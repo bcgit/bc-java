@@ -7,18 +7,19 @@ import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSessionContext;
 
-// TODO[jsse] Serializable ?
+import org.bouncycastle.jsse.BCExtendedSSLSession;
+
 class ExportSSLSession_7
     extends ExtendedSSLSession
 {
-    final ProvSSLSession sslSession;
+    final BCExtendedSSLSession sslSession;
 
-    ExportSSLSession_7(ProvSSLSession sslSession)
+    ExportSSLSession_7(BCExtendedSSLSession sslSession)
     {
         this.sslSession = sslSession;
     }
 
-    ProvSSLSession unwrap()
+    BCExtendedSSLSession unwrap()
     {
         return sslSession;
     }

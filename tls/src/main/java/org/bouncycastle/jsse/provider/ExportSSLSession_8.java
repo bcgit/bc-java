@@ -5,12 +5,13 @@ import java.util.List;
 
 import javax.net.ssl.SNIServerName;
 
+import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSNIServerName;
 
 class ExportSSLSession_8
     extends ExportSSLSession_7
 {
-    ExportSSLSession_8(ProvSSLSession sslSession)
+    ExportSSLSession_8(BCExtendedSSLSession sslSession)
     {
         super(sslSession);
     }

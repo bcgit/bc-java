@@ -1,7 +1,5 @@
 package org.bouncycastle.jsse.provider;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -23,60 +21,9 @@ import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
-// TODO[jsse] Serializable ?
 class ProvSSLSession
     extends BCExtendedSSLSession
 {
-    static final Constructor<? extends SSLSession> exportSSLSessionConstructor;
-
-    static
-    {
-        Constructor<? extends SSLSession> cons = null;
-        try
-        {
-            Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.ExtendedSSLSession");
-            if (null != methods)
-            {
-                String className;
-                if (ReflectionUtil.hasMethod(methods, "getStatusResponses"))
-                {
-                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_9";
-                }
-                else if (ReflectionUtil.hasMethod(methods, "getRequestedServerNames"))
-                {
-                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_8";
-                }
-                else
-                {
-                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_7";
-                }
-
-                cons = ReflectionUtil.getDeclaredConstructor(className, ProvSSLSession.class);
-            }
-        }
-        catch (Exception e)
-        {
-        }
-
-        exportSSLSessionConstructor = cons;
-    }
-
-    private static SSLSession createExportSSLSession(ProvSSLSession sslSession)
-    {
-        if (exportSSLSessionConstructor != null)
-        {
-            try
-            {
-                return exportSSLSessionConstructor.newInstance(sslSession);
-            }
-            catch (Exception e)
-            {
-            }
-        }
-
-        return new ExportSSLSession_5(sslSession);
-    }
-
     // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
     protected final static ProvSSLSession NULL_SESSION = new ProvSSLSession(null, null, null, -1);
 
@@ -100,7 +47,7 @@ class ProvSSLSession
         this.peerPort = peerPort;
         this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
         this.creationTime = System.currentTimeMillis();
-        this.exportSSLSession = createExportSSLSession(this);
+        this.exportSSLSession = SSLSessionUtil.exportSSLSession(this);
         this.lastAccessedTime = creationTime;
     }
 
