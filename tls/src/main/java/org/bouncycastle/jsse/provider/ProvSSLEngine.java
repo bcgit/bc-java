@@ -2,6 +2,7 @@ package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -16,7 +17,6 @@ import javax.net.ssl.SSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.jsse.BCSSLParameters;
-import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.RecordFormat;
 import org.bouncycastle.tls.RecordPreview;
@@ -126,6 +126,44 @@ class ProvSSLEngine
         {
             throw new SSLException(e);
         }
+    }
+
+    public void checkClientTrusted(X509Certificate[] chain, String authType) throws IOException
+    {
+        try
+        {
+            // TODO[jsse] Include 'this' as extra argument
+            contextData.getX509TrustManager().checkClientTrusted(chain, authType);
+        }
+        catch (CertificateException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+        }
+    }
+
+    public void checkServerTrusted(X509Certificate[] chain, String authType) throws IOException
+    {
+        try
+        {
+            // TODO[jsse] Include 'this' as extra argument
+            contextData.getX509TrustManager().checkServerTrusted(chain, authType);
+        }
+        catch (CertificateException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+        }
+    }
+
+    public String chooseClientAlias(String[] keyType, Principal[] issuers)
+    {
+        // TODO[jsse] Pass 'this' as final argument
+        return contextData.getX509KeyManager().chooseEngineClientAlias(keyType, issuers, null);
+    }
+
+    public String chooseServerAlias(String keyType, Principal[] issuers)
+    {
+        // TODO[jsse] Pass 'this' as final argument
+        return contextData.getX509KeyManager().chooseEngineServerAlias(keyType, issuers, null);
     }
 
     @Override
@@ -598,42 +636,6 @@ class ProvSSLEngine
     public int getPeerPort()
     {
         return super.getPeerPort();
-    }
-
-    public boolean isClientTrusted(X509Certificate[] chain, String authType)
-    {
-        BCX509ExtendedTrustManager tm = contextData.getTrustManager();
-        if (tm != null)
-        {
-            try
-            {
-                // TODO[jsse] Include 'this' as extra argument
-                tm.checkClientTrusted(chain, authType);
-                return true;
-            }
-            catch (CertificateException e)
-            {
-            }
-        }
-        return false;
-    }
-
-    public boolean isServerTrusted(X509Certificate[] chain, String authType)
-    {
-        BCX509ExtendedTrustManager tm = contextData.getTrustManager();
-        if (tm != null)
-        {
-            try
-            {
-                // TODO[jsse] Include 'this' as extra argument
-                tm.checkServerTrusted(chain, authType);
-                return true;
-            }
-            catch (CertificateException e)
-            {
-            }
-        }
-        return false;
     }
 
     public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)

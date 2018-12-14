@@ -15,7 +15,6 @@ import java.security.cert.Certificate;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
@@ -45,21 +44,23 @@ class ProvTrustManagerFactorySpi
 
     protected ProvX509TrustManager x509TrustManager;
 
-    public ProvTrustManagerFactorySpi(Provider pkixProvider)
+    ProvTrustManagerFactorySpi(Provider pkixProvider)
     {
         this.pkixProvider = pkixProvider;
     }
 
+    @Override
     protected TrustManager[] engineGetTrustManagers()
     {
-        ArrayList<TrustManager> tms = new ArrayList<TrustManager>();
-        if (null != x509TrustManager)
+        if (null == x509TrustManager)
         {
-            tms.add(x509TrustManager.getExportX509TrustManager());
+            throw new IllegalStateException("TrustManagerFactory not initialized");
         }
-        return tms.toArray(new TrustManager[tms.size()]);
+
+        return new TrustManager[]{ x509TrustManager.getExportX509TrustManager() };
     }
 
+    @Override
     protected void engineInit(KeyStore ks)
         throws KeyStoreException
     {
@@ -123,6 +124,7 @@ class ProvTrustManagerFactorySpi
         }
     }
 
+    @Override
     protected void engineInit(ManagerFactoryParameters spec)
         throws InvalidAlgorithmParameterException
     {

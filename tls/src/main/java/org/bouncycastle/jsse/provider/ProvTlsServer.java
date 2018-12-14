@@ -1,7 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -14,12 +13,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLException;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -195,13 +194,10 @@ class ProvTlsServer
         }
 
         Vector certificateAuthorities = new Vector();
-        X509TrustManager tm = manager.getContextData().getTrustManager();
-        if (tm != null)
+        BCX509ExtendedTrustManager x509TrustManager = manager.getContextData().getX509TrustManager();
+        for (X509Certificate caCert : x509TrustManager.getAcceptedIssuers())
         {
-            for (X509Certificate caCert : tm.getAcceptedIssuers())
-            {
-                certificateAuthorities.addElement(X500Name.getInstance(caCert.getSubjectX500Principal().getEncoded()));
-            }
+            certificateAuthorities.addElement(X500Name.getInstance(caCert.getSubjectX500Principal().getEncoded()));
         }
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
@@ -317,8 +313,7 @@ class ProvTlsServer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        boolean noClientCert = clientCertificate == null || clientCertificate.isEmpty();
-        if (noClientCert)
+        if (null == clientCertificate || clientCertificate.isEmpty())
         {
             if (sslParameters.getNeedClientAuth())
             {
@@ -331,14 +326,8 @@ class ProvTlsServer
             short signatureAlgorithm = clientCertificate.getCertificateAt(0).getLegacySignatureAlgorithm();
             String authType = JsseUtils.getAuthStringClient(signatureAlgorithm);
 
-            if (!manager.isClientTrusted(chain, authType))
-            {
-                /*
-                 * TODO[jsse] The low-level TLS API currently doesn't provide a way to indicate that
-                 * we wish to proceed with an untrusted client certificate, so we always fail here.
-                 */
-                throw new TlsFatalAlert(AlertDescription.bad_certificate);
-            }
+            // NOTE: We never try to continue the handshake with an untrusted client certificate
+            manager.checkClientTrusted(chain, authType);
         }
     }
 
@@ -423,12 +412,6 @@ class ProvTlsServer
             return false;
         }
 
-        X509KeyManager km = manager.getContextData().getKeyManager();
-        if (km == null)
-        {
-            return false;
-        }
-
         String keyType = JsseUtils.getAuthTypeServer(keyExchangeAlgorithm);
         if (keyManagerMissCache.contains(keyType))
         {
@@ -437,10 +420,8 @@ class ProvTlsServer
 
         // TODO[jsse] Is there some extension where the client can specify these (SNI maybe)?
         Principal[] issuers = null;
-        // TODO[jsse] How is this used?
-        Socket socket = null;
 
-        String alias = km.chooseServerAlias(keyType, issuers, socket);
+        String alias = manager.chooseServerAlias(keyType, issuers);
         if (alias == null)
         {
             keyManagerMissCache.add(keyType);
@@ -454,8 +435,9 @@ class ProvTlsServer
             throw new UnsupportedOperationException();
         }
 
-        PrivateKey privateKey = km.getPrivateKey(alias);
-        Certificate certificate = JsseUtils.getCertificateMessage(crypto, km.getCertificateChain(alias));
+        X509ExtendedKeyManager x509KeyManager = manager.getContextData().getX509KeyManager();
+        PrivateKey privateKey = x509KeyManager.getPrivateKey(alias);
+        Certificate certificate = JsseUtils.getCertificateMessage(crypto, x509KeyManager.getCertificateChain(alias));
 
         if (privateKey == null
             || !JsseUtils.isUsableKeyForServer(keyExchangeAlgorithm, privateKey)
