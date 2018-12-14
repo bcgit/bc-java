@@ -12,11 +12,11 @@ import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.jsse.BCSSLParameters;
+import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.RecordFormat;
 import org.bouncycastle.tls.RecordPreview;
@@ -602,13 +602,12 @@ class ProvSSLEngine
 
     public boolean isClientTrusted(X509Certificate[] chain, String authType)
     {
-        // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
-
-        X509TrustManager tm = contextData.getTrustManager();
+        BCX509ExtendedTrustManager tm = contextData.getTrustManager();
         if (tm != null)
         {
             try
             {
+                // TODO[jsse] Include 'this' as extra argument
                 tm.checkClientTrusted(chain, authType);
                 return true;
             }
@@ -621,13 +620,12 @@ class ProvSSLEngine
 
     public boolean isServerTrusted(X509Certificate[] chain, String authType)
     {
-        // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
-
-        X509TrustManager tm = contextData.getTrustManager();
+        BCX509ExtendedTrustManager tm = contextData.getTrustManager();
         if (tm != null)
         {
             try
             {
+                // TODO[jsse] Include 'this' as extra argument
                 tm.checkServerTrusted(chain, authType);
                 return true;
             }

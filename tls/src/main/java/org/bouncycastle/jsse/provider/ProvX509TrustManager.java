@@ -1,7 +1,5 @@
 package org.bouncycastle.jsse.provider;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -28,44 +26,6 @@ import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 class ProvX509TrustManager
     extends BCX509ExtendedTrustManager
 {
-    static final Constructor<? extends X509TrustManager> exportX509TrustManagerConstructor;
-
-    static
-    {
-        Constructor<? extends X509TrustManager> cons = null;
-        try
-        {
-            Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.X509ExtendedTrustManager");
-            if (null != methods)
-            {
-                String className = "org.bouncycastle.jsse.provider.ExportX509TrustManager_7";
-
-                cons = ReflectionUtil.getDeclaredConstructor(className,  ProvX509TrustManager.class);
-            }
-        }
-        catch (Exception e)
-        {
-        }
-
-        exportX509TrustManagerConstructor = cons;
-    }
-
-    private static X509TrustManager createExportX509TrustManager(ProvX509TrustManager x509TrustManager)
-    {
-        if (exportX509TrustManagerConstructor != null)
-        {
-            try
-            {
-                return exportX509TrustManagerConstructor.newInstance(x509TrustManager);
-            }
-            catch (Exception e)
-            {
-            }
-        }
-
-        return new ExportX509TrustManager_5(x509TrustManager);
-    }
-
     private static Set<X509Certificate> getTrustedCerts(Set<TrustAnchor> trustAnchors)
     {
         Set<X509Certificate> result = new HashSet<X509Certificate>(trustAnchors.size());
@@ -95,7 +55,7 @@ class ProvX509TrustManager
         this.trustedCerts = getTrustedCerts(trustAnchors);
         this.baseParameters = new PKIXBuilderParameters(trustAnchors, new X509CertSelector());
         this.baseParameters.setRevocationEnabled(false);
-        this.exportX509TrustManager = createExportX509TrustManager(this);
+        this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
     }
 
     ProvX509TrustManager(Provider pkixProvider, PKIXParameters baseParameters)
@@ -118,7 +78,7 @@ class ProvX509TrustManager
             this.baseParameters.setPolicyMappingInhibited(baseParameters.isPolicyMappingInhibited());
             this.baseParameters.setExplicitPolicyRequired(baseParameters.isExplicitPolicyRequired());
         }
-        this.exportX509TrustManager = createExportX509TrustManager(this);
+        this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
     }
 
     X509TrustManager getExportX509TrustManager()
