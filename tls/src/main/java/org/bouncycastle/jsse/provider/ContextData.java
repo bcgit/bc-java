@@ -1,6 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -8,24 +8,19 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
 final class ContextData
 {
     private final TlsCrypto crypto;
-    private final X509KeyManager km;
-    private final BCX509ExtendedTrustManager tm;
+    private final X509ExtendedKeyManager x509KeyManager;
+    private final BCX509ExtendedTrustManager x509TrustManager;
     private final ProvSSLSessionContext clientSessionContext;
     private final ProvSSLSessionContext serverSessionContext;
 
-    ContextData(TlsCrypto crypto, X509KeyManager km, BCX509ExtendedTrustManager tm, ProvSSLSessionContext clientSessionContext,
-        ProvSSLSessionContext serverSessionContext)
+    ContextData(TlsCrypto crypto, X509ExtendedKeyManager x509KeyManager, BCX509ExtendedTrustManager x509TrustManager,
+        ProvSSLSessionContext clientSessionContext, ProvSSLSessionContext serverSessionContext)
     {
         this.crypto = crypto;
-        this.km = km;
-        this.tm = tm;
+        this.x509KeyManager = x509KeyManager;
+        this.x509TrustManager = x509TrustManager;
         this.clientSessionContext = clientSessionContext;
         this.serverSessionContext = serverSessionContext;
-    }
-
-    ProvSSLSessionContext getClientSessionContext()
-    {
-        return clientSessionContext;
     }
     
     TlsCrypto getCrypto()
@@ -33,9 +28,9 @@ final class ContextData
         return crypto;
     }
 
-    X509KeyManager getKeyManager()
+    ProvSSLSessionContext getClientSessionContext()
     {
-        return km;
+        return clientSessionContext;
     }
 
     ProvSSLSessionContext getServerSessionContext()
@@ -43,8 +38,13 @@ final class ContextData
         return serverSessionContext;
     }
 
-    BCX509ExtendedTrustManager getTrustManager()
+    X509ExtendedKeyManager getX509KeyManager()
     {
-        return tm;
+        return x509KeyManager;
+    }
+
+    BCX509ExtendedTrustManager getX509TrustManager()
+    {
+        return x509TrustManager;
     }
 }

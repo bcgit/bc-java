@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
+import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
@@ -19,8 +20,9 @@ import javax.net.ssl.SSLSession;
 
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
-import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 
@@ -102,11 +104,48 @@ class ProvSSLSocketWrap
         return contextData;
     }
 
-    
     @Override
     public void bind(SocketAddress bindpoint) throws IOException
     {
         throw new SocketException("Wrapped socket should already be bound");
+    }
+
+    public void checkClientTrusted(X509Certificate[] chain, String authType) throws IOException
+    {
+        try
+        {
+            // TODO[jsse] Include 'this' as extra argument
+            contextData.getX509TrustManager().checkClientTrusted(chain, authType);
+        }
+        catch (CertificateException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+        }
+    }
+
+    public void checkServerTrusted(X509Certificate[] chain, String authType) throws IOException
+    {
+        try
+        {
+            // TODO[jsse] Include 'this' as extra argument
+            contextData.getX509TrustManager().checkServerTrusted(chain, authType);
+        }
+        catch (CertificateException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+        }
+    }
+
+    public String chooseClientAlias(String[] keyType, Principal[] issuers)
+    {
+        // TODO[jsse] Pass 'this' as final argument
+        return contextData.getX509KeyManager().chooseClientAlias(keyType, issuers, null);
+    }
+
+    public String chooseServerAlias(String keyType, Principal[] issuers)
+    {
+        // TODO[jsse] Pass 'this' as final argument
+        return contextData.getX509KeyManager().chooseServerAlias(keyType, issuers, null);
     }
 
     @Override
@@ -550,42 +589,6 @@ class ProvSSLSocketWrap
     public int getPeerPort()
     {
         return getPort();
-    }
-
-    public boolean isClientTrusted(X509Certificate[] chain, String authType)
-    {
-        BCX509ExtendedTrustManager tm = contextData.getTrustManager();
-        if (tm != null)
-        {
-            try
-            {
-                // TODO[jsse] Include 'this' as extra argument
-                tm.checkClientTrusted(chain, authType);
-                return true;
-            }
-            catch (CertificateException e)
-            {
-            }
-        }
-        return false;
-    }
-
-    public boolean isServerTrusted(X509Certificate[] chain, String authType)
-    {
-        BCX509ExtendedTrustManager tm = contextData.getTrustManager();
-        if (tm != null)
-        {
-            try
-            {
-                // TODO[jsse] Include 'this' as extra argument
-                tm.checkServerTrusted(chain, authType);
-                return true;
-            }
-            catch (CertificateException e)
-            {
-            }
-        }
-        return false;
     }
 
     public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
