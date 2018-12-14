@@ -9,7 +9,6 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -17,6 +16,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactorySpi;
 import javax.net.ssl.KeyStoreBuilderParameters;
 import javax.net.ssl.ManagerFactoryParameters;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 class ProvKeyManagerFactorySpi
     extends KeyManagerFactorySpi
@@ -24,8 +24,24 @@ class ProvKeyManagerFactorySpi
     private static Logger LOG = Logger.getLogger(ProvKeyManagerFactorySpi.class.getName());
 
     // at the moment we're only accepting X.509/PKCS#8 key material so there is only one key manager needed
-    KeyManager keyManager;
+    protected X509ExtendedKeyManager x509KeyManager = null;
 
+    ProvKeyManagerFactorySpi()
+    {
+    }
+
+    @Override
+    protected KeyManager[] engineGetKeyManagers()
+    {
+        if (null == x509KeyManager)
+        {
+            throw new IllegalStateException("KeyManagerFactory not initialized");
+        }
+
+        return new KeyManager[]{ x509KeyManager };
+    }
+
+    @Override
     protected void engineInit(KeyStore ks, char[] ksPassword)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
@@ -77,7 +93,7 @@ class ProvKeyManagerFactorySpi
                 }
             }
 
-            keyManager = new ProvX509KeyManagerSimple(ks, ksPassword);
+            this.x509KeyManager = new ProvX509KeyManagerSimple(ks, ksPassword);
         }
         catch (Exception e)
         {
@@ -85,25 +101,18 @@ class ProvKeyManagerFactorySpi
         }
     }
 
+    @Override
     protected void engineInit(ManagerFactoryParameters managerFactoryParameters)
         throws InvalidAlgorithmParameterException
     {
         if (managerFactoryParameters instanceof KeyStoreBuilderParameters)
         {
             List<KeyStore.Builder> builders = ((KeyStoreBuilderParameters)managerFactoryParameters).getParameters();
-            keyManager = new ProvX509KeyManager(builders);
-            return;
+            this.x509KeyManager = new ProvX509KeyManager(builders);
         }
-
-        throw new InvalidAlgorithmParameterException("Parameters must be instance of KeyStoreBuilderParameters");
-    }
-
-    protected KeyManager[] engineGetKeyManagers()
-    {
-        if (keyManager != null)
+        else
         {
-            return new KeyManager[] { keyManager };
+            throw new InvalidAlgorithmParameterException("Parameters must be instance of KeyStoreBuilderParameters");
         }
-        throw new IllegalStateException("KeyManagerFactory not initialized");
     }
 }

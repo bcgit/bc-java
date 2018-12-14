@@ -2,7 +2,6 @@ package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -12,7 +11,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -180,12 +179,6 @@ class ProvTlsClient
                     throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
 
-                X509KeyManager km = manager.getContextData().getKeyManager();
-                if (km == null)
-                {
-                    return null;
-                }
-
                 short[] certTypes = certificateRequest.getCertificateTypes();
                 if (certTypes == null || certTypes.length == 0)
                 {
@@ -210,10 +203,7 @@ class ProvTlsClient
                 	issuers = principals.toArray(new Principal[principals.size()]);
                 }
 
-                // TODO[jsse] How is this used?
-                Socket socket = null;
-
-                String alias = km.chooseClientAlias(keyTypes, issuers, socket);
+                String alias = manager.chooseClientAlias(keyTypes, issuers);
                 if (alias == null)
                 {
                     return null;
@@ -226,8 +216,9 @@ class ProvTlsClient
                     throw new UnsupportedOperationException();
                 }
 
-                PrivateKey privateKey = km.getPrivateKey(alias);
-                Certificate certificate = JsseUtils.getCertificateMessage(crypto, km.getCertificateChain(alias));
+                X509ExtendedKeyManager x509KeyManager = manager.getContextData().getX509KeyManager();
+                PrivateKey privateKey = x509KeyManager.getPrivateKey(alias);
+                Certificate certificate = JsseUtils.getCertificateMessage(crypto, x509KeyManager.getCertificateChain(alias));
 
                 if (privateKey == null || certificate.isEmpty())
                 {
@@ -266,23 +257,17 @@ class ProvTlsClient
 
             public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
             {
-                boolean noServerCert = serverCertificate == null || serverCertificate.getCertificate() == null
-                    || serverCertificate.getCertificate().isEmpty();
-                if (noServerCert)
+                if (null == serverCertificate || null == serverCertificate.getCertificate()
+                    || serverCertificate.getCertificate().isEmpty())
                 {
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
-                else
-                {
-                    X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), serverCertificate.getCertificate());
-                    int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-                    String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
-                    if (!manager.isServerTrusted(chain, authType))
-                    {
-                        throw new TlsFatalAlert(AlertDescription.bad_certificate);
-                    }
-                }
+                X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), serverCertificate.getCertificate());
+                int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
+                String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
+
+                manager.checkServerTrusted(chain, authType);
             }
         };
     }
