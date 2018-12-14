@@ -7,17 +7,20 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 
+import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
+
 class ExportX509TrustManager_7
     extends X509ExtendedTrustManager
+    implements ExportX509TrustManager
 {
-    final ProvX509TrustManager x509TrustManager;
+    final BCX509ExtendedTrustManager x509TrustManager;
 
-    ExportX509TrustManager_7(ProvX509TrustManager x509TrustManager)
+    ExportX509TrustManager_7(BCX509ExtendedTrustManager x509TrustManager)
     {
         this.x509TrustManager = x509TrustManager;
     }
 
-    ProvX509TrustManager unwrap()
+    public BCX509ExtendedTrustManager unwrap()
     {
         return x509TrustManager;
     }

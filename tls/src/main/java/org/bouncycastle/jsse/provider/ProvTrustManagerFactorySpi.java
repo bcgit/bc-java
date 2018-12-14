@@ -15,6 +15,7 @@ import java.security.cert.Certificate;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
@@ -51,7 +52,12 @@ class ProvTrustManagerFactorySpi
 
     protected TrustManager[] engineGetTrustManagers()
     {
-        return new TrustManager[]{ x509TrustManager.getExportX509TrustManager() };
+        ArrayList<TrustManager> tms = new ArrayList<TrustManager>();
+        if (null != x509TrustManager)
+        {
+            tms.add(x509TrustManager.getExportX509TrustManager());
+        }
+        return tms.toArray(new TrustManager[tms.size()]);
     }
 
     protected void engineInit(KeyStore ks)

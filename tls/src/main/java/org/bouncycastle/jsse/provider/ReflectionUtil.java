@@ -27,6 +27,34 @@ class ReflectionUtil
         return null != findMethod(methods, name);
     }
 
+    static Class<?> getClass(final String className)
+    {
+        if (null == className)
+        {
+            return null;
+        }
+
+        return AccessController.doPrivileged(new PrivilegedAction<Class<?>>()
+        {
+            public Class<?> run()
+            {
+                try
+                {
+                    ClassLoader classLoader = ReflectionUtil.class.getClassLoader();
+                    Class<?> clazz = (null == classLoader)
+                        ?   Class.forName(className)
+                        :   classLoader.loadClass(className);
+                    return clazz;
+                }
+                catch (Exception e)
+                {
+                }
+
+                return null;
+            }
+        });
+    }
+
     static <T> Constructor<T> getDeclaredConstructor(final String className, final Class<?>... parameterTypes)
     {
         if (null == className)
