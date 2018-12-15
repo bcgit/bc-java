@@ -377,13 +377,4 @@ public class BouncyCastleJsseProvider
             }
         }
     }
-
-//    private static final class FipsCapabilities
-//        extends TlsCryptoCapabilities
-//    {
-//        public FipsCapabilities()
-//        {
-//            super(new int[]{ NamedGroup.secp256r1, NamedGroup.secp384r1 });
-//        }
-//    }
 }
