@@ -1206,7 +1206,12 @@ public class TlsUtils
         Vector supportedSignatureAlgorithms = new Vector(count);
         for (int i = 0; i < count; ++i)
         {
-            supportedSignatureAlgorithms.addElement(SignatureAndHashAlgorithm.parse(input));
+            SignatureAndHashAlgorithm sigAndHashAlg = SignatureAndHashAlgorithm.parse(input);
+
+            if (SignatureAlgorithm.anonymous != sigAndHashAlg.getSignature())
+            {
+                supportedSignatureAlgorithms.addElement(sigAndHashAlg);
+            }
         }
         return supportedSignatureAlgorithms;
     }
