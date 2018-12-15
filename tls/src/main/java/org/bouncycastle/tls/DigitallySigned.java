@@ -65,6 +65,11 @@ public class DigitallySigned
         if (TlsUtils.isTLSv12(context))
         {
             algorithm = SignatureAndHashAlgorithm.parse(input);
+
+            if (SignatureAlgorithm.anonymous == algorithm.getSignature())
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
         }
         byte[] signature = TlsUtils.readOpaque16(input);
         return new DigitallySigned(algorithm, signature);
