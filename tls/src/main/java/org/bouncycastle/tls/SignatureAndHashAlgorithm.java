@@ -110,11 +110,6 @@ public class SignatureAndHashAlgorithm
         short hash = TlsUtils.readUint8(input);
         short signature = TlsUtils.readUint8(input);
 
-        if (signature == SignatureAlgorithm.anonymous)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
         return SignatureAndHashAlgorithm.getInstance(hash, signature);
     }
 
