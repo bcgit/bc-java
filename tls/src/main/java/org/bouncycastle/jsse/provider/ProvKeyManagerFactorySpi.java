@@ -8,6 +8,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.util.List;
 import java.util.logging.Logger;
@@ -22,6 +23,60 @@ class ProvKeyManagerFactorySpi
     extends KeyManagerFactorySpi
 {
     private static Logger LOG = Logger.getLogger(ProvKeyManagerFactorySpi.class.getName());
+
+    static KeyStoreConfig getDefaultKeyStore() throws Exception
+    {
+        String defaultType = KeyStore.getDefaultType();
+
+        String ksPath = null;
+        char[] ksPassword = null;
+
+        String ksPathProp = PropertyUtils.getSystemProperty("javax.net.ssl.keyStore");
+        if ("NONE".equals(ksPathProp))
+        {
+            // Do not try to load any file
+        }
+        else if (null != ksPathProp)
+        {
+            if (new File(ksPathProp).exists())
+            {
+                ksPath = ksPathProp;
+            }
+        }
+
+        KeyStore ks = createKeyStore(defaultType);
+
+        String ksPasswordProp = PropertyUtils.getSystemProperty("javax.net.ssl.keyStorePassword");
+        if (null != ksPasswordProp)
+        {
+            ksPassword = ksPasswordProp.toCharArray();
+        }
+
+        InputStream ksInput = null;
+        try
+        {
+            if (null == ksPath)
+            {
+                LOG.info("Initializing empty key store");
+            }
+            else
+            {
+                LOG.info("Initializing with key store at path: " + ksPath);
+                ksInput = new BufferedInputStream(new FileInputStream(ksPath));
+            }
+
+            ks.load(ksInput, ksPassword);
+        }
+        finally
+        {
+            if (null != ksInput)
+            {
+                ksInput.close();
+            }
+        }
+
+        return new KeyStoreConfig(ks, ksPassword);
+    }
 
     // at the moment we're only accepting X.509/PKCS#8 key material so there is only one key manager needed
     protected X509ExtendedKeyManager x509KeyManager = null;
@@ -45,60 +100,9 @@ class ProvKeyManagerFactorySpi
     protected void engineInit(KeyStore ks, char[] ksPassword)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        try
-        {
-            if (ks == null)
-            {
-                ksPassword = null;
+        // NOTE: When key store is null, we do not try to load defaults
 
-                String ksType = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreType");
-                if (ksType == null)
-                {
-                    ksType = KeyStore.getDefaultType();
-                }
-
-                String ksProv = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreProvider");
-                ks = (ksProv == null || ksProv.length() < 1)
-                    ?   KeyStore.getInstance(ksType)
-                    :   KeyStore.getInstance(ksType, ksProv);
-
-                String ksPath = null;
-
-                String ksPathProp = PropertyUtils.getSystemProperty("javax.net.ssl.keyStore");
-                if (ksPathProp != null)
-                {
-                    if (new File(ksPathProp).exists())
-                    {
-                        ksPath = ksPathProp;
-
-                        String ksPasswordProp = PropertyUtils.getSystemProperty("javax.net.ssl.keyStorePassword");
-                        if (ksPasswordProp != null)
-                        {
-                            ksPassword = ksPasswordProp.toCharArray();
-                        }
-                    }
-                }
-
-                if (ksPath == null)
-                {
-                    ks.load(null, null);
-                    LOG.info("Initialized with empty key store");
-                }
-                else
-                {
-                    InputStream tsInput = new BufferedInputStream(new FileInputStream(ksPath));
-                    ks.load(tsInput, ksPassword);
-                    tsInput.close();
-                    LOG.info("Initialized with key store at path: " + ksPath);
-                }
-            }
-
-            this.x509KeyManager = new ProvX509KeyManagerSimple(ks, ksPassword);
-        }
-        catch (Exception e)
-        {
-            throw new KeyStoreException("initialization failed", e);
-        }
+        this.x509KeyManager = new ProvX509KeyManagerSimple(ks, ksPassword);
     }
 
     @Override
@@ -114,5 +118,21 @@ class ProvKeyManagerFactorySpi
         {
             throw new InvalidAlgorithmParameterException("Parameters must be instance of KeyStoreBuilderParameters");
         }
+    }
+
+    private static KeyStore createKeyStore(String defaultType)
+        throws NoSuchProviderException, KeyStoreException
+    {
+        String ksType = getKeyStoreType(defaultType);
+        String ksProv = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreProvider");
+        return (null == ksProv || ksProv.length() < 1)
+            ?   KeyStore.getInstance(ksType)
+            :   KeyStore.getInstance(ksType, ksProv);
+    }
+
+    private static String getKeyStoreType(String defaultType)
+    {
+        String ksType = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreType");
+        return (null == ksType) ? defaultType : ksType;
     }
 }
