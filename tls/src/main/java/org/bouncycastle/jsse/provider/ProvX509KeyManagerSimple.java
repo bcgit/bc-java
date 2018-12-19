@@ -1,12 +1,14 @@
 package org.bouncycastle.jsse.provider;
 
 import java.net.Socket;
-import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStore.PrivateKeyEntry;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.ECPublicKey;
@@ -32,22 +34,24 @@ class ProvX509KeyManagerSimple
     private final Map<String, Credential> credentials = new HashMap<String, Credential>();
 
     ProvX509KeyManagerSimple(KeyStore ks, char[] password)
-        throws GeneralSecurityException
+        throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        if (ks != null)
+        if (null == ks)
         {
-            Enumeration<String> aliases = ks.aliases();
-            while (aliases.hasMoreElements())
+            return;
+        }
+
+        Enumeration<String> aliases = ks.aliases();
+        while (aliases.hasMoreElements())
+        {
+            String alias = aliases.nextElement();
+            if (ks.entryInstanceOf(alias, PrivateKeyEntry.class))
             {
-                String alias = aliases.nextElement();
-                if (ks.entryInstanceOf(alias, PrivateKeyEntry.class))
+                PrivateKey privateKey = (PrivateKey)ks.getKey(alias, password);
+                X509Certificate[] certificateChain = JsseUtils.getX509CertificateChain(ks.getCertificateChain(alias));
+                if (certificateChain != null && certificateChain.length > 0)
                 {
-                    PrivateKey privateKey = (PrivateKey)ks.getKey(alias, password);
-                    X509Certificate[] certificateChain = JsseUtils.getX509CertificateChain(ks.getCertificateChain(alias));
-                    if (certificateChain != null && certificateChain.length > 0)
-                    {
-                        credentials.put(alias, new Credential(privateKey, certificateChain));
-                    }
+                    credentials.put(alias, new Credential(privateKey, certificateChain));
                 }
             }
         }

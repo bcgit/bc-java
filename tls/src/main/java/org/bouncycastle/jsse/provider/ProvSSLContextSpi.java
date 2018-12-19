@@ -1,6 +1,5 @@
 package org.bouncycastle.jsse.provider;
 
-import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -14,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManager;
@@ -257,6 +257,22 @@ class ProvSSLContextSpi
     private static String[] getKeysArray(Map<String, ?> m)
     {
         return getArray(m.keySet());
+    }
+
+    static KeyManager[] getDefaultKeyManagers() throws Exception
+    {
+        KeyStoreConfig keyStoreConfig = ProvKeyManagerFactorySpi.getDefaultKeyStore();
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keyStoreConfig.keyStore, keyStoreConfig.password);
+        return kmf.getKeyManagers();
+    }
+
+    static TrustManager[] getDefaultTrustManagers() throws Exception
+    {
+        KeyStore trustStore = ProvTrustManagerFactorySpi.getDefaultTrustStore();
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(trustStore);
+        return tmf.getTrustManagers();
     }
 
     protected final boolean isInFipsMode;
@@ -522,11 +538,16 @@ class ProvSSLContextSpi
     protected synchronized void engineInit(KeyManager[] kms, TrustManager[] tms, SecureRandom sr) throws KeyManagementException
     {
         this.initialized = false;
+
         this.crypto = cryptoProvider.create(sr);
         this.x509KeyManager = selectX509KeyManager(kms);
         this.x509TrustManager = selectX509TrustManager(tms);
         this.clientSessionContext = createSSLSessionContext();
         this.serverSessionContext = createSSLSessionContext();
+
+        // Trigger (possibly expensive) RNG initialization here to avoid timeout in an actual handshake
+        this.crypto.getSecureRandom().nextInt();
+
         this.initialized = true;
     }
 
@@ -537,23 +558,6 @@ class ProvSSLContextSpi
 
     protected X509ExtendedKeyManager selectX509KeyManager(KeyManager[] kms) throws KeyManagementException
     {
-        if (kms == null)
-        {
-            try
-            {
-                /*
-                 * "[...] the installed security providers will be searched for the highest priority
-                 * implementation of the appropriate factory."
-                 */
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                kmf.init(null, null);
-                kms = kmf.getKeyManagers();
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new KeyManagementException(e);
-            }
-        }
         if (kms != null)
         {
             for (KeyManager km : kms)
@@ -581,9 +585,9 @@ class ProvSSLContextSpi
                 tmf.init((KeyStore)null);
                 tms = tmf.getTrustManagers();
             }
-            catch (GeneralSecurityException e)
+            catch (Exception e)
             {
-                throw new KeyManagementException(e);
+                LOG.log(Level.WARNING, "Failed to load default trust managers", e);
             }
         }
         if (tms != null)
