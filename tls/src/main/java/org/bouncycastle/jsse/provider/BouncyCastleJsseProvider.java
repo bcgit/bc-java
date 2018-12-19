@@ -133,7 +133,7 @@ public class BouncyCastleJsseProvider
         }
     }
 
-    private boolean configure(final boolean fipsMode, final JcaTlsCryptoProvider baseCryptoProvider)
+    private boolean configure(final boolean fipsMode, final JcaTlsCryptoProvider cryptoProvider)
     {
         // TODO[jsse]: should X.509 be an alias.
         addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", new EngineCreator()
@@ -150,7 +150,7 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvTrustManagerFactorySpi(baseCryptoProvider.getPkixProvider());
+                return new ProvTrustManagerFactorySpi(cryptoProvider.getPkixProvider());
             }
         });
         addAlias("Alg.Alias.TrustManagerFactory.X.509", "PKIX");
@@ -161,7 +161,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, null);
+                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, null);
                 }
             });
         addAlgorithmImplementation("SSLContext.TLSV1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1",
@@ -169,7 +169,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, new String[]{ "TLSv1", "TLSv1.1", "TLSv1.2" });
+                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1", "TLSv1.1", "TLSv1.2" });
                 }
             });
         addAlgorithmImplementation("SSLContext.TLSV1.1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_1",
@@ -177,7 +177,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, new String[]{ "TLSv1.1", "TLSv1.2" });
+                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1.1", "TLSv1.2" });
                 }
             });
         addAlgorithmImplementation("SSLContext.TLSV1.2", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_2",
@@ -185,25 +185,15 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, new String[]{ "TLSv1.2" });
+                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1.2" });
                 }
             });
         addAlgorithmImplementation("SSLContext.DEFAULT", "org.bouncycastle.jsse.provider.SSLContext.Default",
             new EngineCreator()
             {
-                public Object createInstance(Object constructorParameter)
+                public Object createInstance(Object constructorParameter) throws GeneralSecurityException
                 {
-                    try
-                    {
-                        ProvSSLContextSpi defaultSSLContextSpi = new ProvSSLContextSpi(fipsMode, baseCryptoProvider, null);
-                        defaultSSLContextSpi.engineInit(null, null, null);
-                        return defaultSSLContextSpi;
-                    }
-                    catch (GeneralSecurityException e)
-                    {
-                        // TODO[jsse] Log this exception
-                        return null;
-                    }
+                    return new DefaultSSLContextSpi(fipsMode, cryptoProvider);
                 }
             });
 

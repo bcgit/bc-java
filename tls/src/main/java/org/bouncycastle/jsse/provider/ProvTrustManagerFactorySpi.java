@@ -15,9 +15,11 @@ import java.security.cert.Certificate;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.CertPathTrustManagerParameters;
@@ -30,14 +32,80 @@ class ProvTrustManagerFactorySpi
 {
     private static Logger LOG = Logger.getLogger(ProvTrustManagerFactorySpi.class.getName());
 
-    static final String CACERTS_PATH;
-    static final String JSSECACERTS_PATH;
-
-    static
+    static KeyStore getDefaultTrustStore() throws Exception
     {
-        String javaHome = PropertyUtils.getSystemProperty("java.home");
-        CACERTS_PATH = javaHome + "/lib/security/cacerts".replace('/', File.separatorChar);
-        JSSECACERTS_PATH = javaHome + "/lib/security/jssecacerts".replace('/', File.separatorChar);
+        String defaultType = KeyStore.getDefaultType();
+
+        String tsPath = null;
+        char[] tsPassword = null;
+
+        String tsPathProp = PropertyUtils.getSystemProperty("javax.net.ssl.trustStore");
+        if ("NONE".equals(tsPathProp))
+        {
+            // Do not try to load any file
+        }
+        else if (null != tsPathProp)
+        {
+            if (new File(tsPathProp).exists())
+            {
+                tsPath = tsPathProp;
+            }
+        }
+        else
+        {
+            String javaHome = PropertyUtils.getSystemProperty("java.home");
+            if (null != javaHome)
+            {
+                String jsseCacertsPath = javaHome + "/lib/security/jssecacerts".replace("/", File.separator);
+                if (new File(jsseCacertsPath).exists())
+                {
+                    defaultType = "jks";
+                    tsPath = jsseCacertsPath;
+                }
+                else
+                {
+                    String cacertsPath = javaHome + "/lib/security/cacerts".replace("/", File.separator);
+                    if (new File(cacertsPath).exists())
+                    {
+                        defaultType = "jks";
+                        tsPath = cacertsPath;
+                    }
+                }
+            }
+        }
+
+        KeyStore ks = createTrustStore(defaultType);
+
+        String tsPasswordProp = PropertyUtils.getSystemProperty("javax.net.ssl.trustStorePassword");
+        if (null != tsPasswordProp)
+        {
+            tsPassword = tsPasswordProp.toCharArray();
+        }
+
+        InputStream tsInput = null;
+        try
+        {
+            if (null == tsPath)
+            {
+                LOG.info("Initializing empty trust store");
+            }
+            else
+            {
+                LOG.info("Initializing with trust store at path: " + tsPath);
+                tsInput = new BufferedInputStream(new FileInputStream(tsPath));
+            }
+
+            ks.load(tsInput, tsPassword);
+        }
+        finally
+        {
+            if (null != tsInput)
+            {
+                tsInput.close();
+            }
+        }
+
+        return ks;
     }
 
     protected final Provider pkixProvider;
@@ -64,63 +132,43 @@ class ProvTrustManagerFactorySpi
     protected void engineInit(KeyStore ks)
         throws KeyStoreException
     {
+        if (null == ks)
+        {
+            try
+            {
+                ks = getDefaultTrustStore();
+            }
+            catch (SecurityException e)
+            {
+                LOG.log(Level.WARNING, "Skipped default trust store", e);
+                // Ignore
+            }
+            catch (Error e)
+            {
+                LOG.log(Level.WARNING, "Skipped default trust store", e);
+                throw e;
+            }
+            catch (RuntimeException e)
+            {
+                LOG.log(Level.WARNING, "Skipped default trust store", e);
+                throw e;
+            }
+            catch (Exception e)
+            {
+                LOG.log(Level.WARNING, "Skipped default trust store", e);
+                throw new KeyStoreException("Failed to load default trust store", e);
+            }
+        }
+
+        Set<TrustAnchor> trustAnchors = getTrustAnchors(ks);
+
         try
         {
-            if (ks == null)
-            {
-                String defaultType = KeyStore.getDefaultType();
-
-                String tsPath = null;
-                char[] tsPassword = null;
-
-                String tsPathProp = PropertyUtils.getSystemProperty("javax.net.ssl.trustStore");
-                if (tsPathProp != null)
-                {
-                    if (new File(tsPathProp).exists())
-                    {
-                        tsPath = tsPathProp;
-
-                        String tsPasswordProp = PropertyUtils.getSystemProperty("javax.net.ssl.trustStorePassword");
-                        if (tsPasswordProp != null)
-                        {
-                            tsPassword = tsPasswordProp.toCharArray();
-                        }
-                    }
-                }
-                else if (new File(JSSECACERTS_PATH).exists())
-                {
-                    defaultType = "jks";
-                    tsPath = JSSECACERTS_PATH;
-                }
-                else if (new File(CACERTS_PATH).exists())
-                {
-                    defaultType = "jks";
-                    tsPath = CACERTS_PATH;
-                }
-
-                ks = createTrustStore(defaultType);
-
-                if (tsPath == null)
-                {
-                    ks.load(null, null);
-                    LOG.warning("Initialized with empty trust store");
-                }
-                else
-                {
-                    InputStream tsInput = new BufferedInputStream(new FileInputStream(tsPath));
-                    ks.load(tsInput, tsPassword);
-                    tsInput.close();
-                    LOG.info("Initialized with trust store at path: " + tsPath);
-                }
-            }
-
-            Set<TrustAnchor> trustAnchors = getTrustAnchors(ks);
-
             this.x509TrustManager = new ProvX509TrustManager(pkixProvider, trustAnchors);
         }
-        catch (Exception e)
+        catch (InvalidAlgorithmParameterException e)
         {
-            throw new KeyStoreException("initialization failed", e);
+            throw new KeyStoreException("Failed to create trust manager", e);
         }
     }
 
@@ -158,32 +206,24 @@ class ProvTrustManagerFactorySpi
         }
     }
 
-    private String getTrustStoreType(String defaultType)
-    {
-        String tsType = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreType");
-        if (tsType == null)
-        {
-            tsType = defaultType;
-        }
-
-        return tsType;
-    }
-
-    private KeyStore createTrustStore(String defaultType)
+    private static KeyStore createTrustStore(String defaultType)
         throws NoSuchProviderException, KeyStoreException
     {
         String tsType = getTrustStoreType(defaultType);
         String tsProv = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreProvider");
-        KeyStore ts = (tsProv == null || tsProv.length() < 1)
+        return (null == tsProv || tsProv.length() < 1)
             ?   KeyStore.getInstance(tsType)
             :   KeyStore.getInstance(tsType, tsProv);
-
-        return ts;
     }
 
-    private Set<TrustAnchor> getTrustAnchors(KeyStore trustStore)
+    private static Set<TrustAnchor> getTrustAnchors(KeyStore trustStore)
         throws KeyStoreException
     {
+        if (null == trustStore)
+        {
+            return Collections.emptySet();
+        }
+
         Set<TrustAnchor> anchors = new HashSet<TrustAnchor>(trustStore.size());
         for (Enumeration<String> en = trustStore.aliases(); en.hasMoreElements();)
         {
@@ -197,7 +237,12 @@ class ProvTrustManagerFactorySpi
                 }
             }
         }
-
         return anchors;
+    }
+
+    private static String getTrustStoreType(String defaultType)
+    {
+        String tsType = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreType");
+        return (null == tsType) ? defaultType : tsType;
     }
 }
