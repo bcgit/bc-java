@@ -115,6 +115,8 @@ class ProvTlsServer
     {
         if (!selectCredentials(cipherSuite))
         {
+            LOG.finer("Server found no credentials for cipher suite: "
+                + manager.getContext().getCipherSuiteString(cipherSuite));
             return false;
         }
 
