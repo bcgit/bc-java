@@ -3185,8 +3185,7 @@ public class TlsUtils
             return v;
         }
 
-        Vector v = new Vector(6);
-        v.addElement(Shorts.valueOf(SignatureAlgorithm.anonymous));
+        Vector v = new Vector();
         for (int i = 0; i < sigHashAlgs.size(); ++i)
         {
             SignatureAndHashAlgorithm sigHashAlg = (SignatureAndHashAlgorithm)sigHashAlgs.elementAt(i);
