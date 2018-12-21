@@ -5,6 +5,7 @@ import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
+import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -182,7 +183,7 @@ public class PSSTest
             fail("SHA256 signature verification failed");
         }
 
-        s = Signature.getInstance("RSAPSS", "BC");
+        s = Signature.getInstance("RSASSA-PSS", "BC");
 
         s.initSign(privKey);
 
@@ -199,6 +200,38 @@ public class PSSTest
         if (!s.verify(sig))
         {
             fail("SHA256 signature verification failed (setParameter)");
+        }
+
+        s = Signature.getInstance("RSASSA-PSS", "BC");
+
+        s.initSign(privKey);
+
+        s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
+
+        s.update(msg1a);
+
+        try
+        {
+            s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
+            fail("no exception - setParameter byte[]");
+        }
+        catch (ProviderException e)
+        {
+            isEquals("cannot call setParameter in the middle of update", e.getMessage());
+        }
+
+        s.initSign(privKey);
+        
+        s.update(msg1a[0]);
+
+        try
+        {
+            s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
+            fail("no exception - setParameter byte");
+        }
+        catch (ProviderException e)
+        {
+            isEquals("cannot call setParameter in the middle of update", e.getMessage());
         }
 
         //
