@@ -386,8 +386,8 @@ public class DTLSClientProtocol
 
         context.setClientSupportedVersions(state.client.getSupportedVersions());
 
-        ProtocolVersion client_version = ProtocolVersion.getLatest(context.getClientSupportedVersions());
-        if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
+        ProtocolVersion client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
+        if (null == client_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

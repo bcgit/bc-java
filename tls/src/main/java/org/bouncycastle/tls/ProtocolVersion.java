@@ -28,55 +28,83 @@ public final class ProtocolVersion
         return false;
     }
 
-    public static ProtocolVersion getEarliest(ProtocolVersion[] versions)
+    public static ProtocolVersion getEarliestDTLS(ProtocolVersion[] versions)
     {
-        if (null == versions || versions.length < 1)
+        ProtocolVersion earliest = null;
+        if (null != versions)
         {
-            return null;
-        }
-
-        ProtocolVersion earliest = versions[0];
-        int majorVersion = earliest.getMajorVersion();
-
-        for (int i = 1; i < versions.length; ++i)
-        {
-            ProtocolVersion next = versions[i];
-            if (next.getMajorVersion() != majorVersion)
+            for (int i = 0; i < versions.length; ++i)
             {
-                throw new IllegalArgumentException("'versions' entries must all have the same major version");
-            }
-            if (earliest.isLaterVersionOf(next))
-            {
-                earliest = next;
+                ProtocolVersion next = versions[i];
+                if (null != next && next.isDTLS())
+                {
+                    if (null == earliest || next.getMinorVersion() > earliest.getMinorVersion())
+                    {
+                        earliest = next;
+                    }
+                }
             }
         }
-
         return earliest;
     }
 
-    public static ProtocolVersion getLatest(ProtocolVersion[] versions)
+    public static ProtocolVersion getEarliestTLS(ProtocolVersion[] versions)
     {
-        if (null == versions || versions.length < 1)
+        ProtocolVersion earliest = null;
+        if (null != versions)
         {
-            return null;
-        }
-
-        ProtocolVersion latest = versions[0];
-        int majorVersion = latest.getMajorVersion();
-
-        for (int i = 1; i < versions.length; ++i)
-        {
-            ProtocolVersion next = versions[i];
-            if (next.getMajorVersion() != majorVersion)
+            for (int i = 0; i < versions.length; ++i)
             {
-                throw new IllegalArgumentException("'versions' entries must all have the same major version");
-            }
-            if (next.isLaterVersionOf(latest))
-            {
-                latest = next;
+                ProtocolVersion next = versions[i];
+                if (null != next && next.isTLS())
+                {
+                    if (null == earliest || next.getMinorVersion() < earliest.getMinorVersion())
+                    {
+                        earliest = next;
+                    }
+                }
             }
         }
+        return earliest;
+    }
 
+    public static ProtocolVersion getLatestDTLS(ProtocolVersion[] versions)
+    {
+        ProtocolVersion latest = null;
+        if (null != versions)
+        {
+            for (int i = 0; i < versions.length; ++i)
+            {
+                ProtocolVersion next = versions[i];
+                if (null != next && next.isDTLS())
+                {
+                    if (null == latest || next.getMinorVersion() < latest.getMinorVersion())
+                    {
+                        latest = next;
+                    }
+                }
+            }
+        }
+        return latest;
+    }
+
+    public static ProtocolVersion getLatestTLS(ProtocolVersion[] versions)
+    {
+        ProtocolVersion latest = null;
+        if (null != versions)
+        {
+            for (int i = 0; i < versions.length; ++i)
+            {
+                ProtocolVersion next = versions[i];
+                if (null != next && next.isTLS())
+                {
+                    if (null == latest || next.getMinorVersion() > latest.getMinorVersion())
+                    {
+                        latest = next;
+                    }
+                }
+            }
+        }
         return latest;
     }
 

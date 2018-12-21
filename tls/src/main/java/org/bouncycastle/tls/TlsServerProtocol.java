@@ -523,10 +523,10 @@ public class TlsServerProtocol
         }
         else
         {
-            client_version = ProtocolVersion.getLatest(tlsServerContext.getClientSupportedVersions());
+            client_version = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
-        if (!ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
+        if (null == client_version || !ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -756,7 +756,8 @@ public class TlsServerProtocol
         else
         {
             server_version = tlsServer.getServerVersion();
-            if (!ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
+            if (null == server_version || !ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(server_version)
+                || !ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -770,7 +771,7 @@ public class TlsServerProtocol
         }
 
         securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
-        if (!ProtocolVersion.getLatest(tlsServer.getSupportedVersions()).equals(server_version))
+        if (!server_version.equals(ProtocolVersion.getLatestTLS(tlsServer.getSupportedVersions())))
         {
             TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
         }
