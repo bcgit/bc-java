@@ -5,6 +5,7 @@ import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
+import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
@@ -43,6 +44,7 @@ public class PSSSignatureSpi
     private RSAKeyParameters key;
 
     private org.bouncycastle.crypto.signers.PSSSigner pss;
+    private boolean isInitState = true;
 
     private byte getTrailer(
         int trailerField)
@@ -113,6 +115,7 @@ public class PSSSignatureSpi
         key = RSAUtil.generatePublicKeyParameter((RSAPublicKey)publicKey);
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength, trailer);
         pss.init(false, key);
+        isInitState = true;
     }
 
     protected void engineInitSign(
@@ -128,6 +131,7 @@ public class PSSSignatureSpi
         key = RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey);
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength, trailer);
         pss.init(true, new ParametersWithRandom(key, random));
+        isInitState = true;
     }
 
     protected void engineInitSign(
@@ -142,6 +146,7 @@ public class PSSSignatureSpi
         key = RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey);
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength, trailer);
         pss.init(true, key);
+        isInitState = true;
     }
 
     protected void engineUpdate(
@@ -149,6 +154,7 @@ public class PSSSignatureSpi
         throws SignatureException
     {
         pss.update(b);
+        isInitState = false;
     }
 
     protected void engineUpdate(
@@ -158,11 +164,13 @@ public class PSSSignatureSpi
         throws SignatureException
     {
         pss.update(b, off, len);
+        isInitState = false;
     }
 
     protected byte[] engineSign()
         throws SignatureException
     {
+        isInitState = true;
         try
         {
             return pss.generateSignature();
@@ -177,6 +185,7 @@ public class PSSSignatureSpi
         byte[]  sigBytes) 
         throws SignatureException
     {
+        isInitState = true;
         return pss.verifySignature(sigBytes);
     }
 
@@ -184,6 +193,11 @@ public class PSSSignatureSpi
         AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
+        if (!isInitState)
+        {
+            throw new ProviderException("cannot call setParameter in the middle of update");
+        }
+        
         if (params == null)
         {
             if (originalSpec != null)
