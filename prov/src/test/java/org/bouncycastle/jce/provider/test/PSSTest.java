@@ -169,6 +169,38 @@ public class PSSTest
             fail("SHA256 signature verification failed");
         }
 
+        // set parameter after sig intialisation
+        s = Signature.getInstance("RSAPSS", "BC");
+
+        s.initVerify(pubKey);
+
+        s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
+
+        s.update(msg1a);
+        if (!s.verify(sig1b))
+        {
+            fail("SHA256 signature verification failed");
+        }
+
+        s = Signature.getInstance("RSAPSS", "BC");
+
+        s.initSign(privKey);
+
+        s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
+
+        s.update(msg1a);
+
+        sig = s.sign();
+
+        s.initVerify(pubKey);
+
+        s.update(msg1a);
+
+        if (!s.verify(sig))
+        {
+            fail("SHA256 signature verification failed (setParameter)");
+        }
+
         //
         // 512 test -with zero salt length
         //
