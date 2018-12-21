@@ -234,9 +234,29 @@ public abstract class AbstractTlsServer
          * ClientHello.client_version, the server MUST respond with a fatal inappropriate_fallback
          * alert [..].
          */
-        if (isFallback && ProtocolVersion.getLatest(getSupportedVersions()).isLaterVersionOf(context.getClientVersion()))
+        if (isFallback)
         {
-            throw new TlsFatalAlert(AlertDescription.inappropriate_fallback);
+            ProtocolVersion[] serverVersions = getSupportedVersions();
+            ProtocolVersion clientVersion = context.getClientVersion();
+
+            ProtocolVersion latestServerVersion;
+            if (clientVersion.isTLS())
+            {
+                latestServerVersion = ProtocolVersion.getLatestTLS(serverVersions);
+            }
+            else if (clientVersion.isDTLS())
+            {
+                latestServerVersion = ProtocolVersion.getLatestDTLS(serverVersions);
+            }
+            else
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            if (null != latestServerVersion && latestServerVersion.isLaterVersionOf(clientVersion))
+            {
+                throw new TlsFatalAlert(AlertDescription.inappropriate_fallback);
+            }
         }
     }
 

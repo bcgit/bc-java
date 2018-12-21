@@ -345,7 +345,8 @@ public class DTLSServerProtocol
 
         ProtocolVersion server_version = state.server.getServerVersion();
         {
-            if (!ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
+            if (null == server_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(server_version)
+                || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -360,7 +361,7 @@ public class DTLSServerProtocol
         }
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), context);
-        if (!ProtocolVersion.getLatest(state.server.getSupportedVersions()).equals(server_version))
+        if (!server_version.equals(ProtocolVersion.getLatestDTLS(state.server.getSupportedVersions())))
         {
             TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
         }
@@ -615,10 +616,10 @@ public class DTLSServerProtocol
         }
         else
         {
-            client_version = ProtocolVersion.getLatest(context.getClientSupportedVersions());
+            client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
         }
 
-        if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
+        if (null == client_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
