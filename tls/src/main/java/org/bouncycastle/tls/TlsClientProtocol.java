@@ -920,8 +920,8 @@ public class TlsClientProtocol
 
             tlsClientContext.setClientSupportedVersions(tlsClient.getSupportedVersions());
 
-            client_version = ProtocolVersion.getLatest(tlsClientContext.getClientSupportedVersions());
-            if (!ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
+            client_version = ProtocolVersion.getLatestTLS(tlsClientContext.getClientSupportedVersions());
+            if (null == client_version || !ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
