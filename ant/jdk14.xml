@@ -31,6 +31,11 @@
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/est/**/*.java"/>
+                <exclude name="**/pkix/jcajce/*.java"/>
+                <include name="**/pkix/jcajce/Jca*.java" />
+            </fileset>
+            <fileset dir="pkix/src/main/java">
+                <include name="**/pkix/jcajce/Jca*.java" />
             </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java"/>
@@ -161,6 +166,12 @@
         </copy>
 
         <replaceregexp match="${regexp}" replace=" " flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <exclude name="**/MultipartParserTest.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="(List|Map|Set) >" replace="\1" flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
                 <exclude name="**/MultipartParserTest.java"/>

@@ -9,7 +9,7 @@ import java.util.Map;
 
 class DateUtil
 {
-    private static Long ZERO = Long.valueOf(0);
+    private static Long ZERO = longValueOf(0);
 
     private static final Map localeCache = new HashMap();
 
@@ -58,7 +58,7 @@ class DateUtil
                 }
                 else
                 {
-                    adj = Long.valueOf(v);
+                    adj = longValueOf(v);
                 }
 
                 localeCache.put(locale, adj);
@@ -71,5 +71,10 @@ class DateUtil
 
             return date;
         }
+    }
+
+    private static Long longValueOf(long v)
+    {
+        return Long.valueOf(v);
     }
 }
