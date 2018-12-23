@@ -84,19 +84,19 @@ class Polynomial
      * Size of the Private Key (in Byte) Containing Polynomials (Secret Polynomial and Error Polynomial) and Seeds (seedA and seedY)
      * for Heuristic qTESLA Security Category-1
      */
-    public static final int PRIVATE_KEY_I = Parameter.N_I * Parameter.S_BIT_I / Byte.SIZE * 2 + SEED * 2;
+    public static final int PRIVATE_KEY_I = Parameter.N_I * Parameter.S_BIT_I / Const.BYTE_SIZE * 2 + SEED * 2;
 
     /**
      * Size of the Private Key (in Byte) Containing Polynomials (Secret Polynomial and Error Polynomial) and Seeds (seedA and seedY)
      * for Heuristic qTESLA Security Category-3 (Option for Size)
      */
-    public static final int PRIVATE_KEY_III_SIZE = Parameter.N_III_SIZE * Parameter.S_BIT_III_SIZE / Byte.SIZE * 2 + SEED * 2;
+    public static final int PRIVATE_KEY_III_SIZE = Parameter.N_III_SIZE * Parameter.S_BIT_III_SIZE / Const.BYTE_SIZE * 2 + SEED * 2;
 
     /**
      * Size of the Private Key (in Byte) Containing Polynomials (Secret Polynomial and Error Polynomial) and Seeds (seedA and seedY)
      * for Heuristic qTESLA Security Category-3 (Option for Speed)
      */
-    public static final int PRIVATE_KEY_III_SPEED = Parameter.N_III_SPEED * Parameter.S_BIT_III_SPEED / Byte.SIZE * 2 + SEED * 2;
+    public static final int PRIVATE_KEY_III_SPEED = Parameter.N_III_SPEED * Parameter.S_BIT_III_SPEED / Const.BYTE_SIZE * 2 + SEED * 2;
 
     /**
      * Size of the Private Key (in Byte) Containing Polynomials (Secret Polynomial and Error Polynomial) and Seeds (seedA and seedY)
@@ -957,7 +957,7 @@ class Polynomial
         while (i < n)
         {
 
-            if (position > (HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock - Integer.SIZE / Byte.SIZE * numberOfByte))
+            if (position > (HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock - Const.INT_SIZE / Const.BYTE_SIZE * numberOfByte))
             {
 
                 numberOfBlock = 1;
@@ -1057,7 +1057,7 @@ class Polynomial
         while (i < n * k)
         {
 
-            if (position > (HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock - Integer.SIZE / Byte.SIZE * numberOfByte))
+            if (position > (HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock - Const.INT_SIZE / Const.BYTE_SIZE * numberOfByte))
             {
 
                 numberOfBlock = 1;

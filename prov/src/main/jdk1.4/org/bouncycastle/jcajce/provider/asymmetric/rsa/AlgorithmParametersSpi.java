@@ -62,6 +62,11 @@ public abstract class AlgorithmParametersSpi
             Class paramSpec)
             throws InvalidParameterSpecException
         {
+            if (paramSpec == AlgorithmParameterSpec.class)
+            {
+                return currentSpec;
+            }
+
             throw new InvalidParameterSpecException("unknown parameter spec passed to OAEP parameters object.");
         }
     
@@ -153,11 +158,11 @@ public abstract class AlgorithmParametersSpi
             Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (paramSpec == PSSParameterSpec.class && currentSpec != null)
+            if (paramSpec == PSSParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
             {
                 return currentSpec;
             }
-    
+
             throw new InvalidParameterSpecException("unknown parameter spec passed to PSS parameters object.");
         }
     

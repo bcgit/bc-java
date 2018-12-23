@@ -15,6 +15,7 @@ import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.jcajce.spec.QTESLAParameterSpec;
+import org.bouncycastle.util.Integers;
 
 public class KeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
@@ -23,11 +24,11 @@ public class KeyPairGeneratorSpi
 
     static
     {
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I), QTESLASecurityCategory.HEURISTIC_I);
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SIZE), QTESLASecurityCategory.HEURISTIC_III_SIZE);
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SPEED), QTESLASecurityCategory.HEURISTIC_III_SPEED);
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_I), QTESLASecurityCategory.PROVABLY_SECURE_I);
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_III), QTESLASecurityCategory.PROVABLY_SECURE_III);
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I), Integers.valueOf(QTESLASecurityCategory.HEURISTIC_I));
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SIZE), Integers.valueOf(QTESLASecurityCategory.HEURISTIC_III_SIZE));
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SPEED), Integers.valueOf(QTESLASecurityCategory.HEURISTIC_III_SPEED));
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_I), Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_I));
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_III), Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_III));
     }
 
     private QTESLAKeyGenerationParameters param;
@@ -60,7 +61,7 @@ public class KeyPairGeneratorSpi
 
         QTESLAParameterSpec qteslaParams = (QTESLAParameterSpec)params;
 
-        param = new QTESLAKeyGenerationParameters((Integer)catLookup.get(qteslaParams.getSecurityCategory()), random);
+        param = new QTESLAKeyGenerationParameters(((Integer)catLookup.get(qteslaParams.getSecurityCategory())).intValue(), random);
 
         engine.init(param);
         initialised = true;

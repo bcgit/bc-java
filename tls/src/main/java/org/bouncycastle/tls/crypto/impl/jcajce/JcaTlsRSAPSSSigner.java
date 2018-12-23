@@ -6,8 +6,7 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.spec.MGF1ParameterSpec;
-import java.security.spec.PSSParameterSpec;
+import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -64,10 +63,9 @@ public class JcaTlsRSAPSSSigner
         short hash = SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm);
         String digestName = crypto.getDigestName(hash);
 
-        MGF1ParameterSpec mgf1Spec = new MGF1ParameterSpec(digestName);
-        PSSParameterSpec pssSpec = new PSSParameterSpec(digestName, "MGF1", mgf1Spec, HashAlgorithm.getOutputSize(hash), 1);
+        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName);
 
-        String sigName = digestName.replace("-", "") + "WITHRSAANDMGF1";
+        String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
         try
         {
