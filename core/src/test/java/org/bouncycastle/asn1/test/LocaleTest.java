@@ -11,7 +11,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class LocaleTest
     extends SimpleTest
 {
-    @Override
     public String getName()
     {
         return "LocaleTest";
@@ -25,7 +24,7 @@ public class LocaleTest
         String longTimeString = "20180927154606Z";
 
         Locale.setDefault(l);
-        
+
         isTrue(time == new DERUTCTime(timeString).getAdjustedDate().getTime());
         isTrue(time == new DERGeneralizedTime(longTimeString).getDate().getTime());
 
@@ -44,15 +43,16 @@ public class LocaleTest
         Locale defLocale = Locale.getDefault();
 
         Locale list[] = DateFormat.getAvailableLocales();
-         for (Locale l : list){
-             doTestLocale(l);
-         }
+        for (int i = 0; i != list.length; i++)
+        {
+            doTestLocale(list[i]);
+        }
 
-         Locale.setDefault(defLocale);
+        Locale.setDefault(defLocale);
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         runTest(new LocaleTest());
     }

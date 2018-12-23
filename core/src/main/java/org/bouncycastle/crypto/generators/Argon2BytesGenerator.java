@@ -117,8 +117,10 @@ public class Argon2BytesGenerator
     private void reset()
     {
         // Reset memory.
-        for (Block b : memory)
+        for (int i = 0; i < memory.length; i++)
         {
+            Block b = memory[i];
+
             b.clear();
         }
         memory = null;
@@ -684,14 +686,13 @@ public class Argon2BytesGenerator
                 v[i] = v[i] ^ other.v[i];
             }
         }
-
-        @Override
+        
         public String toString()
         {
-            StringBuilder result = new StringBuilder();
-            for (long value : v)
+            StringBuffer result = new StringBuffer();
+            for (int i = 0; i < v.length; i++)
             {
-                result.append(Hex.toHexString(Pack.longToLittleEndian(value)));
+                result.append(Hex.toHexString(Pack.longToLittleEndian(v[i])));
             }
 
             return result.toString();

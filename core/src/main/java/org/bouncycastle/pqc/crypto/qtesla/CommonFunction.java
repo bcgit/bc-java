@@ -59,13 +59,13 @@ class CommonFunction
 
         short number = 0;
 
-        if (load.length - loadOffset >= Short.SIZE / Byte.SIZE)
+        if (load.length - loadOffset >= Const.SHORT_SIZE / Const.BYTE_SIZE)
         {
 
-            for (int i = 0; i < Short.SIZE / Byte.SIZE; i++)
+            for (int i = 0; i < Const.SHORT_SIZE / Const.BYTE_SIZE; i++)
             {
 
-                number ^= (short)(load[loadOffset + i] & 0xFF) << (Byte.SIZE * i);
+                number ^= (short)(load[loadOffset + i] & 0xFF) << (Const.BYTE_SIZE * i);
 
             }
 
@@ -76,7 +76,7 @@ class CommonFunction
             for (int i = 0; i < load.length - loadOffset; i++)
             {
 
-                number ^= (short)(load[loadOffset + i] & 0xFF) << (Byte.SIZE * i);
+                number ^= (short)(load[loadOffset + i] & 0xFF) << (Const.BYTE_SIZE * i);
 
             }
 
@@ -100,13 +100,13 @@ class CommonFunction
 
         int number = 0;
 
-        if (load.length - loadOffset >= Integer.SIZE / Byte.SIZE)
+        if (load.length - loadOffset >= Const.INT_SIZE / Const.BYTE_SIZE)
         {
 
-            for (int i = 0; i < Integer.SIZE / Byte.SIZE; i++)
+            for (int i = 0; i < Const.INT_SIZE / Const.BYTE_SIZE; i++)
             {
 
-                number ^= (int)(load[loadOffset + i] & 0xFF) << (Byte.SIZE * i);
+                number ^= (int)(load[loadOffset + i] & 0xFF) << (Const.BYTE_SIZE * i);
 
             }
 
@@ -118,7 +118,7 @@ class CommonFunction
             for (int i = 0; i < load.length - loadOffset; i++)
             {
 
-                number ^= (int)(load[loadOffset + i] & 0xFF) << (Byte.SIZE * i);
+                number ^= (int)(load[loadOffset + i] & 0xFF) << (Const.BYTE_SIZE * i);
 
             }
 
@@ -142,13 +142,13 @@ class CommonFunction
 
         long number = 0L;
 
-        if (load.length - loadOffset >= Long.SIZE / Byte.SIZE)
+        if (load.length - loadOffset >= Const.LONG_SIZE / Const.BYTE_SIZE)
         {
 
-            for (int i = 0; i < Long.SIZE / Byte.SIZE; i++)
+            for (int i = 0; i < Const.LONG_SIZE / Const.BYTE_SIZE; i++)
             {
 
-                number ^= (long)(load[loadOffset + i] & 0xFF) << (Byte.SIZE * i);
+                number ^= (long)(load[loadOffset + i] & 0xFF) << (Const.BYTE_SIZE * i);
 
             }
 
@@ -159,7 +159,7 @@ class CommonFunction
             for (int i = 0; i < load.length - loadOffset; i++)
             {
 
-                number ^= (long)(load[loadOffset + i] & 0xFF) << (Byte.SIZE * i);
+                number ^= (long)(load[loadOffset + i] & 0xFF) << (Const.BYTE_SIZE * i);
 
             }
 
@@ -182,13 +182,13 @@ class CommonFunction
     public static void store16(byte[] store, int storeOffset, short number)
     {
 
-        if (store.length - storeOffset >= Short.SIZE / Byte.SIZE)
+        if (store.length - storeOffset >= Const.SHORT_SIZE / Const.BYTE_SIZE)
         {
 
-            for (int i = 0; i < Short.SIZE / Byte.SIZE; i++)
+            for (int i = 0; i < Const.SHORT_SIZE / Const.BYTE_SIZE; i++)
             {
 
-                store[storeOffset + i] = (byte)((number >> (Byte.SIZE * i)) & 0xFF);
+                store[storeOffset + i] = (byte)((number >> (Const.BYTE_SIZE * i)) & 0xFF);
 
             }
 
@@ -199,7 +199,7 @@ class CommonFunction
             for (int i = 0; i < store.length - storeOffset; i++)
             {
 
-                store[storeOffset + i] = (byte)((number >> (Byte.SIZE * i)) & 0xFF);
+                store[storeOffset + i] = (byte)((number >> (Const.BYTE_SIZE * i)) & 0xFF);
 
             }
 
@@ -220,13 +220,13 @@ class CommonFunction
     public static void store32(byte[] store, int storeOffset, int number)
     {
 
-        if (store.length - storeOffset >= Integer.SIZE / Byte.SIZE)
+        if (store.length - storeOffset >= Const.INT_SIZE / Const.BYTE_SIZE)
         {
 
-            for (int i = 0; i < Integer.SIZE / Byte.SIZE; i++)
+            for (int i = 0; i < Const.INT_SIZE / Const.BYTE_SIZE; i++)
             {
 
-                store[storeOffset + i] = (byte)((number >> (Byte.SIZE * i)) & 0xFF);
+                store[storeOffset + i] = (byte)((number >> (Const.BYTE_SIZE * i)) & 0xFF);
 
             }
 
@@ -237,7 +237,7 @@ class CommonFunction
             for (int i = 0; i < store.length - storeOffset; i++)
             {
 
-                store[storeOffset + i] = (byte)((number >> (Byte.SIZE * i)) & 0xFF);
+                store[storeOffset + i] = (byte)((number >> (Const.BYTE_SIZE * i)) & 0xFF);
 
             }
 
@@ -258,13 +258,13 @@ class CommonFunction
     public static void store64(byte[] store, int storeOffset, long number)
     {
 
-        if (store.length - storeOffset >= Long.SIZE / Byte.SIZE)
+        if (store.length - storeOffset >= Const.LONG_SIZE / Const.BYTE_SIZE)
         {
 
-            for (int i = 0; i < Long.SIZE / Byte.SIZE; i++)
+            for (int i = 0; i < Const.LONG_SIZE / Const.BYTE_SIZE; i++)
             {
 
-                store[storeOffset + i] = (byte)((number >> (Byte.SIZE * i)) & 0xFFL);
+                store[storeOffset + i] = (byte)((number >> (Const.BYTE_SIZE * i)) & 0xFFL);
 
             }
 
@@ -275,7 +275,7 @@ class CommonFunction
             for (int i = 0; i < store.length - storeOffset; i++)
             {
 
-                store[storeOffset + i] = (byte)((number >> (Byte.SIZE * i)) & 0xFFL);
+                store[storeOffset + i] = (byte)((number >> (Const.BYTE_SIZE * i)) & 0xFFL);
 
             }
 

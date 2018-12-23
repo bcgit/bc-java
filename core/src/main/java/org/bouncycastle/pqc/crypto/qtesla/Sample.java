@@ -556,7 +556,7 @@ class Sample
     public static void polynomialGaussSamplerI(int[] data, int dataOffset, final byte[] seed, int seedOffset, int nonce)
     {
 
-        byte[] seedExpander = new byte[Parameter.N_I * Long.SIZE / Byte.SIZE];
+        byte[] seedExpander = new byte[Parameter.N_I * Const.LONG_SIZE / Const.INT_SIZE];
         short domainSeparator = (short)(nonce << 8);
         int index;
         int j = 0;
@@ -571,7 +571,7 @@ class Sample
         long buffer;
 
         HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
-            seedExpander, 0, Parameter.N_I * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
+            seedExpander, 0, Parameter.N_I * Const.LONG_SIZE / Const.INT_SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
         );
 
         for (index = 0; index < Parameter.N_I; index++)
@@ -581,7 +581,7 @@ class Sample
             {
 
                 HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
-                    seedExpander, 0, Parameter.N_I * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
+                    seedExpander, 0, Parameter.N_I * Const.LONG_SIZE / Const.INT_SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
                 );
 
                 j = 0;
@@ -591,7 +591,7 @@ class Sample
             do
             {
 
-                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                 bitRemained = 64;
 
                 do
@@ -601,8 +601,8 @@ class Sample
                     do
                     {
 
-                        r = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
-                        s = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                        r = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
+                        s = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
 
                         if (bitRemained <= 64 - 6)
                         {
@@ -646,7 +646,7 @@ class Sample
                             if (bitRemained < 6)
                             {
 
-                                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                                 bitRemained = 64;
 
                             }
@@ -661,7 +661,7 @@ class Sample
                         if (bitRemained < 2)
                         {
 
-                            randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                            randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                             bitRemained = 64;
 
                         }
@@ -681,7 +681,7 @@ class Sample
                     /* Sample A Bit from Bernoulli_{exp (- y * (y + 2 * k * x) / (2 * k^2 * SIGMA_2^2))} */
                     k = (long)(Parameter.XI_I * y + z);
 
-                    buffer = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                    buffer = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
 
                 }
                 while (bernoulli(buffer, z * ((k << 1) - z), EXPONENTIAL_DISTRIBUTION_I) == 0);
@@ -692,7 +692,7 @@ class Sample
                 if (bitRemained == 0)
                 {
 
-                    randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                    randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                     bitRemained = 64;
 
                 }
@@ -707,7 +707,7 @@ class Sample
             if (bitRemained == 0)
             {
 
-                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                 bitRemained = 64;
 
             }
@@ -736,7 +736,7 @@ class Sample
     public static void polynomialGaussSamplerIP(long[] data, int dataOffset, final byte[] seed, int seedOffset, int nonce)
     {
 
-        byte[] seedExpander = new byte[Parameter.N_I_P * Long.SIZE / Byte.SIZE];
+        byte[] seedExpander = new byte[Parameter.N_I_P * Const.LONG_SIZE / Const.INT_SIZE];
         short domainSeparator = (short)(nonce << 8);
         int index;
         int j = 0;
@@ -751,7 +751,7 @@ class Sample
         long buffer;
 
         HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
-            seedExpander, 0, Parameter.N_I_P * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
+            seedExpander, 0, Parameter.N_I_P * Const.LONG_SIZE / Const.INT_SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
         );
 
         for (index = 0; index < Parameter.N_I_P; index++)
@@ -761,7 +761,7 @@ class Sample
             {
 
                 HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
-                    seedExpander, 0, Parameter.N_I_P * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
+                    seedExpander, 0, Parameter.N_I_P * Const.LONG_SIZE / Const.INT_SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
                 );
 
                 j = 0;
@@ -771,7 +771,7 @@ class Sample
             do
             {
 
-                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                 bitRemained = 64;
 
                 do
@@ -781,8 +781,8 @@ class Sample
                     do
                     {
 
-                        r = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
-                        s = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                        r = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
+                        s = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
 
                         if (bitRemained <= 64 - 6)
                         {
@@ -826,7 +826,7 @@ class Sample
                             if (bitRemained < 6)
                             {
 
-                                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                                 bitRemained = 64;
 
                             }
@@ -841,7 +841,7 @@ class Sample
                         if (bitRemained < 2)
                         {
 
-                            randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                            randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                             bitRemained = 64;
 
                         }
@@ -861,7 +861,7 @@ class Sample
                     /* Sample A Bit from Bernoulli_{exp (- y * (y + 2 * k * x) / (2 * k^2 * SIGMA_2^2))} */
                     k = (long)(Parameter.XI_I_P * y + z);
 
-                    buffer = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                    buffer = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
 
                 }
                 while (bernoulli(buffer, z * ((k << 1) - z), EXPONENTIAL_DISTRIBUTION_P) == 0);
@@ -872,7 +872,7 @@ class Sample
                 if (bitRemained == 0)
                 {
 
-                    randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                    randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                     bitRemained = 64;
 
                 }
@@ -887,7 +887,7 @@ class Sample
             if (bitRemained == 0)
             {
 
-                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                 bitRemained = 64;
 
             }
@@ -919,7 +919,7 @@ class Sample
     public static void polynomialGaussSamplerIII(int[] data, int dataOffset, final byte[] seed, int seedOffset, int nonce, int n, double xi, double[][] exponentialDistribution)
     {
 
-        byte[] seedExpander = new byte[n * Long.SIZE / Byte.SIZE];
+        byte[] seedExpander = new byte[n * Const.LONG_SIZE / Const.INT_SIZE];
         short domainSeparator = (short)(nonce << 8);
         int index;
         int j = 0;
@@ -934,7 +934,7 @@ class Sample
         long z;
 
         HashUtils.customizableSecureHashAlgorithmKECCAK256Simple(
-            seedExpander, 0, n * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
+            seedExpander, 0, n * Const.LONG_SIZE / Const.INT_SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
         );
 
         for (index = 0; index < n; index++)
@@ -944,7 +944,7 @@ class Sample
             {
 
                 HashUtils.customizableSecureHashAlgorithmKECCAK256Simple(
-                    seedExpander, 0, n * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
+                    seedExpander, 0, n * Const.LONG_SIZE / Const.INT_SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
                 );
 
                 j = 0;
@@ -954,7 +954,7 @@ class Sample
             do
             {
 
-                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                 bitRemained = 64;
 
                 do
@@ -964,9 +964,9 @@ class Sample
                     do
                     {
 
-                        r = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
-                        s = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
-                        t = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                        r = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
+                        s = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
+                        t = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
 
                         if (bitRemained <= 64 - 6)
                         {
@@ -1016,7 +1016,7 @@ class Sample
                             if (bitRemained < 6)
                             {
 
-                                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                                 bitRemained = 64;
 
                             }
@@ -1031,7 +1031,7 @@ class Sample
                         if (bitRemained < 2)
                         {
 
-                            randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                            randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                             bitRemained = 64;
 
                         }
@@ -1052,7 +1052,7 @@ class Sample
                     k = (long)(xi * y + z);
 
                 }
-                while (bernoulli(CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE), z * ((k << 1) - z), exponentialDistribution) == 0);
+                while (bernoulli(CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE), z * ((k << 1) - z), exponentialDistribution) == 0);
 
                 /* Put Last Random Bits into Sign Bit */
                 randomBit <<= (64 - bitRemained);
@@ -1060,7 +1060,7 @@ class Sample
                 if (bitRemained == 0L)
                 {
 
-                    randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                    randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                     bitRemained = 64;
 
                 }
@@ -1075,7 +1075,7 @@ class Sample
             if (bitRemained == 0)
             {
 
-                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                 bitRemained = 64;
 
             }
@@ -1104,7 +1104,7 @@ class Sample
     public static void polynomialGaussSamplerIIIP(long[] data, int dataOffset, final byte[] seed, int seedOffset, int nonce)
     {
 
-        byte[] seedExpander = new byte[Parameter.N_III_P * Long.SIZE / Byte.SIZE];
+        byte[] seedExpander = new byte[Parameter.N_III_P * Const.LONG_SIZE / Const.INT_SIZE];
         short domainSeparator = (short)(nonce << 8);
         int index;
         int j = 0;
@@ -1119,7 +1119,7 @@ class Sample
         long z;
 
         HashUtils.customizableSecureHashAlgorithmKECCAK256Simple(
-            seedExpander, 0, Parameter.N_III_P * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
+            seedExpander, 0, Parameter.N_III_P * Const.LONG_SIZE / Const.INT_SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
         );
 
         for (index = 0; index < Parameter.N_III_P; index++)
@@ -1129,7 +1129,7 @@ class Sample
             {
 
                 HashUtils.customizableSecureHashAlgorithmKECCAK256Simple(
-                    seedExpander, 0, Parameter.N_III_P * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
+                    seedExpander, 0, Parameter.N_III_P * Const.LONG_SIZE / Const.INT_SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
                 );
 
                 j = 0;
@@ -1139,7 +1139,7 @@ class Sample
             do
             {
 
-                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                 bitRemained = 64;
 
                 do
@@ -1149,9 +1149,9 @@ class Sample
                     do
                     {
 
-                        r = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
-                        s = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
-                        t = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                        r = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
+                        s = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
+                        t = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
 
                         if (bitRemained <= 64 - 6)
                         {
@@ -1201,7 +1201,7 @@ class Sample
                             if (bitRemained < 6)
                             {
 
-                                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                                 bitRemained = 64;
 
                             }
@@ -1216,7 +1216,7 @@ class Sample
                         if (bitRemained < 2)
                         {
 
-                            randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                            randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                             bitRemained = 64;
 
                         }
@@ -1237,7 +1237,7 @@ class Sample
                     k = (long)(Parameter.XI_III_P * y + z);
 
                 }
-                while (bernoulli(CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE), z * ((k << 1) - z), EXPONENTIAL_DISTRIBUTION_P) == 0);
+                while (bernoulli(CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE), z * ((k << 1) - z), EXPONENTIAL_DISTRIBUTION_P) == 0);
 
                 /* Put Last Random Bits into Sign Bit */
                 randomBit <<= (64 - bitRemained);
@@ -1245,7 +1245,7 @@ class Sample
                 if (bitRemained == 0L)
                 {
 
-                    randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                    randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                     bitRemained = 64;
 
                 }
@@ -1260,7 +1260,7 @@ class Sample
             if (bitRemained == 0)
             {
 
-                randomBit = CommonFunction.load64(seedExpander, (j++) * Long.SIZE / Byte.SIZE);
+                randomBit = CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE);
                 bitRemained = 64;
 
             }

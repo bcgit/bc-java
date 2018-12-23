@@ -90,7 +90,7 @@ public class OpenSSHPrivateKeyUtil
             }
             catch (Exception ex)
             {
-                throw new IllegalStateException("unable to encode DSAPrivateKeyParameters " + ex.getMessage(), ex);
+                throw new IllegalStateException("unable to encode DSAPrivateKeyParameters " + ex.getMessage());
             }
         }
         else if (params instanceof Ed25519PrivateKeyParameters)
