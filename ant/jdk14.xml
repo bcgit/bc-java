@@ -32,7 +32,6 @@
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/jcajce/*.java"/>
-                <include name="**/pkix/jcajce/Jca*.java" />
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <include name="**/pkix/jcajce/Jca*.java" />
@@ -85,6 +84,7 @@
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
+                <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java"/>

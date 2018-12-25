@@ -66,14 +66,13 @@ public class JcaTlsRSAPSSVerifier
 
         short hash = SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm);
         String digestName = crypto.getDigestName(hash);
-
-        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName);
-
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
         try
         {
             final Signature verifier = crypto.getHelper().createSignature(sigName);
+
+            AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, crypto.getHelper());
 
             // NOTE: We explicitly set them even though they should be the defaults, because providers vary
             verifier.setParameter(pssSpec);

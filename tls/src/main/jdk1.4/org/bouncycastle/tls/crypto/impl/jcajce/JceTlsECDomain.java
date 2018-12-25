@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -23,7 +24,6 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
-
 
 /**
  * EC domain class for generating key pairs and performing key agreement.
@@ -59,11 +59,9 @@ public class JceTlsECDomain
              *
              * We use the convention established by the JSSE to signal this by asking for "TlsPremasterSecret".
              */
-            SecretKey secretKey = crypto.calculateKeyAgreement("ECDH", privateKey, publicKey, "TlsPremasterSecret");
+            byte[] secret = crypto.calculateKeyAgreement("ECDH", privateKey, publicKey, "TlsPremasterSecret");
 
-            // TODO Need to consider cases where SecretKey may not be encodable
-
-            return crypto.adoptLocalSecret(secretKey.getEncoded());
+            return crypto.adoptLocalSecret(secret);
         }
         catch (GeneralSecurityException e)
         {
@@ -87,8 +85,6 @@ public class JceTlsECDomain
     {
         try
         {
-
-
             KeyFactory keyFact = crypto.getHelper().createKeyFactory("EC");
             ECPoint point = decodePoint(encoding);
             ECPublicKeySpec keySpec = new ECPublicKeySpec(
@@ -105,7 +101,7 @@ public class JceTlsECDomain
     public byte[] encodePoint(ECPoint point)
         throws IOException
     {
-        return point.getEncoded(ecConfig.getPointCompression());
+        return point.getEncoded(false);
     }
 
     public byte[] encodePublicKey(ECPublicKey publicKey)
