@@ -193,11 +193,6 @@ public class PSSSignatureSpi
         AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
-        if (!isInitState)
-        {
-            throw new ProviderException("cannot call setParameter in the middle of update");
-        }
-        
         if (params == null)
         {
             if (originalSpec != null)
@@ -208,6 +203,11 @@ public class PSSSignatureSpi
             {
                 return;  // Java 11 bug
             }
+        }
+
+        if (!isInitState)
+        {
+            throw new ProviderException("cannot call setParameter in the middle of update");
         }
 
         if (params instanceof PSSParameterSpec)

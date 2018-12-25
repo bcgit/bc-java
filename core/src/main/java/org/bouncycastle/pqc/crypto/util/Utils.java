@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.qtesla;
+package org.bouncycastle.pqc.crypto.util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +8,7 @@ import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.util.Integers;
 
-class KeyUtils
+class Utils
 {
     static final AlgorithmIdentifier AlgID_qTESLA_I = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_I);
     static final AlgorithmIdentifier AlgID_qTESLA_III_size = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_III_size);
@@ -27,12 +27,12 @@ class KeyUtils
         categories.put(PQCObjectIdentifiers.qTESLA_p_III, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_III));
     }
 
-    static int lookupSecurityCatergory(AlgorithmIdentifier algorithm)
+    static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
     {
         return ((Integer)categories.get(algorithm.getAlgorithm())).intValue();
     }
 
-    static AlgorithmIdentifier lookupAlgID(int securityCategory)
+    static AlgorithmIdentifier qTeslaLookupAlgID(int securityCategory)
     {
         switch (securityCategory)
         {
