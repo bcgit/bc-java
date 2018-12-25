@@ -5,13 +5,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.PrivateKey;
 
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.QTESLAKey;
 import org.bouncycastle.pqc.jcajce.spec.QTESLAParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -22,6 +22,7 @@ public class BCqTESLAPrivateKey
     private static final long serialVersionUID = 1L;
 
     private transient QTESLAPrivateKeyParameters keyParams;
+    private transient ASN1Set attributes;
 
     public BCqTESLAPrivateKey(
         QTESLAPrivateKeyParameters keyParams)
@@ -38,9 +39,8 @@ public class BCqTESLAPrivateKey
     private void init(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        ASN1OctetString qTESLAPriv = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
-
-        this.keyParams = new QTESLAPrivateKeyParameters(KeyUtils.lookupSecurityCatergory(keyInfo.getPrivateKeyAlgorithm()), qTESLAPriv.getOctets());
+        this.attributes = keyInfo.getAttributes();
+        this.keyParams = (QTESLAPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
     }
 
     /**
@@ -66,8 +66,7 @@ public class BCqTESLAPrivateKey
         PrivateKeyInfo pki;
         try
         {
-            AlgorithmIdentifier algorithmIdentifier = KeyUtils.lookupAlgID(keyParams.getSecurityCategory());
-            pki = new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(keyParams.getSecret()));
+            pki = PrivateKeyInfoFactory.createPrivateKeyInfo(keyParams, attributes);
 
             return pki.getEncoded();
         }

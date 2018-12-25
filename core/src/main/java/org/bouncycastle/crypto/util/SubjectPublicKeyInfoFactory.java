@@ -122,7 +122,7 @@ public class SubjectPublicKeyInfoFactory
         }
         else
         {
-            throw new IOException("key parameters not recognised.");
+            throw new IOException("key parameters not recognized");
         }
     }
 }
