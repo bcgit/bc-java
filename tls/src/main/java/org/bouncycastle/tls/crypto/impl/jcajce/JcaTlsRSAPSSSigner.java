@@ -63,12 +63,12 @@ public class JcaTlsRSAPSSSigner
         short hash = SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm);
         String digestName = crypto.getDigestName(hash);
 
-        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName);
-
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
         try
         {
+            AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, crypto.getHelper());
+
             final Signature sig = crypto.getHelper().createSignature(sigName);
 
             // NOTE: We explicitly set them even though they should be the defaults, because providers vary

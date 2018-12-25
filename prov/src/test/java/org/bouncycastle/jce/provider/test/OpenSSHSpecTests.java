@@ -59,8 +59,8 @@ public class OpenSSHSpecTests
         PublicKey pk = kpf.generatePublic(pubSpec);
         PrivateKey prk = kpf.generatePrivate(privSpec);
 
-        OpenSSHPublicKeySpec rcPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
-        OpenSSHPrivateKeySpec rcPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
+        OpenSSHPublicKeySpec rcPublicKeySpec = (OpenSSHPublicKeySpec)kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
+        OpenSSHPrivateKeySpec rcPrivateSpec = (OpenSSHPrivateKeySpec)kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
         isEquals("Pk type", rcPublicKeySpec.getType(), "ssh-rsa");
         isEquals("Spec Type", rcPrivateSpec.getFormat(), "ASN.1");
@@ -106,8 +106,8 @@ public class OpenSSHSpecTests
         PublicKey pk = kpf.generatePublic(pubSpec);
         PrivateKey prk = kpf.generatePrivate(privSpec);
 
-        OpenSSHPublicKeySpec dsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
-        OpenSSHPrivateKeySpec dsaPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
+        OpenSSHPublicKeySpec dsaPublicKeySpec = (OpenSSHPublicKeySpec)kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
+        OpenSSHPrivateKeySpec dsaPrivateSpec = (OpenSSHPrivateKeySpec)kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
         isEquals("Pk type", dsaPublicKeySpec.getType(), "ssh-dss");
         isEquals("Spec Type", dsaPrivateSpec.getFormat(), "ASN.1");
@@ -138,8 +138,8 @@ public class OpenSSHSpecTests
         PublicKey pk = kpf.generatePublic(pubSpec);
         PrivateKey prk = kpf.generatePrivate(privSpec);
 
-        OpenSSHPublicKeySpec ecdsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
-        OpenSSHPrivateKeySpec ecdsaPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
+        OpenSSHPublicKeySpec ecdsaPublicKeySpec = (OpenSSHPublicKeySpec)kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
+        OpenSSHPrivateKeySpec ecdsaPrivateSpec = (OpenSSHPrivateKeySpec)kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
         isEquals("Spec Type", ecdsaPrivateSpec.getFormat(), "ASN.1");
 
@@ -172,8 +172,8 @@ public class OpenSSHSpecTests
         PublicKey pk = kpf.generatePublic(pubSpec);
         PrivateKey prk = kpf.generatePrivate(privSpec);
 
-        OpenSSHPublicKeySpec edDsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
-        OpenSSHPrivateKeySpec edDsaPrivateKeySpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
+        OpenSSHPublicKeySpec edDsaPublicKeySpec = (OpenSSHPublicKeySpec)kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
+        OpenSSHPrivateKeySpec edDsaPrivateKeySpec = (OpenSSHPrivateKeySpec)kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
         isEquals("Pk type", edDsaPublicKeySpec.getType(), "ssh-ed25519");
         isEquals("Spec Type", edDsaPrivateKeySpec.getFormat(), "OpenSSH");
