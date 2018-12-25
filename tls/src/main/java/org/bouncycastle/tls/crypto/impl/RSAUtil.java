@@ -64,7 +64,7 @@ public class RSAUtil
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException(e.getMessage());
         }
     }
 

@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.util.Integers;
 
 /**
  * Base class for a TLS client.
@@ -127,19 +128,19 @@ public abstract class AbstractTlsClient
         TlsCrypto crypto = getCrypto();
         Vector supportedGroups = new Vector();
 
-        if (namedGroupRoles.contains(NamedGroupRole.ecdh))
+        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh)))
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, NamedGroup.x25519);
         }
 
-        if (namedGroupRoles.contains(NamedGroupRole.ecdh)
-            || namedGroupRoles.contains(NamedGroupRole.ecdsa))
+        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh))
+            || namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdsa)))
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
                 NamedGroup.secp256r1, NamedGroup.secp384r1 });
         }
 
-        if (namedGroupRoles.contains(NamedGroupRole.dh))
+        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.dh)))
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
                 NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096 });
@@ -236,8 +237,8 @@ public abstract class AbstractTlsClient
             TlsExtensionsUtils.addSupportedGroupsExtension(clientExtensions, supportedGroups);
         }
 
-        if (namedGroupRoles.contains(NamedGroupRole.ecdh)
-            || namedGroupRoles.contains(NamedGroupRole.ecdsa))
+        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh))
+            || namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdsa)))
         {
             TlsExtensionsUtils.addSupportedPointFormatsExtension(clientExtensions,
                 new short[]{ ECPointFormat.uncompressed });

@@ -1,11 +1,15 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
+import java.security.AccessController;
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.PrivilegedAction;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
@@ -18,13 +22,13 @@ public class JceAEADCipherImpl
 {
 //    private static boolean checkForAEAD()
 //    {
-////        return ((Boolean)AccessController.doPrivileged(new PrivilegedAction()
+//        return (Boolean)AccessController.doPrivileged(new PrivilegedAction()
 //        {
 //            public Object run()
 //            {
 //                try
 //                {
-//                    return new Boolean(Cipher.class.getMethod("updateAAD", new Class[]{byte[].class}) != null);
+//                    return Cipher.class.getMethod("updateAAD", byte[].class) != null;
 //                }
 //                catch (Exception ignore)
 //                {
@@ -32,7 +36,7 @@ public class JceAEADCipherImpl
 //                    return Boolean.FALSE;
 //                }
 //            }
-//        })).booleanValue();
+//        });
 //    }
 
     //  private static final boolean canDoAEAD = checkForAEAD();
@@ -55,22 +59,29 @@ public class JceAEADCipherImpl
     private final int cipherMode;
     private final Cipher cipher;
     private final String algorithm;
+    private final int keySize;
     private final String algorithmParamsName;
 
     private SecretKey key;
 
-    public JceAEADCipherImpl(JcaJceHelper helper, String cipherName, String algorithm, boolean isEncrypting)
+    public JceAEADCipherImpl(JcaJceHelper helper, String cipherName, String algorithm, int keySize, boolean isEncrypting)
         throws GeneralSecurityException
     {
         this.helper = helper;
         this.cipher = helper.createCipher(cipherName);
         this.algorithm = algorithm;
+        this.keySize = keySize;
         this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
         this.algorithmParamsName = getAlgParamsName(helper, cipherName);
     }
 
     public void setKey(byte[] key, int keyOff, int keyLen)
     {
+        if (keySize != keyLen)
+        {
+            throw new IllegalStateException();
+        }
+
         this.key = new SecretKeySpec(key, keyOff, keyLen, algorithm);
     }
 
