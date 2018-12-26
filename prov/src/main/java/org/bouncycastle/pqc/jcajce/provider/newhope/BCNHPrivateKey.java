@@ -1,7 +1,10 @@
 package org.bouncycastle.pqc.jcajce.provider.newhope;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
@@ -9,14 +12,14 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.NHPrivateKey;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 
 public class BCNHPrivateKey
     implements NHPrivateKey
 {
     private static final long serialVersionUID = 1L;
-    ;
-    private final NHPrivateKeyParameters params;
+
+    private transient NHPrivateKeyParameters params;
+    private transient ASN1Set attributes;
 
     public BCNHPrivateKey(
         NHPrivateKeyParameters params)
@@ -27,6 +30,13 @@ public class BCNHPrivateKey
     public BCNHPrivateKey(PrivateKeyInfo keyInfo)
         throws IOException
     {
+        init(keyInfo);
+    }
+
+    private void init(PrivateKeyInfo keyInfo)
+        throws IOException
+    {
+        this.attributes = keyInfo.getAttributes();
         this.params = (NHPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
     }
 
@@ -64,7 +74,7 @@ public class BCNHPrivateKey
     {
         try
         {
-            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params);
+            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
 
             return pki.getEncoded();
         }
@@ -89,15 +99,23 @@ public class BCNHPrivateKey
         return params;
     }
 
-    private static short[] convert(byte[] octets)
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
     {
-        short[] rv = new short[octets.length / 2];
+        in.defaultReadObject();
 
-        for (int i = 0; i != rv.length; i++)
-        {
-            rv[i] = Pack.littleEndianToShort(octets, i * 2);
-        }
+        byte[] enc = (byte[])in.readObject();
 
-        return rv;
+        init(PrivateKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }

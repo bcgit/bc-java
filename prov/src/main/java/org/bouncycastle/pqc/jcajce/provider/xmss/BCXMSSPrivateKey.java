@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
@@ -22,6 +23,7 @@ public class BCXMSSPrivateKey
 
     private transient XMSSPrivateKeyParameters keyParams;
     private transient ASN1ObjectIdentifier treeDigest;
+    private transient ASN1Set attributes;
 
     public BCXMSSPrivateKey(
         ASN1ObjectIdentifier treeDigest,
@@ -40,6 +42,7 @@ public class BCXMSSPrivateKey
     private void init(PrivateKeyInfo keyInfo)
         throws IOException
     {
+        this.attributes = keyInfo.getAttributes();
         XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
         this.treeDigest = keyParams.getTreeDigest().getAlgorithm();
         this.keyParams = (XMSSPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
@@ -59,7 +62,7 @@ public class BCXMSSPrivateKey
     {
         try
         {
-            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(keyParams);
+            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(keyParams, attributes);
 
             return pki.getEncoded();
         }
