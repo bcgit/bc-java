@@ -1,6 +1,8 @@
 package org.bouncycastle.pqc.jcajce.provider.sphincs;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.PublicKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -20,8 +22,8 @@ public class BCSphincs256PublicKey
 {
     private static final long serialVersionUID = 1L;
 
-    private final ASN1ObjectIdentifier treeDigest;
-    private final SPHINCSPublicKeyParameters params;
+    private transient ASN1ObjectIdentifier treeDigest;
+    private transient SPHINCSPublicKeyParameters params;
 
     public BCSphincs256PublicKey(
         ASN1ObjectIdentifier treeDigest,
@@ -34,10 +36,16 @@ public class BCSphincs256PublicKey
     public BCSphincs256PublicKey(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
+        init(keyInfo);
+    }
+
+    private void init(SubjectPublicKeyInfo keyInfo)
+        throws IOException
+    {
         this.treeDigest = SPHINCS256KeyParams.getInstance(keyInfo.getAlgorithm().getParameters()).getTreeDigest().getAlgorithm();
         this.params = (SPHINCSPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
     }
-
+    
     /**
      * Compare this SPHINCS-256 public key with another object.
      *
@@ -116,5 +124,25 @@ public class BCSphincs256PublicKey
     CipherParameters getKeyParams()
     {
         return params;
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        byte[] enc = (byte[])in.readObject();
+
+        init(SubjectPublicKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }

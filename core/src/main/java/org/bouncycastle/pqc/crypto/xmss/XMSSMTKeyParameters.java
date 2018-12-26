@@ -12,4 +12,9 @@ public class XMSSMTKeyParameters
         super(isPrivateKey);
         this.treeDigest = treeDigest;
     }
+
+    public String getTreeDigest()
+    {
+        return treeDigest;
+    }
 }

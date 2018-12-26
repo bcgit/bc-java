@@ -1,5 +1,9 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -1043,6 +1047,60 @@ public class Sphincs256Test
         assertTrue(Arrays.areEqual(expSha2Priv, priv2.getKeyData()));
     }
 
+    public void testPrivateKeyRecovery()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCS256", "BCPQC");
+
+        kpg.initialize(new SPHINCS256KeyGenParameterSpec(), new RiggedRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyFactory kFact = KeyFactory.getInstance("SPHINCS256", "BCPQC");
+
+        SPHINCSKey privKey = (SPHINCSKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(privKey);
+
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        SPHINCSKey privKey2 = (SPHINCSKey)oIn.readObject();
+
+        assertEquals(privKey, privKey2);
+    }
+
+    public void testPublicKeyRecovery()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCS256", "BCPQC");
+
+        kpg.initialize(new SPHINCS256KeyGenParameterSpec(), new RiggedRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyFactory kFact = KeyFactory.getInstance("SPHINCS256", "BCPQC");
+
+        SPHINCSKey pubKey = (SPHINCSKey)kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(pubKey);
+
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        SPHINCSKey pubKey2 = (SPHINCSKey)oIn.readObject();
+
+        assertEquals(pubKey, pubKey2);
+    }
+
     public void testSphincsDefaultSha2KeyGen()
         throws Exception
     {
@@ -1218,7 +1276,7 @@ public class Sphincs256Test
         sig.initVerify(kp.getPublic());
 
         sig.update(msg, 0, msg.length);
-  
+
         assertTrue(sig.verify(s));
 
         sig = Signature.getInstance("SHA3-512withSPHINCS256", "BCPQC");

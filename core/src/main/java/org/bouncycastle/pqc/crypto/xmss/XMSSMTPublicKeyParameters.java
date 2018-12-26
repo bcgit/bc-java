@@ -7,7 +7,6 @@ public final class XMSSMTPublicKeyParameters
     extends XMSSMTKeyParameters
     implements XMSSStoreableObjectInterface
 {
-
     private final XMSSMTParameters params;
     // private final int oid;
     private final byte[] root;
