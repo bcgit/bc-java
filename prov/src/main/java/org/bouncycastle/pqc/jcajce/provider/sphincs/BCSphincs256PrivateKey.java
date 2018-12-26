@@ -1,9 +1,12 @@
 package org.bouncycastle.pqc.jcajce.provider.sphincs;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -21,8 +24,9 @@ public class BCSphincs256PrivateKey
 {
     private static final long serialVersionUID = 1L;
 
-    private final ASN1ObjectIdentifier treeDigest;
-    private final SPHINCSPrivateKeyParameters params;
+    private transient ASN1ObjectIdentifier treeDigest;
+    private transient SPHINCSPrivateKeyParameters params;
+    private transient ASN1Set attributes;
 
     public BCSphincs256PrivateKey(
         ASN1ObjectIdentifier treeDigest,
@@ -35,6 +39,13 @@ public class BCSphincs256PrivateKey
     public BCSphincs256PrivateKey(PrivateKeyInfo keyInfo)
         throws IOException
     {
+        init(keyInfo);
+    }
+
+    private void init(PrivateKeyInfo keyInfo)
+        throws IOException
+    {
+        this.attributes = keyInfo.getAttributes();
         this.treeDigest = SPHINCS256KeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters()).getTreeDigest().getAlgorithm();
         this.params = (SPHINCSPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
     }
@@ -83,12 +94,13 @@ public class BCSphincs256PrivateKey
             PrivateKeyInfo pki;
             if (params.getTreeDigest() != null)
             {
-                pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params);
+                pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
             }
             else
             {
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256, new SPHINCS256KeyParams(new AlgorithmIdentifier(treeDigest)));
-                pki = new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getKeyData()));
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256,
+                    new SPHINCS256KeyParams(new AlgorithmIdentifier(treeDigest)));
+                pki = new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getKeyData()), attributes);
             }
 
             return pki.getEncoded();
@@ -117,5 +129,25 @@ public class BCSphincs256PrivateKey
     CipherParameters getKeyParams()
     {
         return params;
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        byte[] enc = (byte[])in.readObject();
+
+        init(PrivateKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }

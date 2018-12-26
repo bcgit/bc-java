@@ -11,13 +11,18 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
+import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.BDS;
+import org.bouncycastle.pqc.crypto.xmss.BDSStateMap;
+import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
+import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
@@ -101,6 +106,36 @@ public class PrivateKeyFactory
                 {
                     BDS bds = (BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class);
                     keyBuilder.withBDSState(bds.withWOTSDigest(treeDigest));
+                }
+
+                return keyBuilder.build();
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new IOException("ClassNotFoundException processing BDS state: " + e.getMessage());
+            }
+        }
+        else if (algOID.equals(PQCObjectIdentifiers.xmss_mt))
+        {
+            XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+            ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
+
+            try
+            {
+                XMSSPrivateKey xmssMtPrivateKey = XMSSPrivateKey.getInstance(keyInfo.parsePrivateKey());
+
+                XMSSMTPrivateKeyParameters.Builder keyBuilder = new XMSSMTPrivateKeyParameters
+                    .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), Utils.getDigest(treeDigest)))
+                    .withIndex(xmssMtPrivateKey.getIndex())
+                    .withSecretKeySeed(xmssMtPrivateKey.getSecretKeySeed())
+                    .withSecretKeyPRF(xmssMtPrivateKey.getSecretKeyPRF())
+                    .withPublicSeed(xmssMtPrivateKey.getPublicSeed())
+                    .withRoot(xmssMtPrivateKey.getRoot());
+
+                if (xmssMtPrivateKey.getBdsState() != null)
+                {
+                    BDSStateMap bdsState = (BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState(), BDSStateMap.class);
+                    keyBuilder.withBDSState(bdsState.withWOTSDigest(treeDigest));
                 }
 
                 return keyBuilder.build();

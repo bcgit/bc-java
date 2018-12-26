@@ -10,10 +10,13 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
+import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
+import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.util.Pack;
@@ -86,9 +89,19 @@ public class PrivateKeyInfoFactory
         {
             XMSSPrivateKeyParameters keyParams = (XMSSPrivateKeyParameters)privateKey;
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss,
-                new XMSSKeyParams(keyParams.getParameters().getHeight(), Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
+                new XMSSKeyParams(keyParams.getParameters().getHeight(),
+                    Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
 
             return new PrivateKeyInfo(algorithmIdentifier, xmssCreateKeyStructure(keyParams));
+        }
+        else if (privateKey instanceof XMSSMTPrivateKeyParameters)
+        {
+            XMSSMTPrivateKeyParameters keyParams = (XMSSMTPrivateKeyParameters)privateKey;
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss_mt,
+                new XMSSMTKeyParams(keyParams.getParameters().getHeight(), keyParams.getParameters().getLayers(),
+                    Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
+
+            return new PrivateKeyInfo(algorithmIdentifier, xmssmtCreateKeyStructure(keyParams));
         }
         else
         {
@@ -127,5 +140,38 @@ public class PrivateKeyInfoFactory
         byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(keyData, position, keyData.length - position);
 
         return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
+    }
+
+    private static XMSSMTPrivateKey xmssmtCreateKeyStructure(XMSSMTPrivateKeyParameters keyParams)
+    {
+        byte[] keyData = keyParams.toByteArray();
+
+        int n = keyParams.getParameters().getDigestSize();
+        int totalHeight = keyParams.getParameters().getHeight();
+        int indexSize = (totalHeight + 7) / 8;
+        int secretKeySize = n;
+        int secretKeyPRFSize = n;
+        int publicSeedSize = n;
+        int rootSize = n;
+
+        int position = 0;
+        int index = (int)XMSSUtil.bytesToXBigEndian(keyData, position, indexSize);
+        if (!XMSSUtil.isIndexValid(totalHeight, index))
+        {
+            throw new IllegalArgumentException("index out of bounds");
+        }
+        position += indexSize;
+        byte[] secretKeySeed = XMSSUtil.extractBytesAtOffset(keyData, position, secretKeySize);
+        position += secretKeySize;
+        byte[] secretKeyPRF = XMSSUtil.extractBytesAtOffset(keyData, position, secretKeyPRFSize);
+        position += secretKeyPRFSize;
+        byte[] publicSeed = XMSSUtil.extractBytesAtOffset(keyData, position, publicSeedSize);
+        position += publicSeedSize;
+        byte[] root = XMSSUtil.extractBytesAtOffset(keyData, position, rootSize);
+        position += rootSize;
+               /* import BDS state */
+        byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(keyData, position, keyData.length - position);
+
+        return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
     }
 }
