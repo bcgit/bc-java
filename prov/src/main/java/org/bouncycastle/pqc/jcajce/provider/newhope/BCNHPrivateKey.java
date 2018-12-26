@@ -2,13 +2,11 @@ package org.bouncycastle.pqc.jcajce.provider.newhope;
 
 import java.io.IOException;
 
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.NHPrivateKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -29,7 +27,7 @@ public class BCNHPrivateKey
     public BCNHPrivateKey(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        this.params = new NHPrivateKeyParameters(convert(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets()));
+        this.params = (NHPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
     }
 
     /**
@@ -40,7 +38,7 @@ public class BCNHPrivateKey
      */
     public boolean equals(Object o)
     {
-        if (o == null || !(o instanceof BCNHPrivateKey))
+        if (!(o instanceof BCNHPrivateKey))
         {
             return false;
         }
@@ -64,20 +62,9 @@ public class BCNHPrivateKey
 
     public byte[] getEncoded()
     {
-        PrivateKeyInfo pki;
         try
         {
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.newHope);
-
-            short[] privateKeyData = params.getSecData();
-
-            byte[] octets = new byte[privateKeyData.length * 2];
-            for (int i = 0; i != privateKeyData.length; i++)
-            {
-                Pack.shortToLittleEndian(privateKeyData[i], octets, i * 2);
-            }
-
-            pki = new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(octets));
+            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params);
 
             return pki.getEncoded();
         }

@@ -6,13 +6,11 @@ import java.io.ObjectOutputStream;
 import java.security.PublicKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSPublicKey;
-import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
 import org.bouncycastle.util.Arrays;
@@ -44,13 +42,7 @@ public class BCXMSSPublicKey
     {
         XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
         this.treeDigest = keyParams.getTreeDigest().getAlgorithm();
-
-        XMSSPublicKey xmssPublicKey = XMSSPublicKey.getInstance(keyInfo.parsePublicKey());
-
-        this.keyParams = new XMSSPublicKeyParameters
-            .Builder(new XMSSParameters(keyParams.getHeight(), DigestUtil.getDigest(treeDigest)))
-            .withPublicSeed(xmssPublicKey.getPublicSeed())
-            .withRoot(xmssPublicKey.getRoot()).build();
+        this.keyParams = (XMSSPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
     }
 
     /**
@@ -63,12 +55,9 @@ public class BCXMSSPublicKey
 
     public byte[] getEncoded()
     {
-        SubjectPublicKeyInfo pki;
         try
         {
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss, new XMSSKeyParams(keyParams.getParameters().getHeight(), new AlgorithmIdentifier(treeDigest)));
-            pki = new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSPublicKey(keyParams.getPublicSeed(), keyParams.getRoot()));
-
+            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(keyParams);
             return pki.getEncoded();
         }
         catch (IOException e)

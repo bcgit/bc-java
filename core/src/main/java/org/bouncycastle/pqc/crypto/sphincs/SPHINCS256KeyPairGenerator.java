@@ -42,6 +42,7 @@ public class SPHINCS256KeyPairGenerator
         // Construct top subtree
         Tree.treehash(hs, pk, (Horst.N_MASKS * SPHINCS256Config.HASH_BYTES), SPHINCS256Config.SUBTREE_HEIGHT, sk, a, pk, 0);
 
-        return new AsymmetricCipherKeyPair(new SPHINCSPublicKeyParameters(pk), new SPHINCSPrivateKeyParameters(sk));
+        return new AsymmetricCipherKeyPair(new SPHINCSPublicKeyParameters(pk, treeDigest.getAlgorithmName()),
+                            new SPHINCSPrivateKeyParameters(sk, treeDigest.getAlgorithmName()));
     }
 }

@@ -10,6 +10,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSKey;
 import org.bouncycastle.util.Arrays;
 
@@ -30,9 +32,10 @@ public class BCSphincs256PublicKey
     }
 
     public BCSphincs256PublicKey(SubjectPublicKeyInfo keyInfo)
+        throws IOException
     {
         this.treeDigest = SPHINCS256KeyParams.getInstance(keyInfo.getAlgorithm().getParameters()).getTreeDigest().getAlgorithm();
-        this.params = new SPHINCSPublicKeyParameters(keyInfo.getPublicKeyData().getBytes());
+        this.params = (SPHINCSPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
     }
 
     /**
@@ -73,11 +76,19 @@ public class BCSphincs256PublicKey
 
     public byte[] getEncoded()
     {
-        SubjectPublicKeyInfo pki;
         try
         {
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256, new SPHINCS256KeyParams(new AlgorithmIdentifier(treeDigest)));
-            pki = new SubjectPublicKeyInfo(algorithmIdentifier, params.getKeyData());
+            SubjectPublicKeyInfo pki;
+
+            if (params.getTreeDigest() != null)
+            {
+                pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
+            }
+            else
+            {
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256, new SPHINCS256KeyParams(new AlgorithmIdentifier(treeDigest)));
+                pki = new SubjectPublicKeyInfo(algorithmIdentifier, params.getKeyData());
+            }
 
             return pki.getEncoded();
         }
