@@ -12,7 +12,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTKey;
 import org.bouncycastle.util.Arrays;
@@ -42,13 +42,7 @@ public class BCXMSSMTPublicKey
     {
         XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
         this.treeDigest = keyParams.getTreeDigest().getAlgorithm();
-
-        XMSSPublicKey xmssMtPublicKey = XMSSPublicKey.getInstance(keyInfo.parsePublicKey());
-
-        this.keyParams = new XMSSMTPublicKeyParameters
-            .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), DigestUtil.getDigest(treeDigest)))
-            .withPublicSeed(xmssMtPublicKey.getPublicSeed())
-            .withRoot(xmssMtPublicKey.getRoot()).build();
+        this.keyParams = (XMSSMTPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
     }
 
     public boolean equals(Object o)

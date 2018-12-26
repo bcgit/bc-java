@@ -2,11 +2,11 @@ package org.bouncycastle.pqc.jcajce.provider.newhope;
 
 import java.io.IOException;
 
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.NHPublicKey;
 import org.bouncycastle.util.Arrays;
 
@@ -24,8 +24,9 @@ public class BCNHPublicKey
     }
 
     public BCNHPublicKey(SubjectPublicKeyInfo keyInfo)
+        throws IOException
     {
-        this.params = new NHPublicKeyParameters(keyInfo.getPublicKeyData().getBytes());
+        this.params = (NHPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
     }
 
     /**
@@ -60,11 +61,9 @@ public class BCNHPublicKey
 
     public byte[] getEncoded()
     {
-        SubjectPublicKeyInfo pki;
         try
         {
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.newHope);
-            pki = new SubjectPublicKeyInfo(algorithmIdentifier, params.getPubData());
+            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
 
             return pki.getEncoded();
         }

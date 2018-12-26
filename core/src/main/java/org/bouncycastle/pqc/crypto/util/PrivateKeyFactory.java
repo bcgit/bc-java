@@ -11,7 +11,17 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
+import org.bouncycastle.pqc.asn1.XMSSKeyParams;
+import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
+import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.xmss.BDS;
+import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
+import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Pack;
 
 /**
  * Factory for creating private key objects from PKCS8 PrivateKeyInfo objects.
@@ -61,9 +71,60 @@ public class PrivateKeyFactory
 
             return new QTESLAPrivateKeyParameters(Utils.qTeslaLookupSecurityCategory(keyInfo.getPrivateKeyAlgorithm()), qTESLAPriv.getOctets());
         }
+        else if (algOID.equals(BCObjectIdentifiers.sphincs256))
+        {
+            return new SPHINCSPrivateKeyParameters(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets(),
+                Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters())));
+        }
+        else if (algOID.equals(BCObjectIdentifiers.newHope))
+        {
+            return new NHPrivateKeyParameters(convert(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets()));
+        }
+        else if (algOID.equals(BCObjectIdentifiers.xmss))
+        {
+            XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+            ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
+
+            XMSSPrivateKey xmssPrivateKey = XMSSPrivateKey.getInstance(keyInfo.parsePrivateKey());
+
+            try
+            {
+                XMSSPrivateKeyParameters.Builder keyBuilder = new XMSSPrivateKeyParameters
+                    .Builder(new XMSSParameters(keyParams.getHeight(), Utils.getDigest(treeDigest)))
+                    .withIndex(xmssPrivateKey.getIndex())
+                    .withSecretKeySeed(xmssPrivateKey.getSecretKeySeed())
+                    .withSecretKeyPRF(xmssPrivateKey.getSecretKeyPRF())
+                    .withPublicSeed(xmssPrivateKey.getPublicSeed())
+                    .withRoot(xmssPrivateKey.getRoot());
+
+                if (xmssPrivateKey.getBdsState() != null)
+                {
+                    BDS bds = (BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class);
+                    keyBuilder.withBDSState(bds.withWOTSDigest(treeDigest));
+                }
+
+                return keyBuilder.build();
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new IOException("ClassNotFoundException processing BDS state: " + e.getMessage());
+            }
+        }
         else
         {
             throw new RuntimeException("algorithm identifier in private key not recognised");
         }
+    }
+
+    private static short[] convert(byte[] octets)
+    {
+        short[] rv = new short[octets.length / 2];
+
+        for (int i = 0; i != rv.length; i++)
+        {
+            rv[i] = Pack.littleEndianToShort(octets, i * 2);
+        }
+
+        return rv;
     }
 }
