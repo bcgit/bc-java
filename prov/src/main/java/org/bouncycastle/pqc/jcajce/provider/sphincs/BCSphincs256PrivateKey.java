@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -12,6 +11,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSKey;
 import org.bouncycastle.util.Arrays;
 
@@ -35,7 +36,7 @@ public class BCSphincs256PrivateKey
         throws IOException
     {
         this.treeDigest = SPHINCS256KeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters()).getTreeDigest().getAlgorithm();
-        this.params = new SPHINCSPrivateKeyParameters(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets());
+        this.params = (SPHINCSPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
     }
 
     /**
@@ -76,11 +77,19 @@ public class BCSphincs256PrivateKey
 
     public byte[] getEncoded()
     {
-        PrivateKeyInfo pki;
+
         try
         {
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256, new SPHINCS256KeyParams(new AlgorithmIdentifier(treeDigest)));
-            pki = new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getKeyData()));
+            PrivateKeyInfo pki;
+            if (params.getTreeDigest() != null)
+            {
+                pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params);
+            }
+            else
+            {
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256, new SPHINCS256KeyParams(new AlgorithmIdentifier(treeDigest)));
+                pki = new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getKeyData()));
+            }
 
             return pki.getEncoded();
         }

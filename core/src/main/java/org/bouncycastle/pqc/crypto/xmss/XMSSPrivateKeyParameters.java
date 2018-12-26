@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.xmss;
 
 import java.io.IOException;
 
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -10,7 +9,7 @@ import org.bouncycastle.util.Pack;
  * XMSS Private Key.
  */
 public final class XMSSPrivateKeyParameters
-    extends AsymmetricKeyParameter
+    extends XMSSKeyParameters
     implements XMSSStoreableObjectInterface
 {
 
@@ -42,7 +41,7 @@ public final class XMSSPrivateKeyParameters
 
     private XMSSPrivateKeyParameters(Builder builder)
     {
-        super(true);
+        super(true, builder.params.getDigest().getAlgorithmName());
         params = builder.params;
         if (params == null)
         {

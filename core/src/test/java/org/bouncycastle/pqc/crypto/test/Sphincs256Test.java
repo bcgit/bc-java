@@ -1516,7 +1516,7 @@ public class Sphincs256Test
     public void performTest()
         throws Exception
     {
-       // doBlakeKatTest();    TODO: digest classes still need some work...
+       // doBlakeKatTest();    TODO: we only support Blake2...
         doSHA2KatTest();
         doSHA2RandomTest();
         doSHA3KatTest();

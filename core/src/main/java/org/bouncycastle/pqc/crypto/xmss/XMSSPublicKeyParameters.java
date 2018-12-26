@@ -1,12 +1,10 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-
 /**
  * XMSS Public Key.
  */
 public final class XMSSPublicKeyParameters
-    extends AsymmetricKeyParameter
+    extends XMSSKeyParameters
     implements XMSSStoreableObjectInterface
 {
 
@@ -20,7 +18,7 @@ public final class XMSSPublicKeyParameters
 
     private XMSSPublicKeyParameters(Builder builder)
     {
-        super(false);
+        super(false, builder.params.getDigest().getAlgorithmName());
         params = builder.params;
         if (params == null)
         {
@@ -41,19 +39,19 @@ public final class XMSSPublicKeyParameters
                 throw new IllegalArgumentException("public key has wrong size");
             }
             int position = 0;
-			/*
-			 * oid = XMSSUtil.bytesToIntBigEndian(publicKey, position); if (oid !=
-			 * xmss.getParams().getOid().getOid()) { throw new
-			 * ParseException("public key not compatible with current instance parameters"
-			 * , 0); } position += oidSize;
-			 */
+            /*
+             * oid = XMSSUtil.bytesToIntBigEndian(publicKey, position); if (oid !=
+             * xmss.getParams().getOid().getOid()) { throw new
+             * ParseException("public key not compatible with current instance parameters"
+             * , 0); } position += oidSize;
+             */
             root = XMSSUtil.extractBytesAtOffset(publicKey, position, rootSize);
             position += rootSize;
             publicSeed = XMSSUtil.extractBytesAtOffset(publicKey, position, publicSeedSize);
         }
         else
         {
-			/* set */
+            /* set */
             byte[] tmpRoot = builder.root;
             if (tmpRoot != null)
             {
@@ -125,7 +123,7 @@ public final class XMSSPublicKeyParameters
 
     public byte[] toByteArray()
     {
-		/* oid || root || seed */
+        /* oid || root || seed */
         int n = params.getDigestSize();
         // int oidSize = 4;
         int rootSize = n;
@@ -134,15 +132,15 @@ public final class XMSSPublicKeyParameters
         int totalSize = rootSize + publicSeedSize;
         byte[] out = new byte[totalSize];
         int position = 0;
-		/* copy oid */
-		/*
-		 * XMSSUtil.intToBytesBigEndianOffset(out, oid, position); position +=
-		 * oidSize;
-		 */
-		/* copy root */
+        /* copy oid */
+        /*
+         * XMSSUtil.intToBytesBigEndianOffset(out, oid, position); position +=
+         * oidSize;
+         */
+        /* copy root */
         XMSSUtil.copyBytesAtOffset(out, root, position);
         position += rootSize;
-		/* copy public seed */
+        /* copy public seed */
         XMSSUtil.copyBytesAtOffset(out, publicSeed, position);
         return out;
     }
@@ -158,7 +156,7 @@ public final class XMSSPublicKeyParameters
     }
 
     public XMSSParameters getParameters()
-     {
-         return params;
-     }
+    {
+        return params;
+    }
 }

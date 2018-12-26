@@ -344,6 +344,58 @@ public class XMSSTest
         assertEquals(XMSSParameterSpec.SHA512, pubKey.getTreeDigest());
     }
 
+    public void testXMSSShake128KeyFactory()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHAKE128), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyFactory keyFactory = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        XMSSKey privKey = (XMSSKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        assertEquals(kp.getPrivate(), privKey);
+
+        XMSSKey pubKey = (XMSSKey)keyFactory.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        assertEquals(kp.getPublic(), pubKey);
+
+        assertEquals(10, privKey.getHeight());
+        assertEquals(XMSSParameterSpec.SHAKE128, privKey.getTreeDigest());
+
+        assertEquals(10, pubKey.getHeight());
+        assertEquals(XMSSParameterSpec.SHAKE128, pubKey.getTreeDigest());
+    }
+
+    public void testXMSSShake256KeyFactory()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHAKE256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyFactory keyFactory = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        XMSSKey privKey = (XMSSKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        assertEquals(kp.getPrivate(), privKey);
+
+        XMSSKey pubKey = (XMSSKey)keyFactory.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        assertEquals(kp.getPublic(), pubKey);
+
+        assertEquals(10, privKey.getHeight());
+        assertEquals(XMSSParameterSpec.SHAKE256, privKey.getTreeDigest());
+
+        assertEquals(10, pubKey.getHeight());
+        assertEquals(XMSSParameterSpec.SHAKE256, pubKey.getTreeDigest());
+    }
+
     private void testSig(String algorithm, PublicKey pubKey, PrivateKey privKey)
         throws Exception
     {
