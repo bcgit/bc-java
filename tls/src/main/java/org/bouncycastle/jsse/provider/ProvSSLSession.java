@@ -66,6 +66,24 @@ class ProvSSLSession
         this.lastAccessedTime = Math.max(lastAccessedTime, accessTime);
     }
 
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+        if (!(obj instanceof ProvSSLSession))
+        {
+            return false;
+        }
+
+        ProvSSLSession other = (ProvSSLSession)obj;
+        byte[] id = (null == tlsSession) ? null : tlsSession.getSessionID();
+        byte[] otherID = (null == other.tlsSession) ? null : other.tlsSession.getSessionID();
+        return Arrays.areEqual(id, otherID);
+    }
+
     public int getApplicationBufferSize()
     {
         // TODO[jsse] See comments for getPacketBufferSize
@@ -75,7 +93,7 @@ class ProvSSLSession
     public String getCipherSuite()
     {
         return sessionParameters == null
-            ?   null
+            ?   "TLS_NULL_WITH_NULL_NULL"
             :   sslSessionContext.getSSLContext().getCipherSuiteString(sessionParameters.getCipherSuite());
     }
 
@@ -229,6 +247,13 @@ class ProvSSLSession
         }
     }
 
+    @Override
+    public int hashCode()
+    {
+        byte[] id = (null == tlsSession) ? null : tlsSession.getSessionID();
+        return Arrays.hashCode(id);
+    }
+
     public void invalidate()
     {
         if (tlsSession != null)
@@ -251,6 +276,12 @@ class ProvSSLSession
     public void removeValue(String name)
     {
         notifyUnbound(name, valueMap.remove(name));
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Session(" + getCreationTime() + "|" + getCipherSuite() + ")";
     }
 
     protected void notifyBound(String name, Object value)
