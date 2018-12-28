@@ -9,43 +9,97 @@ import org.bouncycastle.jsse.BCExtendedSSLSession;
 
 abstract class SSLSessionUtil
 {
+    private static final Class<?> extendedSSLSessionClass;
     private static final Constructor<? extends SSLSession> exportSSLSessionConstructor;
+    private static final Constructor<? extends BCExtendedSSLSession> importSSLSessionConstructor;
 
     static
     {
-        Constructor<? extends SSLSession> cons = null;
-        try
         {
-            Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.ExtendedSSLSession");
-            if (null != methods)
+            Class<?> clazz = null;
+            try
             {
-                String className;
-                if (ReflectionUtil.hasMethod(methods, "getStatusResponses"))
-                {
-                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_9";
-                }
-                else if (ReflectionUtil.hasMethod(methods, "getRequestedServerNames"))
-                {
-                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_8";
-                }
-                else
-                {
-                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_7";
-                }
-
-                cons = ReflectionUtil.getDeclaredConstructor(className, BCExtendedSSLSession.class);
+                clazz = ReflectionUtil.getClass("javax.net.ssl.ExtendedSSLSession");
             }
-        }
-        catch (Exception e)
-        {
+            catch (Exception e)
+            {
+            }
+            extendedSSLSessionClass = clazz;
         }
 
-        exportSSLSessionConstructor = cons;
+        {
+            Constructor<? extends SSLSession> constructor = null;
+            try
+            {
+                Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.ExtendedSSLSession");
+                if (null != methods)
+                {
+                    String className;
+                    if (ReflectionUtil.hasMethod(methods, "getStatusResponses"))
+                    {
+                        className = "org.bouncycastle.jsse.provider.ExportSSLSession_9";
+                    }
+                    else if (ReflectionUtil.hasMethod(methods, "getRequestedServerNames"))
+                    {
+                        className = "org.bouncycastle.jsse.provider.ExportSSLSession_8";
+                    }
+                    else
+                    {
+                        className = "org.bouncycastle.jsse.provider.ExportSSLSession_7";
+                    }
+
+                    constructor = ReflectionUtil.getDeclaredConstructor(className, BCExtendedSSLSession.class);
+                }
+            }
+            catch (Exception e)
+            {
+            }
+
+            exportSSLSessionConstructor = constructor;
+        }
+
+        {
+            Constructor<? extends BCExtendedSSLSession> constructor = null;
+            if (null != extendedSSLSessionClass)
+            {
+                try
+                {
+                    Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.ExtendedSSLSession");
+                    if (null != methods)
+                    {
+                        String className;
+                        if (ReflectionUtil.hasMethod(methods, "getStatusResponses"))
+                        {
+                            className = "org.bouncycastle.jsse.provider.ImportSSLSession_9";
+                        }
+                        else if (ReflectionUtil.hasMethod(methods, "getRequestedServerNames"))
+                        {
+                            className = "org.bouncycastle.jsse.provider.ImportSSLSession_8";
+                        }
+                        else
+                        {
+                            className = "org.bouncycastle.jsse.provider.ImportSSLSession_7";
+                        }
+
+                        constructor = ReflectionUtil.getDeclaredConstructor(className, extendedSSLSessionClass);
+                    }
+                }
+                catch (Exception e)
+                {
+                }
+            }
+            importSSLSessionConstructor = constructor;
+        }
     }
 
     static SSLSession exportSSLSession(BCExtendedSSLSession sslSession)
     {
-        if (exportSSLSessionConstructor != null)
+        if (sslSession instanceof ImportSSLSession)
+        {
+            return ((ImportSSLSession)sslSession).unwrap();
+        }
+
+        if (null != exportSSLSessionConstructor)
         {
             try
             {
@@ -57,5 +111,31 @@ abstract class SSLSessionUtil
         }
 
         return new ExportSSLSession_5(sslSession);
+    }
+
+    static BCExtendedSSLSession importSSLSession(SSLSession sslSession)
+    {
+        if (sslSession instanceof BCExtendedSSLSession)
+        {
+            return (BCExtendedSSLSession)sslSession;
+        }
+
+        if (sslSession instanceof ExportSSLSession)
+        {
+            return ((ExportSSLSession)sslSession).unwrap();
+        }
+
+        if (null != importSSLSessionConstructor && extendedSSLSessionClass.isInstance(sslSession))
+        {
+            try
+            {
+                return importSSLSessionConstructor.newInstance(sslSession);
+            }
+            catch (Exception e)
+            {
+            }
+        }
+
+        return new ImportSSLSession_5(sslSession);
     }
 }
