@@ -183,24 +183,47 @@ public final class ProtocolVersion
         }
     }
 
+    public ProtocolVersion getNextVersion()
+    {
+        int major = getMajorVersion(), minor = getMinorVersion();
+        switch (major)
+        {
+        case 0x03:
+            switch (minor)
+            {
+            case 0xFF: return null;
+            default  : return get(major, minor + 1);
+            }
+        case 0xFE:
+            switch(minor)
+            {
+            case 0x00: return null;
+            case 0xFF: return DTLSv12;
+            default  : return get(major, minor - 1);
+            }
+        default:    return null;
+        }
+    }
+
     public ProtocolVersion getPreviousVersion()
     {
-        if (isDTLS())
+        int major = getMajorVersion(), minor = getMinorVersion();
+        switch (major)
         {
-            switch(getMinorVersion())
+        case 0x03:
+            switch (minor)
+            {
+            case 0x00: return null;
+            default  : return get(major, minor - 1);
+            }
+        case 0xFE:
+            switch(minor)
             {
             case 0xFF: return null;
             case 0xFD: return DTLSv10;
-            default  : return get(getMajorVersion(), getMinorVersion() + 1);
+            default  : return get(major, minor + 1);
             }
-        }
-        else
-        {
-            switch (getMinorVersion())
-            {
-            case 0x00: return null;
-            default  : return get(getMajorVersion(), getMinorVersion() - 1);
-            }
+        default:    return null;
         }
     }
 
