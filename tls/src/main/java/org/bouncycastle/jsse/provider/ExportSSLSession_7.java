@@ -11,6 +11,7 @@ import org.bouncycastle.jsse.BCExtendedSSLSession;
 
 class ExportSSLSession_7
     extends ExtendedSSLSession
+    implements ExportSSLSession
 {
     final BCExtendedSSLSession sslSession;
 
@@ -19,7 +20,7 @@ class ExportSSLSession_7
         this.sslSession = sslSession;
     }
 
-    BCExtendedSSLSession unwrap()
+    public BCExtendedSSLSession unwrap()
     {
         return sslSession;
     }

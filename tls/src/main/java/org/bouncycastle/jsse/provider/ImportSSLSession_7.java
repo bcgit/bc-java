@@ -3,23 +3,25 @@ package org.bouncycastle.jsse.provider;
 import java.security.Principal;
 import java.security.cert.Certificate;
 
+import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 
-class ExportSSLSession_5
-    implements SSLSession, ExportSSLSession
+class ImportSSLSession_7
+    extends BCExtendedSSLSession
+    implements ImportSSLSession
 {
-    final BCExtendedSSLSession sslSession;
+    final ExtendedSSLSession sslSession;
 
-    ExportSSLSession_5(BCExtendedSSLSession sslSession)
+    ImportSSLSession_7(ExtendedSSLSession sslSession)
     {
         this.sslSession = sslSession;
     }
 
-    public BCExtendedSSLSession unwrap()
+    public SSLSession unwrap()
     {
         return sslSession;
     }
@@ -59,6 +61,12 @@ class ExportSSLSession_5
         return sslSession.getLocalPrincipal();
     }
 
+    @Override
+    public String[] getLocalSupportedSignatureAlgorithms()
+    {
+        return sslSession.getLocalSupportedSignatureAlgorithms();
+    }
+
     public int getPacketBufferSize()
     {
         return sslSession.getPacketBufferSize();
@@ -87,6 +95,12 @@ class ExportSSLSession_5
     public Principal getPeerPrincipal() throws SSLPeerUnverifiedException
     {
         return sslSession.getPeerPrincipal();
+    }
+
+    @Override
+    public String[] getPeerSupportedSignatureAlgorithms()
+    {
+        return sslSession.getPeerSupportedSignatureAlgorithms();
     }
 
     public String getProtocol()

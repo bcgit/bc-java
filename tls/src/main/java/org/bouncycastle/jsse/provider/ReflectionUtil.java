@@ -87,6 +87,38 @@ class ReflectionUtil
         });
     }
 
+    static Method getMethod(final String className, final String methodName, final Class<?>... parameterTypes)
+    {
+        if (null == className || null == methodName)
+        {
+            return null;
+        }
+
+        return AccessController.doPrivileged(new PrivilegedAction<Method>()
+        {
+            public Method run()
+            {
+                try
+                {
+                    ClassLoader classLoader = ReflectionUtil.class.getClassLoader();
+                    Class<?> clazz = (null == classLoader)
+                        ?   Class.forName(className)
+                        :   classLoader.loadClass(className);
+
+                    if (null != clazz)
+                    {
+                        return clazz.getMethod(methodName, parameterTypes);
+                    }
+                }
+                catch (Exception e)
+                {
+                }
+
+                return null;
+            }
+        });
+    }
+
     static Method[] getMethods(final String className)
     {
         if (null == className)
