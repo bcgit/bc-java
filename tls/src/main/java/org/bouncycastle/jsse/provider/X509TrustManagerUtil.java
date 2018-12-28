@@ -9,7 +9,7 @@ import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 
 abstract class X509TrustManagerUtil
 {
-    private static final Class<?> x509ExtendedKeyManagerClass;
+    private static final Class<?> x509ExtendedTrustManagerClass;
     private static final Constructor<? extends X509TrustManager> exportX509TrustManagerConstructor;
     private static final Constructor<? extends BCX509ExtendedTrustManager> importX509TrustManagerConstructor;
 
@@ -24,7 +24,7 @@ abstract class X509TrustManagerUtil
             catch (Exception e)
             {
             }
-            x509ExtendedKeyManagerClass = clazz;
+            x509ExtendedTrustManagerClass = clazz;
         }
 
         {
@@ -47,13 +47,13 @@ abstract class X509TrustManagerUtil
 
         {
             Constructor<? extends BCX509ExtendedTrustManager> constructor = null;
-            if (null != x509ExtendedKeyManagerClass)
+            if (null != x509ExtendedTrustManagerClass)
             {
                 try
                 {
                     String className = "org.bouncycastle.jsse.provider.ImportX509TrustManager_7";
 
-                    constructor = ReflectionUtil.getDeclaredConstructor(className, x509ExtendedKeyManagerClass);
+                    constructor = ReflectionUtil.getDeclaredConstructor(className, x509ExtendedTrustManagerClass);
                 }
                 catch (Exception e)
                 {
@@ -96,7 +96,7 @@ abstract class X509TrustManagerUtil
             return ((ExportX509TrustManager)x509TrustManager).unwrap();
         }
 
-        if (null != importX509TrustManagerConstructor && x509ExtendedKeyManagerClass.isInstance(x509TrustManager))
+        if (null != importX509TrustManagerConstructor && x509ExtendedTrustManagerClass.isInstance(x509TrustManager))
         {
             try
             {
