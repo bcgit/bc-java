@@ -26,6 +26,12 @@ class ImportSSLSession_7
         return sslSession;
     }
 
+    @Override
+    public boolean equals(Object obj)
+    {
+        return null != obj && obj.equals(sslSession);
+    }
+
     public int getApplicationBufferSize()
     {
         return sslSession.getApplicationBufferSize();
@@ -123,6 +129,12 @@ class ImportSSLSession_7
         return sslSession.getValueNames();
     }
 
+    @Override
+    public int hashCode()
+    {
+        return sslSession.hashCode();
+    }
+
     public void invalidate()
     {
         sslSession.invalidate();
@@ -141,5 +153,11 @@ class ImportSSLSession_7
     public void removeValue(String name)
     {
         sslSession.removeValue(name);
+    }
+
+    @Override
+    public String toString()
+    {
+        return sslSession.toString();
     }
 }
