@@ -475,7 +475,7 @@ public class GOST3410Test
         encodedGost12Test(p);
 
 
-        g.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"), new SecureRandom());
+        g.initialize(new org.bouncycastle.jcajce.spec.GOST3410ParameterSpec("Tc26-Gost-3410-12-512-paramSetA"), new SecureRandom());
 
         p = g.generateKeyPair();
 
