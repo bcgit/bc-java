@@ -1,20 +1,5 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
-import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
-import org.bouncycastle.jce.spec.ECParameterSpec;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
-
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
@@ -22,6 +7,23 @@ import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
+
+import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECGOST3410Parameters;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jcajce.spec.GOST3410ParameterSpec;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
+import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
 
 /**
  * KeyPairGenerator for GOST34.10 2012. Algorithm is the same as for GOST34.10 2001
@@ -72,7 +74,13 @@ public class KeyPairGeneratorSpi
         SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
-        if (params instanceof ECParameterSpec)
+        if (params instanceof GOST3410ParameterSpec)
+        {
+            GOST3410ParameterSpec gostParams = (GOST3410ParameterSpec)params;
+
+            init(gostParams, random);
+        }
+        else if (params instanceof ECParameterSpec)
         {
             ECParameterSpec p = (ECParameterSpec)params;
             this.ecParams = params;
@@ -108,29 +116,7 @@ public class KeyPairGeneratorSpi
                 curveName = ((ECNamedCurveGenParameterSpec)params).getName();
             }
 
-            ECDomainParameters ecP = ECGOST3410NamedCurves.getByName(curveName);
-            if (ecP == null)
-            {
-                throw new InvalidAlgorithmParameterException("unknown curve name: " + curveName);
-            }
-
-            this.ecParams = new ECNamedCurveSpec(
-                curveName,
-                ecP.getCurve(),
-                ecP.getG(),
-                ecP.getN(),
-                ecP.getH(),
-                ecP.getSeed());
-
-            java.security.spec.ECParameterSpec p = (java.security.spec.ECParameterSpec)ecParams;
-
-            ECCurve curve = EC5Util.convertCurve(p.getCurve());
-            ECPoint g = EC5Util.convertPoint(curve, p.getGenerator(), false);
-
-            param = new ECKeyGenerationParameters(new ECDomainParameters(curve, g, p.getOrder(), BigInteger.valueOf(p.getCofactor())), random);
-
-            engine.init(param);
-            initialised = true;
+            init(new GOST3410ParameterSpec(curveName), random);
         }
         else if (params == null && BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa() != null)
         {
@@ -150,6 +136,37 @@ public class KeyPairGeneratorSpi
         {
             throw new InvalidAlgorithmParameterException("parameter object not a ECParameterSpec: " + params.getClass().getName());
         }
+    }
+
+    private void init(GOST3410ParameterSpec gostParams, SecureRandom random)
+        throws InvalidAlgorithmParameterException
+    {
+        ECDomainParameters ecP = ECGOST3410NamedCurves.getByOID(gostParams.getPublicKeyParamSet());
+        if (ecP == null)
+        {
+            throw new InvalidAlgorithmParameterException("unknown curve: " + gostParams.getPublicKeyParamSet());
+        }
+
+        this.ecParams = new ECNamedCurveSpec(
+            ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()),
+            ecP.getCurve(),
+            ecP.getG(),
+            ecP.getN(),
+            ecP.getH(),
+            ecP.getSeed());
+
+        java.security.spec.ECParameterSpec p = (java.security.spec.ECParameterSpec)ecParams;
+
+        ECCurve curve = EC5Util.convertCurve(p.getCurve());
+        ECPoint g = EC5Util.convertPoint(curve, p.getGenerator(), false);
+
+        param = new ECKeyGenerationParameters(
+            new ECGOST3410Parameters(
+                new ECDomainParameters(curve, g, p.getOrder(), BigInteger.valueOf(p.getCofactor())),
+                gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(), gostParams.getEncryptionParamSet()), random);
+
+        engine.init(param);
+        initialised = true;
     }
 
     public KeyPair generateKeyPair()

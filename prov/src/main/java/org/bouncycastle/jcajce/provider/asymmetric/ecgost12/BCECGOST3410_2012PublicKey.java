@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECGOST3410Parameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
@@ -99,6 +100,14 @@ public class BCECGOST3410_2012PublicKey
 
         this.algorithm = algorithm;
         this.ecPublicKey = params;
+
+        if (dp instanceof ECGOST3410Parameters)
+        {
+            ECGOST3410Parameters p = (ECGOST3410Parameters)dp;
+
+            this.gostParams = new GOST3410PublicKeyAlgParameters(p.getPublicKeyParamSet(),
+                                                p.getDigestParamSet(), p.getEncryptionParamSet());
+        }
 
         if (spec == null)
         {
