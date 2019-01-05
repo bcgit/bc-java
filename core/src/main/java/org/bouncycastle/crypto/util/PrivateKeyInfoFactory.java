@@ -97,12 +97,6 @@ public class PrivateKeyInfoFactory
                 params = new X962Parameters(DERNull.INSTANCE);      // Implicitly CA
                 orderBitLength = priv.getD().bitLength();   // TODO: this is as good as currently available, must be a better way...
             }
-            else if (domainParams instanceof ECNamedDomainParameters)
-            {
-                params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
-                orderBitLength = domainParams.getN().bitLength();
-
-            }
             else if (domainParams instanceof ECGOST3410Parameters)
             {
                 GOST3410PublicKeyAlgParameters gostParams = new GOST3410PublicKeyAlgParameters(
@@ -121,6 +115,11 @@ public class PrivateKeyInfoFactory
                 extractBytes(encKey, size, 0, priv.getD());
 
                 return new PrivateKeyInfo(new AlgorithmIdentifier(identifier, gostParams), new DEROctetString(encKey));
+            }
+            else if (domainParams instanceof ECNamedDomainParameters)
+            {
+                params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
+                orderBitLength = domainParams.getN().bitLength();
             }
             else
             {

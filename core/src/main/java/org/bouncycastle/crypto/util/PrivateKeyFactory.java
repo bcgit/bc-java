@@ -190,7 +190,7 @@ public class PrivateKeyFactory
             RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
         {
             GOST3410PublicKeyAlgParameters gostParams = null;
-            ECDomainParameters ecSpec = null;
+            ECNamedDomainParameters ecSpec = null;
             BigInteger d = null;
             ASN1Primitive p = keyInfo.getPrivateKeyAlgorithm().getParameters().toASN1Primitive();
             if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
@@ -228,6 +228,7 @@ public class PrivateKeyFactory
             else
             {
                 X962Parameters params = X962Parameters.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+
                 if (params.isNamedCurve())
                 {
                     ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
@@ -261,7 +262,8 @@ public class PrivateKeyFactory
                 else
                 {
                     X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
-                    ecSpec = new ECDomainParameters(
+                    ecSpec = new ECNamedDomainParameters(
+                        algOID,
                         ecP.getCurve(),
                         ecP.getG(),
                         ecP.getN(),

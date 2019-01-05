@@ -29,6 +29,12 @@ public class ECNamedDomainParameters
         this.name = name;
     }
 
+    public ECNamedDomainParameters(ASN1ObjectIdentifier name, ECDomainParameters domainParameters)
+    {
+        super(domainParameters.getCurve(), domainParameters.getG(), domainParameters.getN(), domainParameters.getH(), domainParameters.getSeed());
+        this.name = name;
+    }
+
     public ASN1ObjectIdentifier getName()
     {
         return name;
