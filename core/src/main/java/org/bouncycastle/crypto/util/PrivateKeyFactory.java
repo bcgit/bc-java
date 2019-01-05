@@ -189,22 +189,24 @@ public class PrivateKeyFactory
         else if (algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512)
             || algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
         {
-            GOST3410PublicKeyAlgParameters gostParams = null;
-            ECNamedDomainParameters ecSpec = null;
+            GOST3410PublicKeyAlgParameters gostParams = GOST3410PublicKeyAlgParameters.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+            ECGOST3410Parameters ecSpec = null;
             BigInteger d = null;
             ASN1Primitive p = keyInfo.getPrivateKeyAlgorithm().getParameters().toASN1Primitive();
             if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
             {
-                gostParams = GOST3410PublicKeyAlgParameters.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+
                 ECDomainParameters ecP = ECGOST3410NamedCurves.getByName(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
                 ECCurve curve = ecP.getCurve();
-                ecSpec = new ECNamedDomainParameters(
-                    ECGOST3410NamedCurves.getOID(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet())),
-                    curve,
-                    ecP.getG(),
-                    ecP.getN(),
-                    ecP.getH(),
-                    ecP.getSeed());
+
+                ecSpec = new ECGOST3410Parameters(
+                    new ECNamedDomainParameters(
+                        ECGOST3410NamedCurves.getOID(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet())),
+                        curve,
+                        ecP.getG(),
+                        ecP.getN(),
+                        ecP.getH(),
+                        ecP.getSeed()), gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(), gostParams.getEncryptionParamSet());
                 ASN1Encodable privKey = keyInfo.parsePrivateKey();
                 if (privKey instanceof ASN1Integer)
                 {
@@ -236,23 +238,23 @@ public class PrivateKeyFactory
                     if (ecP == null)
                     {
                         ECDomainParameters gParam = ECGOST3410NamedCurves.getByOID(oid);
-                        ecSpec = new ECNamedDomainParameters(
+                        ecSpec = new ECGOST3410Parameters(new ECNamedDomainParameters(
                             oid,
                             gParam.getCurve(),
                             gParam.getG(),
                             gParam.getN(),
                             gParam.getH(),
-                            gParam.getSeed());
+                            gParam.getSeed()), gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(), gostParams.getEncryptionParamSet());
                     }
                     else
                     {
-                        ecSpec = new ECNamedDomainParameters(
+                        ecSpec = new ECGOST3410Parameters(new ECNamedDomainParameters(
                             oid,
                             ecP.getCurve(),
                             ecP.getG(),
                             ecP.getN(),
                             ecP.getH(),
-                            ecP.getSeed());
+                            ecP.getSeed()), gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(), gostParams.getEncryptionParamSet());
                     }
                 }
                 else if (params.isImplicitlyCA())
@@ -262,13 +264,13 @@ public class PrivateKeyFactory
                 else
                 {
                     X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
-                    ecSpec = new ECNamedDomainParameters(
+                    ecSpec = new ECGOST3410Parameters(new ECNamedDomainParameters(
                         algOID,
                         ecP.getCurve(),
                         ecP.getG(),
                         ecP.getN(),
                         ecP.getH(),
-                        ecP.getSeed());
+                        ecP.getSeed()), gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(), gostParams.getEncryptionParamSet());
                 }
 
                 ASN1Encodable privKey = keyInfo.parsePrivateKey();
