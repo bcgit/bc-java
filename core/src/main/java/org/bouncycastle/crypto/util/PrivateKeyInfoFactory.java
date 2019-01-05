@@ -1,17 +1,21 @@
 package org.bouncycastle.crypto.util;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
@@ -22,6 +26,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECGOST3410Parameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -96,6 +101,26 @@ public class PrivateKeyInfoFactory
             {
                 params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
                 orderBitLength = domainParams.getN().bitLength();
+
+            }
+            else if (domainParams instanceof ECGOST3410Parameters)
+            {
+                GOST3410PublicKeyAlgParameters gostParams = new GOST3410PublicKeyAlgParameters(
+                    ((ECGOST3410Parameters)domainParams).getPublicKeyParamSet(),
+                    ((ECGOST3410Parameters)domainParams).getDigestParamSet(),
+                    ((ECGOST3410Parameters)domainParams).getEncryptionParamSet());
+
+                boolean is512 = priv.getD().bitLength() > 256;
+                ASN1ObjectIdentifier identifier = (is512) ?
+                    RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512 :
+                    RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
+                int size = (is512) ? 64 : 32;
+
+                byte[] encKey = new byte[size];
+
+                extractBytes(encKey, size, 0, priv.getD());
+
+                return new PrivateKeyInfo(new AlgorithmIdentifier(identifier, gostParams), new DEROctetString(encKey));
             }
             else
             {
@@ -146,6 +171,23 @@ public class PrivateKeyInfoFactory
         else
         {
             throw new IOException("key parameters not recognized");
+        }
+    }
+
+
+    private static void extractBytes(byte[] encKey, int size, int offSet, BigInteger bI)
+    {
+        byte[] val = bI.toByteArray();
+        if (val.length < size)
+        {
+            byte[] tmp = new byte[size];
+            System.arraycopy(val, 0, tmp, tmp.length - val.length, val.length);
+            val = tmp;
+        }
+
+        for (int i = 0; i != size; i++)
+        {
+            encKey[offSet + i] = val[val.length - 1 - i];
         }
     }
 
