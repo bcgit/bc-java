@@ -98,6 +98,209 @@ public class GOST3410Test
         }
 
 
+        public SimpleTestResult encodeRecodePublicKey()
+        {
+
+            ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID("Tc26-Gost-3410-12-512-paramSetA");
+            ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+            ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
+            ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
+            ECKeyPairGenerator engine = new ECKeyPairGenerator();
+            engine.init(params);
+            AsymmetricCipherKeyPair pair = engine.generateKeyPair();
+
+            ECPublicKeyParameters generatedKeyParamaters = (ECPublicKeyParameters)pair.getPublic();
+            ECPublicKeyParameters keyParameters = generatedKeyParamaters;
+
+
+            //
+            // Continuously encode/decode the key and check for loss of information.
+            //
+            try
+            {
+                for (int t = 0; t < 3; t++)
+                {
+
+                    SubjectPublicKeyInfo info = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(keyParameters);
+                    keyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(info);
+
+                    { // Specifically cast and test gost parameters.
+                        ECGOST3410Parameters gParam = (ECGOST3410Parameters)generatedKeyParamaters.getParameters();
+                        ECGOST3410Parameters rParam = (ECGOST3410Parameters)keyParameters.getParameters();
+
+
+                        boolean ok = safeEquals(gParam.getDigestParamSet(), rParam.getDigestParamSet()) &&
+                            safeEquals(gParam.getEncryptionParamSet(), rParam.getEncryptionParamSet()) &&
+                            safeEquals(gParam.getPublicKeyParamSet(), rParam.getPublicKeyParamSet());
+
+                        if (!ok)
+                        {
+                            return new SimpleTestResult(false, "GOST parameters does not match");
+                        }
+
+                    }
+
+                    if (!((ECGOST3410Parameters)keyParameters.getParameters()).getName().equals(
+                        ((ECGOST3410Parameters)generatedKeyParamaters.getParameters()).getName()))
+                    {
+                        return new SimpleTestResult(false, "Name does not match");
+                    }
+
+
+                    if (keyParameters.isPrivate() != generatedKeyParamaters.isPrivate())
+                    {
+                        return new SimpleTestResult(false, "isPrivate does not match");
+                    }
+
+                    if (!Arrays.areEqual(keyParameters.getQ().getEncoded(true), generatedKeyParamaters.getQ().getEncoded(true)))
+                    {
+                        return new SimpleTestResult(false, "Q does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getCurve().equals(generatedKeyParamaters.getParameters().getCurve()))
+                    {
+                        return new SimpleTestResult(false, "Curve does not match");
+                    }
+
+                    if (!Arrays.areEqual(
+                        keyParameters.getParameters().getG().getEncoded(true),
+                        generatedKeyParamaters.getParameters().getG().getEncoded(true)))
+                    {
+                        return new SimpleTestResult(false, "G does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getH().equals(generatedKeyParamaters.getParameters().getH()))
+                    {
+                        return new SimpleTestResult(false, "H does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getHInv().equals(generatedKeyParamaters.getParameters().getHInv()))
+                    {
+                        return new SimpleTestResult(false, "Hinv does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getN().equals(generatedKeyParamaters.getParameters().getN()))
+                    {
+                        return new SimpleTestResult(false, "N does not match");
+                    }
+
+                    if (!Arrays.areEqual(keyParameters.getParameters().getSeed(), generatedKeyParamaters.getParameters().getSeed()))
+                    {
+                        return new SimpleTestResult(false, "Seed does not match");
+                    }
+                }
+                return new SimpleTestResult(true, null);
+            }
+            catch (Exception ex)
+            {
+                throw new RuntimeException(ex.getMessage(), ex);
+            }
+
+
+        }
+
+
+        private SimpleTestResult encodeRecodePrivateKey()
+        {
+            try
+            {
+                ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID("Tc26-Gost-3410-12-512-paramSetA");
+                ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+                ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
+                ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
+                ECKeyPairGenerator engine = new ECKeyPairGenerator();
+                engine.init(params);
+                AsymmetricCipherKeyPair pair = engine.generateKeyPair();
+
+                ECPrivateKeyParameters generatedKeyParamaters = (ECPrivateKeyParameters)pair.getPrivate();
+                ECPrivateKeyParameters keyParameters = generatedKeyParamaters;
+
+
+                //
+                // Continuously encode/decode the key and check for loss of information.
+                //
+
+
+                for (int t = 0; t < 3; t++)
+                {
+                    PrivateKeyInfo info = PrivateKeyInfoFactory.createPrivateKeyInfo(keyParameters);
+                    keyParameters = (ECPrivateKeyParameters)PrivateKeyFactory.createKey(info);
+
+                    { // Specifically cast and test gost parameters.
+                        ECGOST3410Parameters gParam = (ECGOST3410Parameters)generatedKeyParamaters.getParameters();
+                        ECGOST3410Parameters rParam = (ECGOST3410Parameters)keyParameters.getParameters();
+
+                        boolean ok = safeEquals(gParam.getDigestParamSet(), rParam.getDigestParamSet()) &&
+                            safeEquals(gParam.getEncryptionParamSet(), rParam.getEncryptionParamSet()) &&
+                            safeEquals(gParam.getPublicKeyParamSet(), rParam.getPublicKeyParamSet());
+
+                        if (!ok)
+                        {
+                            return new SimpleTestResult(false, "GOST parameters does not match");
+                        }
+
+                    }
+
+                    if (keyParameters.isPrivate() != generatedKeyParamaters.isPrivate())
+                    {
+                        return new SimpleTestResult(false, "isPrivate does not match");
+                    }
+
+                    if (!keyParameters.getD().equals(generatedKeyParamaters.getD()))
+                    {
+                        return new SimpleTestResult(false, "D does not match");
+                    }
+
+                    if (!((ECGOST3410Parameters)keyParameters.getParameters()).getName().equals(
+                        ((ECGOST3410Parameters)generatedKeyParamaters.getParameters()).getName()))
+                    {
+                        return new SimpleTestResult(false, "Name does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getCurve().equals(generatedKeyParamaters.getParameters().getCurve()))
+                    {
+                        return new SimpleTestResult(false, "Curve does not match");
+                    }
+
+                    if (!Arrays.areEqual(
+                        keyParameters.getParameters().getG().getEncoded(true),
+                        generatedKeyParamaters.getParameters().getG().getEncoded(true)))
+                    {
+                        return new SimpleTestResult(false, "G does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getH().equals(generatedKeyParamaters.getParameters().getH()))
+                    {
+                        return new SimpleTestResult(false, "H does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getHInv().equals(generatedKeyParamaters.getParameters().getHInv()))
+                    {
+                        return new SimpleTestResult(false, "Hinv does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getN().equals(generatedKeyParamaters.getParameters().getN()))
+                    {
+                        return new SimpleTestResult(false, "N does not match");
+                    }
+
+                    if (!Arrays.areEqual(keyParameters.getParameters().getSeed(), generatedKeyParamaters.getParameters().getSeed()))
+                    {
+                        return new SimpleTestResult(false, "Seed does not match");
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                throw new RuntimeException(ex.getMessage(), ex);
+            }
+
+            return new SimpleTestResult(true, null);
+        }
+
+
         private SimpleTestResult decodeJCEPublic()
         {
             byte[] pub256 = Hex.decode("3068302106082a85030701010101301506092a850307010201010106082a850307010102020343000440292335c87d892510c35a033819a13e2b0dc606d911676af2bad8872d74a4b7bae6c729e98ace04c3dee626343f794731e1489edb7bc26f1c8c56e1448c96501a");
@@ -296,6 +499,13 @@ public class GOST3410Test
                     return new SimpleTestResult(false, "isPrivate does not match");
                 }
 
+                if (!((ECGOST3410Parameters)recoveredKeyParamaters.getParameters()).getName().equals(
+                    ((ECGOST3410Parameters)generatedKeyParamaters.getParameters()).getName()))
+                {
+                    return new SimpleTestResult(false, "Name does not match");
+                }
+
+
                 if (!recoveredKeyParamaters.getD().equals(generatedKeyParamaters.getD()))
                 {
                     return new SimpleTestResult(false, "D does not match");
@@ -375,6 +585,12 @@ public class GOST3410Test
                         return new SimpleTestResult(false, "GOST parameters does not match");
                     }
 
+                }
+
+                if (!((ECGOST3410Parameters)recoveredKeyParamaters.getParameters()).getName().equals(
+                    ((ECGOST3410Parameters)generatedKeyParamaters.getParameters()).getName()))
+                {
+                    return new SimpleTestResult(false, "Name does not match");
                 }
 
 
@@ -475,6 +691,18 @@ public class GOST3410Test
             }
 
             str = decodeJCEPublic();
+            if (!str.isSuccessful())
+            {
+                return str;
+            }
+
+            str = encodeRecodePrivateKey();
+            if (!str.isSuccessful())
+            {
+                return str;
+            }
+
+            str = encodeRecodePublicKey();
             if (!str.isSuccessful())
             {
                 return str;
