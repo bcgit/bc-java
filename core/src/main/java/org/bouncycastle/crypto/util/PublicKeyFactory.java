@@ -135,7 +135,7 @@ public class PublicKeyFactory
     /**
      * Create a public key from the passed in SubjectPublicKeyInfo
      *
-     * @param keyInfo the SubjectPublicKeyInfo containing the key data
+     * @param keyInfo       the SubjectPublicKeyInfo containing the key data
      * @param defaultParams default parameters that might be needed.
      * @return the appropriate key parameter
      * @throws IOException on an error decoding the key
@@ -294,8 +294,8 @@ public class PublicKeyFactory
                     x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
             }
 
-            DERBitString    bits = keyInfo.getPublicKeyData();
-            byte[]          data = bits.getBytes();
+            DERBitString bits = keyInfo.getPublicKeyData();
+            byte[] data = bits.getBytes();
             ASN1OctetString key = new DEROctetString(data);
 
             //
@@ -409,11 +409,10 @@ public class PublicKeyFactory
 
             ECGOST3410Parameters ecDomainParameters =
                 new ECGOST3410Parameters(
-                    ECGOST3410NamedCurves.getByOID(gostParams.getPublicKeyParamSet()),
+                    new ECNamedDomainParameters(gostParams.getPublicKeyParamSet(), ECGOST3410NamedCurves.getByOID(gostParams.getPublicKeyParamSet())),
                     gostParams.getPublicKeyParamSet(),
                     gostParams.getDigestParamSet(),
                     gostParams.getEncryptionParamSet());
-
 
 
             return new ECPublicKeyParameters(ecDomainParameters.getCurve().decodePoint(x9Encoding), ecDomainParameters);
@@ -488,7 +487,8 @@ public class PublicKeyFactory
         }
     }
 
-    private static class X25519Converter extends SubjectPublicKeyInfoConverter
+    private static class X25519Converter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
@@ -496,7 +496,8 @@ public class PublicKeyFactory
         }
     }
 
-    private static class X448Converter extends SubjectPublicKeyInfoConverter
+    private static class X448Converter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
@@ -504,7 +505,8 @@ public class PublicKeyFactory
         }
     }
 
-    private static class Ed25519Converter extends SubjectPublicKeyInfoConverter
+    private static class Ed25519Converter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
@@ -512,7 +514,8 @@ public class PublicKeyFactory
         }
     }
 
-    private static class Ed448Converter extends SubjectPublicKeyInfoConverter
+    private static class Ed448Converter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {

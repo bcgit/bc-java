@@ -83,10 +83,6 @@ public class SubjectPublicKeyInfoFactory
             {
                 params = new X962Parameters(DERNull.INSTANCE);      // Implicitly CA
             }
-            else if (domainParams instanceof ECNamedDomainParameters)
-            {
-                params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
-            }
             else if (domainParams instanceof ECGOST3410Parameters)
             {
 
@@ -129,6 +125,10 @@ public class SubjectPublicKeyInfoFactory
                     return null;
                 }
 
+            }
+            else if (domainParams instanceof ECNamedDomainParameters)
+            {
+                params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
             }
             else
             {
