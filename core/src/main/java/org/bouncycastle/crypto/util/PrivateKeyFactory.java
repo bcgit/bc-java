@@ -186,8 +186,8 @@ public class PrivateKeyFactory
         {
             return new Ed448PrivateKeyParameters(getRawKey(keyInfo, Ed448PrivateKeyParameters.KEY_SIZE), 0);
         }
-        else if (algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) || algOID.equals(
-            RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
+        else if (algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512)
+            || algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
         {
             GOST3410PublicKeyAlgParameters gostParams = null;
             ECNamedDomainParameters ecSpec = null;
