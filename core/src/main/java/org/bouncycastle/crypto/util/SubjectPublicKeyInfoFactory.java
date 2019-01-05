@@ -85,7 +85,6 @@ public class SubjectPublicKeyInfoFactory
             }
             else if (domainParams instanceof ECGOST3410Parameters)
             {
-
                 ECGOST3410Parameters gostParams = (ECGOST3410Parameters)domainParams;
 
                 BigInteger bX = pub.getQ().getAffineXCoord().toBigInteger();
@@ -124,7 +123,6 @@ public class SubjectPublicKeyInfoFactory
                 {
                     return null;
                 }
-
             }
             else if (domainParams instanceof ECNamedDomainParameters)
             {
