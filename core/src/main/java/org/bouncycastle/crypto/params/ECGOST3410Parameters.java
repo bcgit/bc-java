@@ -9,15 +9,22 @@ public class ECGOST3410Parameters
     private final ASN1ObjectIdentifier  digestParamSet;
     private final ASN1ObjectIdentifier  encryptionParamSet;
 
-    public ECGOST3410Parameters(ECNamedDomainParameters ecParameters, ASN1ObjectIdentifier publicKeyParamSet, ASN1ObjectIdentifier digestParamSet)
+    public ECGOST3410Parameters(ECDomainParameters ecParameters, ASN1ObjectIdentifier publicKeyParamSet, ASN1ObjectIdentifier digestParamSet)
     {
         this(ecParameters, publicKeyParamSet, digestParamSet, null);
     }
 
-    public ECGOST3410Parameters(ECNamedDomainParameters ecParameters, ASN1ObjectIdentifier publicKeyParamSet, ASN1ObjectIdentifier digestParamSet, ASN1ObjectIdentifier encryptionParamSet)
+    public ECGOST3410Parameters(ECDomainParameters ecParameters, ASN1ObjectIdentifier publicKeyParamSet, ASN1ObjectIdentifier digestParamSet, ASN1ObjectIdentifier encryptionParamSet)
     {
-        super(ecParameters.getName(), ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH(), ecParameters.getSeed());
+        super(publicKeyParamSet, ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH(), ecParameters.getSeed());
 
+        if (ecParameters instanceof ECNamedDomainParameters)
+        {
+            if (!publicKeyParamSet.equals(((ECNamedDomainParameters)ecParameters).getName()))
+            {
+                throw new IllegalArgumentException("named parameters do not match publicKeyParamSet value");
+            }
+        }
         this.publicKeyParamSet = publicKeyParamSet;
         this.digestParamSet = digestParamSet;
         this.encryptionParamSet = encryptionParamSet;
