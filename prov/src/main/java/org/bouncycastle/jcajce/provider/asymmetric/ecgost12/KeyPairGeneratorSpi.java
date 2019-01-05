@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECGOST3410Parameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
@@ -155,14 +156,9 @@ public class KeyPairGeneratorSpi
             ecP.getH(),
             ecP.getSeed());
 
-        java.security.spec.ECParameterSpec p = (java.security.spec.ECParameterSpec)ecParams;
-
-        ECCurve curve = EC5Util.convertCurve(p.getCurve());
-        ECPoint g = EC5Util.convertPoint(curve, p.getGenerator(), false);
-
         param = new ECKeyGenerationParameters(
             new ECGOST3410Parameters(
-                new ECDomainParameters(curve, g, p.getOrder(), BigInteger.valueOf(p.getCofactor())),
+                new ECNamedDomainParameters(gostParams.getPublicKeyParamSet(), ecP),
                 gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(), gostParams.getEncryptionParamSet()), random);
 
         engine.init(param);
