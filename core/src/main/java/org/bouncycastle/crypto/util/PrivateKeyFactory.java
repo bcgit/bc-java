@@ -10,6 +10,9 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -17,6 +20,7 @@ import org.bouncycastle.asn1.pkcs.DHParameter;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
@@ -32,6 +36,7 @@ import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECGOST3410Parameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -41,6 +46,7 @@ import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
+import org.bouncycastle.math.ec.ECCurve;
 
 /**
  * Factory for creating private key objects from PKCS8 PrivateKeyInfo objects.
@@ -49,12 +55,13 @@ public class PrivateKeyFactory
 {
     /**
      * Create a private key parameter from a PKCS8 PrivateKeyInfo encoding.
-     * 
+     *
      * @param privateKeyInfoData the PrivateKeyInfo encoding
      * @return a suitable private key parameter
      * @throws IOException on an error decoding the key
      */
-    public static AsymmetricKeyParameter createKey(byte[] privateKeyInfoData) throws IOException
+    public static AsymmetricKeyParameter createKey(byte[] privateKeyInfoData)
+        throws IOException
     {
         return createKey(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(privateKeyInfoData)));
     }
@@ -62,24 +69,26 @@ public class PrivateKeyFactory
     /**
      * Create a private key parameter from a PKCS8 PrivateKeyInfo encoding read from a
      * stream.
-     * 
+     *
      * @param inStr the stream to read the PrivateKeyInfo encoding from
      * @return a suitable private key parameter
      * @throws IOException on an error decoding the key
      */
-    public static AsymmetricKeyParameter createKey(InputStream inStr) throws IOException
+    public static AsymmetricKeyParameter createKey(InputStream inStr)
+        throws IOException
     {
         return createKey(PrivateKeyInfo.getInstance(new ASN1InputStream(inStr).readObject()));
     }
 
     /**
      * Create a private key parameter from the passed in PKCS8 PrivateKeyInfo object.
-     * 
+     *
      * @param keyInfo the PrivateKeyInfo object containing the key material
      * @return a suitable private key parameter
      * @throws IOException on an error decoding the key
      */
-    public static AsymmetricKeyParameter createKey(PrivateKeyInfo keyInfo) throws IOException
+    public static AsymmetricKeyParameter createKey(PrivateKeyInfo keyInfo)
+        throws IOException
     {
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
         ASN1ObjectIdentifier algOID = algId.getAlgorithm();
@@ -177,13 +186,122 @@ public class PrivateKeyFactory
         {
             return new Ed448PrivateKeyParameters(getRawKey(keyInfo, Ed448PrivateKeyParameters.KEY_SIZE), 0);
         }
+        else if (algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) || algOID.equals(
+            RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
+        {
+            GOST3410PublicKeyAlgParameters gostParams = null;
+            ECDomainParameters ecSpec = null;
+            BigInteger d = null;
+            ASN1Primitive p = keyInfo.getPrivateKeyAlgorithm().getParameters().toASN1Primitive();
+            if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
+            {
+                gostParams = GOST3410PublicKeyAlgParameters.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+                ECDomainParameters ecP = ECGOST3410NamedCurves.getByName(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
+                ECCurve curve = ecP.getCurve();
+                ecSpec = new ECNamedDomainParameters(
+                    ECGOST3410NamedCurves.getOID(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet())),
+                    curve,
+                    ecP.getG(),
+                    ecP.getN(),
+                    ecP.getH(),
+                    ecP.getSeed());
+                ASN1Encodable privKey = keyInfo.parsePrivateKey();
+                if (privKey instanceof ASN1Integer)
+                {
+                    d = ASN1Integer.getInstance(privKey).getPositiveValue();
+                }
+                else
+                {
+                    byte[] encVal = ASN1OctetString.getInstance(privKey).getOctets();
+                    byte[] dVal = new byte[encVal.length];
+
+                    for (int i = 0; i != encVal.length; i++)
+                    {
+                        dVal[i] = encVal[encVal.length - 1 - i];
+                    }
+
+                    d = new BigInteger(1, dVal);
+                }
+
+
+            }
+            else
+            {
+                X962Parameters params = X962Parameters.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+                if (params.isNamedCurve())
+                {
+                    ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
+                    X9ECParameters ecP = ECNamedCurveTable.getByOID(oid);
+                    if (ecP == null)
+                    {
+                        ECDomainParameters gParam = ECGOST3410NamedCurves.getByOID(oid);
+                        ecSpec = new ECNamedDomainParameters(
+                            oid,
+                            gParam.getCurve(),
+                            gParam.getG(),
+                            gParam.getN(),
+                            gParam.getH(),
+                            gParam.getSeed());
+                    }
+                    else
+                    {
+                        ecSpec = new ECNamedDomainParameters(
+                            oid,
+                            ecP.getCurve(),
+                            ecP.getG(),
+                            ecP.getN(),
+                            ecP.getH(),
+                            ecP.getSeed());
+                    }
+                }
+                else if (params.isImplicitlyCA())
+                {
+                    ecSpec = null;
+                }
+                else
+                {
+                    X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
+                    ecSpec = new ECDomainParameters(
+                        ecP.getCurve(),
+                        ecP.getG(),
+                        ecP.getN(),
+                        ecP.getH(),
+                        ecP.getSeed());
+                }
+
+                ASN1Encodable privKey = keyInfo.parsePrivateKey();
+                if (privKey instanceof ASN1Integer)
+                {
+                    ASN1Integer derD = ASN1Integer.getInstance(privKey);
+
+                    d = derD.getValue();
+                }
+                else
+                {
+                    org.bouncycastle.asn1.sec.ECPrivateKey ec = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(privKey);
+
+                    d = ec.getKey();
+                }
+
+            }
+
+            return new ECPrivateKeyParameters(
+                d,
+                new ECGOST3410Parameters(
+                    ecSpec,
+                    gostParams.getPublicKeyParamSet(),
+                    gostParams.getDigestParamSet(),
+                    gostParams.getEncryptionParamSet()));
+
+        }
         else
         {
             throw new RuntimeException("algorithm identifier in private key not recognised");
         }
     }
 
-    private static byte[] getRawKey(PrivateKeyInfo keyInfo, int expectedSize) throws IOException
+    private static byte[] getRawKey(PrivateKeyInfo keyInfo, int expectedSize)
+        throws IOException
     {
         byte[] result = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
         if (expectedSize != result.length)

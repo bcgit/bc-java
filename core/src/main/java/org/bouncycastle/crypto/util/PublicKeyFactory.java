@@ -51,6 +51,7 @@ import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECGOST3410Parameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
@@ -406,7 +407,15 @@ public class PublicKeyFactory
 
             GOST3410PublicKeyAlgParameters gostParams = GOST3410PublicKeyAlgParameters.getInstance(keyInfo.getAlgorithm().getParameters());
 
-            ECDomainParameters ecDomainParameters = ECGOST3410NamedCurves.getByOID(gostParams.getPublicKeyParamSet());
+            ECGOST3410Parameters ecDomainParameters =
+                new ECGOST3410Parameters(
+                    ECGOST3410NamedCurves.getByOID(gostParams.getPublicKeyParamSet()),
+                    gostParams.getPublicKeyParamSet(),
+                    gostParams.getDigestParamSet(),
+                    gostParams.getEncryptionParamSet());
+
+
+
             return new ECPublicKeyParameters(ecDomainParameters.getCurve().decodePoint(x9Encoding), ecDomainParameters);
         }
     }

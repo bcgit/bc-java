@@ -1,14 +1,19 @@
 package org.bouncycastle.crypto.util;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAPublicKey;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -20,6 +25,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECGOST3410Parameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
@@ -45,7 +51,8 @@ public class SubjectPublicKeyInfoFactory
      * @return a SubjectPublicKeyInfo representing the key.
      * @throws java.io.IOException on an error encoding the key
      */
-    public static SubjectPublicKeyInfo createSubjectPublicKeyInfo(AsymmetricKeyParameter publicKey) throws IOException
+    public static SubjectPublicKeyInfo createSubjectPublicKeyInfo(AsymmetricKeyParameter publicKey)
+        throws IOException
     {
         if (publicKey instanceof RSAKeyParameters)
         {
@@ -70,7 +77,7 @@ public class SubjectPublicKeyInfoFactory
         {
             ECPublicKeyParameters pub = (ECPublicKeyParameters)publicKey;
             ECDomainParameters domainParams = pub.getParameters();
-            ASN1Encodable      params;
+            ASN1Encodable params;
 
             if (domainParams == null)
             {
@@ -79,6 +86,49 @@ public class SubjectPublicKeyInfoFactory
             else if (domainParams instanceof ECNamedDomainParameters)
             {
                 params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
+            }
+            else if (domainParams instanceof ECGOST3410Parameters)
+            {
+
+                ECGOST3410Parameters gostParams = (ECGOST3410Parameters)domainParams;
+
+                BigInteger bX = pub.getQ().getAffineXCoord().toBigInteger();
+                BigInteger bY = pub.getQ().getAffineYCoord().toBigInteger();
+                boolean is512 = (bX.bitLength() > 256);
+
+                params = new GOST3410PublicKeyAlgParameters(gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet());
+
+                int encKeySize;
+                int offset;
+                ASN1ObjectIdentifier algIdentifier;
+                if (is512)
+                {
+                    encKeySize = 128;
+                    offset = 64;
+                    algIdentifier = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512;
+                }
+                else
+                {
+                    encKeySize = 64;
+                    offset = 32;
+                    algIdentifier = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
+                }
+
+                byte[] encKey = new byte[encKeySize];
+
+
+                extractBytes(encKey, encKeySize / 2, 0, bX);
+                extractBytes(encKey, encKeySize / 2, offset, bY);
+
+                try
+                {
+                    return new SubjectPublicKeyInfo(new AlgorithmIdentifier(algIdentifier, params), new DEROctetString(encKey));
+                }
+                catch (IOException e)
+                {
+                    return null;
+                }
+
             }
             else
             {
@@ -123,6 +173,22 @@ public class SubjectPublicKeyInfoFactory
         else
         {
             throw new IOException("key parameters not recognized");
+        }
+    }
+
+    private static void extractBytes(byte[] encKey, int size, int offSet, BigInteger bI)
+    {
+        byte[] val = bI.toByteArray();
+        if (val.length < size)
+        {
+            byte[] tmp = new byte[size];
+            System.arraycopy(val, 0, tmp, tmp.length - val.length, val.length);
+            val = tmp;
+        }
+
+        for (int i = 0; i != size; i++)
+        {
+            encKey[offSet + i] = val[val.length - 1 - i];
         }
     }
 }
