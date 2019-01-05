@@ -46,7 +46,6 @@ import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
-import org.bouncycastle.math.ec.ECCurve;
 
 /**
  * Factory for creating private key objects from PKCS8 PrivateKeyInfo objects.
@@ -196,17 +195,14 @@ public class PrivateKeyFactory
             if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
             {
 
-                ECDomainParameters ecP = ECGOST3410NamedCurves.getByName(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
-                ECCurve curve = ecP.getCurve();
+                ECDomainParameters ecP = ECGOST3410NamedCurves.getByOID(gostParams.getPublicKeyParamSet());
 
                 ecSpec = new ECGOST3410Parameters(
                     new ECNamedDomainParameters(
-                        ECGOST3410NamedCurves.getOID(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet())),
-                        curve,
-                        ecP.getG(),
-                        ecP.getN(),
-                        ecP.getH(),
-                        ecP.getSeed()), gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(), gostParams.getEncryptionParamSet());
+                        gostParams.getPublicKeyParamSet(), ecP),
+                        gostParams.getPublicKeyParamSet(),
+                        gostParams.getDigestParamSet(),
+                        gostParams.getEncryptionParamSet());
                 ASN1Encodable privKey = keyInfo.parsePrivateKey();
                 if (privKey instanceof ASN1Integer)
                 {
