@@ -1,6 +1,8 @@
 package org.bouncycastle.jsse.provider;
 
+import java.security.Principal;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,8 +12,10 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
+import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.jsse.BCExtendedSSLSession;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.RecordFormat;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
@@ -39,7 +43,15 @@ abstract class ProvSSLSessionBase
         this.lastAccessedTime = creationTime;
     }
 
+    protected abstract int getCipherSuiteTLS();
+
     protected abstract byte[] getIDArray();
+
+    protected abstract org.bouncycastle.tls.Certificate getLocalCertificateTLS();
+
+    protected abstract org.bouncycastle.tls.Certificate getPeerCertificateTLS();
+
+    protected abstract ProtocolVersion getProtocolTLS();
 
     SSLSession getExportSSLSession()
     {
@@ -73,6 +85,11 @@ abstract class ProvSSLSessionBase
         return 1 << 14; 
     }
 
+    public String getCipherSuite()
+    {
+        return sslSessionContext.getSSLContext().getCipherSuiteString(getCipherSuiteTLS());
+    }
+
     public long getCreationTime()
     {
         return creationTime;
@@ -87,6 +104,22 @@ abstract class ProvSSLSessionBase
     public long getLastAccessedTime()
     {
         return lastAccessedTime;
+    }
+
+    public Certificate[] getLocalCertificates()
+    {
+        X509Certificate[] chain = JsseUtils.getX509CertificateChain(sslSessionContext.getCrypto(), getLocalCertificateTLS());
+        if (null != chain && chain.length > 0)
+        {
+            return chain;
+        }
+
+        return null;
+    }
+
+    public Principal getLocalPrincipal()
+    {
+        return JsseUtils.getSubject(sslSessionContext.getCrypto(), getLocalCertificateTLS());
     }
 
     public String[] getLocalSupportedSignatureAlgorithms()
@@ -132,6 +165,28 @@ abstract class ProvSSLSessionBase
         }
     }
 
+    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
+    {
+        X509Certificate[] chain = JsseUtils.getX509CertificateChain(sslSessionContext.getCrypto(), getPeerCertificateTLS());
+        if (null != chain && chain.length > 0)
+        {
+            return chain;
+        }
+
+        throw new SSLPeerUnverifiedException("No peer identity established");
+    }
+
+    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException
+    {
+        X500Principal principal = JsseUtils.getSubject(sslSessionContext.getCrypto(), getPeerCertificateTLS());
+        if (null != principal)
+        {
+            return principal;
+        }
+
+        throw new SSLPeerUnverifiedException("No peer identity established");
+    }
+
     public String getPeerHost()
     {
         return peerHost;
@@ -145,6 +200,11 @@ abstract class ProvSSLSessionBase
     public String[] getPeerSupportedSignatureAlgorithms()
     {
         throw new UnsupportedOperationException();
+    }
+
+    public String getProtocol()
+    {
+        return sslSessionContext.getSSLContext().getProtocolString(getProtocolTLS());
     }
 
     public SSLSessionContext getSessionContext()
