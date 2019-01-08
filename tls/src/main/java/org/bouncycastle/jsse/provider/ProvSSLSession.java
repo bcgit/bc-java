@@ -1,12 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
-import java.security.Principal;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.auth.x500.X500Principal;
-
+import org.bouncycastle.crypto.tls.CipherSuite;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SessionParameters;
 import org.bouncycastle.tls.TlsSession;
 
@@ -28,9 +23,33 @@ class ProvSSLSession
     }
 
     @Override
+    protected int getCipherSuiteTLS()
+    {
+        return null == sessionParameters ? CipherSuite.TLS_NULL_WITH_NULL_NULL : sessionParameters.getCipherSuite();
+    }
+
+    @Override
     protected byte[] getIDArray()
     {
-        return (null == tlsSession) ? null : tlsSession.getSessionID();
+        return null == tlsSession ? null : tlsSession.getSessionID();
+    }
+
+    @Override
+    protected org.bouncycastle.tls.Certificate getLocalCertificateTLS()
+    {
+        return null == sessionParameters ? null : sessionParameters.getLocalCertificate();
+    }
+
+    @Override
+    protected org.bouncycastle.tls.Certificate getPeerCertificateTLS()
+    {
+        return null == sessionParameters ? null : sessionParameters.getPeerCertificate();
+    }
+
+    @Override
+    protected ProtocolVersion getProtocolTLS()
+    {
+        return null == sessionParameters ? null : sessionParameters.getNegotiatedVersion();
     }
 
     TlsSession getTlsSession()
@@ -38,72 +57,9 @@ class ProvSSLSession
         return tlsSession;
     }
 
-    public String getCipherSuite()
-    {
-        return sessionParameters == null
-            ?   "TLS_NULL_WITH_NULL_NULL"
-            :   sslSessionContext.getSSLContext().getCipherSuiteString(sessionParameters.getCipherSuite());
-    }
-
-    public Certificate[] getLocalCertificates()
-    {
-        if (sessionParameters != null)
-        {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(sslSessionContext.getCrypto(), sessionParameters.getLocalCertificate());
-            if (chain != null && chain.length > 0)
-            {
-                return chain;
-            }
-        }
-
-        return null;
-    }
-
-    public Principal getLocalPrincipal()
-    {
-        return sessionParameters == null
-            ?   null
-            :   JsseUtils.getSubject(sslSessionContext.getCrypto(), sessionParameters.getLocalCertificate());
-    }
-
-    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
-    {
-        if (sessionParameters != null)
-        {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(sslSessionContext.getCrypto(), sessionParameters.getPeerCertificate());
-            if (chain != null && chain.length > 0)
-            {
-                return chain;
-            }
-        }
-
-        throw new SSLPeerUnverifiedException("No peer identity established");
-    }
-
-    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException
-    {
-        if (sessionParameters != null)
-        {
-            X500Principal principal = JsseUtils.getSubject(sslSessionContext.getCrypto(), sessionParameters.getPeerCertificate());
-            if (principal != null)
-            {
-                return principal;
-            }
-        }
-
-        throw new SSLPeerUnverifiedException("No peer identity established");
-    }
-
-    public String getProtocol()
-    {
-        return sessionParameters == null
-            ?   null
-            :   sslSessionContext.getSSLContext().getProtocolString(sessionParameters.getNegotiatedVersion());
-    }
-
     public void invalidate()
     {
-        if (tlsSession != null)
+        if (null != tlsSession)
         {
             tlsSession.invalidate();
         }
@@ -111,6 +67,6 @@ class ProvSSLSession
 
     public boolean isValid()
     {
-        return tlsSession != null && tlsSession.isResumable();
+        return null != tlsSession && tlsSession.isResumable();
     }
 }

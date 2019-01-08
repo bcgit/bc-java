@@ -326,6 +326,12 @@ class ProvSSLContextSpi
 
     String getCipherSuiteString(int suite)
     {
+        // TODO[jsse] Place into "understood" cipher suite map
+        if (CipherSuite.TLS_NULL_WITH_NULL_NULL == suite)
+        {
+            return "TLS_NULL_WITH_NULL_NULL";
+        }
+
         if (TlsUtils.isValidUint16(suite))
         {
             for (Map.Entry<String, Integer> entry : supportedCipherSuites.entrySet())

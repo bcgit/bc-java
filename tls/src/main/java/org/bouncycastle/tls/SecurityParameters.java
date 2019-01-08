@@ -12,7 +12,7 @@ public class SecurityParameters
     int entity = -1;
     boolean renegotiating = false;
     boolean secureRenegotiation = false;
-    int cipherSuite = -1;
+    int cipherSuite = CipherSuite.TLS_NULL_WITH_NULL_NULL;
     final short compressionAlgorithm = CompressionMethod._null;
     short maxFragmentLength = -1;
     int prfAlgorithm = -1;
