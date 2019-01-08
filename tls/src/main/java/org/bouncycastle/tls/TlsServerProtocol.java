@@ -169,27 +169,30 @@ public class TlsServerProtocol
 
                 this.serverCredentials = validateCredentials(tlsServer.getCredentials());
 
-                Certificate serverCertificate = null;
-
-                ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
-                if (this.serverCredentials == null)
+                // Server certificate
                 {
-                    this.keyExchange.skipServerCredentials();
-                }
-                else
-                {
-                    this.keyExchange.processServerCredentials(this.serverCredentials);
+                    Certificate serverCertificate = null;
 
-                    serverCertificate = this.serverCredentials.getCertificate();
-                    sendCertificateMessage(serverCertificate, endPointHash);
-                }
-                tlsServerContext.getSecurityParametersHandshake().tlsServerEndPoint = endPointHash.toByteArray();
-                this.connection_state = CS_SERVER_CERTIFICATE;
+                    ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
+                    if (null == this.serverCredentials)
+                    {
+                        this.keyExchange.skipServerCredentials();
+                    }
+                    else
+                    {
+                        this.keyExchange.processServerCredentials(this.serverCredentials);
 
-                // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
-                if (serverCertificate == null || serverCertificate.isEmpty())
-                {
-                    this.allowCertificateStatus = false;
+                        serverCertificate = this.serverCredentials.getCertificate();
+                        sendCertificateMessage(serverCertificate, endPointHash);
+                    }
+                    tlsServerContext.getSecurityParametersHandshake().tlsServerEndPoint = endPointHash.toByteArray();
+                    this.connection_state = CS_SERVER_CERTIFICATE;
+
+                    // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
+                    if (null == serverCertificate || serverCertificate.isEmpty())
+                    {
+                        this.allowCertificateStatus = false;
+                    }
                 }
 
                 if (this.allowCertificateStatus)
@@ -417,13 +420,6 @@ public class TlsServerProtocol
     protected void notifyClientCertificate(Certificate clientCertificate)
         throws IOException
     {
-        if (peerCertificate != null)
-        {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-
-        this.peerCertificate = clientCertificate;
-
         TlsUtils.processClientCertificate(tlsServerContext, clientCertificate, certificateRequest, keyExchange,
             tlsServer);
     }
@@ -446,13 +442,11 @@ public class TlsServerProtocol
             throw new IllegalStateException();
         }
 
-        TlsContext context = getContext();
-        DigitallySigned clientCertificateVerify = DigitallySigned.parse(context, buf);
+        DigitallySigned clientCertificateVerify = DigitallySigned.parse(tlsServerContext, buf);
 
         assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerify(context, certificateRequest, peerCertificate, clientCertificateVerify,
-            prepareFinishHash);
+        TlsUtils.verifyCertificateVerify(tlsServerContext, certificateRequest, clientCertificateVerify, prepareFinishHash);
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf)
@@ -938,6 +932,8 @@ public class TlsServerProtocol
 
     protected boolean expectCertificateVerifyMessage()
     {
-        return peerCertificate != null && !peerCertificate.isEmpty() && keyExchange.requiresCertificateVerify();
+        Certificate clientCertificate = tlsServerContext.getSecurityParametersHandshake().getPeerCertificate();
+
+        return null != clientCertificate && !clientCertificate.isEmpty() && keyExchange.requiresCertificateVerify();
     }
 }

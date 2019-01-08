@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1468,10 +1470,12 @@ public class TlsUtils
         return new DigitallySigned(signatureAndHashAlgorithm, signature);
     }
 
-    static void verifyCertificateVerify(TlsContext context, CertificateRequest certificateRequest, Certificate certificate,
+    static void verifyCertificateVerify(TlsServerContext serverContext, CertificateRequest certificateRequest,
         DigitallySigned certificateVerify, TlsHandshakeHash handshakeHash) throws IOException
     {
-        TlsCertificate verifyingCert = certificate.getCertificateAt(0);
+        SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
+        Certificate clientCertificate = securityParameters.getPeerCertificate();
+        TlsCertificate verifyingCert = clientCertificate.getCertificateAt(0);
         SignatureAndHashAlgorithm sigAndHashAlg = certificateVerify.getAlgorithm();
         short signatureAlgorithm;
 
@@ -1512,13 +1516,13 @@ public class TlsUtils
             else
             {
                 byte[] hash;
-                if (isTLSv12(context))
+                if (isTLSv12(serverContext))
                 {
                     hash = handshakeHash.getFinalHash(sigAndHashAlg.getHash());
                 }
                 else
                 {
-                    hash = context.getSecurityParametersHandshake().getSessionHash();
+                    hash = securityParameters.getSessionHash();
                 }
 
                 verified = verifier.verifyRawSignature(certificateVerify, hash);
@@ -3638,10 +3642,16 @@ public class TlsUtils
         }
     }
 
-    static void processClientCertificate(TlsContext context, Certificate clientCertificate,
+    static void processClientCertificate(TlsServerContext serverContext, Certificate clientCertificate,
         CertificateRequest certificateRequest, TlsKeyExchange keyExchange, TlsServer server) throws IOException
     {
-        if (certificateRequest == null)
+        SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
+        if (null != securityParameters.getPeerCertificate())
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        if (null == certificateRequest)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -3654,10 +3664,12 @@ public class TlsUtils
         {
             if (server.shouldCheckSigAlgOfPeerCerts())
             {
-                checkSigAlgOfClientCerts(context, clientCertificate, certificateRequest);
+                checkSigAlgOfClientCerts(serverContext, clientCertificate, certificateRequest);
             }
             keyExchange.processClientCertificate(clientCertificate);
         }
+
+        securityParameters.peerCertificate = clientCertificate;
 
         /*
          * RFC 5246 7.4.6. If the client does not send any certificates, the server MAY at its
@@ -3670,22 +3682,26 @@ public class TlsUtils
         server.notifyClientCertificate(clientCertificate);
     }
 
-    static void processServerCertificate(TlsContext context, TlsClient client, Certificate serverCertificate,
+    static void processServerCertificate(TlsClientContext clientContext, TlsClient client,
         CertificateStatus serverCertificateStatus, TlsKeyExchange keyExchange, TlsAuthentication clientAuthentication,
         Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
     {
-        if (clientAuthentication == null)
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+
+        if (null == clientAuthentication)
         {
             // There was no server certificate message; check it's OK
             keyExchange.skipServerCredentials();
-            context.getSecurityParametersHandshake().tlsServerEndPoint = EMPTY_BYTES;
+            securityParameters.tlsServerEndPoint = EMPTY_BYTES;
             return;
         }
+
+        Certificate serverCertificate = securityParameters.getPeerCertificate();
 
         checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
         if (client.shouldCheckSigAlgOfPeerCerts())
         {
-            checkSigAlgOfServerCerts(context, serverCertificate);
+            checkSigAlgOfServerCerts(clientContext, serverCertificate);
         }
         keyExchange.processServerCertificate(serverCertificate);
 
@@ -3859,5 +3875,28 @@ public class TlsUtils
         }
 
         System.arraycopy(marker, 0, randomBlock, randomBlock.length - marker.length, marker.length);
+    }
+
+    static void receiveServerCertificate(TlsClientContext clientContext, ByteArrayInputStream buf) throws IOException
+    {
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+        if (null != securityParameters.getPeerCertificate())
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
+
+        Certificate serverCertificate = Certificate.parse(clientContext, buf, endPointHash);
+
+        TlsProtocol.assertEmpty(buf);
+
+        if (serverCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        securityParameters.peerCertificate = serverCertificate;
+        securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
     }
 }

@@ -1,7 +1,6 @@
 package org.bouncycastle.tls;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -175,23 +174,10 @@ public class TlsClientProtocol
             }
             case CS_SERVER_SUPPLEMENTAL_DATA:
             {
-                // Parse the Certificate message and send to cipher suite
-
-                ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
-
-                this.peerCertificate = Certificate.parse(getContext(), buf, endPointHash);
-
-                assertEmpty(buf);
-
-                if (peerCertificate.isEmpty())
-                {
-                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
-                }
-
-                tlsClientContext.getSecurityParametersHandshake().tlsServerEndPoint = endPointHash.toByteArray();
+                TlsUtils.receiveServerCertificate(tlsClientContext, buf);
 
                 this.authentication = tlsClient.getAuthentication();
-                if (this.authentication == null)
+                if (null == this.authentication)
                 {
                     throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
@@ -360,9 +346,10 @@ public class TlsClientProtocol
                 }
                 else
                 {
-                    clientCredentials = validateCredentials(this.authentication.getClientCredentials(certificateRequest));
+                    Certificate clientCertificate = null;
 
-                    if (clientCredentials == null)
+                    clientCredentials = validateCredentials(this.authentication.getClientCredentials(certificateRequest));
+                    if (null == clientCredentials)
                     {
                         this.keyExchange.skipClientCredentials();
 
@@ -372,13 +359,12 @@ public class TlsClientProtocol
                          * 
                          * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                          */
-                        sendCertificateMessage(Certificate.EMPTY_CHAIN, null);
                     }
                     else
                     {
                         this.keyExchange.processClientCredentials(clientCredentials);
 
-                        sendCertificateMessage(clientCredentials.getCertificate(), null);
+                        clientCertificate = clientCredentials.getCertificate();
 
                         if (clientCredentials instanceof TlsCredentialedSigner)
                         {
@@ -386,6 +372,8 @@ public class TlsClientProtocol
                             streamSigner = credentialedSigner.getStreamSigner();
                         }
                     }
+
+                    sendCertificateMessage(clientCertificate, null);
                 }
 
                 this.connection_state = CS_CLIENT_CERTIFICATE;
@@ -564,8 +552,8 @@ public class TlsClientProtocol
     protected void handleServerCertificate()
         throws IOException
     {
-        TlsUtils.processServerCertificate(tlsClientContext, tlsClient, peerCertificate, certificateStatus, keyExchange,
-            authentication, clientExtensions, serverExtensions);
+        TlsUtils.processServerCertificate(tlsClientContext, tlsClient, certificateStatus, keyExchange, authentication,
+            clientExtensions, serverExtensions);
     }
 
     protected void handleSupplementalData(Vector serverSupplementalData)
