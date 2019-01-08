@@ -119,7 +119,7 @@ public final class ProtocolVersion
 
     public ProtocolVersion[] downTo(ProtocolVersion min)
     {
-        if (!min.isEqualOrEarlierVersionOf(this))
+        if (!isEqualOrLaterVersionOf(min))
         {
             throw new IllegalArgumentException("'min' must be an equal or earlier version of this one");
         }
@@ -227,24 +227,44 @@ public final class ProtocolVersion
         }
     }
 
-    public boolean isEqualOrEarlierVersionOf(ProtocolVersion version)
+    public boolean isEarlierVersionOf(ProtocolVersion version)
     {
-        if (getMajorVersion() != version.getMajorVersion())
+        if (null == version || getMajorVersion() != version.getMajorVersion())
         {
             return false;
         }
-        int diffMinorVersion = version.getMinorVersion() - getMinorVersion();
+        int diffMinorVersion = getMinorVersion() - version.getMinorVersion();
+        return isDTLS() ? diffMinorVersion > 0 : diffMinorVersion < 0;
+    }
+
+    public boolean isEqualOrEarlierVersionOf(ProtocolVersion version)
+    {
+        if (null == version || getMajorVersion() != version.getMajorVersion())
+        {
+            return false;
+        }
+        int diffMinorVersion = getMinorVersion() - version.getMinorVersion();
+        return isDTLS() ? diffMinorVersion >= 0 : diffMinorVersion <= 0;
+    }
+
+    public boolean isEqualOrLaterVersionOf(ProtocolVersion version)
+    {
+        if (null == version || getMajorVersion() != version.getMajorVersion())
+        {
+            return false;
+        }
+        int diffMinorVersion = getMinorVersion() - version.getMinorVersion();
         return isDTLS() ? diffMinorVersion <= 0 : diffMinorVersion >= 0;
     }
 
     public boolean isLaterVersionOf(ProtocolVersion version)
     {
-        if (getMajorVersion() != version.getMajorVersion())
+        if (null == version || getMajorVersion() != version.getMajorVersion())
         {
             return false;
         }
-        int diffMinorVersion = version.getMinorVersion() - getMinorVersion();
-        return isDTLS() ? diffMinorVersion > 0 : diffMinorVersion < 0;
+        int diffMinorVersion = getMinorVersion() - version.getMinorVersion();
+        return isDTLS() ? diffMinorVersion < 0 : diffMinorVersion > 0;
     }
 
     public boolean equals(Object other)
