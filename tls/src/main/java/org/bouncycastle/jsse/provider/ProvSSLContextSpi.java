@@ -45,6 +45,11 @@ class ProvSSLContextSpi
     private static final String PROPERTY_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
     private static final String PROPERTY_SERVER_PROTOCOLS = "jdk.tls.server.protocols";
 
+    /*
+     * TODO[jsse] Should separate this into "understood" cipher suite int<->String maps
+     * and a Set of supported cipher suite values, so we can cover TLS_NULL_WITH_NULL_NULL and
+     * the SCSV values.
+     */
     private static final Map<String, Integer> SUPPORTED_CIPHERSUITE_MAP = createSupportedCipherSuiteMap();
     private static final Map<String, Integer> SUPPORTED_CIPHERSUITE_MAP_FIPS = createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP);
 
