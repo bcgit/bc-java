@@ -97,7 +97,7 @@ class ProvSSLSessionContext
 
         if (session == null || session.getTlsSession() != tlsSession)
         {
-            session = new ProvSSLSession(this, tlsSession, peerHost, peerPort);
+            session = new ProvSSLSession(this, peerHost, peerPort, tlsSession);
             sessionEntry = new SessionEntry(sessionID, session, sessionsQueue);
             sessionsByID.put(sessionID, sessionEntry);
         }
