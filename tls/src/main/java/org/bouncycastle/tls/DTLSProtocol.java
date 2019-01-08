@@ -61,15 +61,6 @@ public abstract class DTLSProtocol
         return maxFragmentLength;
     }
 
-    /** @deprecated */
-    protected static byte[] generateCertificate(Certificate certificate)
-        throws IOException
-    {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        certificate.encode(buf);
-        return buf.toByteArray();
-    }
-
     protected static byte[] generateCertificate(TlsContext context, Certificate certificate, OutputStream endPointHash)
         throws IOException
     {
@@ -86,9 +77,29 @@ public abstract class DTLSProtocol
         return buf.toByteArray();
     }
 
-    protected byte[] createVerifyData(TlsContext context, DTLSReliableHandshake handshake, boolean isServer)
+    protected static byte[] createVerifyData(TlsContext context, DTLSReliableHandshake handshake, boolean isServer)
     {
         return TlsUtils.calculateTLSVerifyData(context, handshake.getHandshakeHash(), isServer);
+    }
+
+    protected static void sendCertificateMessage(TlsContext context, DTLSReliableHandshake handshake,
+        Certificate certificate, OutputStream endPointHash) throws IOException
+    {
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        if (null != securityParameters.getLocalCertificate())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (null == certificate)
+        {
+            certificate = Certificate.EMPTY_CHAIN;
+        }
+
+        byte[] certificateBody = generateCertificate(context, certificate, endPointHash);
+        handshake.sendMessage(HandshakeType.certificate, certificateBody);
+
+        securityParameters.localCertificate = certificate;
     }
 
     protected static int validateSelectedCipherSuite(int selectedCipherSuite, short alertDescription)

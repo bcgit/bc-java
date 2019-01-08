@@ -73,8 +73,6 @@ public abstract class TlsProtocol
 
     protected TlsSession tlsSession = null;
     protected SessionParameters sessionParameters = null;
-    protected Certificate localCertificate = null;
-    protected Certificate peerCertificate = null;
 
     protected int[] offeredCipherSuites = null;
     protected Hashtable clientExtensions = null;
@@ -356,8 +354,6 @@ public abstract class TlsProtocol
 
         this.tlsSession = null;
         this.sessionParameters = null;
-        this.localCertificate = null;
-        this.peerCertificate = null;
 
         this.offeredCipherSuites = null;
         this.clientExtensions = null;
@@ -404,10 +400,10 @@ public abstract class TlsProtocol
                     .setCipherSuite(securityParameters.getCipherSuite())
                     .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
                     .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
-                    .setLocalCertificate(this.localCertificate)
+                    .setLocalCertificate(securityParameters.getLocalCertificate())
                     .setMasterSecret(getContext().getCrypto().adoptSecret(securityParameters.getMasterSecret()))
                     .setNegotiatedVersion(getContext().getServerVersion())
-                    .setPeerCertificate(this.peerCertificate)
+                    .setPeerCertificate(securityParameters.getPeerCertificate())
                     .setPSKIdentity(securityParameters.getPSKIdentity())
                     .setSRPIdentity(securityParameters.getSRPIdentity())
                     // TODO Consider filtering extensions that aren't relevant to resumed sessions
@@ -1281,28 +1277,26 @@ public abstract class TlsProtocol
         safeWriteRecord(ContentType.alert, alert, 0, 2);
     }
 
-    /** @deprecated */
-    protected void sendCertificateMessage(Certificate certificate)
-        throws IOException
-    {
-        sendCertificateMessage(certificate, null);
-    }
-
     protected void sendCertificateMessage(Certificate certificate, OutputStream endPointHash)
         throws IOException
     {
-        if (certificate == null)
+        TlsContext context = getContext();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        if (null != securityParameters.getLocalCertificate())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (null == certificate)
         {
             certificate = Certificate.EMPTY_CHAIN;
         }
 
         HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate);
-
-        certificate.encode(getContext(), message, endPointHash);
-
+        certificate.encode(context, message, endPointHash);
         message.writeToRecordStream();
 
-        this.localCertificate = certificate;
+        securityParameters.localCertificate = certificate;
     }
 
     protected void sendChangeCipherSpecMessage()

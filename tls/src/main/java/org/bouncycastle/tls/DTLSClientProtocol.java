@@ -186,11 +186,9 @@ public class DTLSClientProtocol
 
         state.keyExchange = TlsUtils.initKeyExchangeClient(state.clientContext, state.client);
 
-        Certificate serverCertificate = null;
-
         if (serverMessage.getType() == HandshakeType.certificate)
         {
-            serverCertificate = processServerCertificate(state, serverMessage.getBody());
+            processServerCertificate(state, serverMessage.getBody());
             serverMessage = handshake.receiveMessage();
         }
         else
@@ -209,8 +207,8 @@ public class DTLSClientProtocol
             // Okay, CertificateStatus is optional
         }
 
-        TlsUtils.processServerCertificate(state.clientContext, state.client, serverCertificate, state.certificateStatus,
-            state.keyExchange, state.authentication, state.clientExtensions, state.serverExtensions);
+        TlsUtils.processServerCertificate(state.clientContext, state.client, state.certificateStatus, state.keyExchange,
+            state.authentication, state.clientExtensions, state.serverExtensions);
 
         if (serverMessage.getType() == HandshakeType.server_key_exchange)
         {
@@ -260,9 +258,7 @@ public class DTLSClientProtocol
             handshake.sendMessage(HandshakeType.supplemental_data, supplementalDataBody);
         }
 
-        Certificate clientCertificate = null;
-
-        if (state.certificateRequest != null)
+        if (null != state.certificateRequest)
         {
             state.clientCredentials = TlsProtocol.validateCredentials(
                 state.authentication.getClientCredentials(state.certificateRequest));
@@ -273,23 +269,20 @@ public class DTLSClientProtocol
              * 
              * NOTE: In previous RFCs, this was SHOULD instead of MUST.
              */
-            if (state.clientCredentials != null)
+
+            Certificate clientCertificate = null;
+            if (null != state.clientCredentials)
             {
                 clientCertificate = state.clientCredentials.getCertificate();
             }
-            if (clientCertificate == null)
-            {
-                clientCertificate = Certificate.EMPTY_CHAIN;
-            }
 
-            byte[] certificateBody = generateCertificate(state.clientContext, clientCertificate, null);
-            handshake.sendMessage(HandshakeType.certificate, certificateBody);
+            sendCertificateMessage(state.clientContext, handshake, clientCertificate, null);
         }
 
         TlsCredentialedSigner credentialedSigner = null;
         TlsStreamSigner streamSigner = null;
 
-        if (state.clientCredentials != null)
+        if (null != state.clientCredentials)
         {
             state.keyExchange.processClientCredentials(state.clientCredentials);
             
@@ -351,10 +344,10 @@ public class DTLSClientProtocol
             .setCipherSuite(securityParameters.getCipherSuite())
             .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
             .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
-            .setLocalCertificate(clientCertificate)
+            .setLocalCertificate(securityParameters.getLocalCertificate())
             .setMasterSecret(state.clientContext.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
             .setNegotiatedVersion(state.clientContext.getServerVersion())
-            .setPeerCertificate(serverCertificate)
+            .setPeerCertificate(securityParameters.getPeerCertificate())
             .setPSKIdentity(securityParameters.getPSKIdentity())
             .setSRPIdentity(securityParameters.getSRPIdentity())
             // TODO Consider filtering extensions that aren't relevant to resumed sessions
@@ -601,30 +594,16 @@ public class DTLSClientProtocol
         state.client.notifyNewSessionTicket(newSessionTicket);
     }
 
-    protected Certificate processServerCertificate(ClientHandshakeState state, byte[] body)
+    protected void processServerCertificate(ClientHandshakeState state, byte[] body)
         throws IOException
     {
-        ByteArrayInputStream buf = new ByteArrayInputStream(body);
-        ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
-
-        Certificate serverCertificate = Certificate.parse(state.clientContext, buf, endPointHash);
-
-        TlsProtocol.assertEmpty(buf);
-
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
-        state.clientContext.getSecurityParametersHandshake().tlsServerEndPoint = endPointHash.toByteArray();
+        TlsUtils.receiveServerCertificate(state.clientContext, new ByteArrayInputStream(body));
 
         state.authentication = state.client.getAuthentication();
-        if (state.authentication == null)
+        if (null == state.authentication)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-
-        return serverCertificate;
     }
 
     protected void processServerHello(ClientHandshakeState state, byte[] body)
