@@ -632,7 +632,7 @@ public class TlsClientProtocol
                 : server_version;
 
             this.recordStream.setWriteVersion(legacy_record_version);
-            tlsClientContext.setServerVersion(server_version);
+            securityParameters.negotiatedVersion = server_version;
         }
 
         this.tlsClient.notifyServerVersion(server_version);
