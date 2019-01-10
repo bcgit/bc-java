@@ -1,6 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
-import org.bouncycastle.crypto.tls.CipherSuite;
+import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SessionParameters;
 import org.bouncycastle.tls.TlsSession;
