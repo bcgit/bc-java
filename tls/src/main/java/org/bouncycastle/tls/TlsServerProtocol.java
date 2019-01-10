@@ -761,7 +761,7 @@ public class TlsServerProtocol
                 : server_version;
 
             recordStream.setWriteVersion(legacy_record_version);
-            tlsServerContext.setServerVersion(server_version);
+            securityParameters.negotiatedVersion = server_version;
         }
 
         securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);

@@ -36,7 +36,6 @@ abstract class AbstractTlsContext
 
     private ProtocolVersion[] clientSupportedVersions = null;
     private ProtocolVersion clientVersion = null;
-    private ProtocolVersion serverVersion = null;
     private TlsSession session = null;
     private Object userObject = null;
 
@@ -60,7 +59,8 @@ abstract class AbstractTlsContext
         if (null != securityParametersConnection)
         {
             securityParametersHandshake.renegotiating = true;
-            securityParametersHandshake.secureRenegotiation = securityParametersConnection.secureRenegotiation;
+            securityParametersHandshake.secureRenegotiation = securityParametersConnection.isSecureRenegotiation();
+            securityParametersHandshake.negotiatedVersion = securityParametersConnection.getNegotiatedVersion();
         }
 
         peer.notifyHandshakeBeginning();
@@ -130,12 +130,7 @@ abstract class AbstractTlsContext
 
     public ProtocolVersion getServerVersion()
     {
-        return serverVersion;
-    }
-
-    void setServerVersion(ProtocolVersion serverVersion)
-    {
-        this.serverVersion = serverVersion;
+        return getSecurityParameters().getNegotiatedVersion();
     }
 
     public TlsSession getResumableSession()
