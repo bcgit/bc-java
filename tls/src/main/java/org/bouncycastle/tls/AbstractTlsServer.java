@@ -37,6 +37,11 @@ public abstract class AbstractTlsServer
         super(crypto);
     }
 
+    protected boolean allowCertificateStatus()
+    {
+        return true;
+    }
+
     protected boolean allowEncryptThenMAC()
     {
         return true;
@@ -403,7 +408,7 @@ public abstract class AbstractTlsServer
                 new short[]{ ECPointFormat.uncompressed });
         }
 
-        if (this.certificateStatusRequest != null)
+        if (null != this.certificateStatusRequest && allowCertificateStatus())
         {
             /*
              * RFC 6066 8. If a server returns a "CertificateStatus" message, then the server MUST
