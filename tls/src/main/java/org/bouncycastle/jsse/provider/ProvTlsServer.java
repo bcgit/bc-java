@@ -71,6 +71,12 @@ class ProvTlsServer
     }
 
     @Override
+    protected boolean allowCertificateStatus()
+    {
+        return false;
+    }
+
+    @Override
     protected int getMaximumNegotiableCurveBits()
     {
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
