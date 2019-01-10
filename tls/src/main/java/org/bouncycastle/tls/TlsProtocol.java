@@ -402,7 +402,7 @@ public abstract class TlsProtocol
                     .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
                     .setLocalCertificate(securityParameters.getLocalCertificate())
                     .setMasterSecret(getContext().getCrypto().adoptSecret(securityParameters.getMasterSecret()))
-                    .setNegotiatedVersion(getContext().getServerVersion())
+                    .setNegotiatedVersion(securityParameters.getNegotiatedVersion())
                     .setPeerCertificate(securityParameters.getPeerCertificate())
                     .setPSKIdentity(securityParameters.getPSKIdentity())
                     .setSRPIdentity(securityParameters.getSRPIdentity())

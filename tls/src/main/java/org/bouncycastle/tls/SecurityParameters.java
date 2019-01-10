@@ -36,6 +36,7 @@ public class SecurityParameters
     int keyExchangeAlgorithm = -1;
     Certificate localCertificate = null;
     Certificate peerCertificate = null;
+    ProtocolVersion negotiatedVersion = null;
 
     // TODO[tls-ops] Investigate whether we can handle verify data using TlsSecret
     byte[] localVerifyData = null;
@@ -221,5 +222,10 @@ public class SecurityParameters
     public Certificate getPeerCertificate()
     {
         return peerCertificate;
+    }
+
+    public ProtocolVersion getNegotiatedVersion()
+    {
+        return negotiatedVersion;
     }
 }

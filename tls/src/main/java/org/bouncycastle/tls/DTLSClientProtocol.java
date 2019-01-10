@@ -346,7 +346,7 @@ public class DTLSClientProtocol
             .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
             .setLocalCertificate(securityParameters.getLocalCertificate())
             .setMasterSecret(state.clientContext.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
-            .setNegotiatedVersion(state.clientContext.getServerVersion())
+            .setNegotiatedVersion(securityParameters.getNegotiatedVersion())
             .setPeerCertificate(securityParameters.getPeerCertificate())
             .setPSKIdentity(securityParameters.getPSKIdentity())
             .setSRPIdentity(securityParameters.getSRPIdentity())
@@ -877,7 +877,7 @@ public class DTLSClientProtocol
                 throw new TlsFatalAlert(AlertDescription.protocol_version);
             }
 
-            context.setServerVersion(server_version);
+            context.getSecurityParametersHandshake().negotiatedVersion = server_version;
             state.client.notifyServerVersion(server_version);
         }
         else if (!currentServerVersion.equals(server_version))

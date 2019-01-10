@@ -299,7 +299,7 @@ public class DTLSServerProtocol
             .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
             .setLocalCertificate(securityParameters.getLocalCertificate())
             .setMasterSecret(state.serverContext.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
-            .setNegotiatedVersion(state.serverContext.getServerVersion())
+            .setNegotiatedVersion(securityParameters.getNegotiatedVersion())
             .setPeerCertificate(securityParameters.getPeerCertificate())
             .setPSKIdentity(securityParameters.getPSKIdentity())
             .setSRPIdentity(securityParameters.getSRPIdentity())
@@ -360,7 +360,7 @@ public class DTLSServerProtocol
 //                : server_version;
 //
 //            recordLayer.setWriteVersion(legacy_record_version);
-            context.setServerVersion(server_version);
+            securityParameters.negotiatedVersion = server_version;
         }
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), context);
