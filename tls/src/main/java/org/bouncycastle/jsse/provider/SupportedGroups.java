@@ -1,6 +1,5 @@
 package org.bouncycastle.jsse.provider;
 
-import java.util.Locale;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -8,6 +7,7 @@ import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.NamedGroupRole;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 abstract class SupportedGroups
 {
@@ -58,7 +58,7 @@ abstract class SupportedGroups
             return null;
         }
 
-        String[] entries = JsseUtils.stripDoubleQuotes(prop.trim()).toLowerCase(Locale.ENGLISH).split(",");
+        String[] entries = Strings.toLowerCase(JsseUtils.stripDoubleQuotes(prop.trim())).split(",");
         int[] result = new int[entries.length];
         int count = 0;
         for (String entry : entries)
