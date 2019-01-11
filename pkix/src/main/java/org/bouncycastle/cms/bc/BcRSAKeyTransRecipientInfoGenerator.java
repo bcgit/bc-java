@@ -18,6 +18,6 @@ public class BcRSAKeyTransRecipientInfoGenerator
     public BcRSAKeyTransRecipientInfoGenerator(X509CertificateHolder recipientCert)
         throws IOException
     {
-        super(recipientCert, new BcRSAAsymmetricKeyWrapper(recipientCert.getSubjectPublicKeyInfo().getAlgorithmId(), recipientCert.getSubjectPublicKeyInfo()));
+        super(recipientCert, new BcRSAAsymmetricKeyWrapper(recipientCert.getSubjectPublicKeyInfo().getAlgorithm(), recipientCert.getSubjectPublicKeyInfo()));
     }
 }

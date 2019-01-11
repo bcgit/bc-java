@@ -9,11 +9,9 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
-import org.bouncycastle.crypto.StreamCipher;
-import org.bouncycastle.crypto.io.CipherOutputStream;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.util.CipherFactory;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Integers;
@@ -94,9 +92,9 @@ public class BcCMSContentEncryptorBuilder
 
             encKey = new KeyParameter(keyGen.generateKey());
 
-            algorithmIdentifier = helper.generateAlgorithmIdentifier(encryptionOID, encKey, random);
+            algorithmIdentifier = helper.generateEncryptionAlgID(encryptionOID, encKey, random);
 
-            cipher = helper.createContentCipher(true, encKey, algorithmIdentifier);
+            cipher = EnvelopedDataHelper.createContentCipher(true, encKey, algorithmIdentifier);
         }
 
         public AlgorithmIdentifier getAlgorithmIdentifier()
@@ -106,14 +104,7 @@ public class BcCMSContentEncryptorBuilder
 
         public OutputStream getOutputStream(OutputStream dOut)
         {
-            if (cipher instanceof BufferedBlockCipher)
-            {
-                return new CipherOutputStream(dOut, (BufferedBlockCipher)cipher);
-            }
-            else
-            {
-                return new CipherOutputStream(dOut, (StreamCipher)cipher);
-            }
+            return CipherFactory.createOutputStream(dOut, cipher);
         }
 
         public GenericKey getKey()

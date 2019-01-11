@@ -5,6 +5,11 @@ public class CRMFException
 {
     private Throwable cause;
 
+    public CRMFException(String msg)
+    {
+        this(msg, null);
+    }
+
     public CRMFException(String msg, Throwable cause)
     {
         super(msg);
