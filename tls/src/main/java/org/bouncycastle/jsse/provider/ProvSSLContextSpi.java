@@ -224,7 +224,7 @@ class ProvSSLContextSpi
             return null;
         }
 
-        String[] entries = JsseUtils.stripQuotes(prop.trim()).split(",");
+        String[] entries = JsseUtils.stripDoubleQuotes(prop.trim()).split(",");
         String[] result = new String[entries.length];
         int count = 0;
         for (String entry : entries)
