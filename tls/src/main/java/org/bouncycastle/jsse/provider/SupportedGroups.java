@@ -58,7 +58,7 @@ abstract class SupportedGroups
             return null;
         }
 
-        String[] entries = JsseUtils.stripQuotes(prop.trim()).toLowerCase(Locale.ENGLISH).split(",");
+        String[] entries = JsseUtils.stripDoubleQuotes(prop.trim()).toLowerCase(Locale.ENGLISH).split(",");
         int[] result = new int[entries.length];
         int count = 0;
         for (String entry : entries)
