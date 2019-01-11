@@ -122,11 +122,6 @@ abstract class ProvSSLSessionBase
         return JsseUtils.getSubject(sslSessionContext.getCrypto(), getLocalCertificateTLS());
     }
 
-    public String[] getLocalSupportedSignatureAlgorithms()
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public int getPacketBufferSize()
     {
         /*
@@ -195,11 +190,6 @@ abstract class ProvSSLSessionBase
     public int getPeerPort()
     {
         return peerPort;
-    }
-
-    public String[] getPeerSupportedSignatureAlgorithms()
-    {
-        throw new UnsupportedOperationException();
     }
 
     public String getProtocol()
