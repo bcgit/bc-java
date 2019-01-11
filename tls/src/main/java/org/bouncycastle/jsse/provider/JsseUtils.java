@@ -402,12 +402,22 @@ abstract class JsseUtils
         return null;
     }
 
-    static String stripQuotes(String s)
+    static String stripDoubleQuotes(String s)
+    {
+        return stripOuterChars(s, '"', '"');
+    }
+
+    static String stripSquareBrackets(String s)
+    {
+        return stripOuterChars(s, '[', ']');
+    }
+
+    private static String stripOuterChars(String s, char openChar, char closeChar)
     {
         if (s != null)
         {
             int sLast = s.length() - 1;
-            if (sLast > 0 && s.charAt(0) == '"' && s.charAt(sLast) == '"')
+            if (sLast > 0 && s.charAt(0) == openChar && s.charAt(sLast) == closeChar)
             {
                 return s.substring(1, sLast);
             }
