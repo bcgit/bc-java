@@ -1,5 +1,8 @@
 package org.bouncycastle.jsse.provider;
 
+import java.util.List;
+
+import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SessionParameters;
@@ -41,15 +44,39 @@ class ProvSSLSession
     }
 
     @Override
+    public String[] getLocalSupportedSignatureAlgorithms()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected org.bouncycastle.tls.Certificate getPeerCertificateTLS()
     {
         return null == sessionParameters ? null : sessionParameters.getPeerCertificate();
     }
 
     @Override
+    public String[] getPeerSupportedSignatureAlgorithms()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected ProtocolVersion getProtocolTLS()
     {
         return null == sessionParameters ? null : sessionParameters.getNegotiatedVersion();
+    }
+
+    @Override
+    public List<BCSNIServerName> getRequestedServerNames()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<byte[]> getStatusResponses()
+    {
+        throw new UnsupportedOperationException();
     }
 
     TlsSession getTlsSession()

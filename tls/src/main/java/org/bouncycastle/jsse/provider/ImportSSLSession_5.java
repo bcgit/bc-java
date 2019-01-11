@@ -2,12 +2,15 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.util.Collections;
+import java.util.List;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
 import org.bouncycastle.jsse.BCExtendedSSLSession;
+import org.bouncycastle.jsse.BCSNIServerName;
 
 final class ImportSSLSession_5
     extends BCExtendedSSLSession
@@ -69,7 +72,7 @@ final class ImportSSLSession_5
     @Override
     public String[] getLocalSupportedSignatureAlgorithms()
     {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public int getPacketBufferSize()
@@ -105,7 +108,7 @@ final class ImportSSLSession_5
     @Override
     public String[] getPeerSupportedSignatureAlgorithms()
     {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public String getProtocol()
@@ -113,9 +116,21 @@ final class ImportSSLSession_5
         return sslSession.getProtocol();
     }
 
+    @Override
+    public List<BCSNIServerName> getRequestedServerNames()
+    {
+        return Collections.<BCSNIServerName>emptyList();
+    }
+
     public SSLSessionContext getSessionContext()
     {
         return sslSession.getSessionContext();
+    }
+
+    @Override
+    public List<byte[]> getStatusResponses()
+    {
+        return Collections.<byte[]>emptyList();
     }
 
     public Object getValue(String name)
