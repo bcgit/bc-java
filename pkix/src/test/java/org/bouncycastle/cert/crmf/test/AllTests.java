@@ -38,6 +38,7 @@ import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.crmf.CRMFException;
@@ -47,6 +48,8 @@ import org.bouncycastle.cert.crmf.EncryptedValueParser;
 import org.bouncycastle.cert.crmf.PKIArchiveControl;
 import org.bouncycastle.cert.crmf.PKMACBuilder;
 import org.bouncycastle.cert.crmf.ValueDecryptorGenerator;
+import org.bouncycastle.cert.crmf.bc.BcCRMFEncryptorBuilder;
+import org.bouncycastle.cert.crmf.bc.BcEncryptedValueBuilder;
 import org.bouncycastle.cert.crmf.bc.BcFixedLengthMGF1Padder;
 import org.bouncycastle.cert.crmf.jcajce.JcaCertificateRequestMessage;
 import org.bouncycastle.cert.crmf.jcajce.JcaCertificateRequestMessageBuilder;
@@ -67,9 +70,12 @@ import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientId;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.operator.bc.BcRSAAsymmetricKeyWrapper;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
@@ -268,6 +274,34 @@ public class AllTests
         JcaEncryptedValueBuilder build = new JcaEncryptedValueBuilder(new JceAsymmetricKeyWrapper(kp.getPublic()).setProvider(BC), new JceCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
 
         EncryptedValue value = build.build(kp.getPrivate());
+
+        ValueDecryptorGenerator decGen = new JceAsymmetricValueDecryptorGenerator(kp.getPrivate()).setProvider(BC);
+
+        EncryptedValueParser  parser = new EncryptedValueParser(value);
+
+        PrivateKeyInfo privInfo = parser.readPrivateKeyInfo(decGen);
+
+        TestCase.assertEquals(privInfo.getPrivateKeyAlgorithm(), parser.getIntendedAlg());
+
+        TestCase.assertTrue(Arrays.areEqual(privInfo.getEncoded(), kp.getPrivate().getEncoded()));
+    }
+
+    public void testBcEncryptedValueWithKey()
+        throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(512);
+
+        KeyPair kp = kGen.generateKeyPair();
+
+        BcEncryptedValueBuilder build = new BcEncryptedValueBuilder(new BcRSAAsymmetricKeyWrapper(
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE),
+            PublicKeyFactory.createKey(SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()))),
+            new BcCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).build());
+
+        EncryptedValue value = build.build(
+            PrivateKeyFactory.createKey(PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded())));
 
         ValueDecryptorGenerator decGen = new JceAsymmetricValueDecryptorGenerator(kp.getPrivate()).setProvider(BC);
 
