@@ -1,6 +1,8 @@
 package org.bouncycastle.jsse.provider;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -151,7 +153,53 @@ class ReflectionUtil
         });
     }
 
+    static Integer getStaticInt(final String className, final String fieldName)
+    {
+        return AccessController.doPrivileged(new PrivilegedAction<Integer>()
+        {
+            public Integer run()
+            {
+                try
+                {
+                    ClassLoader classLoader = ReflectionUtil.class.getClassLoader();
+                    Class<?> clazz = (null == classLoader)
+                        ?   Class.forName(className)
+                        :   classLoader.loadClass(className);
+
+                    if (null != clazz)
+                    {
+                        Field field = clazz.getField(fieldName);
+                        if (null != field)
+                        {
+                            Class<?> fieldType = field.getType();
+                            if (int.class == fieldType)
+                            {
+                                return field.getInt(null);
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                }
+
+                return null;
+            }
+        });
+    }
+
+    static Integer getStaticIntOrDefault(final String className, final String fieldName, int defaultValue)
+    {
+        Integer value = getStaticInt(className, fieldName);
+        return null == value ? defaultValue : value.intValue();
+    }
+
     static Object invokeGetter(final Object obj, final Method method)
+    {
+        return invokeMethod(obj, method);
+    }
+
+    static Object invokeMethod(final Object obj, final Method method, final Object... args)
     {
         return AccessController.doPrivileged(new PrivilegedAction<Object>()
         {
@@ -159,33 +207,22 @@ class ReflectionUtil
             {
                 try
                 {
-                    return method.invoke(obj);
+                    return method.invoke(obj, args);
                 }
-                catch (Exception e)
+                catch (IllegalAccessException e)
                 {
-                    // TODO: log?
+                    throw new RuntimeException(e);
                 }
-                return null;
+                catch (InvocationTargetException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
 
     static void invokeSetter(final Object obj, final Method method, final Object arg)
     {
-        AccessController.doPrivileged(new PrivilegedAction<Void>()
-        {
-            public Void run()
-            {
-                try
-                {
-                    method.invoke(obj, arg);
-                }
-                catch (Exception e)
-                {
-                    // TODO: log?
-                }
-                return null;
-            }
-        });
+        invokeMethod(obj, method, arg);
     }
 }
