@@ -4,20 +4,91 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class ServerName
-{
-    protected short nameType;
-    protected Object name;
+import org.bouncycastle.util.Strings;
 
+public final class ServerName
+{
+    private final short nameType;
+    private final byte[] nameData;
+
+    /**
+     * @deprecated Use {{@link #ServerName(short, byte[])} instead.
+     */
     public ServerName(short nameType, Object name)
     {
-        if (!isCorrectType(nameType, name))
+        if (null == name)
         {
-            throw new IllegalArgumentException("'name' is not an instance of the correct type");
+            throw new NullPointerException("'name' cannot be null");
+        }
+
+        byte[] nameData;
+        switch (nameType)
+        {
+        case NameType.host_name:
+        {
+            if (name instanceof byte[])
+            {
+                nameData = (byte[])name;
+                if (TlsUtils.containsNonAscii(nameData))
+                {
+                    throw new IllegalArgumentException("'name' must be ASCII for host_name");
+                }
+            }
+            else if (name instanceof String)
+            {
+                String s = (String)name;
+                if (TlsUtils.containsNonAscii(s))
+                {
+                    throw new IllegalArgumentException("'name' must be ASCII for host_name");
+                }
+                nameData = Strings.toByteArray(s);
+            }
+            else
+            {
+                throw new IllegalArgumentException("'name' is not an instance of a supported type");
+            }
+            break;
+        }
+        default:
+            throw new IllegalArgumentException("'nameType' is an unsupported NameType");
+        }
+
+        if (nameData.length < 1 || !TlsUtils.isValidUint16(nameData.length))
+        {
+            throw new IllegalArgumentException("'name' must have length from 1 to 65535");
         }
 
         this.nameType = nameType;
-        this.name = name;
+        this.nameData = nameData;
+    }
+
+    public ServerName(short nameType, byte[] nameData)
+    {
+        if (null == nameData)
+        {
+            throw new NullPointerException("'nameData' cannot be null");
+        }
+        if (nameData.length < 1 || !TlsUtils.isValidUint16(nameData.length))
+        {
+            throw new IllegalArgumentException("'nameData' must have length from 1 to 65535");
+        }
+
+        switch (nameType)
+        {
+        case NameType.host_name:
+        {
+            if (TlsUtils.containsNonAscii(nameData))
+            {
+                throw new IllegalArgumentException("'nameData' must be ASCII for host_name");
+            }
+            break;
+        }
+        default:
+            throw new IllegalArgumentException("'nameType' is an unsupported NameType");
+        }
+
+        this.nameType = nameType;
+        this.nameData = nameData;
     }
 
     public short getNameType()
@@ -25,18 +96,26 @@ public class ServerName
         return nameType;
     }
 
-    public Object getName()
+    public byte[] getNameData()
     {
-        return name;
+        return nameData;
     }
 
+    /**
+     * A convenience method for returning a host_name as an ASCII string. Note that this method does
+     * not attempt to recognize Internationalized Domain Names (see RFC 5890); further processing
+     * may be required to support them.
+     * 
+     * @deprecated Use {{@link #getNameData()} instead.
+     */
     public String getHostName()
     {
-        if (!isCorrectType(NameType.host_name, name))
+        if (NameType.host_name != nameType)
         {
-            throw new IllegalStateException("'name' is not a HostName string");
+            throw new IllegalStateException("Not of type host_name");
         }
-        return (String)name;
+
+        return Strings.fromByteArray(nameData);
     }
 
     /**
@@ -53,12 +132,7 @@ public class ServerName
         switch (nameType)
         {
         case NameType.host_name:
-            byte[] asciiEncoding = ((String)name).getBytes("ASCII");
-            if (asciiEncoding.length < 1)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-            TlsUtils.writeOpaque16(asciiEncoding, output);
+            TlsUtils.writeOpaque16(nameData, output);
             break;
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -76,31 +150,23 @@ public class ServerName
     public static ServerName parse(InputStream input) throws IOException
     {
         short name_type = TlsUtils.readUint8(input);
-        Object name;
+        byte[] nameData;
 
         switch (name_type)
         {
         case NameType.host_name:
         {
-            byte[] asciiEncoding = TlsUtils.readOpaque16(input, 1);
-            name = new String(asciiEncoding, "ASCII");
+            nameData = TlsUtils.readOpaque16(input, 1);
+            if (TlsUtils.containsNonAscii(nameData))
+            {
+                throw new TlsFatalAlert(AlertDescription.decode_error);
+            }
             break;
         }
         default:
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
-        return new ServerName(name_type, name);
-    }
-
-    protected static boolean isCorrectType(short nameType, Object name)
-    {
-        switch (nameType)
-        {
-        case NameType.host_name:
-            return name instanceof String;
-        default:
-            throw new IllegalArgumentException("'nameType' is an unsupported NameType");
-        }
+        return new ServerName(name_type, nameData);
     }
 }

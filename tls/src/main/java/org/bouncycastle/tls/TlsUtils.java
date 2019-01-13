@@ -3899,4 +3899,30 @@ public class TlsUtils
         securityParameters.peerCertificate = serverCertificate;
         securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
     }
+
+    public static boolean containsNonAscii(byte[] bs)
+    {
+        for (int i = 0; i < bs.length; ++i)
+        {
+            int c = bs[i] & 0xFF;;
+            if (c >= 0x80)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean containsNonAscii(String s)
+    {
+        for (int i = 0; i < s.length(); ++i)
+        {
+            int c = s.charAt(i);
+            if (c >= 0x80)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
