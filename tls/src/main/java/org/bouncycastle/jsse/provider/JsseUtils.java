@@ -376,7 +376,7 @@ abstract class JsseUtils
         switch (serverName.getNameType())
         {
         case BCStandardConstants.SNI_HOST_NAME:
-            return new BCSNIHostName(serverName.getHostName());
+            return new BCSNIHostName(serverName.getNameData());
         default:
             return null;
         }
