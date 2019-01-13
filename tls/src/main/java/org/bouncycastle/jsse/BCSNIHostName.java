@@ -1,8 +1,10 @@
 package org.bouncycastle.jsse;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 import java.util.regex.Pattern;
+
+import org.bouncycastle.jsse.provider.IDNUtil;
+import org.bouncycastle.util.Strings;
 
 public final class BCSNIHostName extends BCSNIServerName
 {
@@ -18,42 +20,18 @@ public final class BCSNIHostName extends BCSNIServerName
 
     private final String hostName;
 
-    private static String fromAscii(byte[] bs)
-    {
-        try
-        {
-            return new String(bs, "ASCII");
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static byte[] toAscii(String s)
-    {
-        try
-        {
-            return s.getBytes("ASCII");
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
     public BCSNIHostName(String hostName)
     {
-        super(BCStandardConstants.SNI_HOST_NAME, toAscii(hostName));
+        super(BCStandardConstants.SNI_HOST_NAME, Strings.toByteArray(hostName = normalizeHostName(hostName)));
 
         this.hostName = hostName;
     }
 
-    public BCSNIHostName(byte[] asciiEncoding)
+    public BCSNIHostName(byte[] utf8Encoding)
     {
-        super(BCStandardConstants.SNI_HOST_NAME, asciiEncoding);
+        super(BCStandardConstants.SNI_HOST_NAME, utf8Encoding);
 
-        this.hostName = fromAscii(asciiEncoding);
+        this.hostName = normalizeHostName(Strings.fromUTF8ByteArray(utf8Encoding));
     }
 
     public String getAsciiName()
@@ -80,6 +58,27 @@ public final class BCSNIHostName extends BCSNIServerName
         return hostName.toUpperCase(Locale.ENGLISH).hashCode();
     }
 
+    private static String normalizeHostName(String hostName)
+    {
+        if (null == hostName)
+        {
+            throw new NullPointerException("'hostName' cannot be null");
+        }
+
+        hostName = IDNUtil.toASCII(hostName, IDNUtil.USE_STD3_ASCII_RULES);
+
+        if (hostName.length() < 1)
+        {
+            throw new IllegalArgumentException("SNI host_name cannot be empty");
+        }
+        if (hostName.endsWith("."))
+        {
+            throw new IllegalArgumentException("SNI host_name cannot end with a separator");
+        }
+
+        return hostName;
+    }
+
     private static final class BCSNIHostNameMatcher
         extends BCSNIMatcher
     {
@@ -94,14 +93,44 @@ public final class BCSNIHostName extends BCSNIServerName
 
         public boolean matches(BCSNIServerName serverName)
         {
-            if (serverName == null || serverName.getType() != BCStandardConstants.SNI_HOST_NAME)
+            if (null == serverName || BCStandardConstants.SNI_HOST_NAME != serverName.getType())
             {
                 return false;
             }
 
-            String hostName = fromAscii(serverName.getEncoded());
+            String asciiName;
+            try
+            {
+                asciiName = getAsciiHostName(serverName);
+            }
+            catch (RuntimeException e)
+            {
+                return false;
+            }
 
-            return pattern.matcher(hostName).matches();
+            if (pattern.matcher(asciiName).matches())
+            {
+                return true;
+            }
+
+            String unicodeName = IDNUtil.toUnicode(asciiName, 0);
+            if (!asciiName.equals(unicodeName)
+                && pattern.matcher(unicodeName).matches())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private String getAsciiHostName(BCSNIServerName serverName)
+        {
+            if (serverName instanceof BCSNIHostName)
+            {
+                return ((BCSNIHostName)serverName).getAsciiName();
+            }
+
+            return normalizeHostName(Strings.fromUTF8ByteArray(serverName.getEncoded()));
         }
     }
 }
