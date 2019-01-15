@@ -25,7 +25,7 @@ class ProvSSLSessionContext
     private static Logger LOG = Logger.getLogger(ProvSSLSessionContext.class.getName());
 
     private static final int provSessionCacheSize = PropertyUtils
-        .getIntegerSystemProperty("javax.net.ssl.sessionCacheSize", 0, 0, Integer.MAX_VALUE);
+        .getIntegerSystemProperty("javax.net.ssl.sessionCacheSize", 20480, 0, Integer.MAX_VALUE);
 
     // NOTE: This is configured as a simple LRU cache using the "access order" constructor
     @SuppressWarnings("serial")
