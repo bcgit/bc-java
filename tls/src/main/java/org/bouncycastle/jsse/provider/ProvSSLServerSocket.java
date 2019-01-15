@@ -160,11 +160,14 @@ class ProvSSLServerSocket
     }
 
     @Override
-    public synchronized void setUseClientMode(boolean mode)
+    public synchronized void setUseClientMode(boolean useClientMode)
     {
-        this.useClientMode = mode;
+        if (this.useClientMode != useClientMode)
+        {
+            context.updateDefaultProtocols(sslParameters, !useClientMode);
 
-        context.updateDefaultProtocols(sslParameters, !useClientMode);
+            this.useClientMode = useClientMode;
+        }
     }
 
     @Override
