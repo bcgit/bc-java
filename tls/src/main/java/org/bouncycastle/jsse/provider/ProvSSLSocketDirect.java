@@ -301,21 +301,19 @@ class ProvSSLSocketDirect
     }
 
     @Override
-    public synchronized void setUseClientMode(boolean mode)
+    public synchronized void setUseClientMode(boolean useClientMode)
     {
-        if (this.useClientMode == mode)
-        {
-            return;
-        }
-
-        if (protocol != null)
+        if (null != protocol)
         {
             throw new IllegalArgumentException("Mode cannot be changed after the initial handshake has begun");
         }
 
-        this.useClientMode = mode;
+        if (this.useClientMode != useClientMode)
+        {
+            context.updateDefaultProtocols(sslParameters, !useClientMode);
 
-        context.updateDefaultProtocols(sslParameters, !useClientMode);
+            this.useClientMode = useClientMode;
+        }
     }
 
     @Override
