@@ -35,14 +35,14 @@ class ImportX509TrustManager_5
         throws CertificateException
     {
         x509TrustManager.checkClientTrusted(chain, authType);
-        checkExtendedTrust(chain, authType, socket, false);
+        ProvX509TrustManager.checkExtendedTrust(chain, authType, socket, false);
     }
 
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
         x509TrustManager.checkClientTrusted(chain, authType);
-        checkExtendedTrust(chain, authType, engine, false);
+        ProvX509TrustManager.checkExtendedTrust(chain, authType, engine, false);
     }
 
     public void checkServerTrusted(X509Certificate[] chain, String authType)
@@ -55,28 +55,18 @@ class ImportX509TrustManager_5
         throws CertificateException
     {
         x509TrustManager.checkServerTrusted(chain, authType);
-        checkExtendedTrust(chain, authType, socket, true);
+        ProvX509TrustManager.checkExtendedTrust(chain, authType, socket, true);
     }
 
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
         x509TrustManager.checkServerTrusted(chain, authType);
-        checkExtendedTrust(chain, authType, engine, true);
+        ProvX509TrustManager.checkExtendedTrust(chain, authType, engine, true);
     }
 
     public X509Certificate[] getAcceptedIssuers()
     {
         return x509TrustManager.getAcceptedIssuers();
-    }
-
-    private void checkExtendedTrust(X509Certificate[] chain, String authType, Socket socket, boolean isServer)
-    {
-        // TODO[jsse]
-    }
-
-    private void checkExtendedTrust(X509Certificate[] chain, String authType, SSLEngine engine, boolean isServer)
-    {
-        // TODO[jsse]
     }
 }
