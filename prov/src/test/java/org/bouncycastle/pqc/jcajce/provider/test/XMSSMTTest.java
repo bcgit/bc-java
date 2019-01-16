@@ -549,4 +549,37 @@ public class XMSSMTTest
 
         assertTrue(s2.verify(sig));
     }
+
+    public void testReserialization()
+        throws Exception
+    {
+        String digest = "SHA512";
+        String sigAlg = digest+"withXMSSMT";
+        byte[] payload = Strings.toByteArray("Hello, world!");
+        
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+        kpg.initialize(new XMSSMTParameterSpec(4, 2, digest));
+        KeyPair keyPair = kpg.generateKeyPair();
+
+        PrivateKey privateKey = keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+
+        for (int i = 0; i != 10; i++)
+        {
+            StateAwareSignature signer = (StateAwareSignature)Signature.getInstance(sigAlg, "BCPQC");
+            signer.initSign(privateKey);
+            signer.update(payload);
+
+            byte[] signature = signer.sign();
+
+            // serialise private key
+            byte[] enc = signer.getUpdatedPrivateKey().getEncoded();
+            privateKey = KeyFactory.getInstance("XMSSMT").generatePrivate(new PKCS8EncodedKeySpec(enc));
+
+            Signature verifier = Signature.getInstance(sigAlg, "BCPQC");
+            verifier.initVerify(publicKey);
+            verifier.update(payload);
+            assertTrue(verifier.verify(signature));
+        }
+    }
 }
