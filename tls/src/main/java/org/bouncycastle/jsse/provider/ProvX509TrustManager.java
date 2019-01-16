@@ -9,18 +9,26 @@ import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
-import java.security.cert.PKIXCertPathValidatorResult;
+import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.jsse.BCExtendedSSLSession;
+import org.bouncycastle.jsse.BCSNIHostName;
+import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 
 class ProvX509TrustManager
@@ -86,52 +94,40 @@ class ProvX509TrustManager
         return exportX509TrustManager;
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)
+    public void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException
     {
-        // TODO: need to confirm cert and client identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
+        checkTrusted(chain, authType, (Socket)null, false);
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
+    public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
-        // TODO: need to confirm cert and client identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
+        checkTrusted(chain, authType, socket, false);
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine engine)
+    public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
-        // TODO: need to confirm cert and client identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
+        checkTrusted(chain, authType, engine, false);
     }
 
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType)
+    public void checkServerTrusted(X509Certificate[] chain, String authType)
         throws CertificateException
     {
-        // TODO: need to confirm cert and server identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
+        checkTrusted(chain, authType, (Socket)null, true);
     }
 
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
+    public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
-        // TODO: need to confirm cert and server identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
+        checkTrusted(chain, authType, socket, true);
     }
 
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine engine)
+    public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
-        // TODO: need to confirm cert and server identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
+        checkTrusted(chain, authType, engine, true);
     }
 
     public X509Certificate[] getAcceptedIssuers()
@@ -139,15 +135,38 @@ class ProvX509TrustManager
         return trustedCerts.toArray(new X509Certificate[trustedCerts.size()]);
     }
 
-    protected void validatePath(X509Certificate[] x509Certificates)
+    private void checkTrusted(X509Certificate[] chain, String authType, Socket socket, boolean isServer)
         throws CertificateException
     {
-        if (x509Certificates == null || x509Certificates.length < 1)
+        validatePath(chain, authType, isServer);
+
+        checkExtendedTrust(chain, authType, socket, isServer);
+    }
+
+    private void checkTrusted(X509Certificate[] chain, String authType, SSLEngine engine, boolean isServer)
+        throws CertificateException
+    {
+        validatePath(chain, authType, isServer);
+
+        checkExtendedTrust(chain, authType, engine, isServer);
+    }
+
+    private void validatePath(X509Certificate[] chain, String authType, boolean isServer)
+        throws CertificateException
+    {
+        if (null == chain || chain.length < 1)
         {
-            throw new IllegalArgumentException("'x509Certificates' must be a chain of at least one certificate");
+            throw new IllegalArgumentException("'chain' must be a chain of at least one certificate");
+        }
+        if (null == authType || authType.length() < 1)
+        {
+            throw new IllegalArgumentException("'authType' must be a non-null, non-empty string");
         }
 
-        X509Certificate eeCert = x509Certificates[0];
+        // TODO[jsse] Further 'authType'-related checks (at least for server certificates)
+//        String validationAuthType = isServer ? authType : null;
+
+        X509Certificate eeCert = chain[0];
         if (trustedCerts.contains(eeCert))
         {
             return;
@@ -155,8 +174,13 @@ class ProvX509TrustManager
 
         try
         {
+            /*
+             * TODO[jsse] When 'isServer', make use of any status responses (OCSP) via
+             * BCExtendedSSLSession.getStatusResponses()
+             */
+
             CertStore certStore = CertStore.getInstance("Collection",
-                new CollectionCertStoreParameters(Arrays.asList(x509Certificates)), pkixProvider);
+                new CollectionCertStoreParameters(Arrays.asList(chain)), pkixProvider);
 
             CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", pkixProvider);
 
@@ -170,11 +194,141 @@ class ProvX509TrustManager
             param.setTargetCertConstraints(constraints);
 
             @SuppressWarnings("unused")
-            PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
+            PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)pathBuilder.build(param);
+
+            // TODO[jsse] Use the resulting chain for post-validation checks instead of the input chain?
+
+            /*
+             * TODO[jsse] Determine 'chainsToPublicCA' based on the trust anchor for the result
+             * chain. SunJSSE appears to consider this to be any trusted cert in original-location
+             * cacerts file with alias.contains(" [jdk")
+             */
+//            X509Certificate taCert = result.getTrustAnchor().getTrustedCert();
         }
         catch (GeneralSecurityException e)
         {
             throw new CertificateException("unable to process certificates: " + e.getMessage(), e);
         }
+    }
+
+    static void checkExtendedTrust(X509Certificate[] chain, String authType, Socket socket, boolean isServer)
+        throws CertificateException
+    {
+        if (socket instanceof SSLSocket && socket.isConnected())
+        {
+            SSLSocket sslSocket = (SSLSocket)socket;
+            BCExtendedSSLSession sslSession = importSession(sslSocket.getHandshakeSession());
+            SSLParameters sslParameters = sslSocket.getSSLParameters();
+            checkExtendedTrust(chain, authType, isServer, sslSession, sslParameters);
+        }
+    }
+
+    static void checkExtendedTrust(X509Certificate[] chain, String authType, SSLEngine engine, boolean isServer)
+        throws CertificateException
+    {
+        if (null != engine)
+        {
+            BCExtendedSSLSession sslSession = importSession(engine.getHandshakeSession());
+            SSLParameters sslParameters = engine.getSSLParameters();
+            checkExtendedTrust(chain, authType, isServer, sslSession, sslParameters);
+        }
+    }
+
+    private static void checkExtendedTrust(X509Certificate[] chain, String authType, boolean isServer,
+        BCExtendedSSLSession sslSession, SSLParameters sslParameters) throws CertificateException
+    {
+        String endpointIDAlg = sslParameters.getEndpointIdentificationAlgorithm();
+        if (null != endpointIDAlg && endpointIDAlg.length() > 0)
+        {
+            checkEndpointID(chain[0], endpointIDAlg, isServer, sslSession);
+        }
+
+        // TODO[jsse] SunJSSE also does some AlgorithmConstraints-related checks here. 
+    }
+
+    private static void checkEndpointID(X509Certificate certificate, String endpointIDAlg, boolean isServer,
+        BCExtendedSSLSession sslSession) throws CertificateException
+    {
+        String peerHost = sslSession.getPeerHost();
+        if (isServer)
+        {
+            BCSNIHostName sniHostName = getSNIHostName(sslSession);
+            if (null != sniHostName)
+            {
+                String hostname = sniHostName.getAsciiName();
+                if (!hostname.equalsIgnoreCase(peerHost))
+                {
+                    try
+                    {
+                        checkEndpointID(hostname, certificate, endpointIDAlg);
+                        return;
+                    }
+                    catch (CertificateException e)
+                    {
+                        // ignore and continue on to check 'peerHost' instead
+                    }
+                }
+            }
+        }
+
+        checkEndpointID(peerHost, certificate, endpointIDAlg);
+    }
+
+    private static void checkEndpointID(String hostname, X509Certificate certificate, String endpointIDAlg)
+        throws CertificateException
+    {
+        // Strip "[]" off IPv6 addresses
+        hostname = JsseUtils.stripSquareBrackets(hostname);
+
+        if (endpointIDAlg.equalsIgnoreCase("HTTPS"))
+        {
+            HostnameUtil.checkHostname(hostname, certificate, true);
+        }
+        else if (endpointIDAlg.equalsIgnoreCase("LDAP") || endpointIDAlg.equalsIgnoreCase("LDAPS"))
+        {
+            HostnameUtil.checkHostname(hostname, certificate, false);
+        }
+        else
+        {
+            throw new CertificateException("Unknown endpoint ID algorithm: " + endpointIDAlg);
+        }
+    }
+
+    private static BCSNIHostName getSNIHostName(BCExtendedSSLSession sslSession)
+    {
+        List<BCSNIServerName> serverNames = sslSession.getRequestedServerNames();
+        if (null != serverNames)
+        {
+            for (BCSNIServerName serverName : serverNames)
+            {
+                if (null != serverName && BCStandardConstants.SNI_HOST_NAME == serverName.getType())
+                {
+                    if (serverName instanceof BCSNIHostName)
+                    {
+                        return (BCSNIHostName)serverName;
+                    }
+
+                    try
+                    {
+                        return new BCSNIHostName(serverName.getEncoded());
+                    }
+                    catch (RuntimeException e)
+                    {
+                        return null;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static BCExtendedSSLSession importSession(SSLSession sslSession) throws CertificateException
+    {
+        if (null == sslSession)
+        {
+            throw new CertificateException("No handshake session");
+        }
+
+        return SSLSessionUtil.importSSLSession(sslSession);
     }
 }
