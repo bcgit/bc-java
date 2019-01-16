@@ -5,7 +5,6 @@ import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.DHStandardGroups;
-import org.bouncycastle.tls.crypto.TlsDHConfig;
 
 public class DefaultTlsDHGroupVerifier
     implements TlsDHGroupVerifier
@@ -26,6 +25,12 @@ public class DefaultTlsDHGroupVerifier
         addDefaultGroup(DHStandardGroups.rfc3526_4096);
         addDefaultGroup(DHStandardGroups.rfc3526_6144);
         addDefaultGroup(DHStandardGroups.rfc3526_8192);
+
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe2048);
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe3072);
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe4096);
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe6144);
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe8192);
     }
 
     // Vector is (DHGroup)
