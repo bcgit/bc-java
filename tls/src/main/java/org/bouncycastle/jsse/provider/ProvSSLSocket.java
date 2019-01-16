@@ -196,9 +196,9 @@ class ProvSSLSocket
     }
 
     @Override
-    public void setUseClientMode(boolean mode)
+    public void setUseClientMode(boolean useClientMode)
     {
-        engine.setUseClientMode(mode);
+        engine.setUseClientMode(useClientMode);
     }
 
     @Override
