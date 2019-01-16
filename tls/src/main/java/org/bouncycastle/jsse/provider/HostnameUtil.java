@@ -151,7 +151,7 @@ class HostnameUtil
             new BCSNIHostName(name);
             return true;
         }
-        catch (IllegalArgumentException e)
+        catch (RuntimeException e)
         {
             return false;
         }
@@ -189,7 +189,16 @@ class HostnameUtil
 
     private static boolean matchesDNSName(String hostname, String dnsName, boolean allWildcards)
     {
-        // TODO[jsse] Convert to Unicode for compatibility with Public Suffix List?
+        try
+        {
+            // TODO[jsse] 'hostname' conversion per call is redundant (and with isValidDomainName)
+            hostname = IDNUtil.toUnicode(IDNUtil.toASCII(hostname, 0), 0);
+            dnsName = IDNUtil.toUnicode(IDNUtil.toASCII(dnsName, 0), 0);
+        }
+        catch (RuntimeException e)
+        {
+            return false;
+        }
 
         if (!validateWildcards(dnsName))
         {
