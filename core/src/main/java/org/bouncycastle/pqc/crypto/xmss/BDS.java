@@ -250,13 +250,6 @@ public final class BDS
         {
             throw new IllegalStateException("index out of bounds");
         }
-		/* prepare addresses */
-        LTreeAddress lTreeAddress = (LTreeAddress)new LTreeAddress.Builder()
-            .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
-            .build();
-        HashTreeAddress hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-            .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
-            .build();
 
 		/* determine tau */
         int tau = XMSSUtil.calculateTau(index, treeHeight);
@@ -265,6 +258,15 @@ public final class BDS
         {
             keep.put(tau, authenticationPath.get(tau).clone());
         }
+
+        /* prepare addresses */
+        LTreeAddress lTreeAddress = (LTreeAddress)new LTreeAddress.Builder()
+            .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
+            .build();
+        HashTreeAddress hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
+            .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
+            .build();
+
 		/* leaf is a left node */
         if (tau == 0)
         {
@@ -293,6 +295,11 @@ public final class BDS
                 .withLayerAddress(hashTreeAddress.getLayerAddress())
                 .withTreeAddress(hashTreeAddress.getTreeAddress()).withTreeHeight(tau - 1)
                 .withTreeIndex(index >> tau).withKeyAndMask(hashTreeAddress.getKeyAndMask()).build();
+            /*
+             * import WOTSPlusSecretKey as its needed to calculate the public
+             * key on the fly
+             */
+            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(secretSeed, otsHashAddress), publicSeed);
             XMSSNode node = XMSSNodeUtil.randomizeHash(wotsPlus, authenticationPath.get(tau - 1), keep.get(tau - 1), hashTreeAddress);
             node = new XMSSNode(node.getHeight() + 1, node.getValue());
             authenticationPath.set(tau, node);
