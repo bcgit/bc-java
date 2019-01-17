@@ -268,14 +268,15 @@ class ProvTlsClient
     @Override
     public TlsSession getSessionToResume()
     {
-        ProvSSLSessionContext sessionContext = manager.getContextData().getClientSessionContext();
-        this.sslSession = sessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
+        ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
+        ProvSSLSession availableSSLSession = sslSessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
 
-        if (sslSession != null)
+        if (null != availableSSLSession)
         {
-            TlsSession sessionToResume = sslSession.getTlsSession();
-            if (sessionToResume != null)
+            TlsSession sessionToResume = availableSSLSession.getTlsSession();
+            if (null != sessionToResume)
             {
+                this.sslSession = availableSSLSession;
                 return sessionToResume;
             }
         }
@@ -328,14 +329,16 @@ class ProvTlsClient
     @Override
     public synchronized void notifyHandshakeComplete() throws IOException
     {
+        super.notifyHandshakeComplete();
+
         this.handshakeComplete = true;
 
-        TlsSession handshakeSession = context.getSession();
+        TlsSession connectionSession = context.getSession();
 
-        if (sslSession == null || sslSession.getTlsSession() != handshakeSession)
+        if (null == sslSession || sslSession.getTlsSession() != connectionSession)
         {
-            sslSession = manager.getContextData().getClientSessionContext().reportSession(handshakeSession,
-                manager.getPeerHost(), manager.getPeerPort());
+            ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
+            this.sslSession = sslSessionContext.reportSession(connectionSession, manager.getPeerHost(), manager.getPeerPort());
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
@@ -381,22 +384,33 @@ class ProvTlsClient
     @Override
     public void notifySessionID(byte[] sessionID)
     {
+        if (null != sessionID && sessionID.length > 0 && null != sslSession
+            && Arrays.areEqual(sessionID, sslSession.getId()))
+        {
+            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+
+            manager.notifyHandshakeSession(sslSession);
+            return;
+        }
+
         if (sessionID == null || sessionID.length == 0)
         {
             LOG.fine("Server did not specify a session ID");
-        }
-        else if (sslSession != null && Arrays.areEqual(sessionID, sslSession.getId()))
-        {
-            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
-        }
-        else if (!manager.getEnableSessionCreation())
-        {
-            throw new IllegalStateException("Server did not resume session and session creation is disabled");
         }
         else
         {
             LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
         }
+
+        if (!manager.getEnableSessionCreation())
+        {
+            throw new IllegalStateException("Server did not resume session and session creation is disabled");
+        }
+
+        ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
+        ProvSSLSessionBase handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, manager.getPeerHost(),
+            manager.getPeerPort(), context.getSecurityParametersHandshake());
+        manager.notifyHandshakeSession(handshakeSession);
 
         super.notifySessionID(sessionID);
     }
