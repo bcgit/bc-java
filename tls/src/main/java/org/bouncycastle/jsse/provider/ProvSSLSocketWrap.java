@@ -62,7 +62,7 @@ class ProvSSLSocketWrap
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
-    protected SSLSession handshakeSession = null;
+    protected ProvSSLSessionBase handshakeSession = null;
 
     protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
         throws IOException
@@ -224,7 +224,7 @@ class ProvSSLSocketWrap
     @Override
     public synchronized SSLSession getHandshakeSession()
     {
-        return handshakeSession;
+        return null == handshakeSession ? null : handshakeSession.getExportSSLSession();
     }
 
     @Override
@@ -525,9 +525,6 @@ class ProvSSLSocketWrap
     {
         if (protocol == null)
         {
-            // TODO[jsse] Check for session to re-use and apply to handshake
-            // TODO[jsse] Allocate this.handshakeSession and update it during handshake
-
             InputStream input = wrapSocket.getInputStream();
             if (consumed != null)
             {
@@ -591,7 +588,13 @@ class ProvSSLSocketWrap
 
     public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
     {
+        this.handshakeSession = null;
         this.connection = connection;
+    }
+
+    public synchronized void notifyHandshakeSession(ProvSSLSessionBase handshakeSession)
+    {
+        this.handshakeSession = handshakeSession;
     }
 
     synchronized void handshakeIfNecessary(boolean resumable) throws IOException

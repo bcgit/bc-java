@@ -47,7 +47,7 @@ class ProvSSLEngine
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
-    protected SSLSession handshakeSession = null;
+    protected ProvSSLSessionBase handshakeSession = null;
 
     protected SSLException deferredException = null;
 
@@ -89,9 +89,6 @@ class ProvSSLEngine
         }
 
         this.initialHandshakeBegun = true;
-
-        // TODO[jsse] Check for session to re-use and apply to handshake
-        // TODO[jsse] Allocate this.handshakeSession and update it during handshake
 
         try
         {
@@ -235,9 +232,7 @@ class ProvSSLEngine
     @Override
     public synchronized SSLSession getHandshakeSession()
     {
-        // TODO[jsse] this.handshakeSession needs to be reset (to null) whenever not handshaking
-
-        return handshakeSession;
+        return null == handshakeSession ? null : handshakeSession.getExportSSLSession();
     }
 
     @Override
@@ -638,7 +633,13 @@ class ProvSSLEngine
 
     public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
     {
+        this.handshakeSession = null;
         this.connection = connection;
+    }
+
+    public synchronized void notifyHandshakeSession(ProvSSLSessionBase handshakeSession)
+    {
+        this.handshakeSession = handshakeSession;
     }
 
     private RecordPreview getRecordPreview(ByteBuffer src)

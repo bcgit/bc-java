@@ -41,7 +41,7 @@ class ProvSSLSocketDirect
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
-    protected SSLSession handshakeSession = null;
+    protected ProvSSLSessionBase handshakeSession = null;
 
     /** This constructor is the one used (only) by ProvSSLServerSocket */
     ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, boolean enableSessionCreation,
@@ -199,7 +199,7 @@ class ProvSSLSocketDirect
     @Override
     public synchronized SSLSession getHandshakeSession()
     {
-        return handshakeSession;
+        return null == handshakeSession ? null : handshakeSession.getExportSSLSession();
     }
 
     @Override
@@ -332,9 +332,6 @@ class ProvSSLSocketDirect
     {
         if (protocol == null)
         {
-            // TODO[jsse] Check for session to re-use and apply to handshake
-            // TODO[jsse] Allocate this.handshakeSession and update it during handshake
-
             InputStream input = super.getInputStream();
             OutputStream output = super.getOutputStream();
 
@@ -394,7 +391,13 @@ class ProvSSLSocketDirect
 
     public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
     {
+        this.handshakeSession = null;
         this.connection = connection;
+    }
+
+    public synchronized void notifyHandshakeSession(ProvSSLSessionBase handshakeSession)
+    {
+        this.handshakeSession = handshakeSession;
     }
 
     synchronized void handshakeIfNecessary(boolean resumable) throws IOException
