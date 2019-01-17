@@ -24,5 +24,7 @@ interface ProvTlsManager
 
     int getPeerPort();
 
-    void notifyHandshakeComplete(ProvSSLConnection connection); 
+    void notifyHandshakeComplete(ProvSSLConnection connection);
+
+    void notifyHandshakeSession(ProvSSLSessionBase handshakeSession);
 }
