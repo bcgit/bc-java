@@ -214,6 +214,22 @@ class ProvTlsServer
     @Override
     public int getSelectedCipherSuite() throws IOException
     {
+        /*
+         * TODO[jsse] Ideally setting of the handshake session would be done in getSessionToResume, but that is currently never
+         * called.
+         */
+        if (null == sslSession)
+        {
+            ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
+            ProvSSLSessionBase handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, manager.getPeerHost(),
+                manager.getPeerPort(), context.getSecurityParametersHandshake());
+            manager.notifyHandshakeSession(handshakeSession);
+        }
+        else
+        {
+            manager.notifyHandshakeSession(sslSession);
+        }
+
         keyManagerMissCache = new HashSet<String>();
 
         int selectedCipherSuite = super.getSelectedCipherSuite();
@@ -245,14 +261,15 @@ class ProvTlsServer
     @Override
     public TlsSession getSessionToResume(byte[] sessionID)
     {
-        ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
-        this.sslSession = sessionContext.getSessionImpl(sessionID);
+        ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
+        ProvSSLSession availableSSLSession = sslSessionContext.getSessionImpl(sessionID);
 
-        if (sslSession != null)
+        if (null != availableSSLSession)
         {
-            TlsSession sessionToResume = sslSession.getTlsSession();
-            if (sessionToResume != null)
+            TlsSession sessionToResume = availableSSLSession.getTlsSession();
+            if (null != sessionToResume)
             {
+                this.sslSession = availableSSLSession;
                 return sessionToResume;
             }
         }
