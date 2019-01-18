@@ -227,6 +227,11 @@ public class XMSSMTSigner
         return wotsPlus.sign(messageDigest, otsHashAddress);
     }
 
+    public long getUsagesRemaining()
+    {
+        return privateKey.getUsagesRemaining();
+    }
+
     public AsymmetricKeyParameter getUpdatedPrivateKey()
     {
         // if we've generated a signature return the last private key generated
