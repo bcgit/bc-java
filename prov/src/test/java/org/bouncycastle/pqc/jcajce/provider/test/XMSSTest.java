@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
+import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -513,7 +514,7 @@ public class XMSSTest
 
         // create a new PrivateKeyInfo containing a key with no BDS state.
         pKeyInfo = new PrivateKeyInfo(pKeyInfo.getPrivateKeyAlgorithm(),
-            new DERSequence(new ASN1Encodable[] { seq.getObjectAt(0), seq.getObjectAt(1) }));
+            new DERSequence(new ASN1Encodable[]{seq.getObjectAt(0), seq.getObjectAt(1)}));
 
         XMSSKey privKey = (XMSSKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(pKeyInfo.getEncoded()));
 
@@ -546,6 +547,47 @@ public class XMSSTest
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_SHAKE128ph, BCObjectIdentifiers.xmss_SHAKE128, "SHAKE128", new SHAKEDigest(128));
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_SHA512ph, BCObjectIdentifiers.xmss_SHA512, "SHA512", new SHA512Digest());
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_SHAKE256ph, BCObjectIdentifiers.xmss_SHAKE256, "SHAKE256", new SHAKEDigest(256));
+    }
+
+    public void testExhaustion()
+        throws Exception
+    {
+        StateAwareSignature s1 = (StateAwareSignature)Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
+        Signature s2 = Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
+
+        byte[] message = Strings.toByteArray("hello, world!");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(2, "SHA256"), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        XMSSPrivateKey privKey = (XMSSPrivateKey)kp.getPrivate();
+
+        assertEquals(4, privKey.getUsagesRemaining());
+
+        s1.initSign(privKey);
+        
+        do
+        {
+            s1.update(message, 0, message.length);
+
+            byte[] sig = s1.sign();
+
+            s2.initVerify(kp.getPublic());
+
+            s2.update(message, 0, message.length);
+
+            assertTrue(s2.verify(sig));
+
+            privKey = (XMSSPrivateKey)s1.getUpdatedPrivateKey();
+
+            s1.initSign(privKey);
+        }
+        while (s1.isSigningCapable());
+
+        assertEquals(0, privKey.getUsagesRemaining());
     }
 
     private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
@@ -606,7 +648,7 @@ public class XMSSTest
         throws Exception
     {
         String digest = "SHA512";
-        String sigAlg = digest+"withXMSS";
+        String sigAlg = digest + "withXMSS";
         byte[] payload = Strings.toByteArray("Hello, world!");
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
