@@ -112,8 +112,10 @@ public class DTLSServerProtocol
          */
         {
             invalidateSession(state);
-    
-            state.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
+
+            securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
+
+            state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
             state.sessionParameters = null;
         }
 
