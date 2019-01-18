@@ -98,6 +98,8 @@ public class SM2CipherTest
 
         byte[] enc = sm2Engine1.doFinal(m);
 
+        isTrue(enc.length == sm2Engine1.getOutputSize(m.length));
+
         sm2Engine2.init(Cipher.DECRYPT_MODE, kp.getPrivate());
 
         byte[] dec = sm2Engine2.doFinal(enc);
