@@ -273,6 +273,11 @@ public final class XMSSMTPrivateKeyParameters
         return index;
     }
 
+    public long getUsagesRemaining()
+    {
+        return (1L << this.getParameters().getHeight()) - this.getIndex();
+    }
+
     public byte[] getSecretKeySeed()
     {
         return XMSSUtil.cloneArray(secretKeySeed);

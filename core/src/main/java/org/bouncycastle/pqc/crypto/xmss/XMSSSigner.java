@@ -94,6 +94,11 @@ public class XMSSSigner
         return signature.toByteArray();
     }
 
+    public long getUsagesRemaining()
+    {
+        return privateKey.getUsagesRemaining();
+    }
+
     public boolean verifySignature(byte[] message, byte[] signature)
     {
         /* parse signature and public key */
