@@ -91,7 +91,8 @@ public class SM2CipherTest
         throws Exception
     {
         Cipher sm2Engine1 = Cipher.getInstance(name, "BC");
-        Cipher sm2Engine2 = Cipher.getInstance(name, "BC");
+        Cipher sm2Engine2 = Cipher.getInstance(oid.getId(), "BC");
+        
         byte[] m = Strings.toByteArray("encryption standard");
 
         sm2Engine1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), new TestRandomBigInteger("4C62EEFD6ECFC2B95B92FD6C3D9575148AFA17425546D49018E5388D49DD7B4F", 16));
