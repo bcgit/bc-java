@@ -559,22 +559,20 @@ public class DTLSClientProtocol
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
-        byte[] cookie = TlsUtils.readOpaque8(buf);
+
+        /*
+         * RFC 6347 This specification increases the cookie size limit to 255 bytes for greater
+         * future flexibility. The limit remains 32 for previous versions of DTLS.
+         */
+        int maxCookieLength = ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(server_version) ? 255 : 32;
+
+        byte[] cookie = TlsUtils.readOpaque8(buf, 0, maxCookieLength);
 
         TlsProtocol.assertEmpty(buf);
 
         // TODO Seems this behaviour is not yet in line with OpenSSL for DTLS 1.2
 //        reportServerVersion(state, server_version);
         if (!server_version.isEqualOrEarlierVersionOf(state.clientContext.getClientVersion()))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        /*
-         * RFC 6347 This specification increases the cookie size limit to 255 bytes for greater
-         * future flexibility. The limit remains 32 for previous versions of DTLS.
-         */
-        if (!ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(server_version) && cookie.length > 32)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -615,11 +613,7 @@ public class DTLSClientProtocol
 
         byte[] server_random = TlsUtils.readFully(32, buf);
 
-        state.selectedSessionID = TlsUtils.readOpaque8(buf);
-        if (state.selectedSessionID.length > 32)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
+        state.selectedSessionID = TlsUtils.readOpaque8(buf, 0, 32);
 
         int selectedCipherSuite = TlsUtils.readUint16(buf);
 

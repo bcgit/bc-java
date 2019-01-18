@@ -582,11 +582,7 @@ public class TlsClientProtocol
 
         byte[] server_random = TlsUtils.readFully(32, buf);
 
-        this.selectedSessionID = TlsUtils.readOpaque8(buf);
-        if (this.selectedSessionID.length > 32)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
+        this.selectedSessionID = TlsUtils.readOpaque8(buf, 0, 32);
 
         int selectedCipherSuite = TlsUtils.readUint16(buf);
 
