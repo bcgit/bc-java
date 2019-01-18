@@ -137,6 +137,8 @@ public class TlsServerProtocol
             }
             case CS_START:
             {
+                SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+
                 receiveClientHelloMessage(buf);
                 this.connection_state = CS_CLIENT_HELLO;
 
@@ -149,7 +151,9 @@ public class TlsServerProtocol
                 {
                     invalidateSession();
 
-                    this.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
+                    securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
+
+                    this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
                     this.sessionParameters = null;
                 }
 
@@ -185,7 +189,7 @@ public class TlsServerProtocol
                         serverCertificate = this.serverCredentials.getCertificate();
                         sendCertificateMessage(serverCertificate, endPointHash);
                     }
-                    tlsServerContext.getSecurityParametersHandshake().tlsServerEndPoint = endPointHash.toByteArray();
+                    securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
                     this.connection_state = CS_SERVER_CERTIFICATE;
 
                     // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus

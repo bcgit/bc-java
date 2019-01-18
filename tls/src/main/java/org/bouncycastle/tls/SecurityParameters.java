@@ -21,6 +21,7 @@ public class SecurityParameters
     byte[] clientRandom = null;
     byte[] serverRandom = null;
     byte[] sessionHash = null;
+    byte[] sessionID = null;
     byte[] pskIdentity = null;
     byte[] srpIdentity = null;
     byte[] tlsServerEndPoint = null;
@@ -45,6 +46,7 @@ public class SecurityParameters
     void clear()
     {
         sessionHash = null;
+        sessionID = null;
         clientSigAlgs = null;
         clientSigAlgsCert = null;
         clientSupportedGroups = null;
@@ -144,6 +146,11 @@ public class SecurityParameters
     public byte[] getSessionHash()
     {
         return sessionHash;
+    }
+
+    public byte[] getSessionID()
+    {
+        return sessionID;
     }
 
     /**
