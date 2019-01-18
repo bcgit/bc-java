@@ -169,7 +169,7 @@ public class DTLSClientProtocol
 
         invalidateSession(state);
 
-        state.tlsSession = TlsUtils.importSession(state.selectedSessionID, null);
+        state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
         state.sessionParameters = null;
 
         serverMessage = handshake.receiveMessage();
@@ -613,7 +613,7 @@ public class DTLSClientProtocol
 
         byte[] server_random = TlsUtils.readFully(32, buf);
 
-        state.selectedSessionID = TlsUtils.readOpaque8(buf, 0, 32);
+        byte[] selectedSessionID = TlsUtils.readOpaque8(buf, 0, 32);
 
         int selectedCipherSuite = TlsUtils.readUint16(buf);
 
@@ -635,10 +635,15 @@ public class DTLSClientProtocol
         }
         securityParameters.serverRandom = server_random;
 
-        state.client.notifySessionID(state.selectedSessionID);
-        state.resumedSession = state.selectedSessionID.length > 0 && state.tlsSession != null
-            && Arrays.areEqual(state.selectedSessionID, state.tlsSession.getSessionID());
+        securityParameters.sessionID = selectedSessionID;
+        state.client.notifySessionID(selectedSessionID);
+        state.resumedSession = selectedSessionID.length > 0 && state.tlsSession != null
+            && Arrays.areEqual(selectedSessionID, state.tlsSession.getSessionID());
 
+        /*
+         * Find out which CipherSuite the server has chosen and check that it was one of the offered
+         * ones, and is a valid selection for the negotiated version.
+         */
         {
             if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
@@ -910,7 +915,6 @@ public class DTLSClientProtocol
         int[] offeredCipherSuites = null;
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
-        byte[] selectedSessionID = null;
         boolean resumedSession = false;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
