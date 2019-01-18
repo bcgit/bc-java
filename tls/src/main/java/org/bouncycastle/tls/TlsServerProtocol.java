@@ -463,11 +463,7 @@ public class TlsServerProtocol
          * TODO RFC 5077 3.4. If a ticket is presented by the client, the server MUST NOT attempt to
          * use the Session ID in the ClientHello for stateful session resumption.
          */
-        byte[] sessionID = TlsUtils.readOpaque8(buf);
-        if (sessionID.length > 32)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
+        byte[] sessionID = TlsUtils.readOpaque8(buf, 0, 32);
 
         /*
          * TODO RFC 5246 7.4.1.2. If the session_id field is not empty (implying a session
