@@ -89,6 +89,11 @@ public class SM2Engine
         }
     }
 
+    public int getOutputSize(int inputLen)
+    {
+        return (1 + 2 * curveLength) + inputLen + digest.getDigestSize();
+    }
+
     protected ECMultiplier createBasePointMultiplier()
     {
         return new FixedPointCombMultiplier();
