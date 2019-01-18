@@ -153,7 +153,7 @@ public class XMSSSignatureSpi
 
     public boolean isSigningCapable()
     {
-        return treeDigest != null;
+        return treeDigest != null && signer.getUsagesRemaining() != 0;
     }
 
     public PrivateKey getUpdatedPrivateKey()

@@ -13,11 +13,11 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
-import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTKey;
+import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTPrivateKey;
 import org.bouncycastle.util.Arrays;
 
 public class BCXMSSMTPrivateKey
-    implements PrivateKey, XMSSMTKey
+    implements PrivateKey, XMSSMTPrivateKey
 {
     private static final long serialVersionUID = 7682140473044521395L;
 
@@ -46,6 +46,11 @@ public class BCXMSSMTPrivateKey
         XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
         this.treeDigest = keyParams.getTreeDigest().getAlgorithm();
         this.keyParams = (XMSSMTPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
+    }
+
+    public long getUsagesRemaining()
+    {
+        return keyParams.getUsagesRemaining();
     }
 
     public String getAlgorithm()
