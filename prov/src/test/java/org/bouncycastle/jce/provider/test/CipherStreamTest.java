@@ -195,6 +195,13 @@ public class CipherStreamTest
         {
             fail("" + name + " failed short buffer decryption - " + e.toString());
         }
+
+        // mode test
+        if (name.indexOf('/') < 0)
+        {
+            Cipher.getInstance(name + "/NONE/NoPadding");
+            Cipher.getInstance(name + "/ECB/NoPadding");    // very old school
+        }
     }
 
 
