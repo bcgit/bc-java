@@ -119,7 +119,7 @@ final class ImportSSLSession_5
     @Override
     public List<BCSNIServerName> getRequestedServerNames()
     {
-        return Collections.<BCSNIServerName>emptyList();
+        return Collections.emptyList();
     }
 
     public SSLSessionContext getSessionContext()
@@ -130,7 +130,7 @@ final class ImportSSLSession_5
     @Override
     public List<byte[]> getStatusResponses()
     {
-        return Collections.<byte[]>emptyList();
+        return Collections.emptyList();
     }
 
     public Object getValue(String name)
