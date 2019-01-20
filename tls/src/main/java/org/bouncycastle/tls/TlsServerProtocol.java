@@ -661,6 +661,8 @@ public class TlsServerProtocol
             // NOTE: Validates the padding extension data, if present
             TlsExtensionsUtils.getPaddingExtension(clientExtensions);
 
+            securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(clientExtensions);
+
             /*
              * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior
              * to 1.2. Clients MUST NOT offer it if they are offering prior versions.

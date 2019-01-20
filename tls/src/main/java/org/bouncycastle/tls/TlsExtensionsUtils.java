@@ -112,10 +112,17 @@ public class TlsExtensionsUtils
         extensions.put(EXT_server_certificate_type, createCertificateTypeExtensionServer(certificateType));
     }
 
+    /** @deprecated Use {@link #addServerNameExtensionClient(Hashtable, Vector)} instead. */
     public static void addServerNameExtension(Hashtable extensions, ServerNameList serverNameList)
         throws IOException
     {
         extensions.put(EXT_server_name, createServerNameExtension(serverNameList));
+    }
+
+    public static void addServerNameExtensionClient(Hashtable extensions, Vector serverNameList)
+        throws IOException
+    {
+        extensions.put(EXT_server_name, createServerNameExtensionClient(serverNameList));
     }
 
     public static void addSignatureAlgorithmsExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
@@ -244,11 +251,19 @@ public class TlsExtensionsUtils
         return extensionData == null ? -1 : readCertificateTypeExtensionServer(extensionData);
     }
 
+    /** @deprecated Use {@link #getServerNameExtensionClient(Hashtable)} instead. */
     public static ServerNameList getServerNameExtension(Hashtable extensions)
         throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_name);
         return extensionData == null ? null : readServerNameExtension(extensionData);
+    }
+
+    public static Vector getServerNameExtensionClient(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_name);
+        return extensionData == null ? null : readServerNameExtensionClient(extensionData);
     }
 
     public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
@@ -444,6 +459,7 @@ public class TlsExtensionsUtils
         return TlsUtils.encodeUint16(recordSizeLimit);
     }
 
+    /** @deprecated Use {@link #createServerNameExtensionClient(Vector)} instead. */
     public static byte[] createServerNameExtension(ServerNameList serverNameList)
         throws IOException
     {
@@ -455,6 +471,21 @@ public class TlsExtensionsUtils
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         
         serverNameList.encode(buf);
+
+        return buf.toByteArray();
+    }
+
+    public static byte[] createServerNameExtensionClient(Vector serverNameList)
+        throws IOException
+    {
+        if (serverNameList == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        new ServerNameList(serverNameList).encode(buf);
 
         return buf.toByteArray();
     }
@@ -712,6 +743,7 @@ public class TlsExtensionsUtils
         return recordSizeLimit;
     }
 
+    /** @deprecated Use {@link #readServerNameExtensionClient(byte[])} instead. */
     public static ServerNameList readServerNameExtension(byte[] extensionData)
         throws IOException
     {
@@ -727,6 +759,23 @@ public class TlsExtensionsUtils
         TlsProtocol.assertEmpty(buf);
 
         return serverNameList;
+    }
+
+    public static Vector readServerNameExtensionClient(byte[] extensionData)
+        throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
+
+        ServerNameList serverNameList = ServerNameList.parse(buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        return serverNameList.getServerNameList();
     }
 
     public static Vector readSignatureAlgorithmsExtension(byte[] extensionData)

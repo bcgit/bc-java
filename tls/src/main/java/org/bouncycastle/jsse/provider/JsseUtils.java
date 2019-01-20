@@ -382,10 +382,9 @@ abstract class JsseUtils
         }
     }
 
-    static BCSNIServerName findMatchingSNIServerName(ServerNameList serverNameList,
-        Collection<BCSNIMatcher> sniMatchers)
+    static BCSNIServerName findMatchingSNIServerName(Vector serverNameList, Collection<BCSNIMatcher> sniMatchers)
     {
-        Enumeration serverNames = serverNameList.getServerNameList().elements();
+        Enumeration serverNames = serverNameList.elements();
         while (serverNames.hasMoreElements())
         {
             BCSNIServerName sniServerName = convertSNIServerName((ServerName)serverNames.nextElement());

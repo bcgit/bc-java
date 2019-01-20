@@ -955,6 +955,8 @@ public class TlsClientProtocol
                 tlsClientContext.getClientSupportedVersions());
         }
 
+        securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(clientExtensions);
+
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
         {
             securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(clientExtensions);
