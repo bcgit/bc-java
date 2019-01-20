@@ -8,6 +8,7 @@ import java.util.List;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SNIServerName;
+import javax.net.ssl.StandardConstants;
 
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
@@ -63,9 +64,17 @@ abstract class JsseUtils_8
         }
     }
 
+    static class UnknownServerName extends SNIServerName
+    {
+        UnknownServerName(int type, byte[] encoded)
+        {
+            super(type, encoded);
+        }
+    }
+
     static SNIMatcher exportSNIMatcher(BCSNIMatcher matcher)
     {
-        if (matcher == null)
+        if (null == matcher)
         {
             return null;
         }
@@ -83,7 +92,7 @@ abstract class JsseUtils_8
      */
     static Object exportSNIMatchers(Collection<BCSNIMatcher> matchers)
     {
-        if (matchers == null)
+        if (null == matchers)
         {
             return null;
         }
@@ -92,28 +101,37 @@ abstract class JsseUtils_8
         for (BCSNIMatcher matcher : matchers)
         {
             SNIMatcher exported = exportSNIMatcher(matcher);
-            if (exported != null)
+            if (null != exported)
             {
                 result.add(exported);
             }
         }
 
-        if (!result.isEmpty())
+        if (result.isEmpty())
         {
-            return Collections.unmodifiableList(result);
+            return Collections.<SNIMatcher>emptyList();
         }
 
-        return Collections.<SNIMatcher>emptyList();
+        return Collections.unmodifiableList(result);
     }
 
-    static SNIHostName exportSNIServerName(BCSNIServerName serverName)
+    static SNIServerName exportSNIServerName(BCSNIServerName serverName)
     {
-        if (serverName == null || serverName.getType() != BCStandardConstants.SNI_HOST_NAME)
+        if (null == serverName)
         {
             return null;
         }
 
-        return new SNIHostName(serverName.getEncoded());
+        int type = serverName.getType();
+        byte[] encoded = serverName.getEncoded();
+
+        switch (type)
+        {
+        case BCStandardConstants.SNI_HOST_NAME:
+            return new SNIHostName(encoded);
+        default:
+            return new UnknownServerName(type, encoded);
+        }
     }
 
     /*
@@ -121,7 +139,7 @@ abstract class JsseUtils_8
      */
     static Object exportSNIServerNames(Collection<BCSNIServerName> serverNames)
     {
-        if (serverNames == null)
+        if (null == serverNames)
         {
             return null;
         }
@@ -129,24 +147,24 @@ abstract class JsseUtils_8
         ArrayList<SNIServerName> result = new ArrayList<SNIServerName>(serverNames.size());
         for (BCSNIServerName serverName : serverNames)
         {
-            SNIHostName exported = exportSNIServerName(serverName);
-            if (exported != null)
+            SNIServerName exported = exportSNIServerName(serverName);
+            if (null != exported)
             {
                 result.add(exported);
             }
         }
 
-        if (!result.isEmpty())
+        if (result.isEmpty())
         {
-            return Collections.unmodifiableList(result);
+            return Collections.<SNIServerName>emptyList();
         }
 
-        return Collections.<SNIServerName>emptyList();
+        return Collections.unmodifiableList(result);
     }
 
     static BCSNIMatcher importSNIMatcher(SNIMatcher matcher)
     {
-        if (matcher == null)
+        if (null == matcher)
         {
             return null;
         }
@@ -164,39 +182,49 @@ abstract class JsseUtils_8
      */
     static List<BCSNIMatcher> importSNIMatchers(Object getSNIMatchersResult)
     {
-        if (getSNIMatchersResult == null)
+        if (null == getSNIMatchersResult)
         {
             return null;
         }
 
+        @SuppressWarnings("unchecked")
         Collection<SNIMatcher> matchers = (Collection<SNIMatcher>)getSNIMatchersResult;
 
         ArrayList<BCSNIMatcher> result = new ArrayList<BCSNIMatcher>(matchers.size());
         for (SNIMatcher matcher : matchers)
         {
             BCSNIMatcher imported = importSNIMatcher(matcher);
-            if (imported != null)
+            if (null != imported)
             {
                 result.add(imported);
             }
         }
 
-        if (!result.isEmpty())
+        if (result.isEmpty())
         {
-            return Collections.unmodifiableList(result);
+            return Collections.<BCSNIMatcher>emptyList();
         }
 
-        return Collections.<BCSNIMatcher>emptyList();
+        return Collections.unmodifiableList(result);
     }
 
-    static BCSNIHostName importSNIServerName(SNIServerName serverName)
+    static BCSNIServerName importSNIServerName(SNIServerName serverName)
     {
-        if (serverName == null || serverName.getType() != BCStandardConstants.SNI_HOST_NAME)
+        if (null == serverName)
         {
             return null;
         }
 
-        return new BCSNIHostName(serverName.getEncoded());
+        int type = serverName.getType();
+        byte[] encoded = serverName.getEncoded();
+
+        switch (type)
+        {
+        case StandardConstants.SNI_HOST_NAME:
+            return new BCSNIHostName(encoded);
+        default:
+            return new BCUnknownServerName(type, encoded);
+        }
     }
 
     /*
@@ -204,28 +232,29 @@ abstract class JsseUtils_8
      */
     static List<BCSNIServerName> importSNIServerNames(Object getServerNamesResult)
     {
-        if (getServerNamesResult == null)
+        if (null == getServerNamesResult)
         {
             return null;
         }
 
+        @SuppressWarnings("unchecked")
         Collection<SNIServerName> serverNames = (Collection<SNIServerName>)getServerNamesResult;
 
         ArrayList<BCSNIServerName> result = new ArrayList<BCSNIServerName>(serverNames.size());
         for (SNIServerName serverName : serverNames)
         {
-            BCSNIHostName imported = importSNIServerName(serverName);
-            if (imported != null)
+            BCSNIServerName imported = importSNIServerName(serverName);
+            if (null != imported)
             {
                 result.add(imported);
             }
         }
 
-        if (!result.isEmpty())
+        if (result.isEmpty())
         {
-            return Collections.unmodifiableList(result);
+            return Collections.<BCSNIServerName>emptyList();
         }
 
-        return Collections.<BCSNIServerName>emptyList();
+        return Collections.unmodifiableList(result);
     }
 }
