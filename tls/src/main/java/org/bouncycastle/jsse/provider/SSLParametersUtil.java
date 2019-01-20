@@ -112,12 +112,20 @@ abstract class SSLParametersUtil
 
         if (null != setServerNames)
         {
-            set(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(prov.getServerNames()));
+            List<BCSNIServerName> serverNames = prov.getServerNames();
+            if (null != serverNames)
+            {
+                set(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(serverNames));
+            }
         }
 
         if (null != setSNIMatchers)
         {
-            set(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(prov.getSNIMatchers()));
+            Collection<BCSNIMatcher> sniMatchers = prov.getSNIMatchers();
+            if (null != sniMatchers)
+            {
+                set(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(sniMatchers));
+            }
         }
 
         // From JDK 9

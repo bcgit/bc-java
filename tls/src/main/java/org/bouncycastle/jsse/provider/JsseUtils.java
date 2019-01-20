@@ -8,10 +8,12 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
@@ -392,13 +394,28 @@ abstract class JsseUtils
         }
     }
 
-    static BCSNIServerName findMatchingSNIServerName(Vector serverNameList, Collection<BCSNIMatcher> sniMatchers)
+    static List<BCSNIServerName> convertSNIServerNames(Vector serverNameList)
     {
+        if (null == serverNameList || serverNameList.isEmpty())
+        {
+            return Collections.emptyList();
+        }
+
+        ArrayList<BCSNIServerName> result = new ArrayList<BCSNIServerName>(serverNameList.size());
+
         Enumeration serverNames = serverNameList.elements();
         while (serverNames.hasMoreElements())
         {
-            BCSNIServerName sniServerName = convertSNIServerName((ServerName)serverNames.nextElement());
+            result.add(convertSNIServerName((ServerName)serverNames.nextElement()));
+        }
 
+        return Collections.unmodifiableList(result);
+    }
+
+    static BCSNIServerName findMatchingSNIServerName(Vector serverNameList, Collection<BCSNIMatcher> sniMatchers)
+    {
+        for (BCSNIServerName sniServerName : convertSNIServerNames(serverNameList))
+        {
             for (BCSNIMatcher sniMatcher : sniMatchers)
             {
                 if (sniMatcher != null && sniMatcher.getType() == sniServerName.getType()
