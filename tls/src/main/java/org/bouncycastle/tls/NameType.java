@@ -7,8 +7,13 @@ public class NameType
      */
     public static final short host_name = 0;
 
+    public static boolean isRecognized(short nameType)
+    {
+        return host_name == nameType;
+    }
+
     public static boolean isValid(short nameType)
     {
-        return nameType == host_name;
+        return TlsUtils.isValidUint8(nameType);
     }
 }
