@@ -31,7 +31,6 @@ import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ServerName;
-import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -44,6 +43,14 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 abstract class JsseUtils
 {
     protected static X509Certificate[] EMPTY_CHAIN = new X509Certificate[0];
+
+    static class BCUnknownServerName extends BCSNIServerName
+    {
+        BCUnknownServerName(int nameType, byte[] encoded)
+        {
+            super(nameType, encoded);
+        }
+    }
 
     static boolean contains(String[] values, String value)
     {
@@ -373,12 +380,15 @@ abstract class JsseUtils
 
     static BCSNIServerName convertSNIServerName(ServerName serverName)
     {
-        switch (serverName.getNameType())
+        short nameType = serverName.getNameType();
+        byte[] nameData = serverName.getNameData();
+
+        switch (nameType)
         {
         case BCStandardConstants.SNI_HOST_NAME:
-            return new BCSNIHostName(serverName.getNameData());
+            return new BCSNIHostName(nameData);
         default:
-            return null;
+            return new BCUnknownServerName(nameType, nameData);
         }
     }
 
