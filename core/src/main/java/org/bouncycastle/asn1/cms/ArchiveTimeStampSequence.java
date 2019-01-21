@@ -84,6 +84,31 @@ public class ArchiveTimeStampSequence
         return rv;
     }
 
+    public int size()
+    {
+        return archiveTimeStampChains.size();
+    }
+
+    /**
+     * Adds an {@link ArchiveTimeStampChain} to the ArchiveTimeStamp sequence.
+     *
+     * @param chain the {@link ArchiveTimeStampChain} to add
+     * @return returns the modified sequence.
+     */
+    public ArchiveTimeStampSequence append(ArchiveTimeStampChain chain) {
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        for (int i = 0; i != archiveTimeStampChains.size(); i++)
+        {
+            v.add(archiveTimeStampChains.getObjectAt(i));
+        }
+
+        v.add(chain);
+
+        return new ArchiveTimeStampSequence(new DERSequence(v));
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
         final ASN1EncodableVector vector = new ASN1EncodableVector();
