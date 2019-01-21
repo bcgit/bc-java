@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.engines.Grainv1Engine;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseStreamCipher;
+import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 public final class Grainv1
@@ -31,6 +32,15 @@ public final class Grainv1
         }
     }
 
+    public static class AlgParams
+        extends IvAlgorithmParameters
+    {
+        protected String engineToString()
+        {
+            return "Grainv1 IV";
+        }
+    }
+
     public static class Mappings
         extends AlgorithmProvider
     {
@@ -44,6 +54,7 @@ public final class Grainv1
         {
             provider.addAlgorithm("Cipher.Grainv1", PREFIX + "$Base");
             provider.addAlgorithm("KeyGenerator.Grainv1", PREFIX + "$KeyGen");
+            provider.addAlgorithm("AlgorithmParameters.Grainv1", PREFIX + "$AlgParams");
         }
     }
 }

@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.sphincs;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.util.Pack;
 
@@ -48,7 +49,12 @@ public class SPHINCS256Signer
     {
          if (forSigning)
          {
-             keyData = ((SPHINCSPrivateKeyParameters)param).getKeyData();
+             if (param instanceof ParametersWithRandom) {
+                 // SPHINCS-256 signatures are deterministic, RNG is not required.
+                 keyData = ((SPHINCSPrivateKeyParameters)((ParametersWithRandom) param).getParameters()).getKeyData();
+             } else {
+                 keyData = ((SPHINCSPrivateKeyParameters) param).getKeyData();
+             }
          }
          else
          {

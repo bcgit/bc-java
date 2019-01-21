@@ -19,9 +19,9 @@ public class ServerNameList
      */
     public ServerNameList(Vector serverNameList)
     {
-        if (serverNameList == null)
+        if (null == serverNameList)
         {
-            throw new IllegalArgumentException("'serverNameList' must not be null");
+            throw new NullPointerException("'serverNameList' cannot be null");
         }
 
         this.serverNameList = serverNameList;
@@ -46,13 +46,13 @@ public class ServerNameList
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        short[] nameTypesSeen = new short[0];
+        short[] nameTypesSeen = TlsUtils.EMPTY_SHORTS;
         for (int i = 0; i < serverNameList.size(); ++i)
         {
             ServerName entry = (ServerName)serverNameList.elementAt(i);
 
             nameTypesSeen = checkNameType(nameTypesSeen, entry.getNameType());
-            if (nameTypesSeen == null)
+            if (null == nameTypesSeen)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -75,24 +75,18 @@ public class ServerNameList
      */
     public static ServerNameList parse(InputStream input) throws IOException
     {
-        int length = TlsUtils.readUint16(input);
-        if (length < 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
-        byte[] data = TlsUtils.readFully(length, input);
+        byte[] data = TlsUtils.readOpaque16(input, 1);
 
         ByteArrayInputStream buf = new ByteArrayInputStream(data);
 
-        short[] nameTypesSeen = new short[0];
+        short[] nameTypesSeen = TlsUtils.EMPTY_SHORTS;
         Vector server_name_list = new Vector();
         while (buf.available() > 0)
         {
             ServerName entry = ServerName.parse(buf);
 
             nameTypesSeen = checkNameType(nameTypesSeen, entry.getNameType());
-            if (nameTypesSeen == null)
+            if (null == nameTypesSeen)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -105,11 +99,8 @@ public class ServerNameList
 
     private static short[] checkNameType(short[] nameTypesSeen, short nameType)
     {
-        /*
-         * RFC 6066 3. The ServerNameList MUST NOT contain more than one name of the same
-         * name_type.
-         */
-        if (!NameType.isValid(nameType) || Arrays.contains(nameTypesSeen, nameType))
+         // RFC 6066 3. The ServerNameList MUST NOT contain more than one name of the same NameType.
+        if (Arrays.contains(nameTypesSeen, nameType))
         {
             return null;
         }

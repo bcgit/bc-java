@@ -177,6 +177,11 @@ public final class XMSSPrivateKeyParameters
         }
     }
 
+    public long getUsagesRemaining()
+    {
+        return (1L << this.getParameters().getHeight()) - this.getIndex();
+    }
+
     public static class Builder
     {
 
