@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
@@ -95,6 +96,204 @@ public class GOST3410Test
         public String getName()
         {
             return "GOST3410ParameterEncodeDecode";
+        }
+
+
+        private SimpleTestResult encodeRecodePrivateKeyGost2006()
+        {
+            try
+            {
+                ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID("GostR3410-2001-CryptoPro-A");
+                ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+                ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, CryptoProObjectIdentifiers.gostR3411);
+                ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
+                ECKeyPairGenerator engine = new ECKeyPairGenerator();
+                engine.init(params);
+                AsymmetricCipherKeyPair pair = engine.generateKeyPair();
+
+                ECPrivateKeyParameters generatedKeyParameters = (ECPrivateKeyParameters)pair.getPrivate();
+                ECPrivateKeyParameters keyParameters = generatedKeyParameters;
+
+
+                //
+                // Continuously encode/decode the key and check for loss of information.
+                //
+
+
+                for (int t = 0; t < 3; t++)
+                {
+                    PrivateKeyInfo info = PrivateKeyInfoFactory.createPrivateKeyInfo(keyParameters);
+                    keyParameters = (ECPrivateKeyParameters)PrivateKeyFactory.createKey(info);
+
+                    { // Specifically cast and test gost parameters.
+                        ECGOST3410Parameters gParam = (ECGOST3410Parameters)generatedKeyParameters.getParameters();
+                        ECGOST3410Parameters rParam = (ECGOST3410Parameters)keyParameters.getParameters();
+
+                        boolean ok = safeEquals(gParam.getDigestParamSet(), rParam.getDigestParamSet()) &&
+                            safeEquals(gParam.getEncryptionParamSet(), rParam.getEncryptionParamSet()) &&
+                            safeEquals(gParam.getPublicKeyParamSet(), rParam.getPublicKeyParamSet());
+
+                        if (!ok)
+                        {
+                            return new SimpleTestResult(false, "GOST parameters does not match");
+                        }
+
+                    }
+
+                    if (keyParameters.isPrivate() != generatedKeyParameters.isPrivate())
+                    {
+                        return new SimpleTestResult(false, "isPrivate does not match");
+                    }
+
+                    if (!keyParameters.getD().equals(generatedKeyParameters.getD()))
+                    {
+                        return new SimpleTestResult(false, "D does not match");
+                    }
+
+                    if (!((ECGOST3410Parameters)keyParameters.getParameters()).getName().equals(
+                        ((ECGOST3410Parameters)generatedKeyParameters.getParameters()).getName()))
+                    {
+                        return new SimpleTestResult(false, "Name does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getCurve().equals(generatedKeyParameters.getParameters().getCurve()))
+                    {
+                        return new SimpleTestResult(false, "Curve does not match");
+                    }
+
+                    if (!Arrays.areEqual(
+                        keyParameters.getParameters().getG().getEncoded(true),
+                        generatedKeyParameters.getParameters().getG().getEncoded(true)))
+                    {
+                        return new SimpleTestResult(false, "G does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getH().equals(generatedKeyParameters.getParameters().getH()))
+                    {
+                        return new SimpleTestResult(false, "H does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getHInv().equals(generatedKeyParameters.getParameters().getHInv()))
+                    {
+                        return new SimpleTestResult(false, "Hinv does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getN().equals(generatedKeyParameters.getParameters().getN()))
+                    {
+                        return new SimpleTestResult(false, "N does not match");
+                    }
+
+                    if (!Arrays.areEqual(keyParameters.getParameters().getSeed(), generatedKeyParameters.getParameters().getSeed()))
+                    {
+                        return new SimpleTestResult(false, "Seed does not match");
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                throw new RuntimeException(ex.getMessage(), ex);
+            }
+
+            return new SimpleTestResult(true, null);
+        }
+
+
+        public SimpleTestResult encodeRecodePublicKeyGost2006()
+        {
+            ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID("GostR3410-2001-CryptoPro-A");
+            ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+            ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, CryptoProObjectIdentifiers.gostR3411);
+            ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
+            ECKeyPairGenerator engine = new ECKeyPairGenerator();
+            engine.init(params);
+            AsymmetricCipherKeyPair pair = engine.generateKeyPair();
+
+            ECPublicKeyParameters generatedKeyParameters = (ECPublicKeyParameters)pair.getPublic();
+            ECPublicKeyParameters keyParameters = generatedKeyParameters;
+
+            try
+            {
+                for (int t = 0; t < 3; t++)
+                {
+
+                    SubjectPublicKeyInfo info = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(keyParameters);
+                    keyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(info);
+
+                    { // Specifically cast and test gost parameters.
+                        ECGOST3410Parameters gParam = (ECGOST3410Parameters)generatedKeyParameters.getParameters();
+                        ECGOST3410Parameters rParam = (ECGOST3410Parameters)keyParameters.getParameters();
+
+
+                        boolean ok = safeEquals(gParam.getDigestParamSet(), rParam.getDigestParamSet()) &&
+                            safeEquals(gParam.getEncryptionParamSet(), rParam.getEncryptionParamSet()) &&
+                            safeEquals(gParam.getPublicKeyParamSet(), rParam.getPublicKeyParamSet());
+
+                        if (!ok)
+                        {
+                            return new SimpleTestResult(false, "GOST parameters does not match");
+                        }
+
+                    }
+
+                    if (!((ECGOST3410Parameters)keyParameters.getParameters()).getName().equals(
+                        ((ECGOST3410Parameters)generatedKeyParameters.getParameters()).getName()))
+                    {
+                        return new SimpleTestResult(false, "Name does not match");
+                    }
+
+
+                    if (keyParameters.isPrivate() != generatedKeyParameters.isPrivate())
+                    {
+                        return new SimpleTestResult(false, "isPrivate does not match");
+                    }
+
+                    if (!Arrays.areEqual(keyParameters.getQ().getEncoded(true), generatedKeyParameters.getQ().getEncoded(true)))
+                    {
+                        return new SimpleTestResult(false, "Q does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getCurve().equals(generatedKeyParameters.getParameters().getCurve()))
+                    {
+                        return new SimpleTestResult(false, "Curve does not match");
+                    }
+
+                    if (!Arrays.areEqual(
+                        keyParameters.getParameters().getG().getEncoded(true),
+                        generatedKeyParameters.getParameters().getG().getEncoded(true)))
+                    {
+                        return new SimpleTestResult(false, "G does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getH().equals(generatedKeyParameters.getParameters().getH()))
+                    {
+                        return new SimpleTestResult(false, "H does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getHInv().equals(generatedKeyParameters.getParameters().getHInv()))
+                    {
+                        return new SimpleTestResult(false, "Hinv does not match");
+                    }
+
+                    if (!keyParameters.getParameters().getN().equals(generatedKeyParameters.getParameters().getN()))
+                    {
+                        return new SimpleTestResult(false, "N does not match");
+                    }
+
+                    if (!Arrays.areEqual(keyParameters.getParameters().getSeed(), generatedKeyParameters.getParameters().getSeed()))
+                    {
+                        return new SimpleTestResult(false, "Seed does not match");
+                    }
+                }
+                return new SimpleTestResult(true, null);
+            }
+            catch (Exception ex)
+            {
+                throw new RuntimeException(ex.getMessage(), ex);
+            }
+
+
         }
 
 
@@ -703,6 +902,19 @@ public class GOST3410Test
             }
 
             str = encodeRecodePublicKey();
+            if (!str.isSuccessful())
+            {
+                return str;
+            }
+
+
+            str = encodeRecodePublicKeyGost2006();
+            if (!str.isSuccessful())
+            {
+                return str;
+            }
+
+            str = encodeRecodePrivateKeyGost2006();
             if (!str.isSuccessful())
             {
                 return str;
