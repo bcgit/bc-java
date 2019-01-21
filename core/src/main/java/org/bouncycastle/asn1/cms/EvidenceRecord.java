@@ -116,24 +116,12 @@ public class EvidenceRecord
     }
 
     public EvidenceRecord(
-        final ASN1Sequence digestAlgorithms,
-        final CryptoInfos cryptoInfos,
-        final EncryptionInfo encryptionInfo,
-        final ArchiveTimeStampSequence archiveTimeStampSequence)
+        AlgorithmIdentifier[] digestAlgorithms,
+        CryptoInfos cryptoInfos,
+        EncryptionInfo encryptionInfo,
+        ArchiveTimeStampSequence archiveTimeStampSequence)
     {
-        Enumeration digestAlgos = digestAlgorithms.getObjects();
-
-        while (digestAlgos.hasMoreElements())
-        {
-            final Object digestAlgo = digestAlgos.nextElement();
-            if (!(digestAlgo instanceof AlgorithmIdentifier))
-            {
-                throw new IllegalArgumentException("unknown object in getInstance: " +
-                    digestAlgo.getClass().getName());
-            }
-        }
-
-        this.digestAlgorithms = digestAlgorithms;
+        this.digestAlgorithms = new DERSequence(digestAlgorithms);
         this.cryptoInfos = cryptoInfos;
         this.encryptionInfo = encryptionInfo;
         this.archiveTimeStampSequence = archiveTimeStampSequence;
