@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -185,8 +186,10 @@ public class PrivateKeyFactory
         {
             return new Ed448PrivateKeyParameters(getRawKey(keyInfo, Ed448PrivateKeyParameters.KEY_SIZE), 0);
         }
-        else if (algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512)
-            || algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
+        else if (
+            algOID.equals(CryptoProObjectIdentifiers.gostR3410_2001) ||
+                algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) ||
+                algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
         {
             GOST3410PublicKeyAlgParameters gostParams = GOST3410PublicKeyAlgParameters.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
             ECGOST3410Parameters ecSpec = null;
@@ -200,9 +203,9 @@ public class PrivateKeyFactory
                 ecSpec = new ECGOST3410Parameters(
                     new ECNamedDomainParameters(
                         gostParams.getPublicKeyParamSet(), ecP),
-                        gostParams.getPublicKeyParamSet(),
-                        gostParams.getDigestParamSet(),
-                        gostParams.getEncryptionParamSet());
+                    gostParams.getPublicKeyParamSet(),
+                    gostParams.getDigestParamSet(),
+                    gostParams.getEncryptionParamSet());
                 ASN1Encodable privKey = keyInfo.parsePrivateKey();
                 if (privKey instanceof ASN1Integer)
                 {
