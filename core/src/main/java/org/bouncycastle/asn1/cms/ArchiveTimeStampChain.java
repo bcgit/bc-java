@@ -82,8 +82,9 @@ public class ArchiveTimeStampChain
      * Adds an {@link ArchiveTimeStamp} object to the archive timestamp chain.
      *
      * @param archiveTimeStamp the {@link ArchiveTimeStamp} to add.
+     * @return returns the modified chain.
      */
-    protected void add(final ArchiveTimeStamp archiveTimeStamp)
+    public ArchiveTimeStampChain add(final ArchiveTimeStamp archiveTimeStamp)
     {
         final ASN1EncodableVector vector = new ASN1EncodableVector();
         for (final ASN1Encodable ats : archiveTimestamps)
@@ -93,7 +94,7 @@ public class ArchiveTimeStampChain
 
         vector.add(archiveTimeStamp);
 
-        this.archiveTimestamps = new DERSequence(vector);
+        return new ArchiveTimeStampChain(new DERSequence(vector));
     }
 
     public ASN1Primitive toASN1Primitive()
