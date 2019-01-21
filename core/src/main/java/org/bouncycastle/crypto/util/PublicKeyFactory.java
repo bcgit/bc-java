@@ -352,20 +352,18 @@ public class PublicKeyFactory
                 x9Encoding[i + 32] = keyEnc[64 - i];
             }
 
-            ASN1ObjectIdentifier paramOID;
+            GOST3410PublicKeyAlgParameters gostParams = GOST3410PublicKeyAlgParameters.getInstance(keyInfo.getAlgorithm().getParameters());
 
-            if (keyInfo.getAlgorithm().getParameters() instanceof ASN1ObjectIdentifier)
-            {
-                paramOID = ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters());
-            }
-            else
-            {
-                GOST3410PublicKeyAlgParameters params = GOST3410PublicKeyAlgParameters.getInstance(keyInfo.getAlgorithm().getParameters());
-                paramOID = params.getPublicKeyParamSet();
-            }
+            ECGOST3410Parameters ecDomainParameters =
+                new ECGOST3410Parameters(
+                    new ECNamedDomainParameters(gostParams.getPublicKeyParamSet(), ECGOST3410NamedCurves.getByOID(gostParams.getPublicKeyParamSet())),
+                    gostParams.getPublicKeyParamSet(),
+                    gostParams.getDigestParamSet(),
+                    gostParams.getEncryptionParamSet());
 
-            ECDomainParameters ecDomainParameters = ECGOST3410NamedCurves.getByOID(paramOID);
+
             return new ECPublicKeyParameters(ecDomainParameters.getCurve().decodePoint(x9Encoding), ecDomainParameters);
+
         }
     }
 
