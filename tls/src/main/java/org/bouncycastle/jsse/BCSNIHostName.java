@@ -93,7 +93,12 @@ public final class BCSNIHostName extends BCSNIServerName
 
         public boolean matches(BCSNIServerName serverName)
         {
-            if (null == serverName || BCStandardConstants.SNI_HOST_NAME != serverName.getType())
+            if (null == serverName)
+            {
+                throw new NullPointerException("'serverName' cannot be null");
+            }
+
+            if (BCStandardConstants.SNI_HOST_NAME != serverName.getType())
             {
                 return false;
             }

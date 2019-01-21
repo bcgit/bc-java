@@ -137,6 +137,8 @@ public class TlsServerProtocol
             }
             case CS_START:
             {
+                SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+
                 receiveClientHelloMessage(buf);
                 this.connection_state = CS_CLIENT_HELLO;
 
@@ -149,7 +151,9 @@ public class TlsServerProtocol
                 {
                     invalidateSession();
 
-                    this.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
+                    securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
+
+                    this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
                     this.sessionParameters = null;
                 }
 
@@ -185,7 +189,7 @@ public class TlsServerProtocol
                         serverCertificate = this.serverCredentials.getCertificate();
                         sendCertificateMessage(serverCertificate, endPointHash);
                     }
-                    tlsServerContext.getSecurityParametersHandshake().tlsServerEndPoint = endPointHash.toByteArray();
+                    securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
                     this.connection_state = CS_SERVER_CERTIFICATE;
 
                     // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
@@ -463,11 +467,7 @@ public class TlsServerProtocol
          * TODO RFC 5077 3.4. If a ticket is presented by the client, the server MUST NOT attempt to
          * use the Session ID in the ClientHello for stateful session resumption.
          */
-        byte[] sessionID = TlsUtils.readOpaque8(buf);
-        if (sessionID.length > 32)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
+        byte[] sessionID = TlsUtils.readOpaque8(buf, 0, 32);
 
         /*
          * TODO RFC 5246 7.4.1.2. If the session_id field is not empty (implying a session
@@ -660,6 +660,8 @@ public class TlsServerProtocol
         {
             // NOTE: Validates the padding extension data, if present
             TlsExtensionsUtils.getPaddingExtension(clientExtensions);
+
+            securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(clientExtensions);
 
             /*
              * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior

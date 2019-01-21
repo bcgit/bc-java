@@ -13,11 +13,11 @@ import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
-import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
+import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.util.Arrays;
 
 public class BCXMSSPrivateKey
-    implements PrivateKey, XMSSKey
+    implements PrivateKey, XMSSPrivateKey
 {
     private static final long serialVersionUID = 8568701712864512338L;
 
@@ -46,6 +46,11 @@ public class BCXMSSPrivateKey
         XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
         this.treeDigest = keyParams.getTreeDigest().getAlgorithm();
         this.keyParams = (XMSSPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
+    }
+
+    public long getUsagesRemaining()
+    {
+        return keyParams.getUsagesRemaining();
     }
 
     public String getAlgorithm()

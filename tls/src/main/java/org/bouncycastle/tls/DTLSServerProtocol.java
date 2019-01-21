@@ -112,8 +112,10 @@ public class DTLSServerProtocol
          */
         {
             invalidateSession(state);
-    
-            state.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
+
+            securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
+
+            state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
             state.sessionParameters = null;
         }
 
@@ -557,14 +559,15 @@ public class DTLSServerProtocol
          */
         byte[] client_random = TlsUtils.readFully(32, buf);
 
-        byte[] sessionID = TlsUtils.readOpaque8(buf);
-        if (sessionID.length > 32)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
+        byte[] sessionID = TlsUtils.readOpaque8(buf, 0, 32);
 
-        // TODO RFC 4347 has the cookie length restricted to 32, but not in RFC 6347
-        byte[] cookie = TlsUtils.readOpaque8(buf);
+        /*
+         * RFC 6347 This specification increases the cookie size limit to 255 bytes for greater
+         * future flexibility. The limit remains 32 for previous versions of DTLS.
+         */
+        int maxCookieLength = ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(client_version) ? 255 : 32;
+
+        byte[] cookie = TlsUtils.readOpaque8(buf, 0, maxCookieLength);
 
         int cipher_suites_length = TlsUtils.readUint16(buf);
         if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0)
@@ -695,6 +698,8 @@ public class DTLSServerProtocol
         {
             // NOTE: Validates the padding extension data, if present
             TlsExtensionsUtils.getPaddingExtension(state.clientExtensions);
+
+            securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(state.clientExtensions);
 
             /*
              * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior

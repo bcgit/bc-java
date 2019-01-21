@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTKey;
+import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
@@ -494,6 +495,47 @@ public class XMSSMTTest
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE128ph, BCObjectIdentifiers.xmss_mt_SHAKE128, "SHAKE128", new SHAKEDigest(128));
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHA512ph, BCObjectIdentifiers.xmss_mt_SHA512, "SHA512", new SHA512Digest());
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE256ph, BCObjectIdentifiers.xmss_mt_SHAKE256, "SHAKE256", new SHAKEDigest(256));
+    }
+
+    public void testExhaustion()
+        throws Exception
+    {
+        StateAwareSignature s1 = (StateAwareSignature)Signature.getInstance(BCObjectIdentifiers.xmss_mt_SHA256.getId(), "BCPQC");
+        Signature s2 = Signature.getInstance(BCObjectIdentifiers.xmss_mt_SHA256.getId(), "BCPQC");
+
+        byte[] message = Strings.toByteArray("hello, world!");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+
+        kpg.initialize(new XMSSMTParameterSpec(4, 2,"SHA256"), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        XMSSMTPrivateKey privKey = (XMSSMTPrivateKey)kp.getPrivate();
+
+        assertEquals(16, privKey.getUsagesRemaining());
+
+        s1.initSign(privKey);
+
+        do
+        {
+            s1.update(message, 0, message.length);
+
+            byte[] sig = s1.sign();
+
+            s2.initVerify(kp.getPublic());
+
+            s2.update(message, 0, message.length);
+
+            assertTrue(s2.verify(sig));
+
+            privKey = (XMSSMTPrivateKey)s1.getUpdatedPrivateKey();
+
+            s1.initSign(privKey);
+        }
+        while (s1.isSigningCapable());
+
+        assertEquals(0, privKey.getUsagesRemaining());
     }
 
     private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
