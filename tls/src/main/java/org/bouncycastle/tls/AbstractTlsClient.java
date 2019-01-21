@@ -205,7 +205,7 @@ public abstract class AbstractTlsClient
         Vector sniServerNames = getSNIServerNames();
         if (sniServerNames != null)
         {
-            TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(sniServerNames));
+            TlsExtensionsUtils.addServerNameExtensionClient(clientExtensions, sniServerNames);
         }
 
         CertificateStatusRequest statusRequest = getCertificateStatusRequest();

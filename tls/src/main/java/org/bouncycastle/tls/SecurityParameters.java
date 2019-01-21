@@ -21,6 +21,7 @@ public class SecurityParameters
     byte[] clientRandom = null;
     byte[] serverRandom = null;
     byte[] sessionHash = null;
+    byte[] sessionID = null;
     byte[] pskIdentity = null;
     byte[] srpIdentity = null;
     byte[] tlsServerEndPoint = null;
@@ -30,6 +31,7 @@ public class SecurityParameters
     boolean extendedPadding = false;
     boolean truncatedHMac = false;
     ProtocolName applicationProtocol = null;
+    Vector clientServerNames = null;
     Vector clientSigAlgs = null;
     Vector clientSigAlgsCert = null;
     int[] clientSupportedGroups = null;
@@ -45,6 +47,8 @@ public class SecurityParameters
     void clear()
     {
         sessionHash = null;
+        sessionID = null;
+        clientServerNames = null;
         clientSigAlgs = null;
         clientSigAlgsCert = null;
         clientSupportedGroups = null;
@@ -80,6 +84,11 @@ public class SecurityParameters
     public int getCipherSuite()
     {
         return cipherSuite;
+    }
+
+    public Vector getClientServerNames()
+    {
+        return clientServerNames;
     }
 
     public Vector getClientSigAlgs()
@@ -144,6 +153,11 @@ public class SecurityParameters
     public byte[] getSessionHash()
     {
         return sessionHash;
+    }
+
+    public byte[] getSessionID()
+    {
+        return sessionID;
     }
 
     /**

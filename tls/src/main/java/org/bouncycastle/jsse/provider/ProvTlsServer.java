@@ -393,23 +393,20 @@ class ProvTlsServer
     {
         super.processClientExtensions(clientExtensions);
 
-        if (clientExtensions != null)
+        /*
+         * TODO[jsse] RFC 6066 A server that implements this extension MUST NOT accept the
+         * request to resume the session if the server_name extension contains a different name.
+         */
+        Vector serverNameList = context.getSecurityParametersHandshake().getClientServerNames();
+        if (null != serverNameList)
         {
-            /*
-             * TODO[jsse] RFC 6066 A server that implements this extension MUST NOT accept the
-             * request to resume the session if the server_name extension contains a different name.
-             */
             Collection<BCSNIMatcher> sniMatchers = sslParameters.getSNIMatchers();
             if (sniMatchers != null && !sniMatchers.isEmpty())
             {
-                ServerNameList serverNameList = TlsExtensionsUtils.getServerNameExtension(clientExtensions);
-                if (serverNameList != null)
+                this.matchedSNIServerName = JsseUtils.findMatchingSNIServerName(serverNameList, sniMatchers);
+                if (null == matchedSNIServerName)
                 {
-                    matchedSNIServerName = JsseUtils.findMatchingSNIServerName(serverNameList, sniMatchers);
-                    if (matchedSNIServerName == null)
-                    {
-                        throw new TlsFatalAlert(AlertDescription.unrecognized_name);
-                    }
+                    throw new TlsFatalAlert(AlertDescription.unrecognized_name);
                 }
             }
         }

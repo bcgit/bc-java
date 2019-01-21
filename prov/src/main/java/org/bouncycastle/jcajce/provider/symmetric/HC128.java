@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.engines.HC128Engine;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseStreamCipher;
+import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 public final class HC128
@@ -31,6 +32,15 @@ public final class HC128
         }
     }
 
+    public static class AlgParams
+        extends IvAlgorithmParameters
+    {
+        protected String engineToString()
+        {
+            return "HC128 IV";
+        }
+    }
+
     public static class Mappings
         extends AlgorithmProvider
     {
@@ -44,6 +54,7 @@ public final class HC128
         {
             provider.addAlgorithm("Cipher.HC128", PREFIX + "$Base");
             provider.addAlgorithm("KeyGenerator.HC128", PREFIX + "$KeyGen");
+            provider.addAlgorithm("AlgorithmParameters.HC128", PREFIX + "$AlgParams");
         }
     }
 }

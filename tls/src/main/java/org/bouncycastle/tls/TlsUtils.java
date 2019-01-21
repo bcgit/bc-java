@@ -737,6 +737,17 @@ public class TlsUtils
         return readFully(length, input);
     }
 
+    public static byte[] readOpaque8(InputStream input, int minLength, int maxLength)
+        throws IOException
+    {
+        short length = readUint8(input);
+        if (length < minLength || maxLength < length)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return readFully(length, input);
+    }
+
     public static byte[] readOpaque16(InputStream input)
         throws IOException
     {

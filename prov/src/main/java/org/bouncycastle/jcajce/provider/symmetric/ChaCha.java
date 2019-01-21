@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.engines.ChaChaEngine;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseStreamCipher;
+import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 public final class ChaCha
@@ -50,6 +51,15 @@ public final class ChaCha
         }
     }
 
+    public static class AlgParams
+        extends IvAlgorithmParameters
+    {
+        protected String engineToString()
+        {
+            return "ChaCha7539 IV";
+        }
+    }
+
     public static class Mappings
         extends AlgorithmProvider
     {
@@ -67,6 +77,10 @@ public final class ChaCha
 
             provider.addAlgorithm("Cipher.CHACHA7539", PREFIX + "$Base7539");
             provider.addAlgorithm("KeyGenerator.CHACHA7539", PREFIX + "$KeyGen7539");
+            provider.addAlgorithm("AlgorithmParameters.CHACHA7539", PREFIX + "$AlgParams");
+            provider.addAlgorithm("Alg.Alias.Cipher.CHACHA20", "CHACHA7539");
+            provider.addAlgorithm("Alg.Alias.KeyGenerator.CHACHA20", "CHACHA7539");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters.CHACHA20", "CHACHA7539");
         }
     }
 }

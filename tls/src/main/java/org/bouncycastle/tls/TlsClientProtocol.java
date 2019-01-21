@@ -17,8 +17,6 @@ public class TlsClientProtocol
     protected TlsClient tlsClient = null;
     TlsClientContextImpl tlsClientContext = null;
 
-    protected byte[] selectedSessionID = null;
-
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
 
@@ -118,7 +116,6 @@ public class TlsClientProtocol
     {
         super.cleanupHandshake();
 
-        this.selectedSessionID = null;
         this.keyExchange = null;
         this.authentication = null;
         this.certificateStatus = null;
@@ -262,9 +259,10 @@ public class TlsClientProtocol
 
                 applyMaxFragmentLengthExtension();
 
+                SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
                 if (this.resumedSession)
                 {
-                    tlsClientContext.getSecurityParametersHandshake().masterSecret = tlsClientContext.getCrypto()
+                    securityParameters.masterSecret = tlsClientContext.getCrypto()
                         .adoptSecret(sessionParameters.getMasterSecret());
                     this.recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
                 }
@@ -272,7 +270,7 @@ public class TlsClientProtocol
                 {
                     invalidateSession();
 
-                    this.tlsSession = TlsUtils.importSession(this.selectedSessionID, null);
+                    this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
                     this.sessionParameters = null;
                 }
 
@@ -582,11 +580,7 @@ public class TlsClientProtocol
 
         byte[] server_random = TlsUtils.readFully(32, buf);
 
-        this.selectedSessionID = TlsUtils.readOpaque8(buf);
-        if (this.selectedSessionID.length > 32)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
+        byte[] selectedSessionID = TlsUtils.readOpaque8(buf, 0, 32);
 
         int selectedCipherSuite = TlsUtils.readUint16(buf);
 
@@ -643,9 +637,10 @@ public class TlsClientProtocol
         }
         securityParameters.serverRandom = server_random;
 
-        this.tlsClient.notifySessionID(this.selectedSessionID);
-        this.resumedSession = this.selectedSessionID.length > 0 && this.tlsSession != null
-            && Arrays.areEqual(this.selectedSessionID, this.tlsSession.getSessionID());
+        securityParameters.sessionID = selectedSessionID;
+        this.tlsClient.notifySessionID(selectedSessionID);
+        this.resumedSession = selectedSessionID.length > 0 && this.tlsSession != null
+            && Arrays.areEqual(selectedSessionID, this.tlsSession.getSessionID());
 
         /*
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
@@ -959,6 +954,8 @@ public class TlsClientProtocol
             TlsExtensionsUtils.addSupportedVersionsExtensionClient(clientExtensions,
                 tlsClientContext.getClientSupportedVersions());
         }
+
+        securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(clientExtensions);
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
         {

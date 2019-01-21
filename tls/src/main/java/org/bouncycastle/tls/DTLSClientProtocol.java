@@ -169,7 +169,7 @@ public class DTLSClientProtocol
 
         invalidateSession(state);
 
-        state.tlsSession = TlsUtils.importSession(state.selectedSessionID, null);
+        state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
         state.sessionParameters = null;
 
         serverMessage = handshake.receiveMessage();
@@ -427,6 +427,8 @@ public class DTLSClientProtocol
                 context.getClientSupportedVersions());
         }
 
+        securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(state.clientExtensions);
+
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
         {
             securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
@@ -559,22 +561,20 @@ public class DTLSClientProtocol
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
-        byte[] cookie = TlsUtils.readOpaque8(buf);
+
+        /*
+         * RFC 6347 This specification increases the cookie size limit to 255 bytes for greater
+         * future flexibility. The limit remains 32 for previous versions of DTLS.
+         */
+        int maxCookieLength = ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(server_version) ? 255 : 32;
+
+        byte[] cookie = TlsUtils.readOpaque8(buf, 0, maxCookieLength);
 
         TlsProtocol.assertEmpty(buf);
 
         // TODO Seems this behaviour is not yet in line with OpenSSL for DTLS 1.2
 //        reportServerVersion(state, server_version);
         if (!server_version.isEqualOrEarlierVersionOf(state.clientContext.getClientVersion()))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        /*
-         * RFC 6347 This specification increases the cookie size limit to 255 bytes for greater
-         * future flexibility. The limit remains 32 for previous versions of DTLS.
-         */
-        if (!ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(server_version) && cookie.length > 32)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -615,11 +615,7 @@ public class DTLSClientProtocol
 
         byte[] server_random = TlsUtils.readFully(32, buf);
 
-        state.selectedSessionID = TlsUtils.readOpaque8(buf);
-        if (state.selectedSessionID.length > 32)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
+        byte[] selectedSessionID = TlsUtils.readOpaque8(buf, 0, 32);
 
         int selectedCipherSuite = TlsUtils.readUint16(buf);
 
@@ -641,10 +637,15 @@ public class DTLSClientProtocol
         }
         securityParameters.serverRandom = server_random;
 
-        state.client.notifySessionID(state.selectedSessionID);
-        state.resumedSession = state.selectedSessionID.length > 0 && state.tlsSession != null
-            && Arrays.areEqual(state.selectedSessionID, state.tlsSession.getSessionID());
+        securityParameters.sessionID = selectedSessionID;
+        state.client.notifySessionID(selectedSessionID);
+        state.resumedSession = selectedSessionID.length > 0 && state.tlsSession != null
+            && Arrays.areEqual(selectedSessionID, state.tlsSession.getSessionID());
 
+        /*
+         * Find out which CipherSuite the server has chosen and check that it was one of the offered
+         * ones, and is a valid selection for the negotiated version.
+         */
         {
             if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
@@ -916,7 +917,6 @@ public class DTLSClientProtocol
         int[] offeredCipherSuites = null;
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
-        byte[] selectedSessionID = null;
         boolean resumedSession = false;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
