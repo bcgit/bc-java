@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -53,7 +54,8 @@ public class PrivateKeyInfoFactory
      * @return the appropriate PrivateKeyInfo
      * @throws java.io.IOException on an error encoding the key
      */
-    public static PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter privateKey) throws IOException
+    public static PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter privateKey)
+        throws IOException
     {
         return createPrivateKeyInfo(privateKey, null);
     }
@@ -66,7 +68,8 @@ public class PrivateKeyInfoFactory
      * @return the appropriate PrivateKeyInfo
      * @throws java.io.IOException on an error encoding the key
      */
-    public static PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter privateKey, ASN1Set attributes) throws IOException
+    public static PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter privateKey, ASN1Set attributes)
+        throws IOException
     {
         if (privateKey instanceof RSAKeyParameters)
         {
@@ -74,7 +77,7 @@ public class PrivateKeyInfoFactory
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE),
                 new RSAPrivateKey(priv.getModulus(), priv.getPublicExponent(), priv.getExponent(), priv.getP(), priv.getQ(), priv.getDP(), priv.getDQ(), priv.getQInv()),
-            attributes);
+                attributes);
         }
         else if (privateKey instanceof DSAPrivateKeyParameters)
         {
@@ -104,12 +107,30 @@ public class PrivateKeyInfoFactory
                     ((ECGOST3410Parameters)domainParams).getDigestParamSet(),
                     ((ECGOST3410Parameters)domainParams).getEncryptionParamSet());
 
-                boolean is512 = priv.getD().bitLength() > 256;
-                ASN1ObjectIdentifier identifier = (is512) ?
-                    RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512 :
-                    RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
-                int size = (is512) ? 64 : 32;
 
+                int size;
+                ASN1ObjectIdentifier identifier;
+
+                if (oidIs(gostParams.getPublicKeyParamSet(),
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_A,
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_B,
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_C,
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchA,
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchB
+                ))
+                {
+                    size = 32;
+                    identifier = CryptoProObjectIdentifiers.gostR3410_2001;
+                }
+                else
+                {
+
+                    boolean is512 = priv.getD().bitLength() > 256;
+                    identifier = (is512) ?
+                        RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512 :
+                        RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
+                    size = (is512) ? 64 : 32;
+                }
                 byte[] encKey = new byte[size];
 
                 extractBytes(encKey, size, 0, priv.getD());
@@ -190,4 +211,15 @@ public class PrivateKeyInfoFactory
         }
     }
 
+    private static boolean oidIs(ASN1ObjectIdentifier oid, ASN1ObjectIdentifier... oneOf)
+    {
+        for (ASN1ObjectIdentifier candidate : oneOf)
+        {
+            if (oid.equals(candidate))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }

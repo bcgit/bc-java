@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -89,24 +90,41 @@ public class SubjectPublicKeyInfoFactory
 
                 BigInteger bX = pub.getQ().getAffineXCoord().toBigInteger();
                 BigInteger bY = pub.getQ().getAffineYCoord().toBigInteger();
-                boolean is512 = (bX.bitLength() > 256);
 
                 params = new GOST3410PublicKeyAlgParameters(gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet());
 
                 int encKeySize;
                 int offset;
                 ASN1ObjectIdentifier algIdentifier;
-                if (is512)
-                {
-                    encKeySize = 128;
-                    offset = 64;
-                    algIdentifier = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512;
-                }
-                else
+
+
+                if (oidIs(gostParams.getPublicKeyParamSet(),
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_A,
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_B,
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_C,
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchA,
+                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchB
+                ))
                 {
                     encKeySize = 64;
                     offset = 32;
-                    algIdentifier = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
+                    algIdentifier = CryptoProObjectIdentifiers.gostR3410_2001;
+                }
+                else
+                {
+                    boolean is512 = (bX.bitLength() > 256);
+                    if (is512)
+                    {
+                        encKeySize = 128;
+                        offset = 64;
+                        algIdentifier = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512;
+                    }
+                    else
+                    {
+                        encKeySize = 64;
+                        offset = 32;
+                        algIdentifier = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
+                    }
                 }
 
                 byte[] encKey = new byte[encKeySize];
@@ -188,5 +206,17 @@ public class SubjectPublicKeyInfoFactory
         {
             encKey[offSet + i] = val[val.length - 1 - i];
         }
+    }
+
+    private static boolean oidIs(ASN1ObjectIdentifier oid, ASN1ObjectIdentifier... oneOf)
+    {
+        for (ASN1ObjectIdentifier candidate : oneOf)
+        {
+            if (oid.equals(candidate))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
