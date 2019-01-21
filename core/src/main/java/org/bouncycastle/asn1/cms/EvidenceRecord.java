@@ -67,6 +67,54 @@ public class EvidenceRecord
         return null;
     }
 
+    private EvidenceRecord(
+        EvidenceRecord evidenceRecord,
+        ArchiveTimeStampSequence replacementSequence,
+        ArchiveTimeStamp newChainTimeStamp)
+    {
+        this.version = evidenceRecord.version;
+
+        // check the list of digest algorithms is correct.
+        if (newChainTimeStamp != null)
+        {
+            AlgorithmIdentifier algId = newChainTimeStamp.getDigestAlgorithmIdentifier();
+            final ASN1EncodableVector vector = new ASN1EncodableVector();
+            final Enumeration enumeration = evidenceRecord.digestAlgorithms.getObjects();
+            boolean found = false;
+
+            while (enumeration.hasMoreElements())
+            {
+                final AlgorithmIdentifier algorithmIdentifier = AlgorithmIdentifier.getInstance(
+                                                                            enumeration.nextElement());
+                vector.add(algorithmIdentifier);
+
+                if (algorithmIdentifier.equals(algId))
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                vector.add(algId);
+                this.digestAlgorithms = new DERSequence(vector);
+            }
+            else
+            {
+                this.digestAlgorithms = evidenceRecord.digestAlgorithms;
+            }
+        }
+        else
+        {
+            this.digestAlgorithms = evidenceRecord.digestAlgorithms;
+        }
+
+        this.cryptoInfos = evidenceRecord.cryptoInfos;
+        this.encryptionInfo = evidenceRecord.encryptionInfo;
+        this.archiveTimeStampSequence = replacementSequence;
+    }
+
     public EvidenceRecord(
         final ASN1Sequence digestAlgorithms,
         final CryptoInfos cryptoInfos,
@@ -152,6 +200,32 @@ public class EvidenceRecord
     public ArchiveTimeStampSequence getArchiveTimeStampSequence()
     {
         return archiveTimeStampSequence;
+    }
+
+    /**
+     * Return a new EvidenceRecord with an added ArchiveTimeStamp
+     *
+     * @param ats         the archive timestamp to add
+     * @param newChain states whether this new archive timestamp must be added as part of a
+     *                    new sequence (i.e. in the case of hashtree renewal) or not (i.e. in the case of timestamp
+     *                    renewal)
+     * @return the new EvidenceRecord
+     */
+    public EvidenceRecord addArchiveTimeStamp(final ArchiveTimeStamp ats, final boolean newChain)
+    {
+        if (newChain)
+        {
+            ArchiveTimeStampChain chain = new ArchiveTimeStampChain(ats);
+            
+            return new EvidenceRecord(this, archiveTimeStampSequence.append(chain), ats);
+        }
+        else
+        {
+            ArchiveTimeStampChain[] chains = archiveTimeStampSequence.getArchiveTimeStampChains();
+
+            chains[chains.length - 1] = chains[chains.length - 1].append(ats);
+            return new EvidenceRecord(this, new ArchiveTimeStampSequence(chains), null);
+        }
     }
 
     public String toString()
