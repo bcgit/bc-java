@@ -96,7 +96,8 @@ class ProvSSLSessionContext
         }
     }
 
-    synchronized ProvSSLSession reportSession(TlsSession tlsSession, String peerHost, int peerPort)
+    synchronized ProvSSLSession reportSession(String peerHost, int peerPort, TlsSession tlsSession,
+        JsseSessionParameters jsseSessionParameters)
     {
         processQueue();
 
@@ -106,7 +107,7 @@ class ProvSSLSessionContext
         ProvSSLSession session = sessionEntry == null ? null : sessionEntry.get();
         if (null == session || session.getTlsSession() != tlsSession)
         {
-            session = new ProvSSLSession(this, peerHost, peerPort, tlsSession);
+            session = new ProvSSLSession(this, peerHost, peerPort, tlsSession, jsseSessionParameters);
 
             if (null != sessionID)
             {

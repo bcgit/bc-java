@@ -10,14 +10,16 @@ class ProvSSLSessionResumed
 {
     protected final TlsSession tlsSession;
     protected final SessionParameters sessionParameters;
+    protected final JsseSessionParameters jsseSessionParameters;
 
     ProvSSLSessionResumed(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort,
-        SecurityParameters securityParameters, TlsSession tlsSession)
+        SecurityParameters securityParameters, TlsSession tlsSession, JsseSessionParameters jsseSessionParameters)
     {
         super(sslSessionContext, peerHost, peerPort, securityParameters);
 
         this.tlsSession = tlsSession;
         this.sessionParameters = tlsSession.exportSessionParameters();
+        this.jsseSessionParameters = jsseSessionParameters;
     }
 
     @Override
@@ -30,6 +32,12 @@ class ProvSSLSessionResumed
     protected byte[] getIDArray()
     {
         return tlsSession.getSessionID();
+    }
+
+    @Override
+    protected JsseSessionParameters getJsseSessionParameters()
+    {
+        return jsseSessionParameters;
     }
 
     @Override

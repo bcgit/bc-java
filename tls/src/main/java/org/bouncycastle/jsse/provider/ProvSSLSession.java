@@ -12,17 +12,21 @@ class ProvSSLSession
     extends ProvSSLSessionBase
 {
     // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
-    protected final static ProvSSLSession NULL_SESSION = new ProvSSLSession(null, null, -1, null);
+    static final ProvSSLSession NULL_SESSION = new ProvSSLSession(null, null, -1, null,
+        new JsseSessionParameters(null));
 
     protected final TlsSession tlsSession;
     protected final SessionParameters sessionParameters;
+    protected final JsseSessionParameters jsseSessionParameters;
 
-    ProvSSLSession(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort, TlsSession tlsSession)
+    ProvSSLSession(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort, TlsSession tlsSession,
+        JsseSessionParameters jsseSessionParameters)
     {
         super(sslSessionContext, peerHost, peerPort);
 
         this.tlsSession = tlsSession;
         this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
+        this.jsseSessionParameters = jsseSessionParameters;
     }
 
     @Override
@@ -35,6 +39,12 @@ class ProvSSLSession
     protected byte[] getIDArray()
     {
         return null == tlsSession ? null : tlsSession.getSessionID();
+    }
+
+    @Override
+    protected JsseSessionParameters getJsseSessionParameters()
+    {
+        return jsseSessionParameters;
     }
 
     @Override
