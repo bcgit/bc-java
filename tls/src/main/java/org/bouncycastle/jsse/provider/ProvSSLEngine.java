@@ -47,7 +47,7 @@ class ProvSSLEngine
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
-    protected ProvSSLSessionBase handshakeSession = null;
+    protected ProvSSLSessionHandshake handshakeSession = null;
 
     protected SSLException deferredException = null;
 
@@ -637,7 +637,7 @@ class ProvSSLEngine
         this.connection = connection;
     }
 
-    public synchronized void notifyHandshakeSession(ProvSSLSessionBase handshakeSession)
+    public synchronized void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession)
     {
         this.handshakeSession = handshakeSession;
     }

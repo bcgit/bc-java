@@ -26,5 +26,5 @@ interface ProvTlsManager
 
     void notifyHandshakeComplete(ProvSSLConnection connection);
 
-    void notifyHandshakeSession(ProvSSLSessionBase handshakeSession);
+    void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession);
 }

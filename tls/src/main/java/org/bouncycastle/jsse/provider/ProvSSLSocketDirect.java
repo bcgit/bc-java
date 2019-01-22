@@ -41,7 +41,7 @@ class ProvSSLSocketDirect
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
-    protected ProvSSLSessionBase handshakeSession = null;
+    protected ProvSSLSessionHandshake handshakeSession = null;
 
     /** This constructor is the one used (only) by ProvSSLServerSocket */
     ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, boolean enableSessionCreation,
@@ -395,7 +395,7 @@ class ProvSSLSocketDirect
         this.connection = connection;
     }
 
-    public synchronized void notifyHandshakeSession(ProvSSLSessionBase handshakeSession)
+    public synchronized void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession)
     {
         this.handshakeSession = handshakeSession;
     }
