@@ -258,9 +258,9 @@ class ProvTlsServer
          * TODO[jsse] RFC 6066 When resuming a session, the server MUST NOT include a server_name
          * extension in the server hello.
          */
-        if (matchedSNIServerName != null)
+        if (null != matchedSNIServerName)
         {
-            checkServerExtensions().put(TlsExtensionsUtils.EXT_server_name, TlsExtensionsUtils.createEmptyExtensionData());
+            TlsExtensionsUtils.addServerNameExtensionServer(checkServerExtensions());
         }
 
         return serverExtensions;
