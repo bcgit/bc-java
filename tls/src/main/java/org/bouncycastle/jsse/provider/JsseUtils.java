@@ -414,17 +414,30 @@ abstract class JsseUtils
 
     static BCSNIServerName findMatchingSNIServerName(Vector serverNameList, Collection<BCSNIMatcher> sniMatchers)
     {
-        for (BCSNIServerName sniServerName : convertSNIServerNames(serverNameList))
+        if (!serverNameList.isEmpty())
         {
+            List<BCSNIServerName> sniServerNames = convertSNIServerNames(serverNameList);
             for (BCSNIMatcher sniMatcher : sniMatchers)
             {
-                if (sniMatcher != null && sniMatcher.getType() == sniServerName.getType()
-                    && sniMatcher.matches(sniServerName))
+                if (null != sniMatcher)
                 {
-                    return sniServerName;
+                    int nameType = sniMatcher.getType();
+                    for (BCSNIServerName sniServerName : sniServerNames)
+                    {
+                        if (null == sniServerName || sniServerName.getType() != nameType)
+                        {
+                            continue;
+                        }
+                        if (sniMatcher.matches(sniServerName))
+                        {
+                            return sniServerName;
+                        }
+                        break;
+                    }
                 }
             }
         }
+
         return null;
     }
 
