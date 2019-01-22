@@ -114,8 +114,7 @@ class ProvSSLSocketWrap
     {
         try
         {
-            // TODO[jsse] Include 'this' as extra argument
-            contextData.getX509TrustManager().checkClientTrusted(chain, authType);
+            contextData.getX509TrustManager().checkClientTrusted(chain, authType, this);
         }
         catch (CertificateException e)
         {
@@ -127,8 +126,7 @@ class ProvSSLSocketWrap
     {
         try
         {
-            // TODO[jsse] Include 'this' as extra argument
-            contextData.getX509TrustManager().checkServerTrusted(chain, authType);
+            contextData.getX509TrustManager().checkServerTrusted(chain, authType, this);
         }
         catch (CertificateException e)
         {
