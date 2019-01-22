@@ -32,6 +32,12 @@ class ProvSSLSessionHandshake
     }
 
     @Override
+    protected JsseSessionParameters getJsseSessionParameters()
+    {
+        return null;
+    }
+
+    @Override
     protected org.bouncycastle.tls.Certificate getLocalCertificateTLS()
     {
         return securityParameters.getLocalCertificate();

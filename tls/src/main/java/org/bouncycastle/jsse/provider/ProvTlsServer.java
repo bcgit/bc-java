@@ -232,7 +232,7 @@ class ProvTlsServer
             else
             {
                 handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
-                    sslSession.getTlsSession());
+                    sslSession.getTlsSession(), sslSession.getJsseSessionParameters());
             }
 
             manager.notifyHandshakeSession(handshakeSession);
@@ -275,7 +275,7 @@ class ProvTlsServer
         if (null != availableSSLSession)
         {
             TlsSession sessionToResume = availableSSLSession.getTlsSession();
-            if (null != sessionToResume)
+            if (null != sessionToResume && isResumable(availableSSLSession))
             {
                 this.sslSession = availableSSLSession;
                 return sessionToResume;
@@ -376,8 +376,13 @@ class ProvTlsServer
         if (null == sslSession || sslSession.getTlsSession() != connectionTlsSession)
         {
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
-            sslSession = sslSessionContext.reportSession(connectionTlsSession, manager.getPeerHost(),
-                manager.getPeerPort());
+            String peerHost = manager.getPeerHost();
+            int peerPort = manager.getPeerPort();
+            JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
+                sslParameters.getEndpointIdentificationAlgorithm());
+
+            this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
+                jsseSessionParameters);
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
@@ -428,6 +433,17 @@ class ProvTlsServer
                 LOG.fine("Server accepted SNI: " + matchedSNIServerName);
             }
         }
+    }
+
+    protected boolean isResumable(ProvSSLSession availableSSLSession)
+    {
+        /*
+         * TODO[jsse] - Note that session resumption is not yet implemented in the low-level TLS layer anyway.
+         * 
+         * Checks that will need to be done here before this can return true:
+         * - endpoint ID algorithm consistency
+         */
+        return false;
     }
 
     protected boolean selectCredentials(int cipherSuite) throws IOException

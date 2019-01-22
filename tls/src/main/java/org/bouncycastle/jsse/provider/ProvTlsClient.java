@@ -275,7 +275,7 @@ class ProvTlsClient
         if (null != availableSSLSession)
         {
             TlsSession sessionToResume = availableSSLSession.getTlsSession();
-            if (null != sessionToResume)
+            if (null != sessionToResume && isResumable(availableSSLSession))
             {
                 this.sslSession = availableSSLSession;
                 return sessionToResume;
@@ -339,8 +339,13 @@ class ProvTlsClient
         if (null == sslSession || sslSession.getTlsSession() != connectionTlsSession)
         {
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
-            this.sslSession = sslSessionContext.reportSession(connectionTlsSession, manager.getPeerHost(),
-                manager.getPeerPort());
+            String peerHost = manager.getPeerHost();
+            int peerPort = manager.getPeerPort();
+            JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
+                sslParameters.getEndpointIdentificationAlgorithm());
+
+            this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
+                jsseSessionParameters);
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
@@ -424,10 +429,31 @@ class ProvTlsClient
             else
             {
                 handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
-                    sslSession.getTlsSession());
+                    sslSession.getTlsSession(), sslSession.getJsseSessionParameters());
             }
 
             manager.notifyHandshakeSession(handshakeSession);
         }
+    }
+
+    protected boolean isResumable(ProvSSLSession availableSSLSession)
+    {
+        // TODO[jsse] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
+
+        JsseSessionParameters jsseSessionParameters = availableSSLSession.getJsseSessionParameters();
+
+        String endpointIDAlgorithm = sslParameters.getEndpointIdentificationAlgorithm();
+        if (null != endpointIDAlgorithm)
+        {
+            String identificationProtocol = jsseSessionParameters.getIdentificationProtocol();
+            if (!endpointIDAlgorithm.equalsIgnoreCase(identificationProtocol))
+            {
+                LOG.finest("Session not resumed - endpoint ID algorithm mismatch; requested: " + endpointIDAlgorithm
+                    + ", session: " + identificationProtocol);
+                return false;
+            }
+        }
+
+        return true;
     }
 }
