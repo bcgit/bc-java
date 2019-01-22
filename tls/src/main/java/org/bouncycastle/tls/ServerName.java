@@ -6,13 +6,25 @@ import java.io.OutputStream;
 
 import org.bouncycastle.util.Strings;
 
+/**
+ * RFC 6066 3. Server Name Indication
+ *
+ * Current implementation uses this guidance: "For backward compatibility, all future data
+ * structures associated with new NameTypes MUST begin with a 16-bit length field. TLS MAY treat
+ * provided server names as opaque data and pass the names and types to the application."
+ * 
+ * RFC 6066 specifies ASCII encoding for host_name (possibly using A-labels for IDNs), but note that
+ * the previous version (RFC 4366) specified UTF-8 encoding (see RFC 6066 Appendix A). For maximum
+ * compatibility, it is recommended that client code tolerate receiving UTF-8 from the peer, but
+ * only generate ASCII itself.
+ */
 public final class ServerName
 {
     private final short nameType;
     private final byte[] nameData;
 
     /**
-     * @deprecated Use {{@link #ServerName(short, byte[])} instead.
+     * @deprecated Use {@link #ServerName(short, byte[])} instead.
      */
     public ServerName(short nameType, Object name)
     {
@@ -26,22 +38,10 @@ public final class ServerName
         {
         case NameType.host_name:
         {
-            if (name instanceof byte[])
-            {
-                nameData = (byte[])name;
-                if (TlsUtils.containsNonAscii(nameData))
-                {
-                    throw new IllegalArgumentException("'name' must be ASCII for host_name");
-                }
-            }
-            else if (name instanceof String)
+            if (name instanceof String)
             {
                 String s = (String)name;
-                if (TlsUtils.containsNonAscii(s))
-                {
-                    throw new IllegalArgumentException("'name' must be ASCII for host_name");
-                }
-                nameData = Strings.toByteArray(s);
+                nameData = Strings.toUTF8ByteArray(s);
             }
             else
             {
@@ -64,6 +64,10 @@ public final class ServerName
 
     public ServerName(short nameType, byte[] nameData)
     {
+        if (!TlsUtils.isValidUint8(nameType))
+        {
+            throw new IllegalArgumentException("'nameType' must be from 0 to 255");
+        }
         if (null == nameData)
         {
             throw new NullPointerException("'nameData' cannot be null");
@@ -71,20 +75,6 @@ public final class ServerName
         if (nameData.length < 1 || !TlsUtils.isValidUint16(nameData.length))
         {
             throw new IllegalArgumentException("'nameData' must have length from 1 to 65535");
-        }
-
-        switch (nameType)
-        {
-        case NameType.host_name:
-        {
-            if (TlsUtils.containsNonAscii(nameData))
-            {
-                throw new IllegalArgumentException("'nameData' must be ASCII for host_name");
-            }
-            break;
-        }
-        default:
-            throw new IllegalArgumentException("'nameType' is an unsupported NameType");
         }
 
         this.nameType = nameType;
@@ -102,11 +92,11 @@ public final class ServerName
     }
 
     /**
-     * A convenience method for returning a host_name as an ASCII string. Note that this method does
+     * A convenience method for returning a host_name as a UTF-8 string. Note that this method does
      * not attempt to recognize Internationalized Domain Names (see RFC 5890); further processing
      * may be required to support them.
      * 
-     * @deprecated Use {{@link #getNameData()} instead.
+     * @deprecated Use {@link #getNameData()} instead.
      */
     public String getHostName()
     {
@@ -115,7 +105,7 @@ public final class ServerName
             throw new IllegalStateException("Not of type host_name");
         }
 
-        return Strings.fromByteArray(nameData);
+        return Strings.fromUTF8ByteArray(nameData);
     }
 
     /**
@@ -128,15 +118,7 @@ public final class ServerName
     public void encode(OutputStream output) throws IOException
     {
         TlsUtils.writeUint8(nameType, output);
-
-        switch (nameType)
-        {
-        case NameType.host_name:
-            TlsUtils.writeOpaque16(nameData, output);
-            break;
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        TlsUtils.writeOpaque16(nameData, output);
     }
 
     /**
@@ -150,23 +132,7 @@ public final class ServerName
     public static ServerName parse(InputStream input) throws IOException
     {
         short name_type = TlsUtils.readUint8(input);
-        byte[] nameData;
-
-        switch (name_type)
-        {
-        case NameType.host_name:
-        {
-            nameData = TlsUtils.readOpaque16(input, 1);
-            if (TlsUtils.containsNonAscii(nameData))
-            {
-                throw new TlsFatalAlert(AlertDescription.decode_error);
-            }
-            break;
-        }
-        default:
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
+        byte[] nameData = TlsUtils.readOpaque16(input, 1);
         return new ServerName(name_type, nameData);
     }
 }
