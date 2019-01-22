@@ -76,9 +76,10 @@ abstract class AbstractTlsContext
         this.session = session;
 
         securityParametersConnection = securityParametersHandshake;
-        securityParametersHandshake = null;
 
         peer.notifyHandshakeComplete();
+
+        securityParametersHandshake = null;
     }
 
     public TlsCrypto getCrypto()
