@@ -220,8 +220,9 @@ class ProvTlsServer
          */
         {
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
-            String peerHost = manager.getPeerHost();
-            int peerPort = manager.getPeerPort();
+            // TODO[jsse] Review server-side host/port settings
+            String peerHost = null; //manager.getPeerHost();
+            int peerPort = -1; //manager.getPeerPort();
             SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
             ProvSSLSessionHandshake handshakeSession;
@@ -376,8 +377,9 @@ class ProvTlsServer
         if (null == sslSession || sslSession.getTlsSession() != connectionTlsSession)
         {
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
-            String peerHost = manager.getPeerHost();
-            int peerPort = manager.getPeerPort();
+            // TODO[jsse] Review server-side host/port settings
+            String peerHost = null; //manager.getPeerHost();
+            int peerPort = -1; //manager.getPeerPort();
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
                 sslParameters.getEndpointIdentificationAlgorithm());
 
