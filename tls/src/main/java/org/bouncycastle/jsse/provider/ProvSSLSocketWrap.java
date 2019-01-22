@@ -62,7 +62,7 @@ class ProvSSLSocketWrap
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
-    protected ProvSSLSessionBase handshakeSession = null;
+    protected ProvSSLSessionHandshake handshakeSession = null;
 
     protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
         throws IOException
@@ -592,7 +592,7 @@ class ProvSSLSocketWrap
         this.connection = connection;
     }
 
-    public synchronized void notifyHandshakeSession(ProvSSLSessionBase handshakeSession)
+    public synchronized void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession)
     {
         this.handshakeSession = handshakeSession;
     }

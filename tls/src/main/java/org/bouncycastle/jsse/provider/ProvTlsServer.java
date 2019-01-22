@@ -27,7 +27,7 @@ import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.ServerNameList;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
@@ -215,19 +215,27 @@ class ProvTlsServer
     public int getSelectedCipherSuite() throws IOException
     {
         /*
-         * TODO[jsse] Ideally setting of the handshake session would be done in getSessionToResume, but that is currently never
-         * called.
+         * TODO[jsse] Ideally, setting the handshake session would be done in getSessionToResume, but
+         * that is currently never called.
          */
-        if (null == sslSession)
         {
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
-            ProvSSLSessionBase handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, manager.getPeerHost(),
-                manager.getPeerPort(), context.getSecurityParametersHandshake());
+            String peerHost = manager.getPeerHost();
+            int peerPort = manager.getPeerPort();
+            SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+            ProvSSLSessionHandshake handshakeSession;
+            if (null == sslSession)
+            {
+                handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort, securityParameters);
+            }
+            else
+            {
+                handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
+                    sslSession.getTlsSession());
+            }
+
             manager.notifyHandshakeSession(handshakeSession);
-        }
-        else
-        {
-            manager.notifyHandshakeSession(sslSession);
         }
 
         keyManagerMissCache = new HashSet<String>();
@@ -359,13 +367,17 @@ class ProvTlsServer
     @Override
     public synchronized void notifyHandshakeComplete() throws IOException
     {
+        super.notifyHandshakeComplete();
+
         this.handshakeComplete = true;
 
-        TlsSession handshakeSession = context.getSession();
+        TlsSession connectionTlsSession = context.getSession();
 
-        if (sslSession == null || sslSession.getTlsSession() != handshakeSession)
+        if (null == sslSession || sslSession.getTlsSession() != connectionTlsSession)
         {
-            sslSession = manager.getContextData().getServerSessionContext().reportSession(handshakeSession, null, -1);
+            ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
+            sslSession = sslSessionContext.reportSession(connectionTlsSession, manager.getPeerHost(),
+                manager.getPeerPort());
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));

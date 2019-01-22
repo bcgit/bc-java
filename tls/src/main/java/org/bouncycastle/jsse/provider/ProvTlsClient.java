@@ -25,6 +25,7 @@ import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
@@ -333,12 +334,13 @@ class ProvTlsClient
 
         this.handshakeComplete = true;
 
-        TlsSession connectionSession = context.getSession();
+        TlsSession connectionTlsSession = context.getSession();
 
-        if (null == sslSession || sslSession.getTlsSession() != connectionSession)
+        if (null == sslSession || sslSession.getTlsSession() != connectionTlsSession)
         {
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
-            this.sslSession = sslSessionContext.reportSession(connectionSession, manager.getPeerHost(), manager.getPeerPort());
+            this.sslSession = sslSessionContext.reportSession(connectionTlsSession, manager.getPeerHost(),
+                manager.getPeerPort());
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
@@ -384,34 +386,48 @@ class ProvTlsClient
     @Override
     public void notifySessionID(byte[] sessionID)
     {
-        if (null != sessionID && sessionID.length > 0 && null != sslSession
-            && Arrays.areEqual(sessionID, sslSession.getId()))
+        final boolean isResumed = (null != sessionID && sessionID.length > 0 && null != sslSession
+            && Arrays.areEqual(sessionID, sslSession.getId()));
+
+        if (isResumed)
         {
             LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
-
-            manager.notifyHandshakeSession(sslSession);
-            return;
-        }
-
-        if (sessionID == null || sessionID.length == 0)
-        {
-            LOG.fine("Server did not specify a session ID");
         }
         else
         {
-            LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+            if (sessionID == null || sessionID.length < 1)
+            {
+                LOG.fine("Server did not specify a session ID");
+            }
+            else
+            {
+                LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+            }
+
+            if (!manager.getEnableSessionCreation())
+            {
+                throw new IllegalStateException("Server did not resume session and session creation is disabled");
+            }
         }
 
-        if (!manager.getEnableSessionCreation())
         {
-            throw new IllegalStateException("Server did not resume session and session creation is disabled");
+            ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
+            String peerHost = manager.getPeerHost();
+            int peerPort = manager.getPeerPort();
+            SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+            ProvSSLSessionHandshake handshakeSession;
+            if (!isResumed)
+            {
+                handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort, securityParameters);
+            }
+            else
+            {
+                handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
+                    sslSession.getTlsSession());
+            }
+
+            manager.notifyHandshakeSession(handshakeSession);
         }
-
-        ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
-        ProvSSLSessionBase handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, manager.getPeerHost(),
-            manager.getPeerPort(), context.getSecurityParametersHandshake());
-        manager.notifyHandshakeSession(handshakeSession);
-
-        super.notifySessionID(sessionID);
     }
 }

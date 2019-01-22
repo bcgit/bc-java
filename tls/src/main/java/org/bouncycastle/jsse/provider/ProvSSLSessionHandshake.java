@@ -28,7 +28,7 @@ class ProvSSLSessionHandshake
     @Override
     protected byte[] getIDArray()
     {
-        throw new UnsupportedOperationException();
+        return securityParameters.getSessionID();
     }
 
     @Override
@@ -64,21 +64,11 @@ class ProvSSLSessionHandshake
     @Override
     public List<BCSNIServerName> getRequestedServerNames()
     {
-        throw new UnsupportedOperationException();
+        return JsseUtils.convertSNIServerNames(securityParameters.getClientServerNames());
     }
 
     @Override
     public List<byte[]> getStatusResponses()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public void invalidate()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isValid()
     {
         throw new UnsupportedOperationException();
     }

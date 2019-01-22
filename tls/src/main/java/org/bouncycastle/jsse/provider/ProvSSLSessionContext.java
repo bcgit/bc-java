@@ -87,6 +87,15 @@ class ProvSSLSessionContext
         return session;
     }
 
+    synchronized void removeSession(byte[] sessionID)
+    {
+        SessionEntry sessionEntry = mapRemove(sessionsByID, makeSessionID(sessionID));
+        if (null != sessionEntry)
+        {
+            removeSessionByPeer(sessionEntry);
+        }
+    }
+
     synchronized ProvSSLSession reportSession(TlsSession tlsSession, String peerHost, int peerPort)
     {
         processQueue();
@@ -310,6 +319,15 @@ class ProvSSLSessionContext
             throw new NullPointerException();
         }
         return key == null ? null : map.get(key);
+    }
+
+    private static <K, V> V mapRemove(Map<K, V> map, K key)
+    {
+        if (map == null)
+        {
+            throw new NullPointerException();
+        }
+        return key == null ? null : map.remove(key);
     }
 
     private static <K, V> boolean mapRemove(Map<K, V> map, K key, V value)
