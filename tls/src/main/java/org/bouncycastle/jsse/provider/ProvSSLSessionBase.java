@@ -49,6 +49,8 @@ abstract class ProvSSLSessionBase
 
     protected abstract byte[] getIDArray();
 
+    protected abstract JsseSessionParameters getJsseSessionParameters();
+
     protected abstract org.bouncycastle.tls.Certificate getLocalCertificateTLS();
 
     protected abstract org.bouncycastle.tls.Certificate getPeerCertificateTLS();
