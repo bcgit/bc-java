@@ -125,6 +125,12 @@ public class TlsExtensionsUtils
         extensions.put(EXT_server_name, createServerNameExtensionClient(serverNameList));
     }
 
+    public static void addServerNameExtensionServer(Hashtable extensions)
+        throws IOException
+    {
+        extensions.put(EXT_server_name, createServerNameExtensionServer());
+    }
+
     public static void addSignatureAlgorithmsExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
         throws IOException
     {
@@ -336,6 +342,13 @@ public class TlsExtensionsUtils
         return extensionData == null ? false : readExtendedMasterSecretExtension(extensionData);
     }
 
+    public static boolean hasServerNameExtensionServer(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_name);
+        return extensionData == null ? false : readServerNameExtensionServer(extensionData);
+    }
+
     public static boolean hasTruncatedHMacExtension(Hashtable extensions) throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_truncated_hmac);
@@ -488,6 +501,11 @@ public class TlsExtensionsUtils
         new ServerNameList(serverNameList).encode(buf);
 
         return buf.toByteArray();
+    }
+
+    public static byte[] createServerNameExtensionServer()
+    {
+        return createEmptyExtensionData();
     }
 
     public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms)
@@ -776,6 +794,11 @@ public class TlsExtensionsUtils
         TlsProtocol.assertEmpty(buf);
 
         return serverNameList.getServerNameList();
+    }
+
+    public static boolean readServerNameExtensionServer(byte[] extensionData) throws IOException
+    {
+        return readEmptyExtensionData(extensionData);
     }
 
     public static Vector readSignatureAlgorithmsExtension(byte[] extensionData)
