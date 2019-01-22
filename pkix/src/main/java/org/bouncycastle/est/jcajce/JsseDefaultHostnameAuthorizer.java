@@ -142,7 +142,7 @@ public class JsseDefaultHostnameAuthorizer
 
         // Common Name match only.
         RDN[] rdNs = X500Name.getInstance(cert.getSubjectX500Principal().getEncoded()).getRDNs();
-        for (int i = 0; i != rdNs.length; i++)
+        for (int i = rdNs.length - 1; i >= 0; --i)
         {
             RDN rdn = rdNs[i];
             AttributeTypeAndValue[] typesAndValues = rdn.getTypesAndValues();
@@ -151,7 +151,7 @@ public class JsseDefaultHostnameAuthorizer
                 AttributeTypeAndValue atv = typesAndValues[j];
                 if (atv.getType().equals(BCStyle.CN))
                 {
-                    return isValidNameMatch(name, rdn.getFirst().getValue().toString(), knownSuffixes);
+                    return isValidNameMatch(name, atv.getValue().toString(), knownSuffixes);
                 }
             }
         }
