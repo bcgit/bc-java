@@ -631,6 +631,11 @@ class ProvSSLEngine
 
     public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
     {
+        if (null != handshakeSession && !handshakeSession.isValid())
+        {
+            connection.getSession().invalidate();
+        }
+
         this.handshakeSession = null;
         this.connection = connection;
     }
