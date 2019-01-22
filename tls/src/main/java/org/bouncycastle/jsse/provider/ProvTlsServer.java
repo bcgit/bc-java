@@ -413,13 +413,19 @@ class ProvTlsServer
         if (null != serverNameList)
         {
             Collection<BCSNIMatcher> sniMatchers = sslParameters.getSNIMatchers();
-            if (sniMatchers != null && !sniMatchers.isEmpty())
+            if (null == sniMatchers || sniMatchers.isEmpty())
+            {
+                LOG.fine("Server ignored SNI (no matchers specified)");
+            }
+            else
             {
                 this.matchedSNIServerName = JsseUtils.findMatchingSNIServerName(serverNameList, sniMatchers);
                 if (null == matchedSNIServerName)
                 {
                     throw new TlsFatalAlert(AlertDescription.unrecognized_name);
                 }
+
+                LOG.fine("Server accepted SNI: " + matchedSNIServerName);
             }
         }
     }
