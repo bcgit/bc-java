@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.bouncycastle.jsse.provider.IDNUtil;
+import org.bouncycastle.tls.NameType;
 import org.bouncycastle.util.Strings;
 
 public final class BCSNIHostName extends BCSNIServerName
@@ -39,6 +40,7 @@ public final class BCSNIHostName extends BCSNIServerName
         return hostName;
     }
 
+    @Override
     public boolean equals(Object obj)
     {
         if (this == obj)
@@ -53,9 +55,16 @@ public final class BCSNIHostName extends BCSNIServerName
         return hostName.equalsIgnoreCase(other.hostName);
     }
 
+    @Override
     public int hashCode()
     {
         return hostName.toUpperCase(Locale.ENGLISH).hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "{type=" + NameType.getText(NameType.host_name) + ", value=" + hostName + "}";
     }
 
     private static String normalizeHostName(String hostName)

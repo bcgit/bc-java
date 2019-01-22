@@ -1,7 +1,9 @@
 package org.bouncycastle.jsse;
 
+import org.bouncycastle.tls.NameType;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public abstract class BCSNIServerName
 {
@@ -33,6 +35,7 @@ public abstract class BCSNIServerName
         return (byte[])Arrays.clone(encoded);
     }
 
+    @Override
     public boolean equals(Object obj)
     {
         if (this == obj)
@@ -48,8 +51,15 @@ public abstract class BCSNIServerName
             && Arrays.areEqual(encoded, other.encoded);
     }
 
+    @Override
     public int hashCode()
     {
         return nameType ^ Arrays.hashCode(encoded);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "{type=" + NameType.getText((short)nameType) + ", value=" + Hex.toHexString(encoded) + "}";
     }
 }
