@@ -86,6 +86,8 @@ class ProvSSLSession
 
     public void invalidate()
     {
+        super.invalidate();
+
         if (null != tlsSession)
         {
             tlsSession.invalidate();
@@ -94,6 +96,6 @@ class ProvSSLSession
 
     public boolean isValid()
     {
-        return null != tlsSession && tlsSession.isResumable();
+        return super.isValid() && null != tlsSession && tlsSession.isResumable();
     }
 }

@@ -32,6 +32,7 @@ abstract class ProvSSLSessionBase
     protected final SSLSession exportSSLSession;
 
     protected long lastAccessedTime;
+    protected boolean invalidated; 
 
     ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort)
     {
@@ -41,6 +42,7 @@ abstract class ProvSSLSessionBase
         this.creationTime = System.currentTimeMillis();
         this.exportSSLSession = SSLSessionUtil.exportSSLSession(this);
         this.lastAccessedTime = creationTime;
+        this.invalidated = false;
     }
 
     protected abstract int getCipherSuiteTLS();
@@ -219,6 +221,20 @@ abstract class ProvSSLSessionBase
     public int hashCode()
     {
         return Arrays.hashCode(getIDArray());
+    }
+
+    public void invalidate()
+    {
+        sslSessionContext.removeSession(getIDArray());
+
+        this.invalidated = true;
+    }
+
+    public boolean isValid()
+    {
+        byte[] sessionID = getIDArray();
+
+        return null != sessionID && sessionID.length > 0 && !invalidated;
     }
 
     public void putValue(String name, Object value)
