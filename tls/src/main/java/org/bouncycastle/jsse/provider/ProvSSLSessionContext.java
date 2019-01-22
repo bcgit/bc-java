@@ -100,18 +100,25 @@ class ProvSSLSessionContext
     {
         processQueue();
 
-        SessionID sessionID = new SessionID(tlsSession.getSessionID());
-        SessionEntry sessionEntry = sessionsByID.get(sessionID);
-        ProvSSLSession session = sessionEntry == null ? null : sessionEntry.get();
+        SessionID sessionID = makeSessionID(tlsSession.getSessionID());
+        SessionEntry sessionEntry = mapGet(sessionsByID, sessionID);
 
-        if (session == null || session.getTlsSession() != tlsSession)
+        ProvSSLSession session = sessionEntry == null ? null : sessionEntry.get();
+        if (null == session || session.getTlsSession() != tlsSession)
         {
             session = new ProvSSLSession(this, peerHost, peerPort, tlsSession);
-            sessionEntry = new SessionEntry(sessionID, session, sessionsQueue);
-            sessionsByID.put(sessionID, sessionEntry);
+
+            if (null != sessionID)
+            {
+                sessionEntry = new SessionEntry(sessionID, session, sessionsQueue);
+                sessionsByID.put(sessionID, sessionEntry);
+            }
         }
 
-        mapAdd(sessionsByPeer, sessionEntry.getPeerKey(), sessionEntry);
+        if (null != sessionEntry)
+        {
+            mapAdd(sessionsByPeer, sessionEntry.getPeerKey(), sessionEntry);
+        }
 
         return session;
     }
