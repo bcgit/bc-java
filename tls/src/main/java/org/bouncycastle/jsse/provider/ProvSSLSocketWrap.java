@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
+import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.AlertDescription;
@@ -185,6 +186,11 @@ class ProvSSLSocketWrap
     public SocketChannel getChannel()
     {
         return wrapSocket.getChannel();
+    }
+
+    public synchronized BCExtendedSSLSession getBCHandshakeSession()
+    {
+        return handshakeSession;
     }
 
     public synchronized BCSSLConnection getConnection()

@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
+import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
 
@@ -65,6 +66,11 @@ class ProvSSLSocket
         // - Check under what circumstances need to call engine.closeInbound
 
         super.close();
+    }
+
+    public BCExtendedSSLSession getBCHandshakeSession()
+    {
+        return engine.getBCHandshakeSession();
     }
 
     public BCSSLConnection getConnection()
