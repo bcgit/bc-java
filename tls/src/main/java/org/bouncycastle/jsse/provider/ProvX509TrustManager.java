@@ -21,7 +21,6 @@ import java.util.Set;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509TrustManager;
 
@@ -217,7 +216,7 @@ class ProvX509TrustManager
         if (socket instanceof SSLSocket && socket.isConnected())
         {
             SSLSocket sslSocket = (SSLSocket)socket;
-            BCExtendedSSLSession sslSession = importSession(sslSocket.getHandshakeSession());
+            BCExtendedSSLSession sslSession = getHandshakeSession(sslSocket);
             SSLParameters sslParameters = sslSocket.getSSLParameters();
             checkExtendedTrust(chain, authType, isServer, sslSession, sslParameters);
         }
@@ -228,7 +227,7 @@ class ProvX509TrustManager
     {
         if (null != engine)
         {
-            BCExtendedSSLSession sslSession = importSession(engine.getHandshakeSession());
+            BCExtendedSSLSession sslSession = getHandshakeSession(engine);
             SSLParameters sslParameters = engine.getSSLParameters();
             checkExtendedTrust(chain, authType, isServer, sslSession, sslParameters);
         }
@@ -322,13 +321,23 @@ class ProvX509TrustManager
         return null;
     }
 
-    private static BCExtendedSSLSession importSession(SSLSession sslSession) throws CertificateException
+    private static BCExtendedSSLSession getHandshakeSession(SSLEngine sslEngine) throws CertificateException
     {
-        if (null == sslSession)
+        BCExtendedSSLSession handshakeSession = SSLEngineUtil.importHandshakeSession(sslEngine);
+        if (null == handshakeSession)
         {
-            throw new CertificateException("No handshake session");
+            throw new CertificateException("No handshake session for engine");
         }
+        return handshakeSession;
+    }
 
-        return SSLSessionUtil.importSSLSession(sslSession);
+    private static BCExtendedSSLSession getHandshakeSession(SSLSocket sslSocket) throws CertificateException
+    {
+        BCExtendedSSLSession handshakeSession = SSLSocketUtil.importHandshakeSession(sslSocket);
+        if (null == handshakeSession)
+        {
+            throw new CertificateException("No handshake session for socket");
+        }
+        return handshakeSession;
     }
 }
