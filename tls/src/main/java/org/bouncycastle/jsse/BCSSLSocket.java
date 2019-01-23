@@ -6,6 +6,8 @@ package org.bouncycastle.jsse;
  */
 public interface BCSSLSocket
 {
+    BCExtendedSSLSession getBCHandshakeSession();
+
     /**
      * Returns an accessor for extended SSL connection data. This method will initiate the initial
      * handshake if necessary and then block until the handshake has been established. If an error

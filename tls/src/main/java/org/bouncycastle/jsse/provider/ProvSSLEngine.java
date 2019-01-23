@@ -14,6 +14,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
+import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.jsse.BCSSLParameters;
@@ -196,6 +197,11 @@ class ProvSSLEngine
         BCSSLConnection connection = getConnection();
 
         return connection == null ? null : connection.getApplicationProtocol();
+    }
+
+    public synchronized BCExtendedSSLSession getBCHandshakeSession()
+    {
+        return handshakeSession;
     }
 
     public synchronized BCSSLConnection getConnection()
