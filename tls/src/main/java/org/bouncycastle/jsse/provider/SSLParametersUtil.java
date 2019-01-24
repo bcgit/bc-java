@@ -138,6 +138,83 @@ abstract class SSLParametersUtil
         return ssl;
     }
 
+    static BCSSLParameters importSSLParameters(SSLParameters ssl)
+    {
+        BCSSLParameters bc = new BCSSLParameters(ssl.getCipherSuites(), ssl.getProtocols());
+
+        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
+        if (ssl.getNeedClientAuth())
+        {
+            bc.setNeedClientAuth(true);
+        }
+        else if (ssl.getWantClientAuth())
+        {
+            bc.setWantClientAuth(true);
+        }
+        else
+        {
+            bc.setWantClientAuth(false);
+        }
+
+        // From JDK 1.7
+
+        if (null != getAlgorithmConstraints)
+        {
+            Object getAlgorithmConstraintsResult = get(ssl, getAlgorithmConstraints);
+            if (null != getAlgorithmConstraintsResult)
+            {
+                bc.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
+            }
+        }
+
+        if (null != getEndpointIdentificationAlgorithm)
+        {
+            String endpointIdentificationAlgorithm = (String)get(ssl, getEndpointIdentificationAlgorithm);
+            if (null != endpointIdentificationAlgorithm)
+            {
+                bc.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
+            }
+        }
+
+        // From JDK 1.8
+
+        if (null != getUseCipherSuitesOrder)
+        {
+            bc.setUseCipherSuitesOrder((Boolean)get(ssl, getUseCipherSuitesOrder));
+        }
+
+        if (null != getServerNames)
+        {
+            Object getServerNamesResult = get(ssl, getServerNames);
+            if (null != getServerNamesResult)
+            {
+                bc.setServerNames(JsseUtils_8.importSNIServerNames(getServerNamesResult));
+            }
+        }
+
+        if (null != getSNIMatchers)
+        {
+            Object getSNIMatchersResult = get(ssl, getSNIMatchers);
+            if (null != getSNIMatchersResult)
+            {
+                bc.setSNIMatchers(JsseUtils_8.importSNIMatchers(getSNIMatchersResult));
+            }
+        }
+
+        // From JDK 9
+
+        if (null != getApplicationProtocols)
+        {
+            String[] getApplicationProtocolsResult = (String[])get(ssl, getApplicationProtocols);
+            if (null != getApplicationProtocolsResult)
+            {
+                bc.setApplicationProtocols(getApplicationProtocolsResult);
+            }
+        }
+
+        return bc;
+    }
+
     static void setParameters(ProvSSLParameters prov, BCSSLParameters ssl)
     {
         String[] cipherSuites = ssl.getCipherSuites();
@@ -277,7 +354,7 @@ abstract class SSLParametersUtil
         if (null != getApplicationProtocols)
         {
             String[] getApplicationProtocolsResult = (String[])get(ssl, getApplicationProtocols);
-            if (null != getApplicationProtocols)
+            if (null != getApplicationProtocolsResult)
             {
                 prov.setApplicationProtocols(getApplicationProtocolsResult);
             }

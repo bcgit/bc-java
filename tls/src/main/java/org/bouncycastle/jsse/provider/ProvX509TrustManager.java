@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.Set;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 
@@ -217,7 +217,7 @@ class ProvX509TrustManager
         {
             SSLSocket sslSocket = (SSLSocket)socket;
             BCExtendedSSLSession sslSession = getHandshakeSession(sslSocket);
-            SSLParameters sslParameters = sslSocket.getSSLParameters();
+            BCSSLParameters sslParameters = getSSLParameters(sslSocket);
             checkExtendedTrust(chain, authType, isServer, sslSession, sslParameters);
         }
     }
@@ -228,13 +228,13 @@ class ProvX509TrustManager
         if (null != engine)
         {
             BCExtendedSSLSession sslSession = getHandshakeSession(engine);
-            SSLParameters sslParameters = engine.getSSLParameters();
+            BCSSLParameters sslParameters = getSSLParameters(engine);
             checkExtendedTrust(chain, authType, isServer, sslSession, sslParameters);
         }
     }
 
     private static void checkExtendedTrust(X509Certificate[] chain, String authType, boolean isServer,
-        BCExtendedSSLSession sslSession, SSLParameters sslParameters) throws CertificateException
+        BCExtendedSSLSession sslSession, BCSSLParameters sslParameters) throws CertificateException
     {
         String endpointIDAlg = sslParameters.getEndpointIdentificationAlgorithm();
         if (null != endpointIDAlg && endpointIDAlg.length() > 0)
@@ -339,5 +339,25 @@ class ProvX509TrustManager
             throw new CertificateException("No handshake session for socket");
         }
         return handshakeSession;
+    }
+
+    private static BCSSLParameters getSSLParameters(SSLEngine sslEngine) throws CertificateException
+    {
+        BCSSLParameters sslParameters = SSLEngineUtil.importSSLParameters(sslEngine);
+        if (null == sslParameters)
+        {
+            throw new CertificateException("No SSL parameters for engine");
+        }
+        return sslParameters;
+    }
+
+    private static BCSSLParameters getSSLParameters(SSLSocket sslSocket) throws CertificateException
+    {
+        BCSSLParameters sslParameters = SSLSocketUtil.importSSLParameters(sslSocket);
+        if (null == sslParameters)
+        {
+            throw new CertificateException("No SSL parameters for socket");
+        }
+        return sslParameters;
     }
 }
