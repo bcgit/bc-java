@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.cms;
 
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -111,13 +110,6 @@ public class ArchiveTimeStampSequence
 
     public ASN1Primitive toASN1Primitive()
     {
-        final ASN1EncodableVector vector = new ASN1EncodableVector();
-
-        for (final ASN1Encodable chain : archiveTimeStampChains)
-        {
-            vector.add(chain);
-        }
-
-        return new DERSequence(vector);
+        return archiveTimeStampChains;
     }
 }
