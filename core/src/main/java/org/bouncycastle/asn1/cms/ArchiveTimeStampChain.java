@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.cms;
 
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -88,9 +87,9 @@ public class ArchiveTimeStampChain
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        for (ASN1Encodable ats : archiveTimestamps)
+        for (int i = 0; i != archiveTimestamps.size(); i++)
         {
-            v.add(ats);
+            v.add(archiveTimestamps.getObjectAt(i));
         }
 
         v.add(archiveTimeStamp);
