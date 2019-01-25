@@ -73,7 +73,15 @@ public class ECIESKeyEncapsulation
         // If both cofactorMode and oldCofactorMode are set to true
         // then the implementation will use the new cofactor ECDH 
         this.CofactorMode = cofactorMode;
-        this.OldCofactorMode = oldCofactorMode;
+        // https://www.shoup.net/iso/std4.pdf, Page 34.
+        if (cofactorMode)
+        {
+            this.OldCofactorMode = false;
+        }
+        else
+        {
+            this.OldCofactorMode = oldCofactorMode;
+        }
         this.SingleHashMode = singleHashMode;
     }
 
@@ -121,7 +129,7 @@ public class ECIESKeyEncapsulation
         BigInteger r = BigIntegers.createRandomInRange(ONE, n, rnd);
 
         // Compute the static-ephemeral key agreement
-        BigInteger rPrime = CofactorMode ? r.multiply(h).mod(n) : r;
+        BigInteger rPrime = OldCofactorMode ? r.multiply(h).mod(n) : r;
 
         ECMultiplier basePointMultiplier = createBasePointMultiplier();
 
