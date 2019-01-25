@@ -3,6 +3,9 @@ package org.bouncycastle.crypto.test;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -11,25 +14,30 @@ import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.engines.IESEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
+import org.bouncycastle.crypto.kems.ECIESKeyEncapsulation;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.IESParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -480,6 +488,53 @@ public class ECIESTest
         doEphemeralTest(null, true);
         doEphemeralTest(TWOFISH_IV, false);
         doEphemeralTest(TWOFISH_IV, true);
+
+        doCofactorTest(true, false);
+        doCofactorTest(false, false);
+        doCofactorTest(false, true);
+        doCofactorTest(true, true);
+    }
+
+    private void doCofactorTest(boolean newCofactorMode, boolean oldCofactorMode)
+    {
+
+        /* Create the generator */
+        ECKeyPairGenerator myGenerator = new ECKeyPairGenerator();
+        SecureRandom myRandom = new SecureRandom();
+        String myCurve = "sect571k1"; /* Any curve will do */
+
+        /* Lookup the parameters */
+        X9ECParameters x9 = ECNamedCurveTable.getByName(myCurve);
+
+        /* Initialise the generator */
+        ASN1ObjectIdentifier myOid = ECNamedCurveTable.getOID(myCurve);
+        ECNamedDomainParameters myDomain = new ECNamedDomainParameters(myOid, x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+        ECKeyGenerationParameters myParams = new ECKeyGenerationParameters(myDomain, myRandom);
+        myGenerator.init(myParams);
+
+        /* Create the key Pair */
+        AsymmetricCipherKeyPair myPair = myGenerator.generateKeyPair();
+
+        /* Determine message length */
+        int myFieldSize = x9.getCurve().getFieldSize();
+        myFieldSize = (myFieldSize + Byte.SIZE - 1) / Byte.SIZE;
+        int myLen = 2 * myFieldSize + 1;
+        byte[] myMessage = new byte[myLen];
+        int myKeyLen = 256 / Byte.SIZE;
+
+        /* Create agreement */
+        ECIESKeyEncapsulation myAgreement = new ECIESKeyEncapsulation(new KDF2BytesGenerator(new SHA512Digest()), myRandom, newCofactorMode, oldCofactorMode, false);
+        myAgreement.init(myPair.getPublic());
+        KeyParameter mySender = (KeyParameter) myAgreement.encrypt(myMessage, myKeyLen);
+        byte[] mySenderKey = mySender.getKey();
+
+        /* Accept agreement */
+        myAgreement.init(myPair.getPrivate());
+        KeyParameter myReceiver = (KeyParameter) myAgreement.decrypt(myMessage, myKeyLen);
+        byte[] myReceiverKey = myReceiver.getKey();
+
+        /* Check that keys match  */
+        isTrue("new " + newCofactorMode + " old " + oldCofactorMode, Arrays.areEqual(mySenderKey, myReceiverKey));
     }
 
     public static void main(
