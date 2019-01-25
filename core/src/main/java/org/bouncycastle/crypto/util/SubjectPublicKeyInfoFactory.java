@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.util;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -40,6 +42,17 @@ import org.bouncycastle.crypto.params.X448PublicKeyParameters;
  */
 public class SubjectPublicKeyInfoFactory
 {
+    private static Set cryptoProOids = new HashSet(5);
+
+    static
+    {
+        cryptoProOids.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_A);
+        cryptoProOids.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_B);
+        cryptoProOids.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_C);
+        cryptoProOids.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchA);
+        cryptoProOids.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchB);
+    }
+
     private SubjectPublicKeyInfoFactory()
     {
 
@@ -98,13 +111,7 @@ public class SubjectPublicKeyInfoFactory
                 ASN1ObjectIdentifier algIdentifier;
 
 
-                if (oidIs(gostParams.getPublicKeyParamSet(),
-                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_A,
-                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_B,
-                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_C,
-                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchA,
-                    CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchB
-                ))
+                if (cryptoProOids.contains(gostParams.getPublicKeyParamSet()))
                 {
                     encKeySize = 64;
                     offset = 32;
@@ -206,17 +213,5 @@ public class SubjectPublicKeyInfoFactory
         {
             encKey[offSet + i] = val[val.length - 1 - i];
         }
-    }
-
-    private static boolean oidIs(ASN1ObjectIdentifier oid, ASN1ObjectIdentifier... oneOf)
-    {
-        for (ASN1ObjectIdentifier candidate : oneOf)
-        {
-            if (oid.equals(candidate))
-            {
-                return true;
-            }
-        }
-        return false;
     }
 }

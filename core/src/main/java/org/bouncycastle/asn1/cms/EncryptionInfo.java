@@ -89,7 +89,6 @@ public class EncryptionInfo
 
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
 
@@ -99,5 +98,4 @@ public class EncryptionInfo
 
         return ASN1Sequence.getInstance(v);
     }
-
 }
