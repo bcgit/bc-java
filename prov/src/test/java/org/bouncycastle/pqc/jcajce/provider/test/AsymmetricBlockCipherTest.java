@@ -54,15 +54,17 @@ public abstract class AsymmetricBlockCipherTest
                     mBytes = new byte[mLength];
                     rand.nextBytes(mBytes);
 
+                    int cLen = cipher.getOutputSize(mBytes.length);
                     // encrypt
                     cBytes = cipher.doFinal(mBytes);
-
+                    assertTrue(cBytes.length <= cLen);
                     // initialize for decryption
                     cipher.init(Cipher.DECRYPT_MODE, privKey, params);
-
+                    int dLen = cipher.getOutputSize(cBytes.length);
                     // decrypt
                     dBytes = cipher.doFinal(cBytes);
-
+                    assertTrue(dBytes.length <= dLen);
+  
                     // compare
                     assertEquals("Encryption and Decryption test failed:\n"
                         + " actual decrypted text: "
