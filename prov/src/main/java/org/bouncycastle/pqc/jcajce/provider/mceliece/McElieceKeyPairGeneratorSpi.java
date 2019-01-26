@@ -7,7 +7,6 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceParameters;
@@ -24,15 +23,15 @@ public class McElieceKeyPairGeneratorSpi
     {
         super("McEliece");
     }
-
-    public void initialize(AlgorithmParameterSpec params)
+    
+    public void initialize(AlgorithmParameterSpec params, SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
         kpg = new McElieceKeyPairGenerator();
-        super.initialize(params);
         McElieceKeyGenParameterSpec ecc = (McElieceKeyGenParameterSpec)params;
 
-        McElieceKeyGenerationParameters mccKGParams = new McElieceKeyGenerationParameters(CryptoServicesRegistrar.getSecureRandom(), new McElieceParameters(ecc.getM(), ecc.getT()));
+        McElieceKeyGenerationParameters mccKGParams = new McElieceKeyGenerationParameters(
+            random, new McElieceParameters(ecc.getM(), ecc.getT()));
         kpg.init(mccKGParams);
     }
 
@@ -43,7 +42,7 @@ public class McElieceKeyPairGeneratorSpi
         // call the initializer with the chosen parameters
         try
         {
-            this.initialize(paramSpec);
+            this.initialize(paramSpec, random);
         }
         catch (InvalidAlgorithmParameterException ae)
         {

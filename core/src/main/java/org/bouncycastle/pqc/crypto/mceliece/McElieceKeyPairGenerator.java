@@ -71,7 +71,11 @@ public class McElieceKeyPairGenerator
         this.mcElieceParams = (McElieceKeyGenerationParameters)param;
 
         // set source of randomness
-        this.random = CryptoServicesRegistrar.getSecureRandom();
+        this.random = param.getRandom();
+        if (this.random == null)
+        {
+            this.random = CryptoServicesRegistrar.getSecureRandom();
+        }
 
         this.m = this.mcElieceParams.getParameters().getM();
         this.n = this.mcElieceParams.getParameters().getN();
@@ -140,7 +144,6 @@ public class McElieceKeyPairGenerator
     public void init(KeyGenerationParameters param)
     {
         this.initialize(param);
-
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()
