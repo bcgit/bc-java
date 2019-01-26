@@ -25,14 +25,27 @@ public class McElieceCCA2KeyPairGeneratorSpi
         super("McEliece-CCA2");
     }
 
+    public void initialize(AlgorithmParameterSpec params, SecureRandom random)
+        throws InvalidAlgorithmParameterException
+    {
+        kpg = new McElieceCCA2KeyPairGenerator();
+
+        McElieceCCA2KeyGenParameterSpec ecc = (McElieceCCA2KeyGenParameterSpec)params;
+
+        McElieceCCA2KeyGenerationParameters mccca2KGParams = new McElieceCCA2KeyGenerationParameters(
+            random, new McElieceCCA2Parameters(ecc.getM(), ecc.getT(), ecc.getDigest()));
+        kpg.init(mccca2KGParams);
+    }
+
     public void initialize(AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
         kpg = new McElieceCCA2KeyPairGenerator();
-        super.initialize(params);
+
         McElieceCCA2KeyGenParameterSpec ecc = (McElieceCCA2KeyGenParameterSpec)params;
 
-        McElieceCCA2KeyGenerationParameters mccca2KGParams = new McElieceCCA2KeyGenerationParameters(CryptoServicesRegistrar.getSecureRandom(), new McElieceCCA2Parameters(ecc.getM(), ecc.getT(), ecc.getDigest()));
+        McElieceCCA2KeyGenerationParameters mccca2KGParams = new McElieceCCA2KeyGenerationParameters(
+            CryptoServicesRegistrar.getSecureRandom(), new McElieceCCA2Parameters(ecc.getM(), ecc.getT(), ecc.getDigest()));
         kpg.init(mccca2KGParams);
     }
 
