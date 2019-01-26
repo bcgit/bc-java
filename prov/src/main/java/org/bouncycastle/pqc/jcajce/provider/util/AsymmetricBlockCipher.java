@@ -104,7 +104,7 @@ public abstract class AsymmetricBlockCipher
             return 0;
         }
 
-        return maxLen;
+        return opMode == ENCRYPT_MODE ? cipherTextSize : maxPlainTextSize;
     }
 
     /**
