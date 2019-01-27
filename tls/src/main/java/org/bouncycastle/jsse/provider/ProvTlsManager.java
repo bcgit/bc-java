@@ -22,6 +22,8 @@ interface ProvTlsManager
 
     String getPeerHost();
 
+    String getPeerHostSNI();
+
     int getPeerPort();
 
     void notifyHandshakeComplete(ProvSSLConnection connection);

@@ -628,6 +628,11 @@ class ProvSSLEngine
         return super.getPeerHost();
     }
 
+    public String getPeerHostSNI()
+    {
+        return super.getPeerHost();
+    }
+
     public int getPeerPort()
     {
         return super.getPeerPort();
