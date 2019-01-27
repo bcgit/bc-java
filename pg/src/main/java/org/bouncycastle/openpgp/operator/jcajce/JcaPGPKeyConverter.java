@@ -21,6 +21,7 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
@@ -34,6 +35,10 @@ import javax.crypto.spec.DHPublicKeySpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -62,6 +67,7 @@ import org.bouncycastle.openpgp.PGPKdfParameters;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.util.BigIntegers;
 
 public class JcaPGPKeyConverter
 {
@@ -291,12 +297,25 @@ public class JcaPGPKeyConverter
             case PublicKeyAlgorithmTags.ECDH:
                 ECDHPublicBCPGKey ecdhPub = (ECDHPublicBCPGKey)pubPk.getKey();
                 ECSecretBCPGKey ecdhK = (ECSecretBCPGKey)privPk;
-                ECPrivateKeySpec ecDhSpec = new ECPrivateKeySpec(
-                                                    ecdhK.getX(),
-                                                    getECParameterSpec(ecdhPub.getCurveOID()));
-                fact = helper.createKeyFactory("ECDH");
 
-                return fact.generatePrivate(ecDhSpec);
+                if (CryptlibObjectIdentifiers.curvey25519.equals(ecdhPub.getCurveOID()))
+                {
+                    PrivateKeyInfo ecDhSpec = new PrivateKeyInfo(
+                        new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
+                        new DEROctetString(BigIntegers.asUnsignedByteArray(ecdhK.getX())));
+                    fact = helper.createKeyFactory("XDH");
+       
+                    return fact.generatePrivate(new PKCS8EncodedKeySpec(ecDhSpec.getEncoded()));
+                }
+                else
+                {
+                    ECPrivateKeySpec ecDhSpec = new ECPrivateKeySpec(
+                        ecdhK.getX(),
+                        getECParameterSpec(ecdhPub.getCurveOID()));
+                    fact = helper.createKeyFactory("ECDH");
+
+                    return fact.generatePrivate(ecDhSpec);
+                }
             case PublicKeyAlgorithmTags.ECDSA:
                 ECDSAPublicBCPGKey ecdsaPub = (ECDSAPublicBCPGKey)pubPk.getKey();
                 ECSecretBCPGKey ecdsaK = (ECSecretBCPGKey)privPk;
