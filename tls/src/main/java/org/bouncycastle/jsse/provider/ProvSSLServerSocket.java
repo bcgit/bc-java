@@ -65,6 +65,7 @@ class ProvSSLServerSocket
             useClientMode, sslParameters.copy());
 
         implAccept(socket);
+        socket.notifyConnected();
 
         return socket;
     }
