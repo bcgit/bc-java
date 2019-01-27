@@ -20,6 +20,9 @@ abstract class ProvSSLSocketBase
     extends SSLSocket
     implements BCSSLSocket
 {
+    protected static final boolean provJdkTlsTrustNameService = PropertyUtils
+        .getBooleanSystemProperty("jdk.tls.trustNameService", false);
+
     protected final Closeable socketCloser = new Closeable()
     {
         public void close() throws IOException

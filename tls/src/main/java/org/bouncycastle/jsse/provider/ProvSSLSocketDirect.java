@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.Principal;
 import java.security.cert.CertificateException;
@@ -36,6 +39,8 @@ class ProvSSLSocketDirect
     protected final ContextData contextData;
     protected final ProvSSLParameters sslParameters;
 
+    protected String peerHost = null;
+    protected String peerHostSNI = null;
     protected boolean enableSessionCreation = true;
     protected boolean useClientMode = true;
 
@@ -93,6 +98,7 @@ class ProvSSLSocketDirect
         this.context = context;
         this.contextData = contextData;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this.peerHost = host;
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port) throws IOException, UnknownHostException
@@ -102,6 +108,7 @@ class ProvSSLSocketDirect
         this.context = context;
         this.contextData = contextData;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this.peerHost = host;
     }
 
     public ProvSSLContextSpi getContext()
@@ -159,6 +166,19 @@ class ProvSSLSocketDirect
         {
             protocol.close();
         }
+    }
+
+    @Override
+    public void connect(SocketAddress endpoint, int timeout) throws IOException
+    {
+        if (!(endpoint instanceof InetSocketAddress))
+        {
+            throw new SocketException("Only InetSocketAddress is supported.");
+        }
+
+        super.connect(endpoint, timeout);
+
+        notifyConnected();
     }
 
     public synchronized BCExtendedSSLSession getBCHandshakeSession()
@@ -373,17 +393,12 @@ class ProvSSLSocketDirect
 
     public String getPeerHost()
     {
-        InetAddress peerAddress = getInetAddress();
-        if (peerAddress != null)
-        {
-            String peerHost = peerAddress.toString();
-            int pos = peerHost.lastIndexOf('/');
-            if (pos > 0)
-            {
-                return peerHost.substring(0,  pos);
-            }
-        }
-        return null;
+        return peerHost;
+    }
+
+    public String getPeerHostSNI()
+    {
+        return peerHostSNI;
     }
 
     public int getPeerPort()
@@ -413,6 +428,43 @@ class ProvSSLSocketDirect
         {
             startHandshake(resumable);
         }
+    }
+
+    synchronized void notifyConnected()
+    {
+        if (null != peerHost && peerHost.length() > 0)
+        {
+            this.peerHostSNI = peerHost;
+            return;
+        }
+
+        InetAddress peerAddress = getInetAddress();
+        if (null == peerAddress)
+        {
+            return;
+        }
+
+        /*
+         * TODO[jsse] If we could somehow access the 'originalHostName' of peerAddress, it would be
+         * usable as a default SNI host_name.
+         */
+//        String originalHostName = null;
+//        if (null != originalHostName)
+//        {
+//            this.peerHost = originalHostName;
+//            this.peerHostSNI = originalHostName;
+//        }
+
+        if (useClientMode && provJdkTlsTrustNameService)
+        {
+            this.peerHost = peerAddress.getHostName();
+        }
+        else
+        {
+            this.peerHost = peerAddress.getHostAddress();
+        }
+
+        this.peerHostSNI = null;
     }
 
     class AppDataInput extends InputStream

@@ -53,10 +53,11 @@ class ProvSSLSocketWrap
     protected final ContextData contextData;
     protected final Socket wrapSocket;
     protected final InputStream consumed;
-    protected final String host;
     protected final boolean autoClose;
     protected final ProvSSLParameters sslParameters;
 
+    protected String peerHost = null;
+    protected String peerHostSNI = null;
     protected boolean enableSessionCreation = true;
     protected boolean useClientMode;
 
@@ -74,10 +75,11 @@ class ProvSSLSocketWrap
         this.contextData = contextData;
         this.wrapSocket = checkSocket(s);
         this.consumed = consumed;
-        this.host = null;
         this.autoClose = autoClose;
         this.useClientMode = false;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
+
+        notifyConnected();
     }
 
     protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
@@ -89,10 +91,12 @@ class ProvSSLSocketWrap
         this.contextData = contextData;
         this.wrapSocket = checkSocket(s);
         this.consumed = null;
-        this.host = host;
+        this.peerHost = host;
         this.autoClose = autoClose;
         this.useClientMode = true;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
+
+        notifyConnected();
     }
 
     public ProvSSLContextSpi getContext()
@@ -578,9 +582,12 @@ class ProvSSLSocketWrap
 
     public String getPeerHost()
     {
-        // TODO[jsse] See SunJSSE for some attempt at implicit host name determination
+        return peerHost;
+    }
 
-        return host;
+    public String getPeerHostSNI()
+    {
+        return peerHostSNI;
     }
 
     public int getPeerPort()
@@ -610,6 +617,43 @@ class ProvSSLSocketWrap
         {
             startHandshake(resumable);
         }
+    }
+
+    synchronized void notifyConnected()
+    {
+        if (null != peerHost && peerHost.length() > 0)
+        {
+            this.peerHostSNI = peerHost;
+            return;
+        }
+
+        InetAddress peerAddress = getInetAddress();
+        if (null == peerAddress)
+        {
+            return;
+        }
+
+        /*
+         * TODO[jsse] If we could somehow access the 'originalHostName' of peerAddress, it would be
+         * usable as a default SNI host_name.
+         */
+//        String originalHostName = null;
+//        if (null != originalHostName)
+//        {
+//            this.peerHost = originalHostName;
+//            this.peerHostSNI = originalHostName;
+//        }
+
+        if (useClientMode && provJdkTlsTrustNameService)
+        {
+            this.peerHost = peerAddress.getHostName();
+        }
+        else
+        {
+            this.peerHost = peerAddress.getHostAddress();
+        }
+
+        this.peerHostSNI = null;
     }
 
     class AppDataInput extends InputStream
