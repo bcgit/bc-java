@@ -5,15 +5,22 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHKey;
 
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
@@ -31,6 +38,7 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.util.Arrays;
 
 public class JcePublicKeyDataDecryptorFactoryBuilder
 {
@@ -137,8 +145,17 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
         PublicKeyPacket pubKeyData = privKey.getPublicKeyPacket();
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
-        X9ECParameters x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
 
+        X9ECParameters x9Params;
+        if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+        {
+            x9Params = null;
+        }
+        else
+        {
+            x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
+        }
+        
         byte[] enc = secKeyData[0];
 
         int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
@@ -150,30 +167,65 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
         System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyEnc.length);
 
-        ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
-
         try
         {
-            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
+            // XDH
+            if (x9Params == null)
+            {
+                //ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
 
-            KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
+                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
 
-            PrivateKey privateKey = converter.getPrivateKey(privKey);
+                KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
 
-            agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
+                PrivateKey privateKey = converter.getPrivateKey(privKey);
+                KeyFactory keyFact = helper.createKeyFactory("XDH");
 
-            agreement.doPhase(converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
-                new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator)), true);
+                // skip the 0x40 header byte.
+                PublicKey publicKey = keyFact.generatePublic(
+                    new X509EncodedKeySpec(
+                              new SubjectPublicKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
+                                  Arrays.copyOfRange(pEnc, 1, pEnc.length)).getEncoded()));
 
-            Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
+                agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
 
-            Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
+                agreement.doPhase(publicKey, true);
 
-            c.init(Cipher.UNWRAP_MODE, key);
+                Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
 
-            Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
+                Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
 
-            return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
+                c.init(Cipher.UNWRAP_MODE, key);
+
+                Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
+
+                return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
+            }
+            else
+            {
+                ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
+
+                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
+
+                KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
+
+                PrivateKey privateKey = converter.getPrivateKey(privKey);
+
+                agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
+
+                agreement.doPhase(converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
+                    new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator)), true);
+
+                Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
+
+                Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
+
+                c.init(Cipher.UNWRAP_MODE, key);
+
+                Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
+
+                return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
+            }
         }
         catch (InvalidKeyException e)
         {
