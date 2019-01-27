@@ -140,14 +140,12 @@ class ProvSSLSocketDirect
 
     public String chooseClientAlias(String[] keyType, Principal[] issuers)
     {
-        // TODO[jsse] Pass 'this' as final argument
-        return contextData.getX509KeyManager().chooseClientAlias(keyType, issuers, null);
+        return contextData.getX509KeyManager().chooseClientAlias(keyType, issuers, this);
     }
 
     public String chooseServerAlias(String keyType, Principal[] issuers)
     {
-        // TODO[jsse] Pass 'this' as final argument
-        return contextData.getX509KeyManager().chooseServerAlias(keyType, issuers, null);
+        return contextData.getX509KeyManager().chooseServerAlias(keyType, issuers, this);
     }
 
     @Override

@@ -152,14 +152,12 @@ class ProvSSLEngine
 
     public String chooseClientAlias(String[] keyType, Principal[] issuers)
     {
-        // TODO[jsse] Pass 'this' as final argument
-        return contextData.getX509KeyManager().chooseEngineClientAlias(keyType, issuers, null);
+        return contextData.getX509KeyManager().chooseEngineClientAlias(keyType, issuers, this);
     }
 
     public String chooseServerAlias(String keyType, Principal[] issuers)
     {
-        // TODO[jsse] Pass 'this' as final argument
-        return contextData.getX509KeyManager().chooseEngineServerAlias(keyType, issuers, null);
+        return contextData.getX509KeyManager().chooseEngineServerAlias(keyType, issuers, this);
     }
 
     @Override
