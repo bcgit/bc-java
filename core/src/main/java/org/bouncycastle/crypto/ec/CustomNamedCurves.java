@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -670,7 +671,7 @@ public class CustomNamedCurves
 
     static
     {
-        defineCurve("curve25519", curve25519);
+        defineCurveWithOID("curve25519", CryptlibObjectIdentifiers.curvey25519, curve25519);
 
 //        defineCurveWithOID("secp112r1", SECObjectIdentifiers.secp112r1, secp112r1);
 //        defineCurveWithOID("secp112r2", SECObjectIdentifiers.secp112r2, secp112r2);

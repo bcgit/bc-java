@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 
 /**
@@ -146,6 +147,11 @@ public class ECNamedCurveTable
         if (name == null)
         {
             name = GMNamedCurves.getName(oid);
+        }
+
+        if (name == null)
+        {
+            name = CustomNamedCurves.getName(oid);
         }
 
         return name;
