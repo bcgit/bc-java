@@ -146,16 +146,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         PublicKeyPacket pubKeyData = privKey.getPublicKeyPacket();
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
 
-        X9ECParameters x9Params;
-        if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
-        {
-            x9Params = null;
-        }
-        else
-        {
-            x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
-        }
-        
         byte[] enc = secKeyData[0];
 
         int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
@@ -169,63 +159,50 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
         try
         {
+            KeyAgreement agreement;
+            PublicKey publicKey;
+
             // XDH
-            if (x9Params == null)
+            if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
             {
-                //ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
+                agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
 
-                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
-
-                KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
-
-                PrivateKey privateKey = converter.getPrivateKey(privKey);
                 KeyFactory keyFact = helper.createKeyFactory("XDH");
 
                 // skip the 0x40 header byte.
-                PublicKey publicKey = keyFact.generatePublic(
+                publicKey = keyFact.generatePublic(
                     new X509EncodedKeySpec(
                               new SubjectPublicKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
                                   Arrays.copyOfRange(pEnc, 1, pEnc.length)).getEncoded()));
-
-                agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
-
-                agreement.doPhase(publicKey, true);
-
-                Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
-
-                Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
-
-                c.init(Cipher.UNWRAP_MODE, key);
-
-                Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
-
-                return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
             }
             else
             {
+                X9ECParameters x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
                 ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
 
-                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
+                agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
 
-                KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
-
-                PrivateKey privateKey = converter.getPrivateKey(privKey);
-
-                agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
-
-                agreement.doPhase(converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
-                    new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator)), true);
-
-                Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
-
-                Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
-
-                c.init(Cipher.UNWRAP_MODE, key);
-
-                Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
-
-                return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
+                publicKey = converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
+                    new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator));
             }
+
+            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
+
+            PrivateKey privateKey = converter.getPrivateKey(privKey);
+
+            agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
+
+            agreement.doPhase(publicKey, true);
+
+            Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
+
+            Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
+
+            c.init(Cipher.UNWRAP_MODE, key);
+
+            Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
+
+            return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
         }
         catch (InvalidKeyException e)
         {

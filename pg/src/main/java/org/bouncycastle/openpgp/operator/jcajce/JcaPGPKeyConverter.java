@@ -67,6 +67,7 @@ import org.bouncycastle.openpgp.PGPKdfParameters;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 public class JcaPGPKeyConverter
@@ -300,11 +301,12 @@ public class JcaPGPKeyConverter
 
                 if (CryptlibObjectIdentifiers.curvey25519.equals(ecdhPub.getCurveOID()))
                 {
+                    // through some quirk of fate the MPI actual contains the reversed private value
                     PrivateKeyInfo ecDhSpec = new PrivateKeyInfo(
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
-                        new DEROctetString(BigIntegers.asUnsignedByteArray(ecdhK.getX())));
+                        new DEROctetString(Arrays.reverse(BigIntegers.asUnsignedByteArray(ecdhK.getX()))));
                     fact = helper.createKeyFactory("XDH");
-       
+
                     return fact.generatePrivate(new PKCS8EncodedKeySpec(ecDhSpec.getEncoded()));
                 }
                 else

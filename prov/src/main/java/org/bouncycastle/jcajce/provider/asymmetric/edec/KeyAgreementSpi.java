@@ -242,6 +242,42 @@ public class KeyAgreementSpi
         }
     }
 
+    public static class X25519withSHA384CKDF
+        extends KeyAgreementSpi
+    {
+        public X25519withSHA384CKDF()
+        {
+            super("X25519withSHA384CKDF", new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
+        }
+    }
+
+    public static class X25519withSHA512CKDF
+        extends KeyAgreementSpi
+    {
+        public X25519withSHA512CKDF()
+        {
+            super("X25519withSHA512CKDF", new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
+        }
+    }
+
+    public final static class X448withSHA256CKDF
+        extends KeyAgreementSpi
+    {
+        public X448withSHA256CKDF()
+        {
+            super("X448withSHA256CKDF", new ConcatenationKDFGenerator(DigestFactory.createSHA256()));
+        }
+    }
+
+    public static class X448withSHA384CKDF
+        extends KeyAgreementSpi
+    {
+        public X448withSHA384CKDF()
+        {
+            super("X448withSHA384CKDF", new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
+        }
+    }
+
     public final static class X448withSHA512CKDF
         extends KeyAgreementSpi
     {

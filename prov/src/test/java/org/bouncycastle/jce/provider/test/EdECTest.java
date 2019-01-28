@@ -445,6 +445,8 @@ public class EdECTest
     private void x448withCKDFTest()
         throws Exception
     {
+        agreementTest("X448withSHA256CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("X448withSHA384CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
         agreementTest("X448withSHA512CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
     }
 
@@ -452,6 +454,8 @@ public class EdECTest
         throws Exception
     {
         agreementTest("X25519withSHA256CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("X25519withSHA384CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("X25519withSHA512CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
     }
 
     private void x448withKDFTest()
