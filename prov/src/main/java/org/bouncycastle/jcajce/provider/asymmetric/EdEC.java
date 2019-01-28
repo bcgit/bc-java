@@ -56,6 +56,11 @@ public class EdEC
             provider.addAlgorithm("KeyAgreement", EdECObjectIdentifiers.id_X25519, PREFIX + "KeyAgreementSpi$X25519");
 
             provider.addAlgorithm("KeyAgreement.X25519WITHSHA256CKDF", PREFIX + "KeyAgreementSpi$X25519withSHA256CKDF");
+            provider.addAlgorithm("KeyAgreement.X25519WITHSHA384CKDF", PREFIX + "KeyAgreementSpi$X25519withSHA384CKDF");
+            provider.addAlgorithm("KeyAgreement.X25519WITHSHA512CKDF", PREFIX + "KeyAgreementSpi$X25519withSHA512CKDF");
+
+            provider.addAlgorithm("KeyAgreement.X448WITHSHA256CKDF", PREFIX + "KeyAgreementSpi$X448withSHA256CKDF");
+            provider.addAlgorithm("KeyAgreement.X448WITHSHA384CKDF", PREFIX + "KeyAgreementSpi$X448withSHA384CKDF");
             provider.addAlgorithm("KeyAgreement.X448WITHSHA512CKDF", PREFIX + "KeyAgreementSpi$X448withSHA512CKDF");
 
             provider.addAlgorithm("KeyAgreement.X25519WITHSHA256KDF", PREFIX + "KeyAgreementSpi$X25519withSHA256KDF");
