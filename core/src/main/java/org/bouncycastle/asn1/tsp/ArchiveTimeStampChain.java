@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.cms;
+package org.bouncycastle.asn1.tsp;
 
 import java.util.Enumeration;
 

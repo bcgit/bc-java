@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.cms;
+package org.bouncycastle.asn1.tsp;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -7,8 +7,11 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.cms.Attributes;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.tsp.TSTInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -161,6 +164,11 @@ public class ArchiveTimeStamp
 
     public PartialHashtree[] getReducedHashTree()
     {
+        if (reducedHashTree == null)
+        {
+           return null;
+        }
+
         PartialHashtree[] rv = new PartialHashtree[reducedHashTree.size()];
 
         for (int i = 0; i != rv.length; i++)

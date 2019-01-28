@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.cms;
+package org.bouncycastle.asn1.tsp;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
