@@ -91,16 +91,16 @@ class ProvTlsClient
             List<BCSNIServerName> sniServerNames = sslParameters.getServerNames();
             if (null == sniServerNames)
             {
-                String peerHost = manager.getPeerHost();
-                if (peerHost != null && peerHost.indexOf('.') > 0 && !IPAddress.isValid(peerHost))
+                String peerHostSNI = manager.getPeerHostSNI();
+                if (null != peerHostSNI && peerHostSNI.indexOf('.') > 0 && !IPAddress.isValid(peerHostSNI))
                 {
                     try
                     {
-                        sniServerNames = Collections.<BCSNIServerName>singletonList(new BCSNIHostName(peerHost));
+                        sniServerNames = Collections.<BCSNIServerName>singletonList(new BCSNIHostName(peerHostSNI));
                     }
                     catch (RuntimeException e)
                     {
-                        LOG.fine("Failed to add peer host as default SNI host_name: " + peerHost);
+                        LOG.fine("Failed to add peer host as default SNI host_name: " + peerHostSNI);
                     }
                 }
             }
