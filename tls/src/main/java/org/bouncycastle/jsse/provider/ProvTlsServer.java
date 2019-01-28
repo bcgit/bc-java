@@ -220,9 +220,8 @@ class ProvTlsServer
          */
         {
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
-            // TODO[jsse] Review server-side host/port settings
-            String peerHost = null; //manager.getPeerHost();
-            int peerPort = -1; //manager.getPeerPort();
+            String peerHost = manager.getPeerHost();
+            int peerPort = manager.getPeerPort();
             SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
             ProvSSLSessionHandshake handshakeSession;
@@ -377,9 +376,8 @@ class ProvTlsServer
         if (null == sslSession || sslSession.getTlsSession() != connectionTlsSession)
         {
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
-            // TODO[jsse] Review server-side host/port settings
-            String peerHost = null; //manager.getPeerHost();
-            int peerPort = -1; //manager.getPeerPort();
+            String peerHost = manager.getPeerHost();
+            int peerPort = manager.getPeerPort();
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
                 sslParameters.getEndpointIdentificationAlgorithm());
 
@@ -444,6 +442,7 @@ class ProvTlsServer
          * 
          * Checks that will need to be done here before this can return true:
          * - endpoint ID algorithm consistency
+         * - SNI consistency
          */
         return false;
     }
