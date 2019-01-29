@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
@@ -33,6 +35,8 @@ import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 class ProvX509TrustManager
     extends BCX509ExtendedTrustManager
 {
+    private static final Logger LOG = Logger.getLogger(ProvX509TrustManager.class.getName());
+
     private static Set<X509Certificate> getTrustedCerts(Set<TrustAnchor> trustAnchors)
     {
         Set<X509Certificate> result = new HashSet<X509Certificate>(trustAnchors.size());
@@ -264,7 +268,8 @@ class ProvX509TrustManager
                     }
                     catch (CertificateException e)
                     {
-                        // ignore and continue on to check 'peerHost' instead
+                        // ignore (log only) and continue on to check 'peerHost' instead
+                        LOG.log(Level.FINE, "Server's endpoint ID did not match the SNI host_name: " + hostname, e);
                     }
                 }
             }
