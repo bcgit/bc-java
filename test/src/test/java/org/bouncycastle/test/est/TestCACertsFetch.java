@@ -2,7 +2,6 @@ package org.bouncycastle.test.est;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +42,6 @@ import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.Source;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.test.est.examples.ExampleUtils;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -152,7 +150,7 @@ public class TestCACertsFetch
 
         int port = res.open(null);
 
-        ESTService est = new JsseESTServiceBuilder("localhost:" + port , JcaJceUtils.getTrustAllTrustManager()).withTimeout(500).addCipherSuites(res.getEnabledSuites()).build();
+        ESTService est = new JsseESTServiceBuilder("localhost:" + port, JcaJceUtils.getTrustAllTrustManager()).withTimeout(500).addCipherSuites(res.getEnabledSuites()).build();
 
         try
         {
@@ -257,8 +255,6 @@ public class TestCACertsFetch
         }
 
     }
-
-
 
 
     /**
@@ -684,7 +680,7 @@ public class TestCACertsFetch
         catch (Exception ex)
         {
             Assert.assertEquals("Expect EST Exception", ESTException.class, ex.getClass());
-            Assert.assertEquals("Expect cause an IOException", EOFException.class, ex.getCause().getClass());
+            Assert.assertTrue("Expect cause an IOException", ex.getCause() instanceof IOException);
         }
 
     }
@@ -835,7 +831,7 @@ public class TestCACertsFetch
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "localhost:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "localhost:" + port, JcaJceUtils.getTrustAllTrustManager());
 
 
             builder.withReadLimit(1000L);
@@ -903,7 +899,7 @@ public class TestCACertsFetch
             int port = res.open(responseData.toByteArray());
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "localhost:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "localhost:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getEnabledSuites());
 
@@ -960,7 +956,7 @@ public class TestCACertsFetch
 
             int port = res.open(responseData.toByteArray());
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "localhost:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "localhost:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1023,7 +1019,7 @@ public class TestCACertsFetch
 
             int port = res.open(responseData.toByteArray());
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "localhost:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "localhost:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1088,7 +1084,7 @@ public class TestCACertsFetch
             int port = res.open(responseData.toByteArray());
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "localhost:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "localhost:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1150,7 +1146,7 @@ public class TestCACertsFetch
 
             int port = res.open(responseData.toByteArray());
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "localhost:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "localhost:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1212,7 +1208,7 @@ public class TestCACertsFetch
 
             int port = res.open(responseData.toByteArray());
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "localhost:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "localhost:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1277,7 +1273,7 @@ public class TestCACertsFetch
             int port = res.open(responseData.toByteArray());
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "localhost:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "localhost:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
             builder.withTLSVersion("TLSv1");
@@ -1351,7 +1347,7 @@ public class TestCACertsFetch
         {
             int port = res.open(responseData.toByteArray());
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "127.0.0.1:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "127.0.0.1:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530).withHostNameAuthorizer(null);
             builder.addCipherSuites(res.getEnabledSuites());
 
@@ -1442,7 +1438,7 @@ public class TestCACertsFetch
             catch (Exception ex)
             {
                 Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
-                Assert.assertTrue("",  ex.getCause() instanceof IOException);
+                Assert.assertTrue("", ex.getCause() instanceof IOException);
                 Assert.assertTrue(ex.getMessage().contains("must not use anon"));
             }
         }
@@ -1618,7 +1614,7 @@ public class TestCACertsFetch
             int port = res.open(responseData.toByteArray());
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "127.0.0.1:" + port , JcaJceUtils.getTrustAllTrustManager());
+                "127.0.0.1:" + port, JcaJceUtils.getTrustAllTrustManager());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getEnabledSuites());
             builder.withTLSVersion("TLSv1"); // <- needed to get export suites to work.
