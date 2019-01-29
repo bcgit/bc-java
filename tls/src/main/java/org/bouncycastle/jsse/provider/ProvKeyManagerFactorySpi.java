@@ -22,7 +22,7 @@ import javax.net.ssl.X509ExtendedKeyManager;
 class ProvKeyManagerFactorySpi
     extends KeyManagerFactorySpi
 {
-    private static Logger LOG = Logger.getLogger(ProvKeyManagerFactorySpi.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvKeyManagerFactorySpi.class.getName());
 
     static KeyStoreConfig getDefaultKeyStore() throws Exception
     {

@@ -44,7 +44,7 @@ class ProvTlsServer
     extends DefaultTlsServer
     implements ProvTlsPeer
 {
-    private static Logger LOG = Logger.getLogger(ProvTlsServer.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvTlsServer.class.getName());
 
     private static final int provEphemeralDHKeySize = PropertyUtils.getIntegerSystemProperty("jdk.tls.ephemeralDHKeySize", 2048, 1024, 8192);
 

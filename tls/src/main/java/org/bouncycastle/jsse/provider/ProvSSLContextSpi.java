@@ -40,7 +40,7 @@ import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 class ProvSSLContextSpi
     extends SSLContextSpi
 {
-    private static Logger LOG = Logger.getLogger(ProvSSLContextSpi.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvSSLContextSpi.class.getName());
 
     private static final String PROPERTY_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
     private static final String PROPERTY_SERVER_PROTOCOLS = "jdk.tls.server.protocols";
