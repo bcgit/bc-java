@@ -11,7 +11,7 @@ import org.bouncycastle.util.Strings;
 
 abstract class SupportedGroups
 {
-    private static Logger LOG = Logger.getLogger(SupportedGroups.class.getName());
+    private static final Logger LOG = Logger.getLogger(SupportedGroups.class.getName());
 
     private static final String PROPERTY_NAMEDGROUPS = "jdk.tls.namedGroups";
 

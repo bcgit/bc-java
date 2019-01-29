@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  */
 class PropertyUtils
 {
-    private static Logger LOG = Logger.getLogger(PropertyUtils.class.getName());
+    private static final Logger LOG = Logger.getLogger(PropertyUtils.class.getName());
 
     static String getSecurityProperty(final String propertyName)
     {

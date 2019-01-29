@@ -47,7 +47,7 @@ class ProvTlsClient
     extends DefaultTlsClient
     implements ProvTlsPeer
 {
-    private static Logger LOG = Logger.getLogger(ProvTlsClient.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvTlsClient.class.getName());
 
     private static final boolean provEnableSNIExtension = PropertyUtils.getBooleanSystemProperty("jsse.enableSNIExtension", true);
 

@@ -31,7 +31,7 @@ class ProvSSLSocketWrap
     extends ProvSSLSocketBase
     implements ProvTlsManager
 {
-    private static Logger LOG = Logger.getLogger(ProvSSLSocketWrap.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvSSLSocketWrap.class.getName());
 
     private static Socket checkSocket(Socket s) throws SocketException
     {
