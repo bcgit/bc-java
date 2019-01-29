@@ -30,7 +30,7 @@ import javax.net.ssl.TrustManagerFactorySpi;
 class ProvTrustManagerFactorySpi
     extends TrustManagerFactorySpi
 {
-    private static Logger LOG = Logger.getLogger(ProvTrustManagerFactorySpi.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvTrustManagerFactorySpi.class.getName());
 
     static KeyStore getDefaultTrustStore() throws Exception
     {

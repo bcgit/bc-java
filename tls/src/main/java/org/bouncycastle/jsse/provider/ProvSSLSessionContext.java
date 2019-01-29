@@ -22,7 +22,7 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
 class ProvSSLSessionContext
     implements SSLSessionContext
 {
-    private static Logger LOG = Logger.getLogger(ProvSSLSessionContext.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvSSLSessionContext.class.getName());
 
     private static final int provSessionCacheSize = PropertyUtils
         .getIntegerSystemProperty("javax.net.ssl.sessionCacheSize", 20480, 0, Integer.MAX_VALUE);

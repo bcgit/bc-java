@@ -30,7 +30,7 @@ class ProvSSLSocketDirect
     extends ProvSSLSocketBase
     implements ProvTlsManager
 {
-    private static Logger LOG = Logger.getLogger(ProvSSLSocketDirect.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvSSLSocketDirect.class.getName());
 
     protected final AppDataInput appDataIn = new AppDataInput();
     protected final AppDataOutput appDataOut = new AppDataOutput();
