@@ -28,6 +28,18 @@ import org.bouncycastle.util.BigIntegers;
 public class JceTlsDHDomain
     implements TlsDHDomain
 {
+    private static byte[] encodeValue(DHParameterSpec dh, boolean padded, BigInteger x)
+    {
+        return padded
+            ?   BigIntegers.asUnsignedByteArray(getValueLength(dh), x)
+            :   BigIntegers.asUnsignedByteArray(x);
+    }
+
+    private static int getValueLength(DHParameterSpec dh)
+    {
+        return (dh.getP().bitLength() + 7) / 8;
+    }
+
     public static DHParameterSpec getParameters(TlsDHConfig dhConfig)
     {
         DHGroup dhGroup = TlsDHUtils.getDHGroup(dhConfig);
@@ -104,12 +116,12 @@ public class JceTlsDHDomain
 
     public byte[] encodeParameter(BigInteger x) throws IOException
     {
-        return BigIntegers.asUnsignedByteArray(x);
+        return encodeValue(dhParameterSpec, false, x);
     }
 
     public byte[] encodePublicKey(DHPublicKey publicKey) throws IOException
     {
-        return encodeParameter(publicKey.getY());
+        return encodeValue(dhParameterSpec, true, publicKey.getY());
     }
 
     public KeyPair generateKeyPair() throws IOException
