@@ -24,6 +24,18 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class BcTlsDHDomain implements TlsDHDomain
 {
+    private static byte[] encodeValue(DHParameters dh, boolean padded, BigInteger x)
+    {
+        return padded
+            ?   BigIntegers.asUnsignedByteArray(getValueLength(dh), x)
+            :   BigIntegers.asUnsignedByteArray(x);
+    }
+
+    private static int getValueLength(DHParameters dh)
+    {
+        return (dh.getP().bitLength() + 7) / 8;
+    }
+
     public static byte[] calculateBasicAgreement(DHPrivateKeyParameters privateKey, DHPublicKeyParameters publicKey)
     {
         DHBasicAgreement basicAgreement = new DHBasicAgreement();
@@ -95,12 +107,12 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     public byte[] encodeParameter(BigInteger x) throws IOException
     {
-        return BigIntegers.asUnsignedByteArray(x);
+        return encodeValue(dhParameters, false, x);
     }
 
     public byte[] encodePublicKey(DHPublicKeyParameters publicKey) throws IOException
     {
-        return encodeParameter(publicKey.getY());
+        return encodeValue(dhParameters, true, publicKey.getY());
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()
