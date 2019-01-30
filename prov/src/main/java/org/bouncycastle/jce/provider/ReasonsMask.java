@@ -69,7 +69,7 @@ class ReasonsMask
      * Intersects this mask with the given reasons mask.
      * 
      * @param mask The mask to intersect with.
-     * @return The intersection of this and teh given mask.
+     * @return The intersection of this and the given mask.
      */
     ReasonsMask intersect(ReasonsMask mask)
     {
