@@ -62,6 +62,7 @@ class ProvSSLSocketFactory
         return new ProvSSLSocketDirect(context, context.createContextData(), host, port, localHost, localPort);
     }
 
+    @Override
     public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException
     {
         return new ProvSSLSocketWrap(context, context.createContextData(), s, consumed, autoClose);
