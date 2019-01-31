@@ -305,6 +305,12 @@ class ProvSSLSocketDirect
         this.enableSessionCreation = flag;
     }
 
+    public synchronized void setHost(String host)
+    {
+        this.peerHost = host;
+        this.peerHostSNI = host;
+    }
+
     @Override
     public synchronized void setNeedClientAuth(boolean need)
     {
@@ -391,12 +397,12 @@ class ProvSSLSocketDirect
         }
     }
 
-    public String getPeerHost()
+    public synchronized String getPeerHost()
     {
         return peerHost;
     }
 
-    public String getPeerHostSNI()
+    public synchronized String getPeerHostSNI()
     {
         return peerHostSNI;
     }
@@ -453,6 +459,7 @@ class ProvSSLSocketDirect
 //        {
 //            this.peerHost = originalHostName;
 //            this.peerHostSNI = originalHostName;
+//            return;
 //        }
 
         if (useClientMode && provJdkTlsTrustNameService)
