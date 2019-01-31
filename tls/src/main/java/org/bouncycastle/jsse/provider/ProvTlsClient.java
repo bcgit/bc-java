@@ -92,6 +92,11 @@ class ProvTlsClient
             if (null == sniServerNames)
             {
                 String peerHostSNI = manager.getPeerHostSNI();
+
+                /*
+                 * TODO[jsse] Consider removing the restriction that the name must contain a '.'
+                 * character, which is currently there for compatibility with SunJSSE.
+                 */
                 if (null != peerHostSNI && peerHostSNI.indexOf('.') > 0 && !IPAddress.isValid(peerHostSNI))
                 {
                     try
