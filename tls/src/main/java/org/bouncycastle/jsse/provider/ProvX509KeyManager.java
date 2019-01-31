@@ -37,7 +37,7 @@ class ProvX509KeyManager
 
     private final AtomicLong version = new AtomicLong();
 
-    public ProvX509KeyManager(List<KeyStore.Builder> builders)
+    ProvX509KeyManager(List<KeyStore.Builder> builders)
     {
         // the builder list is processed on request so the key manager is dynamic.
         this.builders = builders;
