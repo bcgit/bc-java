@@ -428,6 +428,12 @@ class ProvSSLSocketWrap
         this.enableSessionCreation = flag;
     }
 
+    public synchronized void setHost(String host)
+    {
+        this.peerHost = host;
+        this.peerHostSNI = host;
+    }
+
     @Override
     public void setKeepAlive(boolean on) throws SocketException
     {
@@ -580,12 +586,12 @@ class ProvSSLSocketWrap
         return wrapSocket.toString();
     }
 
-    public String getPeerHost()
+    public synchronized String getPeerHost()
     {
         return peerHost;
     }
 
-    public String getPeerHostSNI()
+    public synchronized String getPeerHostSNI()
     {
         return peerHostSNI;
     }
@@ -642,6 +648,7 @@ class ProvSSLSocketWrap
 //        {
 //            this.peerHost = originalHostName;
 //            this.peerHostSNI = originalHostName;
+//            return;
 //        }
 
         if (useClientMode && provJdkTlsTrustNameService)

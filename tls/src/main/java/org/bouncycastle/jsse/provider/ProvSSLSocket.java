@@ -184,6 +184,11 @@ class ProvSSLSocket
         engine.setEnableSessionCreation(flag);
     }
 
+    public void setHost(String host)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public void setNeedClientAuth(boolean need)
     {
