@@ -337,4 +337,8 @@ public class PKIXExtendedParameters
         return revocationEnabled;
     }
 
+    public boolean getPolicyQualifiersRejected()
+    {
+        return baseParameters.getPolicyQualifiersRejected();
+    }
 }
