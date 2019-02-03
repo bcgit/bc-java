@@ -903,7 +903,7 @@ public class TlsUtils
     {
         if (crypto.hasNamedGroup(namedGroup))
         {
-            supportedGroups.addElement(namedGroup);
+            supportedGroups.addElement(Integers.valueOf(namedGroup));
         }
     }
 
@@ -917,10 +917,10 @@ public class TlsUtils
 
     public static boolean addToSet(Vector s, int i)
     {
-        boolean result = !s.contains(i);
+        boolean result = !s.contains(Integers.valueOf(i));
         if (result)
         {
-            s.addElement(i);
+            s.add(Integers.valueOf(i));
         }
         return result;
     }
@@ -2422,7 +2422,7 @@ public class TlsUtils
             {
                 addToSet(result, getKeyExchangeAlgorithm(cipherSuites[i]));
             }
-            result.removeElement(-1);
+            result.removeElement(Integers.valueOf(-1));
         }
         return result;
     }

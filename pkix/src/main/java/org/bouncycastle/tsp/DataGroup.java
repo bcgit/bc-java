@@ -62,7 +62,7 @@ public class DataGroup
 
             for (int i = 0; i != dataObjects.size(); i++)
             {
-                byte[] dataObject = dataObjects.get(i);
+                byte[] dataObject = (byte[])dataObjects.get(i);
                 if (ha != null)
                 {
                     hashes.add(calcDigest(digestCalculator, Arrays.concatenate(calcDigest(digestCalculator, dataObject), ha)));
@@ -96,14 +96,14 @@ public class DataGroup
 
                 while (iterator.hasNext())
                 {
-                    concat = Arrays.concatenate(concat, iterator.next());
+                    concat = Arrays.concatenate(concat, (byte[])iterator.next());
                 }
 
                 groupHash = calcDigest(digestCalculator, concat);
             }
             else
             {
-                groupHash = hashes.first();
+                groupHash = (byte[])hashes.first();
             }
         }
 
@@ -114,10 +114,13 @@ public class DataGroup
      * Comparator for byte arrays
      */
     private class ByteArrayComparator
-        implements Comparator<byte[]>
+        implements Comparator
     {
-        public int compare(final byte[] left, final byte[] right)
+        public int compare(Object l, Object r)
         {
+            byte[] left = (byte[])l;
+            byte[] right = (byte[])r;
+
             int len = left.length < right.length ? left.length : right.length;
 
             for (int i = 0; i != len; i++)
