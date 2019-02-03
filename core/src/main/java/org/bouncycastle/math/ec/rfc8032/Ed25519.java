@@ -14,7 +14,7 @@ import org.bouncycastle.util.Strings;
 
 public abstract class Ed25519
 {
-    public final class Algorithm
+    public static final class Algorithm
     {
         public static final int Ed25519 = 0;
         public static final int Ed25519ctx = 1;

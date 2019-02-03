@@ -164,7 +164,7 @@ public class OpenSSHKeyParsingTests
             "-----END OPENSSH PRIVATE KEY-----\n")).readPemObject().getContent();
 
 
-        blob[19] = 'C';
+        blob[19] = (byte)'C';
 
         try
         {

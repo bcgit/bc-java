@@ -92,6 +92,24 @@ w
 q
 %
 
+ed org/bouncycastle/crypto/signers/Ed448Signer.java <<%
+g/private final/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/signers/Ed25519ctxSigner.java <<%
+g/private final/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/signers/SM2Signer.java <<%
+g/private final/s/final//
+w
+q
+%
+
 ed org/bouncycastle/crypto/signers/ISOTrailers.java <<%
 g/private static final Map.* trailerMap;/s/final//
 w
@@ -300,7 +318,43 @@ w
 q
 %
 
+ed org/bouncycastle/jcajce/spec/GOST3410ParameterSpec.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/params/ECGOST3410Parameters.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
 ed org/bouncycastle/jcajce/provider/asymmetric/dh/KeyAgreementSpi.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/util/JournalingSecureRandom.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/util/Fingerprint.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/openpgp/operator/jcajce/JcaPGPContentSignerBuilder.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/openpgp/operator/jcajce/JcaKeyFingerprintCalculator.java <<%
 g/private.*final.*;/s/final//
 w
 q

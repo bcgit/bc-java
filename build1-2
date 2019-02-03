@@ -70,10 +70,10 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/mail
     rm -rf org/bouncycastle/bcpg
     rm -rf org/bouncycastle/openpgp
-    rm -rf org/bouncycastle/openssl
-    rm -rf org/bouncycastle/voms
-    rm -rf org/bouncycastle/mozilla
-    rm -rf org/bouncycastle/tsp
+    rm -rf org/bouncycastle/mime
+    rm org/bouncycastle/pkix/jcajce/Revocation*.java
+    rm org/bouncycastle/pkix/jcajce/X509RevocationChecker.java
+    rm org/bouncycastle/pkix/jcajce/RFC3280*.java
     rm -rf org/bouncycastle/sasn1/test
     rm -rf org/bouncycastle/i18n/test
     rm -rf org/bouncycastle/i18n/filter/test
@@ -120,6 +120,8 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/jce/provider/test/DetDSATest.java
     rm org/bouncycastle/jce/provider/test/AEADTest.java
     rm -rf org/bouncycastle/jce/provider/JDKPKCS12StoreParameter.java
+    rm -rf org/bouncycastle/jcajce/BC*LoadStore*.java
+    rm -rf org/bouncycastle/jcajce/spec/DSTU4145*.java
     rm -rf org/bouncycastle/jcajce/provider/config/PKCS12StoreParameter.java
     rm -rf org/bouncycastle/jcajce/provider/test/PrivateConstructorTest.java
     rm -rf org/bouncycastle/jcajce/provider/test/ECAlgorithmParametersTest.java
@@ -128,20 +130,15 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
     rm org/bouncycastle/asn1/test/OctetStringTest.java
     rm org/bouncycastle/asn1/test/ParseTest.java
+    rm org/bouncycastle/pkix/test/RevocationTest.java
+    rm org/bouncycastle/pkix/test/TestUtil.java
     rm -r org/bouncycastle/crypto/test/BigSkippingCipherTest.java
     rm -rf org/bouncycastle/openssl/test
-    rm -rf org/bouncycastle/cms
-    rm -rf org/bouncycastle/cert
-    rm -rf org/bouncycastle/pkcs
-    rm -rf org/bouncycastle/operator
-    rm -rf org/bouncycastle/eac
-    rm -rf org/bouncycastle/tsp
-    rm -r org/bouncycastle/est
-    rm -rf org/bouncycastle/mozilla
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/dstu
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/DSTU*.java
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/util/EC5*.java
     rm org/bouncycastle/asn1/test/EnumeratedTest.java
+    rm -rf org/bouncycastle/pqc/crypto/test/QT*.java
     rm -rf org/bouncycastle/pqc/jcajce/provider/test
     rm -r org/bouncycastle/crypto/test/speedy
     rm -r org/bouncycastle/crypto/test/cavp
@@ -150,17 +147,12 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -r org/bouncycastle/crypto/test/KDFCounterGeneratorTest.java
     rm -r org/bouncycastle/math/test/PrimesTest.java
     rm -r org/bouncycastle/math/raw/test/InterleaveTest.java
-    rm -rf src/org/bouncycastle/cert/jcajce/JcaAttributeCertificateIssuer.java
-    rm -rf src/org/bouncycastle/cert/test/ConverterTest*
-    rm -rf src/org/bouncycastle/cert/test/CertPathLoopTest.java
-    rm -rf src/org/bouncycastle/cert/test/Bc*
-    rm -rf src/org/bouncycastle/cms/test
-    rm -rf src/org/bouncycastle/dvcs/test
-    rm -rf src/org/bouncycastle/eac/test
-    rm -rf src/org/bouncycastle/pkcs/test
-    rm -rf src/org/bouncycastle/tsp/test
-    rm -rf src/org/bouncycastle/tsp/GenTimeAccuracyUnit*
-    rm -rf src/org/bouncycastle/tsp/TimeStampTokenInfoUnit*
+    rm -rf org/bouncycastle/cert/jcajce/JcaAttributeCertificateIssuer.java
+    rm -rf org/bouncycastle/cert/test/ConverterTest*
+    rm -rf org/bouncycastle/cert/test/CertPathLoopTest.java
+    rm -rf org/bouncycastle/cert/test/Bc*
+    rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
+    rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
 
     sh ../../scripts/jdk1.2ed.sh
 
@@ -389,16 +381,7 @@ then
     mkdir $artifacts/bcpkix-jdk12-$base
     mkdir $artifacts/bcpkix-jdk12-$base/src
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/bcpkix-jdk12-$base; tar xf -)
-    ((cd pkix/src/main/java && tar cf - * ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.2 && tar cf - * ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
-    ((cd pkix/src/test/java && tar cf - * ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
-    ((cd pkix/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
-    ((cd pkix/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
-    ((cd pkix/src/main/javadoc && tar cf - * ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
-    find $artifacts/bcpkix-jdk12-$base -name "*.java" -exec scripts/trim.sh \{\} \;
-    find $artifacts/bcpkix-jdk12-$base -name "*.java" -exec scripts/usejcecert.sh \{\} \;
+    ((cd $jdk12src && tar cf - org/bouncycastle/cert org/bouncycastle/cms org/bouncycastle/pkcs org/bouncycastle/pkix org/bouncycastle/openssl org/bouncycastle/operator org/bouncycastle/mozilla org/bouncycastle/tsp org/bouncycastle/voms ) | (cd $artifacts/bcpkix-jdk12-$base/src && tar xf -))
     (
     cd $artifacts/bcpkix-jdk12-$base; mkdir classes; mkdir javadoc;
 
@@ -497,12 +480,11 @@ then
     rm -rf src/org/bouncycastle/mail
     rm -rf src/org/bouncycastle/pkcs
     rm -rf src/org/bouncycastle/cms
+    rm -rf src/org/bouncycastle/mime
     rm -rf src/org/bouncycastle/eac
     rm -rf src/org/bouncycastle/cert
     rm -rf src/org/bouncycastle/tsp
     rm -rf src/org/bouncycastle/x509
-    rm -rf src/org/bouncycastle/openssl
-    rm -rf src/org/bouncycastle/operator
     rm -rf src/org/bouncycastle/voms
     rm -rf src/org/bouncycastle/sasn1
     rm -rf src/org/bouncycastle/est

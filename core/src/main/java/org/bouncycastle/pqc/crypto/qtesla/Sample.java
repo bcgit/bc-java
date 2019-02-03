@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.qtesla;
 
-import java.util.Arrays;
+import org.bouncycastle.util.Arrays;
 
 class Sample
 {
@@ -687,7 +687,7 @@ class Sample
                 while (bernoulli(buffer, z * ((k << 1) - z), EXPONENTIAL_DISTRIBUTION_I) == 0);
 
                 /* Put Last Random Bits into Sign Bit */
-                randomBit <<= (64 - bitRemained);
+                randomBit <<= (int)(64 - bitRemained);
 
                 if (bitRemained == 0)
                 {
@@ -867,7 +867,7 @@ class Sample
                 while (bernoulli(buffer, z * ((k << 1) - z), EXPONENTIAL_DISTRIBUTION_P) == 0);
 
                 /* Put Last Random Bits into Sign Bit */
-                randomBit <<= (64 - bitRemained);
+                randomBit <<= (int)(64 - bitRemained);
 
                 if (bitRemained == 0)
                 {
@@ -1055,7 +1055,7 @@ class Sample
                 while (bernoulli(CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE), z * ((k << 1) - z), exponentialDistribution) == 0);
 
                 /* Put Last Random Bits into Sign Bit */
-                randomBit <<= (64 - bitRemained);
+                randomBit <<= (int)(64 - bitRemained);
 
                 if (bitRemained == 0L)
                 {
@@ -1240,7 +1240,7 @@ class Sample
                 while (bernoulli(CommonFunction.load64(seedExpander, (j++) * Const.LONG_SIZE / Const.INT_SIZE), z * ((k << 1) - z), EXPONENTIAL_DISTRIBUTION_P) == 0);
 
                 /* Put Last Random Bits into Sign Bit */
-                randomBit <<= (64 - bitRemained);
+                randomBit <<= (int)(64 - bitRemained);
 
                 if (bitRemained == 0L)
                 {
@@ -1304,7 +1304,7 @@ class Sample
         );
 
         /* Use Rejection Sampling to Determine Positions to be Set in the New Vector */
-        Arrays.fill(C, 0, n, (short)0);
+        Arrays.fill(C, (short)0);
 
         /* Sample A Unique Position k times.
          * Use Two Bytes

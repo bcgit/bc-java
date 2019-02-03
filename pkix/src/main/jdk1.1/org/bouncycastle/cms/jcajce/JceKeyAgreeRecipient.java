@@ -179,6 +179,6 @@ public abstract class JceKeyAgreeRecipient
 
     public AlgorithmIdentifier getPrivateKeyAlgorithmIdentifier()
     {
-        return PrivateKeyInfo.getInstance(recipientKey.getEncoded()).getAlgorithmId();
+        return PrivateKeyInfo.getInstance(recipientKey.getEncoded()).getPrivateKeyAlgorithm();
     }
 }
