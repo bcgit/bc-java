@@ -31,11 +31,24 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018,
 <li>Use of EC named curves could be lost if keys were constructed via a key factory and algorithm parameters. This has been fixed.</li>
 <li>RFC3211WrapEngine would not properly handle messages longer than 127 bytes. This has been fixed.</li>
 <li>The JCE implementations for RFC3211 would not returned null AlgorithmParameters. This has been fixed.</li>
+<li>TLS: Don't check CCS status for hello_request.</li>
+<li>TLS: Tolerate unrecognized hash algorithms.</li>
+<li>TLS: Tolerate unrecognized SNI types.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
-<li>TLS: Finalised support for RFC 8442 cipher suites.</li>
 <li>The password hashing function, Argon2 has been added to the lightweight API.</li>
+<li>BCJSSE: Added support for endpoint ID validation (HTTPS, LDAP, LDAPS).</li>
+<li>BCJSSE: Added support for 'useCipherSuitesOrder' parameter.</li>
+<li>BCJSSE: Added support for ALPN.</li>
+<li>BCJSSE: Various changes for improved compatibility with SunJSSE.</li>
+<li>BCJSSE: Provide default extended key/trust managers.</li>
+<li>TLS: Added support for TLS 1.2 features from RFC 8446.</li>
+<li>TLS: Removed support for EC point compression.</li>
+<li>TLS: Removed support for record compression.</li>
+<li>TLS: Updated to RFC 7627 from draft-ietf-tls-session-hash-04.</li>
+<li>TLS: Improved certificate sig. alg. checks.</li>
+<li>TLS: Finalised support for RFC 8442 cipher suites.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
