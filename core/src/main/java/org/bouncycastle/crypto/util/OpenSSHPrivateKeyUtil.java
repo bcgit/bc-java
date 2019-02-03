@@ -23,6 +23,7 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 
@@ -154,7 +155,7 @@ public class OpenSSHPrivateKeyUtil
 
             if (sequence.size() == 6)
             {
-                if (allIntegers(sequence) && ((ASN1Integer)sequence.getObjectAt(0)).getPositiveValue().equals(BigInteger.ZERO))
+                if (allIntegers(sequence) && ((ASN1Integer)sequence.getObjectAt(0)).getPositiveValue().equals(BigIntegers.ZERO))
                 {
                     // length of 6 and all Integers -- DSA
                     result = new DSAPrivateKeyParameters(
@@ -168,7 +169,7 @@ public class OpenSSHPrivateKeyUtil
             }
             else if (sequence.size() == 9)
             {
-                if (allIntegers(sequence) && ((ASN1Integer)sequence.getObjectAt(0)).getPositiveValue().equals(BigInteger.ZERO))
+                if (allIntegers(sequence) && ((ASN1Integer)sequence.getObjectAt(0)).getPositiveValue().equals(BigIntegers.ZERO))
                 {
                     // length of 8 and all Integers -- RSA
                     RSAPrivateKey rsaPrivateKey = RSAPrivateKey.getInstance(sequence);
