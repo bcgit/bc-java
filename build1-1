@@ -61,6 +61,8 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
 
     rm org/bouncycastle/jce/provider/test/GOST3410KeyPairTest.java
     rm org/bouncycastle/jce/provider/test/DRBGTest.java
+    rm -rf org/bouncycastle/jcajce/BC*LoadStore*.java
+    rm -rf org/bouncycastle/jcajce/spec/DSTU4145*.java
     rm -rf org/bouncycastle/math/ec/rfc8032/test
     rm -rf org/bouncycastle/crypto/test/ntru
     rm -rf org/bouncycastle/pqc/math/ntru
@@ -70,6 +72,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/XMSS*
     rm -rf org/bouncycastle/pqc/crypto/*/EncryptionKey*
     rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
+    rm -rf org/bouncycastle/pqc/crypto/test/QT*
     rm -rf org/bouncycastle/crypto/*/test
     rm -rf org/bouncycastle/crypto/*/IndexGenerator*
     rm -rf org/bouncycastle/util/utiltest
@@ -90,6 +93,8 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/JCEEC*.java
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/ec/EC5Util.java
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/ecgost12
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/edec
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/EdEC.java
     rm -rf org/bouncycastle/jcajce/provider/config/ProviderConfigurationPermission.java
     rm -rf org/bouncycastle/jcajce/provider/test
     rm org/bouncycastle/jcajce/BCFKSStoreParameter.java
@@ -98,6 +103,8 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/test/X509LDAP*.java
     rm -rf org/bouncycastle/jce/provider/test/MQVTest*.java
     rm -rf org/bouncycastle/jce/provider/test/AlgorithmParametersTest.java
+    rm -rf org/bouncycastle/jce/provider/test/EdECTest.java
+    rm -rf org/bouncycastle/jce/provider/test/SM2CipherTest.java
     rm -rf org/bouncycastle/jce/spec/ECNamedCurveSpec.java
     rm -rf org/bouncycastle/util/encoders/test/*.java
     rm -rf org/bouncycastle/x509/PKIXCertPathReviewer.java
@@ -153,6 +160,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/cert/test/GOST3410_2012CMSTest.java
     rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
     rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
+    rm -rf org/bouncycastle/tsp/DataGroup*
     rm -rf org/bouncycastle/jce/provider/test/DHTest.java
     rm -rf org/bouncycastle/jce/provider/test/DSATest.java
     rm -rf org/bouncycastle/jce/provider/test/ECEncodingTest.java
@@ -177,6 +185,12 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pkcs/test
     rm -rf org/bouncycastle/eac/test
     rm -rf org/bouncycastle/cms/test
+    rm -rf org/bouncycastle/pkix/jcajce/X509*
+    rm -rf org/bouncycastle/pkix/jcajce/RFC3280*
+    rm -rf org/bouncycastle/pkix/jcajce/Revocation*
+    rm -rf org/bouncycastle/pkix/test/Revocation*
+    rm -rf org/bouncycastle/pkix/test/TestUtil*
+    rm -rf org/bouncycastle/mime/
     rm -rf org/bouncycastle/tsp/test
     rm -rf org/bouncycastle/est/test
     rm -rf org/bouncycastle/dvcs/test
@@ -414,8 +428,11 @@ then
     (cd src/javax/crypto; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java */*.java)
 
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[bx]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[pc]*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/b*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/x*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/cr*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/cm*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/p*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java pqc/*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/*.java )
@@ -425,7 +442,9 @@ then
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[adefghijk]*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[lmnoqrstuvwyz]*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[ade]*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[a]*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[d]*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[e]*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[gimpsu]*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[ABCD]*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[EFHKMNOP]*.java)
@@ -579,6 +598,12 @@ q
 
     ed src/org/bouncycastle/openpgp/test/RegressionTest.java <<%
 g/new PGPKeyRingTest(),/d
+w
+q
+%
+
+    ed src/org/bouncycastle/openpgp/operator/jcajce/JcaKeyFingerprintCalculator.java <<%
+g/private.*final.*;/s/final//
 w
 q
 %

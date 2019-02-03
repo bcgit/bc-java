@@ -22,6 +22,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -830,7 +831,7 @@ public class OAEPTest
     private void testForHighByteError(String label, int keySizeBits) throws Exception
     {
         // draw a key of the size asked
-        BigInteger e = BigInteger.ONE.shiftLeft(16).add(BigInteger.ONE);
+        BigInteger e = BigIntegers.ONE.shiftLeft(16).add(BigIntegers.ONE);
 
         AsymmetricCipherKeyPairGenerator kpGen = new RSAKeyPairGenerator();
 

@@ -94,7 +94,7 @@ public class BcCMSContentEncryptorBuilder
 
             encKey = new KeyParameter(keyGen.generateKey());
 
-            algorithmIdentifier = helper.generateAlgorithmIdentifier(encryptionOID, encKey, random);
+            algorithmIdentifier = helper.generateEncryptionAlgID(encryptionOID, encKey, random);
 
             cipher = helper.createContentCipher(true, encKey, algorithmIdentifier);
         }
