@@ -517,10 +517,10 @@ public class ECIESTest
 
         /* Determine message length */
         int myFieldSize = x9.getCurve().getFieldSize();
-        myFieldSize = (myFieldSize + Byte.SIZE - 1) / Byte.SIZE;
+        myFieldSize = (myFieldSize + 8 - 1) / 8;
         int myLen = 2 * myFieldSize + 1;
         byte[] myMessage = new byte[myLen];
-        int myKeyLen = 256 / Byte.SIZE;
+        int myKeyLen = 256 / 8;
 
         /* Create agreement */
         ECIESKeyEncapsulation myAgreement = new ECIESKeyEncapsulation(new KDF2BytesGenerator(new SHA512Digest()), myRandom, newCofactorMode, oldCofactorMode, false);
