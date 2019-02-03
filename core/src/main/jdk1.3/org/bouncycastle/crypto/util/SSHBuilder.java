@@ -26,7 +26,7 @@ class SSHBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
         }
     }
 
@@ -38,7 +38,7 @@ class SSHBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage());
         }
     }
 
