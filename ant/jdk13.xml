@@ -84,13 +84,20 @@
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
+                <exclude name="**/jcajce/BCFKSLoadStoreParameter.java" />
+                <exclude name="**/jcajce/BCLoadStoreParameter.java" />
+                <exclude name="**/jcajce/spec/DSTU4145ParameterSpec.java" />
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/cert/jcajce/JcaAttributeCertificateIssuer.java" />
+                <exclude name="**/pkix/jcajce/X509Revoc*.java" />
+                <exclude name="**/pkix/jcajce/Revoc*.java" />
+                <exclude name="**/pkix/jcajce/RFC3280Cert*.java" />
                 <exclude name="**/est/**/*.java" />
             </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/*.java" />
+                <exclude name="**/keybox/**/*.java" />
             </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java" />
@@ -123,6 +130,7 @@
                 <exclude name="**/PGPUnicodeTest.java" />
                 <exclude name="**/pqc/**/EncryptionKeyTest.java" />
                 <exclude name="**/pqc/**/BitStringTest.java" />
+                <exclude name="**/pqc/**/QTESLA*.java" />
                 <exclude name="**/jcajce/provider/test/*.java" />
                 <exclude name="**/jce/provider/test/JceTestUtil.java" />
                 <exclude name="**/speedy/**" />
@@ -176,6 +184,9 @@
                 <exclude name="**/CertPathLoopTest.java" />
                 <exclude name="**/TimeStampTokenInfoUnitTest.java" />
                 <exclude name="**/est/**/*.java" />
+                <exclude name="**/mime/test/*.java" />
+                <exclude name="**/pkix/**/RevocationTest.java" />
+                <exclude name="**/pkix/**/TestUtil.java" />
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/SignedMailValidatorTest.java" />
@@ -227,7 +238,9 @@
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" />
-            <fileset dir="pkix/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="pkix/src/test/jdk1.4" includes="**/*.java" >
+                <exclude name="**/mime/test/*.java" />
+            </fileset>
             <fileset dir="mail/src/test/jdk1.4" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}" overwrite="true">
