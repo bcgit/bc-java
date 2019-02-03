@@ -193,7 +193,7 @@ public class GOST3410Test
             }
             catch (Exception ex)
             {
-                throw new RuntimeException(ex.getMessage(), ex);
+                return new SimpleTestResult(false, ex.getMessage(), ex);
             }
 
             return new SimpleTestResult(true, null);
@@ -290,7 +290,7 @@ public class GOST3410Test
             }
             catch (Exception ex)
             {
-                throw new RuntimeException(ex.getMessage(), ex);
+                return new SimpleTestResult(false, ex.getMessage(), ex);
             }
 
 
@@ -392,7 +392,7 @@ public class GOST3410Test
             }
             catch (Exception ex)
             {
-                throw new RuntimeException(ex.getMessage(), ex);
+                return new SimpleTestResult(false, ex.getMessage(), ex);
             }
 
 
@@ -493,7 +493,7 @@ public class GOST3410Test
             }
             catch (Exception ex)
             {
-                throw new RuntimeException(ex.getMessage(), ex);
+                return new SimpleTestResult(false, ex.getMessage(), ex);
             }
 
             return new SimpleTestResult(true, null);
@@ -573,7 +573,7 @@ public class GOST3410Test
             }
             catch (Exception ex)
             {
-                throw new RuntimeException(ex.getMessage(), ex);
+                return new SimpleTestResult(false, ex.getMessage(), ex);
             }
 
             return new SimpleTestResult(true, null);
@@ -652,7 +652,7 @@ public class GOST3410Test
             }
             catch (Exception ex)
             {
-                throw new RuntimeException(ex.getMessage(), ex);
+                return new SimpleTestResult(false, ex.getMessage(), ex);
             }
 
             return new SimpleTestResult(true, null);
@@ -747,7 +747,7 @@ public class GOST3410Test
             catch (Exception t)
             {
                 // Any exception is bad.
-                throw new RuntimeException(t.getMessage(), t);
+                return new SimpleTestResult(false, t.getMessage(), t);
             }
         }
 
@@ -840,7 +840,7 @@ public class GOST3410Test
             catch (Exception t)
             {
                 // Any exception is bad.
-                throw new RuntimeException(t.getMessage(), t);
+                return new SimpleTestResult(false, t.getMessage(), t);
             }
         }
 
