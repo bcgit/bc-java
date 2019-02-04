@@ -538,7 +538,7 @@ class Sample
         }
 
         /* Sample from Bernoulli of bernoulliParameter */
-        return (int)(((result & 0x3FFFFFFFFFFFFFFFL) - Math.round(bernoulliParameter)) >>> 63);
+        return (int)(((result & 0x3FFFFFFFFFFFFFFFL) - round(bernoulliParameter)) >>> 63);
 
     }
 
@@ -1359,4 +1359,15 @@ class Sample
 
     }
 
+    private static long round(double v)
+    {
+        if (v < 0)
+        {
+            return (long)(v - 0.5);
+        }
+        else
+        {
+            return (long)(v + 0.5);
+        }
+    }
 }
