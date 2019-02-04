@@ -70,6 +70,8 @@ then
         rm src/org/bouncycastle/asn1/test/CMCStatusTest.java
         rm src/org/bouncycastle/asn1/test/PublishTrustAnchorsTest.java
         rm src/org/bouncycastle/asn1/test/RevokeRequestTest.java
+	rm src/org/bouncycastle/asn1/test/LocaleTest.java
+	rm src/org/bouncycastle/tsp/DataGroup.java
         rm -rf src/org/bouncycastle/math/ec/rfc7748/test
         rm -rf src/org/bouncycastle/math/ec/rfc8032/test
         rm -rf src/org/bouncycastle/math/raw/test
@@ -131,6 +133,7 @@ then
         rm src/org/bouncycastle/cert/test/DANETest.java
         rm src/org/bouncycastle/cert/test/X509ExtensionUtilsTest.java
         rm src/org/bouncycastle/crypto/test/BigSkippingCipherTest.java
+        rm src/org/bouncycastle/crypto/test/OpenSSHKeyParsingTests.java
         rm -r src/org/bouncycastle/util/utiltest
         rm -r src/org/bouncycastle/openpgp/examples
         rm src/org/bouncycastle/openpgp/PGPCompressed*
