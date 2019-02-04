@@ -327,7 +327,7 @@ implementations
 <tr><td><b>SHA384Digest</b></td><td>384</td><td>FIPS 180-2</td></tr>
 <tr><td><b>SHA512Digest</b></td><td>512</td><td>FIPS 180-2</td></tr>
 <tr><td><b>SHA3Digest</b></td><td>224, 256, 384, 512</td><td></td></tr>
-<tr><td><b>SHAKEDigest</b></td><td>128, 256</td><td></td></tr>
+<tr><td><b>SHAKEDigest</b></td><td>128, 256</td><td>cSHAKE primitive also supported.</td></tr>
 <tr><td><b>SkeinDigest</b></td><td>any byte length</td><td>256 bit, 512 bit and 1024 state sizes. Additional parameterisation using SkeinParameters.</td></tr>
 <tr><td><b>SM3Digest</b></td><td>256</td><td>The SM3 Digest.</td></tr>
 <tr><td><b>TigerDigest</b></td><td>192</td><td>The Tiger Digest.</td></tr>
@@ -378,6 +378,7 @@ The following password hashing schemes are supported:
 </p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Constructor</th><th>Notes</th></tr>
+<tr><td><b>Argon2</b></td><td>&nbsp;</td><td>&nbsp;</td></tr>
 <tr><td><b>BCrypt</b></td><td>&nbsp;</td><td>&nbsp;</td></tr>
 <tr><td><b>OpenBSDBcyrpt</b></td><td>&nbsp;</td><td>&nbsp;</td></tr>
 <tr><td><b>SCrypt</b></td><td>&nbsp;</td><td>&nbsp;</td></tr>
@@ -929,6 +930,11 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA512withXMSSMT-SHA512</li>
 <li>SHAKE128withXMSSMT-SHAKE128</li>
 <li>SHAKE256withXMSSMT-SHAKE256</li>
+<li>qTESLA-I</li>
+<li>qTESLA-III-SIZE</li>
+<li>qTESLA-III-SPEED</li>
+<li>qTESLA-P-I</li>
+<li>qTESLA-P-III</li>
 </ul>
 
 <h4>Password Hashing and PBE</h4>
