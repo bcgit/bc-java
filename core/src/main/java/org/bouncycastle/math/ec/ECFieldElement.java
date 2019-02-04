@@ -24,6 +24,11 @@ public abstract class ECFieldElement
     public abstract ECFieldElement invert();
     public abstract ECFieldElement sqrt();
 
+    public ECFieldElement()
+    {
+
+    }
+    
     public int bitLength()
     {
         return toBigInteger().bitLength();
