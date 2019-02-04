@@ -93,6 +93,7 @@
                 <exclude name="**/pkix/jcajce/X509Revoc*.java" />
                 <exclude name="**/pkix/jcajce/Revoc*.java" />
                 <exclude name="**/pkix/jcajce/RFC3280Cert*.java" />
+                <exclude name="**/mime/**/*.java" />
                 <exclude name="**/est/**/*.java" />
             </fileset>
             <fileset dir="pg/src/main/java">
