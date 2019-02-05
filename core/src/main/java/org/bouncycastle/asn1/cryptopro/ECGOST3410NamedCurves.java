@@ -117,14 +117,14 @@ public class ECGOST3410NamedCurves
             mod_p, // p
             new BigInteger("C2173F1513981673AF4892C23035A27CE25E2013BF95AA33B22C656F277E7335", 16), // a
             new BigInteger("295F9BAE7428ED9CCC20E7C359A9D41A22FCCD9108E17BF7BA9337A6F8AE9513", 16), // b
-            mod_q, ECConstants.ONE);
+            mod_q, ECConstants.FOUR);
 
         ecParams = new ECDomainParameters(
             curve,
             curve.createPoint(
                 new BigInteger("91E38443A5E82C0D880923425712B2BB658B9196932E02C78B2582FE742DAA28", 16), // x
                 new BigInteger("32879423AB1A0375895786C4BB46E9565FDE0B5344766740AF268ADB32322E5C", 16)), // y
-            mod_q, ECConstants.ONE);
+            mod_q, ECConstants.FOUR);
         params.put(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetA, ecParams);
 
         mod_p = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDC7",16); //p
@@ -165,14 +165,14 @@ public class ECGOST3410NamedCurves
             mod_p, // p
             new BigInteger("DC9203E514A721875485A529D2C722FB187BC8980EB866644DE41C68E143064546E861C0E2C9EDD92ADE71F46FCF50FF2AD97F951FDA9F2A2EB6546F39689BD3",16), // a
             new BigInteger("B4C4EE28CEBC6C2C8AC12952CF37F16AC7EFB6A9F69F4B57FFDA2E4F0DE5ADE038CBC2FFF719D2C18DE0284B8BFEF3B52B8CC7A5F5BF0A3C8D2319A5312557E1",16), // b
-            mod_q, ECConstants.ONE);
+            mod_q, ECConstants.FOUR);
 
         ecParams = new ECDomainParameters(
             curve,
             curve.createPoint(
                 new BigInteger("E2E31EDFC23DE7BDEBE241CE593EF5DE2295B7A9CBAEF021D385F7074CEA043AA27272A7AE602BF2A7B9033DB9ED3610C6FB85487EAE97AAC5BC7928C1950148", 16), // x
                 new BigInteger("F5CE40D95B5EB899ABBCCFF5911CB8577939804D6527378B8C108C3D2090FF9BE18E2D33E3021ED2EF32D85822423B6304F726AA854BAE07D0396E9A9ADDC40F",16)), // y
-            mod_q, ECConstants.ONE);
+            mod_q, ECConstants.FOUR);
         params.put(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512_paramSetC, ecParams);
 
 
