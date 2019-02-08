@@ -1,15 +1,19 @@
 package org.bouncycastle.cert;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.Time;
@@ -78,6 +82,31 @@ public class X509v3CertificateBuilder
         tbsGen.setSubjectPublicKeyInfo(publicKeyInfo);
 
         extGenerator = new ExtensionsGenerator();
+    }
+
+    /**
+     * Create a builder for a version 3 certificate, initialised with another certificate.
+     *
+     * @param template template certificate to base the new one on.
+     */
+    public X509v3CertificateBuilder(X509CertificateHolder template)
+    {
+        tbsGen = new V3TBSCertificateGenerator();
+        tbsGen.setSerialNumber(new ASN1Integer(template.getSerialNumber()));
+        tbsGen.setIssuer(template.getIssuer());
+        tbsGen.setStartDate(new Time(template.getNotBefore()));
+        tbsGen.setEndDate(new Time(template.getNotAfter()));
+        tbsGen.setSubject(template.getSubject());
+        tbsGen.setSubjectPublicKeyInfo(template.getSubjectPublicKeyInfo());
+
+        extGenerator = new ExtensionsGenerator();
+
+        Extensions exts = template.getExtensions();
+
+        for (Enumeration en = exts.oids(); en.hasMoreElements();)
+        {
+            extGenerator.addExtension(exts.getExtension((ASN1ObjectIdentifier)en.nextElement()));
+        }
     }
 
     /**
@@ -161,6 +190,69 @@ public class X509v3CertificateBuilder
     }
 
     /**
+     * Replace the extension field for the passed in extension's extension ID
+     * with a new version.
+     *
+     * @param oid the OID defining the extension type.
+     * @param isCritical true if the extension is critical, false otherwise.
+     * @param value the ASN.1 structure that forms the extension's value.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder replaceExtension(
+        ASN1ObjectIdentifier oid,
+        boolean isCritical,
+        ASN1Encodable value)
+        throws CertIOException
+    {
+        try
+        {
+            doReplaceExtension(new Extension(oid, isCritical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER)));
+        }
+        catch (IOException e)
+        {
+            throw new CertIOException("cannot encode extension: " + e.getMessage(), e);
+        }
+
+        return this;
+    }
+
+    /**
+     * Replace the extension field for the passed in extension's extension ID
+     * with a new version.
+     *
+     * @param extension the full extension value.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder replaceExtension(
+        Extension extension)
+        throws CertIOException
+    {
+        doReplaceExtension(extension);
+
+        return this;
+    }
+
+    /**
+     * Replace a given extension field for the standard extensions tag (tag 3) with the passed in
+     * byte encoded extension value.
+     *
+     * @param oid the OID defining the extension type.
+     * @param isCritical true if the extension is critical, false otherwise.
+     * @param encodedValue a byte array representing the encoding of the extension value.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder replaceExtension(
+        ASN1ObjectIdentifier oid,
+        boolean isCritical,
+        byte[] encodedValue)
+        throws CertIOException
+    {
+        doReplaceExtension(new Extension(oid, isCritical, encodedValue));
+
+        return this;
+    }
+
+    /**
      * Add a given extension field for the standard extensions tag (tag 3)
      * copying the extension value from another certificate.
      *
@@ -206,5 +298,25 @@ public class X509v3CertificateBuilder
         }
 
         return CertUtils.generateFullCert(signer, tbsGen.generateTBSCertificate());
+    }
+
+    private void doReplaceExtension(Extension ext)
+    {
+        Extensions exts = extGenerator.generate();
+        extGenerator = new ExtensionsGenerator();
+
+        for (Enumeration en = exts.oids(); en.hasMoreElements();)
+        {
+            ASN1ObjectIdentifier extOid = (ASN1ObjectIdentifier)en.nextElement();
+
+            if (extOid.equals(ext.getExtnId()))
+            {
+                extGenerator.addExtension(ext);
+            }
+            else
+            {
+                extGenerator.addExtension(exts.getExtension(extOid));
+            }
+        }
     }
 }
