@@ -1,10 +1,12 @@
 package org.bouncycastle.cert;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -12,6 +14,7 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.x509.AttCertIssuer;
 import org.bouncycastle.asn1.x509.Attribute;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.V2AttributeCertificateInfoGenerator;
 import org.bouncycastle.operator.ContentSigner;
@@ -66,6 +69,35 @@ public class X509v2AttributeCertificateBuilder
         acInfoGen.setSerialNumber(new ASN1Integer(serialNumber));
         acInfoGen.setStartDate(new ASN1GeneralizedTime(notBefore, dateLocale));
         acInfoGen.setEndDate(new ASN1GeneralizedTime(notAfter, dateLocale));
+    }
+
+    /**
+     * Return if the extension indicated by OID is present.
+     *
+     * @param oid the OID for the extension of interest.
+     * @return the Extension, or null if it is not present.
+     */
+    public boolean hasExtension(ASN1ObjectIdentifier oid)
+    {
+         return doGetExtension(oid) != null;
+    }
+
+    /**
+     * Return the current value of the extension for OID.
+     *
+     * @param oid the OID for the extension we want to fetch.
+     * @return true if a matching extension is present, false otherwise.
+     */
+    public Extension getExtension(ASN1ObjectIdentifier oid)
+    {
+         return doGetExtension(oid);
+    }
+
+    private Extension doGetExtension(ASN1ObjectIdentifier oid)
+    {
+        Extensions exts = extGenerator.generate();
+
+        return exts.getExtension(oid);
     }
 
     /**
@@ -152,6 +184,89 @@ public class X509v2AttributeCertificateBuilder
         throws CertIOException
     {
         extGenerator.addExtension(extension);
+
+        return this;
+    }
+
+    /**
+     * Replace the extension field for the passed in extension's extension ID
+     * with a new version.
+     *
+     * @param oid the OID defining the extension type.
+     * @param isCritical true if the extension is critical, false otherwise.
+     * @param value the ASN.1 structure that forms the extension's value.
+     * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the extension to be replaced is not present.
+     */
+    public X509v2AttributeCertificateBuilder replaceExtension(
+        ASN1ObjectIdentifier oid,
+        boolean isCritical,
+        ASN1Encodable value)
+        throws CertIOException
+    {
+        try
+        {
+            extGenerator = CertUtils.doReplaceExtension(extGenerator, new Extension(oid, isCritical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER)));
+        }
+        catch (IOException e)
+        {
+            throw new CertIOException("cannot encode extension: " + e.getMessage(), e);
+        }
+
+        return this;
+    }
+
+    /**
+     * Replace the extension field for the passed in extension's extension ID
+     * with a new version.
+     *
+     * @param extension the full extension value.
+     * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the extension to be replaced is not present.
+     */
+    public X509v2AttributeCertificateBuilder replaceExtension(
+        Extension extension)
+        throws CertIOException
+    {
+        extGenerator = CertUtils.doReplaceExtension(extGenerator, extension);
+
+        return this;
+    }
+
+    /**
+     * Replace a given extension field for the standard extensions tag (tag 3) with the passed in
+     * byte encoded extension value.
+     *
+     * @param oid the OID defining the extension type.
+     * @param isCritical true if the extension is critical, false otherwise.
+     * @param encodedValue a byte array representing the encoding of the extension value.
+     * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the extension to be replaced is not present.
+     */
+    public X509v2AttributeCertificateBuilder replaceExtension(
+        ASN1ObjectIdentifier oid,
+        boolean isCritical,
+        byte[] encodedValue)
+        throws CertIOException
+    {
+        extGenerator = CertUtils.doReplaceExtension(extGenerator, new Extension(oid, isCritical, encodedValue));
+
+        return this;
+    }
+
+    /**
+     * Remove the extension indicated by OID.
+     *
+     * @param oid the OID of the extension to be removed.
+     * @return this builder object.
+     * @throws IllegalArgumentException if the extension to be removed is not present.
+     */
+    public X509v2AttributeCertificateBuilder removeExtension(ASN1ObjectIdentifier oid)
+    {
+        extGenerator = CertUtils.doRemoveExtension(extGenerator, oid);
 
         return this;
     }
