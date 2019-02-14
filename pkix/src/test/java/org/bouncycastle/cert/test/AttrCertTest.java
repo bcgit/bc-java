@@ -655,6 +655,15 @@ public class AttrCertTest
         testCertWithBaseCertificateID();
         testGenerateWithCert();
         testGenerateWithPrincipal();
+
+        aCert = new X509v2AttributeCertificateBuilder(aCert).build(
+            new JcaContentSignerBuilder("SHA1withRSA").setProvider("BC").build(privKey));
+
+        if (!aCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(pubKey)))
+        {
+            fail("signature not valid");
+        }
+
     }
 
     public static void main(
