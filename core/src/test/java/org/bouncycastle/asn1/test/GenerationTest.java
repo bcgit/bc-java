@@ -300,6 +300,11 @@ public class GenerationTest
         extGen.addExtension(Extension.cRLNumber, false, new ASN1Integer(1));
         extGen.addExtension(Extension.issuingDistributionPoint, true, IssuingDistributionPoint.getInstance(new DERSequence()));
 
+        isTrue(extGen.hasExtension(Extension.cRLNumber));
+        isTrue(!extGen.hasExtension(Extension.freshestCRL));
+
+        isEquals(new Extension(Extension.cRLNumber, false, new ASN1Integer(1).getEncoded()), extGen.getExtension(Extension.cRLNumber));
+
         Extensions          ex = extGen.generate();
 
         gen.setExtensions(ex);
@@ -316,6 +321,19 @@ public class GenerationTest
             fail("failed v2 cert list generation");
         }
 
+        // extGen - check replacement.
+        extGen.replaceExtension(Extension.cRLNumber, false, new ASN1Integer(2));
+
+        isEquals(new Extension(Extension.cRLNumber, false, new ASN1Integer(2).getEncoded()), extGen.getExtension(Extension.cRLNumber));
+
+        // extGen - check remove.
+        extGen.removeExtension(Extension.cRLNumber);
+
+        isTrue(!extGen.hasExtension(Extension.cRLNumber));
+
+        // check we can still generate
+        ex = extGen.generate();
+        
         //
         // read back test
         //
