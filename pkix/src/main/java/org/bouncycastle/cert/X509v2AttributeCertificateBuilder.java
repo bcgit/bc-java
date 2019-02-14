@@ -3,6 +3,7 @@ package org.bouncycastle.cert;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -69,6 +70,42 @@ public class X509v2AttributeCertificateBuilder
         acInfoGen.setSerialNumber(new ASN1Integer(serialNumber));
         acInfoGen.setStartDate(new ASN1GeneralizedTime(notBefore, dateLocale));
         acInfoGen.setEndDate(new ASN1GeneralizedTime(notAfter, dateLocale));
+    }
+
+    /**
+     * Create a builder for a version 2 attribute certificate, initialised with another certificate.
+     *
+     * @param template template certificate to base the new one on.
+     */
+    public X509v2AttributeCertificateBuilder(X509AttributeCertificateHolder template)
+    {
+        acInfoGen = new V2AttributeCertificateInfoGenerator();
+        acInfoGen.setSerialNumber(new ASN1Integer(template.getSerialNumber()));
+        acInfoGen.setIssuer(AttCertIssuer.getInstance(template.getIssuer().form));
+        acInfoGen.setStartDate(new ASN1GeneralizedTime(template.getNotBefore()));
+        acInfoGen.setEndDate(new ASN1GeneralizedTime(template.getNotAfter()));
+        acInfoGen.setHolder(template.getHolder().holder);
+        boolean[] uniqueID = template.getIssuerUniqueID();
+        if (uniqueID != null)
+        {
+            acInfoGen.setIssuerUniqueID(CertUtils.booleanToBitString(uniqueID));
+        }
+        
+        Attribute[] attr = template.getAttributes();
+
+        for (int i = 0; i != attr.length; i++)
+        {
+            acInfoGen.addAttribute(attr[i]);
+        }
+
+        extGenerator = new ExtensionsGenerator();
+
+        Extensions exts = template.getExtensions();
+
+        for (Enumeration en = exts.oids(); en.hasMoreElements();)
+        {
+            extGenerator.addExtension(exts.getExtension((ASN1ObjectIdentifier)en.nextElement()));
+        }
     }
 
     /**

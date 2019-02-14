@@ -84,6 +84,34 @@ public class X509v2CRLBuilder
     }
 
     /**
+     * Create a builder for a version 2 CRL, initialised with another CRL.
+     *
+     * @param template template CRL to base the new one on.
+     */
+    public X509v2CRLBuilder(X509CRLHolder template)
+    {
+        tbsGen = new V2TBSCertListGenerator();
+        tbsGen.setIssuer(template.getIssuer());
+        tbsGen.setThisUpdate(new Time(template.getThisUpdate()));
+        Date nextUpdate = template.getNextUpdate();
+        if (nextUpdate != null)
+        {
+            tbsGen.setNextUpdate(new Time(nextUpdate));
+        }
+
+        addCRL(template);
+
+        extGenerator = new ExtensionsGenerator();
+
+        Extensions exts = template.getExtensions();
+
+        for (Enumeration en = exts.oids(); en.hasMoreElements();)
+        {
+            extGenerator.addExtension(exts.getExtension((ASN1ObjectIdentifier)en.nextElement()));
+        }
+    }
+
+    /**
      * Return if the extension indicated by OID is present.
      *
      * @param oid the OID for the extension of interest.

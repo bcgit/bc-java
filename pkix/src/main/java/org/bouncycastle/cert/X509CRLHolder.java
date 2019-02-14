@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +27,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.TBSCertList;
+import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Encodable;
@@ -141,6 +143,22 @@ public class X509CRLHolder
         return X500Name.getInstance(x509CRL.getIssuer());
     }
 
+    public Date getThisUpdate()
+    {
+        return x509CRL.getThisUpdate().getDate();
+    }
+
+    public Date getNextUpdate()
+    {
+        Time update = x509CRL.getNextUpdate();
+
+        if (update != null)
+        {
+            return update.getDate();
+        }
+
+        return null;
+    }
     public X509CRLEntryHolder getRevokedCertificate(BigInteger serialNumber)
     {
         GeneralNames currentCA = issuerName;
