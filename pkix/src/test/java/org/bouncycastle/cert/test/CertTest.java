@@ -2237,6 +2237,18 @@ public class CertTest
         {
             fail("CRL entry reasonCode not found");
         }
+
+        // build from template
+        crlGen = new X509v2CRLBuilder(crl);
+
+        crl = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
+
+        isTrue(crlGen.hasExtension(Extension.authorityKeyIdentifier));
+
+        if (!crl.getIssuer().equals(new X500Name("CN=Test CA")))
+        {
+            fail("failed CRL issuer test");
+        }
     }
 
     public void checkCRLCreation2()
@@ -3583,6 +3595,12 @@ public class CertTest
             new GeneralNames(new GeneralName(GeneralName.rfc822Name, "test@test.test")));
 
         X509Certificate baseCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        baseCert.verify(pubKey);
+
+        certGen = new JcaX509v3CertificateBuilder(baseCert);
+
+        baseCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
         baseCert.verify(pubKey);
     }
