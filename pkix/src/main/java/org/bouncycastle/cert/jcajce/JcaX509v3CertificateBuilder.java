@@ -98,6 +98,17 @@ public class JcaX509v3CertificateBuilder
     }
 
     /**
+     * Create a builder for a version 3 certificate, initialised with another certificate.
+     *
+     * @param template template certificate to base the new one on.
+     */
+    public JcaX509v3CertificateBuilder(X509Certificate template)
+        throws CertificateEncodingException
+    {
+         super(new JcaX509CertificateHolder(template));
+    }
+
+    /**
      * Add a given extension field for the standard extensions tag (tag 3)
      * copying the extension value from another certificate.
      *

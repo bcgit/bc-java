@@ -1544,6 +1544,8 @@ public class CertTest
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(privKey);
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
 
+        isTrue(!certGen.hasExtension(Extension.authorityKeyIdentifier));
+        
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
         cert.checkValidity(new Date());
@@ -1584,6 +1586,15 @@ public class CertTest
                     }));
 
         X509CertificateHolder certHolder = certGen.build(sigGen);
+
+        isEquals(new Extension(new ASN1ObjectIdentifier("2.5.29.15"), true,
+                        new X509KeyUsage(X509KeyUsage.encipherOnly).getEncoded()), certGen.getExtension(new ASN1ObjectIdentifier("2.5.29.15")));
+
+        certGen.replaceExtension(new Extension(new ASN1ObjectIdentifier("2.5.29.15"), true,
+                                new X509KeyUsage(X509KeyUsage.digitalSignature).getEncoded()));
+        
+        isEquals(new Extension(new ASN1ObjectIdentifier("2.5.29.15"), true,
+                        new X509KeyUsage(X509KeyUsage.digitalSignature).getEncoded()), certGen.getExtension(new ASN1ObjectIdentifier("2.5.29.15")));
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certHolder);
 
@@ -2165,7 +2176,15 @@ public class CertTest
 
         crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(pair.getPublic()));
 
+        isTrue(crlGen.hasExtension(Extension.authorityKeyIdentifier));
+
         X509CRLHolder crl = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
+
+        Extension authOrig = crlGen.getExtension(Extension.authorityKeyIdentifier);
+
+        crlGen.removeExtension(Extension.authorityKeyIdentifier);
+        
+        isTrue(!crlGen.hasExtension(Extension.authorityKeyIdentifier));
 
         if (!crl.getIssuer().equals(new X500Name("CN=Test CA")))
         {
@@ -2177,6 +2196,11 @@ public class CertTest
         if (authExt == null)
         {
             fail("failed to find CRL extension");
+        }
+
+        if (!authExt.equals(authOrig))
+        {
+            fail("auth not matching original");
         }
 
         AuthorityKeyIdentifier authId = AuthorityKeyIdentifier.getInstance(authExt.getParsedValue());

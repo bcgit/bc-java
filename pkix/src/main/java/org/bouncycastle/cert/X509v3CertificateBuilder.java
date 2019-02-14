@@ -1,21 +1,28 @@
 package org.bouncycastle.cert;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.operator.ContentSigner;
@@ -110,6 +117,35 @@ public class X509v3CertificateBuilder
     }
 
     /**
+     * Return if the extension indicated by OID is present.
+     *
+     * @param oid the OID for the extension of interest.
+     * @return the Extension, or null if it is not present.
+     */
+    public boolean hasExtension(ASN1ObjectIdentifier oid)
+    {
+         return doGetExtension(oid) != null;
+    }
+
+    /**
+     * Return the current value of the extension for OID.
+     *
+     * @param oid the OID for the extension we want to fetch.
+     * @return true if a matching extension is present, false otherwise.
+     */
+    public Extension getExtension(ASN1ObjectIdentifier oid)
+    {
+         return doGetExtension(oid);
+    }
+
+    private Extension doGetExtension(ASN1ObjectIdentifier oid)
+    {
+        Extensions exts = extGenerator.generate();
+
+        return exts.getExtension(oid);
+    }
+
+    /**
      * Set the subjectUniqueID - note: it is very rare that it is correct to do this.
      *
      * @param uniqueID a boolean array representing the bits making up the subjectUniqueID.
@@ -117,7 +153,7 @@ public class X509v3CertificateBuilder
      */
     public X509v3CertificateBuilder setSubjectUniqueID(boolean[] uniqueID)
     {
-        tbsGen.setSubjectUniqueID(CertUtils.booleanToBitString(uniqueID));
+        tbsGen.setSubjectUniqueID(booleanToBitString(uniqueID));
 
         return this;
     }
@@ -130,7 +166,7 @@ public class X509v3CertificateBuilder
      */
     public X509v3CertificateBuilder setIssuerUniqueID(boolean[] uniqueID)
     {
-        tbsGen.setIssuerUniqueID(CertUtils.booleanToBitString(uniqueID));
+        tbsGen.setIssuerUniqueID(booleanToBitString(uniqueID));
 
         return this;
     }
@@ -142,6 +178,8 @@ public class X509v3CertificateBuilder
      * @param isCritical true if the extension is critical, false otherwise.
      * @param value the ASN.1 structure that forms the extension's value.
      * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the OID oid has already been used.
      */
     public X509v3CertificateBuilder addExtension(
         ASN1ObjectIdentifier oid,
@@ -149,7 +187,14 @@ public class X509v3CertificateBuilder
         ASN1Encodable value)
         throws CertIOException
     {
-        CertUtils.addExtension(extGenerator, oid, isCritical, value);
+        try
+        {
+            extGenerator.addExtension(oid, isCritical, value);
+        }
+        catch (IOException e)
+        {
+            throw new CertIOException("cannot encode extension: " + e.getMessage(), e);
+        }
 
         return this;
     }
@@ -159,6 +204,8 @@ public class X509v3CertificateBuilder
      *
      * @param extension the full extension value.
      * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the OID oid has already been used.
      */
     public X509v3CertificateBuilder addExtension(
         Extension extension)
@@ -177,6 +224,8 @@ public class X509v3CertificateBuilder
      * @param isCritical true if the extension is critical, false otherwise.
      * @param encodedValue a byte array representing the encoding of the extension value.
      * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the OID oid has already been allocated.
      */
     public X509v3CertificateBuilder addExtension(
         ASN1ObjectIdentifier oid,
@@ -197,6 +246,8 @@ public class X509v3CertificateBuilder
      * @param isCritical true if the extension is critical, false otherwise.
      * @param value the ASN.1 structure that forms the extension's value.
      * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the extension to be replaced is not present.
      */
     public X509v3CertificateBuilder replaceExtension(
         ASN1ObjectIdentifier oid,
@@ -206,7 +257,7 @@ public class X509v3CertificateBuilder
     {
         try
         {
-            doReplaceExtension(new Extension(oid, isCritical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER)));
+            extGenerator = CertUtils.doReplaceExtension(extGenerator, new Extension(oid, isCritical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER)));
         }
         catch (IOException e)
         {
@@ -222,12 +273,14 @@ public class X509v3CertificateBuilder
      *
      * @param extension the full extension value.
      * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the extension to be replaced is not present.
      */
     public X509v3CertificateBuilder replaceExtension(
         Extension extension)
         throws CertIOException
     {
-        doReplaceExtension(extension);
+        extGenerator = CertUtils.doReplaceExtension(extGenerator, extension);
 
         return this;
     }
@@ -240,6 +293,8 @@ public class X509v3CertificateBuilder
      * @param isCritical true if the extension is critical, false otherwise.
      * @param encodedValue a byte array representing the encoding of the extension value.
      * @return this builder object.
+     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws IllegalArgumentException if the extension to be replaced is not present.
      */
     public X509v3CertificateBuilder replaceExtension(
         ASN1ObjectIdentifier oid,
@@ -247,7 +302,21 @@ public class X509v3CertificateBuilder
         byte[] encodedValue)
         throws CertIOException
     {
-        doReplaceExtension(new Extension(oid, isCritical, encodedValue));
+        extGenerator = CertUtils.doReplaceExtension(extGenerator, new Extension(oid, isCritical, encodedValue));
+
+        return this;
+    }
+
+    /**
+     * Remove the extension indicated by OID.
+     *
+     * @param oid the OID of the extension to be removed.
+     * @return this builder object.
+     * @throws IllegalArgumentException if the extension to be removed is not present.
+     */
+    public X509v3CertificateBuilder removeExtension(ASN1ObjectIdentifier oid)
+    {
+        extGenerator = CertUtils.doRemoveExtension(extGenerator, oid);
 
         return this;
     }
@@ -297,26 +366,59 @@ public class X509v3CertificateBuilder
             tbsGen.setExtensions(extGenerator.generate());
         }
 
-        return CertUtils.generateFullCert(signer, tbsGen.generateTBSCertificate());
+        try
+        {
+            TBSCertificate tbsCert = tbsGen.generateTBSCertificate();
+            return new X509CertificateHolder(generateStructure(tbsCert, signer.getAlgorithmIdentifier(), generateSig(signer, tbsCert)));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException("cannot produce certificate signature");
+        }
     }
 
-    private void doReplaceExtension(Extension ext)
+    private static byte[] generateSig(ContentSigner signer, ASN1Encodable tbsObj)
+        throws IOException
     {
-        Extensions exts = extGenerator.generate();
-        extGenerator = new ExtensionsGenerator();
+        OutputStream sOut = signer.getOutputStream();
+        DEROutputStream dOut = new DEROutputStream(sOut);
 
-        for (Enumeration en = exts.oids(); en.hasMoreElements();)
+        dOut.writeObject(tbsObj);
+
+        sOut.close();
+
+        return signer.getSignature();
+    }
+
+    private static Certificate generateStructure(TBSCertificate tbsCert, AlgorithmIdentifier sigAlgId, byte[] signature)
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(tbsCert);
+        v.add(sigAlgId);
+        v.add(new DERBitString(signature));
+
+        return Certificate.getInstance(new DERSequence(v));
+    }
+
+    static DERBitString booleanToBitString(boolean[] id)
+    {
+        byte[] bytes = new byte[(id.length + 7) / 8];
+
+        for (int i = 0; i != id.length; i++)
         {
-            ASN1ObjectIdentifier extOid = (ASN1ObjectIdentifier)en.nextElement();
+            bytes[i / 8] |= (id[i]) ? (1 << ((7 - (i % 8)))) : 0;
+        }
 
-            if (extOid.equals(ext.getExtnId()))
-            {
-                extGenerator.addExtension(ext);
-            }
-            else
-            {
-                extGenerator.addExtension(exts.getExtension(extOid));
-            }
+        int pad = id.length % 8;
+
+        if (pad == 0)
+        {
+            return new DERBitString(bytes);
+        }
+        else
+        {
+            return new DERBitString(bytes, 8 - pad);
         }
     }
 }
