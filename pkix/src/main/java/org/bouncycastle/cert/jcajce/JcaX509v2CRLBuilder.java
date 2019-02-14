@@ -1,5 +1,7 @@
 package org.bouncycastle.cert.jcajce;
 
+import java.security.cert.CRLException;
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
@@ -19,5 +21,16 @@ public class JcaX509v2CRLBuilder
     public JcaX509v2CRLBuilder(X509Certificate issuerCert, Date now)
     {
         this(issuerCert.getSubjectX500Principal(), now);
+    }
+
+    /**
+     * Create a builder for a version 2 CRL, initialised with another CRL as a template.
+     *
+     * @param templateCRL template CRL to base the new one on.
+     */
+    public JcaX509v2CRLBuilder(X509CRL templateCRL)
+        throws CRLException
+    {
+        super(new JcaX509CRLHolder(templateCRL));
     }
 }
