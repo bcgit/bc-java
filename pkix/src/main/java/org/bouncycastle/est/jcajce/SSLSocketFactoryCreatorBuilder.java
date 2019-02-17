@@ -13,6 +13,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+
 /**
  * A basic builder to allow configuration of an SSLContext used to create an SSLSocketFactory.
  */
@@ -22,7 +24,7 @@ class SSLSocketFactoryCreatorBuilder
     protected Provider tlsProvider;
     protected KeyManager[] keyManagers;
     protected X509TrustManager[] trustManagers;
-    protected SecureRandom secureRandom = new SecureRandom();
+    protected SecureRandom secureRandom = CryptoServicesRegistrar.getSecureRandom();
 
     public SSLSocketFactoryCreatorBuilder(X509TrustManager trustManager)
     {
