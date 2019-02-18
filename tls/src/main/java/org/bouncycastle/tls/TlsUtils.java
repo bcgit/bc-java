@@ -397,6 +397,14 @@ public class TlsUtils
         output.write(buf);
     }
 
+    public static void writeOpaque8(byte[] data, byte[] buf, int off)
+        throws IOException
+    {
+        checkUint8(data.length);
+        writeUint8(data.length, buf, off);
+        System.arraycopy(data, 0, buf, off + 1, data.length);
+    }
+
     public static void writeOpaque16(byte[] buf, OutputStream output)
         throws IOException
     {
