@@ -24,9 +24,20 @@ to conform the algorithms to the JCE framework.
 
 
 <h3>2.1.1 Version</h3>
+Release: 1.62<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
+<h3>2.1.2 Defects Fixed</h3>
+<ul>
+</ul>
+<h3>2.1.3 Additional Features and Functionality</h3>
+<ul>
+<li>Builders for X509 certificates and CRLs now support replace and remove extension methods.</li>
+</ul>
+
+<h3>2.2.1 Version</h3>
 Release: 1.61<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, February 4th.
-<h3>2.1.2 Defects Fixed</h3>
+<h3>2.2.2 Defects Fixed</h3>
 <ul>
 <li>Use of EC named curves could be lost if keys were constructed via a key factory and algorithm parameters. This has been fixed.</li>
 <li>RFC3211WrapEngine would not properly handle messages longer than 127 bytes. This has been fixed.</li>
@@ -47,7 +58,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, February 4th.
 <li>Several parsing issues related to the processing of CMP PKIPublicationInfo have been fixed.</li>
 <li>The ECGOST curves for id-tc26-gost-3410-12-256-paramSetA and id-tc26-gost-3410-12-512-paramSetC had incorrect co-factors. These have been fixed.</li>
 </ul>
-<h3>2.1.3 Additional Features and Functionality</h3>
+<h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
 <li>The qTESLA signature algorithm has been added to PQC light-weight API and the PQC provider.</li>
 <li>The password hashing function, Argon2 has been added to the lightweight API.</li>
@@ -67,13 +78,15 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, February 4th.
 <li>Utility classes have been added for handling OpenSSH keys.</li>
 <li>Support for processing messages built using GPG and Curve25519 has been added to the OpenPGP API.</li>
 <li>The provider now recognises the standard SM3 OID.</li>
-<li>An new API for directly parsing and creating S/MIME documents has been added to the PKIX API.</li>
+<li>A new API for directly parsing and creating S/MIME documents has been added to the PKIX API.</li>
+<li>SM2 in public key cipher mode has been added to the provider API.</li>
+<li>The BCFKSLoadStoreParameter has been extended to allow the use of certificates and digital signatures for verifying the integrity of BCFKS key stores.</li>
 </ul>
 
-<h3>2.2.1 Version</h3>
+<h3>2.3.1 Version</h3>
 Release: 1.60<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018, June 30
-<h3>2.2.2 Defects Fixed</h3>
+<h3>2.3.2 Defects Fixed</h3>
 <ul>
 <li>Base64/UrlBase64 would throw an exception on a zero length string. This has been fixed.</li>
 <li>Base64/UrlBase64 would throw an exception if there was whitespace in the last 4 characters. This has been fixed.</li>
@@ -94,7 +107,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018, June 30
 <li>In some situations the use of sm2p256v1 would result in "unknown curve name". This has been fixed.</li>
 <li>CMP PollReqContent now supports multiple certificate request IDs.</li>
 </ul>
-<h3>2.2.3 Additional Features and Functionality</h3>
+<h3>2.3.3 Additional Features and Functionality</h3>
 <ul>
 <li>TLS: Extended CBC padding is now optional (and disabled by default).</li>
 <li>TLS: Now supports channel binding 'tls-server-end-point'.</li>
@@ -122,16 +135,16 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018, June 30
 <li>Support has been added for the German BSI KAEG Elliptic Curve key agreement algorithm with X9.63 as the KDF to the JCE.</li>
 <li>Support has been added for the German BSI KAEG Elliptic Curve session key KDF to the lightweight API.</li>
 </ul>
-<h3>2.2.4 Security Related Changes and CVE's Addressed by this Release</h3>
+<h3>2.3.4 Security Related Changes and CVE's Addressed by this Release</h3>
 <ul>
 <li>CVE-2018-1000180: issue around primality tests for RSA key pair generation if done using only the low-level API.</li>
 <li>CVE-2018-1000613: lack of class checking in deserialization of XMSS/XMSS^MT private keys with BDS state information.</li>
 </ul>
 
-<h3>2.3.1 Version</h3>
+<h3>2.4.1 Version</h3>
 Release: 1.59 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, December 28
-<h3>2.3.2 Defects Fixed</h3>
+<h3>2.4.2 Defects Fixed</h3>
 <ul>
 <li>Issues with using PQC based keys with the provided BC KeyStores have now been fixed.</li>
 <li>ECGOST-2012 public keys were being encoded with the wrong OID for the digest parameter in the algorithm parameter set. This has been fixed.</li>
@@ -145,7 +158,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, December 28
 <li>An off-by-one error for the max N check for SCRYPT has been fixed. SCRYPT should now be compliant with RFC 7914.</li>
 <li>ASN1GeneralizedTime will now accept a broader range of input strings.</li>
 </ul>
-<h3>2.3.3 Additional Features and Functionality</h3>
+<h3>2.4.3 Additional Features and Functionality</h3>
 <ul>
 <li>GOST3410-94 private keys encoded using ASN.1 INTEGER are now accepted in private key info objects.</li>
 <li>SCRYPT is now supported as a SecretKeyFactory in the provider and in the PKCS8 APIs</li>
@@ -164,15 +177,15 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, December 28
 <li>A DEROtherInfo generator for key agreement using NewHope as the source of the shared private info has been added that can be used in conjunction with regular key agreement algorithms.</li>
 <li>RFC 7748: Added low-level implementations of X25519 and X448.</li>
 </ul>
-<h3>2.3.4 Security Related Changes and CVE's Addressed by this Release</h3>
+<h3>2.4.4 Security Related Changes and CVE's Addressed by this Release</h3>
 <ul>
 <li>CVE-2017-13098 ("ROBOT"), a Bleichenbacher oracle in TLS when RSA key exchange is negotiated. This potentially affected BCJSSE servers and any other TLS servers configured to use JCE for the underlying crypto - note the two TLS implementations using the BC lightweight APIs are not affected by this.</li>
 </ul>
 
-<h3>2.4.1 Version</h3>
+<h3>2.5.1 Version</h3>
 Release: 1.58 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, August 18
-<h3>2.4.2 Defects Fixed</h3>
+<h3>2.5.2 Defects Fixed</h3>
 <ul>
 <li>NewHope and SPHINCS keys are now correctly created off certificates by the BC provider.</li>
 <li>Use of the seeded constructor with SecureRandom() and the BC provider in first position could cause a stack overflow error. This has been fixed.</li>
@@ -206,7 +219,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, August 18
 <li>The new TLS API now supports RFC 7633 - X.509v3 TLS Feature Extension (e.g. "must staple"), enabled in default clients.</li>
 <li>TLS exceptions have been made more directly informative.</li>
 </ul>
-<h3>2.4.4 Removed Features and Functionality</h3>
+<h3>2.5.4 Removed Features and Functionality</h3>
 <ul>
 <li>Per RFC 7465, removed support for RC4 in the new TLS API.</li>
 <li>Per RFC 7568, removed support for SSLv3 in the new TLS API.</li>
