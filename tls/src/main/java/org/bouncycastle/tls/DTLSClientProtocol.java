@@ -88,7 +88,7 @@ public class DTLSClientProtocol
         throws IOException
     {
         SecurityParameters securityParameters = state.clientContext.getSecurityParametersHandshake();
-        DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer);
+        DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer, null);
 
         byte[] clientHelloBody = generateClientHello(state);
 
@@ -119,7 +119,7 @@ public class DTLSClientProtocol
             byte[] cookie = processHelloVerifyRequest(state, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
-            handshake.resetHandshakeMessagesDigest();
+            handshake.resetAfterHelloVerifyRequest();
             handshake.sendMessage(HandshakeType.client_hello, patched);
 
             serverMessage = handshake.receiveMessage();
@@ -471,23 +471,11 @@ public class DTLSClientProtocol
 
 
 
+        ClientHello clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(), session_id,
+            TlsUtils.EMPTY_BYTES, state.offeredCipherSuites, state.clientExtensions);
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-
-        TlsUtils.writeVersion(legacy_version, buf);
-
-        buf.write(securityParameters.getClientRandom());
-
-        TlsUtils.writeOpaque8(session_id, buf);
-
-        // Cookie
-        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
-
-        TlsUtils.writeUint16ArrayWithUint16Length(state.offeredCipherSuites, buf);
-
-        TlsUtils.writeUint8ArrayWithUint8Length(new short[]{ CompressionMethod._null }, buf);
-
-        TlsProtocol.writeExtensions(buf, state.clientExtensions);
-
+        clientHello.encode(state.clientContext, buf);
         return buf.toByteArray();
     }
 

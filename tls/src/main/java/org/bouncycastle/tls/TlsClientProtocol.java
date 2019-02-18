@@ -1024,20 +1024,11 @@ public class TlsClientProtocol
 
 
 
+        ClientHello clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(), session_id,
+            null, offeredCipherSuites, clientExtensions);
+
         HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
-
-        TlsUtils.writeVersion(legacy_version, message);
-
-        message.write(securityParameters.getClientRandom());
-
-        TlsUtils.writeOpaque8(session_id, message);
-
-        TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);
-
-        TlsUtils.writeUint8ArrayWithUint8Length(new short[]{ CompressionMethod._null }, message);
-
-        writeExtensions(message, clientExtensions);
-
+        clientHello.encode(tlsClientContext, message);
         message.writeToRecordStream();
     }
 
