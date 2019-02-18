@@ -1,14 +1,21 @@
 package org.bouncycastle.tls.test;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketTimeoutException;
 import java.security.SecureRandom;
 
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.DTLSRequest;
 import org.bouncycastle.tls.DTLSServerProtocol;
 import org.bouncycastle.tls.DTLSTransport;
+import org.bouncycastle.tls.DTLSVerifier;
+import org.bouncycastle.tls.DatagramSender;
 import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.UDPTransport;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 
 /**
  * A simple test designed to conduct a DTLS handshake with an external DTLS client.
@@ -23,31 +30,57 @@ public class DTLSServerTest
         throws Exception
     {
         int port = 5556;
-        int mtu = 1500;
+        final int mtu = 1500;
 
-        DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
+        DTLSVerifier verifier = new DTLSVerifier(new BcTlsCrypto(new SecureRandom()));
+        DTLSRequest request = null;
 
         byte[] data = new byte[mtu];
-        DatagramPacket packet = new DatagramPacket(data, mtu);
-
-        DatagramSocket socket = new DatagramSocket(port);
-        socket.receive(packet);
-
-        System.out.println("Accepting connection from " + packet.getAddress().getHostAddress() + ":" + port);
-        socket.connect(packet.getAddress(), packet.getPort());
+        final DatagramPacket packet = new DatagramPacket(data, mtu);
+        final DatagramSocket socket = new DatagramSocket(port);
 
         /*
-         * NOTE: For simplicity, and since we don't yet have HelloVerifyRequest support, we just
-         * discard the initial packet, which the client should re-send anyway.
+         * Process incoming packets, replying with HelloVerifyRequest, until one is verified.
          */
+        do
+        {
+            socket.receive(packet);
+
+            request = verifier.verifyRequest(packet.getAddress().getAddress(), data, 0, packet.getLength(), new DatagramSender()
+            {
+                public int getSendLimit() throws IOException
+                {
+                    return mtu - 28;
+                }
+
+                public void send(byte[] buf, int off, int len) throws IOException
+                {
+                    if (len > getSendLimit())
+                    {
+                        throw new TlsFatalAlert(AlertDescription.internal_error);
+                    }
+
+                    socket.send(new DatagramPacket(buf, off, len, packet.getAddress(), packet.getPort()));
+                }
+            });
+        }
+        while (null == request);
+
+        /*
+         * Proceed to a handshake, passing verified 'request' (ClientHello) to DTLSServerProtocol.accept.
+         */
+        System.out.println("Accepting connection from " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
+        socket.connect(packet.getAddress(), packet.getPort());
 
         DatagramTransport transport = new UDPTransport(socket, mtu);
-        
+
         // Uncomment to see packets
 //        transport = new LoggingDatagramTransport(transport, System.out);
 
         MockDTLSServer server = new MockDTLSServer();
-        DTLSTransport dtlsServer = serverProtocol.accept(server, transport);
+        DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
+
+        DTLSTransport dtlsServer = serverProtocol.accept(server, transport, request);
 
         byte[] buf = new byte[dtlsServer.getReceiveLimit()];
 

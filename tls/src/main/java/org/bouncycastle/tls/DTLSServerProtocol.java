@@ -31,6 +31,12 @@ public class DTLSServerProtocol
     public DTLSTransport accept(TlsServer server, DatagramTransport transport)
         throws IOException
     {
+        return accept(server, transport, null);
+    }
+
+    public DTLSTransport accept(TlsServer server, DatagramTransport transport, DTLSRequest request)
+        throws IOException
+    {
         if (server == null)
         {
             throw new IllegalArgumentException("'server' cannot be null");
@@ -55,7 +61,7 @@ public class DTLSServerProtocol
 
         try
         {
-            return serverHandshake(state, recordLayer);
+            return serverHandshake(state, recordLayer, request);
         }
         catch (TlsFatalAlert fatalAlert)
         {
@@ -84,24 +90,33 @@ public class DTLSServerProtocol
         invalidateSession(state);
     }
 
-    protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer)
-        throws IOException
+    protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer,
+        DTLSRequest request) throws IOException
     {
         SecurityParameters securityParameters = state.serverContext.getSecurityParametersHandshake();
-        DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.serverContext, recordLayer);
+        DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.serverContext, recordLayer, request);
 
-        DTLSReliableHandshake.Message clientMessage = handshake.receiveMessage();
+        DTLSReliableHandshake.Message clientMessage = null;
 
-        // NOTE: DTLSRecordLayer requires any DTLS version, we don't otherwise constrain this
-//        ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
-
-        if (clientMessage.getType() == HandshakeType.client_hello)
+        if (null == request)
         {
-            processClientHello(state, clientMessage.getBody());
+            clientMessage = handshake.receiveMessage();
+
+            // NOTE: DTLSRecordLayer requires any DTLS version, we don't otherwise constrain this
+//            ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
+
+            if (clientMessage.getType() == HandshakeType.client_hello)
+            {
+                processClientHello(state, clientMessage.getBody());
+            }
+            else
+            {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
         }
         else
         {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            processClientHello(state, request.getClientHello());
         }
 
         /*
@@ -550,51 +565,23 @@ public class DTLSServerProtocol
         throws IOException
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
+        ClientHello clientHello = ClientHello.parse(buf, NullOutputStream.INSTANCE);
+        processClientHello(state, clientHello);
+    }
 
+    protected void processClientHello(ServerHandshakeState state, ClientHello clientHello)
+        throws IOException
+    {
         // TODO Read RFCs for guidance on the expected record layer version number
-        ProtocolVersion client_version = TlsUtils.readVersion(buf);
-
-        /*
-         * Read the client random
-         */
-        byte[] client_random = TlsUtils.readFully(32, buf);
-
-        byte[] sessionID = TlsUtils.readOpaque8(buf, 0, 32);
-
-        /*
-         * RFC 6347 This specification increases the cookie size limit to 255 bytes for greater
-         * future flexibility. The limit remains 32 for previous versions of DTLS.
-         */
-        int maxCookieLength = ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(client_version) ? 255 : 32;
-
-        byte[] cookie = TlsUtils.readOpaque8(buf, 0, maxCookieLength);
-
-        int cipher_suites_length = TlsUtils.readUint16(buf);
-        if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
-        /*
-         * NOTE: "If the session_id field is not empty (implying a session resumption request) this
-         * vector must include at least the cipher_suite from that session."
-         */
-        state.offeredCipherSuites = TlsUtils.readUint16Array(cipher_suites_length / 2, buf);
-
-        int compression_methods_length = TlsUtils.readUint8(buf);
-        if (compression_methods_length < 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        short[] offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
+        ProtocolVersion client_version = clientHello.getClientVersion();
+        state.offeredCipherSuites = clientHello.getCipherSuites();
 
         /*
          * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
          * extensions appearing in the client hello, and send a server hello containing no
          * extensions.
          */
-        state.clientExtensions = TlsProtocol.readExtensions(buf);
+        state.clientExtensions = clientHello.getExtensions();
 
     
     
@@ -626,16 +613,11 @@ public class DTLSServerProtocol
 
         state.server.notifyClientVersion(context.getClientVersion());
 
-        securityParameters.clientRandom = client_random;
+        securityParameters.clientRandom = clientHello.getRandom();
 
         state.server.notifyFallback(Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV));
 
         state.server.notifyOfferedCipherSuites(state.offeredCipherSuites);
-
-        if (!Arrays.contains(offeredCompressionMethods, CompressionMethod._null))
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
 
         /*
          * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
