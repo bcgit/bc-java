@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsNullNullCipher;
+import org.bouncycastle.util.Arrays;
 
 class DTLSRecordLayer
     implements DatagramTransport
@@ -12,6 +13,60 @@ class DTLSRecordLayer
     private static final int MAX_FRAGMENT_LENGTH = 1 << 14;
     private static final long TCP_MSL = 1000L * 60 * 2;
     private static final long RETRANSMIT_TIMEOUT = TCP_MSL * 2;
+
+    static byte[] receiveClientHelloRecord(byte[] data, int dataOff, int dataLen) throws IOException
+    {
+        if (dataLen < RECORD_HEADER_LENGTH)
+        {
+            return null;
+        }
+
+        short contentType = TlsUtils.readUint8(data, dataOff + 0);
+        if (ContentType.handshake != contentType)
+        {
+            return null;
+        }
+
+        ProtocolVersion version = TlsUtils.readVersion(data, dataOff + 1);
+        if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(version))
+        {
+            return null;
+        }
+
+        int epoch = TlsUtils.readUint16(data, dataOff + 3);
+        if (0 != epoch)
+        {
+            return null;
+        }
+
+        // TODO Are there any constraints on this?
+        long sequenceNumber = TlsUtils.readUint48(data, dataOff + 5);
+        System.out.println("Record sequence in ClientHello: " + sequenceNumber);
+
+        int length = TlsUtils.readUint16(data, dataOff + 11);
+        if (dataLen != RECORD_HEADER_LENGTH + length)
+        {
+            return null;
+        }
+
+        return Arrays.copyOfRange(data, dataOff + RECORD_HEADER_LENGTH, dataOff + dataLen);
+    }
+
+    static void sendHelloVerifyRequestRecord(DatagramSender sender, byte[] message) throws IOException
+    {
+        TlsUtils.checkUint16(message.length);
+
+        byte[] record = new byte[RECORD_HEADER_LENGTH + message.length];
+        TlsUtils.writeUint8(ContentType.handshake, record, 0);
+        TlsUtils.writeVersion(ProtocolVersion.DTLSv10, record, 1);
+        TlsUtils.writeUint16(0, record, 3);
+        TlsUtils.writeUint48(0, record, 5);
+        TlsUtils.writeUint16(message.length, record, 11);
+
+        System.arraycopy(message, 0, record, RECORD_HEADER_LENGTH, message.length);
+
+        sender.send(record, 0, record.length);
+    }
 
     private final DatagramTransport transport;
     private final TlsPeer peer;
@@ -44,6 +99,11 @@ class DTLSRecordLayer
         this.writeEpoch = currentEpoch;
 
         setPlaintextLimit(MAX_FRAGMENT_LENGTH);
+    }
+
+    void resetAfterHelloVerifyRequest()
+    {
+        currentEpoch.getReplayWindow().reset();
     }
 
     void setPlaintextLimit(int plaintextLimit)
@@ -218,12 +278,26 @@ class DTLSRecordLayer
 
                 if (readVersion != null && !readVersion.equals(version))
                 {
-                    continue;
+                    /*
+                     * Special-case handling for retransmitted ClientHello records.
+                     * 
+                     * TODO Revisit how 'readVersion' works, since this is quite awkward.
+                     */
+                    boolean isClientHelloFragment =
+                            getReadEpoch() == 0
+                        &&  length > 0
+                        &&  ContentType.handshake == type
+                        &&  HandshakeType.client_hello == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
+
+                    if (!isClientHelloFragment)
+                    {
+                        continue;
+                    }
                 }
 
-                byte[] plaintext = recordEpoch.getCipher().decodeCiphertext(
-                    getMacSequenceNumber(recordEpoch.getEpoch(), seq), type, record, RECORD_HEADER_LENGTH,
-                    received - RECORD_HEADER_LENGTH);
+                long macSeqNo = getMacSequenceNumber(recordEpoch.getEpoch(), seq);
+                byte[] plaintext = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, record,
+                    RECORD_HEADER_LENGTH, length);
 
                 recordEpoch.getReplayWindow().reportAuthenticated(seq);
 
