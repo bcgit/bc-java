@@ -1,7 +1,9 @@
 package org.bouncycastle.tls;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -10,8 +12,71 @@ import org.bouncycastle.util.Integers;
 
 class DTLSReliableHandshake
 {
-    private final static int MAX_RECEIVE_AHEAD = 16;
+    private static final int MAX_RECEIVE_AHEAD = 16;
     private static final int MESSAGE_HEADER_LENGTH = 12;
+
+    static DTLSRequest readClientRequest(byte[] data, int dataOff, int dataLen, OutputStream dtlsOutput)
+        throws IOException
+    {
+        // TODO Support the possibility of a fragmented ClientHello datagram
+
+        byte[] message = DTLSRecordLayer.receiveClientHelloRecord(data, dataOff, dataLen);
+        if (null == message || message.length < MESSAGE_HEADER_LENGTH)
+        {
+            return null;
+        }
+
+        short msgType = TlsUtils.readUint8(message, 0);
+        if (HandshakeType.client_hello != msgType)
+        {
+            return null;
+        }
+
+        int length = TlsUtils.readUint24(message, 1);
+        if (message.length != MESSAGE_HEADER_LENGTH + length)
+        {
+            return null;
+        }
+
+//        int messageSeq = TlsUtils.readUint16(message, 4);
+
+        int fragmentOffset = TlsUtils.readUint24(message, 6);
+        if (0 != fragmentOffset)
+        {
+            return null;
+        }
+
+        int fragmentLength = TlsUtils.readUint24(message, 9);
+        if (length != fragmentLength)
+        {
+            return null;
+        }
+
+        ClientHello clientHello = ClientHello.parse(new ByteArrayInputStream(message, MESSAGE_HEADER_LENGTH, length), dtlsOutput);
+
+        return new DTLSRequest(message, clientHello);
+    }
+
+    static void sendHelloVerifyRequest(DatagramSender sender, int messageSeq, byte[] cookie) throws IOException
+    {
+        TlsUtils.checkUint16(messageSeq);
+        TlsUtils.checkUint8(cookie.length);
+
+        int length = 3 + cookie.length;
+
+        byte[] message = new byte[MESSAGE_HEADER_LENGTH + length];
+        TlsUtils.writeUint8(HandshakeType.hello_verify_request, message, 0);
+        TlsUtils.writeUint24(length, message, 1);
+        TlsUtils.writeUint16(messageSeq, message, 4);
+        TlsUtils.writeUint24(0, message, 6);
+        TlsUtils.writeUint24(length, message, 9);
+
+        // HelloVerifyRequest fields
+        TlsUtils.writeVersion(ProtocolVersion.DTLSv10, message, MESSAGE_HEADER_LENGTH + 0);
+        TlsUtils.writeOpaque8(cookie, message, MESSAGE_HEADER_LENGTH + 2);
+
+        DTLSRecordLayer.sendHelloVerifyRequestRecord(sender, message);
+    }
 
     /*
      * No 'final' modifiers so that it works in earlier JDKs
@@ -25,12 +90,48 @@ class DTLSReliableHandshake
     private Vector outboundFlight = new Vector();
     private boolean sending = true;
 
-    private int message_seq = 0, next_receive_seq = 0;
+    private int next_send_seq = 0, next_receive_seq = 0;
 
-    DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport)
+    DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport, DTLSRequest request)
     {
         this.recordLayer = transport;
         this.handshakeHash = new DeferredHash(context);
+
+        if (null != request)
+        {
+            sending = false;
+
+            int messageSeq = request.getMessageSeq();
+            byte[] message = request.getMessage();
+
+            // Simulate a previous flight consisting of the request ClientHello
+            DTLSReassembler reassembler = new DTLSReassembler(HandshakeType.client_hello, message.length - MESSAGE_HEADER_LENGTH);
+            currentInboundFlight.put(Integers.valueOf(messageSeq), reassembler);
+
+            next_send_seq = messageSeq;
+            next_receive_seq = messageSeq + 1;
+
+            handshakeHash.update(message, 0, message.length);
+
+            /*
+             * TODO If we store the (highest) record sequence number of the request, we could
+             * initialize the replay window here accordingly.
+             */
+        }
+    }
+
+    void resetAfterHelloVerifyRequest()
+    {
+        currentInboundFlight = new Hashtable();
+        previousInboundFlight = null;
+        outboundFlight = new Vector();
+        sending = true;
+
+        next_receive_seq = next_send_seq;
+
+        handshakeHash.reset();
+
+        recordLayer.resetAfterHelloVerifyRequest();
     }
 
     void notifyHelloComplete()
@@ -62,7 +163,7 @@ class DTLSReliableHandshake
             outboundFlight.removeAllElements();
         }
 
-        Message message = new Message(message_seq++, msg_type, body);
+        Message message = new Message(next_send_seq++, msg_type, body);
 
         outboundFlight.addElement(message);
 
@@ -168,11 +269,6 @@ class DTLSReliableHandshake
         }
 
         recordLayer.handshakeSuccessful(retransmit);
-    }
-
-    void resetHandshakeMessagesDigest()
-    {
-        handshakeHash.reset();
     }
 
     private int backOff(int timeoutMillis)

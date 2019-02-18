@@ -1462,6 +1462,12 @@ public abstract class TlsProtocol
 
         assertEmpty(input);
 
+        return readExtensionsData(extBytes);
+    }
+
+    protected static Hashtable readExtensionsData(byte[] extBytes)
+        throws IOException
+    {
         // Integer -> byte[]
         Hashtable extensions = new Hashtable();
 
