@@ -21,6 +21,15 @@ public class JournalingSecureRandom
 
     private TranscriptStream tOut = new TranscriptStream();
     private int index = 0;
+    
+    /**
+     * Default constructor that takes an arbitrary SecureRandom as initial random
+     */
+    public JournalingSecureRandom() {
+    	
+    	this(new SecureRandom());
+    
+    }
 
     /**
      * Base constructor - no prior transcript.
@@ -101,6 +110,15 @@ public class JournalingSecureRandom
     {
         Arrays.fill(transcript, (byte)0);
         tOut.clear();
+    }
+    
+    /**
+     * Resets the index to zero such that the randomness will now be reused
+     */
+    public void reset() {
+    	
+    	index = 0;
+    	
     }
 
     /**
