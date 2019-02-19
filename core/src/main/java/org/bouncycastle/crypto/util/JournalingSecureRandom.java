@@ -7,7 +7,9 @@ import java.security.SecureRandom;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A SecureRandom that maintains a journal of its output.
+* A SecureRandom that maintains a journal of its output.
+* This can be used to recreate an output that was based on randomness
+* For the transcript to be reusable, the order of the requests for randomness during recreation must be consistent with the initial requests and no other sources of randomness may be used.
  */
 public class JournalingSecureRandom
     extends SecureRandom
@@ -45,7 +47,7 @@ public class JournalingSecureRandom
     }
 
     /**
-     * Fill bytes with random data, journaling the random data before returning.
+     * Fill bytes with random data, journaling the random data before returning or re-use previously used random data, depending on the state of the transcript.
      *
      * @param bytes a block of bytes to be filled with random data.
      */
