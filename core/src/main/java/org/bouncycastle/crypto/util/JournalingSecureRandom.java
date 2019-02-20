@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -21,14 +22,13 @@ public class JournalingSecureRandom
 
     private TranscriptStream tOut = new TranscriptStream();
     private int index = 0;
-    
+
     /**
      * Default constructor that takes an arbitrary SecureRandom as initial random
      */
-    public JournalingSecureRandom() {
-    	
-    	this(new SecureRandom());
-    
+    public JournalingSecureRandom()
+    {
+        this(CryptoServicesRegistrar.getSecureRandom());
     }
 
     /**
@@ -47,12 +47,12 @@ public class JournalingSecureRandom
      * any new randomness are journaled.
      *
      * @param transcript initial transcript of randomness.
-     * @param random source of randomness we will be journaling when the transcript runs out.
+     * @param random     source of randomness we will be journaling when the transcript runs out.
      */
     public JournalingSecureRandom(byte[] transcript, SecureRandom random)
     {
-         this.base = random;
-         this.transcript = Arrays.clone(transcript);
+        this.base = random;
+        this.transcript = Arrays.clone(transcript);
     }
 
     /**
@@ -111,14 +111,15 @@ public class JournalingSecureRandom
         Arrays.fill(transcript, (byte)0);
         tOut.clear();
     }
-    
+
     /**
      * Resets the index to zero such that the randomness will now be reused
      */
-    public void reset() {
-    	
-    	index = 0;
-    	
+    public void reset()
+    {
+
+        index = 0;
+
     }
 
     /**
