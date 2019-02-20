@@ -20,8 +20,8 @@ public class BouncyCastleJsseProvider
 {
     public static final String PROVIDER_NAME = "BCJSSE";
 
-    private static final double PROVIDER_VERSION = 1.0007;
-    private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.7";
+    private static final double PROVIDER_VERSION = 1.0008;
+    private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.8";
 
     private Map<String, BcJsseService> serviceMap = new HashMap<String, BcJsseService>();
     private Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
