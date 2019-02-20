@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -73,6 +74,7 @@ public class JceAsymmetricKeyWrapper
     private Map extraMappings = new HashMap();
     private PublicKey publicKey;
     private SecureRandom random;
+    private AlgorithmParameters algorithmParameters;
 
     public JceAsymmetricKeyWrapper(PublicKey publicKey)
     {
@@ -135,6 +137,19 @@ public class JceAsymmetricKeyWrapper
     }
 
     /**
+     * Provide a set of algorithm parameters for the key wrapper cipher to use.
+     *
+     * @param algorithmParameters algorithmParameters for key wrapper.
+     * @return the current builder instance.
+     */
+    public JceAsymmetricKeyWrapper setAlgorithmParameters(AlgorithmParameters algorithmParameters)
+    {
+        this.algorithmParameters = algorithmParameters;
+
+        return this;
+    }
+
+    /**
      * Internally algorithm ids are converted into cipher names using a lookup table. For some providers
      * the standard lookup table won't work. Use this method to establish a specific mapping from an
      * algorithm identifier to a specific algorithm.
@@ -165,7 +180,7 @@ public class JceAsymmetricKeyWrapper
             {
                 if (random == null)
                 {
-                    random = new SecureRandom();
+                    random = CryptoServicesRegistrar.getSecureRandom();
                 }
                 KeyPairGenerator kpGen = helper.createKeyPairGenerator(getAlgorithmIdentifier().getAlgorithm());
 
@@ -222,17 +237,25 @@ public class JceAsymmetricKeyWrapper
         else
         {
             Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier().getAlgorithm(), extraMappings);
-            AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
 
             try
             {
-                if (algParams != null)
+                if (algorithmParameters != null)
                 {
-                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algParams, random);
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algorithmParameters, random);
                 }
                 else
                 {
-                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, random);
+                    AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
+
+                    if (algParams != null)
+                    {
+                        keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algParams, random);
+                    }
+                    else
+                    {
+                        keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, random);
+                    }
                 }
                 encryptedKeyBytes = keyEncryptionCipher.wrap(OperatorUtils.getJceKey(encryptionKey));
             }
