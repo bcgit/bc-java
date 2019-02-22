@@ -75,7 +75,6 @@ public class JceAsymmetricKeyWrapper
     private Map extraMappings = new HashMap();
     private PublicKey publicKey;
     private SecureRandom random;
-    private AlgorithmParameters algorithmParameters;
 
     public JceAsymmetricKeyWrapper(PublicKey publicKey)
     {
@@ -242,22 +241,15 @@ public class JceAsymmetricKeyWrapper
 
             try
             {
-                if (algorithmParameters != null)
+                AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
+
+                if (algParams != null)
                 {
-                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algorithmParameters, random);
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algParams, random);
                 }
                 else
                 {
-                    AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
-
-                    if (algParams != null)
-                    {
-                        keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algParams, random);
-                    }
-                    else
-                    {
-                        keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, random);
-                    }
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, random);
                 }
                 encryptedKeyBytes = keyEncryptionCipher.wrap(OperatorUtils.getJceKey(encryptionKey));
             }
