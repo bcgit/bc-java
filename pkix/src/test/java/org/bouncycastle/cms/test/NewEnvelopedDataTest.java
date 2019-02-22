@@ -918,9 +918,10 @@ public class NewEnvelopedDataTest
 
         edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setAlgorithmMapping(PKCSObjectIdentifiers.rsaEncryption, "RSA/2/PKCS1Padding").setProvider(BC));
 
+        OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build();
         CMSEnvelopedData ed = edGen.generate(
             new CMSProcessableByteArray(data),
-            new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
+            encryptor);
 
         RecipientInformationStore recipients = ed.getRecipientInfos();
 
@@ -951,6 +952,32 @@ public class NewEnvelopedDataTest
             fail("recipients not matched using general recipient ID.");
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
+
+        ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(encryptor.getAlgorithmIdentifier()).setProvider(BC).build());
+
+        recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
+
+        c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+        assertEquals(encryptor.getAlgorithmIdentifier(), ed.getContentEncryptionAlgorithm());
+        
+        it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setAlgorithmMapping(PKCSObjectIdentifiers.rsaEncryption, "RSA/2/PKCS1Padding").setProvider(BC));
+
+            assertEquals(true, Arrays.equals(data, recData));
+        }
     }
 
     public void testOriginatorInfoGeneration()
