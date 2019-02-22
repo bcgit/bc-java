@@ -12,6 +12,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -104,6 +105,20 @@ public class JceAsymmetricKeyWrapper
     /**
      * Create a wrapper, overriding the algorithm type that is stored in the public key.
      *
+     * @param algorithmParams algorithm parameters for encryption algorithm to be used.
+     * @param publicKey the public key to be used.
+     */
+    public JceAsymmetricKeyWrapper(AlgorithmParameters algorithmParams, PublicKey publicKey)
+        throws InvalidParameterSpecException
+    {
+        super(extractFromSpec(algorithmParams.getParameterSpec(AlgorithmParameterSpec.class)));
+
+        this.publicKey = publicKey;
+    }
+
+    /**
+     * Create a wrapper, overriding the algorithm type that is stored in the public key.
+     *
      * @param algorithmParameterSpec the parameterSpec for encryption algorithm to be used.
      * @param publicKey the public key to be used.
      */
@@ -132,19 +147,6 @@ public class JceAsymmetricKeyWrapper
     public JceAsymmetricKeyWrapper setSecureRandom(SecureRandom random)
     {
         this.random = random;
-
-        return this;
-    }
-
-    /**
-     * Provide a set of algorithm parameters for the key wrapper cipher to use.
-     *
-     * @param algorithmParameters algorithmParameters for key wrapper.
-     * @return the current builder instance.
-     */
-    public JceAsymmetricKeyWrapper setAlgorithmParameters(AlgorithmParameters algorithmParameters)
-    {
-        this.algorithmParameters = algorithmParameters;
 
         return this;
     }
