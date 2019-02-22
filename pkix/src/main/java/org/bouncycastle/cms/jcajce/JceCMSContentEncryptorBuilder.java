@@ -11,11 +11,14 @@ import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
@@ -29,12 +32,12 @@ public class JceCMSContentEncryptorBuilder
 {
     private static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
 
-
     private final ASN1ObjectIdentifier encryptionOID;
     private final int                  keySize;
 
     private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
     private SecureRandom random;
+    private AlgorithmIdentifier algorithmIdentifier;
     private AlgorithmParameters algorithmParameters;
 
     public JceCMSContentEncryptorBuilder(ASN1ObjectIdentifier encryptionOID)
@@ -72,6 +75,17 @@ public class JceCMSContentEncryptorBuilder
             }
             this.keySize = keySize;
         }
+    }
+
+    /**
+     * Constructor for a content encryptor builder based on an algorithm identifier and its contained parameters.
+     *
+     * @param encryptionAlgId the full algorithm identifier for the encryption.
+     */
+    public JceCMSContentEncryptorBuilder(AlgorithmIdentifier encryptionAlgId)
+    {
+        this(encryptionAlgId.getAlgorithm(), KEY_SIZE_PROVIDER.getKeySize(encryptionAlgId.getAlgorithm()));
+        this.algorithmIdentifier = encryptionAlgId;
     }
 
     /**
@@ -129,6 +143,28 @@ public class JceCMSContentEncryptorBuilder
     public OutputEncryptor build()
         throws CMSException
     {
+        if (algorithmParameters != null)
+        {
+            return new CMSOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
+        }
+        if (algorithmIdentifier != null)
+        {
+            ASN1Encodable params = algorithmIdentifier.getParameters();
+            if (params != null && !params.equals(DERNull.INSTANCE))
+            {
+                try
+                {
+                    algorithmParameters = helper.createAlgorithmParameters(algorithmIdentifier.getAlgorithm());
+
+                    algorithmParameters.init(params.toASN1Primitive().getEncoded());
+                }
+                catch (Exception e)
+                {
+                    throw new CMSException("unable to process provided algorithmIdentifier: " + e.toString(), e);
+                }
+            }
+        }
+
         return new CMSOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
     }
 
@@ -146,7 +182,7 @@ public class JceCMSContentEncryptorBuilder
 
             if (random == null)
             {
-                random = new SecureRandom();
+                random = CryptoServicesRegistrar.getSecureRandom();
             }
 
             if (keySize < 0)
@@ -177,7 +213,7 @@ public class JceCMSContentEncryptorBuilder
 
             //
             // If params are null we try and second guess on them as some providers don't provide
-            // algorithm parameter generation explicity but instead generate them under the hood.
+            // algorithm parameter generation explicitly but instead generate them under the hood.
             //
             if (params == null)
             {
