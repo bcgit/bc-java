@@ -2,6 +2,7 @@ package org.bouncycastle.cms.jcajce;
 
 import java.io.IOException;
 import java.security.AlgorithmParameters;
+import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -21,6 +22,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
+import org.bouncycastle.jcajce.util.AnnotatedPrivateKey;
 
 class CMSUtils
 {
@@ -73,6 +75,18 @@ class CMSUtils
     static boolean isRFC2631(ASN1ObjectIdentifier algorithm)
     {
         return algorithm.equals(PKCSObjectIdentifiers.id_alg_ESDH) || algorithm.equals(PKCSObjectIdentifiers.id_alg_SSDH);
+    }
+
+    static PrivateKey cleanPrivateKey(PrivateKey key)
+    {
+        if (key instanceof AnnotatedPrivateKey)
+        {
+            return cleanPrivateKey(((AnnotatedPrivateKey)key).getKey());
+        }
+        else
+        {
+            return key;
+        }
     }
 
     static IssuerAndSerialNumber getIssuerAndSerialNumber(X509Certificate cert)

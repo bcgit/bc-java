@@ -41,7 +41,7 @@ public abstract class JceKeyTransRecipient
 
     public JceKeyTransRecipient(PrivateKey recipientKey)
     {
-        this.recipientKey = recipientKey;
+        this.recipientKey = CMSUtils.cleanPrivateKey(recipientKey);
     }
 
     /**
