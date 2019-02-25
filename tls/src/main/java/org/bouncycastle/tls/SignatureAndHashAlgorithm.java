@@ -55,11 +55,19 @@ public class SignatureAndHashAlgorithm
      */
     public SignatureAndHashAlgorithm(short hash, short signature)
     {
-        if (!TlsUtils.isValidUint8(hash))
+        /*
+         * TODO]tls] The TlsUtils methods are inlined here to avoid circular static initialization
+         * b/w these classes. We should refactor parts of TlsUtils into separate classes. e.g. the
+         * TLS low-level encoding methods, and/or the SigAndHash registry and methods.
+         */
+
+//        if (!TlsUtils.isValidUint8(hash))
+        if ((hash & 0xFF) != hash)
         {
             throw new IllegalArgumentException("'hash' should be a uint8");
         }
-        if (!TlsUtils.isValidUint8(signature))
+//        if (!TlsUtils.isValidUint8(signature))
+        if ((signature & 0xFF) != signature)
         {
             throw new IllegalArgumentException("'signature' should be a uint8");
         }
