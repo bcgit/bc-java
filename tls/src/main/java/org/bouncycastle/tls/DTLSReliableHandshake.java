@@ -186,6 +186,8 @@ class DTLSReliableHandshake
     Message receiveMessage()
         throws IOException
     {
+        // TODO Add support for "overall" handshake timeout
+
         if (sending)
         {
             sending = false;
@@ -199,42 +201,36 @@ class DTLSReliableHandshake
 
         for (;;)
         {
-            try
+            Message pending = getPendingMessage();
+            if (pending != null)
             {
-                for (;;)
-                {
-                    Message pending = getPendingMessage();
-                    if (pending != null)
-                    {
-                        return pending;
-                    }
-
-                    int receiveLimit = recordLayer.getReceiveLimit();
-                    if (buf == null || buf.length < receiveLimit)
-                    {
-                        buf = new byte[receiveLimit];
-                    }
-
-                    int received = recordLayer.receive(buf, 0, receiveLimit, readTimeoutMillis);
-                    if (received < 0)
-                    {
-                        break;
-                    }
-
-                    boolean resentOutbound = processRecord(MAX_RECEIVE_AHEAD, recordLayer.getReadEpoch(), buf, 0, received);
-                    if (resentOutbound)
-                    {
-                        readTimeoutMillis = backOff(readTimeoutMillis);
-                    }
-                }
-            }
-            catch (IOException e)
-            {
-                // NOTE: Assume this is a timeout for the moment
+                return pending;
             }
 
-            resendOutboundFlight();
-            readTimeoutMillis = backOff(readTimeoutMillis);
+            int receiveLimit = recordLayer.getReceiveLimit();
+            if (buf == null || buf.length < receiveLimit)
+            {
+                buf = new byte[receiveLimit];
+            }
+
+            int received = recordLayer.receive(buf, 0, receiveLimit, readTimeoutMillis);
+
+            boolean resentOutbound;
+            if (received < 0)
+            {
+                resendOutboundFlight();
+                resentOutbound = true;
+            }
+            else
+            {
+                resentOutbound = processRecord(MAX_RECEIVE_AHEAD, recordLayer.getReadEpoch(), buf, 0, received);
+            }
+
+            // TODO Review conditions for resend/backoff  
+            if (resentOutbound)
+            {
+                readTimeoutMillis = backOff(readTimeoutMillis);
+            }
         }
     }
 

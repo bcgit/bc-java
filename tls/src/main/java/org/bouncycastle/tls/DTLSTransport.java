@@ -1,6 +1,7 @@
 package org.bouncycastle.tls;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 
 public class DTLSTransport
     implements DatagramTransport
@@ -36,6 +37,10 @@ public class DTLSTransport
             recordLayer.fail(fatalAlert.getAlertDescription());
             throw fatalAlert;
         }
+        catch (InterruptedIOException e)
+        {
+            throw e;
+        }
         catch (IOException e)
         {
             recordLayer.fail(AlertDescription.internal_error);
@@ -59,6 +64,10 @@ public class DTLSTransport
         {
             recordLayer.fail(fatalAlert.getAlertDescription());
             throw fatalAlert;
+        }
+        catch (InterruptedIOException e)
+        {
+            throw e;
         }
         catch (IOException e)
         {
