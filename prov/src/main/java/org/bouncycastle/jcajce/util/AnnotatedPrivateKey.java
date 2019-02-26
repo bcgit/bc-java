@@ -20,7 +20,7 @@ public class AnnotatedPrivateKey
     AnnotatedPrivateKey(PrivateKey key, String label)
     {
         this.key = key;
-        this.annotations = Collections.singletonMap(LABEL, label);
+        this.annotations = Collections.singletonMap(LABEL, (Object)label);
     }
 
     AnnotatedPrivateKey(PrivateKey key, Map<String, Object> annotations)
