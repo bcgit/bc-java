@@ -20,6 +20,11 @@ public class JceKeyTransRecipientInfoGenerator
     {
         super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), new JceAsymmetricKeyWrapper(recipientCert));
     }
+    
+    public JceKeyTransRecipientInfoGenerator(X509Certificate recipientCert, JceAsymmetricKeyWrapper wrapper) 
+    {
+    	super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), wrapper);
+    }
 
     public JceKeyTransRecipientInfoGenerator(byte[] subjectKeyIdentifier, PublicKey publicKey)
     {
