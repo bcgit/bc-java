@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.KeyTransRecipientInfoGenerator;
+import org.bouncycastle.operator.AsymmetricKeyWrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
 
 public class JceKeyTransRecipientInfoGenerator
@@ -21,7 +22,8 @@ public class JceKeyTransRecipientInfoGenerator
         super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), new JceAsymmetricKeyWrapper(recipientCert));
     }
     
-    public JceKeyTransRecipientInfoGenerator(X509Certificate recipientCert, JceAsymmetricKeyWrapper wrapper) 
+    public JceKeyTransRecipientInfoGenerator(X509Certificate recipientCert, AsymmetricKeyWrapper wrapper)
+        throws CertificateEncodingException
     {
     	super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), wrapper);
     }
