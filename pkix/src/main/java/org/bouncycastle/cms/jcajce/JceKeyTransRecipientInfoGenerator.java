@@ -33,6 +33,11 @@ public class JceKeyTransRecipientInfoGenerator
         super(subjectKeyIdentifier, new JceAsymmetricKeyWrapper(publicKey));
     }
 
+    public JceKeyTransRecipientInfoGenerator(byte[] subjectKeyIdentifier, AsymmetricKeyWrapper wrapper)
+    {
+        super(subjectKeyIdentifier, wrapper);
+    }
+
     /**
      * Create a generator overriding the algorithm type implied by the public key in the certificate passed in.
      *
