@@ -71,12 +71,14 @@ import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 public class BaseBlockCipher
     extends BaseWrapCipher
     implements PBE
 {
+    private static final int BUF_SIZE = 512;
     private static final Class gcmSpecClass = ClassUtil.loadClass(BaseBlockCipher.class, "javax.crypto.spec.GCMParameterSpec");
 
     //
@@ -997,11 +999,38 @@ public class BaseBlockCipher
         cipher.updateAAD(input, offset, length);
     }
 
-    protected void engineUpdateAAD(ByteBuffer bytebuffer)
+    protected void engineUpdateAAD(ByteBuffer src)
     {
-        int offset = bytebuffer.arrayOffset() + bytebuffer.position();
-        int length = bytebuffer.limit() - bytebuffer.position();
-        engineUpdateAAD(bytebuffer.array(), offset, length);
+        int remaining = src.remaining();
+        if (remaining < 1)
+        {
+            // No data to update
+        }
+        else if (src.hasArray())
+        {
+            engineUpdateAAD(src.array(), src.arrayOffset() + src.position(), remaining);
+            src.position(src.limit());
+        }
+        else if (remaining <= BUF_SIZE)
+        {
+            byte[] data = new byte[remaining];
+            src.get(data);
+            engineUpdateAAD(data, 0, data.length);
+            Arrays.fill(data, (byte)0);
+        }
+        else
+        {
+            byte[] data = new byte[BUF_SIZE];
+            do
+            {
+                int length = Math.min(data.length, remaining);
+                src.get(data, 0, length);
+                engineUpdateAAD(data, 0, length);
+                remaining -= length;
+            }
+            while (remaining > 0);
+            Arrays.fill(data, (byte)0);
+        }
     }
 
     protected byte[] engineUpdate(
