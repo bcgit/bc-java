@@ -1,4 +1,4 @@
-package test;
+package org.bouncycastle.crypto.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
