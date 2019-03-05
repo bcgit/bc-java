@@ -54,7 +54,12 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
                 byte[] tmp = new byte[64 + ciphertextLength];
                 System.arraycopy(input, inputOffset, tmp, 64, ciphertextLength);
 
-                if (tmp.length != cipher.doFinal(tmp, 0, tmp.length, tmp, 0))
+                // to avoid performance issue in FIPS jar  1.0.0-1.0.2
+                int len = cipher.update(tmp, 0, tmp.length, tmp, 0) ;
+                        
+                len += cipher.doFinal(tmp, len);
+
+                if (tmp.length != len)
                 {
                     throw new IllegalStateException();
                 }

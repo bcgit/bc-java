@@ -57,7 +57,12 @@ public class JceBlockCipherImpl
     {
         try
         {
-            return cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
+            // to avoid performance issue in FIPS jar  1.0.0-1.0.2
+            int len = cipher.update(input, inputOffset, inputLength, output, outputOffset) ;
+
+            len += cipher.doFinal(output, outputOffset + len);
+
+            return len;
         }
         catch (GeneralSecurityException e)
         {
