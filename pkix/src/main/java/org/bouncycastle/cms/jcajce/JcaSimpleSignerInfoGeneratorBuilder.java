@@ -115,6 +115,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
     public SignerInfoGenerator build(String algorithmName, PrivateKey privateKey, X509CertificateHolder certificate)
         throws OperatorCreationException
     {
+        privateKey = CMSUtils.cleanPrivateKey(privateKey);
         ContentSigner contentSigner = helper.createContentSigner(algorithmName, privateKey);
 
         return configureAndBuild().build(contentSigner, certificate);
@@ -123,6 +124,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
     public SignerInfoGenerator build(String algorithmName, PrivateKey privateKey, X509Certificate certificate)
         throws OperatorCreationException, CertificateEncodingException
     {
+        privateKey = CMSUtils.cleanPrivateKey(privateKey);
         ContentSigner contentSigner = helper.createContentSigner(algorithmName, privateKey);
 
         return configureAndBuild().build(contentSigner, new JcaX509CertificateHolder(certificate));
@@ -131,6 +133,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
     public SignerInfoGenerator build(String algorithmName, PrivateKey privateKey, byte[] keyIdentifier)
         throws OperatorCreationException
     {
+        privateKey = CMSUtils.cleanPrivateKey(privateKey);
         ContentSigner contentSigner = helper.createContentSigner(algorithmName, privateKey);
 
         return configureAndBuild().build(contentSigner, keyIdentifier);
@@ -153,6 +156,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
         ContentSigner createContentSigner(String algorithm, PrivateKey privateKey)
             throws OperatorCreationException
         {
+            privateKey = CMSUtils.cleanPrivateKey(privateKey);
             return new JcaContentSignerBuilder(algorithm).build(privateKey);
         }
 
@@ -176,6 +180,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
         ContentSigner createContentSigner(String algorithm, PrivateKey privateKey)
             throws OperatorCreationException
         {
+            privateKey = CMSUtils.cleanPrivateKey(privateKey);
             return new JcaContentSignerBuilder(algorithm).setProvider(providerName).build(privateKey);
         }
 
@@ -199,6 +204,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
         ContentSigner createContentSigner(String algorithm, PrivateKey privateKey)
             throws OperatorCreationException
         {
+            privateKey = CMSUtils.cleanPrivateKey(privateKey);
             return new JcaContentSignerBuilder(algorithm).setProvider(provider).build(privateKey);
         }
 

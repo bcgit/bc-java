@@ -631,11 +631,13 @@ public class EnvelopedDataHelper
 
     public JceAsymmetricKeyUnwrapper createAsymmetricUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, PrivateKey keyEncryptionKey)
     {
+        keyEncryptionKey = CMSUtils.cleanPrivateKey(keyEncryptionKey);
         return helper.createAsymmetricUnwrapper(keyEncryptionAlgorithm, keyEncryptionKey);
     }
 
     public JceKTSKeyUnwrapper createAsymmetricUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, PrivateKey keyEncryptionKey, byte[] partyUInfo, byte[] partyVInfo)
     {
+        keyEncryptionKey = CMSUtils.cleanPrivateKey(keyEncryptionKey);
         return helper.createAsymmetricUnwrapper(keyEncryptionAlgorithm, keyEncryptionKey, partyUInfo, partyVInfo);
     }
 
