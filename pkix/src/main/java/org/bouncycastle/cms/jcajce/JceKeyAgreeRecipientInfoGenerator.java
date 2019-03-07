@@ -66,7 +66,7 @@ public class JceKeyAgreeRecipientInfoGenerator
         super(keyAgreementOID, SubjectPublicKeyInfo.getInstance(senderPublicKey.getEncoded()), keyEncryptionOID);
 
         this.senderPublicKey = senderPublicKey;
-        this.senderPrivateKey = senderPrivateKey;
+        this.senderPrivateKey = CMSUtils.cleanPrivateKey(senderPrivateKey);
     }
 
     public JceKeyAgreeRecipientInfoGenerator setUserKeyingMaterial(byte[] userKeyingMaterial)
