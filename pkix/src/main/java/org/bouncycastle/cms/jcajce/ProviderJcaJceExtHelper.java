@@ -23,11 +23,13 @@ class ProviderJcaJceExtHelper
 
     public JceAsymmetricKeyUnwrapper createAsymmetricUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, PrivateKey keyEncryptionKey)
     {
+        keyEncryptionKey = CMSUtils.cleanPrivateKey(keyEncryptionKey);
         return new JceAsymmetricKeyUnwrapper(keyEncryptionAlgorithm, keyEncryptionKey).setProvider(provider);
     }
 
     public JceKTSKeyUnwrapper createAsymmetricUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, PrivateKey keyEncryptionKey, byte[] partyUInfo, byte[] partyVInfo)
     {
+        keyEncryptionKey = CMSUtils.cleanPrivateKey(keyEncryptionKey);
         return new JceKTSKeyUnwrapper(keyEncryptionAlgorithm, keyEncryptionKey, partyUInfo, partyVInfo).setProvider(provider);
     }
 

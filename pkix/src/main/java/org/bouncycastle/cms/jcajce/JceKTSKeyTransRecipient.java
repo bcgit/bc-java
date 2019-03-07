@@ -35,7 +35,7 @@ public abstract class JceKTSKeyTransRecipient
 
     public JceKTSKeyTransRecipient(PrivateKey recipientKey, byte[] partyVInfo)
     {
-        this.recipientKey = recipientKey;
+        this.recipientKey = CMSUtils.cleanPrivateKey(recipientKey);
         this.partyVInfo = partyVInfo;
     }
 
