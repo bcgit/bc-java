@@ -20,6 +20,8 @@ import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 public class JceAEADCipherImpl
     implements TlsAEADCipherImpl
 {
+    private static final int BUF_SIZE = 32 * 1024;
+
     private static boolean checkForAEAD()
     {
         return (Boolean)AccessController.doPrivileged(new PrivilegedAction()
@@ -125,11 +127,19 @@ public class JceAEADCipherImpl
         try
         {
             // to avoid performance issue in FIPS jar  1.0.0-1.0.2
-            int len = cipher.update(input, inputOffset, inputLength, output, outputOffset) ;
+            int totLen = 0;
+            while (inputLength > BUF_SIZE)
+            {
+                totLen += cipher.update(input, inputOffset, BUF_SIZE, output, outputOffset + totLen);
 
-            len += cipher.doFinal(output, outputOffset + len);
+                inputOffset += BUF_SIZE;
+                inputLength -= BUF_SIZE;
+            }
 
-            return len;
+            totLen += cipher.update(input, inputOffset, inputLength, output, outputOffset + totLen);
+            totLen += cipher.doFinal(output, outputOffset + totLen);
+
+            return totLen;
         }
         catch (GeneralSecurityException e)
         {
