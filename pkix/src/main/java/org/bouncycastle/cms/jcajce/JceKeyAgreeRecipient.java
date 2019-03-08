@@ -61,8 +61,7 @@ public abstract class JceKeyAgreeRecipient
 
     public JceKeyAgreeRecipient(PrivateKey recipientKey)
     {
-        recipientKey = CMSUtils.cleanPrivateKey(recipientKey);
-        this.recipientKey = recipientKey;
+        this.recipientKey = CMSUtils.cleanPrivateKey(recipientKey);
     }
 
     /**
