@@ -15,6 +15,8 @@ import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 public class JceBlockCipherImpl
     implements TlsBlockCipherImpl
 {
+    private static final int BUF_SIZE = 32 * 1024;
+
     private final int cipherMode;
     private final Cipher cipher;
     private final String algorithm;
@@ -58,6 +60,14 @@ public class JceBlockCipherImpl
         try
         {
             // to avoid performance issue in FIPS jar  1.0.0-1.0.2
+            while (inputLength > BUF_SIZE)
+            {
+                outputOffset += cipher.update(input, inputOffset, BUF_SIZE, output, outputOffset);
+
+                inputOffset += BUF_SIZE;
+                inputLength -= BUF_SIZE;
+            }
+
             int len = cipher.update(input, inputOffset, inputLength, output, outputOffset) ;
 
             len += cipher.doFinal(output, outputOffset + len);
