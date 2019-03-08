@@ -19,6 +19,7 @@ import org.bouncycastle.util.Pack;
 
 public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
 {
+    private static final int BUF_SIZE = 32 * 1024;
     private static final byte[] ZEROES = new byte[15];
 
     protected final Cipher cipher;
@@ -55,11 +56,17 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
                 System.arraycopy(input, inputOffset, tmp, 64, ciphertextLength);
 
                 // to avoid performance issue in FIPS jar  1.0.0-1.0.2
-                int len = cipher.update(tmp, 0, tmp.length, tmp, 0) ;
+                int tmpOff = 0;
+                while (tmpOff < tmp.length - BUF_SIZE)
+                {
+                    tmpOff += cipher.update(tmp, tmpOff, BUF_SIZE, tmp, tmpOff);
+                }
+
+                int len = cipher.update(tmp, tmpOff, tmp.length - tmpOff, tmp, tmpOff);
                         
                 len += cipher.doFinal(tmp, len);
 
-                if (tmp.length != len)
+                if (tmp.length != tmpOff + len)
                 {
                     throw new IllegalStateException();
                 }
@@ -86,7 +93,18 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
                 byte[] tmp = new byte[64 + ciphertextLength];
                 System.arraycopy(input, inputOffset, tmp, 64, ciphertextLength);
 
-                if (tmp.length != cipher.doFinal(tmp, 0, tmp.length, tmp, 0))
+                // to avoid performance issue in FIPS jar  1.0.0-1.0.2
+                int tmpOff = 0;
+                while (tmpOff < tmp.length - BUF_SIZE)
+                {
+                    tmpOff += cipher.update(tmp, tmpOff, BUF_SIZE, tmp, tmpOff);
+                }
+
+                int len = cipher.update(tmp, tmpOff, tmp.length - tmpOff, tmp, tmpOff);
+
+                len += cipher.doFinal(tmp, len);
+
+                if (tmp.length != tmpOff + len)
                 {
                     throw new IllegalStateException();
                 }
