@@ -63,24 +63,24 @@ public class JceBlockCipherWithCBCImplicitIVImpl
             }
 
             // to avoid performance issue in FIPS jar  1.0.0-1.0.2
+            int totLen = 0;
             while (inputLength > BUF_SIZE)
             {
-                outputOffset += cipher.update(input, inputOffset, BUF_SIZE, output, outputOffset);
+                totLen += cipher.update(input, inputOffset, BUF_SIZE, output, outputOffset + totLen);
 
                 inputOffset += BUF_SIZE;
                 inputLength -= BUF_SIZE;
             }
 
-            int len = cipher.update(input, inputOffset, inputLength, output, outputOffset) ;
-
-            len += cipher.doFinal(output, outputOffset + len);
+            totLen += cipher.update(input, inputOffset, inputLength, output, outputOffset + totLen);
+            totLen += cipher.doFinal(output, outputOffset + totLen);
 
             if (isEncrypting)
             {
-                nextIV = Arrays.copyOfRange(output, outputOffset + inputLength - cipher.getBlockSize(), outputOffset + inputLength);
+                nextIV = Arrays.copyOfRange(output, outputOffset + totLen + inputLength - cipher.getBlockSize(), outputOffset + totLen + inputLength);
             }
 
-            return len;
+            return totLen;
         }
         catch (GeneralSecurityException e)
         {
