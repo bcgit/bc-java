@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.IOException;
+
 class DTLSEpoch
 {
     private final DTLSReplayWindow replayWindow = new DTLSReplayWindow();
@@ -24,9 +26,13 @@ class DTLSEpoch
         this.cipher = cipher;
     }
 
-    long allocateSequenceNumber()
+    synchronized long allocateSequenceNumber() throws IOException
     {
-        // TODO Check for overflow
+        if (sequenceNumber >= (1L << 48))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         return sequenceNumber++;
     }
 
@@ -45,7 +51,7 @@ class DTLSEpoch
         return replayWindow;
     }
 
-    long getSequenceNumber()
+    synchronized long getSequenceNumber()
     {
         return sequenceNumber;
     }

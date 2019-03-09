@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import java.io.IOException;
+
 import org.bouncycastle.tls.crypto.TlsCipher;
 
 class DTLSEpoch
@@ -26,9 +28,13 @@ class DTLSEpoch
         this.cipher = cipher;
     }
 
-    long allocateSequenceNumber()
+    synchronized long allocateSequenceNumber() throws IOException
     {
-        // TODO Check for overflow
+        if (sequenceNumber >= (1L << 48))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         return sequenceNumber++;
     }
 
@@ -47,12 +53,12 @@ class DTLSEpoch
         return replayWindow;
     }
 
-    long getSequenceNumber()
+    synchronized long getSequenceNumber()
     {
         return sequenceNumber;
     }
 
-    void setSequenceNumber(long sequenceNumber)
+    synchronized void setSequenceNumber(long sequenceNumber)
     {
         this.sequenceNumber = sequenceNumber;
     }
