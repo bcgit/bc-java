@@ -5,6 +5,14 @@ import java.math.BigInteger;
 public class RSAKeyParameters
     extends AsymmetricKeyParameter
 {
+    // Hexadecimal value of the product of the 131 smallest odd primes from 3 to 743
+    private static final BigInteger SMALL_PRIMES_PRODUCT = new BigInteger(
+              "8138e8a0fcf3a4e84a771d40fd305d7f4aa59306d7251de54d98af8fe95729a1f"
+            + "73d893fa424cd2edc8636a6c3285e022b0e3866a565ae8108eed8591cd4fe8d2"
+            + "ce86165a978d719ebf647f362d33fca29cd179fb42401cbaf3df0c614056f9c8"
+            + "f3cfd51e474afb6bc6974f78db8aba8e9e517fded658591ab7502bd41849462f",
+        16);
+
     private static final BigInteger ONE = BigInteger.valueOf(1);
 
     private BigInteger      modulus;
@@ -36,12 +44,7 @@ public class RSAKeyParameters
             throw new IllegalArgumentException("RSA modulus is even");
         }
 
-        // the value is the product of the 132 smallest primes from 3 to 751
-        if (!modulus.gcd(new BigInteger("145188775577763990151158743208307020242261438098488931355057091965" +
-            "931517706595657435907891265414916764399268423699130577757433083166" +
-            "651158914570105971074227669275788291575622090199821297575654322355" +
-            "049043101306108213104080801056529374892690144291505781966373045481" +
-            "8359472391642885328171302299245556663073719855")).equals(ONE))
+        if (!modulus.gcd(SMALL_PRIMES_PRODUCT).equals(ONE))
         {
             throw new IllegalArgumentException("RSA modulus has a small prime factor");
         }
