@@ -188,7 +188,7 @@ public class SM2Engine
     {
         for (int i = 0; i != encData.length; i++)
         {
-            if (encData[i] != in[inOff])
+            if (encData[i] != in[inOff + i])
             {
                 return false;
             }
