@@ -18,9 +18,10 @@ public class JournalingSecureRandom
     private static byte[] EMPTY_TRANSCRIPT = new byte[0];
 
     private final SecureRandom base;
-    private final byte[] transcript;
 
     private TranscriptStream tOut = new TranscriptStream();
+    private byte[] transcript;
+
     private int index = 0;
 
     /**
@@ -117,9 +118,12 @@ public class JournalingSecureRandom
      */
     public void reset()
     {
-
         index = 0;
-
+        if (index == transcript.length)
+        {
+            transcript = tOut.toByteArray();
+        }
+        tOut.reset();
     }
 
     /**
