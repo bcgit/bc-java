@@ -77,7 +77,7 @@ public class JceBlockCipherWithCBCImplicitIVImpl
 
             if (isEncrypting)
             {
-                nextIV = Arrays.copyOfRange(output, outputOffset + totLen + inputLength - cipher.getBlockSize(), outputOffset + totLen + inputLength);
+                nextIV = Arrays.copyOfRange(output, outputOffset + totLen - cipher.getBlockSize(), outputOffset + totLen);
             }
 
             return totLen;
