@@ -119,7 +119,7 @@ public class DTLSClientProtocol
             byte[] cookie = processHelloVerifyRequest(state, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
-            handshake.resetAfterHelloVerifyRequest();
+            handshake.resetAfterHelloVerifyRequestClient();
             handshake.sendMessage(HandshakeType.client_hello, patched);
 
             serverMessage = handshake.receiveMessage();

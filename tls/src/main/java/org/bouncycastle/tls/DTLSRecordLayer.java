@@ -41,9 +41,7 @@ class DTLSRecordLayer
             return null;
         }
 
-        // TODO Are there any constraints on this?
-        long sequenceNumber = TlsUtils.readUint48(data, dataOff + 5);
-        System.out.println("Record sequence in ClientHello: " + sequenceNumber);
+//        long sequenceNumber = TlsUtils.readUint48(data, dataOff + 5);
 
         int length = TlsUtils.readUint16(data, dataOff + 11);
         if (dataLen != RECORD_HEADER_LENGTH + length)
@@ -54,7 +52,7 @@ class DTLSRecordLayer
         return Arrays.copyOfRange(data, dataOff + RECORD_HEADER_LENGTH, dataOff + dataLen);
     }
 
-    static void sendHelloVerifyRequestRecord(DatagramSender sender, byte[] message) throws IOException
+    static void sendHelloVerifyRequestRecord(DatagramSender sender, long recordSeq, byte[] message) throws IOException
     {
         TlsUtils.checkUint16(message.length);
 
@@ -62,7 +60,7 @@ class DTLSRecordLayer
         TlsUtils.writeUint8(ContentType.handshake, record, 0);
         TlsUtils.writeVersion(ProtocolVersion.DTLSv10, record, 1);
         TlsUtils.writeUint16(0, record, 3);
-        TlsUtils.writeUint48(0, record, 5);
+        TlsUtils.writeUint48(recordSeq, record, 5);
         TlsUtils.writeUint16(message.length, record, 11);
 
         System.arraycopy(message, 0, record, RECORD_HEADER_LENGTH, message.length);
@@ -117,9 +115,19 @@ class DTLSRecordLayer
         setPlaintextLimit(MAX_FRAGMENT_LENGTH);
     }
 
-    void resetAfterHelloVerifyRequest()
+    void resetAfterHelloVerifyRequestClient()
     {
         currentEpoch.getReplayWindow().reset();
+    }
+
+    void resetAfterHelloVerifyRequestServer(long writeRecordSeqNo)
+    {
+        currentEpoch.setSequenceNumber(writeRecordSeqNo);
+
+        /*
+         * TODO The sequence number reflects one that the client has already sent, so we could
+         * initialize the replay window here accordingly.
+         */
     }
 
     void setPlaintextLimit(int plaintextLimit)
