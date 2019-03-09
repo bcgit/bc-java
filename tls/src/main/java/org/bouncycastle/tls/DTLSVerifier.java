@@ -50,7 +50,7 @@ public class DTLSVerifier
                     return request;
                 }
 
-                DTLSReliableHandshake.sendHelloVerifyRequest(sender, request.getMessageSeq(), expectedCookie);
+                DTLSReliableHandshake.sendHelloVerifyRequest(sender, request.getRecordSeq(), request.getMessageSeq(), expectedCookie);
             }
         }
         catch (IOException e)

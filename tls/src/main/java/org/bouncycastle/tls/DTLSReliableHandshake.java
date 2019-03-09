@@ -26,6 +26,8 @@ class DTLSReliableHandshake
             return null;
         }
 
+        long recordSeq = TlsUtils.readUint48(data, dataOff + 5);
+
         short msgType = TlsUtils.readUint8(message, 0);
         if (HandshakeType.client_hello != msgType)
         {
@@ -54,10 +56,10 @@ class DTLSReliableHandshake
 
         ClientHello clientHello = ClientHello.parse(new ByteArrayInputStream(message, MESSAGE_HEADER_LENGTH, length), dtlsOutput);
 
-        return new DTLSRequest(message, clientHello);
+        return new DTLSRequest(recordSeq, message, clientHello);
     }
 
-    static void sendHelloVerifyRequest(DatagramSender sender, int messageSeq, byte[] cookie) throws IOException
+    static void sendHelloVerifyRequest(DatagramSender sender, long recordSeq, int messageSeq, byte[] cookie) throws IOException
     {
         TlsUtils.checkUint16(messageSeq);
         TlsUtils.checkUint8(cookie.length);
@@ -75,7 +77,7 @@ class DTLSReliableHandshake
         TlsUtils.writeVersion(ProtocolVersion.DTLSv10, message, MESSAGE_HEADER_LENGTH + 0);
         TlsUtils.writeOpaque8(cookie, message, MESSAGE_HEADER_LENGTH + 2);
 
-        DTLSRecordLayer.sendHelloVerifyRequestRecord(sender, message);
+        DTLSRecordLayer.sendHelloVerifyRequestRecord(sender, recordSeq, message);
     }
 
     /*
@@ -101,8 +103,11 @@ class DTLSReliableHandshake
         {
             sending = false;
 
+            long recordSeq = request.getRecordSeq();
             int messageSeq = request.getMessageSeq();
             byte[] message = request.getMessage();
+
+            recordLayer.resetAfterHelloVerifyRequestServer(recordSeq);
 
             // Simulate a previous flight consisting of the request ClientHello
             DTLSReassembler reassembler = new DTLSReassembler(HandshakeType.client_hello, message.length - MESSAGE_HEADER_LENGTH);
@@ -112,15 +117,10 @@ class DTLSReliableHandshake
             next_receive_seq = messageSeq + 1;
 
             handshakeHash.update(message, 0, message.length);
-
-            /*
-             * TODO If we store the (highest) record sequence number of the request, we could
-             * initialize the replay window here accordingly.
-             */
         }
     }
 
-    void resetAfterHelloVerifyRequest()
+    void resetAfterHelloVerifyRequestClient()
     {
         currentInboundFlight = new Hashtable();
         previousInboundFlight = null;
@@ -131,7 +131,7 @@ class DTLSReliableHandshake
 
         handshakeHash.reset();
 
-        recordLayer.resetAfterHelloVerifyRequest();
+        recordLayer.resetAfterHelloVerifyRequestClient();
     }
 
     void notifyHelloComplete()
