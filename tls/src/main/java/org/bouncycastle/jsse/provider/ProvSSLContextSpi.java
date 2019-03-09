@@ -430,25 +430,32 @@ class ProvSSLContextSpi
         return getKeysArray(supportedProtocols);
     }
 
+    String[] getSupportedCipherSuites(String[] cipherSuites)
+    {
+        if (null == cipherSuites)
+        {
+            throw new NullPointerException("'cipherSuites' cannot be null");
+        }
+
+        ArrayList<String> result = new ArrayList<String>(cipherSuites.length);
+        for (String cipherSuite : cipherSuites)
+        {
+            if (null == cipherSuite || cipherSuite.length() < 1)
+            {
+                throw new IllegalArgumentException("'cipherSuites' cannot contain null or empty string elements");
+            }
+
+            if (supportedCipherSuites.containsKey(cipherSuite))
+            {
+                result.add(cipherSuite);
+            }
+        }
+        return getArray(result);
+    }
+
     boolean isFips()
     {
         return isInFipsMode;
-    }
-
-    boolean isSupportedCipherSuites(String[] suites)
-    {
-        if (suites == null)
-        {
-            return false;
-        }
-        for (String suite : suites)
-        {
-            if (suite == null || !supportedCipherSuites.containsKey(suite))
-            {
-                return false;
-            }
-        }
-        return true;
     }
 
     boolean isSupportedProtocols(String[] protocols)
