@@ -66,12 +66,7 @@ final class ProvSSLParameters
 
     public void setCipherSuites(String[] cipherSuites)
     {
-        if (!context.isSupportedCipherSuites(cipherSuites))
-        {
-            throw new IllegalArgumentException("'cipherSuites' cannot be null, or contain unsupported cipher suites");
-        }
-
-        this.cipherSuites = cipherSuites.clone();
+        this.cipherSuites = context.getSupportedCipherSuites(cipherSuites);
     }
 
     public String[] getProtocols()
