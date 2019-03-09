@@ -36,7 +36,7 @@ public class RSAKeyParameters
             throw new IllegalArgumentException("RSA modulus is even");
         }
 
-        // the value is the product of the 132 smallest primes from 3 to 751
+        // the value is the product of the 131 smallest primes from 3 to 751
         if (!modulus.gcd(new BigInteger("145188775577763990151158743208307020242261438098488931355057091965" +
             "931517706595657435907891265414916764399268423699130577757433083166" +
             "651158914570105971074227669275788291575622090199821297575654322355" +
