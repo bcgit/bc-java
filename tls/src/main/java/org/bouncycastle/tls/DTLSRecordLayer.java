@@ -221,13 +221,19 @@ class DTLSRecordLayer
     public int receive(byte[] buf, int off, int len, int waitMillis)
         throws IOException
     {
-        // TODO Avoid returning -1 (timeout) until 'waitMillis' has definitely elapsed  
+        long currentTimeMillis = System.currentTimeMillis();
+
+        Timeout timeout = null;
+        if (waitMillis > 0)
+        {
+            timeout = new Timeout(waitMillis, currentTimeMillis);
+        }
 
         byte[] record = null;
 
-        for (;;)
+        while (waitMillis >= 0)
         {
-            if (null != retransmitTimeout && retransmitTimeout.remainingMillis() < 1)
+            if (null != retransmitTimeout && retransmitTimeout.remainingMillis(currentTimeMillis) < 1)
             {
                 retransmit = null;
                 retransmitEpoch = null;
@@ -241,17 +247,17 @@ class DTLSRecordLayer
             }
 
             int received = receiveRecord(record, 0, receiveLimit, waitMillis);
-            if (received < 0)
-            {
-                return received;
-            }
-
             int processed = processRecord(received, record, buf, off);
             if (processed >= 0)
             {
                 return processed;
             }
+
+            currentTimeMillis = System.currentTimeMillis();
+            waitMillis = getWaitMillis(timeout, currentTimeMillis);
         }
+
+        return -1;
     }
 
     public void send(byte[] buf, int off, int len)
@@ -664,5 +670,28 @@ class DTLSRecordLayer
     private static long getMacSequenceNumber(int epoch, long sequence_number)
     {
         return ((epoch & 0xFFFFFFFFL) << 48) | sequence_number;
+    }
+
+//    private static int getWaitMillis(Timeout t)
+//    {
+//        return getWaitMillis(t, System.currentTimeMillis());
+//    }
+
+    private static int getWaitMillis(Timeout timeout, long currentTimeMillis)
+    {
+        if (null == timeout)
+        {
+            return 0;
+        }
+        long remainingMillis = timeout.remainingMillis(currentTimeMillis);
+        if (remainingMillis < 1L)
+        {
+            return -1;
+        }
+        if (remainingMillis > Integer.MAX_VALUE)
+        {
+            return Integer.MAX_VALUE;
+        }
+        return (int)remainingMillis;
     }
 }
