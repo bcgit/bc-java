@@ -244,186 +244,12 @@ class DTLSRecordLayer
             {
                 return received;
             }
-            if (received < RECORD_HEADER_LENGTH)
+
+            int processed = processRecord(received, record, buf, off);
+            if (processed >= 0)
             {
-                continue;
+                return processed;
             }
-            int length = TlsUtils.readUint16(record, 11);
-            if (received != (length + RECORD_HEADER_LENGTH))
-            {
-                continue;
-            }
-
-            short type = TlsUtils.readUint8(record, 0);
-
-            // TODO Support user-specified custom protocols?
-            switch (type)
-            {
-            case ContentType.alert:
-            case ContentType.application_data:
-            case ContentType.change_cipher_spec:
-            case ContentType.handshake:
-            case ContentType.heartbeat:
-                break;
-            default:
-                // TODO Exception?
-                continue;
-            }
-
-            int epoch = TlsUtils.readUint16(record, 3);
-
-            DTLSEpoch recordEpoch = null;
-            if (epoch == readEpoch.getEpoch())
-            {
-                recordEpoch = readEpoch;
-            }
-            else if (type == ContentType.handshake && retransmitEpoch != null
-                && epoch == retransmitEpoch.getEpoch())
-            {
-                recordEpoch = retransmitEpoch;
-            }
-
-            if (recordEpoch == null)
-            {
-                continue;
-            }
-
-            long seq = TlsUtils.readUint48(record, 5);
-            if (recordEpoch.getReplayWindow().shouldDiscard(seq))
-            {
-                continue;
-            }
-
-            ProtocolVersion version = TlsUtils.readVersion(record, 1);
-            if (!version.isDTLS())
-            {
-                continue;
-            }
-
-            if (readVersion != null && !readVersion.equals(version))
-            {
-                /*
-                 * Special-case handling for retransmitted ClientHello records.
-                 * 
-                 * TODO Revisit how 'readVersion' works, since this is quite awkward.
-                 */
-                boolean isClientHelloFragment =
-                        getReadEpoch() == 0
-                    &&  length > 0
-                    &&  ContentType.handshake == type
-                    &&  HandshakeType.client_hello == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
-
-                if (!isClientHelloFragment)
-                {
-                    continue;
-                }
-            }
-
-            long macSeqNo = getMacSequenceNumber(recordEpoch.getEpoch(), seq);
-            byte[] plaintext = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, record,
-                RECORD_HEADER_LENGTH, length);
-
-            recordEpoch.getReplayWindow().reportAuthenticated(seq);
-
-            if (plaintext.length > this.plaintextLimit)
-            {
-                continue;
-            }
-
-            if (readVersion == null)
-            {
-                readVersion = version;
-            }
-
-            switch (type)
-            {
-            case ContentType.alert:
-            {
-                if (plaintext.length == 2)
-                {
-                    short alertLevel = plaintext[0];
-                    short alertDescription = plaintext[1];
-
-                    peer.notifyAlertReceived(alertLevel, alertDescription);
-
-                    if (alertLevel == AlertLevel.fatal)
-                    {
-                        failed();
-                        throw new TlsFatalAlert(alertDescription);
-                    }
-
-                    // TODO Can close_notify be a fatal alert?
-                    if (alertDescription == AlertDescription.close_notify)
-                    {
-                        closeTransport();
-                    }
-                }
-
-                continue;
-            }
-            case ContentType.application_data:
-            {
-                if (inHandshake)
-                {
-                    // TODO Consider buffering application data for new epoch that arrives
-                    // out-of-order with the Finished message
-                    continue;
-                }
-                break;
-            }
-            case ContentType.change_cipher_spec:
-            {
-                // Implicitly receive change_cipher_spec and change to pending cipher state
-
-                for (int i = 0; i < plaintext.length; ++i)
-                {
-                    short message = TlsUtils.readUint8(plaintext, i);
-                    if (message != ChangeCipherSpec.change_cipher_spec)
-                    {
-                        continue;
-                    }
-
-                    if (pendingEpoch != null)
-                    {
-                        readEpoch = pendingEpoch;
-                    }
-                }
-
-                continue;
-            }
-            case ContentType.handshake:
-            {
-                if (!inHandshake)
-                {
-                    if (retransmit != null)
-                    {
-                        retransmit.receivedHandshakeRecord(epoch, plaintext, 0, plaintext.length);
-                    }
-
-                    // TODO Consider support for HelloRequest
-                    continue;
-                }
-                break;
-            }
-            case ContentType.heartbeat:
-            {
-                // TODO[RFC 6520]
-                continue;
-            }
-            }
-
-            /*
-             * NOTE: If we receive any non-handshake data in the new epoch implies the peer has
-             * received our final flight.
-             */
-            if (!inHandshake && retransmit != null)
-            {
-                this.retransmit = null;
-                this.retransmitEpoch = null;
-            }
-
-            System.arraycopy(plaintext, 0, buf, off, plaintext.length);
-            return plaintext.length;
         }
     }
 
@@ -572,6 +398,189 @@ class DTLSRecordLayer
             e.bytesTransferred = 0;
             throw e;
         }
+    }
+
+    private int processRecord(int received, byte[] record, byte[] buf, int off)
+        throws IOException
+    {
+        if (received < RECORD_HEADER_LENGTH)
+        {
+            return -1;
+        }
+        int length = TlsUtils.readUint16(record, 11);
+        if (received != (length + RECORD_HEADER_LENGTH))
+        {
+            return -1;
+        }
+
+        short type = TlsUtils.readUint8(record, 0);
+
+        switch (type)
+        {
+        case ContentType.alert:
+        case ContentType.application_data:
+        case ContentType.change_cipher_spec:
+        case ContentType.handshake:
+        case ContentType.heartbeat:
+            break;
+        default:
+            return -1;
+        }
+
+        int epoch = TlsUtils.readUint16(record, 3);
+
+        DTLSEpoch recordEpoch = null;
+        if (epoch == readEpoch.getEpoch())
+        {
+            recordEpoch = readEpoch;
+        }
+        else if (type == ContentType.handshake && retransmitEpoch != null
+            && epoch == retransmitEpoch.getEpoch())
+        {
+            recordEpoch = retransmitEpoch;
+        }
+
+        if (null == recordEpoch)
+        {
+            return -1;
+        }
+
+        long seq = TlsUtils.readUint48(record, 5);
+        if (recordEpoch.getReplayWindow().shouldDiscard(seq))
+        {
+            return -1;
+        }
+
+        ProtocolVersion version = TlsUtils.readVersion(record, 1);
+        if (!version.isDTLS())
+        {
+            return -1;
+        }
+
+        if (null != readVersion && !readVersion.equals(version))
+        {
+            /*
+             * Special-case handling for retransmitted ClientHello records.
+             * 
+             * TODO Revisit how 'readVersion' works, since this is quite awkward.
+             */
+            boolean isClientHelloFragment =
+                    getReadEpoch() == 0
+                &&  length > 0
+                &&  ContentType.handshake == type
+                &&  HandshakeType.client_hello == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
+
+            if (!isClientHelloFragment)
+            {
+                return -1;
+            }
+        }
+
+        long macSeqNo = getMacSequenceNumber(recordEpoch.getEpoch(), seq);
+        byte[] plaintext = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, record,
+            RECORD_HEADER_LENGTH, length);
+
+        recordEpoch.getReplayWindow().reportAuthenticated(seq);
+
+        if (plaintext.length > this.plaintextLimit)
+        {
+            return -1;
+        }
+
+        if (null == readVersion)
+        {
+            readVersion = version;
+        }
+
+        switch (type)
+        {
+        case ContentType.alert:
+        {
+            if (plaintext.length == 2)
+            {
+                short alertLevel = plaintext[0];
+                short alertDescription = plaintext[1];
+
+                peer.notifyAlertReceived(alertLevel, alertDescription);
+
+                if (alertLevel == AlertLevel.fatal)
+                {
+                    failed();
+                    throw new TlsFatalAlert(alertDescription);
+                }
+
+                // TODO Can close_notify be a fatal alert?
+                if (alertDescription == AlertDescription.close_notify)
+                {
+                    closeTransport();
+                }
+            }
+
+            return -1;
+        }
+        case ContentType.application_data:
+        {
+            if (inHandshake)
+            {
+                // TODO Consider buffering application data for new epoch that arrives
+                // out-of-order with the Finished message
+                return -1;
+            }
+            break;
+        }
+        case ContentType.change_cipher_spec:
+        {
+            // Implicitly receive change_cipher_spec and change to pending cipher state
+
+            for (int i = 0; i < plaintext.length; ++i)
+            {
+                short message = TlsUtils.readUint8(plaintext, i);
+                if (message != ChangeCipherSpec.change_cipher_spec)
+                {
+                    continue;
+                }
+
+                if (pendingEpoch != null)
+                {
+                    readEpoch = pendingEpoch;
+                }
+            }
+
+            return -1;
+        }
+        case ContentType.handshake:
+        {
+            if (!inHandshake)
+            {
+                if (retransmit != null)
+                {
+                    retransmit.receivedHandshakeRecord(epoch, plaintext, 0, plaintext.length);
+                }
+
+                // TODO Consider support for HelloRequest
+                return -1;
+            }
+            break;
+        }
+        case ContentType.heartbeat:
+        {
+            // TODO[RFC 6520]
+            return -1;
+        }
+        }
+
+        /*
+         * NOTE: If we receive any non-handshake data in the new epoch implies the peer has
+         * received our final flight.
+         */
+        if (!inHandshake && retransmit != null)
+        {
+            this.retransmit = null;
+            this.retransmitEpoch = null;
+        }
+
+        System.arraycopy(plaintext, 0, buf, off, plaintext.length);
+        return plaintext.length;
     }
 
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis)
