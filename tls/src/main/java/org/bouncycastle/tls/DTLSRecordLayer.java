@@ -98,7 +98,7 @@ class DTLSRecordLayer
 
     private DTLSHandshakeRetransmit retransmit = null;
     private DTLSEpoch retransmitEpoch = null;
-    private long retransmitExpiry = 0;
+    private Timeout retransmitTimeout = null;
 
     DTLSRecordLayer(DatagramTransport transport, TlsPeer peer, short contentType)
     {
@@ -180,11 +180,11 @@ class DTLSRecordLayer
             throw new IllegalStateException();
         }
 
-        if (retransmit != null)
+        if (null != retransmit)
         {
             this.retransmit = retransmit;
             this.retransmitEpoch = currentEpoch;
-            this.retransmitExpiry = System.currentTimeMillis() + RETRANSMIT_TIMEOUT;
+            this.retransmitTimeout = new Timeout(RETRANSMIT_TIMEOUT);
         }
 
         this.inHandshake = false;
@@ -194,7 +194,7 @@ class DTLSRecordLayer
 
     void resetWriteEpoch()
     {
-        if (retransmitEpoch != null)
+        if (null != retransmitEpoch)
         {
             this.writeEpoch = retransmitEpoch;
         }
@@ -227,16 +227,17 @@ class DTLSRecordLayer
 
         for (;;)
         {
-            int receiveLimit = Math.min(len, getReceiveLimit()) + RECORD_HEADER_LENGTH;
-            if (record == null || record.length < receiveLimit)
-            {
-                record = new byte[receiveLimit];
-            }
-
-            if (retransmit != null && System.currentTimeMillis() > retransmitExpiry)
+            if (null != retransmitTimeout && retransmitTimeout.remainingMillis() < 1)
             {
                 retransmit = null;
                 retransmitEpoch = null;
+                retransmitTimeout = null;
+            }
+
+            int receiveLimit = Math.min(len, getReceiveLimit()) + RECORD_HEADER_LENGTH;
+            if (null == record || record.length < receiveLimit)
+            {
+                record = new byte[receiveLimit];
             }
 
             int received = receiveRecord(record, 0, receiveLimit, waitMillis);
@@ -403,6 +404,7 @@ class DTLSRecordLayer
     private int processRecord(int received, byte[] record, byte[] buf, int off)
         throws IOException
     {
+        // NOTE: received < 0 (timeout) is covered by this first case
         if (received < RECORD_HEADER_LENGTH)
         {
             return -1;
@@ -434,7 +436,7 @@ class DTLSRecordLayer
         {
             recordEpoch = readEpoch;
         }
-        else if (type == ContentType.handshake && retransmitEpoch != null
+        else if (type == ContentType.handshake && null != retransmitEpoch
             && epoch == retransmitEpoch.getEpoch())
         {
             recordEpoch = retransmitEpoch;
@@ -552,7 +554,7 @@ class DTLSRecordLayer
         {
             if (!inHandshake)
             {
-                if (retransmit != null)
+                if (null != retransmit)
                 {
                     retransmit.receivedHandshakeRecord(epoch, plaintext, 0, plaintext.length);
                 }
@@ -573,10 +575,11 @@ class DTLSRecordLayer
          * NOTE: If we receive any non-handshake data in the new epoch implies the peer has
          * received our final flight.
          */
-        if (!inHandshake && retransmit != null)
+        if (!inHandshake && null != retransmit)
         {
             this.retransmit = null;
             this.retransmitEpoch = null;
+            this.retransmitTimeout = null;
         }
 
         System.arraycopy(plaintext, 0, buf, off, plaintext.length);
