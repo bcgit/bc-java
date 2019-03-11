@@ -5,11 +5,25 @@ import java.io.IOException;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 /**
- * Base interface for a TLS endpoint.
+ * Base interface for a (D)TLS endpoint.
  */
 public interface TlsPeer
 {
     TlsCrypto getCrypto();
+
+    /**
+     * <p>
+     * NOTE: Currently only respected by DTLS protocols.
+     * </p>
+     * <p>
+     * Specify the timeout, in milliseconds, to use for the complete handshake process. Negative
+     * values are not allowed. A timeout of zero means an infinite timeout (i.e. the handshake will
+     * never time out).
+     * </p>
+     * 
+     * @return the handshake timeout, in milliseconds.
+     */
+    int getHandshakeTimeoutMillis();
 
     /**
      * Notifies the peer that a new handshake is about to begin.

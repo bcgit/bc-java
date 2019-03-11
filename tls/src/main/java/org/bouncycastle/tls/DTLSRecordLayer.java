@@ -223,12 +223,7 @@ class DTLSRecordLayer
     {
         long currentTimeMillis = System.currentTimeMillis();
 
-        Timeout timeout = null;
-        if (waitMillis > 0)
-        {
-            timeout = new Timeout(waitMillis, currentTimeMillis);
-        }
-
+        Timeout timeout = Timeout.forWaitMillis(waitMillis, currentTimeMillis);
         byte[] record = null;
 
         while (waitMillis >= 0)

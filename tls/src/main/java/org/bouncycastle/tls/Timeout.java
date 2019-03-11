@@ -42,6 +42,24 @@ class Timeout
         return remaining;
     }
 
+    static Timeout forWaitMillis(int waitMillis)
+    {
+        return forWaitMillis(waitMillis, System.currentTimeMillis());
+    }
+
+    static Timeout forWaitMillis(int waitMillis, long currentTimeMillis)
+    {
+        if (waitMillis < 0)
+        {
+            throw new IllegalArgumentException("'waitMillis' cannot be negative");
+        }
+        if (waitMillis > 0)
+        {
+            return new Timeout(waitMillis, currentTimeMillis);
+        }
+        return null;
+    }
+
     static int getWaitMillis(Timeout timeout)
     {
         return getWaitMillis(timeout, System.currentTimeMillis());

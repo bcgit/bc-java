@@ -88,7 +88,8 @@ public class DTLSClientProtocol
         throws IOException
     {
         SecurityParameters securityParameters = state.clientContext.getSecurityParametersHandshake();
-        DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer, null);
+        DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer,
+            state.client.getHandshakeTimeoutMillis(), null);
 
         byte[] clientHelloBody = generateClientHello(state);
 
