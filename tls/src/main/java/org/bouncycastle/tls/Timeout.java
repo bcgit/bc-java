@@ -41,4 +41,27 @@ class Timeout
 
         return remaining;
     }
+
+    static int getWaitMillis(Timeout timeout)
+    {
+        return getWaitMillis(timeout, System.currentTimeMillis());
+    }
+
+    static int getWaitMillis(Timeout timeout, long currentTimeMillis)
+    {
+        if (null == timeout)
+        {
+            return 0;
+        }
+        long remainingMillis = timeout.remainingMillis(currentTimeMillis);
+        if (remainingMillis < 1L)
+        {
+            return -1;
+        }
+        if (remainingMillis > Integer.MAX_VALUE)
+        {
+            return Integer.MAX_VALUE;
+        }
+        return (int)remainingMillis;
+    }
 }
