@@ -22,6 +22,11 @@ public abstract class AbstractTlsPeer
         return crypto;
     }
 
+    public int getHandshakeTimeoutMillis()
+    {
+        return 0;
+    }
+
     public void notifyHandshakeBeginning() throws IOException
     {
     }

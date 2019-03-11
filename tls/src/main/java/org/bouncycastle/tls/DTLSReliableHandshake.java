@@ -87,6 +87,7 @@ class DTLSReliableHandshake
      * No 'final' modifiers so that it works in earlier JDKs
      */
     private DTLSRecordLayer recordLayer;
+    private Timeout handshakeTimeout;
 
     private TlsHandshakeHash handshakeHash;
 
@@ -99,10 +100,11 @@ class DTLSReliableHandshake
 
     private int next_send_seq = 0, next_receive_seq = 0;
 
-    DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport, DTLSRequest request)
+    DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport, int timeoutMillis, DTLSRequest request)
     {
         this.recordLayer = transport;
         this.handshakeHash = new DeferredHash(context);
+        this.handshakeTimeout = Timeout.forWaitMillis(timeoutMillis);
 
         if (null != request)
         {
@@ -197,12 +199,12 @@ class DTLSReliableHandshake
     Message receiveMessage()
         throws IOException
     {
-        // TODO Add support for "overall" handshake timeout
+        long currentTimeMillis = System.currentTimeMillis();
 
         if (null == resendTimeout)
         {
             resendMillis = INITIAL_RESEND_MILLIS;
-            resendTimeout = new Timeout(resendMillis);
+            resendTimeout = new Timeout(resendMillis, currentTimeMillis);
 
             prepareInboundFlight(new Hashtable());
         }
@@ -217,13 +219,23 @@ class DTLSReliableHandshake
                 return pending;
             }
 
+            int handshakeMillis = Timeout.getWaitMillis(handshakeTimeout, currentTimeMillis);
+            if (handshakeMillis < 0)
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+
+            int waitMillis = Math.max(1, Timeout.getWaitMillis(resendTimeout, currentTimeMillis));
+            if (handshakeMillis > 0)
+            {
+                waitMillis = Math.min(waitMillis, handshakeMillis);
+            }
+
             int receiveLimit = recordLayer.getReceiveLimit();
             if (buf == null || buf.length < receiveLimit)
             {
                 buf = new byte[receiveLimit];
             }
-
-            int waitMillis = Math.max(1, Timeout.getWaitMillis(resendTimeout));
 
             int received = recordLayer.receive(buf, 0, receiveLimit, waitMillis);
             if (received < 0)
@@ -234,6 +246,8 @@ class DTLSReliableHandshake
             {
                 processRecord(MAX_RECEIVE_AHEAD, recordLayer.getReadEpoch(), buf, 0, received);
             }
+
+            currentTimeMillis = System.currentTimeMillis();
         }
     }
 
