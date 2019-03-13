@@ -136,6 +136,20 @@ public class JournalingSecureRandom
         return tOut.toByteArray();
     }
 
+    /**
+     * Return the full transcript, such as would be needed to create a copy of this JournalingSecureRandom,
+     *
+     * @return a copy of the original transcript on construction, plus any randomness added since.
+     */
+    public byte[] getFullTranscript()
+    {
+         if (index == transcript.length)
+         {
+             return tOut.toByteArray();
+         }
+         return Arrays.clone(transcript);
+    }
+
     private class TranscriptStream
         extends ByteArrayOutputStream
     {
