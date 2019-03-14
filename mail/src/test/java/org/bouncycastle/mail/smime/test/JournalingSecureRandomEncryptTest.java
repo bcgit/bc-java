@@ -5,23 +5,34 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Date;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
-import org.bouncycastle.cms.test.CMSTestUtil;
 import org.bouncycastle.crypto.util.JournalingSecureRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mime.smime.SMIMEEnvelopedWriter;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
@@ -63,10 +74,38 @@ public class JournalingSecureRandomEncryptTest
             // give the path to the certificate of receiver
 
             _encrDN = "CN=Doug, OU=Sales, O=Bouncy Castle, C=AU";
-            _encrKP = org.bouncycastle.cms.test.CMSTestUtil.makeKeyPair();
-            _encrCert = CMSTestUtil.makeCertificate(_encrKP, _encrDN, _encrKP, _encrDN);
+            KeyPairGenerator kpg  = KeyPairGenerator.getInstance("RSA", "BC");
+            kpg.initialize(1024, new SecureRandom());
+            _encrKP = kpg.generateKeyPair();
+            _encrCert = makeCertificate(_encrKP, _encrDN, _encrKP, _encrDN);
 
         }
+    }
+
+    public static X509Certificate makeCertificate(KeyPair subKP, String _subDN, KeyPair issKP, String _issDN)
+        throws GeneralSecurityException, IOException, OperatorCreationException
+    {
+
+        PublicKey subPub  = subKP.getPublic();
+        PrivateKey issPriv = issKP.getPrivate();
+        PublicKey  issPub  = issKP.getPublic();
+
+        X509v3CertificateBuilder v3CertGen = new JcaX509v3CertificateBuilder(
+            new X500Name(_issDN),
+            BigInteger.valueOf(2),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
+            new X500Name(_subDN),
+            subPub);
+
+        JcaContentSignerBuilder contentSignerBuilder = new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC");
+
+        X509Certificate _cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(v3CertGen.build(contentSignerBuilder.build(issPriv)));
+
+        _cert.checkValidity(new Date());
+        _cert.verify(issPub);
+
+        return _cert;
     }
 
     /**

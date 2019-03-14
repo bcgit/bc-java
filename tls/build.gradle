@@ -6,6 +6,15 @@ dependencies {
 
 jar.baseName = "bctls-jdk15on"
 
+sourceSets {
+    main {
+         java {
+            srcDirs = ['src/main/java', 'src/main/jdk1.5']
+         }
+    }
+}
+
+
 cobertura {
    coverageDirs = [
        "${rootProject.projectDir}/core/build/classes/main",
