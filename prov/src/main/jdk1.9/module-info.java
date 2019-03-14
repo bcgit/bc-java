@@ -1,5 +1,8 @@
 module org.bouncycastle.provider
 {
+    requires java.sql;
+    requires java.naming;
+
     exports org.bouncycastle;
     exports org.bouncycastle.asn1;
     exports org.bouncycastle.asn1.anssi;
