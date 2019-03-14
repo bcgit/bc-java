@@ -1,5 +1,7 @@
 module org.bouncycastle.pkix
 {
+    requires java.logging;
+    requires java.naming;
     requires org.bouncycastle.provider;
 
     exports org.bouncycastle.cert;
