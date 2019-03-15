@@ -1,23 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
-import javax.net.ssl.SSLEngine;
-
-import org.bouncycastle.jsse.BCSSLEngine;
-
-abstract class ProvSSLEngine
-    extends SSLEngine
-    implements BCSSLEngine, ProvTlsManager
+class ProvSSLEngineCreator
 {
-    protected ProvSSLEngine()
-    {
-        super();
-    }
-
-    protected ProvSSLEngine(String host, int port)
-    {
-        super(host, port);
-    }
-
     static ProvSSLEngine create(ProvSSLContextSpi context, ContextData contextData)
     {
         return new ProvSSLEngine_9(context, contextData);
