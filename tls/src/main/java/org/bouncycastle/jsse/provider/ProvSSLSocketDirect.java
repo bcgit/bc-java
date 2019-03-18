@@ -53,8 +53,6 @@ class ProvSSLSocketDirect
     ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, boolean enableSessionCreation,
         boolean useClientMode, ProvSSLParameters sslParameters)
     {
-        super();
-
         this.context = context;
         this.contextData = contextData;
         this.enableSessionCreation = enableSessionCreation;
@@ -64,8 +62,6 @@ class ProvSSLSocketDirect
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData)
     {
-        super();
-
         this.context = context;
         this.contextData = contextData;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
@@ -74,41 +70,43 @@ class ProvSSLSocketDirect
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
         throws IOException
     {
-        super(address, port, clientAddress, clientPort);
-
         this.context = context;
         this.contextData = contextData;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
+
+        implBind(clientAddress, clientPort);
+        implConnect(address, port);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port) throws IOException
     {
-        super(address, port);
-
         this.context = context;
         this.contextData = contextData;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
+
+        implConnect(address, port);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
-        super(host, port, clientAddress, clientPort);
-
         this.context = context;
         this.contextData = contextData;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
         this.peerHost = host;
+
+        implBind(clientAddress, clientPort);
+        implConnect(host, port);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port) throws IOException, UnknownHostException
     {
-        super(host, port);
-
         this.context = context;
         this.contextData = contextData;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
         this.peerHost = host;
+
+        implConnect(host, port);
     }
 
     public ProvSSLContextSpi getContext()
