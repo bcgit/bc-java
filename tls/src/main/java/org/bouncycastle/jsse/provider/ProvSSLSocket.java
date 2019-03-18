@@ -20,38 +20,38 @@ class ProvSSLSocket
 
     protected ProvSSLSocket(ProvSSLEngine engine)
     {
-        super();
-
         this.engine = engine;
     }
 
     protected ProvSSLSocket(ProvSSLEngine engine, InetAddress address, int port) throws IOException
     {
-        super(address, port);
-
         this.engine = engine;
+
+        implConnect(address, port);
     }
 
     protected ProvSSLSocket(ProvSSLEngine engine, InetAddress address, int port, InetAddress clientAddress, int clientPort) throws IOException
     {
-        super(address, port, clientAddress, clientPort);
-
         this.engine = engine;
+
+        implBind(clientAddress, clientPort);
+        implConnect(address, port);
     }
 
     protected ProvSSLSocket(ProvSSLEngine engine, String host, int port) throws IOException, UnknownHostException
     {
-        super(host, port);
-
         this.engine = engine;
+
+        implConnect(host, port);
     }
 
     protected ProvSSLSocket(ProvSSLEngine engine, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
-        super(host, port, clientAddress, clientPort);
-
         this.engine = engine;
+
+        implBind(clientAddress, clientPort);
+        implConnect(host, port);
     }
 
     @Override
