@@ -69,8 +69,6 @@ class ProvSSLSocketWrap
     protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
         throws IOException
     {
-        super();
-
         this.context = context;
         this.contextData = contextData;
         this.wrapSocket = checkSocket(s);
@@ -85,8 +83,6 @@ class ProvSSLSocketWrap
     protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
         throws IOException
     {
-        super();
-
         this.context = context;
         this.contextData = contextData;
         this.wrapSocket = checkSocket(s);
