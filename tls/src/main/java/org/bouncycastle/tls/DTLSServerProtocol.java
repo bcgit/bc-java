@@ -55,7 +55,7 @@ public class DTLSServerProtocol
         SecurityParameters securityParameters = state.serverContext.getSecurityParametersHandshake();
         securityParameters.extendedPadding = server.shouldUseExtendedPadding();
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, server, ContentType.handshake);
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(state.serverContext, state.server, transport);
 
         // TODO Need to handle sending of HelloVerifyRequest without entering a full connection
 
@@ -331,6 +331,8 @@ public class DTLSServerProtocol
 
         state.serverContext.handshakeComplete(state.server, state.tlsSession);
 
+        recordLayer.initHeartbeat(state.heartbeat, HeartbeatMode.peer_allowed_to_send == state.heartbeatPolicy);
+
         return new DTLSTransport(recordLayer);
     }
 
@@ -441,6 +443,14 @@ public class DTLSServerProtocol
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(state.serverExtensions);
         }
+
+        // Heartbeats
+        if (null != state.heartbeat || HeartbeatMode.peer_allowed_to_send == state.heartbeatPolicy)
+        {
+            TlsExtensionsUtils.addHeartbeatExtension(state.serverExtensions, new HeartbeatExtension(state.heartbeatPolicy));
+        }
+
+
 
         /*
          * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
@@ -696,6 +706,20 @@ public class DTLSServerProtocol
 
             securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(state.clientExtensions);
 
+            // Heartbeats
+            {
+                HeartbeatExtension heartbeatExtension = TlsExtensionsUtils.getHeartbeatExtension(state.clientExtensions);
+                if (null != heartbeatExtension)
+                {
+                    if (HeartbeatMode.peer_allowed_to_send == heartbeatExtension.getMode())
+                    {
+                        state.heartbeat = state.server.getHeartbeat();
+                    }
+
+                    state.heartbeatPolicy = state.server.getHeartbeatPolicy();
+                }
+            }
+
             state.server.processClientExtensions(state.clientExtensions);
         }
     }
@@ -741,5 +765,7 @@ public class DTLSServerProtocol
         TlsKeyExchange keyExchange = null;
         TlsCredentials serverCredentials = null;
         CertificateRequest certificateRequest = null;
+        TlsHeartbeat heartbeat = null;
+        short heartbeatPolicy = HeartbeatMode.peer_not_allowed_to_send;
     }
 }

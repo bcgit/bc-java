@@ -16,10 +16,10 @@ class Timeout
         this.startMillis = Math.max(0, currentTimeMillis);
     }
 
-    long remainingMillis()
-    {
-        return remainingMillis(System.currentTimeMillis());
-    }
+//    long remainingMillis()
+//    {
+//        return remainingMillis(System.currentTimeMillis());
+//    }
 
     synchronized long remainingMillis(long currentTimeMillis)
     {
@@ -42,6 +42,36 @@ class Timeout
         return remaining;
     }
 
+//    static int constrainWaitMillis(int waitMillis, Timeout timeout)
+//    {
+//        return constrainWaitMillis(waitMillis, timeout, System.currentTimeMillis());
+//    }
+
+    static int constrainWaitMillis(int waitMillis, Timeout timeout, long currentTimeMillis)
+    {
+        if (waitMillis < 0)
+        {
+            return -1;
+        }
+
+        int timeoutMillis = getWaitMillis(timeout, currentTimeMillis);
+        if (timeoutMillis < 0)
+        {
+            return -1;
+        }
+
+        if (waitMillis == 0)
+        {
+            return timeoutMillis;
+        }
+        if (timeoutMillis == 0)
+        {
+            return waitMillis;
+        }
+
+        return Math.min(waitMillis, timeoutMillis);
+    }
+
     static Timeout forWaitMillis(int waitMillis)
     {
         return forWaitMillis(waitMillis, System.currentTimeMillis());
@@ -60,10 +90,10 @@ class Timeout
         return null;
     }
 
-    static int getWaitMillis(Timeout timeout)
-    {
-        return getWaitMillis(timeout, System.currentTimeMillis());
-    }
+//    static int getWaitMillis(Timeout timeout)
+//    {
+//        return getWaitMillis(timeout, System.currentTimeMillis());
+//    }
 
     static int getWaitMillis(Timeout timeout, long currentTimeMillis)
     {
@@ -81,5 +111,15 @@ class Timeout
             return Integer.MAX_VALUE;
         }
         return (int)remainingMillis;
+    }
+
+//    static boolean hasExpired(Timeout timeout)
+//    {
+//        return hasExpired(timeout, System.currentTimeMillis());
+//    }
+
+    static boolean hasExpired(Timeout timeout, long currentTimeMillis)
+    {
+        return null != timeout && timeout.remainingMillis(currentTimeMillis) < 1L;
     }
 }

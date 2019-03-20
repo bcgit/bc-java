@@ -10,28 +10,58 @@ import org.bouncycastle.util.io.Streams;
 
 public class HeartbeatMessage
 {
+    public static HeartbeatMessage create(TlsContext context, short type, byte[] payload)
+    {
+        return create(context, type, payload, 16);
+    }
+
+    public static HeartbeatMessage create(TlsContext context, short type, byte[] payload, int paddingLength)
+    {
+        byte[] padding = context.getNonceGenerator().generateNonce(paddingLength);
+
+        return new HeartbeatMessage(type, payload, padding);
+    }
+
     protected short type;
     protected byte[] payload;
-    protected int paddingLength;
+    protected byte[] padding;
 
-    public HeartbeatMessage(short type, byte[] payload, int paddingLength)
+    public HeartbeatMessage(short type, byte[] payload, byte[] padding)
     {
         if (!HeartbeatMessageType.isValid(type))
         {
             throw new IllegalArgumentException("'type' is not a valid HeartbeatMessageType value");
         }
-        if (payload == null || payload.length >= (1 << 16))
+        if (null == payload || payload.length >= (1 << 16))
         {
             throw new IllegalArgumentException("'payload' must have length < 2^16");
         }
-        if (paddingLength < 16)
+        if (null == padding || padding.length < 16)
         {
-            throw new IllegalArgumentException("'paddingLength' must be at least 16");
+            throw new IllegalArgumentException("'padding' must have length >= 16");
         }
 
         this.type = type;
         this.payload = payload;
-        this.paddingLength = paddingLength;
+        this.padding = padding;
+    }
+
+    public int getPaddingLength()
+    {
+        /*
+         * RFC 6520 4. The padding of a received HeartbeatMessage message MUST be ignored
+         */
+        return padding.length;
+    }
+
+    public byte[] getPayload()
+    {
+        return payload;
+    }
+
+    public short getType()
+    {
+        return type;
     }
 
     /**
@@ -41,7 +71,7 @@ public class HeartbeatMessage
      *            the {@link OutputStream} to encode to.
      * @throws IOException
      */
-    public void encode(TlsContext context, OutputStream output) throws IOException
+    public void encode(OutputStream output) throws IOException
     {
         TlsUtils.writeUint8(type, output);
 
@@ -49,7 +79,6 @@ public class HeartbeatMessage
         TlsUtils.writeUint16(payload.length, output);
         output.write(payload);
 
-        byte[] padding = context.getNonceGenerator().generateNonce(paddingLength);
         output.write(padding);
     }
 
@@ -74,8 +103,8 @@ public class HeartbeatMessage
         PayloadBuffer buf = new PayloadBuffer();
         Streams.pipeAll(input, buf);
 
-        byte[] payload = buf.toTruncatedByteArray(payload_length);
-        if (payload == null)
+        byte[] payload = buf.getPayload(payload_length);
+        if (null == payload)
         {
             /*
              * RFC 6520 4. If the payload_length of a received HeartbeatMessage is too large, the
@@ -84,27 +113,29 @@ public class HeartbeatMessage
             return null;
         }
 
-        int padding_length = buf.size() - payload.length;
+        byte[] padding = buf.getPadding(payload_length);
 
-        /*
-         * RFC 6520 4. The padding of a received HeartbeatMessage message MUST be ignored
-         */
-        return new HeartbeatMessage(type, payload, padding_length);
+        return new HeartbeatMessage(type, payload, padding);
     }
 
     static class PayloadBuffer extends ByteArrayOutputStream
     {
-        byte[] toTruncatedByteArray(int payloadLength)
+        byte[] getPayload(int payloadLength)
         {
             /*
              * RFC 6520 4. The padding_length MUST be at least 16.
              */
-            int minimumCount = payloadLength + 16;
-            if (count < minimumCount)
+            int maxPayloadLength = count - 16;
+            if (payloadLength > maxPayloadLength)
             {
                 return null;
             }
             return Arrays.copyOf(buf, payloadLength);
+        }
+
+        byte[] getPadding(int payloadLength)
+        {
+            return Arrays.copyOfRange(buf, payloadLength, count);
         }
     }
 }

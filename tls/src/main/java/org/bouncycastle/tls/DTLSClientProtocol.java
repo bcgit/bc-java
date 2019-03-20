@@ -51,7 +51,7 @@ public class DTLSClientProtocol
             }
         }
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, client, ContentType.handshake);
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(state.clientContext, state.client, transport);
 
         try
         {
@@ -164,6 +164,8 @@ public class DTLSClientProtocol
             }
 
             state.clientContext.handshakeComplete(state.client, state.tlsSession);
+
+            recordLayer.initHeartbeat(state.heartbeat, HeartbeatMode.peer_allowed_to_send == state.heartbeatPolicy);
 
             return new DTLSTransport(recordLayer);
         }
@@ -361,6 +363,8 @@ public class DTLSClientProtocol
 
         state.clientContext.handshakeComplete(state.client, state.tlsSession);
 
+        recordLayer.initHeartbeat(state.heartbeat, HeartbeatMode.peer_allowed_to_send == state.heartbeatPolicy);
+
         return new DTLSTransport(recordLayer);
     }
 
@@ -468,6 +472,17 @@ public class DTLSClientProtocol
         if (fallback && !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
         {
             state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV);
+        }
+
+        // Heartbeats
+        {
+            state.heartbeat = state.client.getHeartbeat();
+            state.heartbeatPolicy = state.client.getHeartbeatPolicy();
+
+            if (null != state.heartbeat || HeartbeatMode.peer_allowed_to_send == state.heartbeatPolicy)
+            {
+                TlsExtensionsUtils.addHeartbeatExtension(state.clientExtensions, new HeartbeatExtension(state.heartbeatPolicy));
+            }
         }
 
 
@@ -768,6 +783,22 @@ public class DTLSClientProtocol
          */
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(state.serverExtensions);
 
+        // Heartbeats
+        {
+            HeartbeatExtension heartbeatExtension = TlsExtensionsUtils.getHeartbeatExtension(state.serverExtensions);
+            if (null == heartbeatExtension)
+            {
+                state.heartbeat = null;
+                state.heartbeatPolicy = HeartbeatMode.peer_not_allowed_to_send;
+            }
+            else if (HeartbeatMode.peer_allowed_to_send != heartbeatExtension.getMode())
+            {
+                state.heartbeat = null;
+            }
+        }
+
+
+
         Hashtable sessionClientExtensions = state.clientExtensions, sessionServerExtensions = state.serverExtensions;
 
         if (state.resumedSession)
@@ -914,5 +945,7 @@ public class DTLSClientProtocol
         CertificateStatus certificateStatus = null;
         CertificateRequest certificateRequest = null;
         TlsCredentials clientCredentials = null;
+        TlsHeartbeat heartbeat = null;
+        short heartbeatPolicy = HeartbeatMode.peer_not_allowed_to_send;
     }
 }

@@ -91,6 +91,16 @@ public abstract class AbstractTlsPeer
     {
     }
 
+    public TlsHeartbeat getHeartbeat()
+    {
+        return null;
+    }
+
+    public short getHeartbeatPolicy()
+    {
+        return HeartbeatMode.peer_not_allowed_to_send;
+    }
+
     public int getRenegotiationPolicy()
     {
         return RenegotiationPolicy.DENY;
