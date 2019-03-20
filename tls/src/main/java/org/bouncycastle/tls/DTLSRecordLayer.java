@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
@@ -82,8 +84,9 @@ class DTLSRecordLayer
         }
     }
 
-    private final DatagramTransport transport;
+    private final TlsContext context;
     private final TlsPeer peer;
+    private final DatagramTransport transport;
 
     private final ByteQueue recordQueue = new ByteQueue();
 
@@ -100,10 +103,20 @@ class DTLSRecordLayer
     private DTLSEpoch retransmitEpoch = null;
     private Timeout retransmitTimeout = null;
 
-    DTLSRecordLayer(DatagramTransport transport, TlsPeer peer, short contentType)
+    private TlsHeartbeat heartbeat = null;              // If non-null, controls the sending of heartbeat requests
+    private boolean heartBeatResponder = false;         // Whether we should send heartbeat responses
+
+    private HeartbeatMessage heartbeatInFlight = null;  // The current in-flight heartbeat request, if any
+    private Timeout heartbeatTimeout = null;            // Idle timeout (if none in-flight), else expiry timeout for response
+
+    private int heartbeatResendMillis = -1;             // Delay before retransmit of current in-flight heartbeat request
+    private Timeout heartbeatResendTimeout = null;      // Timeout for next retransmit of the in-flight heartbeat request
+
+    DTLSRecordLayer(TlsContext context, TlsPeer peer, DatagramTransport transport)
     {
-        this.transport = transport;
+        this.context = context;
         this.peer = peer;
+        this.transport = transport;
 
         this.inHandshake = true;
 
@@ -192,6 +205,22 @@ class DTLSRecordLayer
         this.pendingEpoch = null;
     }
 
+    void initHeartbeat(TlsHeartbeat heartbeat, boolean heartbeatResponder)
+    {
+        if (inHandshake)
+        {
+            throw new IllegalStateException();
+        }
+
+        this.heartbeat = heartbeat;
+        this.heartBeatResponder = heartbeatResponder;
+
+        if (null != heartbeat)
+        {
+            resetHeartbeat();
+        }
+    }
+
     void resetWriteEpoch()
     {
         if (null != retransmitEpoch)
@@ -233,6 +262,39 @@ class DTLSRecordLayer
                 retransmit = null;
                 retransmitEpoch = null;
                 retransmitTimeout = null;
+            }
+
+            if (Timeout.hasExpired(heartbeatTimeout, currentTimeMillis))
+            {
+                if (null != heartbeatInFlight)
+                {
+                    throw new TlsTimeoutException("Heartbeat timed out");
+                }
+
+                this.heartbeatInFlight = HeartbeatMessage.create(context, HeartbeatMessageType.heartbeat_request,
+                    heartbeat.generatePayload());
+                this.heartbeatTimeout = new Timeout(heartbeat.getTimeoutMillis(), currentTimeMillis);
+
+                this.heartbeatResendMillis = DTLSReliableHandshake.INITIAL_RESEND_MILLIS;
+                this.heartbeatResendTimeout = new Timeout(heartbeatResendMillis, currentTimeMillis);
+
+                sendHeartbeatMessage(heartbeatInFlight);
+            }
+            else if (Timeout.hasExpired(heartbeatResendTimeout, currentTimeMillis))
+            {
+                this.heartbeatResendMillis = DTLSReliableHandshake.backOff(heartbeatResendMillis);
+                this.heartbeatResendTimeout = new Timeout(heartbeatResendMillis, currentTimeMillis);
+
+                sendHeartbeatMessage(heartbeatInFlight);
+            }
+
+            waitMillis = Timeout.constrainWaitMillis(waitMillis, heartbeatTimeout, currentTimeMillis);
+            waitMillis = Timeout.constrainWaitMillis(waitMillis, heartbeatResendTimeout, currentTimeMillis);
+
+            // NOTE: Guard against bad logic giving a negative value 
+            if (waitMillis < 0)
+            {
+                waitMillis = 1;
             }
 
             int receiveLimit = Math.min(len, getReceiveLimit()) + RECORD_HEADER_LENGTH;
@@ -402,6 +464,7 @@ class DTLSRecordLayer
         }
     }
 
+    // TODO Include 'currentTimeMillis' as an argument, use with Timeout, resetHeartbeat
     private int processRecord(int received, byte[] record, byte[] buf, int off)
         throws IOException
     {
@@ -567,7 +630,48 @@ class DTLSRecordLayer
         }
         case ContentType.heartbeat:
         {
-            // TODO[RFC 6520]
+            if (null != heartbeatInFlight || heartBeatResponder)
+            {
+                try
+                {
+                    ByteArrayInputStream input = new ByteArrayInputStream(plaintext);
+                    HeartbeatMessage heartbeatMessage = HeartbeatMessage.parse(input);
+
+                    if (null != heartbeatMessage)
+                    {
+                        switch (heartbeatMessage.getType())
+                        {
+                        case HeartbeatMessageType.heartbeat_request:
+                        {
+                            if (heartBeatResponder)
+                            {
+                                HeartbeatMessage response = HeartbeatMessage.create(context,
+                                    HeartbeatMessageType.heartbeat_response, heartbeatMessage.getPayload());
+
+                                sendHeartbeatMessage(response);
+                            }
+                            break;
+                        }
+                        case HeartbeatMessageType.heartbeat_response:
+                        {
+                            if (null != heartbeatInFlight
+                                && Arrays.areEqual(heartbeatMessage.getPayload(), heartbeatInFlight.getPayload()))
+                            {
+                                resetHeartbeat();
+                            }
+                            break;
+                        }
+                        default:
+                            break;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    // Ignore
+                }
+            }
+
             return -1;
         }
         }
@@ -620,7 +724,31 @@ class DTLSRecordLayer
         return received;
     }
 
-    private void sendRecord(short contentType, byte[] buf, int off, int len)
+    private void resetHeartbeat()
+    {
+        this.heartbeatInFlight = null;
+        this.heartbeatResendMillis = -1;
+        this.heartbeatResendTimeout = null;
+        this.heartbeatTimeout = new Timeout(heartbeat.getIdleMillis());
+    }
+
+    private void sendHeartbeatMessage(HeartbeatMessage heartbeatMessage)
+        throws IOException
+    {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        heartbeatMessage.encode(output);
+        byte[] buf = output.toByteArray();
+
+        sendRecord(ContentType.heartbeat, buf, 0, buf.length);
+    }
+
+    /*
+     * Currently synchronized here to ensure heartbeat sends and application data sends don't
+     * interfere with each other. It may be overly cautious; the sequence number allocation is
+     * atomic, and if we synchronize only on the datagram send instead, then the only effect should
+     * be possible reordering of records (which might surprise a reliable transport implementation).
+     */
+    private synchronized void sendRecord(short contentType, byte[] buf, int off, int len)
         throws IOException
     {
         // Never send anything until a valid ClientHello has been received

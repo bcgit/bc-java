@@ -107,6 +107,29 @@ public interface TlsPeer
     void notifyHandshakeComplete() throws IOException;
 
     /**
+     * Return a {@link TlsHeartbeat} instance that will control the generation of heartbeats locally
+     * (if permitted by the remote peer), or null to not generate heartbeats. Heartbeats are
+     * described in RFC 6520.
+     * 
+     * @return an instance of {@link TlsHeartbeat}.
+     * @see DefaultTlsHeartbeat
+     */
+    TlsHeartbeat getHeartbeat();
+
+    /**
+     * <p>
+     * Return the heartbeat mode applicable to the remote peer. Heartbeats are described in RFC
+     * 6520.
+     * </p>
+     * <p>
+     * See enumeration class {@link HeartbeatMode} for appropriate return values.
+     * </p>
+     * 
+     * @return the {@link HeartbeatMode} value.
+     */
+    short getHeartbeatPolicy();
+
+    /**
      * WARNING: EXPERIMENTAL FEATURE
      * 
      * Return this peer's policy on renegotiation requests from the remote peer. This will be called
