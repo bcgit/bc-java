@@ -22,7 +22,6 @@ import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.junit.Assert;
 
 public class QTESLATest
     extends TestCase
@@ -270,7 +269,7 @@ public class QTESLATest
                 new QTeslaKatPArser(file, QTESLATest.class.getResourceAsStream(file))
                     .parse("count");
 
-            Assert.assertEquals(100, vectors.size());
+            assertEquals(100, vectors.size());
 
             int type;
 
