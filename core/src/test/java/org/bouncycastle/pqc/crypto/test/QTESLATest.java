@@ -6,8 +6,10 @@ import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -20,6 +22,7 @@ import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.junit.Assert;
 
 public class QTESLATest
     extends TestCase
@@ -260,11 +263,14 @@ public class QTESLATest
             "/org/bouncycastle/crypto/test/qTesla/KAT/ref/KAT64/PQCsignKAT_qTesla-p-III.rsp"
         };
 
+
         for (String file : files)
         {
             List<QTeslaKatVector> vectors =
-                new QTeslaKatPArser(QTESLATest.class.getResourceAsStream(file))
+                new QTeslaKatPArser(file, QTESLATest.class.getResourceAsStream(file))
                     .parse("count");
+
+            Assert.assertEquals(100, vectors.size());
 
             int type;
 
@@ -336,16 +342,77 @@ public class QTESLATest
             smlen = asInt(parameters, "smlen", -1);
             sm = asByteArray(parameters, "sm");
         }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            QTeslaKatVector that = (QTeslaKatVector)o;
+
+//            if (count != that.count)
+//            {
+//                return false;
+//            }
+            if (mlen != that.mlen)
+            {
+                return false;
+            }
+            if (smlen != that.smlen)
+            {
+                return false;
+            }
+            if (!java.util.Arrays.equals(seed, that.seed))
+            {
+                return false;
+            }
+            if (!java.util.Arrays.equals(msg, that.msg))
+            {
+                return false;
+            }
+            if (!java.util.Arrays.equals(pk, that.pk))
+            {
+                return false;
+            }
+            if (!java.util.Arrays.equals(sk, that.sk))
+            {
+                return false;
+            }
+            return java.util.Arrays.equals(sm, that.sm);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result;// = count;
+            result = java.util.Arrays.hashCode(seed);//   31 * result + java.util.Arrays.hashCode(seed);
+            result = 31 * result + mlen;
+            result = 31 * result + java.util.Arrays.hashCode(msg);
+            result = 31 * result + java.util.Arrays.hashCode(pk);
+            result = 31 * result + java.util.Arrays.hashCode(sk);
+            result = 31 * result + smlen;
+            result = 31 * result + java.util.Arrays.hashCode(sm);
+            return result;
+        }
     }
 
     public static class QTeslaKatPArser
     {
 
         private final InputStream src;
+        private final String srcLabel;
 
-        public QTeslaKatPArser(InputStream src)
+        public QTeslaKatPArser(String label, InputStream src)
         {
             this.src = src;
+            this.srcLabel = label;
         }
 
 
@@ -354,10 +421,10 @@ public class QTESLATest
         {
 
             List<QTeslaKatVector> vectors = new ArrayList<QTeslaKatVector>();
-
             Map<String, String> extractedParameters = new HashMap<String, String>();
-
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+            Set<QTeslaKatVector> duplicateTrap = new HashSet<QTeslaKatVector>();
+
 
             String line = null;
 
@@ -376,10 +443,7 @@ public class QTESLATest
                 if (line.contains("="))
                 {
                     String[] kv = line.split("=");
-                    //
-                    // Don't assume it will have two parts.
-                    // NIST CAVP vectors can have dangling assign tokens.
-                    //
+
                     for (int t = 0; t < kv.length; t++)
                     {
                         kv[t] = kv[t].trim();
@@ -390,17 +454,18 @@ public class QTESLATest
 
                     if (kv.length > 0)
                     {
-                        //
-                        // Accumulate a block of parameters in the "extractedParameters" list.
-                        // When we encounter the deliminator field generate a new vector object and add it
-                        // to the list of vectors.
-                        //
-                        // extractedParameters is mutable an cleared after passing to QTeslaKatVector;
-                        //
-
                         if (!extractedParameters.isEmpty() && kv[0].equals(blockDelimField))
                         {
-                            vectors.add(new QTeslaKatVector(extractedParameters));
+                            QTeslaKatVector vector = new QTeslaKatVector(extractedParameters);
+                            vectors.add(vector);
+
+                            if (duplicateTrap.contains(vector))
+                            {
+                                throw new Exception("Duplicate Vector encountered, set : " + vector.count + " in " + srcLabel);
+                            }
+
+                            duplicateTrap.add(vector);
+
                             extractedParameters.clear();
                         }
 
