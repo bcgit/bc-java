@@ -15,7 +15,7 @@ class DTLSReliableHandshake
     private static final int MAX_RECEIVE_AHEAD = 16;
     private static final int MESSAGE_HEADER_LENGTH = 12;
 
-    private static final int INITIAL_RESEND_MILLIS = 1000;
+    static final int INITIAL_RESEND_MILLIS = 1000;
     private static final int MAX_RESEND_MILLIS = 60000;
 
     static DTLSRequest readClientRequest(byte[] data, int dataOff, int dataLen, OutputStream dtlsOutput)
@@ -219,16 +219,18 @@ class DTLSReliableHandshake
                 return pending;
             }
 
-            int handshakeMillis = Timeout.getWaitMillis(handshakeTimeout, currentTimeMillis);
-            if (handshakeMillis < 0)
+            if (Timeout.hasExpired(handshakeTimeout, currentTimeMillis))
             {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                throw new TlsTimeoutException("Handshake timed out");
             }
 
-            int waitMillis = Math.max(1, Timeout.getWaitMillis(resendTimeout, currentTimeMillis));
-            if (handshakeMillis > 0)
+            int waitMillis = Timeout.getWaitMillis(handshakeTimeout, currentTimeMillis);
+            waitMillis = Timeout.constrainWaitMillis(waitMillis, resendTimeout, currentTimeMillis);
+
+            // NOTE: Ensure a finite wait, of at least 1ms
+            if (waitMillis < 1)
             {
-                waitMillis = Math.min(waitMillis, handshakeMillis);
+                waitMillis = 1;
             }
 
             int receiveLimit = recordLayer.getReceiveLimit();
@@ -284,7 +286,7 @@ class DTLSReliableHandshake
         recordLayer.handshakeSuccessful(retransmit);
     }
 
-    private int backOff(int timeoutMillis)
+    static int backOff(int timeoutMillis)
     {
         /*
          * TODO[DTLS] implementations SHOULD back off handshake packet size during the
