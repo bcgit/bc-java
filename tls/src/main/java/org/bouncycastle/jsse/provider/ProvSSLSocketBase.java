@@ -56,7 +56,7 @@ abstract class ProvSSLSocketBase
         super.close();
     }
 
-    // @Override from JDK 9
+    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
     public String getApplicationProtocol()
     {
         BCSSLConnection connection = getConnection();
@@ -68,6 +68,12 @@ abstract class ProvSSLSocketBase
     public SocketChannel getChannel()
     {
 //        return super.getChannel();
+        throw new UnsupportedOperationException();
+    }
+
+    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
+    public String getHandshakeApplicationProtocol()
+    {
         throw new UnsupportedOperationException();
     }
 
