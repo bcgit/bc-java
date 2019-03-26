@@ -29,6 +29,7 @@ public abstract class AbstractTlsServer
 
     protected ProtocolVersion serverVersion;
     protected int selectedCipherSuite;
+    protected Vector clientProtocolNames;
     protected ProtocolName selectedProtocolName;
     protected Hashtable serverExtensions;
 
@@ -185,6 +186,23 @@ public abstract class AbstractTlsServer
             :  -1;
     }
 
+    protected ProtocolName selectProtocolName() throws IOException
+    {
+        Vector serverProtocolNames = getProtocolNames();
+        if (null == serverProtocolNames || serverProtocolNames.isEmpty())
+        {
+            return null;
+        }
+
+        ProtocolName result = selectProtocolName(clientProtocolNames, serverProtocolNames);
+        if (null == result)
+        {
+            throw new TlsFatalAlert(AlertDescription.no_application_protocol);
+        }
+
+        return result;
+    }
+
     protected ProtocolName selectProtocolName(Vector clientProtocolNames, Vector serverProtocolNames)
     {
         for (int i = 0; i < serverProtocolNames.size(); ++i)
@@ -196,6 +214,11 @@ public abstract class AbstractTlsServer
             }
         }
         return null;
+    }
+
+    protected boolean shouldSelectProtocolNameEarly()
+    {
+        return true;
     }
 
     public void init(TlsServerContext context)
@@ -276,19 +299,15 @@ public abstract class AbstractTlsServer
     {
         this.clientExtensions = clientExtensions;
 
-        if (clientExtensions != null)
+        if (null != clientExtensions)
         {
-            Vector clientProtocolNames = TlsExtensionsUtils.getALPNExtensionClient(clientExtensions);
-            if (clientProtocolNames != null && !clientProtocolNames.isEmpty())
+            this.clientProtocolNames = TlsExtensionsUtils.getALPNExtensionClient(clientExtensions);
+            
+            if (shouldSelectProtocolNameEarly())
             {
-                Vector serverProtocolNames = getProtocolNames();
-                if (serverProtocolNames != null && !serverProtocolNames.isEmpty())
+                if (null != clientProtocolNames && !clientProtocolNames.isEmpty())
                 {
-                    this.selectedProtocolName = selectProtocolName(clientProtocolNames, serverProtocolNames);
-                    if (selectedProtocolName == null)
-                    {
-                        throw new TlsFatalAlert(AlertDescription.no_application_protocol);
-                    }
+                    this.selectedProtocolName = selectProtocolName();
                 }
             }
 
@@ -368,7 +387,15 @@ public abstract class AbstractTlsServer
     public Hashtable getServerExtensions()
         throws IOException
     {
-        if (this.selectedProtocolName != null)
+        if (!shouldSelectProtocolNameEarly())
+        {
+            if (null != clientProtocolNames && !clientProtocolNames.isEmpty())
+            {
+                this.selectedProtocolName = selectProtocolName();
+            }
+        }
+
+        if (null != selectedProtocolName)
         {
             TlsExtensionsUtils.addALPNExtensionServer(checkServerExtensions(), selectedProtocolName);
         }

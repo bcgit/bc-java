@@ -8,6 +8,10 @@ import javax.net.SocketFactory;
  */
 public interface BCSSLSocket
 {
+    BCApplicationProtocolSelector<BCSSLSocket> getBCHandshakeApplicationProtocolSelector();
+
+    void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<BCSSLSocket> selector);
+
     BCExtendedSSLSession getBCHandshakeSession();
 
     /**

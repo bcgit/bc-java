@@ -16,8 +16,10 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
+import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.RecordFormat;
@@ -195,6 +197,16 @@ class ProvSSLEngine_9
         BCSSLConnection connection = getConnection();
 
         return connection == null ? null : connection.getApplicationProtocol();
+    }
+
+    public synchronized BCApplicationProtocolSelector<BCSSLEngine> getBCHandshakeApplicationProtocolSelector()
+    {
+        return sslParameters.getEngineAPSelector();
+    }
+
+    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<BCSSLEngine> selector)
+    {
+        sslParameters.setEngineAPSelector(selector);
     }
 
     public synchronized BCExtendedSSLSession getBCHandshakeSession()
@@ -652,6 +664,11 @@ class ProvSSLEngine_9
     public synchronized void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession)
     {
         this.handshakeSession = handshakeSession;
+    }
+
+    public synchronized String selectApplicationProtocol(List<String> protocols)
+    {
+        return sslParameters.getEngineAPSelector().select(this, protocols);
     }
 
     private RecordPreview getRecordPreview(ByteBuffer src)
