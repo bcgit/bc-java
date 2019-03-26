@@ -19,7 +19,6 @@ import javax.net.ssl.SSLSession;
 import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
-import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.RecordFormat;
@@ -199,12 +198,12 @@ class ProvSSLEngine_9
         return connection == null ? null : connection.getApplicationProtocol();
     }
 
-    public synchronized BCApplicationProtocolSelector<BCSSLEngine> getBCHandshakeApplicationProtocolSelector()
+    public synchronized BCApplicationProtocolSelector<SSLEngine> getBCHandshakeApplicationProtocolSelector()
     {
         return sslParameters.getEngineAPSelector();
     }
 
-    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<BCSSLEngine> selector)
+    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLEngine> selector)
     {
         sslParameters.setEngineAPSelector(selector);
     }

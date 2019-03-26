@@ -18,12 +18,12 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 
 import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
-import org.bouncycastle.jsse.BCSSLSocket;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -189,12 +189,12 @@ class ProvSSLSocketWrap
         return wrapSocket.getChannel();
     }
 
-    public synchronized BCApplicationProtocolSelector<BCSSLSocket> getBCHandshakeApplicationProtocolSelector()
+    public synchronized BCApplicationProtocolSelector<SSLSocket> getBCHandshakeApplicationProtocolSelector()
     {
         return sslParameters.getSocketAPSelector();
     }
 
-    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<BCSSLSocket> selector)
+    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLSocket> selector)
     {
         sslParameters.setSocketAPSelector(selector);
     }

@@ -13,7 +13,6 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCSSLConnection;
@@ -21,6 +20,8 @@ import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCSSLSocket;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.util.Arrays;
+
+import junit.framework.TestCase;
 
 public class CipherSuitesTestCase extends TestCase
 {
@@ -187,9 +188,9 @@ public class CipherSuitesTestCase extends TestCase
 //    
 //                    bcSock.setParameters(bcParams);
 
-                    bcSock.setBCHandshakeApplicationProtocolSelector(new BCApplicationProtocolSelector<BCSSLSocket>()
+                    bcSock.setBCHandshakeApplicationProtocolSelector(new BCApplicationProtocolSelector<SSLSocket>()
                     {
-                        public String select(BCSSLSocket transport, List<String> protocols)
+                        public String select(SSLSocket transport, List<String> protocols)
                         {
                             if (protocols.contains("h2"))
                             {
