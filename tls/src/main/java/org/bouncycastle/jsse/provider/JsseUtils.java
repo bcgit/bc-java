@@ -192,6 +192,22 @@ abstract class JsseUtils
         return protocolNames;
     }
 
+    public static List<String> getProtocolNames(Vector applicationProtocols)
+    {
+        if (null == applicationProtocols || applicationProtocols.isEmpty())
+        {
+            return null;
+        }
+
+        ArrayList<String> protocolNames = new ArrayList<String>(applicationProtocols.size());
+        for (int i = 0; i < applicationProtocols.size(); ++i)
+        {
+            ProtocolName protocolName = (ProtocolName)applicationProtocols.elementAt(i);
+            protocolNames .add(protocolName.getUtf8Decoding());
+        }
+        return protocolNames;
+    }
+
     public static X509Certificate[] getX509CertificateChain(TlsCrypto crypto, Certificate certificateMessage)
     {
         if (certificateMessage == null || certificateMessage.isEmpty())

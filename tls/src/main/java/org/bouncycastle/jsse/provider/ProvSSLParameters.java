@@ -5,8 +5,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCSSLEngine;
+import org.bouncycastle.jsse.BCSSLSocket;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 final class ProvSSLParameters
@@ -36,6 +39,8 @@ final class ProvSSLParameters
     private List<BCSNIMatcher> sniMatchers;
     private List<BCSNIServerName> sniServerNames;
     private String[] applicationProtocols = new String[0];
+    private BCApplicationProtocolSelector<BCSSLEngine> engineAPSelector;
+    private BCApplicationProtocolSelector<BCSSLSocket> socketAPSelector;
 
     ProvSSLParameters(ProvSSLContextSpi context, String[] cipherSuites, String[] protocols)
     {
@@ -56,6 +61,8 @@ final class ProvSSLParameters
         p.sniMatchers = sniMatchers;
         p.sniServerNames = sniServerNames;
         p.applicationProtocols = applicationProtocols;
+        p.engineAPSelector = engineAPSelector;
+        p.socketAPSelector = socketAPSelector;
         return p;
     }
 
@@ -176,5 +183,25 @@ final class ProvSSLParameters
     public void setApplicationProtocols(String[] applicationProtocols)
     {
         this.applicationProtocols = applicationProtocols.clone();
+    }
+    
+    public BCApplicationProtocolSelector<BCSSLEngine> getEngineAPSelector()
+    {
+        return engineAPSelector;
+    }
+    
+    public void setEngineAPSelector(BCApplicationProtocolSelector<BCSSLEngine> engineAPSelector)
+    {
+        this.engineAPSelector = engineAPSelector;
+    }
+
+    public BCApplicationProtocolSelector<BCSSLSocket> getSocketAPSelector()
+    {
+        return socketAPSelector;
+    }
+
+    public void setSocketAPSelector(BCApplicationProtocolSelector<BCSSLSocket> socketAPSelector)
+    {
+        this.socketAPSelector = socketAPSelector;
     }
 }

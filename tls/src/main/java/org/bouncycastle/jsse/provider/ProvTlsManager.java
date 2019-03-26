@@ -3,6 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 interface ProvTlsManager
 {
@@ -29,4 +30,6 @@ interface ProvTlsManager
     void notifyHandshakeComplete(ProvSSLConnection connection);
 
     void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession);
+
+    String selectApplicationProtocol(List<String> protocols);
 }
