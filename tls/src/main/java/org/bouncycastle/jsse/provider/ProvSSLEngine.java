@@ -7,6 +7,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
@@ -17,6 +18,7 @@ import javax.net.ssl.SSLSession;
 import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.RecordFormat;
@@ -32,8 +34,9 @@ import org.bouncycastle.tls.TlsServerProtocol;
  * getDelegatedTasks() will always return null; CPU-intensive parts of the handshake will execute
  * during wrap/unwrap calls.
  */
-class ProvSSLEngine_5
-    extends ProvSSLEngine
+class ProvSSLEngine
+    extends SSLEngine
+    implements BCSSLEngine, ProvTlsManager
 {
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
@@ -51,7 +54,7 @@ class ProvSSLEngine_5
 
     protected SSLException deferredException = null;
 
-    protected ProvSSLEngine_5(ProvSSLContextSpi context, ContextData contextData)
+    protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData)
     {
         super();
 
@@ -60,7 +63,7 @@ class ProvSSLEngine_5
         this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
-    protected ProvSSLEngine_5(ProvSSLContextSpi context, ContextData contextData, String host, int port)
+    protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData, String host, int port)
     {
         super(host, port);
 
@@ -188,7 +191,7 @@ class ProvSSLEngine_5
         }
     }
 
-    // @Override from JDK 9
+    // An SSLEngine method from JDK 9, but also a BCSSLEngine method
     public String getApplicationProtocol()
     {
         BCSSLConnection connection = getConnection();
@@ -238,6 +241,12 @@ class ProvSSLEngine_5
     public synchronized boolean getEnableSessionCreation()
     {
         return enableSessionCreation;
+    }
+
+    // An SSLEngine method from JDK 9, but also a BCSSLEngine method
+    public String getHandshakeApplicationProtocol()
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override

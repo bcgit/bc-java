@@ -61,7 +61,7 @@ class ProvSSLServerSocket
     @Override
     public synchronized Socket accept() throws IOException
     {
-        ProvSSLSocketDirect socket = new ProvSSLSocketDirect(context, contextData, enableSessionCreation,
+        ProvSSLSocketDirect socket = SSLSocketUtil.create(context, contextData, enableSessionCreation,
             useClientMode, sslParameters.copy());
 
         implAccept(socket);

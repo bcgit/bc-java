@@ -506,14 +506,14 @@ class ProvSSLContextSpi
     protected synchronized SSLEngine engineCreateSSLEngine()
     {
         checkInitialized();
-        return ProvSSLEngine.create(this, createContextData());
+        return SSLEngineUtil.create(this, createContextData());
     }
 
     @Override
     protected synchronized SSLEngine engineCreateSSLEngine(String host, int port)
     {
         checkInitialized();
-        return ProvSSLEngine.create(this, createContextData(), host, port);
+        return SSLEngineUtil.create(this, createContextData(), host, port);
     }
 
     @Override

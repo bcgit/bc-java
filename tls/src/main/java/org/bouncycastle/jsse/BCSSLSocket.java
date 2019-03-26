@@ -9,6 +9,8 @@ import javax.net.ssl.SSLSocket;
  */
 public interface BCSSLSocket
 {
+    String getApplicationProtocol();
+
     BCApplicationProtocolSelector<SSLSocket> getBCHandshakeApplicationProtocolSelector();
 
     void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLSocket> selector);
@@ -23,6 +25,8 @@ public interface BCSSLSocket
      * @return A {@link BCSSLConnection} instance.
      */
     BCSSLConnection getConnection();
+
+    String getHandshakeApplicationProtocol();
 
     /**
      * Returns a {@link BCSSLParameters} with properties reflecting the current configuration.

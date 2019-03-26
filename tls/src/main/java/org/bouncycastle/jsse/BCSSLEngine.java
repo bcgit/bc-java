@@ -8,6 +8,8 @@ import javax.net.ssl.SSLEngine;
  */
 public interface BCSSLEngine
 {
+    String getApplicationProtocol();
+
     BCApplicationProtocolSelector<SSLEngine> getBCHandshakeApplicationProtocolSelector();
 
     void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLEngine> selector);
@@ -22,6 +24,8 @@ public interface BCSSLEngine
      * @return A {@link BCSSLConnection} instance.
      */
     BCSSLConnection getConnection();
+
+    String getHandshakeApplicationProtocol();
 
     /**
      * Returns a {@link BCSSLParameters} with properties reflecting the current configuration.
