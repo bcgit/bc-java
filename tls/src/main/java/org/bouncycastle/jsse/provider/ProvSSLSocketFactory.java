@@ -23,55 +23,45 @@ class ProvSSLSocketFactory
     @Override
     public Socket createSocket() throws IOException
     {
-//        SSLEngine engine = context.engineCreateSSLEngine();
-//        return new ProvSSLSocket(engine);
-        return new ProvSSLSocketDirect(context, context.createContextData());
+        return SSLSocketUtil.create(context, context.createContextData());
     }
 
     @Override
     public Socket createSocket(InetAddress host, int port) throws IOException
     {
-//        SSLEngine engine = context.engineCreateSSLEngine(host.getHostName(), port);
-//        return new ProvSSLSocket(engine, host, port);
-        return new ProvSSLSocketDirect(context, context.createContextData(), host, port);
+        return SSLSocketUtil.create(context, context.createContextData(), host, port);
     }
 
     @Override
     public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
         throws IOException
     {
-//        SSLEngine engine = context.engineCreateSSLEngine(address.getHostName(), port);
-//        return new ProvSSLSocket(engine, address, port, localAddress, localPort);
-        return new ProvSSLSocketDirect(context, context.createContextData(), address, port, localAddress, localPort);
+        return SSLSocketUtil.create(context, context.createContextData(), address, port, localAddress, localPort);
     }
 
     @Override
     public Socket createSocket(String host, int port) throws IOException, UnknownHostException
     {
-//        SSLEngine engine = context.engineCreateSSLEngine(host, port);
-//        return new ProvSSLSocket(engine, host, port);
-        return new ProvSSLSocketDirect(context, context.createContextData(), host, port);
+        return SSLSocketUtil.create(context, context.createContextData(), host, port);
     }
 
     @Override
     public Socket createSocket(String host, int port, InetAddress localHost, int localPort)
         throws IOException, UnknownHostException
     {
-//        SSLEngine engine = context.engineCreateSSLEngine(host, port);
-//        return new ProvSSLSocket(engine, host, port, localHost, localPort);
-        return new ProvSSLSocketDirect(context, context.createContextData(), host, port, localHost, localPort);
+        return SSLSocketUtil.create(context, context.createContextData(), host, port, localHost, localPort);
     }
 
     @Override
     public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException
     {
-        return new ProvSSLSocketWrap(context, context.createContextData(), s, consumed, autoClose);
+        return SSLSocketUtil.create(context, context.createContextData(), s, consumed, autoClose);
     }
 
     @Override
     public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException
     {
-        return new ProvSSLSocketWrap(context, context.createContextData(), s, host, port, autoClose);
+        return SSLSocketUtil.create(context, context.createContextData(), s, host, port, autoClose);
     }
 
     @Override
