@@ -6,6 +6,10 @@ package org.bouncycastle.jsse;
  */
 public interface BCSSLEngine
 {
+    BCApplicationProtocolSelector<BCSSLEngine> getBCHandshakeApplicationProtocolSelector();
+
+    void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<BCSSLEngine> selector);
+
     BCExtendedSSLSession getBCHandshakeSession();
 
     /**

@@ -5,8 +5,10 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -26,6 +28,7 @@ import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -169,6 +172,38 @@ class ProvTlsServer
     protected int selectECDHDefault(int minimumCurveBits)
     {
         return SupportedGroups.getServerDefaultECDH(manager.getContext().isFips(), minimumCurveBits);
+    }
+
+    @Override
+    protected ProtocolName selectProtocolName() throws IOException
+    {
+        if (null == sslParameters.getEngineAPSelector() && null == sslParameters.getSocketAPSelector())
+        {
+            return super.selectProtocolName();
+        }
+
+        List<String> protocols = JsseUtils.getProtocolNames(clientProtocolNames);
+        String protocol = manager.selectApplicationProtocol(Collections.unmodifiableList(protocols));
+        if (null == protocol)
+        {
+            throw new TlsFatalAlert(AlertDescription.no_application_protocol);
+        }
+        else if (protocol.length() < 1)
+        {
+            return null;
+        }
+        else if (!protocols.contains(protocol))
+        {
+            throw new TlsFatalAlert(AlertDescription.no_application_protocol);
+        }
+
+        return ProtocolName.asUtf8Encoding(protocol);
+    }
+
+    @Override
+    protected boolean shouldSelectProtocolNameEarly()
+    {
+        return null == sslParameters.getEngineAPSelector() && null == sslParameters.getSocketAPSelector();
     }
 
     public synchronized boolean isHandshakeComplete()

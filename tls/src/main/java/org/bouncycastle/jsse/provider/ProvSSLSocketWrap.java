@@ -12,15 +12,18 @@ import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
+import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
+import org.bouncycastle.jsse.BCSSLSocket;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -184,6 +187,16 @@ class ProvSSLSocketWrap
     public SocketChannel getChannel()
     {
         return wrapSocket.getChannel();
+    }
+
+    public synchronized BCApplicationProtocolSelector<BCSSLSocket> getBCHandshakeApplicationProtocolSelector()
+    {
+        return sslParameters.getSocketAPSelector();
+    }
+
+    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<BCSSLSocket> selector)
+    {
+        sslParameters.setSocketAPSelector(selector);
     }
 
     public synchronized BCExtendedSSLSession getBCHandshakeSession()
@@ -611,6 +624,11 @@ class ProvSSLSocketWrap
     public synchronized void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession)
     {
         this.handshakeSession = handshakeSession;
+    }
+
+    public synchronized String selectApplicationProtocol(List<String> protocols)
+    {
+        return sslParameters.getSocketAPSelector().select(this, protocols);
     }
 
     synchronized void handshakeIfNecessary(boolean resumable) throws IOException

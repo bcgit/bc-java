@@ -1,6 +1,7 @@
 package org.bouncycastle.jsse.provider.test;
 
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,6 +15,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCSSLSocket;
@@ -179,12 +181,28 @@ public class CipherSuitesTestCase extends TestCase
                 if (sslSock instanceof BCSSLSocket)
                 {
                     BCSSLSocket bcSock = (BCSSLSocket)sslSock;
-    
-                    BCSSLParameters bcParams = new BCSSLParameters();
-                    bcParams.setApplicationProtocols(new String[]{ "h2", "http/1.1" });
-    
-                    bcSock.setParameters(bcParams);
-    
+
+//                    BCSSLParameters bcParams = new BCSSLParameters();
+//                    bcParams.setApplicationProtocols(new String[]{ "h2", "http/1.1" });
+//    
+//                    bcSock.setParameters(bcParams);
+
+                    bcSock.setBCHandshakeApplicationProtocolSelector(new BCApplicationProtocolSelector<BCSSLSocket>()
+                    {
+                        public String select(BCSSLSocket transport, List<String> protocols)
+                        {
+                            if (protocols.contains("h2"))
+                            {
+                                return "h2";
+                            }
+                            if (protocols.contains("http/1.1"))
+                            {
+                                return "http/1.1";
+                            }
+                            return null;
+                        }
+                    });
+
                     BCSSLConnection bcConn = bcSock.getConnection();
                     if (bcConn != null)
                     {
