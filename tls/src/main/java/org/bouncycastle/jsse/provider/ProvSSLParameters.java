@@ -5,11 +5,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSocket;
+
 import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
-import org.bouncycastle.jsse.BCSSLEngine;
-import org.bouncycastle.jsse.BCSSLSocket;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 final class ProvSSLParameters
@@ -39,8 +40,8 @@ final class ProvSSLParameters
     private List<BCSNIMatcher> sniMatchers;
     private List<BCSNIServerName> sniServerNames;
     private String[] applicationProtocols = new String[0];
-    private BCApplicationProtocolSelector<BCSSLEngine> engineAPSelector;
-    private BCApplicationProtocolSelector<BCSSLSocket> socketAPSelector;
+    private BCApplicationProtocolSelector<SSLEngine> engineAPSelector;
+    private BCApplicationProtocolSelector<SSLSocket> socketAPSelector;
 
     ProvSSLParameters(ProvSSLContextSpi context, String[] cipherSuites, String[] protocols)
     {
@@ -185,22 +186,22 @@ final class ProvSSLParameters
         this.applicationProtocols = applicationProtocols.clone();
     }
     
-    public BCApplicationProtocolSelector<BCSSLEngine> getEngineAPSelector()
+    public BCApplicationProtocolSelector<SSLEngine> getEngineAPSelector()
     {
         return engineAPSelector;
     }
     
-    public void setEngineAPSelector(BCApplicationProtocolSelector<BCSSLEngine> engineAPSelector)
+    public void setEngineAPSelector(BCApplicationProtocolSelector<SSLEngine> engineAPSelector)
     {
         this.engineAPSelector = engineAPSelector;
     }
 
-    public BCApplicationProtocolSelector<BCSSLSocket> getSocketAPSelector()
+    public BCApplicationProtocolSelector<SSLSocket> getSocketAPSelector()
     {
         return socketAPSelector;
     }
 
-    public void setSocketAPSelector(BCApplicationProtocolSelector<BCSSLSocket> socketAPSelector)
+    public void setSocketAPSelector(BCApplicationProtocolSelector<SSLSocket> socketAPSelector)
     {
         this.socketAPSelector = socketAPSelector;
     }
