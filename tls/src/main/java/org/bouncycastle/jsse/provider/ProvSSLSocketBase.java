@@ -15,7 +15,6 @@ import java.util.Set;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 
-import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLSocket;
 
 abstract class ProvSSLSocketBase
@@ -56,24 +55,10 @@ abstract class ProvSSLSocketBase
         super.close();
     }
 
-    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
-    public String getApplicationProtocol()
-    {
-        BCSSLConnection connection = getConnection();
-
-        return connection == null ? null : connection.getApplicationProtocol();
-    }
-
     @Override
     public SocketChannel getChannel()
     {
 //        return super.getChannel();
-        throw new UnsupportedOperationException();
-    }
-
-    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
-    public String getHandshakeApplicationProtocol()
-    {
         throw new UnsupportedOperationException();
     }
 

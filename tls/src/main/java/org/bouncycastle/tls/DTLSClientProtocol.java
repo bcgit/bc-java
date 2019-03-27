@@ -782,6 +782,7 @@ public class DTLSClientProtocol
          * messages are considered.
          */
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(state.serverExtensions);
+        securityParameters.applicationProtocolSet = true;
 
         // Heartbeats
         {
