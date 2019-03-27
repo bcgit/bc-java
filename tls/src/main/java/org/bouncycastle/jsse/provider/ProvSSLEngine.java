@@ -192,21 +192,14 @@ class ProvSSLEngine
     }
 
     // An SSLEngine method from JDK 9, but also a BCSSLEngine method
-    public String getApplicationProtocol()
+    public synchronized String getApplicationProtocol()
     {
-        BCSSLConnection connection = getConnection();
-
-        return connection == null ? null : connection.getApplicationProtocol();
+        return null == connection ? null : connection.getApplicationProtocol();
     }
 
     public synchronized BCApplicationProtocolSelector<SSLEngine> getBCHandshakeApplicationProtocolSelector()
     {
         return sslParameters.getEngineAPSelector();
-    }
-
-    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLEngine> selector)
-    {
-        sslParameters.setEngineAPSelector(selector);
     }
 
     public synchronized BCExtendedSSLSession getBCHandshakeSession()
@@ -244,9 +237,9 @@ class ProvSSLEngine
     }
 
     // An SSLEngine method from JDK 9, but also a BCSSLEngine method
-    public String getHandshakeApplicationProtocol()
+    public synchronized String getHandshakeApplicationProtocol()
     {
-        throw new UnsupportedOperationException();
+        return null == handshakeSession ? null : handshakeSession.getApplicationProtocol();
     }
 
     @Override
@@ -320,6 +313,11 @@ class ProvSSLEngine
     public synchronized boolean isOutboundDone()
     {
         return protocol != null && protocol.isClosed() && protocol.getAvailableOutputBytes() < 1;
+    }
+
+    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLEngine> selector)
+    {
+        sslParameters.setEngineAPSelector(selector);
     }
 
     @Override

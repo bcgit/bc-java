@@ -811,6 +811,7 @@ public class TlsClientProtocol
          * messages are considered.
          */
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);
+        securityParameters.applicationProtocolSet = true;
 
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
         if (this.resumedSession)

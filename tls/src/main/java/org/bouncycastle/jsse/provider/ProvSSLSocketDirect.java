@@ -182,14 +182,15 @@ class ProvSSLSocketDirect
         notifyConnected();
     }
 
+    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
+    public synchronized String getApplicationProtocol()
+    {
+        return null == connection ? null : connection.getApplicationProtocol();
+    }
+
     public synchronized BCApplicationProtocolSelector<SSLSocket> getBCHandshakeApplicationProtocolSelector()
     {
         return sslParameters.getSocketAPSelector();
-    }
-
-    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLSocket> selector)
-    {
-        sslParameters.setSocketAPSelector(selector);
     }
 
     public synchronized BCExtendedSSLSession getBCHandshakeSession()
@@ -227,6 +228,12 @@ class ProvSSLSocketDirect
     public synchronized boolean getEnableSessionCreation()
     {
         return enableSessionCreation;
+    }
+
+    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
+    public synchronized String getHandshakeApplicationProtocol()
+    {
+        return null == handshakeSession ? null : handshakeSession.getApplicationProtocol();
     }
 
     @Override
@@ -296,6 +303,11 @@ class ProvSSLSocketDirect
     public synchronized boolean getWantClientAuth()
     {
         return sslParameters.getWantClientAuth();
+    }
+
+    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLSocket> selector)
+    {
+        sslParameters.setSocketAPSelector(selector);
     }
 
     @Override
