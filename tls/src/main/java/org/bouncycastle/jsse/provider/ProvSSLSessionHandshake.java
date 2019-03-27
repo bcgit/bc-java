@@ -19,6 +19,11 @@ class ProvSSLSessionHandshake
         this.securityParameters = securityParameters;
     }
 
+    String getApplicationProtocol()
+    {
+        return JsseUtils.getApplicationProtocol(securityParameters);
+    }
+
     @Override
     protected int getCipherSuiteTLS()
     {

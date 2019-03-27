@@ -2,8 +2,6 @@ package org.bouncycastle.jsse.provider;
 
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.tls.ChannelBinding;
-import org.bouncycastle.tls.ProtocolName;
-import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsContext;
 
 class ProvSSLConnection
@@ -20,17 +18,7 @@ class ProvSSLConnection
 
     public String getApplicationProtocol()
     {
-        SecurityParameters sp = tlsContext.getSecurityParametersConnection();
-        if (null != sp)
-        {
-            ProtocolName applicationProtocol = sp.getApplicationProtocol();
-            if (null != applicationProtocol)
-            {
-                return applicationProtocol.getUtf8Decoding();
-            }
-        }
-
-        return "";
+        return JsseUtils.getApplicationProtocol(tlsContext.getSecurityParametersConnection());
     }
 
     public byte[] getChannelBinding(String channelBinding)

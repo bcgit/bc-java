@@ -183,10 +183,10 @@ class ProvSSLSocketWrap
         throw new SocketException("Wrapped socket should already be connected");
     }
 
-    @Override
-    public SocketChannel getChannel()
+    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
+    public synchronized String getApplicationProtocol()
     {
-        return wrapSocket.getChannel();
+        return null == connection ? null : connection.getApplicationProtocol();
     }
 
     public synchronized BCApplicationProtocolSelector<SSLSocket> getBCHandshakeApplicationProtocolSelector()
@@ -194,14 +194,15 @@ class ProvSSLSocketWrap
         return sslParameters.getSocketAPSelector();
     }
 
-    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLSocket> selector)
-    {
-        sslParameters.setSocketAPSelector(selector);
-    }
-
     public synchronized BCExtendedSSLSession getBCHandshakeSession()
     {
         return handshakeSession;
+    }
+
+    @Override
+    public SocketChannel getChannel()
+    {
+        return wrapSocket.getChannel();
     }
 
     public synchronized BCSSLConnection getConnection()
@@ -234,6 +235,12 @@ class ProvSSLSocketWrap
     public synchronized boolean getEnableSessionCreation()
     {
         return enableSessionCreation;
+    }
+
+    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
+    public synchronized String getHandshakeApplicationProtocol()
+    {
+        return null == handshakeSession ? null : handshakeSession.getApplicationProtocol();
     }
 
     @Override
@@ -417,6 +424,11 @@ class ProvSSLSocketWrap
     public boolean isOutputShutdown()
     {
         return wrapSocket.isOutputShutdown();
+    }
+
+    public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLSocket> selector)
+    {
+        sslParameters.setSocketAPSelector(selector);
     }
 
     @Override
