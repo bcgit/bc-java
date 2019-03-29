@@ -39,8 +39,6 @@ public class RSADigestSigner
      */
     static
     {
-        // Null-digester is intentionally NOT on this mapping.
-        
         oidMap.put("RIPEMD128", TeleTrusTObjectIdentifiers.ripemd128);
         oidMap.put("RIPEMD160", TeleTrusTObjectIdentifiers.ripemd160);
         oidMap.put("RIPEMD256", TeleTrusTObjectIdentifiers.ripemd256);
@@ -74,12 +72,7 @@ public class RSADigestSigner
         ASN1ObjectIdentifier digestOid)
     {
         this.digest = digest;
-        if (digestOid != null) {
-            this.algId = new AlgorithmIdentifier(digestOid, DERNull.INSTANCE);
-        } else {
-            // NULL digester, match behaviour with DigestSignatureSpi
-            this.algId = null;
-        }
+        this.algId = new AlgorithmIdentifier(digestOid, DERNull.INSTANCE);
     }
 
     /**
@@ -91,7 +84,7 @@ public class RSADigestSigner
     }
 
     /**
-     * Initialize the signer for signing or verification.
+     * initialise the signer for signing or verification.
      *
      * @param forSigning
      *            true if for signing, false otherwise
@@ -247,10 +240,6 @@ public class RSADigestSigner
         byte[] hash)
         throws IOException
     {
-        if (algId == null) {
-            return hash;
-        }
-
         DigestInfo dInfo = new DigestInfo(algId, hash);
 
         return dInfo.getEncoded(ASN1Encoding.DER);
