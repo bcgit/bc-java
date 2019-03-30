@@ -196,6 +196,7 @@ public class BouncyCastleJsseProvider
                     return new DefaultSSLContextSpi(fipsMode, cryptoProvider);
                 }
             });
+        addAlias("Alg.Alias.SSLContext.SSL", "DEFAULT");
 
         return fipsMode;
     }
