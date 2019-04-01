@@ -9,7 +9,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 
 /**
- * Base class for a TLS client.
+ * Base class for a TLS server.
  */
 public abstract class AbstractTlsServer
     extends AbstractTlsPeer
