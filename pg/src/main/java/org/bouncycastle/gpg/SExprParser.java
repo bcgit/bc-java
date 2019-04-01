@@ -65,7 +65,8 @@ public class SExprParser
         String type;
 
         type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected-private-key"))
+		if (type.equals("protected-private-key")
+				|| type.equals("private-key"))
         {
             SXprUtils.skipOpenParenthesis(inputStream);
 
@@ -357,6 +358,8 @@ public class SExprParser
 
             SXprUtils.skipCloseParenthesis(inputStream);
             SXprUtils.skipCloseParenthesis(inputStream);
+		} else if (type.equals("d")) {
+			return null;
         }
         else
         {
@@ -586,22 +589,42 @@ public class SExprParser
         String type;
         byte[][] basicData = extractData(inputStream, keyProtectionRemoverFactory);
 
-        byte[] keyData = basicData[0];
-        byte[] protectedAt = basicData[1];
+		byte[] keyData;
+		byte[] protectedAt = null;
+
+		InputStream keyIn;
+		BigInteger d;
+
+		if (basicData == null) {
+			keyIn = inputStream;
+			byte[] nBytes = SXprUtils.readBytes(inputStream,
+					inputStream.read());
+			d = new BigInteger(1, nBytes);
+
+			SXprUtils.skipCloseParenthesis(inputStream);
+
+		} else {
+			keyData = basicData[0];
+			protectedAt = basicData[1];
+
+			keyIn = new ByteArrayInputStream(keyData);
+
+			SXprUtils.skipOpenParenthesis(keyIn);
+			SXprUtils.skipOpenParenthesis(keyIn);
+			d = readBigInteger("d", keyIn);
+		}
 
         //
         // parse the secret key S-expr
         //
-        InputStream keyIn = new ByteArrayInputStream(keyData);
 
-        SXprUtils.skipOpenParenthesis(keyIn);
-        SXprUtils.skipOpenParenthesis(keyIn);
-
-        BigInteger d = readBigInteger("d", keyIn);
         BigInteger p = readBigInteger("p", keyIn);
         BigInteger q = readBigInteger("q", keyIn);
         BigInteger u = readBigInteger("u", keyIn);
 
+		if (basicData == null) {
+			return new BigInteger[] { d, p, q, u };
+		}
         SXprUtils.skipCloseParenthesis(keyIn);
 
         SXprUtils.skipOpenParenthesis(keyIn);
@@ -661,7 +684,7 @@ public class SExprParser
     {
         writeCanonical(dOut, label, i.toByteArray());
     }
-    
+
     private void writeCanonical(OutputStream dOut, String label, byte[] data)
         throws IOException
     {
