@@ -13,6 +13,7 @@ import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.CRL;
+import java.security.cert.CRLException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -1666,10 +1667,24 @@ public class CertTest
     {
         CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
 
-        Collection crls = certFact.generateCRLs(this.getClass().getResourceAsStream("cert_chain.txt"));
-        isTrue("multi crl", crls.isEmpty());
-        CRL crl = certFact.generateCRL(this.getClass().getResourceAsStream("cert_chain.txt"));
-        isTrue("single crl", crl == null);
+        try
+        {
+            certFact.generateCRLs(this.getClass().getResourceAsStream("cert_chain.txt"));
+            fail("multi crl - no exception");
+        }
+        catch (CRLException e)
+        {
+            // ignore
+        }
+        try
+        {
+            certFact.generateCRL(this.getClass().getResourceAsStream("cert_chain.txt"));
+            fail("single crl - no exception");
+        }
+        catch (CRLException e)
+        {
+            // ignore
+        }
     }
 
     private void pemFileTestWithNl()
