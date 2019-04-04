@@ -166,7 +166,8 @@ public class RegressionTest
             new CSHAKETest(),
             new Argon2Test(),
             new OpenSSHKeyParsingTests(),
-            new EthereumIESTest()
+            new EthereumIESTest(),
+            new BigIntegersTest()
         };
 
     public static void main(
