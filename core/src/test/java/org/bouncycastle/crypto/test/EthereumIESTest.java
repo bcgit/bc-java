@@ -85,12 +85,12 @@ public class EthereumIESTest
         //
         EthereumIESEngine i1 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac);
         EthereumIESEngine i2 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac);
         byte[] d = new byte[]{1, 2, 3, 4, 5, 6, 7, 8};
@@ -125,13 +125,13 @@ public class EthereumIESTest
             new CBCBlockCipher(new TwofishEngine()));
         i1 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac,
             c1);
         i2 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac,
             c2);
@@ -200,12 +200,12 @@ public class EthereumIESTest
         //
         EthereumIESEngine i1 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac);
         EthereumIESEngine i2 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac);
         byte[] d = new byte[]{1, 2, 3, 4, 5, 6, 7, 8};
@@ -325,12 +325,12 @@ public class EthereumIESTest
         //
         EthereumIESEngine i1 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac);
         EthereumIESEngine i2 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac);
 
@@ -361,13 +361,13 @@ public class EthereumIESTest
             new CBCBlockCipher(new TwofishEngine()));
         i1 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac,
             c1);
         i2 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac,
             c2);
@@ -405,12 +405,12 @@ public class EthereumIESTest
         //
         EthereumIESEngine i1 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac);
         EthereumIESEngine i2 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac);
         byte[] d = new byte[]{1, 2, 3, 4, 5, 6, 7, 8};
@@ -440,13 +440,13 @@ public class EthereumIESTest
             new CBCBlockCipher(new TwofishEngine()));
         i1 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac,
             c1);
         i2 = new EthereumIESEngine(
             new ECDHBasicAgreement(),
-            new EthereumIESEngine.KDFFunction(1, new SHA1Digest()),
+            new EthereumIESEngine.HandshakeKDFFunction(1, new SHA1Digest()),
             new HMac(new SHA1Digest()),
             commonMac,
             c2);

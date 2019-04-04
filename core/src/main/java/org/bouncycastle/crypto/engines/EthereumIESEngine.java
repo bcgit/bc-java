@@ -491,7 +491,7 @@ public class EthereumIESEngine
      * This class has been adapted from the <tt>BaseKDFBytesGenerator</tt> implementation of Bouncy Castle. Only one
      * change is present specifically for Ethereum.
      */
-    public static class KDFFunction
+    public static class HandshakeKDFFunction
         implements DigestDerivationFunction
     {
         private int counterStart;
@@ -506,7 +506,7 @@ public class EthereumIESEngine
          * @param counterStart value of counter.
          * @param digest       the digest to be used as the source of derived keys.
          */
-        public KDFFunction(int counterStart, Digest digest)
+        public HandshakeKDFFunction(int counterStart, Digest digest)
         {
             this.counterStart = counterStart;
             this.digest = digest;
