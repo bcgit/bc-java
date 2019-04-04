@@ -55,8 +55,9 @@ class PEMUtil
             {
                 l.append((char) c);
             }
-        } while (c >= 0 && l.length() == 0);
-
+        }
+        while (c >= 0 && l.length() == 0);
+   
         if (c < 0)
         {
             // make sure to return the read bytes if the end of file is encountered
@@ -108,7 +109,9 @@ class PEMUtil
         return null;
     }
 
-    ASN1Sequence readPEMObject(InputStream in) throws IOException
+    ASN1Sequence readPEMObject(
+        InputStream in)
+        throws IOException
     {
         String line;
         StringBuffer pemBuf = new StringBuffer();
@@ -120,13 +123,13 @@ class PEMUtil
             header = getBoundaries(line);
             if (header != null && !header.isTheExpectedHeader(line))
             {
-                throw new IOException("Malformed PEM data: found footer where header was expected");
+                throw new IOException("malformed PEM data: found footer where header was expected");
             }
         }
 
         if (header == null)
         {
-            throw new IOException("Malformed PEM data: no header found");
+            throw new IOException("malformed PEM data: no header found");
         }
 
         Boundaries footer = null;
@@ -138,9 +141,10 @@ class PEMUtil
             {
                 if (!header.isTheExpectedFooter(line))
                 {
-                    throw new IOException("Malformed PEM data: header/footer mismatch");
+                    throw new IOException("malformed PEM data: header/footer mismatch");
                 }
-            } else
+            }
+            else
             {
                 pemBuf.append(line);
             }
@@ -148,7 +152,7 @@ class PEMUtil
 
         if (footer == null)
         {
-            throw new IOException("Malformed PEM data: no footer found");
+            throw new IOException("malformed PEM data: no footer found");
         }
 
         if (pemBuf.length() != 0)
@@ -156,7 +160,8 @@ class PEMUtil
             try
             {
                 return ASN1Sequence.getInstance(Base64.decode(pemBuf.toString()));
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new IOException("malformed PEM data encountered");
             }
