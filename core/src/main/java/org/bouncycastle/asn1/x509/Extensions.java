@@ -13,6 +13,16 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <pre>
+ *     Extensions        ::=   SEQUENCE SIZE (1..MAX) OF Extension
+ *
+ *     Extension         ::=   SEQUENCE {
+ *        extnId            EXTENSION.&amp;id ({ExtensionSet}),
+ *        critical          BOOLEAN DEFAULT FALSE,
+ *        extnValue         OCTET STRING }
+ * </pre>
+ */
 public class Extensions
     extends ASN1Object
 {
