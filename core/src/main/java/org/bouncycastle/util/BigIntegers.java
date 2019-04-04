@@ -148,7 +148,7 @@ public final class BigIntegers
             + "ce86165a978d719ebf647f362d33fca29cd179fb42401cbaf3df0c614056f9c8"
             + "f3cfd51e474afb6bc6974f78db8aba8e9e517fded658591ab7502bd41849462f",
         16);
-    private static final int SQR_MAX_SMALL = 20; // bitlength of 743 * 743
+    private static final int MAX_SMALL = BigInteger.valueOf(743).bitLength(); // bitlength of 743 * 743
 
     /**
      * Return a prime number candidate of the specified bit length.
@@ -183,7 +183,7 @@ public final class BigIntegers
             base[base.length - 1] |= 0x01;
 
             rv = new BigInteger(1, base);
-            if (bitLength > SQR_MAX_SMALL)
+            if (bitLength > MAX_SMALL)
             {
                 while (!rv.gcd(SMALL_PRIMES_PRODUCT).equals(ONE))
                 {
