@@ -3,9 +3,14 @@ package org.bouncycastle.crypto.test;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -42,9 +47,11 @@ public class RSADigestSignerTest
         RSAPrivateCrtKeyParameters rsaPrivate = new RSAPrivateCrtKeyParameters(rsaPrivMod, rsaPubExp, rsaPrivExp, rsaPrivP, rsaPrivQ, rsaPrivDP, rsaPrivDQ, rsaPrivQinv);
 
         checkDigest(rsaPublic, rsaPrivate, new SHA1Digest(), X509ObjectIdentifiers.id_SHA1);
+        checkNullDigest(rsaPublic, rsaPrivate, new SHA1Digest(), X509ObjectIdentifiers.id_SHA1);
 
         checkDigest(rsaPublic, rsaPrivate, new SHA224Digest(), NISTObjectIdentifiers.id_sha224);
         checkDigest(rsaPublic, rsaPrivate, new SHA256Digest(), NISTObjectIdentifiers.id_sha256);
+        checkNullDigest(rsaPublic, rsaPrivate, new SHA256Digest(), NISTObjectIdentifiers.id_sha256);
         checkDigest(rsaPublic, rsaPrivate, new SHA384Digest(), NISTObjectIdentifiers.id_sha384);
         checkDigest(rsaPublic, rsaPrivate, new SHA512Digest(), NISTObjectIdentifiers.id_sha512);
         checkDigest(rsaPublic, rsaPrivate, new SHA512tDigest(224), NISTObjectIdentifiers.id_sha512_224);
@@ -54,6 +61,23 @@ public class RSADigestSignerTest
         checkDigest(rsaPublic, rsaPrivate, new SHA3Digest(256), NISTObjectIdentifiers.id_sha3_256);
         checkDigest(rsaPublic, rsaPrivate, new SHA3Digest(384), NISTObjectIdentifiers.id_sha3_384);
         checkDigest(rsaPublic, rsaPrivate, new SHA3Digest(512), NISTObjectIdentifiers.id_sha3_512);
+
+        // Null format test
+        RSADigestSigner signer = new RSADigestSigner(new NullDigest());
+        
+        signer.init(true, rsaPrivate);
+
+        signer.update(new byte[16], 0, 16);
+
+        try
+        {
+            signer.generateSignature();
+            fail("no exception");
+        }
+        catch (CryptoException e)
+        {
+            isTrue(e.getMessage().startsWith("unable to encode signature: malformed DigestInfo"));
+        }
     }
 
     private void checkDigest(RSAKeyParameters rsaPublic, RSAPrivateCrtKeyParameters rsaPrivate, Digest digest, ASN1ObjectIdentifier digOid)
@@ -72,6 +96,43 @@ public class RSADigestSignerTest
         if (!signer.verifySignature(sig))
         {
             fail("RSA Digest Signer failed.");
+        }
+    }
+
+    private void checkNullDigest(RSAKeyParameters rsaPublic, RSAPrivateCrtKeyParameters rsaPrivate, Digest digest, ASN1ObjectIdentifier digOid)
+        throws Exception
+    {
+        byte[] msg = new byte[] { 1, 6, 3, 32, 7, 43, 2, 5, 7, 78, 4, 23 };
+
+        RSADigestSigner signer = new RSADigestSigner(new NullDigest());
+
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.update(msg, 0, msg.length);
+        digest.doFinal(hash, 0);
+
+        DigestInfo digInfo = new DigestInfo(new AlgorithmIdentifier(digOid, DERNull.INSTANCE), hash);
+        byte[] infoEnc = digInfo.getEncoded();
+
+        signer.init(true, rsaPrivate);
+
+        signer.update(infoEnc, 0, infoEnc.length);
+
+        byte[] sig = signer.generateSignature();
+
+        signer = new RSADigestSigner(digest, digOid);
+        signer.init(false, rsaPublic);
+        signer.update(msg, 0, msg.length);
+        if (!signer.verifySignature(sig))
+        {
+            fail("NONE - RSA Digest Signer failed.");
+        }
+
+        signer = new RSADigestSigner(new NullDigest());
+        signer.init(false, rsaPublic);
+        signer.update(infoEnc, 0, infoEnc.length);
+        if (!signer.verifySignature(sig))
+        {
+            fail("NONE - RSA Digest Signer failed.");
         }
     }
 
