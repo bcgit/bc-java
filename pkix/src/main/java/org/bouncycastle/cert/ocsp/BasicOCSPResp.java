@@ -22,6 +22,7 @@ import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Encodable;
 
 /**
+ * OCSP RFC 2560, RFC 6960
  * <pre>
  * BasicOCSPResponse       ::= SEQUENCE {
  *    tbsResponseData      ResponseData,
