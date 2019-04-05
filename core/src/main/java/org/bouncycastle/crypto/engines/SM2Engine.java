@@ -12,7 +12,6 @@ import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
@@ -27,7 +26,13 @@ import org.bouncycastle.util.Pack;
  */
 public class SM2Engine
 {
+    public enum Mode
+    {
+        C1C2C3, C1C3C2;
+    }
+
     private final Digest digest;
+    private final Mode mode;
     
     private boolean forEncryption;
     private ECKeyParameters ecKey;
@@ -40,9 +45,24 @@ public class SM2Engine
         this(new SM3Digest());
     }
 
+    public SM2Engine(Mode mode)
+    {
+        this(new SM3Digest(), mode);
+    }
+
     public SM2Engine(Digest digest)
     {
+        this(digest, Mode.C1C2C3);
+    }
+
+    public SM2Engine(Digest digest, Mode mode)
+    {
+        if (mode == null)
+        {
+            throw new IllegalArgumentException("mode cannot be NULL");
+        }
         this.digest = digest;
+        this.mode = mode;
     }
 
     public void init(boolean forEncryption, CipherParameters param)
@@ -131,8 +151,14 @@ public class SM2Engine
         addFieldElement(digest, kPB.getAffineYCoord());
 
         digest.doFinal(c3, 0);
-        
-        return Arrays.concatenate(c1, c2, c3);
+
+        switch (mode)
+        {
+        case C1C3C2:
+            return Arrays.concatenate(c1, c3, c2);
+        default:
+            return Arrays.concatenate(c1, c2, c3);
+        }
     }
 
     private byte[] decrypt(byte[] in, int inOff, int inLen)
@@ -152,9 +178,17 @@ public class SM2Engine
 
         c1P = c1P.multiply(((ECPrivateKeyParameters)ecKey).getD()).normalize();
 
-        byte[] c2 = new byte[inLen - c1.length - digest.getDigestSize()];
+        int digestSize = this.digest.getDigestSize();
+        byte[] c2 = new byte[inLen - c1.length - digestSize];
 
-        System.arraycopy(in, inOff + c1.length, c2, 0, c2.length);
+        if (mode == Mode.C1C3C2)
+        {
+            System.arraycopy(in, inOff + c1.length + digestSize, c2, 0, c2.length);
+        }
+        else
+        {
+            System.arraycopy(in, inOff + c1.length, c2, 0, c2.length);
+        }
 
         kdf(digest, c1P, c2);
 
@@ -167,9 +201,19 @@ public class SM2Engine
         digest.doFinal(c3, 0);
 
         int check = 0;
-        for (int i = 0; i != c3.length; i++)
+        if (mode == Mode.C1C3C2)
         {
-            check |= c3[i] ^ in[inOff + c1.length + c2.length + i];
+            for (int i = 0; i != c3.length; i++)
+            {
+                check |= c3[i] ^ in[inOff + c1.length + i];
+            }
+        }
+        else
+        {
+            for (int i = 0; i != c3.length; i++)
+            {
+                check |= c3[i] ^ in[inOff + c1.length + c2.length + i];
+            }
         }
 
         Arrays.fill(c1, (byte)0);
@@ -255,7 +299,7 @@ public class SM2Engine
         {
             k = BigIntegers.createRandomBigInteger(qBitLength, random);
         }
-        while (k.equals(ECConstants.ZERO) || k.compareTo(ecParams.getN()) >= 0);
+        while (k.equals(BigIntegers.ZERO) || k.compareTo(ecParams.getN()) >= 0);
 
         return k;
     }
