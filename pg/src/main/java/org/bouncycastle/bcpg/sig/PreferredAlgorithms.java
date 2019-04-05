@@ -33,17 +33,9 @@ public class PreferredAlgorithms
     public PreferredAlgorithms(
         int        type,
         boolean    critical,
-        int[]      preferrences)
+        int[]      preferences)
     {
-        super(type, critical, false, intToByteArray(preferrences));
-    }
-    
-    /**
-     * @deprecated mispelt!
-     */
-    public int[] getPreferrences()
-    {
-        return getPreferences();
+        super(type, critical, false, intToByteArray(preferences));
     }
 
     public int[] getPreferences()
