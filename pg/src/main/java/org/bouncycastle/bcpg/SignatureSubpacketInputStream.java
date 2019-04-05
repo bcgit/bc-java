@@ -7,6 +7,7 @@ import java.io.InputStream;
 import org.bouncycastle.bcpg.sig.EmbeddedSignature;
 import org.bouncycastle.bcpg.sig.Exportable;
 import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -144,6 +145,7 @@ public class SignatureSubpacketInputStream
         case PREFERRED_COMP_ALGS:
         case PREFERRED_HASH_ALGS:
         case PREFERRED_SYM_ALGS:
+        case PREFERRED_AEAD_ALGORITHMS:
             return new PreferredAlgorithms(type, isCritical, isLongLength, data);
         case KEY_FLAGS:
             return new KeyFlags(isCritical, isLongLength, data);
@@ -157,6 +159,8 @@ public class SignatureSubpacketInputStream
             return new RevocationReason(isCritical, isLongLength, data);
         case SIGNATURE_TARGET:
             return new SignatureTarget(isCritical, isLongLength, data);
+        case ISSUER_FINGERPRINT:
+            return new IssuerFingerprint(isCritical, isLongLength, data);
         }
 
         return new SignatureSubpacket(type, isCritical, isLongLength, data);

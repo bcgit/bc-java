@@ -29,4 +29,6 @@ public interface SignatureSubpacketTags
     public static final int FEATURES = 30;             // features
     public static final int SIGNATURE_TARGET = 31;     // signature target
     public static final int EMBEDDED_SIGNATURE = 32;   // embedded signature
+    public static final int ISSUER_FINGERPRINT = 33;   // issuer key fingerprint
+    public static final int PREFERRED_AEAD_ALGORITHMS = 34;   // preferred AEAD algorithms
 }

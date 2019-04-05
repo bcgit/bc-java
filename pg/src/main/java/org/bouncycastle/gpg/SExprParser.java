@@ -66,7 +66,7 @@ public class SExprParser
 
         type = SXprUtils.readString(inputStream, inputStream.read());
 		if (type.equals("protected-private-key")
-				|| type.equals("private-key"))
+           || type.equals("private-key"))
         {
             SXprUtils.skipOpenParenthesis(inputStream);
 
@@ -358,7 +358,9 @@ public class SExprParser
 
             SXprUtils.skipCloseParenthesis(inputStream);
             SXprUtils.skipCloseParenthesis(inputStream);
-		} else if (type.equals("d")) {
+		}
+        else if (type.equals("d"))
+        {
 			return null;
         }
         else
@@ -595,7 +597,8 @@ public class SExprParser
 		InputStream keyIn;
 		BigInteger d;
 
-		if (basicData == null) {
+		if (basicData == null)
+		{
 			keyIn = inputStream;
 			byte[] nBytes = SXprUtils.readBytes(inputStream,
 					inputStream.read());
@@ -603,7 +606,9 @@ public class SExprParser
 
 			SXprUtils.skipCloseParenthesis(inputStream);
 
-		} else {
+		}
+		else
+		{
 			keyData = basicData[0];
 			protectedAt = basicData[1];
 
@@ -622,9 +627,11 @@ public class SExprParser
         BigInteger q = readBigInteger("q", keyIn);
         BigInteger u = readBigInteger("u", keyIn);
 
-		if (basicData == null) {
+		if (basicData == null)
+		{
 			return new BigInteger[] { d, p, q, u };
 		}
+
         SXprUtils.skipCloseParenthesis(keyIn);
 
         SXprUtils.skipOpenParenthesis(keyIn);
