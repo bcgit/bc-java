@@ -17,3 +17,11 @@ pg/*.txt
 
 .idea
 
+core/out
+mail/out
+pg/out
+pkix/out
+prov/out
+tls/out
+test/out
+
