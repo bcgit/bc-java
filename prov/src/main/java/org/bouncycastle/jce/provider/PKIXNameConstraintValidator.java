@@ -11,6 +11,9 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralSubtree;
 import org.bouncycastle.util.Arrays;
@@ -59,9 +62,18 @@ public class PKIXNameConstraintValidator
 
         for (int j = subtree.size() - 1; j >= 0; j--)
         {
-            if (!subtree.getObjectAt(j).equals(dns.getObjectAt(j)))
-            {
-                return false;
+            // both subtree and dns are a ASN.1 Name and the elements are a RDN
+            RDN subtreeRdn = RDN.getInstance(subtree.getObjectAt(j));
+            for (int k=0; k<dns.size(); k++) {
+                RDN dnsRdn = RDN.getInstance(dns.getObjectAt(k));
+                // type must match, other types which are not restricted are allowed, see https://tools.ietf.org/html/rfc5280#section-7.1
+                if (subtreeRdn.getFirst().getType().equals(dnsRdn.getFirst().getType())) {
+                    // use new RFC 5280 comparison, NOTE: this is not different from with RFC 3280, where only binary comparison is used
+                    // obey RFC 5280 7.1
+                    if (!IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn)) {
+                        return false;
+                    }
+                }
             }
         }
 
