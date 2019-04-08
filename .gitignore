@@ -24,4 +24,5 @@ pkix/out
 prov/out
 tls/out
 test/out
+codesigning.jks
 
