@@ -81,7 +81,7 @@ public class PKIXNameConstraintValidator
                             continue dnsiteration;
                         }
                     }
-                    // use new RFC 5280 comparison, NOTE: this is not different from with RFC 3280, where only binary comparison is used
+                    // use new RFC 5280 comparison, NOTE: this is now different from with RFC 3280, where only binary comparison is used
                     // obey RFC 5280 7.1
                     // special treatment of serialNumber for GSMA SGP.22 RSP specification
                     if (subtreeRdn.size() == 1 && subtreeRdn.getFirst().getType().equals(RFC4519Style.serialNumber)) {
