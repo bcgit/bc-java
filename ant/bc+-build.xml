@@ -3,9 +3,6 @@
 <project name="crypto.bcbuild" default="build" basedir=".">
 
     <property file="bc-build.properties" />
-    <echo message="Mail home: ${mail.jar.home}"/>
-    <echo message="Junit home: ${junit.jar.home}"/>
-    <echo message="Activation home: ${activation.jar.home}"/>
     <property environment="env" />
 
     <property name="target.name" value="${target.prefix}-${release.suffix}" />
@@ -285,7 +282,7 @@
         </copy>
 
         <javac source="${bc.javac.source}" target="${bc.javac.target}"
-            srcdir="${lcrypto.target.src.dir}" verbose="true"
+            srcdir="${lcrypto.target.src.dir}"
             destdir="${lcrypto.target.classes.dir}"
 	    memoryMaximumSize="512m"
             fork="true"
