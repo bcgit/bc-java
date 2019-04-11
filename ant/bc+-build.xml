@@ -1117,7 +1117,7 @@
     -->
     <target name="zip-src" depends="zip-src-check, zip-src-jce, zip-src-jce-ext, zip-src-provider, zip-src-provider-ext">
         <zip basedir="${mail.target.src.dir}" destfile="${mail.target.src.zip}" />
-        <delete dir="${mail.target.src.dir}"/>
+        <delete dir="${mail.target.src.dir}" />
         <zip basedir="${pkix.target.src.dir}" destfile="${pkix.target.src.zip}" />
         <delete dir="${pkix.target.src.dir}" />
         <zip basedir="${pg.target.src.dir}" destfile="${pg.target.src.zip}" />
