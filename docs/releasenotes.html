@@ -29,15 +29,20 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>DTLS: Fixed infinite loop on IO exceptions.</li>
+<li>DTLS: Retransmission timers now properly apply to flights monolithically.</li>
+<li>BCJSSE: setEnabledCipherSuites ignores unsupported cipher suites.</li>
+<li>BCJSSE: SSLSocket implementations store passed-in 'host' before connecting.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>Builders for X509 certificates and CRLs now support replace and remove extension methods.</li>
 <li>DTLS: Added server-side support for HelloVerifyRequest.</li>
-<li>DTLS: Retransmission timers now properly apply to flights monolithically.</li>
 <li>DTLS: Added support for an overall handshake timeout.</li>
+<li>DTLS: Added support for the heartbeat extension (RFC 6520).</li>
 <li>Lightweight RSADigestSigner now support use of NullDigest.</li>
 <li>SM2Engine now supports C1C3C2 mode.</li>
+<li>BCJSSE: Added support for ALPN selectors (including in BC extension API for earlier JDKs).</li>
+<li>BCJSSE: Support 'SSL' algorithm for SSLContext (alias for 'TLS').</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
