@@ -156,11 +156,6 @@ public final class Arrays
         byte[]  expected,
         byte[]  supplied)
     {
-        if (expected == supplied)
-        {
-            return true;
-        }
-
         if (expected == null || supplied == null)
         {
             return false;
