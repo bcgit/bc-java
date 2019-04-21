@@ -60,6 +60,19 @@ public class SMIMEEnvelopedWriter
             }
         }
 
+        /**
+         * Set the underlying string size for encapsulated data
+         *
+         * @param bufferSize length of octet strings to buffer the data.
+         */
+        public Builder setBufferSize(
+            int bufferSize)
+        {
+            this.envGen.setBufferSize(bufferSize);
+
+            return this;
+        }
+
         public Builder setUnprotectedAttributeGenerator(CMSAttributeTableGenerator unprotectedAttributeGenerator)
         {
             this.envGen.setUnprotectedAttributeGenerator(unprotectedAttributeGenerator);
