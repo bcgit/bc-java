@@ -7,17 +7,20 @@ public class TlsDHConfig
 {
     protected final DHGroup explicitGroup;
     protected final int namedGroup;
+    protected final boolean padded;
 
     public TlsDHConfig(DHGroup explicitGroup)
     {
         this.explicitGroup = explicitGroup;
         this.namedGroup = -1;
+        this.padded = false;
     }
 
-    public TlsDHConfig(int namedGroup)
+    public TlsDHConfig(int namedGroup, boolean padded)
     {
         this.explicitGroup = null;
         this.namedGroup = namedGroup;
+        this.padded = padded;
     }
 
     public DHGroup getExplicitGroup()
@@ -28,5 +31,10 @@ public class TlsDHConfig
     public int getNamedGroup()
     {
         return namedGroup;
+    }
+
+    public boolean isPadded()
+    {
+        return padded;
     }
 }

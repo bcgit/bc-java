@@ -42,6 +42,12 @@ public class PSKTlsServer
         return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
+    public ProtocolVersion getMaximumVersion()
+    {
+        // TODO[tls13] Consider whether this class should offer TLSv13
+        return ProtocolVersion.TLSv12;
+    }
+
     public TlsCredentials getCredentials() throws IOException
     {
         int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);

@@ -36,17 +36,14 @@ public class BcTlsDHDomain implements TlsDHDomain
         return (dh.getP().bitLength() + 7) / 8;
     }
 
-    public static byte[] calculateBasicAgreement(DHPrivateKeyParameters privateKey, DHPublicKeyParameters publicKey)
+    public static BcTlsSecret calculateDHAgreement(BcTlsCrypto crypto, DHPrivateKeyParameters privateKey,
+        DHPublicKeyParameters publicKey, boolean padded)
     {
         DHBasicAgreement basicAgreement = new DHBasicAgreement();
         basicAgreement.init(privateKey);
         BigInteger agreementValue = basicAgreement.calculateAgreement(publicKey);
-
-        /*
-         * RFC 5246 8.1.2. Leading bytes of Z that contain all zero bits are stripped before it is
-         * used as the pre_master_secret.
-         */
-        return BigIntegers.asUnsignedByteArray(agreementValue);
+        byte[] secret = encodeValue(privateKey.getParameters(), padded, agreementValue);
+        return crypto.adoptLocalSecret(secret);
     }
 
     public static DHParameters getParameters(TlsDHConfig dhConfig)
@@ -73,7 +70,7 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     public BcTlsSecret calculateDHAgreement(DHPrivateKeyParameters privateKey, DHPublicKeyParameters publicKey)
     {
-        return crypto.adoptLocalSecret(calculateBasicAgreement(privateKey, publicKey));
+        return calculateDHAgreement(crypto, privateKey, publicKey, dhConfig.isPadded());
     }
 
     public TlsAgreement createDH()
@@ -83,6 +80,11 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     public BigInteger decodeParameter(byte[] encoding) throws IOException
     {
+        if (dhConfig.isPadded() && getValueLength(dhParameters) != encoding.length)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         return new BigInteger(1, encoding);
     }
 
@@ -107,7 +109,7 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     public byte[] encodeParameter(BigInteger x) throws IOException
     {
-        return encodeValue(dhParameters, false, x);
+        return encodeValue(dhParameters, dhConfig.isPadded(), x);
     }
 
     public byte[] encodePublicKey(DHPublicKeyParameters publicKey) throws IOException

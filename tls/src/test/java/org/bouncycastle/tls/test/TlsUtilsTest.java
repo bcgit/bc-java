@@ -98,6 +98,11 @@ public class TlsUtilsTest
                 throw new UnsupportedOperationException();
             }
 
+            public byte[] exportEarlyKeyingMaterial(String asciiLabel, byte[] context_value, int length)
+            {
+                throw new UnsupportedOperationException();
+            }
+
             public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
             {
                 throw new UnsupportedOperationException();
