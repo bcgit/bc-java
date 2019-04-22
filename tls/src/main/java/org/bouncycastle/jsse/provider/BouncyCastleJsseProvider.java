@@ -169,6 +169,8 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
+                    // TODO[tls13]
+//                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" });
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1", "TLSv1.1", "TLSv1.2" });
                 }
             });
@@ -177,6 +179,8 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
+                    // TODO[tls13]
+//                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1.1", "TLSv1.2", "TLSv1.3" });
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1.1", "TLSv1.2" });
                 }
             });
@@ -185,9 +189,20 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
+                    // TODO[tls13]
+//                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1.2", "TLSv1.3" });
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1.2" });
                 }
             });
+        // TODO[tls13]
+//        addAlgorithmImplementation("SSLContext.TLSV1.3", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_3",
+//            new EngineCreator()
+//            {
+//                public Object createInstance(Object constructorParameter)
+//                {
+//                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1.3" });
+//                }
+//            });
         addAlgorithmImplementation("SSLContext.DEFAULT", "org.bouncycastle.jsse.provider.SSLContext.Default",
             new EngineCreator()
             {

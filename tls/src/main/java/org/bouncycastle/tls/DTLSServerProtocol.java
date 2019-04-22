@@ -302,7 +302,7 @@ public class DTLSServerProtocol
         {
             NewSessionTicket newSessionTicket = state.server.getNewSessionTicket();
             byte[] newSessionTicketBody = generateNewSessionTicket(state, newSessionTicket);
-            handshake.sendMessage(HandshakeType.session_ticket, newSessionTicketBody);
+            handshake.sendMessage(HandshakeType.new_session_ticket, newSessionTicketBody);
         }
 
         // NOTE: Calculated exclusive of the Finished message itself

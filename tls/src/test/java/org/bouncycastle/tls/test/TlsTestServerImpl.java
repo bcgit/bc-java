@@ -189,7 +189,11 @@ class TlsTestServerImpl
         }
         if (isEmpty && (config.serverCertReq == TlsTestConfig.SERVER_CERT_REQ_MANDATORY))
         {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            short alertDescription = TlsUtils.isTLSv13(context)
+                ?   AlertDescription.certificate_required
+                :   AlertDescription.handshake_failure;
+
+            throw new TlsFatalAlert(alertDescription);
         }
 
         TlsCertificate[] chain = clientCertificate.getCertificateList();

@@ -37,6 +37,12 @@ public class PSKTlsClient
         return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
+    public ProtocolVersion[] getSupportedVersions()
+    {
+        // TODO[tls13] Consider whether this class should offer TLSv13
+        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+    }
+
     public TlsPSKIdentity getPSKIdentity()
     {
         return pskIdentity;

@@ -17,6 +17,7 @@ public class TlsClientProtocol
     protected TlsClient tlsClient = null;
     TlsClientContextImpl tlsClientContext = null;
 
+    protected Hashtable clientAgreements = null;
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
 
@@ -491,7 +492,7 @@ public class TlsClientProtocol
             this.connection_state = CS_CERTIFICATE_REQUEST;
             break;
         }
-        case HandshakeType.session_ticket:
+        case HandshakeType.new_session_ticket:
         {
             switch (this.connection_state)
             {
@@ -905,7 +906,9 @@ public class TlsClientProtocol
             tlsClientContext.setClientSupportedVersions(tlsClient.getSupportedVersions());
 
             client_version = ProtocolVersion.getLatestTLS(tlsClientContext.getClientSupportedVersions());
-            if (null == client_version || !ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
+            if (null == client_version
+                || client_version.isEarlierVersionOf(ProtocolVersion.TLSv10)
+                || client_version.isLaterVersionOf(ProtocolVersion.TLSv12))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -965,6 +968,8 @@ public class TlsClientProtocol
         }
 
         securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
+
+        this.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
 

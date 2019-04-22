@@ -27,7 +27,8 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class BcTlsECDomain implements TlsECDomain
 {
-    public static byte[] calculateBasicAgreement(ECPrivateKeyParameters privateKey, ECPublicKeyParameters publicKey)
+    public static BcTlsSecret calculateBasicAgreement(BcTlsCrypto crypto, ECPrivateKeyParameters privateKey,
+        ECPublicKeyParameters publicKey)
     {
         ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
         basicAgreement.init(privateKey);
@@ -38,7 +39,8 @@ public class BcTlsECDomain implements TlsECDomain
          * FE2OSP, the Field Element to Octet String Conversion Primitive, has constant length for
          * any given field; leading zeros found in this octet string MUST NOT be truncated.
          */
-        return BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue);
+        byte[] secret = BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue);
+        return crypto.adoptLocalSecret(secret);
     }
 
     public static ECDomainParameters getDomainParameters(TlsECConfig ecConfig)
@@ -88,7 +90,7 @@ public class BcTlsECDomain implements TlsECDomain
 
     public BcTlsSecret calculateECDHAgreement(ECPrivateKeyParameters privateKey, ECPublicKeyParameters publicKey)
     {
-        return crypto.adoptLocalSecret(calculateBasicAgreement(privateKey, publicKey));
+        return calculateBasicAgreement(crypto, privateKey, publicKey);
     }
 
     public TlsAgreement createECDH()

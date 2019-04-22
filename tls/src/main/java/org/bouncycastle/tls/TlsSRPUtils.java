@@ -1,6 +1,5 @@
 package org.bouncycastle.tls;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,12 +41,7 @@ public class TlsSRPUtils
             throw new IllegalArgumentException("'extensionData' cannot be null");
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
-        byte[] identity = TlsUtils.readOpaque8(buf, 1);
-
-        TlsProtocol.assertEmpty(buf);
-
-        return identity;
+        return TlsUtils.decodeOpaque8(extensionData, 1);
     }
 
     public static BigInteger readSRPParameter(InputStream input) throws IOException

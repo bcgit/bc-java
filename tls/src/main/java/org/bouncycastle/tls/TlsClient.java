@@ -30,6 +30,17 @@ public interface TlsClient
     Hashtable getClientExtensions()
         throws IOException;
 
+    /**
+     * If this client is offering TLS 1.3 or higher, this method may be called to determine for which
+     * groups a key share should be included in the initial ClientHello. Groups that were not included
+     * in the supported_groups extension (by {@link #getClientExtensions()} will be ignored. The protocol
+     * will then add a suitable key_share extension to the ClientHello extensions. 
+     * 
+     * @return a {@link Vector} of {@link NamedGroup named group} values, possibly empty or null. 
+     * @throws IOException
+     */
+    Vector getEarlyKeyShareGroups();
+
     void notifyServerVersion(ProtocolVersion selectedVersion)
         throws IOException;
 
