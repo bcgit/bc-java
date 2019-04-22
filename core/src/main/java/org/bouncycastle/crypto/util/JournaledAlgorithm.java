@@ -197,7 +197,6 @@ public class JournaledAlgorithm
         }
     }
 
-    @Override
     public byte[] getEncoded()
         throws IOException
     {
