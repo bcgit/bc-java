@@ -401,7 +401,7 @@ public class TlsServerProtocol
         case HandshakeType.server_key_exchange:
         case HandshakeType.certificate_request:
         case HandshakeType.server_hello_done:
-        case HandshakeType.session_ticket:
+        case HandshakeType.new_session_ticket:
         default:
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
@@ -696,7 +696,7 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.session_ticket);
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.new_session_ticket);
 
         newSessionTicket.encode(message);
 
@@ -717,7 +717,9 @@ public class TlsServerProtocol
         else
         {
             server_version = tlsServer.getServerVersion();
-            if (null == server_version || !ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(server_version)
+            if (null == server_version
+                || server_version.isEarlierVersionOf(ProtocolVersion.TLSv10)
+                || server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
                 || !ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);

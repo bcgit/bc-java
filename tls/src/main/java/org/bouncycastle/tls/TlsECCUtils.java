@@ -38,6 +38,17 @@ public class TlsECCUtils
         return TlsExtensionsUtils.readSupportedPointFormatsExtension(extensionData);
     }
 
+    public static TlsECConfig createNamedECConfig(TlsContext context, int namedGroup)
+        throws IOException
+    {
+        if (NamedGroup.getCurveBits(namedGroup) < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return new TlsECConfig(namedGroup);
+    }
+
     public static int getMinimumCurveBits(int cipherSuite)
     {
         /*

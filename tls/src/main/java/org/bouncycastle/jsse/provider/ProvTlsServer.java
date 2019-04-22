@@ -385,7 +385,11 @@ class ProvTlsServer
         {
             if (sslParameters.getNeedClientAuth())
             {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                short alertDescription = TlsUtils.isTLSv13(context)
+                    ?   AlertDescription.certificate_required
+                    :   AlertDescription.handshake_failure;
+
+                throw new TlsFatalAlert(alertDescription);
             }
         }
         else

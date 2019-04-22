@@ -7,6 +7,16 @@ public abstract class DefaultTlsClient
 {
     private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
+        // TODO[tls13]
+//        /*
+//         * TLS 1.3
+//         */
+//        CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+//        CipherSuite.TLS_AES_128_GCM_SHA256,
+
+        /*
+         * pre-TLS 1.3
+         */
         CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
         CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
         CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
