@@ -12,7 +12,13 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralSubtree;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
@@ -392,9 +398,33 @@ public class PKIXNameConstraintValidator
 
         for (int j = subtree.size() - 1; j >= 0; j--)
         {
-            if (!subtree.getObjectAt(j).equals(dns.getObjectAt(j)))
-            {
-                return false;
+            // both subtree and dns are a ASN.1 Name and the elements are a RDN
+            RDN subtreeRdn = RDN.getInstance(subtree.getObjectAt(j));
+            dnsiteration:
+            for (int k=0; k<dns.size(); k++) {
+                RDN dnsRdn = RDN.getInstance(dns.getObjectAt(k));
+                // check if types and values of all naming attributes are matching, other types which are not restricted are allowed, see https://tools.ietf.org/html/rfc5280#section-7.1
+                if (subtreeRdn.size() > 0 && subtreeRdn.size() == dnsRdn.size()) {
+                    // Two relative distinguished names
+                    //   RDN1 and RDN2 match if they have the same number of naming attributes
+                    //   and for each naming attribute in RDN1 there is a matching naming attribute in RDN2.
+                    //   NOTE: this is checking the attributes in the same order, which might be not necessary, if this is a problem also IETFUtils.rDNAreEqual mus tbe changed.
+                    for (int l=0; l<subtreeRdn.size(); l++) {
+                        if (!subtreeRdn.getTypesAndValues()[l].getType().equals(dnsRdn.getTypesAndValues()[l].getType())) {
+                            continue dnsiteration;
+                        }
+                    }
+                    // use new RFC 5280 comparison, NOTE: this is now different from with RFC 3280, where only binary comparison is used
+                    // obey RFC 5280 7.1
+                    // special treatment of serialNumber for GSMA SGP.22 RSP specification
+                    if (subtreeRdn.size() == 1 && subtreeRdn.getFirst().getType().equals(RFC4519Style.serialNumber)) {
+                        if (!dnsRdn.getFirst().getValue().toString().startsWith(subtreeRdn.getFirst().getValue().toString())) {
+                            return false;
+                        }
+                    } else if (!IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn)) {
+                        return false;
+                    }
+                }
             }
         }
 
