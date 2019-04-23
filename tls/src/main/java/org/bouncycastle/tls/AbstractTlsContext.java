@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Times;
@@ -187,11 +188,32 @@ abstract class AbstractTlsContext
         }
     }
 
+    public byte[] exportEarlyKeyingMaterial(String asciiLabel, byte[] context_value, int length)
+    {
+        if (context_value != null && !TlsUtils.isValidUint16(context_value.length))
+        {
+            throw new IllegalArgumentException("'context_value' must have length less than 2^16 (or be null)");
+        }
+
+        // TODO[tls13]
+        TlsSecret exporter_secret = null; // early_exporter_master_secret
+
+        return exportKeyingMaterial13(exporter_secret, asciiLabel, context_value, length);
+    }
+
     public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
     {
         if (context_value != null && !TlsUtils.isValidUint16(context_value.length))
         {
             throw new IllegalArgumentException("'context_value' must have length less than 2^16 (or be null)");
+        }
+
+        if (TlsUtils.isTLSv13(this))
+        {
+            // TODO[tls13]
+            TlsSecret exporter_secret = null; // exporter_master_secret
+
+            return exportKeyingMaterial13(exporter_secret, asciiLabel, context_value, length);
         }
 
         SecurityParameters sp = getSecurityParametersConnection();
@@ -239,5 +261,19 @@ abstract class AbstractTlsContext
         }
 
         return TlsUtils.PRF(this, sp.getMasterSecret(), asciiLabel, seed, length).extract();
+    }
+
+    protected byte[] exportKeyingMaterial13(TlsSecret exporter_secret, String asciiLabel, byte[] context_value, int length)
+    {
+        if (context_value == null)
+        {
+            context_value = TlsUtils.EMPTY_BYTES;
+        }
+
+        /*
+         *  TODO[tls13]
+         *  HKDF-Expand-Label(Derive-Secret(Secret, label, ""), "exporter", Hash(context_value), key_length)
+         */
+        throw new UnsupportedOperationException();
     }
 }

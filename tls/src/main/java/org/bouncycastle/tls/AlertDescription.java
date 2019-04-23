@@ -235,6 +235,21 @@ public class AlertDescription
      */
     public static final short inappropriate_fallback = 86;
 
+    /*
+     * RFC 8446
+     */
+
+    /**
+     * Sent by endpoints that receive a handshake message not containing an extension that is
+     * mandatory to send for the offered TLS version or other negotiated parameters.
+     */
+    public static final short missing_extension = 109;
+
+    /**
+     * Sent by servers when a client certificate is desired but none was provided by the client.
+     */
+    public static final short certificate_required = 116;
+
     public static String getName(short alertDescription)
     {
         switch (alertDescription)
@@ -303,6 +318,10 @@ public class AlertDescription
             return "no_application_protocol";
         case inappropriate_fallback:
             return "inappropriate_fallback";
+        case missing_extension:
+            return "missing_extension";
+        case certificate_required:
+            return "certificate_required";
         default:
             return "UNKNOWN";
         }

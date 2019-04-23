@@ -86,7 +86,7 @@ public class BcDefaultTlsCredentialedAgreement
         public TlsSecret generateAgreement(TlsCertificate peerCertificate) throws IOException
         {
             DHPublicKeyParameters peerPublicKey = BcTlsCertificate.convert(crypto, peerCertificate).getPubKeyDH();
-            return crypto.adoptLocalSecret(BcTlsDHDomain.calculateBasicAgreement(privateKey, peerPublicKey));
+            return BcTlsDHDomain.calculateDHAgreement(crypto, privateKey, peerPublicKey, false);
         }
 
         public Certificate getCertificate()
@@ -112,7 +112,7 @@ public class BcDefaultTlsCredentialedAgreement
         public TlsSecret generateAgreement(TlsCertificate peerCertificate) throws IOException
         {
             ECPublicKeyParameters peerPublicKey = BcTlsCertificate.convert(crypto, peerCertificate).getPubKeyEC();
-            return crypto.adoptLocalSecret(BcTlsECDomain.calculateBasicAgreement(privateKey, peerPublicKey));
+            return BcTlsECDomain.calculateBasicAgreement(crypto, privateKey, peerPublicKey);
         }
 
         public Certificate getCertificate()

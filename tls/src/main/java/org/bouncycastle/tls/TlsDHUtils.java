@@ -13,9 +13,15 @@ import org.bouncycastle.util.BigIntegers;
 
 public class TlsDHUtils
 {
-    public static TlsDHConfig createNamedDHConfig(int namedGroup)
+    public static TlsDHConfig createNamedDHConfig(TlsContext context, int namedGroup)
     {
-        return NamedGroup.getFiniteFieldBits(namedGroup) > 0 ? new TlsDHConfig(namedGroup) : null;
+        if (namedGroup < 0 || NamedGroup.getFiniteFieldBits(namedGroup) < 1)
+        {
+            return null;
+        }
+
+        boolean padded = TlsUtils.isTLSv13(context);
+        return new TlsDHConfig(namedGroup, padded);
     }
 
     public static DHGroup getDHGroup(TlsDHConfig dhConfig)
@@ -113,7 +119,7 @@ public class TlsDHUtils
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (null == clientSupportedGroups || Arrays.contains(clientSupportedGroups, namedGroup))
         {
-            return new TlsDHConfig(namedGroup);
+            return new TlsDHConfig(namedGroup, false);
         }
 
         throw new TlsFatalAlert(AlertDescription.illegal_parameter);
