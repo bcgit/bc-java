@@ -41,16 +41,16 @@ public class RSAKeyParameters
 
     private BigInteger validate(BigInteger modulus)
     {
+        if ((modulus.intValue() & 1) == 0)
+        {
+            throw new IllegalArgumentException("RSA modulus is even");
+        }
+
         // If you need to set this you need to have a serious word to whoever is generating
         // your keys.
         if (Properties.isOverrideSet("org.bouncycastle.rsa.allow_unsafe_mod"))
         {
             return modulus;
-        }
-
-        if ((modulus.intValue() & 1) == 0)
-        {
-            throw new IllegalArgumentException("RSA modulus is even");
         }
 
         if (!modulus.gcd(SMALL_PRIMES_PRODUCT).equals(ONE))
