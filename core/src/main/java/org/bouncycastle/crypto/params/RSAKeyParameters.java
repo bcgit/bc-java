@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.util.Properties;
+
 public class RSAKeyParameters
     extends AsymmetricKeyParameter
 {
@@ -39,6 +41,13 @@ public class RSAKeyParameters
 
     private BigInteger validate(BigInteger modulus)
     {
+        // If you need to set this you need to have a serious word to whoever is generating
+        // your keys.
+        if (Properties.isOverrideSet("org.bouncycastle.rsa.allow_unsafe_mod"))
+        {
+            return modulus;
+        }
+
         if ((modulus.intValue() & 1) == 0)
         {
             throw new IllegalArgumentException("RSA modulus is even");
