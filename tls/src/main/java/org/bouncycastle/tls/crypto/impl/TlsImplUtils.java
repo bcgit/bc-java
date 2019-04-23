@@ -32,6 +32,16 @@ public class TlsImplUtils
         return isTLSv12(cryptoParams.getServerVersion());
     }
 
+    public static boolean isTLSv13(ProtocolVersion version)
+    {
+        return ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
+    }
+
+    public static boolean isTLSv13(TlsCryptoParameters cryptoParams)
+    {
+        return isTLSv13(cryptoParams.getServerVersion());
+    }
+
     public static byte[] calculateKeyBlock(TlsCryptoParameters cryptoParams, int length)
     {
         SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();

@@ -87,6 +87,21 @@ public class NamedGroup
 
     private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096", "ffdhe6144", "ffdhe8192" };
 
+    public static boolean canBeNegotiated(int namedGroup, ProtocolVersion version)
+    {
+        if (TlsUtils.isTLSv13(version))
+        {
+            if ((namedGroup >= sect163k1 && namedGroup <= secp256k1)
+                || (namedGroup >= brainpoolP256r1 && namedGroup <= brainpoolP512r1)
+                || (namedGroup >= arbitrary_explicit_prime_curves && namedGroup <= arbitrary_explicit_char2_curves))
+            {
+                return false;
+            }
+        }
+
+        return isValid(namedGroup);
+    }
+
     public static int getByName(String name)
     {
         if (name != null)

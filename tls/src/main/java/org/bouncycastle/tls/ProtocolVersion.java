@@ -10,6 +10,7 @@ public final class ProtocolVersion
     public static final ProtocolVersion TLSv10 = new ProtocolVersion(0x0301, "TLS 1.0");
     public static final ProtocolVersion TLSv11 = new ProtocolVersion(0x0302, "TLS 1.1");
     public static final ProtocolVersion TLSv12 = new ProtocolVersion(0x0303, "TLS 1.2");
+    public static final ProtocolVersion TLSv13 = new ProtocolVersion(0x0304, "TLS 1.3");
     public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF, "DTLS 1.0");
     public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD, "DTLS 1.2");
 
@@ -298,6 +299,8 @@ public final class ProtocolVersion
                 return TLSv11;
             case 0x03:
                 return TLSv12;
+            case 0x04:
+                return TLSv13;
             }
             return getUnknownVersion(major, minor, "TLS");
         }

@@ -35,5 +35,17 @@ public class HandshakeType
     /*
      * RFC 5077 
      */
+    /**
+     * @deprecated Use {@link #new_session_ticket}
+     */
     public static final short session_ticket = 4;
+
+    /*
+     * RFC 8446
+     */
+    public static final short new_session_ticket = 4;
+    public static final short end_of_early_data = 5; 
+    public static final short encrypted_extensions = 8; 
+    public static final short key_update = 24; 
+    public static final short message_hash = 254; 
 }
