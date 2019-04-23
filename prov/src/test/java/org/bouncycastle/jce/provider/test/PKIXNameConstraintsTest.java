@@ -85,12 +85,12 @@ public class PKIXNameConstraintsTest
 
     private final static String testDNIsConstraint[] =
     { "O=test org, OU=test org unit",
-            "O=test org, OU=test org unit, CN=John Doe" };
+            "O=test org, OU=test org unit, CN=John Doe",
+            "OU=test org unit, O=test org, CN=John Doe",};
 
     private final static String testDNIsNotConstraint[] =
     { "O=test org, OU=test org unit, CN=John Doe2",
             "O=test org, OU=test org unit2",
-            "OU=test org unit, O=test org, CN=John Doe",
             "O=test org, OU=test org unit, CN=John Doe, L=USA" };
 
     private final static String testDNS = "abc.test.com";
