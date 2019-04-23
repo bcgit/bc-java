@@ -25,10 +25,13 @@ import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -276,6 +279,16 @@ public class TlsUtils
         return isTLSv12(context.getServerVersion());
     }
 
+    public static boolean isTLSv13(ProtocolVersion version)
+    {
+        return ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
+    }
+
+    public static boolean isTLSv13(TlsContext context)
+    {
+        return isTLSv13(context.getServerVersion());
+    }
+
     public static void writeUint8(short i, OutputStream output)
         throws IOException
     {
@@ -493,6 +506,56 @@ public class TlsUtils
         writeUint16Array(uints, buf, offset + 2);
     }
 
+    public static byte[] decodeOpaque8(byte[] buf)
+        throws IOException
+    {
+        return decodeOpaque8(buf, 0);
+    }
+
+    public static byte[] decodeOpaque8(byte[] buf, int minLength)
+        throws IOException
+    {
+        if (buf == null)
+        {
+            throw new IllegalArgumentException("'buf' cannot be null");
+        }
+        if (buf.length < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        short length = readUint8(buf, 0);
+        if (buf.length != (length + 1) || length < minLength)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return Arrays.copyOfRange(buf, 1, buf.length);
+    }
+
+    public static byte[] decodeOpaque16(byte[] buf)
+        throws IOException
+    {
+        return decodeOpaque16(buf, 0);
+    }
+
+    public static byte[] decodeOpaque16(byte[] buf, int minLength)
+        throws IOException
+    {
+        if (buf == null)
+        {
+            throw new IllegalArgumentException("'buf' cannot be null");
+        }
+        if (buf.length < 2)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        int length = readUint16(buf, 0);
+        if (buf.length != (length + 2) || length < minLength)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return Arrays.copyOfRange(buf, 2, buf.length);
+    }
+
     public static short decodeUint8(byte[] buf) throws IOException
     {
         if (buf == null)
@@ -540,11 +603,30 @@ public class TlsUtils
         return readUint16(buf, 0);
     }
 
+    public static long decodeUint32(byte[] buf) throws IOException
+    {
+        if (buf == null)
+        {
+            throw new IllegalArgumentException("'buf' cannot be null");
+        }
+        if (buf.length != 4)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return readUint32(buf, 0);
+    }
+
     public static byte[] encodeOpaque8(byte[] buf)
         throws IOException
     {
         checkUint8(buf.length);
         return Arrays.prepend(buf, (byte)buf.length);
+    }
+
+    public static byte[] encodeOpaque16(byte[] buf)
+        throws IOException
+    {
+        return Arrays.concatenate(encodeUint16(buf.length), buf);
     }
 
     public static byte[] encodeUint8(short uint) throws IOException
@@ -578,6 +660,15 @@ public class TlsUtils
         byte[] result = new byte[2 + length];
         writeUint16ArrayWithUint16Length(uints, result, 0);
         return result;
+    }
+
+    public static byte[] encodeUint32(long uint) throws IOException
+    {
+        checkUint32(uint);
+
+        byte[] encoding = new byte[4];
+        writeUint32(uint, encoding, 0);
+        return encoding;
     }
 
     public static byte[] encodeVersion(ProtocolVersion version) throws IOException
@@ -1677,7 +1768,7 @@ public class TlsUtils
         }
     }
 
-    private static Vector vectorOfOne(Object obj)
+    public static Vector vectorOfOne(Object obj)
     {
         Vector v = new Vector(1);
         v.addElement(obj);
@@ -1785,6 +1876,7 @@ public class TlsUtils
         case CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA:
             return EncryptionAlgorithm.AES_128_CBC;
 
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CCM:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM:
@@ -1793,6 +1885,7 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_AES_128_CCM:
             return EncryptionAlgorithm.AES_128_CCM;
 
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256:
@@ -1801,6 +1894,7 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_AES_128_CCM_8:
             return EncryptionAlgorithm.AES_128_CCM_8;
 
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_GCM_SHA256:
@@ -1873,6 +1967,7 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_AES_256_CCM_8:
             return EncryptionAlgorithm.AES_256_CCM_8;
 
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_anon_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384:
@@ -2033,6 +2128,7 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
             return EncryptionAlgorithm.CAMELLIA_256_GCM;
 
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
@@ -2416,6 +2512,11 @@ public class TlsUtils
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
             return KeyExchangeAlgorithm.SRP_RSA;
 
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
         default:
             return -1;
         }
@@ -2439,6 +2540,11 @@ public class TlsUtils
     {
         switch (cipherSuite)
         {
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_anon_WITH_ARIA_128_GCM_SHA256:
@@ -2752,6 +2858,13 @@ public class TlsUtils
     {
         switch (cipherSuite)
         {
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+            return ProtocolVersion.TLSv13;
+
         case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA256:
@@ -3943,5 +4056,76 @@ public class TlsUtils
             }
         }
         return false;
+    }
+
+    static Hashtable addEarlyKeySharesToClientHello(TlsContext context, TlsClient client, Hashtable clientExtensions)
+        throws IOException
+    {
+        if (!TlsUtils.isTLSv13(context.getClientVersion()))
+        {
+            return null;
+        }
+
+        int[] offeredGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
+        if (null == offeredGroups || offeredGroups.length < 1)
+        {
+            return null;
+        }
+
+        Vector earlyGroups = client.getEarlyKeyShareGroups();
+        if (null == earlyGroups || earlyGroups.isEmpty())
+        {
+            return null;
+        }
+
+        TlsCrypto crypto = context.getCrypto();
+        Vector clientShares = new Vector();
+        Hashtable clientAgreements = new Hashtable();
+
+        for (int i = 0; i < offeredGroups.length; ++i)
+        {
+            int offeredGroup = offeredGroups[i];
+
+            if (!earlyGroups.contains(offeredGroup)
+                || clientAgreements.containsKey(offeredGroup)
+                || !crypto.hasNamedGroup(offeredGroup))
+            {
+                continue;
+            }
+
+            TlsAgreement agreement = null;
+            if (NamedGroup.refersToASpecificCurve(offeredGroup))
+            {
+                if (crypto.hasECDHAgreement())
+                {
+                    agreement = crypto.createECDomain(new TlsECConfig(offeredGroup)).createECDH();
+                }
+            }
+            else if (NamedGroup.refersToASpecificFiniteField(offeredGroup))
+            {
+                if (crypto.hasDHAgreement())
+                {
+                    agreement = crypto.createDHDomain(new TlsDHConfig(offeredGroup, true)).createDH();
+                }
+            }
+
+            if (null != agreement)
+            {
+                byte[] key_exchange = agreement.generateEphemeral();
+                KeyShareEntry clientShare = new KeyShareEntry(offeredGroup, key_exchange);
+
+                clientShares.addElement(clientShare);
+                clientAgreements.put(offeredGroup, agreement);
+            }
+        }
+
+        if (clientAgreements.isEmpty())
+        {
+            return null;
+        }
+
+        TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
+
+        return clientAgreements;
     }
 }

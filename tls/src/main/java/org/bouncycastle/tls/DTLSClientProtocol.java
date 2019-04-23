@@ -327,7 +327,7 @@ public class DTLSClientProtocol
         if (state.expectSessionTicket)
         {
             serverMessage = handshake.receiveMessage();
-            if (serverMessage.getType() == HandshakeType.session_ticket)
+            if (serverMessage.getType() == HandshakeType.new_session_ticket)
             {
                 processNewSessionTicket(state, serverMessage.getBody());
             }
@@ -441,6 +441,8 @@ public class DTLSClientProtocol
         }
 
         securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(state.clientExtensions);
+
+        state.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(state.clientContext, state.client, state.clientExtensions);
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
 
@@ -941,6 +943,7 @@ public class DTLSClientProtocol
         boolean resumedSession = false;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
+        Hashtable clientAgreements = null;
         TlsKeyExchange keyExchange = null;
         TlsAuthentication authentication = null;
         CertificateStatus certificateStatus = null;

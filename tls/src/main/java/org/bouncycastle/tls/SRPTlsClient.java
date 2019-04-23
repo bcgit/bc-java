@@ -38,6 +38,12 @@ public class SRPTlsClient
         return false;
     }
 
+    public ProtocolVersion getClientVersion()
+    {
+        // TODO[tls13] Consider whether this class should offer TLSv13
+        return ProtocolVersion.TLSv12;
+    }
+
     public Hashtable getClientExtensions()
         throws IOException
     {
