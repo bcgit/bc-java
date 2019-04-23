@@ -196,6 +196,54 @@ public class RSATest
         System.getProperties().remove(PKCS1Encoding.NOT_STRICT_LENGTH_ENABLED_PROPERTY);
     }
 
+    private void testUnsafeModulusAndWrongExp()
+    {
+        try
+        {
+            try
+            {
+                new RSAKeyParameters(false, mod, pubExp.multiply(BigInteger.valueOf(2)));
+
+                fail("no exception");
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue("RSA publicExponent is even".equals(e.getMessage()));
+            }
+
+            try
+            {
+                new RSAKeyParameters(false, mod.multiply(BigInteger.valueOf(2)), pubExp);
+
+                fail("no exception");
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue("RSA modulus is even".equals(e.getMessage()));
+            }
+
+            try
+            {
+                new RSAKeyParameters(false, mod.multiply(BigInteger.valueOf(3)), pubExp);
+
+                fail("no exception");
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue("RSA modulus has a small prime factor".equals(e.getMessage()));
+            }
+
+            System.setProperty("org.bouncycastle.rsa.allow_unsafe_mod", "true");
+
+            // this should now work (sigh...)
+            new RSAKeyParameters(false, mod.multiply(BigInteger.valueOf(3)), pubExp);
+        }
+        finally
+        {
+            System.clearProperty("org.bouncycastle.rsa.allow_unsafe_mod");
+        }
+    }
+
     private void testTruncatedPKCS1Block(RSAKeyParameters pubParameters, RSAKeyParameters privParameters)
     {
         checkForPKCS1Exception(pubParameters, privParameters, truncatedDataBlock, "block incorrect");
@@ -649,6 +697,7 @@ public class RSATest
         testTruncatedPKCS1Block(pubParameters, privParameters);
         testWrongPaddingPKCS1Block(pubParameters, privParameters);
         test_CVE_2017_15361();
+        testUnsafeModulusAndWrongExp();
 
         try
         {
