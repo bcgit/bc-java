@@ -7,4 +7,9 @@ public class PKIXNameConstraintValidatorException
     {
         super(msg);
     }
+
+    public PKIXNameConstraintValidatorException(String msg, Throwable e)
+    {
+        super(msg, e);
+    }
 }
