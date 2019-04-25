@@ -4,6 +4,7 @@ import java.security.InvalidKeyException;
 import java.util.Hashtable;
 
 import javax.crypto.Mac;
+import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.crypto.TlsHMAC;
@@ -85,6 +86,18 @@ public class JceTlsHMAC
     public byte[] calculateMAC()
     {
         return hmac.doFinal();
+    }
+
+    public void calculateMAC(byte[] output, int outOff)
+    {
+        try
+        {
+            hmac.doFinal(output, outOff);
+        }
+        catch (ShortBufferException e)
+        {
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     public int getInternalBlockSize()
