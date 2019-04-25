@@ -597,9 +597,14 @@ public class BcTlsCrypto
         return new CBCBlockCipher(new SEEDEngine());
     }
 
+    public TlsHMAC createHMAC(short hashAlgorithm)
+    {
+        return new HMacOperator(createDigest(hashAlgorithm));
+    }
+
     public TlsHMAC createHMAC(int macAlgorithm)
     {
-        return new HMacOperator(createDigest(TlsUtils.getHashAlgorithmForHMACAlgorithm(macAlgorithm)));
+        return createHMAC(TlsUtils.getHashAlgorithmForHMACAlgorithm(macAlgorithm));
     }
 
     public TlsSRP6Client createSRP6Client(TlsSRPConfig srpConfig)
@@ -674,6 +679,11 @@ public class BcTlsCrypto
                 return verifierGenerator.generateVerifier(salt, identity, password);
             }
         };
+    }
+
+    public TlsSecret hkdfInit(short hashAlgorithm)
+    {
+        return adoptLocalSecret(new byte[HashAlgorithm.getOutputSize(hashAlgorithm)]);
     }
 
     private class BlockOperator
@@ -790,6 +800,11 @@ public class BcTlsCrypto
             hmac.doFinal(rv, 0);
 
             return rv;
+        }
+
+        public void calculateMAC(byte[] output, int outOff)
+        {
+            hmac.doFinal(output, outOff);
         }
 
         public int getInternalBlockSize()
