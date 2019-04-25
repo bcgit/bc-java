@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto;
 import java.io.IOException;
 
 import org.bouncycastle.tls.EncryptionAlgorithm;
+import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 
 /**
@@ -56,4 +57,23 @@ public interface TlsSecret
      * @return the secret's internal data.
      */
     byte[] extract();
+
+    /**
+     * RFC 5869 HKDF-Expand function, with this secret's data as the pseudo-random key ('prk').
+     * 
+     * @param hashAlgorithm the hash algorithm to instantiate HMAC with. See {@link HashAlgorithm} for values.
+     * @param info optional context and application specific information (can be zero-length).
+     * @param length length of output keying material in octets.
+     * @return output keying material (of 'length' octets).
+     */
+    TlsSecret hkdfExpand(short hashAlgorithm, byte[] info, int length);
+
+    /**
+     * RFC 5869 HKDF-Extract function, with this secret's data as the 'salt'.
+     * 
+     * @param hashAlgorithm the hash algorithm to instantiate HMAC with. See {@link HashAlgorithm} for values.
+     * @param ikm input keying material.
+     * @return a pseudo-random key (of HashLen octets).
+     */
+    TlsSecret hkdfExtract(short hashAlgorithm, byte[] ikm);
 }
