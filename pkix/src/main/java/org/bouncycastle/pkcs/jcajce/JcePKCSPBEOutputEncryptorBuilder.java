@@ -5,7 +5,6 @@ import java.security.Provider;
 import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
-import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -26,6 +25,7 @@ import org.bouncycastle.crypto.util.PBKDF2Config;
 import org.bouncycastle.crypto.util.PBKDFConfig;
 import org.bouncycastle.crypto.util.ScryptConfig;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jcajce.spec.ScryptKeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;

@@ -9,7 +9,6 @@ import java.security.Provider;
 import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
-import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -28,6 +27,7 @@ import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
