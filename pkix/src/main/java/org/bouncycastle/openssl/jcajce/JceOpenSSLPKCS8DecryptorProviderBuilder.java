@@ -7,7 +7,6 @@ import java.security.GeneralSecurityException;
 import java.security.Provider;
 
 import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
@@ -20,6 +19,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CharToByteConverter;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.io.CipherInputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
