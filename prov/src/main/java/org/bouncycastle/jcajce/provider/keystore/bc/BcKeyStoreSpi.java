@@ -28,8 +28,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
@@ -48,6 +46,8 @@ import org.bouncycastle.crypto.io.DigestOutputStream;
 import org.bouncycastle.crypto.io.MacInputStream;
 import org.bouncycastle.crypto.io.MacOutputStream;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.jcajce.io.CipherInputStream;
+import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
