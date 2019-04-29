@@ -70,11 +70,11 @@ abstract class SupportedGroups
             int namedGroup = NamedGroup.getByName(name);
             if (namedGroup < 0)
             {
-                LOG.warning("'" + PROPERTY_NAMEDGROUPS + "' contains unrecognised NamedGroup: " + name);
+                LOG.finest("'" + PROPERTY_NAMEDGROUPS + "' contains unrecognised NamedGroup: " + name);
             }
             else if (provDisableChar2 && NamedGroup.isChar2Curve(namedGroup))
             {
-                LOG.warning("'" + PROPERTY_NAMEDGROUPS + "' contains disabled characteristic-2 curve: " + name);
+                LOG.finest("'" + PROPERTY_NAMEDGROUPS + "' contains disabled characteristic-2 curve: " + name);
             }
             else
             {

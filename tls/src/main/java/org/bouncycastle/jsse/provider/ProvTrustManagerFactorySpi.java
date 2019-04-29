@@ -87,7 +87,7 @@ class ProvTrustManagerFactorySpi
         {
             if (null == tsPath)
             {
-                LOG.info("Initializing empty trust store");
+                LOG.finest("Initializing empty trust store");
             }
             else
             {

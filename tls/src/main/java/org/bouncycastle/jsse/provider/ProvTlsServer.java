@@ -459,7 +459,7 @@ class ProvTlsServer
             Collection<BCSNIMatcher> sniMatchers = sslParameters.getSNIMatchers();
             if (null == sniMatchers || sniMatchers.isEmpty())
             {
-                LOG.fine("Server ignored SNI (no matchers specified)");
+                LOG.finest("Server ignored SNI (no matchers specified)");
             }
             else
             {

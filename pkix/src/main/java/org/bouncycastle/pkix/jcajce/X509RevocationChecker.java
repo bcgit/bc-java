@@ -396,7 +396,7 @@ public class X509RevocationChecker
 
         if (issuerList.isEmpty())
         {
-            LOG.log(Level.INFO, "configured with 0 pre-loaded CRLs");
+            LOG.log(Level.FINEST, "configured with 0 pre-loaded CRLs");
         }
         else
         {

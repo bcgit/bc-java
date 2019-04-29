@@ -401,13 +401,13 @@ class ProvTlsClient
 
         if (isResumed)
         {
-            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+            LOG.finest("Server resumed session: " + Hex.toHexString(sessionID));
         }
         else
         {
             if (sessionID == null || sessionID.length < 1)
             {
-                LOG.fine("Server did not specify a session ID");
+                LOG.finest("Server did not specify a session ID");
             }
             else
             {

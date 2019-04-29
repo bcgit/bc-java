@@ -57,7 +57,7 @@ class ProvKeyManagerFactorySpi
         {
             if (null == ksPath)
             {
-                LOG.info("Initializing empty key store");
+                LOG.finest("Initializing empty key store");
             }
             else
             {
