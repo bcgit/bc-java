@@ -277,7 +277,7 @@ class ProvTlsServer
 
         int selectedCipherSuite = super.getSelectedCipherSuite();
 
-        LOG.fine("Server selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+        LOG.finest("Server selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
 
         keyManagerMissCache = null;
 
@@ -367,7 +367,7 @@ class ProvTlsServer
 
         String protocolString = manager.getContext().getProtocolString(serverVersion);
 
-        LOG.fine("Server selected protocol version: " + protocolString);
+        LOG.finest("Server selected protocol version: " + protocolString);
 
         return serverVersion;
     }
@@ -469,7 +469,7 @@ class ProvTlsServer
                     throw new TlsFatalAlert(AlertDescription.unrecognized_name);
                 }
 
-                LOG.fine("Server accepted SNI: " + matchedSNIServerName);
+                LOG.finest("Server accepted SNI: " + matchedSNIServerName);
             }
         }
     }

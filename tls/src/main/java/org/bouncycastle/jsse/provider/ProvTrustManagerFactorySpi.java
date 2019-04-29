@@ -91,7 +91,7 @@ class ProvTrustManagerFactorySpi
             }
             else
             {
-                LOG.info("Initializing with trust store at path: " + tsPath);
+                LOG.finest("Initializing with trust store at path: " + tsPath);
                 tsInput = new BufferedInputStream(new FileInputStream(tsPath));
             }
 

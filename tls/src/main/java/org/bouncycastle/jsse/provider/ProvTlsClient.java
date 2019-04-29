@@ -378,7 +378,7 @@ class ProvTlsClient
     {
         manager.getContext().validateNegotiatedCipherSuite(selectedCipherSuite);
 
-        LOG.fine("Client notified of selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+        LOG.finest("Client notified of selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
 
         super.notifySelectedCipherSuite(selectedCipherSuite);
     }
@@ -388,7 +388,7 @@ class ProvTlsClient
     {
         String protocolString = manager.getContext().getProtocolString(serverVersion);
 
-        LOG.fine("Client notified of selected protocol version: " + protocolString);
+        LOG.finest("Client notified of selected protocol version: " + protocolString);
 
         super.notifyServerVersion(serverVersion);
     }
@@ -411,7 +411,7 @@ class ProvTlsClient
             }
             else
             {
-                LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+                LOG.finest("Server specified new session: " + Hex.toHexString(sessionID));
             }
 
             if (!manager.getEnableSessionCreation())

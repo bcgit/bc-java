@@ -61,7 +61,7 @@ class ProvKeyManagerFactorySpi
             }
             else
             {
-                LOG.info("Initializing with key store at path: " + ksPath);
+                LOG.finest("Initializing with key store at path: " + ksPath);
                 ksInput = new BufferedInputStream(new FileInputStream(ksPath));
             }
 

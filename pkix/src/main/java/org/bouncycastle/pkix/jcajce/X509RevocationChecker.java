@@ -582,7 +582,7 @@ public class X509RevocationChecker
 
                             urlStream.close();
 
-                            LOG.log(Level.INFO, "downloaded CRL from CrlDP " + url + " for issuer \"" + issuer + "\"");
+                            LOG.log(Level.FINEST, "downloaded CRL from CrlDP " + url + " for issuer \"" + issuer + "\"");
 
                             crlCache.put(name, new WeakReference<X509CRL>(crl));
 
