@@ -51,17 +51,17 @@ class PropertyUtils
         {
             if ("true".equals(propertyValue))
             {
-                LOG.log(Level.INFO, "Found boolean system property [" + propertyName + "]: " + true);
+                LOG.log(Level.FINEST, "Found boolean system property [" + propertyName + "]: " + true);
                 return true;
             }
             if ("false".equals(propertyValue))
             {
-                LOG.log(Level.INFO, "Found boolean system property [" + propertyName + "]: " + false);
+                LOG.log(Level.FINEST, "Found boolean system property [" + propertyName + "]: " + false);
                 return false;
             }
             LOG.log(Level.WARNING, "Unrecognized value for boolean system property [" + propertyName + "]: " + propertyValue);
         }
-        LOG.log(Level.FINE, "Boolean system property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.log(Level.FINEST, "Boolean system property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 
@@ -75,7 +75,7 @@ class PropertyUtils
                  int parsedValue = Integer.parseInt(propertyValue);
                  if (parsedValue >= minimumValue && parsedValue <= maximumValue)
                  {
-                     LOG.log(Level. INFO, "Found integer system property [" + propertyName + "]: " + parsedValue);
+                     LOG.log(Level.FINEST, "Found integer system property [" + propertyName + "]: " + parsedValue);
                      return parsedValue;
                  }
                  if (LOG.isLoggable(Level.WARNING))
@@ -89,7 +89,7 @@ class PropertyUtils
                 LOG.log(Level.WARNING, "Unrecognized value for integer system property [" + propertyName + "]: " + propertyValue);
             }
         }
-        LOG.log(Level.FINE, "Integer system property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.log(Level.FINEST, "Integer system property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 
@@ -98,7 +98,7 @@ class PropertyUtils
         String propertyValue = getSystemProperty(propertyName);
         if (null != propertyValue)
         {
-            LOG.log(Level. INFO, "Found string system property [" + propertyName + "]: " + propertyValue);
+            LOG.log(Level.FINEST, "Found string system property [" + propertyName + "]: " + propertyValue);
             return propertyValue;
         }
         return null;

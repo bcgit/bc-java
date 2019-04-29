@@ -87,11 +87,11 @@ class ProvTrustManagerFactorySpi
         {
             if (null == tsPath)
             {
-                LOG.info("Initializing empty trust store");
+                LOG.finest("Initializing empty trust store");
             }
             else
             {
-                LOG.info("Initializing with trust store at path: " + tsPath);
+                LOG.finest("Initializing with trust store at path: " + tsPath);
                 tsInput = new BufferedInputStream(new FileInputStream(tsPath));
             }
 

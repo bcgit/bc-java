@@ -259,7 +259,7 @@ class ProvSSLSessionContext
 
         if (count > 0)
         {
-            LOG.fine("Processed " + count + " session entries (soft references) from the reference queue");
+            LOG.finest("Processed " + count + " session entries (soft references) from the reference queue");
         }
     }
 
