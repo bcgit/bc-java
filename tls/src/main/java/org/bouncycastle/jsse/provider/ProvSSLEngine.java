@@ -6,6 +6,8 @@ import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -38,6 +40,8 @@ class ProvSSLEngine
     extends SSLEngine
     implements BCSSLEngine, ProvTlsManager
 {
+    private static final Logger LOG = Logger.getLogger(ProvSSLEngine.class.getName());
+
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
     protected final ProvSSLParameters sslParameters;
@@ -45,6 +49,7 @@ class ProvSSLEngine
     protected boolean enableSessionCreation = true;
     protected boolean useClientMode = false;
 
+    protected boolean closedEarly = false;
     protected boolean initialHandshakeBegun = false;
     protected HandshakeStatus handshakeStatus = HandshakeStatus.NOT_HANDSHAKING; 
     protected TlsProtocol protocol = null;
@@ -86,6 +91,10 @@ class ProvSSLEngine
     public synchronized void beginHandshake()
         throws SSLException
     {
+        if (closedEarly)
+        {
+            throw new SSLException("Connection is already closed");
+        }
         if (initialHandshakeBegun)
         {
             throw new UnsupportedOperationException("Renegotiation not supported");
@@ -166,28 +175,48 @@ class ProvSSLEngine
     public synchronized void closeInbound()
         throws SSLException
     {
-        // TODO How to behave when protocol is still null?
-        try
+        if (closedEarly)
         {
-            protocol.closeInput();
+            // SSLEngine already closed before any handshake attempted
         }
-        catch (IOException e)
+        else if (null == protocol)
         {
-            throw new SSLException(e);
+            this.closedEarly = true;
+        }
+        else
+        {
+            try
+            {
+                protocol.closeInput();
+            }
+            catch (IOException e)
+            {
+                throw new SSLException(e);
+            }
         }
     }
 
     @Override
     public synchronized void closeOutbound()
     {
-        // TODO How to behave when protocol is still null?
-        try
+        if (closedEarly)
         {
-            protocol.close();
+            // SSLEngine already closed before any handshake attempted
         }
-        catch (IOException e)
+        else if (null == protocol)
         {
-           // TODO[logging] 
+            this.closedEarly = true;
+        }
+        else
+        {
+            try
+            {
+                protocol.close();
+            }
+            catch (IOException e)
+            {
+                LOG.log(Level.WARNING, "Failed to close outbound", e);
+            }
         }
     }
 
@@ -306,13 +335,13 @@ class ProvSSLEngine
     @Override
     public synchronized boolean isInboundDone()
     {
-        return protocol != null && protocol.isClosed();
+        return closedEarly || (null != protocol && protocol.isClosed());
     }
 
     @Override
     public synchronized boolean isOutboundDone()
     {
-        return protocol != null && protocol.isClosed() && protocol.getAvailableOutputBytes() < 1;
+        return closedEarly || (null != protocol && protocol.isClosed() && protocol.getAvailableOutputBytes() < 1);
     }
 
     public synchronized void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLEngine> selector)
