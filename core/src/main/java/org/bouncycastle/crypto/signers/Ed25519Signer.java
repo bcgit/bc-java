@@ -89,6 +89,11 @@ public class Ed25519Signer
 
         synchronized boolean verifySignature(Ed25519PublicKeyParameters publicKey, byte[] signature)
         {
+            if (Ed25519.SIGNATURE_SIZE != signature.length)
+            {
+                return false;
+            }
+
             byte[] pk = publicKey.getEncoded();
             boolean result = Ed25519.verify(signature, 0, pk, 0, buf, 0, count);
             reset();
