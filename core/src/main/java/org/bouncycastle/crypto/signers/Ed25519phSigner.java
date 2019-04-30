@@ -77,6 +77,10 @@ public class Ed25519phSigner
         {
             throw new IllegalStateException("Ed25519phSigner not initialised for verification");
         }
+        if (Ed25519.SIGNATURE_SIZE != signature.length)
+        {
+            return false;
+        }
 
         byte[] pk = publicKey.getEncoded();
         return Ed25519.verifyPrehash(signature, 0, pk, 0, context, prehash);

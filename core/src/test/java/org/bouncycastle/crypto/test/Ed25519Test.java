@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.Ed25519ctxSigner;
 import org.bouncycastle.crypto.signers.Ed25519phSigner;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -105,24 +106,43 @@ public class Ed25519Test
         byte[] signature = signer.generateSignature();
 
         Signer verifier = createSigner(algorithm, context);
-        verifier.init(false, publicKey);
-        verifier.update(msg, 0, msg.length);
-        boolean shouldVerify = verifier.verifySignature(signature);
 
-        if (!shouldVerify)
         {
-            fail("Ed25519(" + algorithm + ") signature failed to verify");
+            verifier.init(false, publicKey);
+            verifier.update(msg, 0, msg.length);
+            boolean shouldVerify = verifier.verifySignature(signature);
+
+            if (!shouldVerify)
+            {
+                fail("Ed25519(" + algorithm + ") signature failed to verify");
+            }
         }
 
-        signature[(RANDOM.nextInt() >>> 1) % signature.length] ^= 1 << (RANDOM.nextInt() & 7);
-
-        verifier.init(false, publicKey);
-        verifier.update(msg, 0, msg.length);
-        boolean shouldNotVerify = verifier.verifySignature(signature);
-
-        if (shouldNotVerify)
         {
-            fail("Ed25519(" + algorithm + ") bad signature incorrectly verified");
+            byte[] wrongLengthSignature = Arrays.append(signature, (byte)0x00);
+
+            verifier.init(false, publicKey);
+            verifier.update(msg, 0, msg.length);
+            boolean shouldNotVerify = verifier.verifySignature(wrongLengthSignature);
+
+            if (shouldNotVerify)
+            {
+                fail("Ed25519(" + algorithm + ") wrong length signature incorrectly verified");
+            }
+        }
+
+        {
+            byte[] badSignature = Arrays.clone(signature);
+            badSignature[(RANDOM.nextInt() >>> 1) % badSignature.length] ^= 1 << (RANDOM.nextInt() & 7);
+
+            verifier.init(false, publicKey);
+            verifier.update(msg, 0, msg.length);
+            boolean shouldNotVerify = verifier.verifySignature(badSignature);
+
+            if (shouldNotVerify)
+            {
+                fail("Ed25519(" + algorithm + ") bad signature incorrectly verified");
+            }
         }
     }
 }
