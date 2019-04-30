@@ -92,6 +92,11 @@ public class Ed448Signer
 
         synchronized boolean verifySignature(Ed448PublicKeyParameters publicKey, byte[] ctx, byte[] signature)
         {
+            if (Ed448.SIGNATURE_SIZE != signature.length)
+            {
+                return false;
+            }
+
             byte[] pk = publicKey.getEncoded();
             boolean result = Ed448.verify(signature, 0, pk, 0, ctx, buf, 0, count);
             reset();
