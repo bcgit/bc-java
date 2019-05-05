@@ -42,8 +42,6 @@ public class DRBG
             {"org.conscrypt.OpenSSLProvider", "org.conscrypt.OpenSSLRandom"},
         };
 
-    private static final Object[] initialEntropySourceAndSpi = findSource();
-
     // Cascade through providers looking for match.
     private final static Object[] findSource()
     {
@@ -68,7 +66,7 @@ public class DRBG
     private static class CoreSecureRandom
         extends SecureRandom
     {
-        CoreSecureRandom()
+        CoreSecureRandom(Object[] initialEntropySourceAndSpi)
         {
             super((SecureRandomSpi)initialEntropySourceAndSpi[1], (Provider)initialEntropySourceAndSpi[0]);
         }
@@ -120,9 +118,9 @@ public class DRBG
 
     private static SecureRandom createCoreSecureRandom()
     {
-        if (initialEntropySourceAndSpi != null)
+        if (Security.getProperty("securerandom.source") == null)
         {
-            return new CoreSecureRandom();
+            return new CoreSecureRandom(findSource());
         }
         else
         {
