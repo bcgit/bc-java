@@ -18,69 +18,69 @@ public final class DefaultXMSSMTOid implements XMSSOid {
 	static {
 		Map<String, DefaultXMSSMTOid> map = new HashMap<String, DefaultXMSSMTOid>();
 		map.put(createKey("SHA-256", 32, 16, 67, 20, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-256_W16_H20_D2"));
+				new DefaultXMSSMTOid(0x00000001, "XMSSMT_SHA2_20/2_256"));
 		map.put(createKey("SHA-256", 32, 16, 67, 20, 4),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-256_W16_H20_D4"));
+				new DefaultXMSSMTOid(0x00000002, "XMSSMT_SHA2_20/4_256"));
 		map.put(createKey("SHA-256", 32, 16, 67, 40, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-256_W16_H40_D2"));
+				new DefaultXMSSMTOid(0x00000003, "XMSSMT_SHA2_40/2_256"));
 		map.put(createKey("SHA-256", 32, 16, 67, 40, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-256_W16_H40_D4"));
+				new DefaultXMSSMTOid(0x00000004, "XMSSMT_SHA2_40/4_256"));
 		map.put(createKey("SHA-256", 32, 16, 67, 40, 4),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-256_W16_H40_D8"));
+				new DefaultXMSSMTOid(0x00000005, "XMSSMT_SHA2_40/8_256"));
 		map.put(createKey("SHA-256", 32, 16, 67, 60, 8),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-256_W16_H60_D3"));
+				new DefaultXMSSMTOid(0x00000006, "XMSSMT_SHA2_60/3_256"));
 		map.put(createKey("SHA-256", 32, 16, 67, 60, 6),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-256_W16_H60_D6"));
+				new DefaultXMSSMTOid(0x00000007, "XMSSMT_SHA2_60/6_256"));
 		map.put(createKey("SHA-256", 32, 16, 67, 60, 12),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-256_W16_H60_D12"));
+				new DefaultXMSSMTOid(0x00000008, "XMSSMT_SHA2_60/12_256"));
 		map.put(createKey("SHA2-512", 64, 16, 131, 20, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-512_W16_H20_D2"));
+				new DefaultXMSSMTOid(0x00000009, "XMSSMT_SHA2_20/2_512"));
 		map.put(createKey("SHA2-512", 64, 16, 131, 20, 4),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-512_W16_H20_D4"));
+				new DefaultXMSSMTOid(0x0000000a, "XMSSMT_SHA2_20/4_512"));
 		map.put(createKey("SHA2-512", 64, 16, 131, 40, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-512_W16_H40_D2"));
+				new DefaultXMSSMTOid(0x0000000b, "XMSSMT_SHA2_40/2_512"));
 		map.put(createKey("SHA2-512", 64, 16, 131, 40, 4),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-512_W16_H40_D4"));
+				new DefaultXMSSMTOid(0x0000000c, "XMSSMT_SHA2_40/4_512"));
 		map.put(createKey("SHA2-512", 64, 16, 131, 40, 8),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-512_W16_H40_D8"));
+				new DefaultXMSSMTOid(0x0000000d, "XMSSMT_SHA2_40/8_512"));
 		map.put(createKey("SHA2-512", 64, 16, 131, 60, 3),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-512_W16_H60_D3"));
+				new DefaultXMSSMTOid(0x0000000e, "XMSSMT_SHA2_60/3_512"));
 		map.put(createKey("SHA2-512", 64, 16, 131, 60, 6),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-512_W16_H60_D6"));
+				new DefaultXMSSMTOid(0x0000000f, "XMSSMT_SHA2_60/6_512"));
 		map.put(createKey("SHA2-512", 64, 16, 131, 60, 12),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHA2-512_W16_H60_D12"));
+				new DefaultXMSSMTOid(0x00000010, "XMSSMT_SHA2_60/12_512"));
 		map.put(createKey("SHAKE128", 32, 16, 67, 20, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE128_W16_H20_D2"));
+				new DefaultXMSSMTOid(0x00000011, "XMSSMT_SHAKE_20/2_256"));
 		map.put(createKey("SHAKE128", 32, 16, 67, 20, 4),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE128_W16_H20_D4"));
+				new DefaultXMSSMTOid(0x00000012, "XMSSMT_SHAKE_20/4_256"));
 		map.put(createKey("SHAKE128", 32, 16, 67, 40, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE128_W16_H40_D2"));
+				new DefaultXMSSMTOid(0x00000013, "XMSSMT_SHAKE_40/2_256"));
 		map.put(createKey("SHAKE128", 32, 16, 67, 40, 4),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE128_W16_H40_D4"));
+				new DefaultXMSSMTOid(0x00000014, "XMSSMT_SHAKE_40/4_256"));
 		map.put(createKey("SHAKE128", 32, 16, 67, 40, 8),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE128_W16_H40_D8"));
+				new DefaultXMSSMTOid(0x00000015, "XMSSMT_SHAKE_40/8_256"));
 		map.put(createKey("SHAKE128", 32, 16, 67, 60, 3),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE128_W16_H60_D3"));
+				new DefaultXMSSMTOid(0x00000016, "XMSSMT_SHAKE_60/3_256"));
 		map.put(createKey("SHAKE128", 32, 16, 67, 60, 6),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE128_W16_H60_D6"));
+				new DefaultXMSSMTOid(0x00000017, "XMSSMT_SHAKE_60/6_256"));
 		map.put(createKey("SHAKE128", 32, 16, 67, 60, 12),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE128_W16_H60_D12"));
+				new DefaultXMSSMTOid(0x00000018, "XMSSMT_SHAKE_60/12_256"));
 		map.put(createKey("SHAKE256", 64, 16, 131, 20, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE256_W16_H20_D2"));
+				new DefaultXMSSMTOid(0x00000019, "XMSSMT_SHAKE_20/2_512"));
 		map.put(createKey("SHAKE256", 64, 16, 131, 20, 4),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE256_W16_H20_D4"));
+				new DefaultXMSSMTOid(0x0000001a, "XMSSMT_SHAKE_20/4_512"));
 		map.put(createKey("SHAKE256", 64, 16, 131, 40, 2),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE256_W16_H40_D2"));
+				new DefaultXMSSMTOid(0x0000001b, "XMSSMT_SHAKE_40/2_512"));
 		map.put(createKey("SHAKE256", 64, 16, 131, 40, 4),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE256_W16_H40_D4"));
+				new DefaultXMSSMTOid(0x0000001c, "XMSSMT_SHAKE_40/4_512"));
 		map.put(createKey("SHAKE256", 64, 16, 131, 40, 8),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE256_W16_H40_D8"));
+				new DefaultXMSSMTOid(0x0000001d, "XMSSMT_SHAKE_40/8_512"));
 		map.put(createKey("SHAKE256", 64, 16, 131, 60, 3),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE256_W16_H60_D3"));
+				new DefaultXMSSMTOid(0x0000001e, "XMSSMT_SHAKE_60/3_512"));
 		map.put(createKey("SHAKE256", 64, 16, 131, 60, 6),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE256_W16_H60_D6"));
+				new DefaultXMSSMTOid(0x0000001f, "XMSSMT_SHAKE_60/6_512"));
 		map.put(createKey("SHAKE256", 64, 16, 131, 60, 12),
-				new DefaultXMSSMTOid(0x01000001, "XMSSMT_SHAKE256_W16_H60_D12"));
+				new DefaultXMSSMTOid(0x00000020, "XMSSMT_SHAKE_60/12_512"));
 		oidLookupTable = Collections.unmodifiableMap(map);
 	}
 
