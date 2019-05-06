@@ -12,6 +12,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.crypto.tls.TlsClient;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
+import org.bouncycastle.util.Strings;
 
 /**
  * A simple test designed to conduct a TLS handshake with an external TLS server.
@@ -38,8 +39,12 @@ public class PSKTlsClientTest
          * started with "-psk 6161616161" to make the keys match, and possibly the "-psk_hint"
          * option should be present.
          */
-        String psk_identity = "Client_identity";
-        byte[] psk = new byte[]{ 0x61, 0x61, 0x61, 0x61, 0x61 };
+//        String psk_identity = "Client_identity";
+//        byte[] psk = new byte[]{ 0x61, 0x61, 0x61, 0x61, 0x61 };
+
+        // These correspond to the configuration of MockPSKTlsServer
+        String psk_identity = "client";
+        byte[] psk = Strings.toUTF8ByteArray("TLS_TEST_PSK");
 
         BasicTlsPSKIdentity pskIdentity = new BasicTlsPSKIdentity(psk_identity, psk);
 
