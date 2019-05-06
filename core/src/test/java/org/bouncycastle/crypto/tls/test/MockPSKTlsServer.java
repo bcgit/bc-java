@@ -101,7 +101,7 @@ class MockPSKTlsServer
                 String name = Strings.fromUTF8ByteArray(identity);
                 if (name.equals("client"))
                 {
-                    return new byte[16];
+                    return Strings.toUTF8ByteArray("TLS_TEST_PSK");
                 }
             }
             return null;

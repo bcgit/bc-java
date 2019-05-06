@@ -39,7 +39,6 @@ public class BasicTlsPSKIdentity
 
     public byte[] getPSK()
     {
-        return psk;
+        return Arrays.clone(psk);
     }
-
 }
