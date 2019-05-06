@@ -17,18 +17,18 @@ public final class DefaultXMSSOid implements XMSSOid {
 
 	static {
 		Map<String, DefaultXMSSOid> map = new HashMap<String, DefaultXMSSOid>();
-		map.put(createKey("SHA-256", 32, 16, 67, 10), new DefaultXMSSOid(0x01000001, "XMSS_SHA2-256_W16_H10"));
-		map.put(createKey("SHA-256", 32, 16, 67, 16), new DefaultXMSSOid(0x02000002, "XMSS_SHA2-256_W16_H16"));
-		map.put(createKey("SHA-256", 32, 16, 67, 20), new DefaultXMSSOid(0x03000003, "XMSS_SHA2-256_W16_H20"));
-		map.put(createKey("SHA-512", 64, 16, 131, 10), new DefaultXMSSOid(0x04000004, "XMSS_SHA2-512_W16_H10"));
-		map.put(createKey("SHA-512", 64, 16, 131, 16), new DefaultXMSSOid(0x05000005, "XMSS_SHA2-512_W16_H16"));
-		map.put(createKey("SHA-512", 64, 16, 131, 20), new DefaultXMSSOid(0x06000006, "XMSS_SHA2-512_W16_H20"));
-		map.put(createKey("SHAKE128", 32, 16, 67, 10), new DefaultXMSSOid(0x07000007, "XMSS_SHAKE128_W16_H10"));
-		map.put(createKey("SHAKE128", 32, 16, 67, 16), new DefaultXMSSOid(0x08000008, "XMSS_SHAKE128_W16_H16"));
-		map.put(createKey("SHAKE128", 32, 16, 67, 20), new DefaultXMSSOid(0x09000009, "XMSS_SHAKE128_W16_H20"));
-		map.put(createKey("SHAKE256", 64, 16, 131, 10), new DefaultXMSSOid(0x0a00000a, "XMSS_SHAKE256_W16_H10"));
-		map.put(createKey("SHAKE256", 64, 16, 131, 16), new DefaultXMSSOid(0x0b00000b, "XMSS_SHAKE256_W16_H16"));
-		map.put(createKey("SHAKE256", 64, 16, 131, 20), new DefaultXMSSOid(0x0c00000c, "XMSS_SHAKE256_W16_H20"));
+		map.put(createKey("SHA-256", 32, 16, 67, 10), new DefaultXMSSOid(0x00000001, "XMSS_SHA2_10_256"));
+		map.put(createKey("SHA-256", 32, 16, 67, 16), new DefaultXMSSOid(0x00000002, "XMSS_SHA2_16_256"));
+		map.put(createKey("SHA-256", 32, 16, 67, 20), new DefaultXMSSOid(0x00000003, "XMSS_SHA2_20_256"));
+		map.put(createKey("SHA-512", 64, 16, 131, 10), new DefaultXMSSOid(0x00000004, "XMSS_SHA2_10_512"));
+		map.put(createKey("SHA-512", 64, 16, 131, 16), new DefaultXMSSOid(0x00000005, "XMSS_SHA2_16_512"));
+		map.put(createKey("SHA-512", 64, 16, 131, 20), new DefaultXMSSOid(0x00000006, "XMSS_SHA2_20_512"));
+		map.put(createKey("SHAKE128", 32, 16, 67, 10), new DefaultXMSSOid(0x00000007, "XMSS_SHAKE_10_256"));
+		map.put(createKey("SHAKE128", 32, 16, 67, 16), new DefaultXMSSOid(0x00000008, "XMSS_SHAKE_16_256"));
+		map.put(createKey("SHAKE128", 32, 16, 67, 20), new DefaultXMSSOid(0x00000009, "XMSS_SHAKE_20_256"));
+		map.put(createKey("SHAKE256", 64, 16, 131, 10), new DefaultXMSSOid(0x0000000a, "XMSS_SHAKE_10_512"));
+		map.put(createKey("SHAKE256", 64, 16, 131, 16), new DefaultXMSSOid(0x0000000b, "XMSS_SHAKE_16_512"));
+		map.put(createKey("SHAKE256", 64, 16, 131, 20), new DefaultXMSSOid(0x0000000c, "XMSS_SHAKE_20_512"));
 		oidLookupTable = Collections.unmodifiableMap(map);
 	}
 
