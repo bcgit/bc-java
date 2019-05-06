@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
 import org.bouncycastle.crypto.tls.TlsPSKIdentity;
 import org.bouncycastle.crypto.tls.TlsSession;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 class MockPSKTlsClient
@@ -26,7 +27,7 @@ class MockPSKTlsClient
 
     MockPSKTlsClient(TlsSession session)
     {
-        this(session, new BasicTlsPSKIdentity("client", new byte[16]));
+        this(session, new BasicTlsPSKIdentity("client", Strings.toUTF8ByteArray("TLS_TEST_PSK")));
     }
 
     MockPSKTlsClient(TlsSession session, TlsPSKIdentity pskIdentity)

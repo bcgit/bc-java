@@ -11,6 +11,7 @@ import java.net.Socket;
 import org.bouncycastle.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.tls.TlsClient;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.util.Strings;
 
 /**
  * A simple test designed to conduct a TLS handshake with an external TLS server.
@@ -40,7 +41,7 @@ public class PSKTlsClientTest
 
         // These correspond to the configuration of MockPSKTlsServer
         String psk_identity = "client";
-        byte[] psk = new byte[16];
+        byte[] psk = Strings.toUTF8ByteArray("TLS_TEST_PSK");
 
         BasicTlsPSKIdentity pskIdentity = new BasicTlsPSKIdentity(psk_identity, psk);
 
