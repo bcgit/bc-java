@@ -7,6 +7,7 @@
 *.html     text diff=html
 *.java     text diff=java
 *.pem      text
+#*.rsp      text
 *.tmpl     text
 
 # Denote all files that are truly binary and should not be modified.
