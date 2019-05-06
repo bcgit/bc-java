@@ -571,6 +571,7 @@ class ProvSSLContextSpi
     protected SSLParameters engineGetSupportedSSLParameters()
     {
         // TODO[jsse] Review initial values
+        // TODO[jsse] Compare to 'getDefaultSocket' approach from SunJSSE
         SSLParameters r = new SSLParameters();
         r.setCipherSuites(getSupportedCipherSuites());
         r.setProtocols(getSupportedProtocols());
