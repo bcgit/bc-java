@@ -35,8 +35,12 @@ public class PSKTlsClientTest
          * started with "-psk 6161616161" to make the keys match, and possibly the "-psk_hint"
          * option should be present.
          */
-        String psk_identity = "Client_identity";
-        byte[] psk = new byte[]{ 0x61, 0x61, 0x61, 0x61, 0x61 };
+//        String psk_identity = "Client_identity";
+//        byte[] psk = new byte[]{ 0x61, 0x61, 0x61, 0x61, 0x61 };
+
+        // These correspond to the configuration of MockPSKTlsServer
+        String psk_identity = "client";
+        byte[] psk = new byte[16];
 
         BasicTlsPSKIdentity pskIdentity = new BasicTlsPSKIdentity(psk_identity, psk);
 
