@@ -183,6 +183,23 @@ class ProvSSLSocketWrap
         throw new SocketException("Wrapped socket should already be connected");
     }
 
+    @Override
+    protected void finalize() throws Throwable
+    {
+        try
+        {
+            close();
+        }
+        catch (IOException e)
+        {
+            // Ignore
+        }
+        finally
+        {
+            super.finalize();
+        }
+    }
+
     // An SSLSocket method from JDK 9, but also a BCSSLSocket method
     public synchronized String getApplicationProtocol()
     {
