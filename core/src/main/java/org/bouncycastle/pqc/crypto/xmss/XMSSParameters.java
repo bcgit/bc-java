@@ -35,7 +35,7 @@ public final class XMSSParameters
         wotsPlus = new WOTSPlus(new WOTSPlusParameters(digest));
         this.height = height;
         this.k = determineMinK();
-        oid = DefaultXMSSOid.lookup(getDigest().getAlgorithmName(), getDigestSize(), getWinternitzParameter(),
+        this.oid = DefaultXMSSOid.lookup(getDigest().getAlgorithmName(), getDigestSize(), getWinternitzParameter(),
             wotsPlus.getParams().getLen(), height);
         /*
 		 * if (oid == null) { throw new InvalidParameterException(); }
@@ -92,6 +92,11 @@ public final class XMSSParameters
     WOTSPlus getWOTSPlus()
     {
         return wotsPlus;
+    }
+
+    XMSSOid getOid()
+    {
+        return oid;
     }
 
     int getK()
