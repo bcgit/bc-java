@@ -27,17 +27,17 @@ public class XMSSMTTest
 
     public void testGenKeyPairSHA256()
     {
-        XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest());
+        XMSSMTParameters params = new XMSSMTParameters(20, 4, new SHA256Digest());
         XMSSMT xmssMT = new XMSSMT(params, new NullPRNG());
         xmssMT.generateKeys();
         byte[] privateKey = xmssMT.exportPrivateKey();
         byte[] publicKey = xmssMT.exportPublicKey();
-        String expectedPrivateKey = "000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "0000000000000000000000000000000000000000000000000000001f5bb70f454d7c7bda"
-            + "84d207c5a0d47211af7b489e839d2294cc8c9d5522a8ae";
-        String expectedPublicKey = "1f5bb70f454d7c7bda84d207c5a0d47211af7b489e839d2294cc8c9d5522a8ae00000000"
-            + "00000000000000000000000000000000000000000000000000000000";
+        String expectedPrivateKey = "00000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "0000000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "000000000000000000000000000000000000000000ea874c176936e8456c1650167a7e900e54" +
+            "6f923382f9bc5a92a2df07d5080aee";
+        String expectedPublicKey = "00000002ea874c176936e8456c1650167a7e900e546f923382f9bc5a92a2df07d5080aee000000000" +
+            "0000000000000000000000000000000000000000000000000000000";
         byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
         assertEquals(true, Arrays.areEqual(Hex.decode(expectedPrivateKey), strippedPrivateKey));
         assertEquals(true, Arrays.areEqual(Hex.decode(expectedPublicKey), publicKey));
@@ -45,23 +45,23 @@ public class XMSSMTTest
 
     public void testGenKeyPairSHA512()
     {
-        XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA512Digest());
+        XMSSMTParameters params = new XMSSMTParameters(20, 4, new SHA512Digest());
         XMSSMT xmssMT = new XMSSMT(params, new NullPRNG());
         xmssMT.generateKeys();
         byte[] privateKey = xmssMT.exportPrivateKey();
         byte[] publicKey = xmssMT.exportPublicKey();
-        String expectedPrivateKey = "000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "000000000000000000000000000000e5a47fa691568971bdef45d4c9a7db69fe8a691df7"
-            + "f70a9341e33dba98a215fe9651933da16a3524124dc4c3f1baf35d6f03369ff3800346bb"
-            + "d8c2e179ae4abd";
-        String expectedPublicKey = "e5a47fa691568971bdef45d4c9a7db69fe8a691df7f70a9341e33dba98a215fe9651933d"
-            + "a16a3524124dc4c3f1baf35d6f03369ff3800346bbd8c2e179ae4abd0000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000000000000"
-            + "0000000000000000000000000000000000000000";
+        String expectedPrivateKey = "0000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "0000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "0000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "0000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "0000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "00000000000000000007571b70ae5442f1e352d3e02cf0016ec96b23e51ff8e43c9ae0b75" +
+            "8d4fd37bb82a261908bac5a69ddb75c7d5b6d966d7210028b020667a104feaab7cb2ae0278";
+        String expectedPublicKey = "0000000a7571b70ae5442f1e352d3e02cf0016ec96b23e51ff8e43c9ae0b758d4fd37bb82a261908" +
+            "bac5a69ddb75c7d5b6d966d7210028b020667a104feaab7cb2ae027800000000000000000" +
+            "0000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "00000000000000000000000000000000000000";
+
         byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
         assertEquals(true, Arrays.areEqual(Hex.decode(expectedPrivateKey), strippedPrivateKey));
         assertEquals(true, Arrays.areEqual(Hex.decode(expectedPublicKey), publicKey));

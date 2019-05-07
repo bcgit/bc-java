@@ -110,4 +110,9 @@ public final class XMSSMTParameters
     {
         return xmssParams.getWOTSPlus().getParams().getLen();
     }
+
+    protected XMSSOid getOid()
+    {
+        return oid;
+    }
 }

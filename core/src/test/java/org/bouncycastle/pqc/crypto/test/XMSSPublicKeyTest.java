@@ -57,7 +57,7 @@ public class XMSSPublicKeyTest extends TestCase {
 
 		byte[] pkByte = pk.toByteArray();
 		/* check everything is 0 */
-		for (int i = 0; i < pkByte.length; i++) {
+		for (int i = 5; i < pkByte.length; i++) {
 			assertEquals(0x00, pkByte[i]);
 		}
 	}
