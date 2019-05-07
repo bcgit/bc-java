@@ -182,6 +182,30 @@ class ProvSSLSocketDirect
         notifyConnected();
     }
 
+    @Override
+    protected void finalize() throws Throwable
+    {
+        try
+        {
+            close();
+        }
+        catch (IOException e1)
+        {
+            try
+            {
+                super.close();
+            }
+            catch (IOException e2)
+            {
+                // Ignore
+            }
+        }
+        finally
+        {
+            super.finalize();
+        }
+    }
+
     // An SSLSocket method from JDK 9, but also a BCSSLSocket method
     public synchronized String getApplicationProtocol()
     {
