@@ -87,7 +87,7 @@ public class PKIXNameConstraintValidator
             checkPermittedIP(permittedSubtreesIP, ip);
             break;
         default:
-            throw new IllegalStateException("Unknown tag encountered: " + name.getTagNo());
+            // other tags to be ignored.
         }
     }
 
@@ -126,7 +126,7 @@ public class PKIXNameConstraintValidator
             checkExcludedIP(excludedSubtreesIP, ip);
             break;
         default:
-            throw new IllegalStateException("Unknown tag encountered: " + name.getTagNo());
+            // other tags to be ignored.
         }
     }
 
