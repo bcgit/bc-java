@@ -95,7 +95,6 @@ public final class XMSSMTPublicKeyParameters
         }
     }
 
-    @Override
     public byte[] getEncoded()
         throws IOException
     {
