@@ -79,9 +79,9 @@ public class TlsProtocolNonBlockingTest
 
         if (fragment)
         {
+            byte[] buffer = new byte[1];
             while (from.getAvailableOutputBytes() > 0)
             {
-                byte[] buffer = new byte[1];
                 from.readOutput(buffer, 0, 1);
                 to.offerInput(buffer);
             }

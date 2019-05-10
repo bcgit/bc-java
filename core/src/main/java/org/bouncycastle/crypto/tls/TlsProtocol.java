@@ -798,10 +798,18 @@ public abstract class TlsProtocol
     }
 
     /**
+     * Equivalent to <code>offerInput(input, 0, input.length)</code>
+     * @see TlsProtocol#offerInput(byte[], int, int)
+     * @param input The input buffer to offer
+     * @throws IOException If an error occurs while decrypting or processing a record
+     */
+    public void offerInput(byte[] input) throws IOException
+    {
+        offerInput(input, 0, input.length);
+    }
+
+    /**
      * Offer input from an arbitrary source. Only allowed in non-blocking mode.<br>
-     * <br>
-     * After this method returns, the input buffer is "owned" by this object. Other code
-     * must not attempt to do anything with it.<br>
      * <br>
      * This method will decrypt and process all records that are fully available.
      * If only part of a record is available, the buffer will be retained until the
@@ -813,21 +821,23 @@ public abstract class TlsProtocol
      * You should always check to see if there is any available output after calling
      * this method by calling {@link #getAvailableOutputBytes()}.
      * @param input The input buffer to offer
+     * @param inputOff The offset within the input buffer that input begins
+     * @param inputLen The number of bytes of input being offered
      * @throws IOException If an error occurs while decrypting or processing a record
      */
-    public void offerInput(byte[] input) throws IOException
+    public void offerInput(byte[] input, int inputOff, int inputLen) throws IOException
     {
         if (blocking)
         {
             throw new IllegalStateException("Cannot use offerInput() in blocking mode! Use getInputStream() instead.");
         }
-        
+
         if (closed)
         {
             throw new IOException("Connection is closed, cannot accept any more input");
         }
-        
-        inputBuffers.addBytes(input);
+
+        inputBuffers.addBytes(input, inputOff, inputLen);
 
         // loop while there are enough bytes to read the length of the next record
         while (inputBuffers.available() >= RecordStream.TLS_HEADER_SIZE)
