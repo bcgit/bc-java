@@ -1030,9 +1030,6 @@ public abstract class TlsProtocol
     /**
      * Offer input from an arbitrary source. Only allowed in non-blocking mode.<br>
      * <br>
-     * After this method returns, the input buffer is "owned" by this object. Other code
-     * must not attempt to do anything with it.<br>
-     * <br>
      * This method will decrypt and process all records that are fully available.
      * If only part of a record is available, the buffer will be retained until the
      * remainder of the record is offered.<br>
