@@ -82,16 +82,15 @@ public class Blake2sDigest
     private byte[] key = null;
 
     // Tree hashing parameters:
-    // Because this class does not implement the Tree Hashing Mode,
-    // these parameters can be treated as constants (see init() function)
-	/*
-	 * private int fanout = 1; // 0-255
-	 * private int depth = 1; // 1 - 255
-	 * private int leafLength= 0;
-	 * private long nodeOffset = 0L;
-	 * private int nodeDepth = 0;
-	 * private int innerHashLength = 0;
-	 */
+    // The Tree Hashing Mode is not supported but those are used for
+    // the XOF implementation
+	private int fanout = 1; // 0-255
+	private int depth = 1; // 0-255
+	private int leafLength= 0;
+	private long nodeOffset = 0L;
+	private int nodeDepth = 0;
+	private int innerHashLength = 0;
+
 
     /**
      * Whenever this buffer overflows, it will be processed in the compress()
@@ -144,8 +143,19 @@ public class Blake2sDigest
         this.keyLength = digest.keyLength;
         this.key = Arrays.clone(digest.key);
         this.digestLength = digest.digestLength;
+        this.internalState = Arrays.clone(internalState);
         this.chainValue = Arrays.clone(digest.chainValue);
+        this.t0 = digest.t0;
+        this.t1 = digest.t1;
+        this.f0 = digest.f0;
+        this.salt = Arrays.clone(digest.salt);
         this.personalization = Arrays.clone(digest.personalization);
+        this.fanout = digest.fanout;
+        this.depth = digest.depth;
+        this.leafLength = digest.leafLength;
+        this.nodeOffset = digest.nodeOffset;
+        this.nodeDepth = digest.nodeDepth;
+        this.innerHashLength = digest.innerHashLength;
     }
 
     /**
@@ -160,10 +170,9 @@ public class Blake2sDigest
             throw new IllegalArgumentException(
                 "BLAKE2s digest bit length must be a multiple of 8 and not greater than 256");
         }
-        buffer = new byte[BLOCK_LENGTH_BYTES];
-        keyLength = 0;
         digestLength = digestBits / 8;
-        init();
+
+        init(null, null, null);
     }
 
     /**
@@ -177,23 +186,7 @@ public class Blake2sDigest
      */
     public Blake2sDigest(byte[] key)
     {
-        buffer = new byte[BLOCK_LENGTH_BYTES];
-        if (key != null)
-        {
-            if (key.length > 32)
-            {
-                throw new IllegalArgumentException(
-                    "Keys > 32 are not supported");
-            }
-            this.key = new byte[key.length];
-            System.arraycopy(key, 0, this.key, 0, key.length);
-
-            keyLength = key.length;
-            System.arraycopy(key, 0, buffer, 0, key.length);
-            bufferPos = BLOCK_LENGTH_BYTES; // zero padding
-        }
-        digestLength = 32;
-        init();
+        init(null, null, key);
     }
 
     /**
@@ -212,40 +205,48 @@ public class Blake2sDigest
     public Blake2sDigest(byte[] key, int digestBytes, byte[] salt,
                          byte[] personalization)
     {
-        buffer = new byte[BLOCK_LENGTH_BYTES];
         if (digestBytes < 1 || digestBytes > 32)
         {
             throw new IllegalArgumentException(
                 "Invalid digest length (required: 1 - 32)");
         }
         digestLength = digestBytes;
-        if (salt != null)
-        {
-            if (salt.length != 8)
-            {
-                throw new IllegalArgumentException(
-                    "Salt length must be exactly 8 bytes");
-            }
-            this.salt = new byte[8];
-            System.arraycopy(salt, 0, this.salt, 0, salt.length);
-        }
-        if (personalization != null)
-        {
-            if (personalization.length != 8)
-            {
-                throw new IllegalArgumentException(
-                    "Personalization length must be exactly 8 bytes");
-            }
-            this.personalization = new byte[8];
-            System.arraycopy(personalization, 0, this.personalization, 0,
-                personalization.length);
-        }
-        if (key != null)
+
+        init(salt, personalization, key);
+    }
+
+    // XOF root hash parameters
+    Blake2sDigest(int digestBytes, byte[] key, byte[] salt, byte[] personalization, long offset) {
+        digestLength = digestBytes;
+        nodeOffset = offset;
+
+        init(salt, personalization, key);
+    }
+
+    // XOF internal hash parameters
+    Blake2sDigest(int digestBytes, int hashLength, long offset) {
+        digestLength = digestBytes;
+        nodeOffset = offset;
+        fanout = 0;
+        depth = 0;
+        leafLength = hashLength;
+        innerHashLength = hashLength;
+        nodeDepth = 0;
+
+        init(null, null, null);
+    }
+
+    // initialize the digest's parameters
+    private void init(byte[] salt, byte[] personalization, byte[] key)
+    {
+        buffer = new byte[BLOCK_LENGTH_BYTES];
+
+        if (key != null && key.length > 0)
         {
             if (key.length > 32)
             {
                 throw new IllegalArgumentException(
-                    "Keys > 32 bytes are not supported");
+                        "Keys > 32 bytes are not supported");
             }
             this.key = new byte[key.length];
             System.arraycopy(key, 0, this.key, 0, key.length);
@@ -254,30 +255,33 @@ public class Blake2sDigest
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
         }
-        init();
-    }
 
-    // initialize chainValue
-    private void init()
-    {
         if (chainValue == null)
         {
             chainValue = new int[8];
 
             chainValue[0] = blake2s_IV[0]
-                ^ (digestLength | (keyLength << 8) | 0x1010000);
-            // 0x1010000 = ((fanout << 16) | (depth << 24));
-            // with fanout = 1; depth = 0;
-            chainValue[1] = blake2s_IV[1];// ^ leafLength; with leafLength = 0;
-            chainValue[2] = blake2s_IV[2];// ^ nodeOffset; with nodeOffset = 0;
-            chainValue[3] = blake2s_IV[3];// ^ ( (nodeOffset << 32) |
-            // (nodeDepth << 16) | (innerHashLength << 24) );
-            // with nodeDepth = 0; innerHashLength = 0;
+                ^ (digestLength | (keyLength << 8) | ((fanout << 16) | (depth << 24)));
+            chainValue[1] = blake2s_IV[1] ^ leafLength;
+
+            int nofHi = (int) (nodeOffset >> 32);
+            int nofLo = (int) nodeOffset;
+            chainValue[2] = blake2s_IV[2] ^ nofLo;
+            chainValue[3] = blake2s_IV[3] ^ (nofHi |
+                    (nodeDepth << 16) | (innerHashLength << 24));
 
             chainValue[4] = blake2s_IV[4];
             chainValue[5] = blake2s_IV[5];
             if (salt != null)
             {
+                if (salt.length != 8)
+                {
+                    throw new IllegalArgumentException(
+                            "Salt length must be exactly 8 bytes");
+                }
+                this.salt = new byte[8];
+                System.arraycopy(salt, 0, this.salt, 0, salt.length);
+
                 chainValue[4] ^= Pack.littleEndianToInt(salt, 0);
                 chainValue[5] ^= Pack.littleEndianToInt(salt, 4);
             }
@@ -286,6 +290,15 @@ public class Blake2sDigest
             chainValue[7] = blake2s_IV[7];
             if (personalization != null)
             {
+                if (personalization.length != 8)
+                {
+                    throw new IllegalArgumentException(
+                            "Personalization length must be exactly 8 bytes");
+                }
+                this.personalization = new byte[8];
+                System.arraycopy(personalization, 0, this.personalization, 0,
+                        personalization.length);
+
                 chainValue[6] ^= Pack.littleEndianToInt(personalization, 0);
                 chainValue[7] ^= Pack.littleEndianToInt(personalization, 4);
             }
@@ -457,7 +470,8 @@ public class Blake2sDigest
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
         }
-        init();
+
+        init(this.salt, this.personalization, this.key);
     }
 
     private void compress(byte[] message, int messagePos)
