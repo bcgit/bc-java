@@ -147,6 +147,7 @@ public class RegressionTest
             new X931SignerTest(),
             new Blake2bDigestTest(),
             new Blake2sDigestTest(),
+            new Blake2xsDigestTest(),
             new KeccakDigestTest(),
             new SHAKEDigestTest(),
             new SM2EngineTest(),

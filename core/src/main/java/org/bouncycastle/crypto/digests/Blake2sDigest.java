@@ -82,7 +82,7 @@ public class Blake2sDigest
     private byte[] key = null;
 
     // Tree hashing parameters:
-    // The Tree Hashing Mode is not supported but those are used for
+    // The Tree Hashing Mode is not supported but these are used for
     // the XOF implementation
 	private int fanout = 1; // 0-255
 	private int depth = 1; // 0-255
