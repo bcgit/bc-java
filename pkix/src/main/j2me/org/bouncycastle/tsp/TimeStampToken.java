@@ -148,17 +148,17 @@ public class TimeStampToken
         return tsaSignerInfo.getUnsignedAttributes();
     }
 
-    public Store getCertificates()
+    public Store<X509CertificateHolder> getCertificates()
     {
         return tsToken.getCertificates();
     }
 
-    public Store getCRLs()
+    public Store<X509CRLHolder> getCRLs()
     {
         return tsToken.getCRLs();
     }
 
-    public Store getAttributeCertificates()
+    public Store<X509AttributeCertificateHolder> getAttributeCertificates()
     {
         return tsToken.getAttributeCertificates();
     }
