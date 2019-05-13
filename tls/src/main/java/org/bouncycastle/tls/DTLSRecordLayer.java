@@ -94,6 +94,7 @@ class DTLSRecordLayer
     private volatile boolean failed = false;
     // TODO[dtls13] Review the draft/RFC (legacy_record_version) to see if readVersion can be removed
     private volatile ProtocolVersion readVersion = null, writeVersion = null;
+    private volatile boolean inConnection;
     private volatile boolean inHandshake;
     private volatile int plaintextLimit;
     private DTLSEpoch currentEpoch, pendingEpoch;
@@ -135,6 +136,8 @@ class DTLSRecordLayer
 
     void resetAfterHelloVerifyRequestServer(long writeRecordSeqNo)
     {
+        this.inConnection = true;
+
         currentEpoch.setSequenceNumber(writeRecordSeqNo);
 
         /*
@@ -363,7 +366,7 @@ class DTLSRecordLayer
     {
         if (!closed)
         {
-            if (inHandshake)
+            if (inHandshake && inConnection)
             {
                 warn(AlertDescription.user_canceled, "User canceled handshake");
             }
@@ -375,13 +378,16 @@ class DTLSRecordLayer
     {
         if (!closed)
         {
-            try
+            if (inConnection)
             {
-                raiseAlert(AlertLevel.fatal, alertDescription, null, null);
-            }
-            catch (Exception e)
-            {
-                // Ignore
+                try
+                {
+                    raiseAlert(AlertLevel.fatal, alertDescription, null, null);
+                }
+                catch (Exception e)
+                {
+                    // Ignore
+                }
             }
 
             failed = true;
@@ -712,6 +718,8 @@ class DTLSRecordLayer
         int received = receiveDatagram(buf, off, len, waitMillis);
         if (received >= RECORD_HEADER_LENGTH)
         {
+            this.inConnection = true;
+
             int fragmentLength = TlsUtils.readUint16(buf, off + 11);
             int recordLength = RECORD_HEADER_LENGTH + fragmentLength;
             if (received > recordLength)
