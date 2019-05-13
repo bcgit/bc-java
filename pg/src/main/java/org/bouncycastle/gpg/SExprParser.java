@@ -194,7 +194,8 @@ public class SExprParser
         String type;
 
         type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected-private-key"))
+        if (type.equals("protected-private-key")
+            || type.equals("private-key"))
         {
             SXprUtils.skipOpenParenthesis(inputStream);
 

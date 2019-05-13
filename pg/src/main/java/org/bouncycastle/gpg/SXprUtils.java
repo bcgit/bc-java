@@ -85,7 +85,7 @@ class SXprUtils
         int ch = in.read();
         if (ch != '(')
         {
-            throw new IOException("unknown character encountered");
+            throw new IOException("unknown character encountered: " + (char)ch);
         }
     }
 
