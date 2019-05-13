@@ -5,6 +5,7 @@ import java.security.Security;
 
 import org.bouncycastle.gpg.SExprParser;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
@@ -156,6 +157,19 @@ public class SExprTest
 
         k4 = parser.parseSecretKey(new ByteArrayInputStream(key4), new JcePBEProtectionRemoverFactory("fredfred".toCharArray()), k4.getPublicKey());
         k5 = parser.parseSecretKey(new ByteArrayInputStream(key5), new JcePBEProtectionRemoverFactory("fredfred".toCharArray()), k5.getPublicKey());
+
+        // no key protection
+        String[] keyDirs = new String[]
+            {
+                "up1",
+                "up2"
+            };
+
+        for (int i = 0; i != keyDirs.length; i++)
+        {
+            PGPPrivateKey key = parser.parseSecretKey(this.getClass().getResourceAsStream("/pgpdata/" + keyDirs[i] + "/private-keys-v1.d/priv.key"),
+                null, new JcaKeyFingerprintCalculator()).extractPrivateKey(null);
+        }
     }
 
     public static void main(
