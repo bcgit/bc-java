@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.GeneralDigest;
 import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyParameters;
@@ -29,7 +30,7 @@ public class SM2Signer
     implements Signer, ECConstants
 {
     private final DSAKCalculator kCalculator = new RandomDSAKCalculator();
-    private final SM3Digest digest = new SM3Digest();
+    private final GeneralDigest digest;
     private final DSAEncoding encoding;
 
     private ECDomainParameters ecParams;
@@ -37,16 +38,18 @@ public class SM2Signer
     private ECKeyParameters ecKey;
     private byte[] z;
 
-    public SM2Signer()
-    {
-        this(StandardDSAEncoding.INSTANCE);
+    public SM2Signer() {
+        this(StandardDSAEncoding.INSTANCE, new SM3Digest());
     }
 
-    public SM2Signer(DSAEncoding encoding)
-    {
+    public SM2Signer(GeneralDigest digest) {
+        this(StandardDSAEncoding.INSTANCE, digest);
+    }
+
+    public SM2Signer(DSAEncoding encoding, GeneralDigest digest) {
         this.encoding = encoding;
+        this.digest = digest;
     }
-
     public void init(boolean forSigning, CipherParameters param)
     {
         CipherParameters baseParam;
