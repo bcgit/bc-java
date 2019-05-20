@@ -46,7 +46,13 @@ public class SM2Signer
         this(StandardDSAEncoding.INSTANCE, digest);
     }
 
-    public SM2Signer(DSAEncoding encoding, GeneralDigest digest) {
+    public SM2Signer(GeneralDigest digest)
+    {
+        this(StandardDSAEncoding.INSTANCE, digest);
+    }
+
+    public SM2Signer(DSAEncoding encoding)
+    {
         this.encoding = encoding;
         this.digest = digest;
     }
