@@ -141,4 +141,13 @@ public class GMSignatureSpi
             super(new SM2Signer(new SHA256Digest()));
         }
     }
+
+    static public class sha256WithSM2
+            extends GMSignatureSpi
+    {
+        public sha256WithSM2()
+        {
+            super(new SM2Signer(new SHA256Digest()));
+        }
+    }
 }
