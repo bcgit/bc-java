@@ -38,12 +38,9 @@ public class SM2Signer
     private ECKeyParameters ecKey;
     private byte[] z;
 
-    public SM2Signer() {
+    public SM2Signer()
+    {
         this(StandardDSAEncoding.INSTANCE, new SM3Digest());
-    }
-
-    public SM2Signer(GeneralDigest digest) {
-        this(StandardDSAEncoding.INSTANCE, digest);
     }
 
     public SM2Signer(GeneralDigest digest)
@@ -54,8 +51,15 @@ public class SM2Signer
     public SM2Signer(DSAEncoding encoding)
     {
         this.encoding = encoding;
+        this.digest = new SM3Digest();
+    }
+
+    public SM2Signer(DSAEncoding encoding, GeneralDigest digest)
+    {
+        this.encoding = encoding;
         this.digest = digest;
     }
+
     public void init(boolean forSigning, CipherParameters param)
     {
         CipherParameters baseParam;
