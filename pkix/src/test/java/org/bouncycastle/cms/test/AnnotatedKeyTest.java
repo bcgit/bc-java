@@ -151,7 +151,7 @@ public class AnnotatedKeyTest
 
         RecipientId id = new JceKeyTransRecipientId(_reciCert);
 
-        Collection collection = recipients.getRecipients(id);
+        Collection<RecipientInformation> collection = recipients.getRecipients(id);
         if (collection.size() != 2)
         {
             fail("recipients not matched using general recipient ID.");
