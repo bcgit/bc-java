@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.util.*;
 import org.bouncycastle.util.Iterable;
 
 public class RecipientInformationStore
@@ -97,7 +96,7 @@ public class RecipientInformationStore
      * @param selector a recipient id to select against.
      * @return a collection of RecipientInformation objects.
      */
-    public Collection<Recipient> getRecipients(
+    public Collection<RecipientInformation> getRecipients(
         RecipientId selector)
     {
         if (selector instanceof KeyTransRecipientId)
@@ -109,15 +108,15 @@ public class RecipientInformationStore
 
             if (issuer != null && subjectKeyId != null)
             {
-                List results = new ArrayList();
+                List<RecipientInformation> results = new ArrayList();
 
-                Collection match1 = getRecipients(new KeyTransRecipientId(issuer, keyTrans.getSerialNumber()));
+                Collection<RecipientInformation> match1 = getRecipients(new KeyTransRecipientId(issuer, keyTrans.getSerialNumber()));
                 if (match1 != null)
                 {
                     results.addAll(match1);
                 }
 
-                Collection match2 = getRecipients(new KeyTransRecipientId(subjectKeyId));
+                Collection<RecipientInformation> match2 = getRecipients(new KeyTransRecipientId(subjectKeyId));
                 if (match2 != null)
                 {
                     results.addAll(match2);
