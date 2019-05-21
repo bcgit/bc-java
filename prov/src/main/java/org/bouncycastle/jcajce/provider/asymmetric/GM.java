@@ -30,6 +30,12 @@ public class GM
         {
             provider.addAlgorithm("Signature.SM3WITHSM2", PREFIX + "GMSignatureSpi$sm3WithSM2");
             provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sm3, "SM3WITHSM2");
+            // SHA1 with SM2
+            provider.addAlgorithm("Signature.SHA1WithSM2", PREFIX + "GMSignatureSpi$sha1WithSM2");
+            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sha1, "SHA1WithSM2");
+            // SHA256 with SM2
+            provider.addAlgorithm("Signature.SHA256WithSM2", PREFIX + "GMSignatureSpi$sha256WithSM2");
+            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sha256, "SHA256WithSM2");
 
             provider.addAlgorithm("Cipher.SM2", PREFIX + "GMCipherSpi$SM2");
             provider.addAlgorithm("Alg.Alias.Cipher.SM2WITHSM3", "SM2");
