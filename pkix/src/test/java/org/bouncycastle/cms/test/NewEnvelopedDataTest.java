@@ -2218,7 +2218,7 @@ public class NewEnvelopedDataTest
 
         RecipientId id = new JceKeyTransRecipientId((X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost3410_RecipCert)));
 
-        Collection collection = recipients.getRecipients(id);
+        Collection<RecipientInformation> collection = recipients.getRecipients(id);
         if (collection.size() != 1)
         {
             fail("recipients not matched using general recipient ID.");
