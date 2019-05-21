@@ -10,6 +10,8 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
@@ -152,6 +154,24 @@ public class GMSignatureSpi
         public sm3WithSM2()
         {
             super(new SM2Signer());
+        }
+    }
+
+    static public class sha1WithSM2
+            extends GMSignatureSpi
+    {
+        public sha1WithSM2()
+        {
+            super(new SM2Signer(new SHA1Digest()));
+        }
+    }
+
+    static public class sha256WithSM2
+            extends GMSignatureSpi
+    {
+        public sha256WithSM2()
+        {
+            super(new SM2Signer(new SHA256Digest()));
         }
     }
 }
