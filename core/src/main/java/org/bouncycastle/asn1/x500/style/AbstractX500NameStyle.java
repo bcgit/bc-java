@@ -44,8 +44,7 @@ public abstract class AbstractX500NameStyle
 
     private int calcHashCode(ASN1Encodable enc)
     {
-        String value = IETFUtils.valueToString(enc);
-        value = IETFUtils.canonicalize(value);
+        String value = IETFUtils.canonicalString(enc);
         return value.hashCode();
     }
 
