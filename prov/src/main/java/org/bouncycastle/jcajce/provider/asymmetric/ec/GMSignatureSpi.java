@@ -10,7 +10,6 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -148,6 +147,78 @@ public class GMSignatureSpi
         throw new UnsupportedOperationException("engineGetParameter unsupported");
     }
 
+//    static public class blake2b512WithSM2
+//        extends GMSignatureSpi
+//    {
+//        public blake2b512WithSM2()
+//        {
+//            super(new SM2Signer(new Blake2bDigest(512)));
+//        }
+//    }
+
+//    static public class blake2s256WithSM2
+//        extends GMSignatureSpi
+//    {
+//        public blake2s256WithSM2()
+//        {
+//            super(new SM2Signer(new Blake2sDigest(256)));
+//        }
+//    }
+
+//    static public class ripemd160WithSM2
+//        extends GMSignatureSpi
+//    {
+//        public ripemd160WithSM2()
+//        {
+//            super(new SM2Signer(new RIPEMD160Digest()));
+//        }
+//    }
+
+//    static public class sha1WithSM2
+//        extends GMSignatureSpi
+//    {
+//        public sha1WithSM2()
+//        {
+//            super(new SM2Signer(new SHA1Digest()));
+//        }
+//    }
+
+//    static public class sha224WithSM2
+//        extends GMSignatureSpi
+//    {
+//        public sha224WithSM2()
+//        {
+//            super(new SM2Signer(new SHA224Digest()));
+//        }
+//    }
+
+    static public class sha256WithSM2
+        extends GMSignatureSpi
+    {
+        public sha256WithSM2()
+        {
+            super(new SM2Signer(new SHA256Digest()));
+        }
+    }
+
+//    static public class sha384WithSM2
+//        extends GMSignatureSpi
+//    {
+//        public sha384WithSM2()
+//        {
+//            super(new SM2Signer(new SHA384Digest()));
+//        }
+//    }
+
+//    static public class sha512WithSM2
+//        extends GMSignatureSpi
+//    {
+//        public sha512WithSM2()
+//        {
+//            super(new SM2Signer(new SHA512Digest()));
+//        }
+//    }
+
     static public class sm3WithSM2
         extends GMSignatureSpi
     {
@@ -157,21 +228,12 @@ public class GMSignatureSpi
         }
     }
 
-    static public class sha1WithSM2
-            extends GMSignatureSpi
-    {
-        public sha1WithSM2()
-        {
-            super(new SM2Signer(new SHA1Digest()));
-        }
-    }
-
-    static public class sha256WithSM2
-            extends GMSignatureSpi
-    {
-        public sha256WithSM2()
-        {
-            super(new SM2Signer(new SHA256Digest()));
-        }
-    }
+//    static public class whirlpoolWithSM2
+//        extends GMSignatureSpi
+//    {
+//        public whirlpoolWithSM2()
+//        {
+//            super(new SM2Signer(new WhirlpoolDigest()));
+//        }
+//    }
 }
