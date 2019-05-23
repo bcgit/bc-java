@@ -28,8 +28,26 @@ public class GM
 
         public void configure(ConfigurableProvider provider)
         {
+//            provider.addAlgorithm("Signature.BLAKE2BWITHSM2", PREFIX + "GMSignatureSpi$blake2b512WithSM2");
+//            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_blake2b512, "BLAKE2BWITHSM2");
+//            provider.addAlgorithm("Signature.BLAKE2SWITHSM2", PREFIX + "GMSignatureSpi$blake2s256WithSM2");
+//            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_blake2s256, "BLAKE2SWITHSM2");
+//            provider.addAlgorithm("Signature.RIPEMD160WITHSM2", PREFIX + "GMSignatureSpi$ripemd160WithSM2");
+//            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_rmd160, "RIPEMD160WITHSM2");
+//            provider.addAlgorithm("Signature.SHA1WITHSM2", PREFIX + "GMSignatureSpi$sha1WithSM2");
+//            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sha1, "SHA1WITHSM2");
+//            provider.addAlgorithm("Signature.SHA224WITHSM2", PREFIX + "GMSignatureSpi$sha224WithSM2");
+//            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sha224, "SHA224WITHSM2");
+            provider.addAlgorithm("Signature.SHA256WITHSM2", PREFIX + "GMSignatureSpi$sha256WithSM2");
+            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sha256, "SHA256WITHSM2");
+//            provider.addAlgorithm("Signature.SHA384WITHSM2", PREFIX + "GMSignatureSpi$sha384WithSM2");
+//            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sha384, "SHA384WITHSM2");
+//            provider.addAlgorithm("Signature.SHA512WITHSM2", PREFIX + "GMSignatureSpi$sha512WithSM2");
+//            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sha512, "SHA512WITHSM2");
             provider.addAlgorithm("Signature.SM3WITHSM2", PREFIX + "GMSignatureSpi$sm3WithSM2");
             provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sm3, "SM3WITHSM2");
+//            provider.addAlgorithm("Signature.WHIRLPOOLWITHSM2", PREFIX + "GMSignatureSpi$whirlpoolWithSM2");
+//            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_whirlpool, "WHIRLPOOLWITHSM2");
 
             provider.addAlgorithm("Cipher.SM2", PREFIX + "GMCipherSpi$SM2");
             provider.addAlgorithm("Alg.Alias.Cipher.SM2WITHSM3", "SM2");

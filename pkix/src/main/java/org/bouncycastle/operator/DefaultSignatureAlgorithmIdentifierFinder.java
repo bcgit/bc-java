@@ -127,6 +127,13 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_512);
         algorithms.put("SHA3-512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA3_512);
         algorithms.put("SHA512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA512);
+
+//        algorithms.put("RIPEMD160WITHSM2", GMObjectIdentifiers.sm2sign_with_rmd160);
+//        algorithms.put("SHA1WITHSM2", GMObjectIdentifiers.sm2sign_with_sha1);
+//        algorithms.put("SHA224WITHSM2", GMObjectIdentifiers.sm2sign_with_sha224);
+        algorithms.put("SHA256WITHSM2", GMObjectIdentifiers.sm2sign_with_sha256);
+//        algorithms.put("SHA384WITHSM2", GMObjectIdentifiers.sm2sign_with_sha384);
+//        algorithms.put("SHA512WITHSM2", GMObjectIdentifiers.sm2sign_with_sha512);
         algorithms.put("SM3WITHSM2", GMObjectIdentifiers.sm2sign_with_sm3);
 
         algorithms.put("SHA256WITHXMSS", BCObjectIdentifiers.xmss_SHA256ph);
@@ -235,6 +242,12 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         // SM2
         //
+//        noParams.add(GMObjectIdentifiers.sm2sign_with_rmd160);
+//        noParams.add(GMObjectIdentifiers.sm2sign_with_sha1);
+//        noParams.add(GMObjectIdentifiers.sm2sign_with_sha224);
+        noParams.add(GMObjectIdentifiers.sm2sign_with_sha256);
+//        noParams.add(GMObjectIdentifiers.sm2sign_with_sha384);
+//        noParams.add(GMObjectIdentifiers.sm2sign_with_sha512);
         noParams.add(GMObjectIdentifiers.sm2sign_with_sm3);
 
         //
@@ -318,6 +331,13 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         digestOids.put(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001, CryptoProObjectIdentifiers.gostR3411);
         digestOids.put(RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
         digestOids.put(RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
+
+//        digestOids.put(GMObjectIdentifiers.sm2sign_with_rmd160, TeleTrusTObjectIdentifiers.ripemd160);
+//        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha1, OIWObjectIdentifiers.idSHA1);
+//        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha224, NISTObjectIdentifiers.id_sha224);
+        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha256, NISTObjectIdentifiers.id_sha256);
+//        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha384, NISTObjectIdentifiers.id_sha384);
+//        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha512, NISTObjectIdentifiers.id_sha512);
         digestOids.put(GMObjectIdentifiers.sm2sign_with_sm3, GMObjectIdentifiers.sm3);
     }
 
