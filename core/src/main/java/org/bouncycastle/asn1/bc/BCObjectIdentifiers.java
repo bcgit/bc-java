@@ -160,4 +160,13 @@ public interface BCObjectIdentifiers
      * NewHope
      */
     public static final ASN1ObjectIdentifier newHope = bc_exch.branch("1");
+
+    /**
+     * X.509 extension(4) values
+     * <p>
+     * 1.3.6.1.4.1.22554.4
+     */
+    public static final ASN1ObjectIdentifier bc_ext        = bc.branch("4");
+
+    public static final ASN1ObjectIdentifier linkedCertificate = bc_ext.branch("1");
 }

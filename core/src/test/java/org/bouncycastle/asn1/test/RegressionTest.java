@@ -78,7 +78,8 @@ public class RegressionTest
         new PKIPublicationInfoTest(),
         new CertifiedKeyPairTest(),
         new PrivateKeyInfoTest(),
-        new LocaleTest()
+        new LocaleTest(),
+        new LinkedCertificateTest()
     };
 
     public static void main(
