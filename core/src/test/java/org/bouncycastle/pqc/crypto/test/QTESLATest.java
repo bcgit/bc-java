@@ -21,6 +21,7 @@ import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASigner;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
 
 public class QTESLATest
@@ -43,9 +44,9 @@ public class QTESLATest
         String value = asString(values, key);
         if (value != null)
         {
-            return Integer.parseInt(value);
+            return Integers.valueOf(Integer.parseInt(value));
         }
-        return def;
+        return Integers.valueOf(def);
     }
 
     private static byte[] asByteArray(Map<String, String> values, String key)
