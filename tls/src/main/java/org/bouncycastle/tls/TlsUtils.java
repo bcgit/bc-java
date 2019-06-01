@@ -4089,7 +4089,7 @@ public class TlsUtils
 
             if (!earlyGroups.contains(offeredGroupElement)
                 || clientAgreements.containsKey(offeredGroupElement)
-                || !crypto.hasNamedGroup(offeredGroupElement))
+                || !crypto.hasNamedGroup(offeredGroup))
             {
                 continue;
             }
@@ -4116,7 +4116,7 @@ public class TlsUtils
                 KeyShareEntry clientShare = new KeyShareEntry(offeredGroup, key_exchange);
 
                 clientShares.addElement(clientShare);
-                clientAgreements.put(offeredGroup, agreement);
+                clientAgreements.put(offeredGroupElement, agreement);
             }
         }
 
