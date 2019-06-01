@@ -341,6 +341,10 @@ public class PKIXNameConstraintValidator
                 // use new RFC 5280 comparison, NOTE: this is now different from with RFC 3280, where only binary comparison is used
                 // obey RFC 5280 7.1
                 // special treatment of serialNumber for GSMA SGP.22 RSP specification
+                if (!subtreeRdn.getFirst().getType().equals(dnsRdn.getFirst().getType()))
+                {
+                    return false;
+                }
                 if (subtreeRdn.size() == 1 && subtreeRdn.getFirst().getType().equals(RFC4519Style.serialNumber))
                 {
                     if (!dnsRdn.getFirst().getValue().toString().startsWith(subtreeRdn.getFirst().getValue().toString()))
