@@ -98,8 +98,10 @@ class PEMUtil
      */
     private Boundaries getBoundaries(String line)
     {
-        for (Boundaries boundary : _supportedBoundaries)
+        for (int i = 0; i != _supportedBoundaries.length; i++)
         {
+            Boundaries boundary = _supportedBoundaries[i];
+            
             if (boundary.isTheExpectedHeader(line) || boundary.isTheExpectedFooter(line))
             {
                 return boundary;
