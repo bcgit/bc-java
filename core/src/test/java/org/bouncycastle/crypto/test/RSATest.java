@@ -240,7 +240,7 @@ public class RSATest
         }
         finally
         {
-            System.clearProperty("org.bouncycastle.rsa.allow_unsafe_mod");
+            System.setProperty("org.bouncycastle.rsa.allow_unsafe_mod", "false");
         }
     }
 
