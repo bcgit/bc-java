@@ -4085,10 +4085,11 @@ public class TlsUtils
         for (int i = 0; i < offeredGroups.length; ++i)
         {
             int offeredGroup = offeredGroups[i];
+            Integer offeredGroupElement = Integers.valueOf(offeredGroup);
 
-            if (!earlyGroups.contains(offeredGroup)
-                || clientAgreements.containsKey(offeredGroup)
-                || !crypto.hasNamedGroup(offeredGroup))
+            if (!earlyGroups.contains(offeredGroupElement)
+                || clientAgreements.containsKey(offeredGroupElement)
+                || !crypto.hasNamedGroup(offeredGroupElement))
             {
                 continue;
             }
