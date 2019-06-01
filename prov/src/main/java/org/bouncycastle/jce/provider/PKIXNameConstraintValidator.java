@@ -117,7 +117,7 @@ public class PKIXNameConstraintValidator
     {
         validator.intersectEmptyPermittedSubtree(nameType);
     }
-
+    
     /**                                                           
      * Adds a subtree to the excluded set of these name constraints.
      *

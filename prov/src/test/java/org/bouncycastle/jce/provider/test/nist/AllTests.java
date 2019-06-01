@@ -21,6 +21,7 @@ public class AllTests
         TestSuite suite = new TestSuite("CertPath Tests");
         
         suite.addTestSuite(NistCertPathTest.class);
+        suite.addTestSuite(NistCertPathTest2.class);
         suite.addTestSuite(NistCertPathReviewerTest.class);
 
         return new BCTestSetup(suite);
