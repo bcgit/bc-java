@@ -2579,8 +2579,9 @@ public class Blake2xsDigestTest
 
     private void testBlake2xsTestVectors()
     {
-        for (String[] vector : Blake2xsDigestTest.xofTestVectors)
+        for (int i = 0; i != Blake2xsDigestTest.xofTestVectors.length; i++)
         {
+            String[] vector = Blake2xsDigestTest.xofTestVectors[i];
             byte[] input = Hex.decode(vector[0]);
             byte[] key = Hex.decode(vector[1]);
 
@@ -2650,7 +2651,6 @@ public class Blake2xsDigestTest
         final long maxNumberOfBlocks = 1024 * 1024;
         Blake2xsDigest h = new Blake2xsDigest()
         {
-            @Override
             public long getUnknownMaxLength()
             {
                 return maxNumberOfBlocks * 32;

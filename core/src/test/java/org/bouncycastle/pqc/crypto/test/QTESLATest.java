@@ -263,8 +263,9 @@ public class QTESLATest
         };
 
 
-        for (String file : files)
+        for (int i = 0; i != files.length; i++)
         {
+            String file = files[i];
             List<QTeslaKatVector> vectors =
                 new QTeslaKatPArser(file, QTESLATest.class.getResourceAsStream(file))
                     .parse("count");
