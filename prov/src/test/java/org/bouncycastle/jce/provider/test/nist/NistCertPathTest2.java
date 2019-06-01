@@ -267,7 +267,7 @@ public class NistCertPathTest2
             fail("path accepted when should be rejected");
         }
         catch (CertPathValidatorException e)
-        {                     e.printStackTrace();
+        {                    
             assertEquals(index, e.getIndex());
             assertEquals(message, e.getMessage());
         }
@@ -464,7 +464,7 @@ public class NistCertPathTest2
         String crlName)
         throws Exception
     {
-        X509CRL crl = (X509CRL)certs.get(crlName);
+        X509CRL crl = (X509CRL)crls.get(crlName);
         
         if (crl != null)
         {
