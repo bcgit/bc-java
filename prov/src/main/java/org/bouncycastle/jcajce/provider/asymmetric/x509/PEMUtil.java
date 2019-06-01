@@ -40,7 +40,7 @@ class PEMUtil
     PEMUtil(String type)
     {
         _supportedBoundaries = new Boundaries[]
-        { new Boundaries(type), new Boundaries(String.format("X509 %s", type)),
+        { new Boundaries(type), new Boundaries("X509 " + type),
                 new Boundaries("PKCS7") };
     }
 
