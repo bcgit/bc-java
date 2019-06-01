@@ -269,13 +269,13 @@ public abstract class AbstractTlsClient
     {
         if (null != supportedGroups)
         {
-            if (supportedGroups.contains(NamedGroup.x25519))
+            if (supportedGroups.contains(Integers.valueOf(NamedGroup.x25519)))
             {
-                return TlsUtils.vectorOfOne(NamedGroup.x25519);
+                return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.x25519));
             }
-            if (supportedGroups.contains(NamedGroup.secp256r1))
+            if (supportedGroups.contains(Integers.valueOf(NamedGroup.secp256r1)))
             {
-                return TlsUtils.vectorOfOne(NamedGroup.secp256r1);
+                return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.secp256r1));
             }
         }
         return null;
