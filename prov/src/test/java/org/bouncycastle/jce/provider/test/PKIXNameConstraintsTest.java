@@ -1,6 +1,8 @@
 package org.bouncycastle.jce.provider.test;
 
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralSubtree;
 import org.bouncycastle.jce.provider.PKIXNameConstraintValidator;
@@ -81,17 +83,21 @@ public class PKIXNameConstraintsTest
     private final static String[] dnIntersection =
     { "O=test org, OU=test org unit, CN=John Doe" };
 
+    // Note: In BC text conversion is ISO format - IETF starts at the back.
     private final static String testDN = "O=test org, OU=test org unit, CN=John Doe";
 
     private final static String testDNIsConstraint[] =
-    { "O=test org, OU=test org unit",
-            "O=test org, OU=test org unit, CN=John Doe",
-            "OU=test org unit, O=test org, CN=John Doe",};
+    {
+        "O=test org, OU=test org unit",
+        "O=test org, OU=test org unit, CN=John Doe",
+    };
 
     private final static String testDNIsNotConstraint[] =
-    { "O=test org, OU=test org unit, CN=John Doe2",
-            "O=test org, OU=test org unit2",
-            "O=test org, OU=test org unit, CN=John Doe, L=USA" };
+    {
+        "O=test org, OU=test org unit, CN=John Doe2",
+        "O=test org, OU=test org unit2",
+        "O=test org, OU=test org unit, CN=John Doe, L=USA"
+    };
 
     private final static String testDNS = "abc.test.com";
 
@@ -214,6 +220,11 @@ public class PKIXNameConstraintsTest
             uriintersect);
         testConstraints(GeneralName.iPAddress, testIP, testIPIsConstraint,
             testIPIsNotConstraint, ip1, ip2, ipunion, ipintersect);
+
+        PKIXNameConstraintValidator constraintValidator = new PKIXNameConstraintValidator();
+        constraintValidator.intersectPermittedSubtree(new GeneralSubtree(
+            new GeneralName(GeneralName.directoryName, new X500Name(RFC4519Style.INSTANCE, "ou=permittedSubtree1, o=Test Certificates 2011, c=US"))));
+        constraintValidator.checkPermitted(new GeneralName(GeneralName.directoryName, new X500Name(RFC4519Style.INSTANCE, "cn=Valid DN nameConstraints EE Certificate Test1, ou=permittedSubtree1, o=Test Certificates 2011, c=US")));
     }
 
     /**
