@@ -302,7 +302,7 @@ public class QTESLATest
 
             for (int j = 0; j != vectors.size(); j++)
             {
-                QTeslaKatVector vector = vectors.get(j);
+                QTeslaKatVector vector = (QTeslaKatVector)vectors.get(j);
                 try
                 {
                     doTestKAT(type, vector.pk, vector.sk, vector.seed, vector.msg, vector.sm);
@@ -334,13 +334,13 @@ public class QTESLATest
         QTeslaKatVector(Map<String, String> parameters)
             throws Exception
         {
-            count = asInt(parameters, "count", -1);
+            count = asInt(parameters, "count", -1).intValue();
             seed = asByteArray(parameters, "seed");
-            mlen = asInt(parameters, "mlen", -1);
+            mlen = asInt(parameters, "mlen", -1).intValue();
             msg = asByteArray(parameters, "msg");
             pk = asByteArray(parameters, "pk");
             sk = asByteArray(parameters, "sk");
-            smlen = asInt(parameters, "smlen", -1);
+            smlen = asInt(parameters, "smlen", -1).intValue();
             sm = asByteArray(parameters, "sm");
         }
 
@@ -369,35 +369,35 @@ public class QTESLATest
             {
                 return false;
             }
-            if (!java.util.Arrays.equals(seed, that.seed))
+            if (!Arrays.areEqual(seed, that.seed))
             {
                 return false;
             }
-            if (!java.util.Arrays.equals(msg, that.msg))
+            if (!Arrays.areEqual(msg, that.msg))
             {
                 return false;
             }
-            if (!java.util.Arrays.equals(pk, that.pk))
+            if (!Arrays.areEqual(pk, that.pk))
             {
                 return false;
             }
-            if (!java.util.Arrays.equals(sk, that.sk))
+            if (!Arrays.areEqual(sk, that.sk))
             {
                 return false;
             }
-            return java.util.Arrays.equals(sm, that.sm);
+            return Arrays.areEqual(sm, that.sm);
         }
 
         public int hashCode()
         {
             int result;// = count;
-            result = java.util.Arrays.hashCode(seed);//   31 * result + java.util.Arrays.hashCode(seed);
+            result = Arrays.hashCode(seed);//   31 * result + Arrays.hashCode(seed);
             result = 31 * result + mlen;
-            result = 31 * result + java.util.Arrays.hashCode(msg);
-            result = 31 * result + java.util.Arrays.hashCode(pk);
-            result = 31 * result + java.util.Arrays.hashCode(sk);
+            result = 31 * result + Arrays.hashCode(msg);
+            result = 31 * result + Arrays.hashCode(pk);
+            result = 31 * result + Arrays.hashCode(sk);
             result = 31 * result + smlen;
-            result = 31 * result + java.util.Arrays.hashCode(sm);
+            result = 31 * result + Arrays.hashCode(sm);
             return result;
         }
     }
@@ -439,7 +439,7 @@ public class QTESLATest
                 //
                 // Vector parameter.
                 //
-                if (line.contains("="))
+                if (line.indexOf('=') > 0)
                 {
                     String[] kv = line.split("=");
 
