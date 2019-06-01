@@ -33,7 +33,7 @@ public class QTESLATest
     {
         if (values.containsKey(key))
         {
-            return values.get(key);
+            return (String)values.get(key);
         }
         return null;
     }
