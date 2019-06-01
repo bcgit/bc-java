@@ -300,8 +300,9 @@ public class QTESLATest
             }
 
 
-            for (QTeslaKatVector vector : vectors)
+            for (int j = 0; j != vectors.size(); j++)
             {
+                QTeslaKatVector vector = vectors.get(j);
                 try
                 {
                     doTestKAT(type, vector.pk, vector.sk, vector.seed, vector.msg, vector.sm);
@@ -343,7 +344,6 @@ public class QTESLATest
             sm = asByteArray(parameters, "sm");
         }
 
-        @Override
         public boolean equals(Object o)
         {
             if (this == o)
@@ -388,7 +388,6 @@ public class QTESLATest
             return java.util.Arrays.equals(sm, that.sm);
         }
 
-        @Override
         public int hashCode()
         {
             int result;// = count;
