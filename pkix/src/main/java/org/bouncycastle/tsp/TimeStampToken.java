@@ -6,7 +6,7 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -98,10 +98,7 @@ public class TimeStampToken
 
             content.write(bOut);
 
-            @SuppressWarnings("resource")
-            ASN1InputStream aIn = new ASN1InputStream(bOut.toByteArray());
-
-            this.tstInfo = new TimeStampTokenInfo(TSTInfo.getInstance(aIn.readObject()));
+            this.tstInfo = new TimeStampTokenInfo(TSTInfo.getInstance(ASN1Primitive.fromByteArray(bOut.toByteArray())));
             
             Attribute attr = tsaSignerInfo.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificate);
 
