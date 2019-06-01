@@ -12,7 +12,10 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
@@ -84,7 +87,7 @@ public class PKIXNameConstraintValidator
             checkPermittedIP(permittedSubtreesIP, ip);
             break;
         default:
-            throw new IllegalStateException("Unknown tag encountered: " + name.getTagNo());
+            // other tags to be ignored.
         }
     }
 
@@ -123,7 +126,7 @@ public class PKIXNameConstraintValidator
             checkExcludedIP(excludedSubtreesIP, ip);
             break;
         default:
-            throw new IllegalStateException("Unknown tag encountered: " + name.getTagNo());
+            // other tags to be ignored.
         }
     }
 
@@ -154,7 +157,7 @@ public class PKIXNameConstraintValidator
             ((Set)subtreesMap.get(tagNo)).add(subtree);
         }
 
-        for (Iterator it = subtreesMap.entrySet().iterator(); it.hasNext(); )
+        for (Iterator it = subtreesMap.entrySet().iterator(); it.hasNext();)
         {
             Map.Entry entry = (Map.Entry)it.next();
 
@@ -296,81 +299,13 @@ public class PKIXNameConstraintValidator
             && collectionsAreEqual(constraintValidator.permittedSubtreesOtherName, permittedSubtreesOtherName);
     }
 
-    public String toString()
-    {
-        String temp = "";
-        temp += "permitted:\n";
-        if (permittedSubtreesDN != null)
-        {
-            temp += "DN:\n";
-            temp += permittedSubtreesDN.toString() + "\n";
-        }
-        if (permittedSubtreesDNS != null)
-        {
-            temp += "DNS:\n";
-            temp += permittedSubtreesDNS.toString() + "\n";
-        }
-        if (permittedSubtreesEmail != null)
-        {
-            temp += "Email:\n";
-            temp += permittedSubtreesEmail.toString() + "\n";
-        }
-        if (permittedSubtreesURI != null)
-        {
-            temp += "URI:\n";
-            temp += permittedSubtreesURI.toString() + "\n";
-        }
-        if (permittedSubtreesIP != null)
-        {
-            temp += "IP:\n";
-            temp += stringifyIPCollection(permittedSubtreesIP) + "\n";
-        }
-        if (permittedSubtreesOtherName != null)
-        {
-            temp += "OtherName:\n";
-            temp += stringifyOtherNameCollection(permittedSubtreesOtherName) + "\n";
-        }
-        temp += "excluded:\n";
-        if (!excludedSubtreesDN.isEmpty())
-        {
-            temp += "DN:\n";
-            temp += excludedSubtreesDN.toString() + "\n";
-        }
-        if (!excludedSubtreesDNS.isEmpty())
-        {
-            temp += "DNS:\n";
-            temp += excludedSubtreesDNS.toString() + "\n";
-        }
-        if (!excludedSubtreesEmail.isEmpty())
-        {
-            temp += "Email:\n";
-            temp += excludedSubtreesEmail.toString() + "\n";
-        }
-        if (!excludedSubtreesURI.isEmpty())
-        {
-            temp += "URI:\n";
-            temp += excludedSubtreesURI.toString() + "\n";
-        }
-        if (!excludedSubtreesIP.isEmpty())
-        {
-            temp += "IP:\n";
-            temp += stringifyIPCollection(excludedSubtreesIP) + "\n";
-        }
-        if (!excludedSubtreesOtherName.isEmpty())
-        {
-            temp += "OtherName:\n";
-            temp += stringifyOtherNameCollection(excludedSubtreesOtherName) + "\n";
-        }
-        return temp;
-    }
-
-    private void checkPermittedDN(X500Name dns)
+    public void checkPermittedDN(X500Name dns)
         throws NameConstraintValidatorException
     {
         checkPermittedDN(permittedSubtreesDN, ASN1Sequence.getInstance(dns.toASN1Primitive()));
     }
 
-    private void checkExcludedDN(X500Name dns)
+    public void checkExcludedDN(X500Name dns)
         throws NameConstraintValidatorException
     {
         checkExcludedDN(excludedSubtreesDN, ASN1Sequence.getInstance(dns));
@@ -390,9 +325,35 @@ public class PKIXNameConstraintValidator
             return false;
         }
 
-        for (int j = subtree.size() - 1; j >= 0; j--)
+        for (int j = 0; j < subtree.size(); j++)
         {
-            if (!subtree.getObjectAt(j).equals(dns.getObjectAt(j)))
+            // both subtree and dns are a ASN.1 Name and the elements are a RDN
+            RDN subtreeRdn = RDN.getInstance(subtree.getObjectAt(j));
+            RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
+
+            // check if types and values of all naming attributes are matching, other types which are not restricted are allowed, see https://tools.ietf.org/html/rfc5280#section-7.1
+            if (subtreeRdn.size() == dnsRdn.size())
+            {
+                // Two relative distinguished names
+                //   RDN1 and RDN2 match if they have the same number of naming attributes
+                //   and for each naming attribute in RDN1 there is a matching naming attribute in RDN2.
+                //   NOTE: this is checking the attributes in the same order, which might be not necessary, if this is a problem also IETFUtils.rDNAreEqual mus tbe changed.
+                // use new RFC 5280 comparison, NOTE: this is now different from with RFC 3280, where only binary comparison is used
+                // obey RFC 5280 7.1
+                // special treatment of serialNumber for GSMA SGP.22 RSP specification
+                if (subtreeRdn.size() == 1 && subtreeRdn.getFirst().getType().equals(RFC4519Style.serialNumber))
+                {
+                    if (!dnsRdn.getFirst().getValue().toString().startsWith(subtreeRdn.getFirst().getValue().toString()))
+                    {
+                        return false;
+                    }
+                }
+                else if (!IETFUtils.rDNAreEqual(subtreeRdn, dnsRdn))
+                {
+                    return false;
+                }
+            }
+            else
             {
                 return false;
             }
@@ -454,7 +415,7 @@ public class PKIXNameConstraintValidator
     private Set intersectDN(Set permitted, Set dns)
     {
         Set intersect = new HashSet();
-        for (Iterator it = dns.iterator(); it.hasNext(); )
+        for (Iterator it = dns.iterator(); it.hasNext();)
         {
             ASN1Sequence dn = ASN1Sequence.getInstance(((GeneralSubtree)it
                 .next()).getBase().getName().toASN1Primitive());
@@ -548,7 +509,7 @@ public class PKIXNameConstraintValidator
     private Set intersectEmail(Set permitted, Set emails)
     {
         Set intersect = new HashSet();
-        for (Iterator it = emails.iterator(); it.hasNext(); )
+        for (Iterator it = emails.iterator(); it.hasNext();)
         {
             String email = extractNameAsString(((GeneralSubtree)it.next())
                 .getBase());
@@ -614,7 +575,7 @@ public class PKIXNameConstraintValidator
     private Set intersectIP(Set permitted, Set ips)
     {
         Set intersect = new HashSet();
-        for (Iterator it = ips.iterator(); it.hasNext(); )
+        for (Iterator it = ips.iterator(); it.hasNext();)
         {
             byte[] ip = ASN1OctetString.getInstance(
                 ((GeneralSubtree)it.next()).getBase().getName()).getOctets();
@@ -700,7 +661,7 @@ public class PKIXNameConstraintValidator
     }
 
     /**
-     * Calculates the interesction if two IP ranges.
+     * Calculates the intersection if two IP ranges.
      *
      * @param ipWithSubmask1 The first IP address with its subnet mask.
      * @param ipWithSubmask2 The second IP address with its subnet mask.
@@ -1033,6 +994,10 @@ public class PKIXNameConstraintValidator
         if (constraint.indexOf('@') != -1)
         {
             if (email.equalsIgnoreCase(constraint))
+            {
+                return true;
+            }
+            if (sub.equalsIgnoreCase(constraint.substring(1)))
             {
                 return true;
             }
@@ -1424,7 +1389,7 @@ public class PKIXNameConstraintValidator
     private Set intersectDNS(Set permitted, Set dnss)
     {
         Set intersect = new HashSet();
-        for (Iterator it = dnss.iterator(); it.hasNext(); )
+        for (Iterator it = dnss.iterator(); it.hasNext();)
         {
             String dns = extractNameAsString(((GeneralSubtree)it.next())
                 .getBase());
@@ -1623,7 +1588,7 @@ public class PKIXNameConstraintValidator
     private Set intersectURI(Set permitted, Set uris)
     {
         Set intersect = new HashSet();
-        for (Iterator it = uris.iterator(); it.hasNext(); )
+        for (Iterator it = uris.iterator(); it.hasNext();)
         {
             String uri = extractNameAsString(((GeneralSubtree)it.next())
                 .getBase());
@@ -2046,7 +2011,7 @@ public class PKIXNameConstraintValidator
     {
         StringBuffer temp = new StringBuffer();
         temp.append("[");
-        for (Iterator it = ips.iterator(); it.hasNext(); )
+        for (Iterator it = ips.iterator(); it.hasNext();)
         {
             if (temp.length() > 1)
             {
@@ -2062,7 +2027,7 @@ public class PKIXNameConstraintValidator
     {
         StringBuffer temp = new StringBuffer();
         temp.append("[");
-        for (Iterator it = otherNames.iterator(); it.hasNext(); )
+        for (Iterator it = otherNames.iterator(); it.hasNext();)
         {
             if (temp.length() > 1)
             {
@@ -2081,6 +2046,80 @@ public class PKIXNameConstraintValidator
             }
         }
         temp.append("]");
+        return temp.toString();
+    }
+
+    private final void addLine(StringBuffer sb, String str)
+    {
+         sb.append(str).append(Strings.lineSeparator());
+    }
+
+    public String toString()
+    {
+        StringBuffer temp = new StringBuffer();
+
+        addLine(temp, "permitted:");
+        if (permittedSubtreesDN != null)
+        {
+            addLine(temp, "DN:");
+            addLine(temp, permittedSubtreesDN.toString());
+        }
+        if (permittedSubtreesDNS != null)
+        {
+            addLine(temp, "DNS:");
+            addLine(temp, permittedSubtreesDNS.toString());
+        }
+        if (permittedSubtreesEmail != null)
+        {
+            addLine(temp, "Email:");
+            addLine(temp, permittedSubtreesEmail.toString());
+        }
+        if (permittedSubtreesURI != null)
+        {
+            addLine(temp, "URI:");
+            addLine(temp, permittedSubtreesURI.toString());
+        }
+        if (permittedSubtreesIP != null)
+        {
+            addLine(temp, "IP:");
+            addLine(temp, stringifyIPCollection(permittedSubtreesIP));
+        }
+        if (permittedSubtreesOtherName != null)
+        {
+            addLine(temp, "OtherName:");
+            addLine(temp, stringifyOtherNameCollection(permittedSubtreesOtherName));
+        }
+        addLine(temp, "excluded:");
+        if (!excludedSubtreesDN.isEmpty())
+        {
+            addLine(temp, "DN:");
+            addLine(temp, excludedSubtreesDN.toString());
+        }
+        if (!excludedSubtreesDNS.isEmpty())
+        {
+            addLine(temp, "DNS:");
+            addLine(temp, excludedSubtreesDNS.toString());
+        }
+        if (!excludedSubtreesEmail.isEmpty())
+        {
+            addLine(temp, "Email:");
+            addLine(temp, excludedSubtreesEmail.toString());
+        }
+        if (!excludedSubtreesURI.isEmpty())
+        {
+            addLine(temp, "URI:");
+            addLine(temp, excludedSubtreesURI.toString());
+        }
+        if (!excludedSubtreesIP.isEmpty())
+        {
+            addLine(temp, "IP:");
+            addLine(temp, stringifyIPCollection(excludedSubtreesIP));
+        }
+        if (!excludedSubtreesOtherName.isEmpty())
+        {
+            addLine(temp, "OtherName:");
+            addLine(temp, stringifyOtherNameCollection(excludedSubtreesOtherName));
+        }
         return temp.toString();
     }
 }
