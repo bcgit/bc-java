@@ -288,6 +288,12 @@ w
 q
 %
 
+ed org/bouncycastle/asn1/bc/LinkedCertificate.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
 ed org/bouncycastle/crypto/modes/G3413CFBBlockCipher.java <<%
 g/private.*final.*;/s/final//
 w
@@ -360,3 +366,8 @@ w
 q
 %
 
+ed org/bouncycastle/jcajce/provider/asymmetric/x509/PEMUtil <<%
+g/private.*final.*;/s/final//
+w
+q
+%

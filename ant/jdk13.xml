@@ -147,6 +147,7 @@
                 <exclude name="**/ECDSA5Test.java" />
                 <exclude name="**/NamedCurveTest.java" />
                 <exclude name="**/nist/NistCertPathTest.java" />
+                <exclude name="**/nist/NistCertPathTest2.java" />
                 <exclude name="**/nist/NistCertPathReviewerTest.java" />
                 <exclude name="**/CRL5Test.java" />
                 <exclude name="**/DetDSA*.java" />
@@ -188,10 +189,13 @@
                 <exclude name="**/mime/test/*.java" />
                 <exclude name="**/pkix/**/RevocationTest.java" />
                 <exclude name="**/pkix/**/TestUtil.java" />
+                <exclude name="**/JournalingSecureRandomEncryptTest.java" />
+                <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/SignedMailValidatorTest.java" />
                 <exclude name="**/DummyCertPathReviewer.java" />
+		<exclude name="**/JournalingSecureRandomEncryptTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/resources" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
