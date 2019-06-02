@@ -233,14 +233,14 @@ public class RSATest
                 isTrue("RSA modulus has a small prime factor".equals(e.getMessage()));
             }
 
-            System.setProperty("org.bouncycastle.rsa.allow_unsafe_mod", "true");
+            System.getProperties().put("org.bouncycastle.rsa.allow_unsafe_mod", "true");
 
             // this should now work (sigh...)
             new RSAKeyParameters(false, mod.multiply(BigInteger.valueOf(3)), pubExp);
         }
         finally
         {
-            System.setProperty("org.bouncycastle.rsa.allow_unsafe_mod", "false");
+            System.getProperties().remove("org.bouncycastle.rsa.allow_unsafe_mod");
         }
     }
 
