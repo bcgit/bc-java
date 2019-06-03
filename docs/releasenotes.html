@@ -25,7 +25,7 @@ to conform the algorithms to the JCE framework.
 
 <h3>2.1.1 Version</h3>
 Release: 1.62<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, June 3rd.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>DTLS: Fixed infinite loop on IO exceptions.</li>
@@ -37,6 +37,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
 <li>XMSS/XMSS^MT OIDs now using the values defined in RFC 8391.</li>
 <li>XMSS/XMSS^MT keys now encoded with OID at start.</li>
 <li>An error causing valid paths to be rejected due to DN based name constraints has been fixed in the CertPath API.</li>
+<li>Name constraint resolution now includes special handling of serial numbers.</li>
+<li>Cipher implementations now handle ByteBuffer usage where the ByteBuffer has no backing array.</li>
+<li>CertificateFactory now enforces presence of PEM headers when required.</li>
+<li>A performance issue with RSA key pair generation that was introduced in 1.61 has been mostly eliminated.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -44,11 +48,19 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
 <li>DTLS: Added server-side support for HelloVerifyRequest.</li>
 <li>DTLS: Added support for an overall handshake timeout.</li>
 <li>DTLS: Added support for the heartbeat extension (RFC 6520).</li>
+<li>DTLS: Improve record seq. behaviour in HelloVerifyRequest scenarios.</li>
 <li>TLS: BasicTlsPSKIdentity now reusable (returns cloned array from getPSK).</li>
+<li>BCJSSE: Improved ALPN support, including selectors from Java 9.</li>
 <li>Lightweight RSADigestSigner now support use of NullDigest.</li>
 <li>SM2Engine now supports C1C3C2 mode.</li>
+<li>SHA256withSM2 now added to provider.</li>
 <li>BCJSSE: Added support for ALPN selectors (including in BC extension API for earlier JDKs).</li>
 <li>BCJSSE: Support 'SSL' algorithm for SSLContext (alias for 'TLS').</li>
+<li>The BLAKE2xs XOF has been added to the lightweight API.</li>
+<li>Utility classes added to support journaling of SecureRandom and algorithms to allow persistance and later resumption.</li>
+<li>PGP SexprParser now handles some unprotected key types.</li>
+<li>NONEwithRSA support added to lightweight RSADigestSigner.</li>
+<li>Support for the Ethereum flavor of IES has been added to the lightweight API.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
