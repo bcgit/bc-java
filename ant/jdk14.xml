@@ -86,6 +86,7 @@
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
+                <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java"/>
             <fileset dir="prov/src/test/java">
