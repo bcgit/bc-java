@@ -1,5 +1,6 @@
 package org.bouncycastle.jsse;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.net.ssl.SSLSession;
@@ -17,6 +18,6 @@ public abstract class BCExtendedSSLSession implements SSLSession
 
     public List<byte[]> getStatusResponses()
     {
-        throw new UnsupportedOperationException();
+        return Collections.emptyList();
     }
 }

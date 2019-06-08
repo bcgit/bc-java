@@ -83,12 +83,6 @@ class ProvSSLSession
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public List<byte[]> getStatusResponses()
-    {
-        throw new UnsupportedOperationException();
-    }
-
     TlsSession getTlsSession()
     {
         return tlsSession;
