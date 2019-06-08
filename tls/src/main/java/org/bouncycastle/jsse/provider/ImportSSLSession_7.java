@@ -128,12 +128,6 @@ class ImportSSLSession_7
         return sslSession.getSessionContext();
     }
 
-    @Override
-    public List<byte[]> getStatusResponses()
-    {
-        return Collections.emptyList();
-    }
-
     public Object getValue(String name)
     {
         return sslSession.getValue(name);
