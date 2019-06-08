@@ -77,10 +77,4 @@ class ProvSSLSessionHandshake
     {
         return JsseUtils.convertSNIServerNames(securityParameters.getClientServerNames());
     }
-
-    @Override
-    public List<byte[]> getStatusResponses()
-    {
-        throw new UnsupportedOperationException();
-    }
 }
