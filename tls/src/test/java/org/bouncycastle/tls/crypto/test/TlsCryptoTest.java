@@ -3,9 +3,13 @@ package org.bouncycastle.tls.crypto.test;
 import java.io.IOException;
 
 import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
+import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -20,6 +24,41 @@ public abstract class TlsCryptoTest
     protected TlsCryptoTest(TlsCrypto crypto)
     {
         this.crypto = crypto;
+    }
+
+    public void testECDomain() throws Exception
+    {
+        if (!crypto.hasECDHAgreement())
+        {
+            return;
+        }
+
+        for (int namedGroup = 0; namedGroup < 256; ++namedGroup)
+        {
+            if (!NamedGroup.refersToAnECDHCurve(namedGroup) || !crypto.hasNamedGroup(namedGroup))
+            {
+                continue;
+            }
+
+            TlsECDomain d = crypto.createECDomain(new TlsECConfig(namedGroup));
+
+            for (int i = 0; i < 10; ++i)
+            {
+                TlsAgreement aA = d.createECDH();
+                TlsAgreement aB = d.createECDH();
+
+                byte[] pA = aA.generateEphemeral();
+                byte[] pB = aB.generateEphemeral();
+
+                aA.receivePeerValue(pB);
+                aB.receivePeerValue(pA);
+
+                TlsSecret sA = aA.calculateSecret();
+                TlsSecret sB = aB.calculateSecret();
+
+                assertArrayEquals(extract(sA), extract(sB));
+            }
+        }
     }
 
     public void testHKDF()
