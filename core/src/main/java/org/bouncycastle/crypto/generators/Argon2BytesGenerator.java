@@ -159,11 +159,17 @@ public class Argon2BytesGenerator
         }
     }
 
+    private static class FillBlock {
+    	
+    	Block R = new Block();
+    	Block Z = new Block();
+    	
+    	Block addressBlock = new Block();
+    	Block zeroBlock = new Block();
+    	Block inputBlock = new Block();
+         
     private void fillBlock(Block X, Block Y, Block currentBlock, boolean withXor)
     {
-        Block R = new Block();
-        Block Z = new Block();
-
         R.xor(X, Y);
         Z.copyBlock(R);
 
@@ -207,9 +213,11 @@ public class Argon2BytesGenerator
             currentBlock.xor(R, Z);
         }
     }
+    }
 
     private void fillMemoryBlocks()
     {
+    	FillBlock filler = new FillBlock();
     	Position position = new Position();
         for (int i = 0; i < parameters.getIterations(); i++)
         {
@@ -218,13 +226,13 @@ public class Argon2BytesGenerator
                 for (int k = 0; k < parameters.getLanes(); k++)
                 {
                 	position.update(i, k, j, 0);
-                    fillSegment(position);
+                    fillSegment(filler, position);
                 }
             }
         }
     }
 
-    private void fillSegment(Position position)
+    private void fillSegment(FillBlock filler, Position position)
     {
 
         Block addressBlock = null, inputBlock = null, zeroBlock = null;
@@ -236,18 +244,18 @@ public class Argon2BytesGenerator
 
         if (dataIndependentAddressing)
         {
-            addressBlock = new Block();
-            zeroBlock = new Block();
-            inputBlock = new Block();
+            addressBlock = filler.addressBlock.clear();
+            zeroBlock = filler.zeroBlock.clear();
+            inputBlock = filler.inputBlock.clear();
 
-            initAddressBlocks(position, zeroBlock, inputBlock, addressBlock);
+            initAddressBlocks(filler, position, zeroBlock, inputBlock, addressBlock);
         }
 
         for (position.index = startingIndex; position.index < segmentLength; position.index++, currentOffset++, prevOffset++)
         {
             prevOffset = rotatePrevOffset(currentOffset, prevOffset);
 
-            long pseudoRandom = getPseudoRandom(position, addressBlock, inputBlock, zeroBlock, prevOffset, dataIndependentAddressing);
+            long pseudoRandom = getPseudoRandom(filler, position, addressBlock, inputBlock, zeroBlock, prevOffset, dataIndependentAddressing);
             int refLane = getRefLane(position, pseudoRandom);
             int refColumn = getRefColumn(position, pseudoRandom, refLane == position.lane);
 
@@ -257,7 +265,7 @@ public class Argon2BytesGenerator
             Block currentBlock = memory[currentOffset];
 
             boolean withXor = isWithXor(position);
-            fillBlock(prevBlock, refBlock, currentBlock, withXor);
+            filler.fillBlock(prevBlock, refBlock, currentBlock, withXor);
         }
     }
 
@@ -270,7 +278,7 @@ public class Argon2BytesGenerator
             );
     }
 
-    private void initAddressBlocks(Position position, Block zeroBlock, Block inputBlock, Block addressBlock)
+    private void initAddressBlocks(FillBlock filler, Position position, Block zeroBlock, Block inputBlock, Block addressBlock)
     {
         inputBlock.v[0] = intToLong(position.pass);
         inputBlock.v[1] = intToLong(position.lane);
@@ -282,7 +290,7 @@ public class Argon2BytesGenerator
         if ((position.pass == 0) && (position.slice == 0))
         {
             /* Don't forget to generate the first block of addresses: */
-            nextAddresses(zeroBlock, inputBlock, addressBlock);
+            nextAddresses(filler, zeroBlock, inputBlock, addressBlock);
         }
     }
 
@@ -326,22 +334,22 @@ public class Argon2BytesGenerator
         }
     }
 
-    private void nextAddresses(Block zeroBlock, Block inputBlock, Block addressBlock)
+    private void nextAddresses(FillBlock filler, Block zeroBlock, Block inputBlock, Block addressBlock)
     {
         inputBlock.v[6]++;
-        fillBlock(zeroBlock, inputBlock, addressBlock, false);
-        fillBlock(zeroBlock, addressBlock, addressBlock, false);
+        filler.fillBlock(zeroBlock, inputBlock, addressBlock, false);
+        filler.fillBlock(zeroBlock, addressBlock, addressBlock, false);
     }
 
     /* 1.2 Computing the index of the reference block */
     /* 1.2.1 Taking pseudo-random value from the previous block */
-    private long getPseudoRandom(Position position, Block addressBlock, Block inputBlock, Block zeroBlock, int prevOffset, boolean dataIndependentAddressing)
+    private long getPseudoRandom(FillBlock filler, Position position, Block addressBlock, Block inputBlock, Block zeroBlock, int prevOffset, boolean dataIndependentAddressing)
     {
         if (dataIndependentAddressing)
         {
             if (position.index % ARGON2_ADDRESSES_IN_BLOCK == 0)
             {
-                nextAddresses(zeroBlock, inputBlock, addressBlock);
+                nextAddresses(filler, zeroBlock, inputBlock, addressBlock);
             }
             return addressBlock.v[position.index % ARGON2_ADDRESSES_IN_BLOCK];
         }
@@ -505,7 +513,7 @@ public class Argon2BytesGenerator
         return result;
     }
 
-    private void roundFunction(Block block,
+    private static void roundFunction(Block block,
                                int v0, int v1, int v2, int v3,
                                int v4, int v5, int v6, int v7,
                                int v8, int v9, int v10, int v11,
@@ -523,7 +531,7 @@ public class Argon2BytesGenerator
         F(block, v3, v4, v9, v14);
     }
 
-    private void F(Block block, int a, int b, int c, int d)
+    private static void F(Block block, int a, int b, int c, int d)
     {
         fBlaMka(block, a, b);
         rotr64(block, d, a, 32);
@@ -542,7 +550,7 @@ public class Argon2BytesGenerator
     /* a <- a + b + 2*aL*bL
      * + == addition modulo 2^64
      * aL = least 32 bit */
-    private void fBlaMka(Block block, int x, int y)
+    private static void fBlaMka(Block block, int x, int y)
     {
         final long m = 0xFFFFFFFFL;
         final long xy = (block.v[x] & m) * (block.v[y] & m);
@@ -550,7 +558,7 @@ public class Argon2BytesGenerator
         block.v[x] = block.v[x] + block.v[y] + 2 * xy;
     }
 
-    private void rotr64(Block block, int v, int w, long c)
+    private static void rotr64(Block block, int v, int w, long c)
     {
         final long temp = block.v[v] ^ block.v[w];
         block.v[v] = (temp >>> c) | (temp << (64 - c));
@@ -699,9 +707,10 @@ public class Argon2BytesGenerator
             return result.toString();
         }
 
-        public void clear()
+        public Block clear()
         {
             Arrays.fill(v, 0);
+            return this;
         }
     }
 
