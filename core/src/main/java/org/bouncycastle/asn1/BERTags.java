@@ -9,6 +9,7 @@ public interface BERTags
     public static final int NULL                = 0x05;
     public static final int OBJECT_IDENTIFIER   = 0x06;
     public static final int EXTERNAL            = 0x08;
+    public static final int REAL                = 0x09;
     public static final int ENUMERATED          = 0x0a; // decimal 10
     public static final int SEQUENCE            = 0x10; // decimal 16
     public static final int SEQUENCE_OF         = 0x10; // for completeness - used to model a SEQUENCE of the same type.

@@ -445,6 +445,8 @@ public class ASN1InputStream
                 return new DERIA5String(defIn.toByteArray());
             case INTEGER:
                 return new ASN1Integer(defIn.toByteArray(), false);
+            case REAL:
+                return new ASN1Real(defIn.toByteArray());
             case NULL:
                 return DERNull.INSTANCE;   // actual content is ignored (enforce 0 length?)
             case NUMERIC_STRING:
