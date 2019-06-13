@@ -9,8 +9,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
-import javax.crypto.SecretKey;
-
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -99,7 +97,7 @@ public class JceX448Domain implements TlsECDomain
         try
         {
             KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("X448");
-            keyPairGenerator.initialize(256, crypto.getSecureRandom());
+            keyPairGenerator.initialize(448, crypto.getSecureRandom());
             return keyPairGenerator.generateKeyPair();
         }
         catch (GeneralSecurityException e)
