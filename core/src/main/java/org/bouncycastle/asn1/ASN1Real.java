@@ -20,7 +20,7 @@ public class ASN1Real extends ASN1Primitive {
     }
 
 
-    public ASN1Real(
+    protected ASN1Real(
             byte[] content)
     {
         this.content = Arrays.clone(content);
