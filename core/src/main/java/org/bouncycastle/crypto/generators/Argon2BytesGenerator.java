@@ -210,13 +210,14 @@ public class Argon2BytesGenerator
 
     private void fillMemoryBlocks()
     {
+    	Position position = new Position();
         for (int i = 0; i < parameters.getIterations(); i++)
         {
             for (int j = 0; j < ARGON2_SYNC_POINTS; j++)
             {
                 for (int k = 0; k < parameters.getLanes(); k++)
                 {
-                    Position position = new Position(i, k, j, 0);
+                	position.update(i, k, j, 0);
                     fillSegment(position);
                 }
             }
@@ -710,13 +711,17 @@ public class Argon2BytesGenerator
         int lane;
         int slice;
         int index;
-
-        Position(int pass, int lane, int slice, int index)
+        
+        Position()
         {
-            this.pass = pass;
-            this.lane = lane;
-            this.slice = slice;
-            this.index = index;
+        	
         }
+
+		void update(int pass, int lane, int slice, int index) {
+			this.pass = pass;
+			this.lane = lane;
+			this.slice = slice;
+			this.index = index;
+		}
     }
 }
