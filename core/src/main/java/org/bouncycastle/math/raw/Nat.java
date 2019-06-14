@@ -509,10 +509,10 @@ public abstract class Nat
         long zc = 0;
         for (int i = 0; i < len; ++i)
         {
-            long c = mulWordAddTo(len, x[i], y, 0, zz, i) & M;
-            c += zc + (zz[i + len] & M);
-            zz[i + len] = (int)c;
-            zc = c >>> 32;
+            zc += mulWordAddTo(len, x[i], y, 0, zz, i) & M;
+            zc += zz[i + len] & M;
+            zz[i + len] = (int)zc;
+            zc >>>= 32;
         }
         return (int)zc;
     }
@@ -522,10 +522,10 @@ public abstract class Nat
         long zc = 0;
         for (int i = 0; i < len; ++i)
         {
-            long c = mulWordAddTo(len, x[xOff + i], y, yOff, zz, zzOff) & M;
-            c += zc + (zz[zzOff + len] & M);
-            zz[zzOff + len] = (int)c;
-            zc = c >>> 32;
+            zc += mulWordAddTo(len, x[xOff + i], y, yOff, zz, zzOff) & M;
+            zc += zz[zzOff + len] & M;
+            zz[zzOff + len] = (int)zc;
+            zc >>>= 32;
             ++zzOff;
         }
         return (int)zc;
