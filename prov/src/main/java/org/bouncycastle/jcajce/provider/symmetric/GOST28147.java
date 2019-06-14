@@ -36,6 +36,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
+import org.bouncycastle.util.Strings;
 
 public final class GOST28147
 {
@@ -294,7 +295,9 @@ public final class GOST28147
             ASN1ObjectIdentifier oid = null;
 
             if (name!=null)
-                oid = (ASN1ObjectIdentifier)nameMappings.get(name.toUpperCase());
+            {
+                oid = (ASN1ObjectIdentifier)nameMappings.get(Strings.toUpperCase(name));
+            }
 
             if (oid == null)
             {
