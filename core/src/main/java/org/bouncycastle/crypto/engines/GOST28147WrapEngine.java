@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
+import org.bouncycastle.crypto.params.ParametersWithSBoxIV;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
 import org.bouncycastle.util.Arrays;
 
@@ -29,19 +30,22 @@ public class GOST28147WrapEngine
 
         cipher.init(forWrapping, pU.getParameters());
 
-        KeyParameter kParam;
+        CipherParameters cParam;
 
         if (pU.getParameters() instanceof ParametersWithSBox)
         {
-            kParam = (KeyParameter)((ParametersWithSBox)pU.getParameters()).getParameters();
+            cParam = new ParametersWithSBoxIV(
+                    ((ParametersWithSBox)pU.getParameters()).getParameters(),
+                    ((ParametersWithSBox)pU.getParameters()).getSBox(),
+                    pU.getUKM());
         }
         else
         {
-            kParam = (KeyParameter)pU.getParameters();
+            cParam = new ParametersWithIV(pU.getParameters(), pU.getUKM());
         }
 
 
-        mac.init(new ParametersWithIV(kParam, pU.getUKM()));
+        mac.init(cParam);
     }
 
     public String getAlgorithmName()

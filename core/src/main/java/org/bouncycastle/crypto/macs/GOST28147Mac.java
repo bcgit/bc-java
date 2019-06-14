@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
+import org.bouncycastle.crypto.params.ParametersWithSBoxIV;
 
 /**
  * implementation of GOST 28147-89 MAC
@@ -83,6 +84,25 @@ public class GOST28147Mac
             {
                 workingKey = generateWorkingKey(((KeyParameter)param.getParameters()).getKey());
             }
+        } else if (params instanceof ParametersWithSBoxIV)
+        {
+            ParametersWithSBoxIV   param = (ParametersWithSBoxIV)params;
+
+            //
+            // Set the S-Box
+            //
+            System.arraycopy(param.getSBox(), 0, this.S, 0, param.getSBox().length);
+
+            //
+            // set key if there is one
+            //
+            if (param.getParameters() != null)
+            {
+                workingKey = generateWorkingKey(((KeyParameter)param.getParameters()).getKey());
+            }
+
+            System.arraycopy(param.getIV(), 0, mac, 0, mac.length);
+            macIV = param.getIV(); // don't skip the initial CM5Func
         }
         else if (params instanceof KeyParameter)
         {
