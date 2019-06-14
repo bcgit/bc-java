@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
-import org.bouncycastle.crypto.params.ParametersWithSBoxIV;
 
 /**
  * implementation of GOST 28147-89 MAC
@@ -68,6 +67,19 @@ public class GOST28147Mac
         reset();
         buf = new byte[blockSize];
         macIV = null;
+
+        recursiveInit(params);
+    }
+
+    private void recursiveInit(
+            CipherParameters params)
+            throws IllegalArgumentException
+    {
+        if (params == null) {
+            return;
+        }
+
+        CipherParameters child = null;
         if (params instanceof ParametersWithSBox)
         {
             ParametersWithSBox   param = (ParametersWithSBox)params;
@@ -77,32 +89,7 @@ public class GOST28147Mac
             //
             System.arraycopy(param.getSBox(), 0, this.S, 0, param.getSBox().length);
 
-            //
-            // set key if there is one
-            //
-            if (param.getParameters() != null)
-            {
-                workingKey = generateWorkingKey(((KeyParameter)param.getParameters()).getKey());
-            }
-        } else if (params instanceof ParametersWithSBoxIV)
-        {
-            ParametersWithSBoxIV   param = (ParametersWithSBoxIV)params;
-
-            //
-            // Set the S-Box
-            //
-            System.arraycopy(param.getSBox(), 0, this.S, 0, param.getSBox().length);
-
-            //
-            // set key if there is one
-            //
-            if (param.getParameters() != null)
-            {
-                workingKey = generateWorkingKey(((KeyParameter)param.getParameters()).getKey());
-            }
-
-            System.arraycopy(param.getIV(), 0, mac, 0, mac.length);
-            macIV = param.getIV(); // don't skip the initial CM5Func
+            child = param.getParameters();
         }
         else if (params instanceof KeyParameter)
         {
@@ -112,14 +99,15 @@ public class GOST28147Mac
         {
             ParametersWithIV p = (ParametersWithIV)params;
 
-            workingKey = generateWorkingKey(((KeyParameter)p.getParameters()).getKey());
             System.arraycopy(p.getIV(), 0, mac, 0, mac.length);
             macIV = p.getIV(); // don't skip the initial CM5Func
+            child = p.getParameters();
         }
         else
         {
-           throw new IllegalArgumentException("invalid parameter passed to GOST28147 init - " + params.getClass().getName());
+            throw new IllegalArgumentException("invalid parameter passed to GOST28147 init - " + params.getClass().getName());
         }
+        recursiveInit(child);
     }
 
     public String getAlgorithmName()

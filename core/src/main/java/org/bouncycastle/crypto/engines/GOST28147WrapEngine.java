@@ -4,11 +4,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.macs.GOST28147Mac;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.params.ParametersWithSBox;
-import org.bouncycastle.crypto.params.ParametersWithSBoxIV;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
 import org.bouncycastle.util.Arrays;
 
@@ -30,22 +27,7 @@ public class GOST28147WrapEngine
 
         cipher.init(forWrapping, pU.getParameters());
 
-        CipherParameters cParam;
-
-        if (pU.getParameters() instanceof ParametersWithSBox)
-        {
-            cParam = new ParametersWithSBoxIV(
-                    ((ParametersWithSBox)pU.getParameters()).getParameters(),
-                    ((ParametersWithSBox)pU.getParameters()).getSBox(),
-                    pU.getUKM());
-        }
-        else
-        {
-            cParam = new ParametersWithIV(pU.getParameters(), pU.getUKM());
-        }
-
-
-        mac.init(cParam);
+        mac.init(new ParametersWithIV(pU.getParameters(), pU.getUKM()));
     }
 
     public String getAlgorithmName()
