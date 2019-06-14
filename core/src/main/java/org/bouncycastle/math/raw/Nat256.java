@@ -639,9 +639,10 @@ public abstract class Nat256
             c += x_i * y_7 + (zz[i + 7] & M);
             zz[i + 7] = (int)c;
             c >>>= 32;
-            c += zc + (zz[i + 8] & M);
-            zz[i + 8] = (int)c;
-            zc = c >>> 32;
+
+            zc += c + (zz[i + 8] & M);
+            zz[i + 8] = (int)zc;
+            zc >>>= 32;
         }
         return (int)zc;
     }
@@ -685,9 +686,10 @@ public abstract class Nat256
             c += x_i * y_7 + (zz[zzOff + 7] & M);
             zz[zzOff + 7] = (int)c;
             c >>>= 32;
-            c += zc + (zz[zzOff + 8] & M);
-            zz[zzOff + 8] = (int)c;
-            zc = c >>> 32;
+
+            zc += c + (zz[zzOff + 8] & M);
+            zz[zzOff + 8] = (int)zc;
+            zc >>>= 32;
             ++zzOff;
         }
         return (int)zc;
