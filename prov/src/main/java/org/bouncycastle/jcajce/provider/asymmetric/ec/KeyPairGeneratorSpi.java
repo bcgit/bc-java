@@ -187,6 +187,18 @@ public abstract class KeyPairGeneratorSpi
 
         protected ECKeyGenerationParameters createKeyGenParamsJCE(java.security.spec.ECParameterSpec p, SecureRandom r)
         {
+            if (p instanceof ECNamedCurveSpec)
+            {
+                X9ECParameters x9P = ECUtils.getDomainParametersFromName(((ECNamedCurveSpec)p).getName());
+
+                if (x9P != null)
+                {
+                    ECDomainParameters dp = new ECDomainParameters(x9P.getCurve(), x9P.getG(), x9P.getN(), x9P.getH());
+
+                    return new ECKeyGenerationParameters(dp, r);
+                }
+            }
+
             ECCurve curve = EC5Util.convertCurve(p.getCurve());
             ECPoint g = EC5Util.convertPoint(curve, p.getGenerator(), false);
             BigInteger n = p.getOrder();
