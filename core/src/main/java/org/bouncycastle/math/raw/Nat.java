@@ -923,11 +923,18 @@ public abstract class Nat
         }
         while (j > 0);
 
+        long d = 0L;
+        int zzPos = 2;
+
         for (int i = 1; i < len; ++i)
         {
-            c = squareWordAdd(x, i, zz);
-            addWordAt(extLen, c, zz, i << 1);
+            d += squareWordAddTo(x, i, zz) & M;
+            d += zz[zzPos] & M;
+            zz[zzPos++] = (int)d; d >>>= 32;
+            d += zz[zzPos] & M;
+            zz[zzPos++] = (int)d; d >>>= 32;
         }
+//        assert 0L == d;
 
         shiftUpBit(extLen, zz, x[0] << 31);
     }
@@ -947,15 +954,25 @@ public abstract class Nat
         }
         while (j > 0);
 
+        long d = 0L;
+        int zzPos = zzOff + 2;
+
         for (int i = 1; i < len; ++i)
         {
-            c = squareWordAdd(x, xOff, i, zz, zzOff);
-            addWordAt(extLen, c, zz, zzOff, i << 1);
+            d += squareWordAddTo(x, xOff, i, zz, zzOff) & M;
+            d += zz[zzPos] & M;
+            zz[zzPos++] = (int)d; d >>>= 32;
+            d += zz[zzPos] & M;
+            zz[zzPos++] = (int)d; d >>>= 32;
         }
+//        assert 0L == d;
 
         shiftUpBit(extLen, zz, zzOff, x[xOff] << 31);
     }
 
+    /**
+     * @deprecated Use {@link #squareWordAddTo(int[], int, int[])} instead.
+     */
     public static int squareWordAdd(int[] x, int xPos, int[] z)
     {
         long c = 0, xVal = x[xPos] & M;
@@ -970,7 +987,39 @@ public abstract class Nat
         return (int)c;
     }
 
+    /**
+     * @deprecated Use {@link #squareWordAddTo(int[], int, int, int[], int) instead.
+     */
     public static int squareWordAdd(int[] x, int xOff, int xPos, int[] z, int zOff)
+    {
+        long c = 0, xVal = x[xOff + xPos] & M;
+        int i = 0;
+        do
+        {
+            c += xVal * (x[xOff + i] & M) + (z[xPos + zOff] & M);
+            z[xPos + zOff] = (int)c;
+            c >>>= 32;
+            ++zOff;
+        }
+        while (++i < xPos);
+        return (int)c;
+    }
+
+    public static int squareWordAddTo(int[] x, int xPos, int[] z)
+    {
+        long c = 0, xVal = x[xPos] & M;
+        int i = 0;
+        do
+        {
+            c += xVal * (x[i] & M) + (z[xPos + i] & M);
+            z[xPos + i] = (int)c;
+            c >>>= 32;
+        }
+        while (++i < xPos);
+        return (int)c;
+    }
+
+    public static int squareWordAddTo(int[] x, int xOff, int xPos, int[] z, int zOff)
     {
         long c = 0, xVal = x[xOff + xPos] & M;
         int i = 0;
