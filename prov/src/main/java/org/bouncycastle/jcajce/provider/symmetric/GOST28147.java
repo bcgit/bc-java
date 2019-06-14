@@ -294,7 +294,7 @@ public final class GOST28147
         {
             ASN1ObjectIdentifier oid = null;
 
-            if (name!=null)
+            if (name != null)
             {
                 oid = (ASN1ObjectIdentifier)nameMappings.get(Strings.toUpperCase(name));
             }
