@@ -160,6 +160,31 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int addTo(int len, int[] x, int xOff, int[] z, int zOff, int cIn)
+    {
+        long c = cIn & M;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (x[xOff + i] & M) + (z[zOff + i] & M);
+            z[zOff + i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
+    public static int addToEachOther(int len, int[] u, int uOff, int[] v, int vOff)
+    {
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (u[uOff + i] & M) + (v[vOff + i] & M);
+            u[uOff + i] = (int)c;
+            v[vOff + i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
     public static int addWordAt(int len, int x, int[] z, int zPos)
     {
         // assert zPos <= (len - 1);
@@ -341,6 +366,20 @@ public abstract class Nat
         return -1;
     }
 
+    public static boolean diff(int len, int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
+    {
+        boolean pos = gte(len, x, xOff, y, yOff);
+        if (pos)
+        {
+            sub(len, x, xOff, y, yOff, z, zOff);
+        }
+        else
+        {
+            sub(len, y, yOff, x, xOff, z, zOff);
+        }
+        return pos;
+    }
+
     public static boolean eq(int len, int[] x, int[] y)
     {
         for (int i = len - 1; i >= 0; --i)
@@ -392,6 +431,20 @@ public abstract class Nat
         {
             int x_i = x[i] ^ Integer.MIN_VALUE;
             int y_i = y[i] ^ Integer.MIN_VALUE;
+            if (x_i < y_i)
+                return false;
+            if (x_i > y_i)
+                return true;
+        }
+        return true;
+    }
+
+    public static boolean gte(int len, int[] x, int xOff, int[] y, int yOff)
+    {
+        for (int i = len - 1; i >= 0; --i)
+        {
+            int x_i = x[xOff + i] ^ Integer.MIN_VALUE;
+            int y_i = y[yOff + i] ^ Integer.MIN_VALUE;
             if (x_i < y_i)
                 return false;
             if (x_i > y_i)
@@ -1149,6 +1202,14 @@ public abstract class Nat
         for (int i = 0; i < len; ++i)
         {
             z[i] = 0;
+        }
+    }
+
+    public static void zero(int len, int[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] = 0;
         }
     }
 
