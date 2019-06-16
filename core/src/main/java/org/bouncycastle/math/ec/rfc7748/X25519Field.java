@@ -175,14 +175,20 @@ public abstract class X25519Field
         mul(t, x2, z);
     }
 
-    public static boolean isZeroVar(int[] x)
+    public static int isZero(int[] x)
     {
         int d = 0;
         for (int i = 0; i < SIZE; ++i)
         {
             d |= x[i];
         }
-        return d == 0;
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
+    public static boolean isZeroVar(int[] x)
+    {
+        return 0 != isZero(x);
     }
 
     public static void mul(int[] x, int y, int[] z)

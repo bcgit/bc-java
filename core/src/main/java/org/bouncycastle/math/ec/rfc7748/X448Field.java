@@ -148,7 +148,6 @@ public abstract class X448Field
         int hi = decode24(bs, off + 4);
         z[zOff] = lo & M28;
         z[zOff + 1] = (lo >>> 28) | (hi << 4);
-        
     }
 
     public static void encode(int[] x,  byte[] z , int zOff)
@@ -197,14 +196,20 @@ public abstract class X448Field
         mul(t, x, z);
     }
 
-    public static boolean isZeroVar(int[] x)
+    public static int isZero(int[] x)
     {
         int d = 0;
         for (int i = 0; i < SIZE; ++i)
         {
             d |= x[i];
         }
-        return d == 0;
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
+    public static boolean isZeroVar(int[] x)
+    {
+        return 0 != isZero(x);
     }
 
     public static void mul(int[] x, int y, int[] z)
