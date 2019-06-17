@@ -125,7 +125,6 @@ public class Argon2BytesGenerator
         }
         memory = null;
         Arrays.fill(result, (byte)0);
-        doInit(parameters);
     }
 
     private void doInit(Argon2Parameters parameters)
