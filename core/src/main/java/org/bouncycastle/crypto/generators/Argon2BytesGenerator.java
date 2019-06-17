@@ -634,12 +634,14 @@ public class Argon2BytesGenerator
     
     private static class Block
     {
+    	private static final int SIZE = ARGON2_QWORDS_IN_BLOCK;
+    	
         /* 128 * 8 Byte QWords */
-        private long[] v;
+        private final long[] v;
 
         private Block()
         {
-            v = new long[ARGON2_QWORDS_IN_BLOCK];
+            v = new long[SIZE];
         }
 
         void fromBytes(byte[] input)
@@ -649,7 +651,7 @@ public class Argon2BytesGenerator
                 throw new IllegalArgumentException("input shorter than blocksize");
             }
 
-            for (int i = 0; i < v.length; i++)
+            for (int i = 0; i < SIZE; i++)
             {
                 v[i] = Pack.littleEndianToLong(input, i * 8);
             }
@@ -659,7 +661,7 @@ public class Argon2BytesGenerator
         {
             byte[] result = new byte[ARGON2_BLOCK_SIZE];
 
-            for (int i = 0; i < v.length; i++)
+            for (int i = 0; i < SIZE; i++)
             {
                 Pack.longToLittleEndian(v[i], result, i * 8);
             }
@@ -669,12 +671,12 @@ public class Argon2BytesGenerator
 
         private void copyBlock(Block other)
         {
-            System.arraycopy(other.v, 0, v, 0, v.length);
+            System.arraycopy(other.v, 0, v, 0, SIZE);
         }
 
         private void xor(Block b1, Block b2)
         {
-            for (int i = 0; i < v.length; i++)
+            for (int i = 0; i < SIZE; i++)
             {
                 v[i] = b1.v[i] ^ b2.v[i];
             }
@@ -682,7 +684,7 @@ public class Argon2BytesGenerator
 
         public void xor(Block b1, Block b2, Block b3)
         {
-            for (int i = 0; i < v.length; i++)
+            for (int i = 0; i < SIZE; i++)
             {
                 v[i] = b1.v[i] ^ b2.v[i] ^ b3.v[i];
             }
@@ -699,7 +701,7 @@ public class Argon2BytesGenerator
         public String toString()
         {
             StringBuffer result = new StringBuffer();
-            for (int i = 0; i < v.length; i++)
+            for (int i = 0; i < SIZE; i++)
             {
                 result.append(Hex.toHexString(Pack.longToLittleEndian(v[i])));
             }
