@@ -9,13 +9,17 @@ import org.bouncycastle.math.ec.ScaleXPointMap;
 
 public class GLVTypeBEndomorphism implements GLVEndomorphism
 {
-    protected final ECCurve curve;
     protected final GLVTypeBParameters parameters;
     protected final ECPointMap pointMap;
 
     public GLVTypeBEndomorphism(ECCurve curve, GLVTypeBParameters parameters)
     {
-        this.curve = curve;
+        /*
+         * NOTE: 'curve' MUST only be used to create a suitable ECFieldElement. Due to the way
+         * ECCurve configuration works, 'curve' will not be the actual instance of ECCurve that the
+         * endomorphism is being used with.
+         */
+
         this.parameters = parameters;
         this.pointMap = new ScaleXPointMap(curve.fromBigInteger(parameters.getBeta()));
     }
