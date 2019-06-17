@@ -514,18 +514,6 @@ public class IETFUtils
 
     public static boolean rDNAreEqual(RDN rdn1, RDN rdn2)
     {
-        boolean multiValued = rdn1.isMultiValued();
-
-        if (rdn2.isMultiValued() != multiValued)
-        {
-            return false;
-        }
-
-        if (!multiValued)
-        {
-            return atvAreEqual(rdn1.getFirst(), rdn2.getFirst());
-        }
-
         if (rdn1.size() != rdn2.size())
         {
             return false;
