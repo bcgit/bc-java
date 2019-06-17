@@ -278,12 +278,12 @@ public class ECPointTest extends TestCase
     {
         for (int i = 0; i < fp.p.length; i++)
         {
-            implTestAllPoints(fp.p[0], fp.infinity);
+            implTestAllPoints(fp.p[i], fp.infinity);
         }
 
         for (int i = 0; i < f2m.p.length; i++)
         {
-            implTestAllPoints(f2m.p[0], f2m.infinity);
+            implTestAllPoints(f2m.p[i], f2m.infinity);
         }
     }
 
