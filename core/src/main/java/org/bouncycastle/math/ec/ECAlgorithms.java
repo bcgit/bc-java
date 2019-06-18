@@ -283,11 +283,14 @@ public class ECAlgorithms
         k = k.abs();
         l = l.abs();
 
-        int widthP = Math.max(2, Math.min(16, WNafUtil.getWindowSize(k.bitLength())));
-        int widthQ = Math.max(2, Math.min(16, WNafUtil.getWindowSize(l.bitLength())));
+        int minWidthP = WNafUtil.getWindowSize(k.bitLength(), 8);
+        int minWidthQ = WNafUtil.getWindowSize(l.bitLength(), 8);
 
-        WNafPreCompInfo infoP = WNafUtil.precompute(P, widthP, true);
-        WNafPreCompInfo infoQ = WNafUtil.precompute(Q, widthQ, true);
+        WNafPreCompInfo infoP = WNafUtil.precompute(P, minWidthP, true);
+        WNafPreCompInfo infoQ = WNafUtil.precompute(Q, minWidthQ, true);
+
+        int widthP = Math.min(8, infoP.getWidth());
+        int widthQ = Math.min(8, infoQ.getWidth());
 
         ECPoint[] preCompP = negK ? infoP.getPreCompNeg() : infoP.getPreComp();
         ECPoint[] preCompQ = negL ? infoQ.getPreCompNeg() : infoQ.getPreComp();
@@ -307,19 +310,22 @@ public class ECAlgorithms
         k = k.abs();
         l = l.abs();
 
-        int width = Math.max(2, Math.min(16, WNafUtil.getWindowSize(Math.max(k.bitLength(), l.bitLength()))));
+        int minWidth = WNafUtil.getWindowSize(Math.max(k.bitLength(), l.bitLength()), 8);
 
-        ECPoint Q = WNafUtil.mapPointWithPrecomp(P, width, true, pointMapQ);
+        ECPoint Q = WNafUtil.mapPointWithPrecomp(P, minWidth, true, pointMapQ);
         WNafPreCompInfo infoP = WNafUtil.getWNafPreCompInfo(P);
         WNafPreCompInfo infoQ = WNafUtil.getWNafPreCompInfo(Q);
+
+        int widthP = Math.min(8, infoP.getWidth());
+        int widthQ = Math.min(8, infoQ.getWidth());
 
         ECPoint[] preCompP = negK ? infoP.getPreCompNeg() : infoP.getPreComp();
         ECPoint[] preCompQ = negL ? infoQ.getPreCompNeg() : infoQ.getPreComp();
         ECPoint[] preCompNegP = negK ? infoP.getPreComp() : infoP.getPreCompNeg();
         ECPoint[] preCompNegQ = negL ? infoQ.getPreComp() : infoQ.getPreCompNeg();
 
-        byte[] wnafP = WNafUtil.generateWindowNaf(width, k);
-        byte[] wnafQ = WNafUtil.generateWindowNaf(width, l);
+        byte[] wnafP = WNafUtil.generateWindowNaf(widthP, k);
+        byte[] wnafQ = WNafUtil.generateWindowNaf(widthQ, l);
 
         return implShamirsTrickWNaf(preCompP, preCompNegP, wnafP, preCompQ, preCompNegQ, wnafQ);
     }
@@ -388,8 +394,12 @@ public class ECAlgorithms
         {
             BigInteger ki = ks[i]; negs[i] = ki.signum() < 0; ki = ki.abs();
 
-            int width = Math.max(2, Math.min(16, WNafUtil.getWindowSize(ki.bitLength())));
-            infos[i] = WNafUtil.precompute(ps[i], width, true);
+            int minWidth = WNafUtil.getWindowSize(ki.bitLength(), 8);
+            WNafPreCompInfo info = WNafUtil.precompute(ps[i], minWidth, true);
+
+            int width = Math.min(8, info.getWidth());
+
+            infos[i] = info;
             wnafs[i] = WNafUtil.generateWindowNaf(width, ki);
         }
 
@@ -443,13 +453,19 @@ public class ECAlgorithms
             BigInteger kj0 = ks[j0]; negs[j0] = kj0.signum() < 0; kj0 = kj0.abs();
             BigInteger kj1 = ks[j1]; negs[j1] = kj1.signum() < 0; kj1 = kj1.abs();
 
-            int width = Math.max(2, Math.min(16, WNafUtil.getWindowSize(Math.max(kj0.bitLength(), kj1.bitLength()))));
+            int minWidth = WNafUtil.getWindowSize(Math.max(kj0.bitLength(), kj1.bitLength()), 8);
+            ECPoint P = ps[i], Q = WNafUtil.mapPointWithPrecomp(P, minWidth, true, pointMap);
 
-            ECPoint P = ps[i], Q = WNafUtil.mapPointWithPrecomp(P, width, true, pointMap);
-            infos[j0] = WNafUtil.getWNafPreCompInfo(P);
-            infos[j1] = WNafUtil.getWNafPreCompInfo(Q);
-            wnafs[j0] = WNafUtil.generateWindowNaf(width, kj0);
-            wnafs[j1] = WNafUtil.generateWindowNaf(width, kj1);
+            WNafPreCompInfo infoP = WNafUtil.getWNafPreCompInfo(P);
+            WNafPreCompInfo infoQ = WNafUtil.getWNafPreCompInfo(Q);
+
+            int widthP = Math.min(8, infoP.getWidth());
+            int widthQ = Math.min(8, infoQ.getWidth());
+
+            infos[j0] = infoP;
+            infos[j1] = infoQ;
+            wnafs[j0] = WNafUtil.generateWindowNaf(widthP, kj0);
+            wnafs[j1] = WNafUtil.generateWindowNaf(widthQ, kj1);
         }
 
         return implSumOfMultiplies(negs, infos, wnafs);

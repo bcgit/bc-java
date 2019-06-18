@@ -2,6 +2,8 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.util.Integers;
+
 /**
  * Class implementing the WNAF (Window Non-Adjacent Form) multiplication
  * algorithm.
@@ -17,12 +19,12 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
      */
     protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
-        // Clamp the window width in the range [2, 16]
-        int width = Math.max(2, Math.min(16, getWindowSize(k.bitLength())));
+        int minWidth = WNafUtil.getWindowSize(k.bitLength());
 
-        WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, width, true);
-        ECPoint[] preComp = wnafPreCompInfo.getPreComp();
-        ECPoint[] preCompNeg = wnafPreCompInfo.getPreCompNeg();
+        WNafPreCompInfo info = WNafUtil.precompute(p, minWidth, true);
+        ECPoint[] preComp = info.getPreComp();
+        ECPoint[] preCompNeg = info.getPreCompNeg();
+        int width = info.getWidth();
 
         int[] wnaf = WNafUtil.generateCompactWindowNaf(width, k);
 
@@ -45,7 +47,7 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
             // Optimization can only be used for values in the lower half of the table
             if ((n << 2) < (1 << width))
             {
-                int highest = LongArray.bitLengths[n];
+                int highest = 32 - Integers.numberOfLeadingZeros(n);
 
                 // TODO Get addition/doubling cost ratio from curve and compare to 'scale' to see if worth substituting?
                 int scale = width - highest;
@@ -81,16 +83,5 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
         }
 
         return R;
-    }
-
-    /**
-     * Determine window width to use for a scalar multiplication of the given size.
-     * 
-     * @param bits the bit-length of the scalar to multiply by
-     * @return the window size to use
-     */
-    protected int getWindowSize(int bits)
-    {
-        return WNafUtil.getWindowSize(bits);
     }
 }

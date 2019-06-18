@@ -7,10 +7,51 @@ public abstract class WNafUtil
     public static final String PRECOMP_NAME = "bc_wnaf";
 
     private static final int[] DEFAULT_WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
+    private static final int MAX_WIDTH = 16;
 
     private static final byte[] EMPTY_BYTES = new byte[0];
     private static final int[] EMPTY_INTS = new int[0];
     private static final ECPoint[] EMPTY_POINTS = new ECPoint[0];
+
+    public static void configureBasepoint(ECPoint p)
+    {
+        final ECCurve c = p.getCurve();
+        if (null == c)
+        {
+            return;
+        }
+
+        BigInteger n = c.getOrder();
+        int bits = (null == n) ? c.getFieldSize() + 1 : n.bitLength();
+        final int confWidth = Math.min(MAX_WIDTH, getWindowSize(bits) + 3);
+
+        c.precompute(p, PRECOMP_NAME, new PreCompCallback()
+        {
+            public PreCompInfo precompute(PreCompInfo existing)
+            {
+                WNafPreCompInfo existingWNaf = (existing instanceof WNafPreCompInfo) ? (WNafPreCompInfo)existing : null;
+
+                if (null != existingWNaf && existingWNaf.getConfWidth() == confWidth)
+                {
+                    return existingWNaf;
+                }
+
+                WNafPreCompInfo result = new WNafPreCompInfo();
+
+                result.setConfWidth(confWidth);
+
+                if (null != existingWNaf)
+                {
+                    result.setPreComp(existingWNaf.getPreComp());
+                    result.setPreCompNeg(existingWNaf.getPreCompNeg());
+                    result.setTwice(existingWNaf.getTwice());
+                    result.setWidth(existingWNaf.getWidth());
+                }
+
+                return result;
+            }
+        });
+    }
 
     public static int[] generateCompactNaf(BigInteger k)
     {
@@ -315,7 +356,19 @@ public abstract class WNafUtil
      */
     public static int getWindowSize(int bits)
     {
-        return getWindowSize(bits, DEFAULT_WINDOW_SIZE_CUTOFFS);
+        return getWindowSize(bits, DEFAULT_WINDOW_SIZE_CUTOFFS, MAX_WIDTH);
+    }
+
+    /**
+     * Determine window width to use for a scalar multiplication of the given size.
+     * 
+     * @param bits the bit-length of the scalar to multiply by
+     * @param maxWidth the maximum window width to return 
+     * @return the window size to use
+     */
+    public static int getWindowSize(int bits, int maxWidth)
+    {
+        return getWindowSize(bits, DEFAULT_WINDOW_SIZE_CUTOFFS, maxWidth);
     }
 
     /**
@@ -327,6 +380,19 @@ public abstract class WNafUtil
      */
     public static int getWindowSize(int bits, int[] windowSizeCutoffs)
     {
+        return getWindowSize(bits, windowSizeCutoffs, MAX_WIDTH);
+    }
+
+    /**
+     * Determine window width to use for a scalar multiplication of the given size.
+     * 
+     * @param bits the bit-length of the scalar to multiply by
+     * @param windowSizeCutoffs a monotonically increasing list of bit sizes at which to increment the window width
+     * @param maxWidth the maximum window width to return 
+     * @return the window size to use
+     */
+    public static int getWindowSize(int bits, int[] windowSizeCutoffs, int maxWidth)
+    {
         int w = 0;
         for (; w < windowSizeCutoffs.length; ++w)
         {
@@ -335,14 +401,15 @@ public abstract class WNafUtil
                 break;
             }
         }
-        return w + 2;
+
+        return Math.max(2, Math.min(maxWidth, w + 2));
     }
 
-    public static ECPoint mapPointWithPrecomp(ECPoint p, final int width, final boolean includeNegated,
+    public static ECPoint mapPointWithPrecomp(ECPoint p, final int minWidth, final boolean includeNegated,
         final ECPointMap pointMap)
     {
         final ECCurve c = p.getCurve();
-        final WNafPreCompInfo wnafPreCompP = precompute(p, width, includeNegated);
+        final WNafPreCompInfo infoP = precompute(p, minWidth, includeNegated);
 
         ECPoint q = pointMap.map(p);
         c.precompute(q, PRECOMP_NAME, new PreCompCallback()
@@ -351,20 +418,23 @@ public abstract class WNafUtil
             {
                 WNafPreCompInfo result = new WNafPreCompInfo();
 
-                ECPoint twiceP = wnafPreCompP.getTwice();
-                if (twiceP != null)
+                result.setConfWidth(infoP.getConfWidth());
+
+                ECPoint twiceP = infoP.getTwice();
+                if (null != twiceP)
                 {
                     ECPoint twiceQ = pointMap.map(twiceP);
                     result.setTwice(twiceQ);
                 }
 
-                ECPoint[] preCompP = wnafPreCompP.getPreComp();
+                ECPoint[] preCompP = infoP.getPreComp();
                 ECPoint[] preCompQ = new ECPoint[preCompP.length];
                 for (int i = 0; i < preCompP.length; ++i)
                 {
                     preCompQ[i] = pointMap.map(preCompP[i]);
                 }
                 result.setPreComp(preCompQ);
+                result.setWidth(infoP.getWidth());
 
                 if (includeNegated)
                 {
@@ -383,7 +453,7 @@ public abstract class WNafUtil
         return q;
     }
 
-    public static WNafPreCompInfo precompute(final ECPoint p, final int width, final boolean includeNegated)
+    public static WNafPreCompInfo precompute(final ECPoint p, final int minWidth, final boolean includeNegated)
     {
         final ECCurve c = p.getCurve();
 
@@ -393,25 +463,34 @@ public abstract class WNafUtil
             {
                 WNafPreCompInfo existingWNaf = (existing instanceof WNafPreCompInfo) ? (WNafPreCompInfo)existing : null;
 
-                int reqPreCompLen = 1 << Math.max(0, width - 2);
+                int width = Math.max(2, Math.min(MAX_WIDTH, minWidth));
+                int reqPreCompLen = 1 << (width - 2);
 
-                if (checkExisting(existingWNaf, reqPreCompLen, includeNegated))
+                if (checkExisting(existingWNaf, width, reqPreCompLen, includeNegated))
                 {
                     return existingWNaf;
                 }
 
+                WNafPreCompInfo result = new WNafPreCompInfo();
+
                 ECPoint[] preComp = null, preCompNeg = null;
                 ECPoint twiceP = null;
 
-                if (existingWNaf != null)
+                if (null != existingWNaf)
                 {
+                    int confWidth = existingWNaf.getConfWidth();
+                    result.setConfWidth(confWidth);
+
                     preComp = existingWNaf.getPreComp();
                     preCompNeg = existingWNaf.getPreCompNeg();
                     twiceP = existingWNaf.getTwice();
                 }
 
+                width = Math.min(MAX_WIDTH, Math.max(result.getConfWidth(), width));
+                reqPreCompLen = 1 << (width - 2);
+
                 int iniPreCompLen = 0;
-                if (preComp == null)
+                if (null == preComp)
                 {
                     preComp = EMPTY_POINTS;
                 }
@@ -446,7 +525,7 @@ public abstract class WNafUtil
                         else
                         {
                             ECPoint isoTwiceP = twiceP, last = preComp[curPreCompLen - 1];
-                            if (isoTwiceP == null)
+                            if (null == isoTwiceP)
                             {
                                 isoTwiceP = preComp[0].twice();
                                 twiceP = isoTwiceP;
@@ -506,7 +585,7 @@ public abstract class WNafUtil
                 if (includeNegated)
                 {
                     int pos;
-                    if (preCompNeg == null)
+                    if (null == preCompNeg)
                     {
                         pos = 0;
                         preCompNeg = new ECPoint[reqPreCompLen]; 
@@ -527,23 +606,24 @@ public abstract class WNafUtil
                     }
                 }
 
-                WNafPreCompInfo result = new WNafPreCompInfo();
                 result.setPreComp(preComp);
                 result.setPreCompNeg(preCompNeg);
                 result.setTwice(twiceP);
+                result.setWidth(width);
                 return result;
             }
 
-            private boolean checkExisting(WNafPreCompInfo existingWNaf, int reqPreCompLen, boolean includeNegated)
+            private boolean checkExisting(WNafPreCompInfo existingWNaf, int width, int reqPreCompLen, boolean includeNegated)
             {
-                return existingWNaf != null
+                return null != existingWNaf
+                    && existingWNaf.getWidth() >= Math.max(existingWNaf.getConfWidth(), width)
                     && checkTable(existingWNaf.getPreComp(), reqPreCompLen)
                     && (!includeNegated || checkTable(existingWNaf.getPreCompNeg(), reqPreCompLen));
             }
 
             private boolean checkTable(ECPoint[] table, int reqLen)
             {
-                return table != null && table.length >= reqLen;
+                return null != table && table.length >= reqLen;
             }
         });
     }
