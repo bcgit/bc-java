@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.WNafUtil;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -17,6 +18,13 @@ import org.bouncycastle.util.encoders.Hex;
  */
 public class ANSSINamedCurves
 {
+    private static X9ECPoint configureBasepoint(ECCurve curve, String encoding)
+    {
+        X9ECPoint G = new X9ECPoint(curve, Hex.decode(encoding));
+        WNafUtil.configureBasepoint(G.getPoint());
+        return G;
+    }
+
     private static ECCurve configureCurve(ECCurve curve)
     {
         return curve;
@@ -43,9 +51,8 @@ public class ANSSINamedCurves
             BigInteger h = BigInteger.valueOf(1);
 
             ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
-            X9ECPoint G = new X9ECPoint(curve, Hex.decode("04"
-                + "B6B3D4C356C139EB31183D4749D423958C27D2DCAF98B70164C97A2DD98F5CFF"
-                + "6142E0F7C8B204911F9271F0F3ECEF8C2701C307E8E4C9E183115A1554062CFB"));
+            X9ECPoint G = configureBasepoint(curve,
+                "04B6B3D4C356C139EB31183D4749D423958C27D2DCAF98B70164C97A2DD98F5CFF6142E0F7C8B204911F9271F0F3ECEF8C2701C307E8E4C9E183115A1554062CFB");
 
             return new X9ECParameters(curve, G, n, h, S);
         }

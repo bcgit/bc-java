@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.WNafUtil;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -17,6 +18,13 @@ import org.bouncycastle.util.encoders.Hex;
  */
 public class GMNamedCurves
 {
+    private static X9ECPoint configureBasepoint(ECCurve curve, String encoding)
+    {
+        X9ECPoint G = new X9ECPoint(curve, Hex.decode(encoding));
+        WNafUtil.configureBasepoint(G.getPoint());
+        return G;
+    }
+
     private static ECCurve configureCurve(ECCurve curve)
     {
         return curve;
@@ -35,7 +43,6 @@ public class GMNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-
             BigInteger p = fromHex("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF");
             BigInteger a = fromHex("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC");
             BigInteger b = fromHex("28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93");
@@ -44,9 +51,8 @@ public class GMNamedCurves
             BigInteger h = BigInteger.valueOf(1);
 
             ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
-            X9ECPoint G = new X9ECPoint(curve, Hex.decode("04"
-                + "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7"
-                + "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0"));
+            X9ECPoint G = configureBasepoint(curve,
+                "0432C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0");
 
             return new X9ECParameters(curve, G, n, h, S);
         }
@@ -64,14 +70,14 @@ public class GMNamedCurves
             BigInteger h = BigInteger.valueOf(1);
 
             ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
-            X9ECPoint G = new X9ECPoint(curve, Hex.decode("04"
-                + "4AD5F7048DE709AD51236DE6" + "5E4D4B482C836DC6E4106640"
-                + "02BB3A02D4AAADACAE24817A" + "4CA3A1B014B5270432DB27D2"));
+            X9ECPoint G = configureBasepoint(curve,
+                "044AD5F7048DE709AD51236DE65E4D4B482C836DC6E410664002BB3A02D4AAADACAE24817A4CA3A1B014B5270432DB27D2");
 
             return new X9ECParameters(curve, G, n, h, S);
         }
     };
-    
+
+
     static final Hashtable objIds = new Hashtable();
     static final Hashtable curves = new Hashtable();
     static final Hashtable names = new Hashtable();
