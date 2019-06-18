@@ -72,7 +72,7 @@ public class SignatureSpi
         }
         else
         {
-            throw new InvalidKeyException("cannot identify EdDSA public key");
+            throw new InvalidKeyException("cannot identify EdDSA private key");
         }
     }
 
