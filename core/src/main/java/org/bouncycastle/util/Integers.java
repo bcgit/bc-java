@@ -5,6 +5,11 @@ package org.bouncycastle.util;
  */
 public class Integers
 {
+    public static int numberOfLeadingZeros(int i)
+    {
+        return Integer.numberOfLeadingZeros(i);
+    }
+
     public static int rotateLeft(int i, int distance)
     {
         return Integer.rotateLeft(i, distance);
