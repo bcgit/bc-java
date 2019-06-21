@@ -26,11 +26,12 @@ public class GLVTypeBEndomorphism implements GLVEndomorphism
 
     public BigInteger[] decomposeScalar(BigInteger k)
     {
-        int bits = parameters.getBits();
-        BigInteger b1 = calculateB(k, parameters.getG1(), bits);
-        BigInteger b2 = calculateB(k, parameters.getG2(), bits);
-
         GLVTypeBParameters p = parameters;
+
+        int bits = p.getBits();
+        BigInteger b1 = calculateB(k, p.getG1(), bits);
+        BigInteger b2 = calculateB(k, p.getG2(), bits);
+
         BigInteger a = k.subtract((b1.multiply(p.getV1A())).add(b2.multiply(p.getV2A())));
         BigInteger b = (b1.multiply(p.getV1B())).add(b2.multiply(p.getV2B())).negate();
 
