@@ -186,24 +186,25 @@ public class GeneralName
 
             switch (tag)
             {
-            case otherName:
-                return new GeneralName(tag, ASN1Sequence.getInstance(tagObj, false));
-            case rfc822Name:
-                return new GeneralName(tag, DERIA5String.getInstance(tagObj, false));
-            case dNSName:
-                return new GeneralName(tag, DERIA5String.getInstance(tagObj, false));
-            case x400Address:
-                throw new IllegalArgumentException("unknown tag: " + tag);
-            case directoryName:
-                return new GeneralName(tag, X500Name.getInstance(tagObj, true));
             case ediPartyName:
+            case otherName:
+            case x400Address:
                 return new GeneralName(tag, ASN1Sequence.getInstance(tagObj, false));
+
+            case dNSName:
+            case rfc822Name:
             case uniformResourceIdentifier:
                 return new GeneralName(tag, DERIA5String.getInstance(tagObj, false));
+
+            case directoryName:
+                return new GeneralName(tag, X500Name.getInstance(tagObj, true));
             case iPAddress:
                 return new GeneralName(tag, ASN1OctetString.getInstance(tagObj, false));
             case registeredID:
                 return new GeneralName(tag, ASN1ObjectIdentifier.getInstance(tagObj, false));
+
+            default:
+                throw new IllegalArgumentException("unknown tag: " + tag);
             }
         }
 
@@ -427,13 +428,9 @@ public class GeneralName
 
     public ASN1Primitive toASN1Primitive()
     {
-        if (tag == directoryName)       // directoryName is explicitly tagged as it is a CHOICE
-        {
-            return new DERTaggedObject(true, tag, obj);
-        }
-        else
-        {
-            return new DERTaggedObject(false, tag, obj);
-        }
+        // directoryName is explicitly tagged as it is a CHOICE
+        boolean explicit = (tag == directoryName);
+
+        return new DERTaggedObject(explicit, tag, obj);
     }
 }
