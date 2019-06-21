@@ -13,6 +13,7 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.WNafUtil;
 import org.bouncycastle.math.ec.endo.GLVTypeBEndomorphism;
 import org.bouncycastle.math.ec.endo.GLVTypeBParameters;
+import org.bouncycastle.math.ec.endo.ScalarSplitParameters;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -155,15 +156,16 @@ public class SECNamedCurves
             GLVTypeBParameters glv = new GLVTypeBParameters(
                 new BigInteger("9ba48cba5ebcb9b6bd33b92830b2a2e0e192f10a", 16),
                 new BigInteger("c39c6c3b3a36d7701b9c71a1f5804ae5d0003f4", 16),
-                new BigInteger[]{
-                    new BigInteger("9162fbe73984472a0a9e", 16),
-                    new BigInteger("-96341f1138933bc2f505", 16) },
-                new BigInteger[]{
-                    new BigInteger("127971af8721782ecffa3", 16),
-                    new BigInteger("9162fbe73984472a0a9e", 16) },
-                new BigInteger("9162fbe73984472a0a9d0590", 16),
-                new BigInteger("96341f1138933bc2f503fd44", 16),
-                176);
+                new ScalarSplitParameters(
+                    new BigInteger[]{
+                        new BigInteger("9162fbe73984472a0a9e", 16),
+                        new BigInteger("-96341f1138933bc2f505", 16) },
+                    new BigInteger[]{
+                        new BigInteger("127971af8721782ecffa3", 16),
+                        new BigInteger("9162fbe73984472a0a9e", 16) },
+                    new BigInteger("9162fbe73984472a0a9d0590", 16),
+                    new BigInteger("96341f1138933bc2f503fd44", 16),
+                    176));
 
             ECCurve curve = configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
 
@@ -240,15 +242,16 @@ public class SECNamedCurves
             GLVTypeBParameters glv = new GLVTypeBParameters(
                 new BigInteger("bb85691939b869c1d087f601554b96b80cb4f55b35f433c2", 16),
                 new BigInteger("3d84f26c12238d7b4f3d516613c1759033b1a5800175d0b1", 16),
-                new BigInteger[]{
-                    new BigInteger("71169be7330b3038edb025f1", 16),
-                    new BigInteger("-b3fb3400dec5c4adceb8655c", 16) },
-                new BigInteger[]{
-                    new BigInteger("12511cfe811d0f4e6bc688b4d", 16),
-                    new BigInteger("71169be7330b3038edb025f1", 16) },
-                new BigInteger("71169be7330b3038edb025f1d0f9", 16),
-                new BigInteger("b3fb3400dec5c4adceb8655d4c94", 16),
-                208);
+                new ScalarSplitParameters(
+                    new BigInteger[]{
+                        new BigInteger("71169be7330b3038edb025f1", 16),
+                        new BigInteger("-b3fb3400dec5c4adceb8655c", 16) },
+                    new BigInteger[]{
+                        new BigInteger("12511cfe811d0f4e6bc688b4d", 16),
+                        new BigInteger("71169be7330b3038edb025f1", 16) },
+                    new BigInteger("71169be7330b3038edb025f1d0f9", 16),
+                    new BigInteger("b3fb3400dec5c4adceb8655d4c94", 16),
+                    208));
 
             ECCurve curve = configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
 
@@ -301,15 +304,16 @@ public class SECNamedCurves
             GLVTypeBParameters glv = new GLVTypeBParameters(
                 new BigInteger("fe0e87005b4e83761908c5131d552a850b3f58b749c37cf5b84d6768", 16),
                 new BigInteger("60dcd2104c4cbc0be6eeefc2bdd610739ec34e317f9b33046c9e4788", 16),
-                new BigInteger[]{
-                    new BigInteger("6b8cf07d4ca75c88957d9d670591", 16),
-                    new BigInteger("-b8adf1378a6eb73409fa6c9c637d", 16) },
-                new BigInteger[]{
-                    new BigInteger("1243ae1b4d71613bc9f780a03690e", 16),
-                    new BigInteger("6b8cf07d4ca75c88957d9d670591", 16) },
-                new BigInteger("6b8cf07d4ca75c88957d9d67059037a4", 16),
-                new BigInteger("b8adf1378a6eb73409fa6c9c637ba7f5", 16),
-                240);
+                new ScalarSplitParameters(
+                    new BigInteger[]{
+                        new BigInteger("6b8cf07d4ca75c88957d9d670591", 16),
+                        new BigInteger("-b8adf1378a6eb73409fa6c9c637d", 16) },
+                    new BigInteger[]{
+                        new BigInteger("1243ae1b4d71613bc9f780a03690e", 16),
+                        new BigInteger("6b8cf07d4ca75c88957d9d670591", 16) },
+                    new BigInteger("6b8cf07d4ca75c88957d9d67059037a4", 16),
+                    new BigInteger("b8adf1378a6eb73409fa6c9c637ba7f5", 16),
+                    240));
 
             ECCurve curve = configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
 
@@ -362,15 +366,16 @@ public class SECNamedCurves
             GLVTypeBParameters glv = new GLVTypeBParameters(
                 new BigInteger("7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee", 16),
                 new BigInteger("5363ad4cc05c30e0a5261c028812645a122e22ea20816678df02967c1b23bd72", 16),
-                new BigInteger[]{
-                    new BigInteger("3086d221a7d46bcde86c90e49284eb15", 16),
-                    new BigInteger("-e4437ed6010e88286f547fa90abfe4c3", 16) },
-                new BigInteger[]{
-                    new BigInteger("114ca50f7a8e2f3f657c1108d9d44cfd8", 16),
-                    new BigInteger("3086d221a7d46bcde86c90e49284eb15", 16) },
-                new BigInteger("3086d221a7d46bcde86c90e49284eb153dab", 16),
-                new BigInteger("e4437ed6010e88286f547fa90abfe4c42212", 16),
-                272);
+                new ScalarSplitParameters(
+                    new BigInteger[]{
+                        new BigInteger("3086d221a7d46bcde86c90e49284eb15", 16),
+                        new BigInteger("-e4437ed6010e88286f547fa90abfe4c3", 16) },
+                    new BigInteger[]{
+                        new BigInteger("114ca50f7a8e2f3f657c1108d9d44cfd8", 16),
+                        new BigInteger("3086d221a7d46bcde86c90e49284eb15", 16) },
+                    new BigInteger("3086d221a7d46bcde86c90e49284eb153dab", 16),
+                    new BigInteger("e4437ed6010e88286f547fa90abfe4c42212", 16),
+                    272));
 
             ECCurve curve = configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
 
