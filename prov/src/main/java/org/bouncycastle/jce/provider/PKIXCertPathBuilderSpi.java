@@ -35,6 +35,18 @@ import org.bouncycastle.x509.ExtendedPKIXParameters;
 public class PKIXCertPathBuilderSpi
     extends CertPathBuilderSpi
 {
+    private final boolean isForCRLCheck;
+
+    public PKIXCertPathBuilderSpi()
+    {
+        this(false);
+    }
+
+    PKIXCertPathBuilderSpi(boolean isForCRLCheck)
+    {
+        this.isForCRLCheck = isForCRLCheck;
+    }
+
     /**
      * Build and validate a CertPath using the given parameter.
      * 
@@ -175,7 +187,7 @@ public class PKIXCertPathBuilderSpi
         try
         {
             cFact = new CertificateFactory();
-            validator = new PKIXCertPathValidatorSpi();
+            validator = new PKIXCertPathValidatorSpi(isForCRLCheck);
         }
         catch (Exception e)
         {
