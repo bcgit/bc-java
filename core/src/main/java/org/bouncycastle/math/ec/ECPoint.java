@@ -339,11 +339,25 @@ public abstract class ECPoint
             :   getCurve().createRawPoint(getRawXCoord().multiply(scale), getRawYCoord(), getRawZCoords(), this.withCompression);
     }
 
+    public ECPoint scaleXNegateY(ECFieldElement scale)
+    {
+        return isInfinity()
+            ?   this
+            :   getCurve().createRawPoint(getRawXCoord().multiply(scale), getRawYCoord().negate(), getRawZCoords(), this.withCompression);
+    }
+
     public ECPoint scaleY(ECFieldElement scale)
     {
         return isInfinity()
             ?   this
             :   getCurve().createRawPoint(getRawXCoord(), getRawYCoord().multiply(scale), getRawZCoords(), this.withCompression);
+    }
+
+    public ECPoint scaleYNegateX(ECFieldElement scale)
+    {
+        return isInfinity()
+            ?   this
+            :   getCurve().createRawPoint(getRawXCoord().negate(), getRawYCoord().multiply(scale), getRawZCoords(), this.withCompression);
     }
 
     public boolean equals(ECPoint other)
@@ -1501,6 +1515,11 @@ public abstract class ECPoint
             }
         }
 
+        public ECPoint scaleXNegateY(ECFieldElement scale)
+        {
+            return scaleX(scale);
+        }
+
         public ECPoint scaleY(ECFieldElement scale)
         {
             if (this.isInfinity())
@@ -1527,6 +1546,11 @@ public abstract class ECPoint
                 return super.scaleY(scale);
             }
             }
+        }
+
+        public ECPoint scaleYNegateX(ECFieldElement scale)
+        {
+            return scaleY(scale);
         }
 
         public ECPoint subtract(ECPoint b)

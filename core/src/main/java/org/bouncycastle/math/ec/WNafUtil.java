@@ -405,6 +405,9 @@ public abstract class WNafUtil
         return Math.max(2, Math.min(maxWidth, w + 2));
     }
 
+    /**
+     * @deprecated
+     */
     public static ECPoint mapPointWithPrecomp(ECPoint p, final int minWidth, final boolean includeNegated,
         final ECPointMap pointMap)
     {
@@ -617,6 +620,75 @@ public abstract class WNafUtil
             {
                 return null != existingWNaf
                     && existingWNaf.getWidth() >= Math.max(existingWNaf.getConfWidth(), width)
+                    && checkTable(existingWNaf.getPreComp(), reqPreCompLen)
+                    && (!includeNegated || checkTable(existingWNaf.getPreCompNeg(), reqPreCompLen));
+            }
+
+            private boolean checkTable(ECPoint[] table, int reqLen)
+            {
+                return null != table && table.length >= reqLen;
+            }
+        });
+    }
+
+    public static WNafPreCompInfo precomputeWithPointMap(final ECPoint p, final ECPointMap pointMap, final WNafPreCompInfo fromWNaf,
+        final boolean includeNegated)
+    {
+        final ECCurve c = p.getCurve();
+
+        return (WNafPreCompInfo)c.precompute(p, PRECOMP_NAME, new PreCompCallback()
+        {
+            public PreCompInfo precompute(PreCompInfo existing)
+            {
+                WNafPreCompInfo existingWNaf = (existing instanceof WNafPreCompInfo) ? (WNafPreCompInfo)existing : null;
+
+                int width = fromWNaf.getWidth();
+                int reqPreCompLen = fromWNaf.getPreComp().length;
+
+                if (checkExisting(existingWNaf, width, reqPreCompLen, includeNegated))
+                {
+                    return existingWNaf;
+                }
+
+                /*
+                 * TODO Ideally this method would support incremental calculation, but given the
+                 * existing use-cases it would be of little-to-no benefit.
+                 */
+                WNafPreCompInfo result = new WNafPreCompInfo();
+
+                ECPoint twiceFrom = fromWNaf.getTwice();
+                if (null != twiceFrom)
+                {
+                    ECPoint twice = pointMap.map(twiceFrom);
+                    result.setTwice(twice);
+                }
+
+                ECPoint[] preCompFrom = fromWNaf.getPreComp();
+                ECPoint[] preComp = new ECPoint[preCompFrom.length];
+                for (int i = 0; i < preCompFrom.length; ++i)
+                {
+                    preComp[i] = pointMap.map(preCompFrom[i]);
+                }
+                result.setPreComp(preComp);
+                result.setWidth(width);
+
+                if (includeNegated)
+                {
+                    ECPoint[] preCompNeg = new ECPoint[preComp.length];
+                    for (int i = 0; i < preCompNeg.length; ++i)
+                    {
+                        preCompNeg[i] = preComp[i].negate();
+                    }
+                    result.setPreCompNeg(preCompNeg);
+                }
+
+                return result;
+            }
+
+            private boolean checkExisting(WNafPreCompInfo existingWNaf, int width, int reqPreCompLen, boolean includeNegated)
+            {
+                return null != existingWNaf
+                    && existingWNaf.getWidth() >= width
                     && checkTable(existingWNaf.getPreComp(), reqPreCompLen)
                     && (!includeNegated || checkTable(existingWNaf.getPreCompNeg(), reqPreCompLen));
             }

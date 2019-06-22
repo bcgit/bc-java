@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.endo.ECEndomorphism;
+import org.bouncycastle.math.ec.endo.EndoUtil;
 import org.bouncycastle.math.ec.endo.GLVEndomorphism;
 import org.bouncycastle.math.field.FiniteField;
 import org.bouncycastle.math.field.PolynomialExtensionField;
@@ -303,7 +304,7 @@ public class ECAlgorithms
         return implShamirsTrickWNaf(preCompP, preCompNegP, wnafP, preCompQ, preCompNegQ, wnafQ);
     }
 
-    static ECPoint implShamirsTrickWNaf(ECPoint P, BigInteger k, ECPointMap pointMapQ, BigInteger l)
+    static ECPoint implShamirsTrickWNaf(ECEndomorphism endomorphism, ECPoint P, BigInteger k, BigInteger l)
     {
         boolean negK = k.signum() < 0, negL = l.signum() < 0;
 
@@ -312,9 +313,9 @@ public class ECAlgorithms
 
         int minWidth = WNafUtil.getWindowSize(Math.max(k.bitLength(), l.bitLength()), 8);
 
-        ECPoint Q = WNafUtil.mapPointWithPrecomp(P, minWidth, true, pointMapQ);
-        WNafPreCompInfo infoP = WNafUtil.getWNafPreCompInfo(P);
-        WNafPreCompInfo infoQ = WNafUtil.getWNafPreCompInfo(Q);
+        WNafPreCompInfo infoP = WNafUtil.precompute(P, minWidth, true);
+        ECPoint Q = EndoUtil.mapPoint(endomorphism, P);
+        WNafPreCompInfo infoQ = WNafUtil.precomputeWithPointMap(Q, endomorphism.getPointMap(), infoP, true);
 
         int widthP = Math.min(8, infoP.getWidth());
         int widthQ = Math.min(8, infoQ.getWidth());
@@ -420,16 +421,16 @@ public class ECAlgorithms
             abs[j++] = ab[1];
         }
 
-        ECPointMap pointMap = glvEndomorphism.getPointMap();
         if (glvEndomorphism.hasEfficientPointMap())
         {
-            return ECAlgorithms.implSumOfMultiplies(ps, pointMap, abs);
+            return ECAlgorithms.implSumOfMultiplies(glvEndomorphism, ps, abs);
         }
 
         ECPoint[] pqs = new ECPoint[len << 1];
         for (int i = 0, j = 0; i < len; ++i)
         {
-            ECPoint p = ps[i], q = pointMap.map(p);
+            ECPoint p = ps[i];
+            ECPoint q = EndoUtil.mapPoint(glvEndomorphism, p);
             pqs[j++] = p;
             pqs[j++] = q;
         }
@@ -438,13 +439,15 @@ public class ECAlgorithms
 
     }
 
-    static ECPoint implSumOfMultiplies(ECPoint[] ps, ECPointMap pointMap, BigInteger[] ks)
+    static ECPoint implSumOfMultiplies(ECEndomorphism endomorphism, ECPoint[] ps, BigInteger[] ks)
     {
         int halfCount = ps.length, fullCount = halfCount << 1;
 
         boolean[] negs = new boolean[fullCount];
         WNafPreCompInfo[] infos = new WNafPreCompInfo[fullCount];
         byte[][] wnafs = new byte[fullCount][];
+
+        ECPointMap pointMap = endomorphism.getPointMap();
 
         for (int i = 0; i < halfCount; ++i)
         {
@@ -454,10 +457,11 @@ public class ECAlgorithms
             BigInteger kj1 = ks[j1]; negs[j1] = kj1.signum() < 0; kj1 = kj1.abs();
 
             int minWidth = WNafUtil.getWindowSize(Math.max(kj0.bitLength(), kj1.bitLength()), 8);
-            ECPoint P = ps[i], Q = WNafUtil.mapPointWithPrecomp(P, minWidth, true, pointMap);
 
-            WNafPreCompInfo infoP = WNafUtil.getWNafPreCompInfo(P);
-            WNafPreCompInfo infoQ = WNafUtil.getWNafPreCompInfo(Q);
+            ECPoint P = ps[i];
+            WNafPreCompInfo infoP = WNafUtil.precompute(P, minWidth, true);
+            ECPoint Q = EndoUtil.mapPoint(endomorphism, P);
+            WNafPreCompInfo infoQ = WNafUtil.precomputeWithPointMap(Q, pointMap, infoP, true);
 
             int widthP = Math.min(8, infoP.getWidth());
             int widthQ = Math.min(8, infoQ.getWidth());
