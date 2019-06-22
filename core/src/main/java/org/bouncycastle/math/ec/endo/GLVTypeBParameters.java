@@ -4,35 +4,25 @@ import java.math.BigInteger;
 
 public class GLVTypeBParameters
 {
-    private static void checkVector(BigInteger[] v, String name)
-    {
-        if (v == null || v.length != 2 || v[0] == null || v[1] == null)
-        {
-            throw new IllegalArgumentException("'" + name + "' must consist of exactly 2 (non-null) values");
-        }
-    }
+    protected final BigInteger beta, lambda;
+    protected final ScalarSplitParameters splitParams;
 
-    protected final BigInteger beta;
-    protected final BigInteger lambda;
-    protected final BigInteger v1A, v1B, v2A, v2B;
-    protected final BigInteger g1, g2;
-    protected final int bits;
-
+    /**
+     * @deprecated Use constructor taking a {@link ScalarSplitParameters} instead.
+     */
     public GLVTypeBParameters(BigInteger beta, BigInteger lambda, BigInteger[] v1, BigInteger[] v2, BigInteger g1,
         BigInteger g2, int bits)
     {
-        checkVector(v1, "v1");
-        checkVector(v2, "v2");
-
         this.beta = beta;
         this.lambda = lambda;
-        this.v1A = v1[0];
-        this.v1B = v1[1];
-        this.v2A = v2[0];
-        this.v2B = v2[1];
-        this.g1 = g1;
-        this.g2 = g2;
-        this.bits = bits;
+        this.splitParams = new ScalarSplitParameters(v1, v2, g1, g2, bits);
+    }
+
+    public GLVTypeBParameters(BigInteger beta, BigInteger lambda, ScalarSplitParameters splitParams)
+    {
+        this.beta = beta;
+        this.lambda = lambda;
+        this.splitParams = splitParams;
     }
 
     public BigInteger getBeta()
@@ -45,38 +35,64 @@ public class GLVTypeBParameters
         return lambda;
     }
 
+    public ScalarSplitParameters getSplitParams()
+    {
+        return splitParams;
+    }
+
+    /**
+     * @deprecated Access via {@link #getSplitParams()} instead.
+     */
     public BigInteger getV1A()
     {
-        return v1A;
+        return getSplitParams().getV1A();
     }
 
+    /**
+     * @deprecated Access via {@link #getSplitParams()} instead.
+     */
     public BigInteger getV1B()
     {
-        return v1B;
+        return getSplitParams().getV1B();
     }
 
+    /**
+     * @deprecated Access via {@link #getSplitParams()} instead.
+     */
     public BigInteger getV2A()
     {
-        return v2A;
+        return getSplitParams().getV2A();
     }
 
+    /**
+     * @deprecated Access via {@link #getSplitParams()} instead.
+     */
     public BigInteger getV2B()
     {
-        return v2B;
+        return getSplitParams().getV2B();
     }
 
+    /**
+     * @deprecated Access via {@link #getSplitParams()} instead.
+     */
     public BigInteger getG1()
     {
-        return g1;
+        return getSplitParams().getG1();
     }
 
+    /**
+     * @deprecated Access via {@link #getSplitParams()} instead.
+     */
     public BigInteger getG2()
     {
-        return g2;
+        return getSplitParams().getG2();
     }
     
+    /**
+     * @deprecated Access via {@link #getSplitParams()} instead.
+     */
     public int getBits()
     {
-        return bits;
+        return getSplitParams().getBits();
     }
 }
