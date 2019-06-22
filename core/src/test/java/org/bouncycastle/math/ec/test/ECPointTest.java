@@ -9,20 +9,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.WNafUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * Test class for {@link org.bouncycastle.math.ec.ECPoint ECPoint}. All
@@ -408,8 +412,11 @@ public class ECPointTest extends TestCase
         implTestMultiply(q, n.bitLength());
         implTestMultiply(infinity, n.bitLength());
 
+        int logSize = 32 - Integers.numberOfLeadingZeros(curve.getFieldSize() - 1);
+        int rounds = Math.max(2, Math.min(10, 32 - 3 * logSize));
+
         ECPoint p = q;
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < rounds; ++i)
         {
             implTestEncoding(p);
             p = p.twice();
@@ -551,16 +558,52 @@ public class ECPointTest extends TestCase
         }
     }
 
-    private List enumToList(Enumeration en)
+    public void testExampleFpB0() throws Exception
     {
-        List rv = new ArrayList();
+        /*
+         * The supersingular curve y^2 = x^3 - 3.x (i.e. with 'B' == 0) from RFC 6508 2.1, with
+         * curve parameters from RFC 6509 Appendix A.
+         */
+        BigInteger p = fromHex(
+              "997ABB1F0A563FDA65C61198DAD0657A"
+            + "416C0CE19CB48261BE9AE358B3E01A2E"
+            + "F40AAB27E2FC0F1B228730D531A59CB0"
+            + "E791B39FF7C88A19356D27F4A666A6D0"
+            + "E26C6487326B4CD4512AC5CD65681CE1"
+            + "B6AFF4A831852A82A7CF3C521C3C09AA"
+            + "9F94D6AF56971F1FFCE3E82389857DB0"
+            + "80C5DF10AC7ACE87666D807AFEA85FEB");
+        BigInteger a = p.subtract(BigInteger.valueOf(3));
+        BigInteger b = BigInteger.valueOf(0);
+        byte[] S = null;
+        BigInteger n = p.add(BigInteger.valueOf(1)).shiftRight(2);
+        BigInteger h = BigInteger.valueOf(4);
 
-        while (en.hasMoreElements())
-        {
-            rv.add(en.nextElement());
-        }
+        ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
 
-        return rv;
+        X9ECPoint G = configureBasepoint(curve, "04"
+            // Px
+            + "53FC09EE332C29AD0A7990053ED9B52A"
+            + "2B1A2FD60AEC69C698B2F204B6FF7CBF"
+            + "B5EDB6C0F6CE2308AB10DB9030B09E10"
+            + "43D5F22CDB9DFA55718BD9E7406CE890"
+            + "9760AF765DD5BCCB337C86548B72F2E1"
+            + "A702C3397A60DE74A7C1514DBA66910D"
+            + "D5CFB4CC80728D87EE9163A5B63F73EC"
+            + "80EC46C4967E0979880DC8ABEAE63895"
+            // Py
+            + "0A8249063F6009F1F9F1F0533634A135"
+            + "D3E82016029906963D778D821E141178"
+            + "F5EA69F4654EC2B9E7F7F5E5F0DE55F6"
+            + "6B598CCF9A140B2E416CFF0CA9E032B9"
+            + "70DAE117AD547C6CCAD696B5B7652FE0"
+            + "AC6F1E80164AA989492D979FC5A4D5F2"
+            + "13515AD7E9CB99A980BDAD5AD5BB4636"
+            + "ADB9B5706A67DCDE75573FD71BEF16D7");
+
+        X9ECParameters x9 = new X9ECParameters(curve, G, n, h, S);
+
+        implAddSubtractMultiplyTwiceEncodingTestAllCoords(x9);
     }
 
     private void assertPointsEqual(String message, ECPoint a, ECPoint b)
@@ -584,6 +627,36 @@ public class ECPointTest extends TestCase
         {
             assertTrue(Arrays.areEqual(a, b));
         }
+    }
+
+    private static X9ECPoint configureBasepoint(ECCurve curve, String encoding)
+    {
+        X9ECPoint G = new X9ECPoint(curve, Hex.decode(encoding));
+        WNafUtil.configureBasepoint(G.getPoint());
+        return G;
+    }
+
+    private static ECCurve configureCurve(ECCurve curve)
+    {
+        return curve;
+    }
+
+    private List enumToList(Enumeration en)
+    {
+        List rv = new ArrayList();
+
+        while (en.hasMoreElements())
+        {
+            rv.add(en.nextElement());
+        }
+
+        return rv;
+    }
+
+    private static BigInteger fromHex(
+        String hex)
+    {
+        return new BigInteger(1, Hex.decode(hex));
     }
 
     public static Test suite()
