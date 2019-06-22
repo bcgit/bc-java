@@ -1,6 +1,5 @@
 package org.bouncycastle.jce.provider;
 
-import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
@@ -41,9 +40,16 @@ public class PKIXCertPathValidatorSpi
         extends CertPathValidatorSpi
 {
     private final JcaJceHelper helper = new BCJcaJceHelper();
+    private final boolean isForCRLCheck;
 
     public PKIXCertPathValidatorSpi()
     {
+        this(false);
+    }
+
+    public PKIXCertPathValidatorSpi(boolean isForCRLCheck)
+    {
+        this.isForCRLCheck = isForCRLCheck;
     }
 
     public CertPathValidatorResult engineValidate(
@@ -313,10 +319,10 @@ public class PKIXCertPathValidatorSpi
             RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, index, workingPublicKey,
                 verificationAlreadyPerformed, workingIssuerName, sign, helper);
 
-            RFC3280CertPathUtilities.processCertBC(certPath, index, nameConstraintValidator);
+            RFC3280CertPathUtilities.processCertBC(certPath, index, nameConstraintValidator, isForCRLCheck);
 
             validPolicyTree = RFC3280CertPathUtilities.processCertD(certPath, index, acceptablePolicies,
-                    validPolicyTree, policyNodes, inhibitAnyPolicy);
+                    validPolicyTree, policyNodes, inhibitAnyPolicy, isForCRLCheck);
 
             validPolicyTree = RFC3280CertPathUtilities.processCertE(certPath, index, validPolicyTree);
 
