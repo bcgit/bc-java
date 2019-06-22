@@ -4,14 +4,14 @@ import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPointMap;
-import org.bouncycastle.math.ec.ScaleXPointMap;
+import org.bouncycastle.math.ec.ScaleYNegateXPointMap;
 
-public class GLVTypeBEndomorphism implements GLVEndomorphism
+public class GLVTypeAEndomorphism implements GLVEndomorphism
 {
-    protected final GLVTypeBParameters parameters;
+    protected final GLVTypeAParameters parameters;
     protected final ECPointMap pointMap;
 
-    public GLVTypeBEndomorphism(ECCurve curve, GLVTypeBParameters parameters)
+    public GLVTypeAEndomorphism(ECCurve curve, GLVTypeAParameters parameters)
     {
         /*
          * NOTE: 'curve' MUST only be used to create a suitable ECFieldElement. Due to the way
@@ -20,7 +20,7 @@ public class GLVTypeBEndomorphism implements GLVEndomorphism
          */
 
         this.parameters = parameters;
-        this.pointMap = new ScaleXPointMap(curve.fromBigInteger(parameters.getBeta()));
+        this.pointMap = new ScaleYNegateXPointMap(curve.fromBigInteger(parameters.getI()));
     }
 
     public BigInteger[] decomposeScalar(BigInteger k)

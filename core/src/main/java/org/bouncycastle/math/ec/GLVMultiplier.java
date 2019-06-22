@@ -2,6 +2,7 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.endo.EndoUtil;
 import org.bouncycastle.math.ec.endo.GLVEndomorphism;
 
 public class GLVMultiplier extends AbstractECMultiplier
@@ -31,12 +32,13 @@ public class GLVMultiplier extends AbstractECMultiplier
         BigInteger[] ab = glvEndomorphism.decomposeScalar(k.mod(n));
         BigInteger a = ab[0], b = ab[1];
 
-        ECPointMap pointMap = glvEndomorphism.getPointMap();
         if (glvEndomorphism.hasEfficientPointMap())
         {
-            return ECAlgorithms.implShamirsTrickWNaf(p, a, pointMap, b);
+            return ECAlgorithms.implShamirsTrickWNaf(glvEndomorphism, p, a, b);
         }
 
-        return ECAlgorithms.implShamirsTrickWNaf(p, a, pointMap.map(p), b);
+        ECPoint q = EndoUtil.mapPoint(glvEndomorphism, p);
+
+        return ECAlgorithms.implShamirsTrickWNaf(p, a, q, b);
     }
 }
