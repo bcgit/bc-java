@@ -1,7 +1,9 @@
 package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 
 /**
  * Private parameters for an SM2 key exchange. The ephemeralPrivateKey is used to calculate the random point used in the algorithm.
@@ -35,11 +37,13 @@ public class SM2KeyExchangePrivateParameters
             throw new IllegalArgumentException("Static and ephemeral private keys have different domain parameters");
         }
 
+        ECMultiplier m = new FixedPointCombMultiplier();
+
         this.initiator = initiator;
         this.staticPrivateKey = staticPrivateKey;
-        this.staticPublicPoint = parameters.getG().multiply(staticPrivateKey.getD()).normalize();
+        this.staticPublicPoint = m.multiply(parameters.getG(), staticPrivateKey.getD()).normalize();
         this.ephemeralPrivateKey = ephemeralPrivateKey;
-        this.ephemeralPublicPoint = parameters.getG().multiply(ephemeralPrivateKey.getD()).normalize();
+        this.ephemeralPublicPoint = m.multiply(parameters.getG(), ephemeralPrivateKey.getD()).normalize();
     }
 
     public boolean isInitiator()

@@ -38,6 +38,8 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 
 /**
  * Factory to create ASN.1 private key info objects from lightweight private keys.
@@ -162,9 +164,12 @@ public class PrivateKeyInfoFactory
                 orderBitLength = domainParams.getN().bitLength();
             }
 
-            return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
-                new ECPrivateKey(orderBitLength, priv.getD(),
-                    new DERBitString(domainParams.getG().multiply(priv.getD()).getEncoded(false)), params),
+            ECPoint q = new FixedPointCombMultiplier().multiply(domainParams.getG(), priv.getD());
+            DERBitString publicKey = new DERBitString(q.getEncoded(false));
+
+            return new PrivateKeyInfo(
+                new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
+                new ECPrivateKey(orderBitLength, priv.getD(), publicKey, params),
                 attributes);
         }
         else if (privateKey instanceof X448PrivateKeyParameters)
