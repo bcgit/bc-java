@@ -366,11 +366,6 @@ public class BCECPrivateKey
         return ECUtil.privateKeyToString("EC", d, engineGetSpec());
     }
 
-    private org.bouncycastle.math.ec.ECPoint calculateQ(org.bouncycastle.jce.spec.ECParameterSpec spec)
-    {
-        return spec.getG().multiply(d).normalize();
-    }
-
     private DERBitString getPublicKeyDetails(BCECPublicKey pub)
     {
         try
