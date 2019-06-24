@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
@@ -155,7 +156,7 @@ public class PrivateKeyInfoFactory
             {
                 X9ECParameters ecP = new X9ECParameters(
                     domainParams.getCurve(),
-                    domainParams.getG(),
+                    new X9ECPoint(domainParams.getG(), false),
                     domainParams.getN(),
                     domainParams.getH(),
                     domainParams.getSeed());
@@ -165,6 +166,8 @@ public class PrivateKeyInfoFactory
             }
 
             ECPoint q = new FixedPointCombMultiplier().multiply(domainParams.getG(), priv.getD());
+
+            // TODO Support point compression
             DERBitString publicKey = new DERBitString(q.getEncoded(false));
 
             return new PrivateKeyInfo(

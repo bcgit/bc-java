@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
@@ -65,7 +66,7 @@ public class BCDSTU4145PublicKey
         ECPublicKeySpec spec)
     {
         this.ecSpec = spec.getParams();
-        this.ecPublicKey = new ECPublicKeyParameters(EC5Util.convertPoint(ecSpec, spec.getW(), false), EC5Util.getDomainParameters(null, ecSpec));
+        this.ecPublicKey = new ECPublicKeyParameters(EC5Util.convertPoint(ecSpec, spec.getW()), EC5Util.getDomainParameters(null, ecSpec));
     }
 
     public BCDSTU4145PublicKey(
@@ -243,22 +244,17 @@ public class BCDSTU4145PublicKey
 
         if (dstuParams != null)
         {
+            ECPoint g = EC5Util.convertPoint(spec.getG());
+
             if (dstuParams.isNamedCurve())
             {
-                ecSpec = new ECNamedCurveSpec(
-                    dstuParams.getNamedCurve().getId(),
-                    ellipticCurve,
-                    EC5Util.convertPoint(spec.getG()),
-                    spec.getN(),
-                    spec.getH());
+                String name = dstuParams.getNamedCurve().getId();
+
+                ecSpec = new ECNamedCurveSpec(name, ellipticCurve, g, spec.getN(), spec.getH());
             }
             else
             {
-                ecSpec = new ECParameterSpec(
-                    ellipticCurve,
-                    EC5Util.convertPoint(spec.getG()),
-                    spec.getN(),
-                    spec.getH().intValue());
+                ecSpec = new ECParameterSpec(ellipticCurve, g, spec.getN(), spec.getH().intValue());
             }
         }
         else
@@ -313,7 +309,7 @@ public class BCDSTU4145PublicKey
 
                 X9ECParameters ecP = new X9ECParameters(
                     curve,
-                    EC5Util.convertPoint(curve, ecSpec.getGenerator(), withCompression),
+                    new X9ECPoint(EC5Util.convertPoint(curve, ecSpec.getGenerator()), withCompression),
                     ecSpec.getOrder(),
                     BigInteger.valueOf(ecSpec.getCofactor()),
                     ecSpec.getCurve().getSeed());
@@ -322,6 +318,7 @@ public class BCDSTU4145PublicKey
             }
         }
 
+        // NOTE: 'withCompression' is ignored here
         byte[] encKey = DSTU4145PointEncoder.encodePoint(ecPublicKey.getQ());
 
         try
@@ -348,7 +345,7 @@ public class BCDSTU4145PublicKey
             return null;
         }
 
-        return EC5Util.convertSpec(ecSpec, withCompression);
+        return EC5Util.convertSpec(ecSpec);
     }
 
     public ECPoint getW()
@@ -377,7 +374,7 @@ public class BCDSTU4145PublicKey
     {
         if (ecSpec != null)
         {
-            return EC5Util.convertSpec(ecSpec, withCompression);
+            return EC5Util.convertSpec(ecSpec);
         }
 
         return BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
