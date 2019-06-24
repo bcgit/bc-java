@@ -68,7 +68,7 @@ public class JCEECPublicKey
     {
         this.algorithm = algorithm;
         this.ecSpec = spec.getParams();
-        this.q = EC5Util.convertPoint(ecSpec, spec.getW(), false);
+        this.q = EC5Util.convertPoint(ecSpec, spec.getW());
     }
 
     public JCEECPublicKey(
@@ -91,7 +91,7 @@ public class JCEECPublicKey
             {
                 org.bouncycastle.jce.spec.ECParameterSpec s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
 
-                q = s.getCurve().createPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger(), false);
+                q = s.getCurve().createPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
             }               
             this.ecSpec = null;
         }
@@ -169,7 +169,7 @@ public class JCEECPublicKey
     {
         this.algorithm = key.getAlgorithm();
         this.ecSpec = key.getParams();
-        this.q = EC5Util.convertPoint(this.ecSpec, key.getW(), false);
+        this.q = EC5Util.convertPoint(this.ecSpec, key.getW());
     }
 
     JCEECPublicKey(
@@ -326,7 +326,7 @@ public class JCEECPublicKey
 
                     X9ECParameters ecP = new X9ECParameters(
                         curve,
-                        EC5Util.convertPoint(curve, ecSpec.getGenerator(), withCompression),
+                        new X9ECPoint(EC5Util.convertPoint(curve, ecSpec.getGenerator()), withCompression),
                         ecSpec.getOrder(),
                         BigInteger.valueOf(ecSpec.getCofactor()),
                         ecSpec.getCurve().getSeed());
@@ -335,10 +335,10 @@ public class JCEECPublicKey
                 }
             }
 
-            BigInteger      bX = this.q.getAffineXCoord().toBigInteger();
-            BigInteger      bY = this.q.getAffineYCoord().toBigInteger();
-            byte[]          encKey = new byte[64];
+            BigInteger bX = this.q.getAffineXCoord().toBigInteger();
+            BigInteger bY = this.q.getAffineYCoord().toBigInteger();
 
+            byte[] encKey = new byte[64];
             extractBytes(encKey, 0, bX);
             extractBytes(encKey, 32, bY);
 
@@ -372,7 +372,7 @@ public class JCEECPublicKey
 
                 X9ECParameters ecP = new X9ECParameters(
                     curve,
-                    EC5Util.convertPoint(curve, ecSpec.getGenerator(), withCompression),
+                    new X9ECPoint(EC5Util.convertPoint(curve, ecSpec.getGenerator()), withCompression),
                     ecSpec.getOrder(),
                     BigInteger.valueOf(ecSpec.getCofactor()),
                     ecSpec.getCurve().getSeed());
@@ -380,11 +380,9 @@ public class JCEECPublicKey
                 params = new X962Parameters(ecP);
             }
 
-            ECCurve curve = this.engineGetQ().getCurve();
-            ASN1OctetString p = (ASN1OctetString)
-                new X9ECPoint(curve.createPoint(this.getQ().getAffineXCoord().toBigInteger(), this.getQ().getAffineYCoord().toBigInteger(), withCompression)).toASN1Primitive();
+            byte[] pubKeyOctets = this.getQ().getEncoded(withCompression);
 
-            info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());
+            info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), pubKeyOctets);
         }
 
         return KeyUtil.getEncodedSubjectPublicKeyInfo(info);
@@ -418,7 +416,7 @@ public class JCEECPublicKey
             return null;
         }
 
-        return EC5Util.convertSpec(ecSpec, withCompression);
+        return EC5Util.convertSpec(ecSpec);
     }
 
     public ECPoint getW()
@@ -445,7 +443,7 @@ public class JCEECPublicKey
     {
         if (ecSpec != null)
         {
-            return EC5Util.convertSpec(ecSpec, withCompression);
+            return EC5Util.convertSpec(ecSpec);
         }
 
         return BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();

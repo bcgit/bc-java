@@ -7,15 +7,17 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class ECAlgorithmsTest extends TestCase
 {
@@ -179,7 +181,7 @@ public class ECAlgorithmsTest extends TestCase
             else if (curve.supportsCoordinateSystem(coord))
             {
                 ECCurve c = curve.configure().setCoordinateSystem(coord).create();
-                x9s.add(new X9ECParameters(c, c.importPoint(x9.getG()), x9.getN(), x9.getH()));
+                x9s.add(new X9ECParameters(c, new X9ECPoint(c.importPoint(x9.getG()), false), x9.getN(), x9.getH()));
             }
         }
     }

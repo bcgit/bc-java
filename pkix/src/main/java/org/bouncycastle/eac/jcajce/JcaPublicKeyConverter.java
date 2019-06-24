@@ -149,14 +149,14 @@ public class JcaPublicKeyConverter
             ECPublicKey pubKey = (ECPublicKey)publicKey;
             java.security.spec.ECParameterSpec params = pubKey.getParams();
 
-            return new ECDSAPublicKey(
-                usage,
-                ((ECFieldFp)params.getCurve().getField()).getP(),
-                params.getCurve().getA(), params.getCurve().getB(),
-                convertPoint(convertCurve(params.getCurve(), params.getOrder(), params.getCofactor()), params.getGenerator()).getEncoded(),
-                params.getOrder(),
-                convertPoint(convertCurve(params.getCurve(), params.getOrder(), params.getCofactor()), pubKey.getW()).getEncoded(),
-                params.getCofactor());
+            EllipticCurve c1 = params.getCurve();
+            ECCurve c2 = convertCurve(c1, params.getOrder(), params.getCofactor());
+
+            ECPoint basePoint = convertPoint(c2, params.getGenerator());
+            ECPoint publicPoint = convertPoint(c2, pubKey.getW());
+
+            return new ECDSAPublicKey(usage, ((ECFieldFp)c1.getField()).getP(), c1.getA(), c1.getB(),
+                basePoint.getEncoded(false), params.getOrder(), publicPoint.getEncoded(false), params.getCofactor());
         }
     }
 

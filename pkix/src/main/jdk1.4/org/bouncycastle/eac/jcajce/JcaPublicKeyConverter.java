@@ -131,10 +131,11 @@ public class JcaPublicKeyConverter
             return new ECDSAPublicKey(
                 usage,
                 ((ECCurve.Fp)params.getCurve()).getQ(),
-                ((ECFieldElement.Fp)params.getCurve().getA()).toBigInteger(), ((ECFieldElement.Fp)params.getCurve().getB()).toBigInteger(),
-                params.getG().getEncoded(),
+                ((ECFieldElement.Fp)params.getCurve().getA()).toBigInteger(),
+                ((ECFieldElement.Fp)params.getCurve().getB()).toBigInteger(),
+                params.getG().getEncoded(false),
                 params.getN(),
-                pubKey.getQ().getEncoded(),
+                pubKey.getQ().getEncoded(false),
                 params.getH().intValue());
         }
     }

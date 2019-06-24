@@ -67,13 +67,13 @@ public class KeyFactorySpi
            ECPublicKey k = (ECPublicKey)key;
            if (k.getParams() != null)
            {
-               return new ECPublicKeySpec(EC5Util.convertPoint(k.getParams(), k.getW(), false), EC5Util.convertSpec(k.getParams(), false));
+               return new ECPublicKeySpec(EC5Util.convertPoint(k.getParams(), k.getW()), EC5Util.convertSpec(k.getParams()));
            }
            else
            {
                ECParameterSpec implicitSpec = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
 
-               return new ECPublicKeySpec(EC5Util.convertPoint(k.getParams(), k.getW(), false), implicitSpec);
+               return new ECPublicKeySpec(EC5Util.convertPoint(k.getParams(), k.getW()), implicitSpec);
            }
        }
        else if (spec.isAssignableFrom(ECPrivateKeySpec.class) && key instanceof ECPrivateKey)
@@ -82,7 +82,7 @@ public class KeyFactorySpi
 
            if (k.getParams() != null)
            {
-               return new ECPrivateKeySpec(k.getS(), EC5Util.convertSpec(k.getParams(), false));
+               return new ECPrivateKeySpec(k.getS(), EC5Util.convertSpec(k.getParams()));
            }
            else
            {

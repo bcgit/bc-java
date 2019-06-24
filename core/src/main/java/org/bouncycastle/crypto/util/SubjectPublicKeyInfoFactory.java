@@ -135,8 +135,6 @@ public class SubjectPublicKeyInfoFactory
                 }
 
                 byte[] encKey = new byte[encKeySize];
-
-
                 extractBytes(encKey, encKeySize / 2, 0, bX);
                 extractBytes(encKey, encKeySize / 2, offset, bY);
 
@@ -157,7 +155,8 @@ public class SubjectPublicKeyInfoFactory
             {
                 X9ECParameters ecP = new X9ECParameters(
                     domainParams.getCurve(),
-                    domainParams.getG(),
+                    // TODO Support point compression
+                    new X9ECPoint(domainParams.getG(), false),
                     domainParams.getN(),
                     domainParams.getH(),
                     domainParams.getSeed());
@@ -165,9 +164,10 @@ public class SubjectPublicKeyInfoFactory
                 params = new X962Parameters(ecP);
             }
 
-            ASN1OctetString p = (ASN1OctetString)new X9ECPoint(pub.getQ()).toASN1Primitive();
+            // TODO Support point compression
+            byte[] pubKeyOctets = pub.getQ().getEncoded(false);
 
-            return new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());
+            return new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), pubKeyOctets);
         }
         else if (publicKey instanceof X448PublicKeyParameters)
         {
