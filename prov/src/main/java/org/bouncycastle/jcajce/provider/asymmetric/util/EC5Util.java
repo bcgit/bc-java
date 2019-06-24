@@ -118,7 +118,7 @@ public class EC5Util
         }
         else
         {
-            domainParameters = ECUtil.getDomainParameters(configuration, convertSpec(params, false));
+            domainParameters = ECUtil.getDomainParameters(configuration, convertSpec(params));
         }
 
         return domainParameters;
@@ -261,66 +261,93 @@ public class EC5Util
         EllipticCurve ellipticCurve,
         org.bouncycastle.jce.spec.ECParameterSpec spec)
     {
+        ECPoint g = convertPoint(spec.getG());
+
         if (spec instanceof ECNamedCurveParameterSpec)
         {
-            return new ECNamedCurveSpec(
-                ((ECNamedCurveParameterSpec)spec).getName(),
-                ellipticCurve,
-                convertPoint(spec.getG()),
-                spec.getN(),
-                spec.getH());
+            String name = ((ECNamedCurveParameterSpec)spec).getName();
+
+            return new ECNamedCurveSpec(name, ellipticCurve, g, spec.getN(), spec.getH());
         }
         else
         {
-            return new ECParameterSpec(
-                ellipticCurve,
-                convertPoint(spec.getG()),
-                spec.getN(),
-                spec.getH().intValue());
+            return new ECParameterSpec(ellipticCurve, g, spec.getN(), spec.getH().intValue());
         }
     }
 
+    public static org.bouncycastle.jce.spec.ECParameterSpec convertSpec(ECParameterSpec ecSpec)
+    {
+        ECCurve curve = convertCurve(ecSpec.getCurve());
+
+        org.bouncycastle.math.ec.ECPoint g = convertPoint(curve, ecSpec.getGenerator());
+        BigInteger n = ecSpec.getOrder();
+        BigInteger h = BigInteger.valueOf(ecSpec.getCofactor());
+        byte[] seed = ecSpec.getCurve().getSeed();
+
+        if (ecSpec instanceof ECNamedCurveSpec)
+        {
+            return new org.bouncycastle.jce.spec.ECNamedCurveParameterSpec(((ECNamedCurveSpec)ecSpec).getName(), curve,
+                g, n, h, seed);
+        }
+        else
+        {
+            return new org.bouncycastle.jce.spec.ECParameterSpec(curve, g, n, h, seed);
+        }
+    }
+
+    /**
+     * @deprecated per-point compression property will be removed, use
+     *             {@link #convertSpec(ECParameterSpec)} instead.
+     */
     public static org.bouncycastle.jce.spec.ECParameterSpec convertSpec(
         ECParameterSpec ecSpec,
         boolean withCompression)
     {
         ECCurve curve = convertCurve(ecSpec.getCurve());
 
+        org.bouncycastle.math.ec.ECPoint g = convertPoint(curve, ecSpec.getGenerator(), withCompression);
+        BigInteger n = ecSpec.getOrder();
+        BigInteger h = BigInteger.valueOf(ecSpec.getCofactor());
+        byte[] seed = ecSpec.getCurve().getSeed();
+
         if (ecSpec instanceof ECNamedCurveSpec)
         {
-            return new org.bouncycastle.jce.spec.ECNamedCurveParameterSpec(
-                ((ECNamedCurveSpec)ecSpec).getName(),
-                curve,
-                convertPoint(curve, ecSpec.getGenerator(), withCompression),
-                ecSpec.getOrder(),
-                BigInteger.valueOf(ecSpec.getCofactor()),
-                ecSpec.getCurve().getSeed());
+            return new org.bouncycastle.jce.spec.ECNamedCurveParameterSpec(((ECNamedCurveSpec)ecSpec).getName(), curve,
+                g, n, h, seed);
         }
         else
         {
-            return new org.bouncycastle.jce.spec.ECParameterSpec(
-                curve,
-                convertPoint(curve, ecSpec.getGenerator(), withCompression),
-                ecSpec.getOrder(),
-                BigInteger.valueOf(ecSpec.getCofactor()),
-                ecSpec.getCurve().getSeed());
+            return new org.bouncycastle.jce.spec.ECParameterSpec(curve, g, n, h, seed);
         }
     }
 
-    public static org.bouncycastle.math.ec.ECPoint convertPoint(
-        ECParameterSpec ecSpec,
-        ECPoint point,
+    public static org.bouncycastle.math.ec.ECPoint convertPoint(ECParameterSpec ecSpec, ECPoint point)
+    {
+        return convertPoint(convertCurve(ecSpec.getCurve()), point);
+    }
+
+    /**
+     * @deprecated per-point compression property will be removed, use
+     *             {@link #convertPoint(ECParameterSpec, ECPoint)} instead.
+     */
+    public static org.bouncycastle.math.ec.ECPoint convertPoint(ECParameterSpec ecSpec, ECPoint point,
         boolean withCompression)
     {
         return convertPoint(convertCurve(ecSpec.getCurve()), point, withCompression);
     }
 
-    public static org.bouncycastle.math.ec.ECPoint convertPoint(
-        ECCurve curve,
-        ECPoint point,
-        boolean withCompression)
+    public static org.bouncycastle.math.ec.ECPoint convertPoint(ECCurve curve, ECPoint point)
     {
         return curve.createPoint(point.getAffineX(), point.getAffineY());
+    }
+
+    /**
+     * @deprecated per-point compression property will be removed, use
+     *             {@link #convertPoint(ECCurve, ECPoint) instead.
+     */
+    public static org.bouncycastle.math.ec.ECPoint convertPoint(ECCurve curve, ECPoint point, boolean withCompression)
+    {
+        return curve.createPoint(point.getAffineX(), point.getAffineY(), withCompression);
     }
 
     public static ECPoint convertPoint(org.bouncycastle.math.ec.ECPoint point)

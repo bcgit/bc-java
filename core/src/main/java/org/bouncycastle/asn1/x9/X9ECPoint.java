@@ -19,6 +19,9 @@ public class X9ECPoint
     private ECCurve c;
     private ECPoint p;
 
+    /**
+     * @deprecated Use {@link #X9ECPoint(ECPoint, boolean)} to be explicit about point compression.
+     */
     public X9ECPoint(
         ECPoint p)
     {

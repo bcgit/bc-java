@@ -185,9 +185,9 @@ public class ECUtil
         else if (key instanceof java.security.interfaces.ECPublicKey)
         {
             java.security.interfaces.ECPublicKey pubKey = (java.security.interfaces.ECPublicKey)key;
-            ECParameterSpec s = EC5Util.convertSpec(pubKey.getParams(), false);
+            ECParameterSpec s = EC5Util.convertSpec(pubKey.getParams());
             return new ECPublicKeyParameters(
-                EC5Util.convertPoint(pubKey.getParams(), pubKey.getW(), false),
+                EC5Util.convertPoint(pubKey.getParams(), pubKey.getW()),
                             new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
         }
         else
@@ -250,7 +250,7 @@ public class ECUtil
         else if (key instanceof java.security.interfaces.ECPrivateKey)
         {
             java.security.interfaces.ECPrivateKey privKey = (java.security.interfaces.ECPrivateKey)key;
-            ECParameterSpec s = EC5Util.convertSpec(privKey.getParams(), false);
+            ECParameterSpec s = EC5Util.convertSpec(privKey.getParams());
             return new ECPrivateKeyParameters(
                             privKey.getS(),
                             new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
