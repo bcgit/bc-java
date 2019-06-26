@@ -63,7 +63,7 @@ class BouncyCastleProviderConfiguration
             }
             else  // assume java.security.spec
             {
-                curveSpec = EC5Util.convertSpec((java.security.spec.ECParameterSpec)parameter, false);
+                curveSpec = EC5Util.convertSpec((java.security.spec.ECParameterSpec)parameter);
             }
 
             if (curveSpec == null)
@@ -88,7 +88,7 @@ class BouncyCastleProviderConfiguration
             }
             else  // assume java.security.spec
             {
-                ecImplicitCaParams = EC5Util.convertSpec((java.security.spec.ECParameterSpec)parameter, false);
+                ecImplicitCaParams = EC5Util.convertSpec((java.security.spec.ECParameterSpec)parameter);
             }
         }
         else if (parameterName.equals(ConfigurableProvider.THREAD_LOCAL_DH_DEFAULT_PARAMS))
