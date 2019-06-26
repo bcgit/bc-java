@@ -357,7 +357,10 @@ public abstract class BaseWrapCipher
             throw new IllegalStateException("not supported in a wrapping mode");
         }
 
-        wrapStream.write(input, inputOffset, inputLen);
+        if (input != null)
+        {
+            wrapStream.write(input, inputOffset, inputLen);
+        }
 
         try
         {
