@@ -82,6 +82,9 @@ public class X9ECParameters
         return null;
     }
 
+    /**
+     * @deprecated Use constructor taking an {@link X9ECPoint} instead.
+     */
     public X9ECParameters(
         ECCurve     curve,
         ECPoint     g,
@@ -92,13 +95,15 @@ public class X9ECParameters
 
     public X9ECParameters(
         ECCurve     curve,
-        X9ECPoint     g,
-        BigInteger  n,
-        BigInteger  h)
+        X9ECPoint   g,
+        BigInteger  n)
     {
-        this(curve, g, n, h, null);
+        this(curve, g, n, null, null);
     }
 
+    /**
+     * @deprecated Use constructor taking an {@link X9ECPoint} instead.
+     */
     public X9ECParameters(
         ECCurve     curve,
         ECPoint     g,
@@ -108,6 +113,18 @@ public class X9ECParameters
         this(curve, g, n, h, null);
     }
 
+    public X9ECParameters(
+        ECCurve     curve,
+        X9ECPoint   g,
+        BigInteger  n,
+        BigInteger  h)
+    {
+        this(curve, g, n, h, null);
+    }
+
+    /**
+     * @deprecated Use constructor taking an {@link X9ECPoint} instead.
+     */
     public X9ECParameters(
         ECCurve     curve,
         ECPoint     g,
@@ -115,7 +132,7 @@ public class X9ECParameters
         BigInteger  h,
         byte[]      seed)
     {
-        this(curve, new X9ECPoint(g), n, h, seed);
+        this(curve, new X9ECPoint(g, false), n, h, seed);
     }
 
     public X9ECParameters(
@@ -181,6 +198,11 @@ public class X9ECParameters
     public byte[] getSeed()
     {
         return Arrays.clone(seed);
+    }
+
+    public boolean hasSeed()
+    {
+        return null != seed;
     }
 
     /**

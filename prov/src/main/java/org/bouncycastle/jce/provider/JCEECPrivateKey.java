@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -295,7 +296,7 @@ public class JCEECPrivateKey
 
             X9ECParameters ecP = new X9ECParameters(
                 curve,
-                EC5Util.convertPoint(curve, ecSpec.getGenerator(), withCompression),
+                new X9ECPoint(EC5Util.convertPoint(curve, ecSpec.getGenerator()), withCompression),
                 ecSpec.getOrder(),
                 BigInteger.valueOf(ecSpec.getCofactor()),
                 ecSpec.getCurve().getSeed());
@@ -347,14 +348,14 @@ public class JCEECPrivateKey
             return null;
         }
         
-        return EC5Util.convertSpec(ecSpec, withCompression);
+        return EC5Util.convertSpec(ecSpec);
     }
 
     org.bouncycastle.jce.spec.ECParameterSpec engineGetSpec()
     {
         if (ecSpec != null)
         {
-            return EC5Util.convertSpec(ecSpec, withCompression);
+            return EC5Util.convertSpec(ecSpec);
         }
 
         return BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();

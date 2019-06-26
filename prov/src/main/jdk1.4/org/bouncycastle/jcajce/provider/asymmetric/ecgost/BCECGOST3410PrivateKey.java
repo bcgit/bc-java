@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -220,7 +221,7 @@ public class BCECGOST3410PrivateKey
 
             X9ECParameters ecP = new X9ECParameters(
                   p.getCurve(),
-                  g,
+                  new X9ECPoint(g, withCompression),
                   p.getN(),
                   p.getH(),
                   p.getSeed());
