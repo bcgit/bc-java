@@ -28,6 +28,11 @@ class DTLSRecordLayer
     private DTLSEpoch retransmitEpoch = null;
     private long retransmitExpiry = 0;
 
+    public boolean getClosed()
+    {
+        return closed;
+    }
+
     DTLSRecordLayer(DatagramTransport transport, TlsContext context, TlsPeer peer, short contentType)
     {
         this.transport = transport;

@@ -16,6 +16,7 @@ public class DTLSServerProtocol
     extends DTLSProtocol
 {
     protected boolean verifyRequests = true;
+    private DTLSRecordLayer recordLayer;
 
     public DTLSServerProtocol(SecureRandom secureRandom)
     {
@@ -30,6 +31,14 @@ public class DTLSServerProtocol
     public void setVerifyRequests(boolean verifyRequests)
     {
         this.verifyRequests = verifyRequests;
+    }
+
+    public void cancel() throws Exception
+    {
+        if (recordLayer != null)
+        {
+            recordLayer.close();
+        }
     }
 
     public DTLSTransport accept(TlsServer server, DatagramTransport transport)
@@ -56,7 +65,7 @@ public class DTLSServerProtocol
 
         server.init(state.serverContext);
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.serverContext, server, ContentType.handshake);
+        recordLayer = new DTLSRecordLayer(transport, state.serverContext, server, ContentType.handshake);
 
         // TODO Need to handle sending of HelloVerifyRequest without entering a full connection
 

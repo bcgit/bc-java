@@ -103,6 +103,10 @@ class DTLSReliableHandshake
             {
                 for (;;)
                 {
+                    if (recordLayer.getClosed())
+                    {
+                        throw new TlsFatalAlert(AlertDescription.user_canceled, new Exception("User canceled handshake"));
+                    }
                     Message pending = getPendingMessage();
                     if (pending != null)
                     {
