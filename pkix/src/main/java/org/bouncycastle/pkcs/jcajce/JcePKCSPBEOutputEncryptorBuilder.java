@@ -1,6 +1,7 @@
 package org.bouncycastle.pkcs.jcajce;
 
 import java.io.OutputStream;
+import java.security.AlgorithmParameters;
 import java.security.Provider;
 import java.security.SecureRandom;
 
@@ -227,9 +228,22 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
                     cipher.init(Cipher.ENCRYPT_MODE, key, random);
 
-                    PBES2Parameters algParams = new PBES2Parameters(
-                        new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, pkdf.getIterationCount(), pkdf.getPRF())),
-                        new EncryptionScheme(keyEncAlgorithm, ASN1Primitive.fromByteArray(cipher.getParameters().getEncoded())));
+                    AlgorithmParameters algP = cipher.getParameters();
+
+                    PBES2Parameters algParams;
+
+                    if (algP != null)
+                    {
+                        algParams = new PBES2Parameters(
+                            new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, pkdf.getIterationCount(), pkdf.getPRF())),
+                            new EncryptionScheme(keyEncAlgorithm, ASN1Primitive.fromByteArray(cipher.getParameters().getEncoded())));
+                    }
+                    else
+                    {
+                        algParams = new PBES2Parameters(
+                            new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, pkdf.getIterationCount(), pkdf.getPRF())),
+                            new EncryptionScheme(keyEncAlgorithm));
+                    }
 
                     encryptionAlg = new AlgorithmIdentifier(algorithm, algParams);
                 }

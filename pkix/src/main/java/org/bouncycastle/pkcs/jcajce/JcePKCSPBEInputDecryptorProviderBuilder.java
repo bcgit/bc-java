@@ -150,6 +150,10 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                         {
                             cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(ASN1OctetString.getInstance(encParams).getOctets()));
                         }
+                        else if (encParams == null) // absent parameters
+                        {
+                            cipher.init(Cipher.DECRYPT_MODE, key);
+                        }
                         else
                         {
                             // TODO: at the moment it's just GOST, but...
