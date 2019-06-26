@@ -1,14 +1,12 @@
 package org.bouncycastle.math.ec.rfc7748;
 
-import org.bouncycastle.math.raw.Nat;
-
 public abstract class X448Field
 {
     public static final int SIZE = 16;
 
     private static final int M28 = 0x0FFFFFFF;
 
-    private X448Field() {}
+    protected X448Field() {}
 
     public static void add(int[] x, int[] y, int[] z)
     {
@@ -70,6 +68,18 @@ public abstract class X448Field
         z[8] = z8; z[9] = z9; z[10] = z10; z[11] = z11; z[12] = z12; z[13] = z13; z[14] = z14; z[15] = z15;
     }
 
+    public static void cmov(int cond, int[] x, int xOff, int[] z, int zOff)
+    {
+        assert 0 == cond || -1 == cond;
+
+        for (int i = 0; i < SIZE; ++i)
+        {
+            int z_i = z[zOff + i], diff = z_i ^ x[xOff + i];
+            z_i ^= (diff & cond);
+            z[zOff + i] = z_i;
+        }
+    }
+
     public static void cnegate(int negate, int[] z)
     {
 //        assert negate >>> 1 == 0;
@@ -77,7 +87,7 @@ public abstract class X448Field
         int[] t = create();
         sub(t, z, t);
 
-        Nat.cmov(SIZE, negate, t, 0, z, 0);
+        cmov(-negate, t, 0, z, 0);
     }
 
     public static void copy(int[] x, int xOff, int[] z, int zOff)
