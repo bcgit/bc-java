@@ -238,12 +238,14 @@ public class BCECPublicKey
 
     public byte[] getEncoded()
     {
-        X962Parameters  params = ECUtils.getDomainParametersFromName(ecSpec, withCompression);
-        ASN1OctetString p = ASN1OctetString.getInstance(new X9ECPoint(ecPublicKey.getQ(), withCompression).toASN1Primitive());
+        AlgorithmIdentifier algId = new AlgorithmIdentifier(
+            X9ObjectIdentifiers.id_ecPublicKey,
+            ECUtils.getDomainParametersFromName(ecSpec, withCompression));
 
-        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());
-        
-        return KeyUtil.getEncodedSubjectPublicKeyInfo(info);
+        byte[] pubKeyOctets = ecPublicKey.getQ().getEncoded(withCompression);
+
+        // stored curve is null if ImplicitlyCa
+        return KeyUtil.getEncodedSubjectPublicKeyInfo(algId, pubKeyOctets);
     }
 
     public ECParameterSpec getParams()

@@ -289,7 +289,7 @@ public abstract class Ed448
 
     private static byte[] getWNAF(int[] n, int width)
     {
-//        assert n[SCALAR_INTS - 1] >>> 31 == 0;
+//        assert n[SCALAR_INTS - 1] >>> 30 == 0;
 
         int[] t = new int[SCALAR_INTS * 2];
         {
@@ -303,7 +303,7 @@ public abstract class Ed448
             }
         }
 
-        byte[] ws = new byte[448];
+        byte[] ws = new byte[447];
 
         final int pow2 = 1 << width;
         final int mask = pow2 - 1;
@@ -588,9 +588,9 @@ public abstract class Ed448
 
         for (int i = 0; i < PRECOMP_POINTS; ++i)
         {
-            int mask = ((i ^ index) - 1) >> 31;
-            Nat.cmov(X448Field.SIZE, mask, precompBase, off, p.x, 0);   off += X448Field.SIZE;
-            Nat.cmov(X448Field.SIZE, mask, precompBase, off, p.y, 0);   off += X448Field.SIZE;
+            int cond = ((i ^ index) - 1) >> 31;
+            X448Field.cmov(cond, precompBase, off, p.x, 0);    off += X448Field.SIZE;
+            X448Field.cmov(cond, precompBase, off, p.y, 0);    off += X448Field.SIZE;
         }
     }
 
@@ -1077,13 +1077,7 @@ public abstract class Ed448
 
         pointSetNeutral(r);
 
-        int bit = 447;
-        while (bit > 0 && (ws_b[bit] | ws_p[bit]) == 0)
-        {
-            --bit;
-        }
-
-        for (;;)
+        for (int bit = 446;;)
         {
             int wb = ws_b[bit];
             if (wb != 0)

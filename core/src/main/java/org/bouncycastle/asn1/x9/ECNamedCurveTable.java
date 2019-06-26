@@ -231,6 +231,6 @@ public class ECNamedCurveTable
 
     private static X9ECParameters fromDomainParameters(ECDomainParameters dp)
     {
-        return dp == null ? null : new X9ECParameters(dp.getCurve(), dp.getG(), dp.getN(), dp.getH(), dp.getSeed());
+        return dp == null ? null : new X9ECParameters(dp.getCurve(), new X9ECPoint(dp.getG(), false), dp.getN(), dp.getH(), dp.getSeed());
     }
 }

@@ -278,7 +278,7 @@ public abstract class Ed25519
 
     private static byte[] getWNAF(int[] n, int width)
     {
-//        assert n[SCALAR_INTS - 1] >>> 31 == 0;
+//        assert n[SCALAR_INTS - 1] >>> 28 == 0;
 
         int[] t = new int[SCALAR_INTS * 2];
         {
@@ -292,7 +292,7 @@ public abstract class Ed25519
             }
         }
 
-        byte[] ws = new byte[256];
+        byte[] ws = new byte[253];
 
         final int pow2 = 1 << width;
         final int mask = pow2 - 1;
@@ -615,10 +615,10 @@ public abstract class Ed25519
 
         for (int i = 0; i < PRECOMP_POINTS; ++i)
         {
-            int mask = ((i ^ index) - 1) >> 31;
-            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ypx_h, 0);    off += X25519Field.SIZE;
-            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ymx_h, 0);    off += X25519Field.SIZE;
-            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.xyd,   0);    off += X25519Field.SIZE;
+            int cond = ((i ^ index) - 1) >> 31;
+            X25519Field.cmov(cond, precompBase, off, p.ypx_h, 0);    off += X25519Field.SIZE;
+            X25519Field.cmov(cond, precompBase, off, p.ymx_h, 0);    off += X25519Field.SIZE;
+            X25519Field.cmov(cond, precompBase, off, p.xyd,   0);    off += X25519Field.SIZE;
         }
     }
 
@@ -990,13 +990,7 @@ public abstract class Ed25519
 
         pointSetNeutral(r);
 
-        int bit = 255;
-        while (bit > 0 && (ws_b[bit] | ws_p[bit]) == 0)
-        {
-            --bit;
-        }
-
-        for (;;)
+        for (int bit = 252;;)
         {
             int wb = ws_b[bit];
             if (wb != 0)

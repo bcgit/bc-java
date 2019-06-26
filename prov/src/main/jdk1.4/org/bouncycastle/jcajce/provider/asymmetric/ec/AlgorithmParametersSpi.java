@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
 
@@ -123,7 +124,7 @@ public class AlgorithmParametersSpi
             {
                 X9ECParameters ecP = new X9ECParameters(
                     ecParameterSpec.getCurve(),
-                    ecParameterSpec.getG(),
+                    new X9ECPoint(ecParameterSpec.getG(), false),
                     ecParameterSpec.getN(),
                     ecParameterSpec.getH(),
                     ecParameterSpec.getSeed());
@@ -137,9 +138,8 @@ public class AlgorithmParametersSpi
         throw new IOException("Unknown parameters format in AlgorithmParameters object: " + format);
     }
 
-   
     protected String engineToString()
     {
-        return "EC AlgorithmParameters ";
+        return "EC Parameters";
     }
 }
