@@ -11,7 +11,7 @@ public abstract class X25519Field
     private static final int[] ROOT_NEG_ONE = new int[]{ 0x020EA0B0, 0x0386C9D2, 0x00478C4E, 0x0035697F, 0x005E8630,
         0x01FBD7A7, 0x0340264F, 0x01F0B2B4, 0x00027E0E, 0x00570649 };
 
-    private X25519Field() {}
+    protected X25519Field() {}
 
     public static void add(int[] x, int[] y, int[] z)
     {
@@ -62,6 +62,18 @@ public abstract class X25519Field
 
         z[0] = z0; z[1] = z1; z[2] = z2; z[3] = z3; z[4] = z4;
         z[5] = z5; z[6] = z6; z[7] = z7; z[8] = z8; z[9] = z9;
+    }
+
+    public static void cmov(int cond, int[] x, int xOff, int[] z, int zOff)
+    {
+        assert 0 == cond || -1 == cond;
+
+        for (int i = 0; i < SIZE; ++i)
+        {
+            int z_i = z[zOff + i], diff = z_i ^ x[xOff + i];
+            z_i ^= (diff & cond);
+            z[zOff + i] = z_i;
+        }
     }
 
     public static void cnegate(int negate, int[] z)
