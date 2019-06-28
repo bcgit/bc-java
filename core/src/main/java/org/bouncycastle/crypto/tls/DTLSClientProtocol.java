@@ -13,9 +13,19 @@ import org.bouncycastle.util.Arrays;
 public class DTLSClientProtocol
     extends DTLSProtocol
 {
+    private DTLSRecordLayer recordLayer;
+
     public DTLSClientProtocol(SecureRandom secureRandom)
     {
         super(secureRandom);
+    }
+
+    public void cancel() throws Exception
+    {
+        if (recordLayer != null)
+        {
+            recordLayer.close();
+        }
     }
 
     public DTLSTransport connect(TlsClient client, DatagramTransport transport)
@@ -42,7 +52,7 @@ public class DTLSClientProtocol
 
         client.init(state.clientContext);
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext, client, ContentType.handshake);
+        recordLayer = new DTLSRecordLayer(transport, state.clientContext, client, ContentType.handshake);
 
         TlsSession sessionToResume = state.client.getSessionToResume();
         if (sessionToResume != null && sessionToResume.isResumable())
