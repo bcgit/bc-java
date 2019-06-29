@@ -119,7 +119,7 @@ public final class AES
     {
         public CCM()
         {
-            super(new CCMBlockCipher(new AESEngine()), false, 13);
+            super(new CCMBlockCipher(new AESEngine()), false, 12);
         }
     }
 
