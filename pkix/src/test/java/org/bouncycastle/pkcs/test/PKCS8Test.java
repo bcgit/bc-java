@@ -220,6 +220,60 @@ public class PKCS8Test
         assertEquals(modulus, k.getModulus());
     }
 
+    public void testCCMEncryption()
+        throws Exception
+    {
+        PKCS8EncryptedPrivateKeyInfoBuilder bldr = new PKCS8EncryptedPrivateKeyInfoBuilder(pkInfo);
+
+        PKCS8EncryptedPrivateKeyInfo encInfo = bldr.build(
+            new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes192_CCM)
+                .setPRF(new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_256, DERNull.INSTANCE))
+                .setProvider("BC")
+                .build("hello".toCharArray()));
+
+        EncryptedPrivateKeyInfo encPkInfo = EncryptedPrivateKeyInfo.getInstance(encInfo.getEncoded());
+
+        assertEquals(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_256, DERNull.INSTANCE),
+            PBKDF2Params.getInstance(
+                PBES2Parameters.getInstance(encPkInfo.getEncryptionAlgorithm().getParameters())
+                    .getKeyDerivationFunc().getParameters())
+                .getPrf());
+
+        PrivateKeyInfo pkInfo = encInfo.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build("hello".toCharArray()));
+
+        RSAPrivateKey k = RSAPrivateKey.getInstance(pkInfo.parsePrivateKey());
+
+        assertEquals(modulus, k.getModulus());
+    }
+
+    public void testGCMEncryption()
+        throws Exception
+    {
+        PKCS8EncryptedPrivateKeyInfoBuilder bldr = new PKCS8EncryptedPrivateKeyInfoBuilder(pkInfo);
+
+        PKCS8EncryptedPrivateKeyInfo encInfo = bldr.build(
+            new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_GCM)
+                .setPRF(new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_256, DERNull.INSTANCE))
+                .setProvider("BC")
+                .build("hello".toCharArray()));
+
+        EncryptedPrivateKeyInfo encPkInfo = EncryptedPrivateKeyInfo.getInstance(encInfo.getEncoded());
+
+        assertEquals(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_256, DERNull.INSTANCE),
+            PBKDF2Params.getInstance(
+                PBES2Parameters.getInstance(encPkInfo.getEncryptionAlgorithm().getParameters())
+                    .getKeyDerivationFunc().getParameters())
+                .getPrf());
+
+        PrivateKeyInfo pkInfo = encInfo.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build("hello".toCharArray()));
+
+        RSAPrivateKey k = RSAPrivateKey.getInstance(pkInfo.parsePrivateKey());
+
+        assertEquals(modulus, k.getModulus());
+    }
+
     public void testScryptEncryption()
         throws Exception
     {
