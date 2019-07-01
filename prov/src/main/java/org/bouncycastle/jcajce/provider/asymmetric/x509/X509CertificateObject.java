@@ -73,8 +73,10 @@ class X509CertificateObject
     private org.bouncycastle.asn1.x509.Certificate    c;
     private BasicConstraints            basicConstraints;
     private boolean[]                   keyUsage;
-    private boolean                     hashValueSet;
-    private int                         hashValue;
+
+    private volatile PublicKey          publicKeyValue;
+    private volatile boolean            hashValueSet;
+    private volatile int                hashValue;
 
     private PKCS12BagAttributeCarrier   attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
@@ -531,7 +533,12 @@ class X509CertificateObject
     {
         try
         {
-            return BouncyCastleProvider.getPublicKey(c.getSubjectPublicKeyInfo());
+            // Cache the public key to support repeated-use optimizations
+            if (publicKeyValue == null)
+            {
+                publicKeyValue = BouncyCastleProvider.getPublicKey(c.getSubjectPublicKeyInfo());
+            }
+            return publicKeyValue;
         }
         catch (IOException e)
         {
