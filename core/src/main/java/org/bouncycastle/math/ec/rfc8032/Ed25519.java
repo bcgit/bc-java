@@ -452,7 +452,7 @@ public abstract class Ed25519
         decodeScalar(k, 0, nA);
 
         PointAccum pR = new PointAccum();
-        scalarMultStraussVar(nS, nA, pA, pR);
+        scalarMultStrausVar(nS, nA, pA, pR);
 
         byte[] check = new byte[POINT_BYTES];
         encodePoint(pR, check, 0);
@@ -1176,7 +1176,7 @@ public abstract class Ed25519
         X25519Field.copy(p.z, 0, z, 0);
     }
 
-    private static void scalarMultStraussVar(int[] nb, int[] np, PointAffine p, PointAccum r)
+    private static void scalarMultStrausVar(int[] nb, int[] np, PointAffine p, PointAccum r)
     {
         precompute();
 

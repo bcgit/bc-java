@@ -458,7 +458,7 @@ public abstract class Ed448
         decodeScalar(k, 0, nA);
 
         PointExt pR = new PointExt();
-        scalarMultStraussVar(nS, nA, pA, pR);
+        scalarMultStrausVar(nS, nA, pA, pR);
 
         byte[] check = new byte[POINT_BYTES];
         encodePoint(pR, check, 0);
@@ -1202,7 +1202,7 @@ public abstract class Ed448
         X448Field.copy(p.y, 0, y, 0);
     }
 
-    private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointExt r)
+    private static void scalarMultStrausVar(int[] nb, int[] np, PointExt p, PointExt r)
     {
         precompute();
 
