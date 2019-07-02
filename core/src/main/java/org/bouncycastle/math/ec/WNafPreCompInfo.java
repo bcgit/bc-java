@@ -6,6 +6,8 @@ package org.bouncycastle.math.ec;
  */
 public class WNafPreCompInfo implements PreCompInfo
 {
+    volatile int promotionCountdown = 4; 
+
     protected int confWidth = -1;
 
     /**
@@ -27,6 +29,31 @@ public class WNafPreCompInfo implements PreCompInfo
     protected ECPoint twice = null;
 
     protected int width = -1;
+
+    int decrementPromotionCountdown()
+    {
+        int t = promotionCountdown;
+        if (t > 0)
+        {
+            promotionCountdown = --t;
+        }
+        return t;
+    }
+
+    int getPromotionCountdown()
+    {
+        return promotionCountdown;
+    }
+
+    void setPromotionCountdown(int promotionCountdown)
+    {
+        this.promotionCountdown = promotionCountdown;
+    }
+
+    public boolean isPromoted()
+    {
+        return promotionCountdown <= 0;
+    }
 
     public int getConfWidth()
     {

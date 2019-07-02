@@ -7,6 +7,7 @@ import org.bouncycastle.math.ec.endo.EndoUtil;
 import org.bouncycastle.math.ec.endo.GLVEndomorphism;
 import org.bouncycastle.math.field.FiniteField;
 import org.bouncycastle.math.field.PolynomialExtensionField;
+import org.bouncycastle.math.raw.Nat;
 
 public class ECAlgorithms
 {
@@ -281,14 +282,25 @@ public class ECAlgorithms
     {
         boolean negK = k.signum() < 0, negL = l.signum() < 0;
 
-        k = k.abs();
-        l = l.abs();
+        BigInteger kAbs = k.abs(), lAbs = l.abs();
 
-        int minWidthP = WNafUtil.getWindowSize(k.bitLength(), 8);
-        int minWidthQ = WNafUtil.getWindowSize(l.bitLength(), 8);
+        int minWidthP = WNafUtil.getWindowSize(kAbs.bitLength(), 8);
+        int minWidthQ = WNafUtil.getWindowSize(lAbs.bitLength(), 8);
 
         WNafPreCompInfo infoP = WNafUtil.precompute(P, minWidthP, true);
         WNafPreCompInfo infoQ = WNafUtil.precompute(Q, minWidthQ, true);
+
+        // When P, Q are 'promoted' (i.e. reused several times), switch to fixed-point algorithm
+        {
+            ECCurve c = P.getCurve();
+            int combSize = FixedPointUtil.getCombSize(c);
+            if (!negK && !negL
+                && k.bitLength() <= combSize && l.bitLength() <= combSize
+                && infoP.isPromoted() && infoQ.isPromoted())
+            {
+                return implShamirsTrickFixedPoint(P, k, Q, l);
+            }
+        }
 
         int widthP = Math.min(8, infoP.getWidth());
         int widthQ = Math.min(8, infoQ.getWidth());
@@ -298,8 +310,8 @@ public class ECAlgorithms
         ECPoint[] preCompNegP = negK ? infoP.getPreComp() : infoP.getPreCompNeg();
         ECPoint[] preCompNegQ = negL ? infoQ.getPreComp() : infoQ.getPreCompNeg();
 
-        byte[] wnafP = WNafUtil.generateWindowNaf(widthP, k);
-        byte[] wnafQ = WNafUtil.generateWindowNaf(widthQ, l);
+        byte[] wnafP = WNafUtil.generateWindowNaf(widthP, kAbs);
+        byte[] wnafQ = WNafUtil.generateWindowNaf(widthQ, lAbs);
 
         return implShamirsTrickWNaf(preCompP, preCompNegP, wnafP, preCompQ, preCompNegQ, wnafQ);
     }
@@ -527,5 +539,78 @@ public class ECAlgorithms
         }
 
         return R;
+    }
+
+    private static ECPoint implShamirsTrickFixedPoint(ECPoint p, BigInteger k, ECPoint q, BigInteger l)
+    {
+        ECCurve c = p.getCurve();
+        int combSize = FixedPointUtil.getCombSize(c);
+
+        if (k.bitLength() > combSize || l.bitLength() > combSize)
+        {
+            /*
+             * TODO The comb works best when the scalars are less than the (possibly unknown) order.
+             * Still, if we want to handle larger scalars, we could allow customization of the comb
+             * size, or alternatively we could deal with the 'extra' bits either by running the comb
+             * multiple times as necessary, or by using an alternative multiplier as prelude.
+             */
+            throw new IllegalStateException("fixed-point comb doesn't support scalars larger than the curve order");
+        }
+
+        FixedPointPreCompInfo infoP = FixedPointUtil.precompute(p);
+        FixedPointPreCompInfo infoQ = FixedPointUtil.precompute(q);
+
+        ECLookupTable lookupTableP = infoP.getLookupTable();
+        ECLookupTable lookupTableQ = infoQ.getLookupTable();
+
+        int widthP = infoP.getWidth();
+        int widthQ = infoQ.getWidth();
+
+        // TODO This shouldn't normally happen, but a better "solution" is desirable anyway
+        if (widthP != widthQ)
+        {
+            FixedPointCombMultiplier m = new FixedPointCombMultiplier();
+            ECPoint r1 = m.multiply(p, k);
+            ECPoint r2 = m.multiply(q, l);
+            return r1.add(r2);
+        }
+
+        int width = widthP;
+
+        int d = (combSize + width - 1) / width;
+
+        ECPoint R = c.getInfinity();
+
+        int fullComb = d * width;
+        int[] K = Nat.fromBigInteger(fullComb, k);
+        int[] L = Nat.fromBigInteger(fullComb, l);
+
+        int top = fullComb - 1; 
+        for (int i = 0; i < d; ++i)
+        {
+            int secretIndexK = 0, secretIndexL = 0;
+
+            for (int j = top - i; j >= 0; j -= d)
+            {
+                int secretBitK = K[j >>> 5] >>> (j & 0x1F);
+                secretIndexK ^= secretBitK >>> 1;
+                secretIndexK <<= 1;
+                secretIndexK ^= secretBitK;
+
+                int secretBitL = L[j >>> 5] >>> (j & 0x1F);
+                secretIndexL ^= secretBitL >>> 1;
+                secretIndexL <<= 1;
+                secretIndexL ^= secretBitL;
+            }
+
+            ECPoint addP = lookupTableP.lookup(secretIndexK);
+            ECPoint addQ = lookupTableQ.lookup(secretIndexL);
+
+            ECPoint T = addP.add(addQ);
+
+            R = R.twicePlus(T);
+        }
+
+        return R.add(infoP.getOffset()).add(infoQ.getOffset());
     }
 }
