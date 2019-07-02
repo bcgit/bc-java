@@ -33,11 +33,13 @@ public abstract class WNafUtil
 
                 if (null != existingWNaf && existingWNaf.getConfWidth() == confWidth)
                 {
+                    existingWNaf.setPromotionCountdown(0);
                     return existingWNaf;
                 }
 
                 WNafPreCompInfo result = new WNafPreCompInfo();
 
+                result.setPromotionCountdown(0);
                 result.setConfWidth(confWidth);
 
                 if (null != existingWNaf)
@@ -471,6 +473,7 @@ public abstract class WNafUtil
 
                 if (checkExisting(existingWNaf, width, reqPreCompLen, includeNegated))
                 {
+                    existingWNaf.decrementPromotionCountdown();
                     return existingWNaf;
                 }
 
@@ -481,6 +484,9 @@ public abstract class WNafUtil
 
                 if (null != existingWNaf)
                 {
+                    int promotionCountdown = existingWNaf.decrementPromotionCountdown();
+                    result.setPromotionCountdown(promotionCountdown);
+
                     int confWidth = existingWNaf.getConfWidth();
                     result.setConfWidth(confWidth);
 
@@ -647,6 +653,7 @@ public abstract class WNafUtil
 
                 if (checkExisting(existingWNaf, width, reqPreCompLen, includeNegated))
                 {
+                    existingWNaf.decrementPromotionCountdown();
                     return existingWNaf;
                 }
 
@@ -655,6 +662,8 @@ public abstract class WNafUtil
                  * existing use-cases it would be of little-to-no benefit.
                  */
                 WNafPreCompInfo result = new WNafPreCompInfo();
+
+                result.setPromotionCountdown(fromWNaf.getPromotionCountdown());
 
                 ECPoint twiceFrom = fromWNaf.getTwice();
                 if (null != twiceFrom)
