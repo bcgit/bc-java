@@ -2,6 +2,8 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.AbstractECLookupTable;
+import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECLookupTable;
@@ -14,7 +16,8 @@ public class SecP128R1Curve extends ECCurve.AbstractFp
     public static final BigInteger q = new BigInteger(1,
         Hex.decode("FFFFFFFDFFFFFFFFFFFFFFFFFFFFFFFF"));
 
-    private static final int SecP128R1_DEFAULT_COORDS = COORD_JACOBIAN;
+    private static final int SECP128R1_DEFAULT_COORDS = COORD_JACOBIAN;
+    private static final ECFieldElement[] SECP128R1_AFFINE_ZS = new ECFieldElement[] { new SecP128R1FieldElement(ECConstants.ONE) }; 
 
     protected SecP128R1Point infinity;
 
@@ -31,7 +34,7 @@ public class SecP128R1Curve extends ECCurve.AbstractFp
         this.order = new BigInteger(1, Hex.decode("FFFFFFFE0000000075A30D1B9038A115"));
         this.cofactor = BigInteger.valueOf(1);
 
-        this.coord = SecP128R1_DEFAULT_COORDS;
+        this.coord = SECP128R1_DEFAULT_COORDS;
     }
 
     protected ECCurve cloneCurve()
@@ -95,7 +98,7 @@ public class SecP128R1Curve extends ECCurve.AbstractFp
             }
         }
 
-        return new ECLookupTable()
+        return new AbstractECLookupTable()
         {
             public int getSize()
             {
@@ -120,7 +123,26 @@ public class SecP128R1Curve extends ECCurve.AbstractFp
                     pos += (FE_INTS * 2);
                 }
 
-                return createRawPoint(new SecP128R1FieldElement(x), new SecP128R1FieldElement(y), false);
+                return createPoint(x, y);
+            }
+
+            public ECPoint lookupVar(int index)
+            {
+                int[] x = Nat128.create(), y = Nat128.create();
+                int pos = index * FE_INTS * 2;
+
+                for (int j = 0; j < FE_INTS; ++j)
+                {
+                    x[j] = table[pos + j];
+                    y[j] = table[pos + FE_INTS + j];
+                }
+
+                return createPoint(x, y);
+            }
+
+            private ECPoint createPoint(int[] x, int[] y)
+            {
+                return createRawPoint(new SecP128R1FieldElement(x), new SecP128R1FieldElement(y), SECP128R1_AFFINE_ZS, false);
             }
         };
     }
