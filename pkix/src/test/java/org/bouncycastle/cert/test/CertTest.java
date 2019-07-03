@@ -2249,6 +2249,27 @@ public class CertTest
         {
             fail("failed CRL issuer test");
         }
+
+        // build from template without extensions
+
+        crlGen = new X509v2CRLBuilder(new X500Name("CN=Test CA"), now);
+
+        crlGen.setNextUpdate(new Date(now.getTime() + 100000));
+
+        crlGen.addCRLEntry(BigInteger.ONE, now, CRLReason.privilegeWithdrawn);
+
+        crl = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
+
+        crlGen = new X509v2CRLBuilder(crl);
+
+        crl = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
+
+        isTrue(!crlGen.hasExtension(Extension.authorityKeyIdentifier));
+
+        if (!crl.getIssuer().equals(new X500Name("CN=Test CA")))
+        {
+            fail("failed CRL issuer test");
+        }
     }
 
     public void checkCRLCreation2()
