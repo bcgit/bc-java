@@ -492,7 +492,7 @@ public abstract class ECCurve
             }
         }
 
-        return new ECLookupTable()
+        return new AbstractECLookupTable()
         {
             public int getSize()
             {
@@ -517,6 +517,25 @@ public abstract class ECCurve
                     pos += (FE_BYTES * 2);
                 }
 
+                return createPoint(x, y);
+            }
+
+            public ECPoint lookupVar(int index)
+            {
+                byte[] x = new byte[FE_BYTES], y = new byte[FE_BYTES];
+                int pos = index * FE_BYTES * 2;
+
+                for (int j = 0; j < FE_BYTES; ++j)
+                {
+                    x[j] = table[pos + j];
+                    y[j] = table[pos + FE_BYTES + j];
+                }
+
+                return createPoint(x, y);
+            }
+
+            private ECPoint createPoint(byte[] x, byte[] y)
+            {
                 return createRawPoint(fromBigInteger(new BigInteger(1, x)), fromBigInteger(new BigInteger(1, y)), false);
             }
         };
@@ -1250,7 +1269,7 @@ public abstract class ECCurve
                 }
             }
 
-            return new ECLookupTable()
+            return new AbstractECLookupTable()
             {
                 public int getSize()
                 {
@@ -1275,6 +1294,25 @@ public abstract class ECCurve
                         pos += (FE_LONGS * 2);
                     }
 
+                    return createPoint(x, y);
+                }
+
+                public ECPoint lookupVar(int index)
+                {
+                    long[] x = Nat.create64(FE_LONGS), y = Nat.create64(FE_LONGS);
+                    int pos = index * FE_LONGS * 2;
+
+                    for (int j = 0; j < FE_LONGS; ++j)
+                    {
+                        x[j] = table[pos + j];
+                        y[j] = table[pos + FE_LONGS + j];
+                    }
+
+                    return createPoint(x, y);
+                }
+
+                private ECPoint createPoint(long[] x, long[] y)
+                {
                     return createRawPoint(new ECFieldElement.F2m(m, ks, new LongArray(x)), new ECFieldElement.F2m(m, ks, new LongArray(y)), false);
                 }
             };
