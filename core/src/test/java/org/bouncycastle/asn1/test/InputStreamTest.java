@@ -60,7 +60,7 @@ public class InputStreamTest
         }
         catch (IOException e)
         {
-            if (!e.getMessage().equals("corrupted stream - out of bounds length found"))
+            if (!e.getMessage().equals("corrupted stream - out of bounds length found: 1048575 >= 5"))
             {
                 fail("wrong exception: " + e.getMessage());
             }
