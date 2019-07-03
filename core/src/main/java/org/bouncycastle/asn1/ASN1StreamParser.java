@@ -142,7 +142,8 @@ public class ASN1StreamParser
         //
         // calculate length
         //
-        int length = ASN1InputStream.readLength(_in, _limit);
+        int length = ASN1InputStream.readLength(_in, _limit,
+            tagNo == BERTags.OCTET_STRING || tagNo == BERTags.SEQUENCE || tagNo == BERTags.SET || tagNo == BERTags.EXTERNAL);
 
         if (length < 0) // indefinite-length method
         {
