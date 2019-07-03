@@ -1,7 +1,7 @@
 package org.bouncycastle.math.ec;
 
 public class SimpleLookupTable
-    implements ECLookupTable
+    extends AbstractECLookupTable
 {
     private static ECPoint[] copy(ECPoint[] points, int off, int len)
     {
@@ -12,7 +12,7 @@ public class SimpleLookupTable
         }
         return result;
     }
-    
+
     private final ECPoint[] points;
 
     public SimpleLookupTable(ECPoint[] points, int off, int len)
@@ -26,6 +26,11 @@ public class SimpleLookupTable
     }
 
     public ECPoint lookup(int index)
+    {
+        throw new UnsupportedOperationException("Constant-time lookup not supported");
+    }
+
+    public ECPoint lookupVar(int index)
     {
         return points[index];
     }
