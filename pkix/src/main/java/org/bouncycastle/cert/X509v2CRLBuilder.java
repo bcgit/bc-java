@@ -104,10 +104,12 @@ public class X509v2CRLBuilder
         extGenerator = new ExtensionsGenerator();
 
         Extensions exts = template.getExtensions();
-
-        for (Enumeration en = exts.oids(); en.hasMoreElements();)
+        if (exts != null)
         {
-            extGenerator.addExtension(exts.getExtension((ASN1ObjectIdentifier)en.nextElement()));
+            for (Enumeration en = exts.oids(); en.hasMoreElements(); )
+            {
+                extGenerator.addExtension(exts.getExtension((ASN1ObjectIdentifier)en.nextElement()));
+            }
         }
     }
 
