@@ -348,13 +348,14 @@ public class ASN1InputStream
             }
 
             length = 0;
-            for (int i = 0; i < size; i++)
+            int i = 0;
+            for (; i < size; i++)
             {
                 int next = s.read();
 
                 if (next < 0)
                 {
-                    throw new EOFException("EOF found reading length");
+                    throw new EOFException("EOF found reading length " + i + "/" + size);
                 }
 
                 length = (length << 8) + next;
@@ -367,7 +368,8 @@ public class ASN1InputStream
 
             if (length >= limit)   // after all we must have read at least 1 byte
             {
-                throw new IOException("corrupted stream - out of bounds length found");
+                throw new IOException("corrupted stream - out of bounds length found with length " + length + " and limit " + limit
+                		+ " " + i + "/" + size);
             }
         }
 
