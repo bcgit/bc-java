@@ -603,8 +603,8 @@ public class ECAlgorithms
                 secretIndexL ^= secretBitL;
             }
 
-            ECPoint addP = lookupTableP.lookup(secretIndexK);
-            ECPoint addQ = lookupTableQ.lookup(secretIndexL);
+            ECPoint addP = lookupTableP.lookupVar(secretIndexK);
+            ECPoint addQ = lookupTableQ.lookupVar(secretIndexL);
 
             ECPoint T = addP.add(addQ);
 

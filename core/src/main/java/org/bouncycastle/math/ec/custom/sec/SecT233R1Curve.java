@@ -2,17 +2,20 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.AbstractECLookupTable;
+import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECCurve.AbstractF2m;
-import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECLookupTable;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SecT233R1Curve extends AbstractF2m
 {
-    private static final int SecT233R1_DEFAULT_COORDS = COORD_LAMBDA_PROJECTIVE;
+    private static final int SECT233R1_DEFAULT_COORDS = COORD_LAMBDA_PROJECTIVE;
+    private static final ECFieldElement[] SECT233R1_AFFINE_ZS = new ECFieldElement[] { new SecT233FieldElement(ECConstants.ONE) }; 
 
     protected SecT233R1Point infinity;
 
@@ -27,7 +30,7 @@ public class SecT233R1Curve extends AbstractF2m
         this.order = new BigInteger(1, Hex.decode("01000000000000000000000000000013E974E72F8A6922031D2603CFE0D7"));
         this.cofactor = BigInteger.valueOf(2);
 
-        this.coord = SecT233R1_DEFAULT_COORDS;
+        this.coord = SECT233R1_DEFAULT_COORDS;
     }
 
     protected ECCurve cloneCurve()
@@ -116,7 +119,7 @@ public class SecT233R1Curve extends AbstractF2m
             }
         }
 
-        return new ECLookupTable()
+        return new AbstractECLookupTable()
         {
             public int getSize()
             {
@@ -141,7 +144,26 @@ public class SecT233R1Curve extends AbstractF2m
                     pos += (FE_LONGS * 2);
                 }
 
-                return createRawPoint(new SecT233FieldElement(x), new SecT233FieldElement(y), false);
+                return createPoint(x, y);
+            }
+
+            public ECPoint lookupVar(int index)
+            {
+                long[] x = Nat256.create64(), y = Nat256.create64();
+                int pos = index * FE_LONGS * 2;
+
+                for (int j = 0; j < FE_LONGS; ++j)
+                {
+                    x[j] = table[pos + j];
+                    y[j] = table[pos + FE_LONGS + j];
+                }
+
+                return createPoint(x, y);
+            }
+
+            private ECPoint createPoint(long[] x, long[] y)
+            {
+                return createRawPoint(new SecT233FieldElement(x), new SecT233FieldElement(y), SECT233R1_AFFINE_ZS, false);
             }
         };
     }

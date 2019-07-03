@@ -2,6 +2,7 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.AbstractECLookupTable;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
@@ -15,6 +16,7 @@ public class SecP160K1Curve extends ECCurve.AbstractFp
     public static final BigInteger q = SecP160R2Curve.q;
 
     private static final int SECP160K1_DEFAULT_COORDS = COORD_JACOBIAN;
+    private static final ECFieldElement[] SECP160K1_AFFINE_ZS = new ECFieldElement[] { new SecP160R2FieldElement(ECConstants.ONE) }; 
 
     protected SecP160K1Point infinity;
 
@@ -92,7 +94,7 @@ public class SecP160K1Curve extends ECCurve.AbstractFp
             }
         }
 
-        return new ECLookupTable()
+        return new AbstractECLookupTable()
         {
             public int getSize()
             {
@@ -117,7 +119,26 @@ public class SecP160K1Curve extends ECCurve.AbstractFp
                     pos += (FE_INTS * 2);
                 }
 
-                return createRawPoint(new SecP160R2FieldElement(x), new SecP160R2FieldElement(y), false);
+                return createPoint(x, y);
+            }
+
+            public ECPoint lookupVar(int index)
+            {
+                int[] x = Nat160.create(), y = Nat160.create();
+                int pos = index * FE_INTS * 2;
+
+                for (int j = 0; j < FE_INTS; ++j)
+                {
+                    x[j] = table[pos + j];
+                    y[j] = table[pos + FE_INTS + j];
+                }
+
+                return createPoint(x, y);
+            }
+
+            private ECPoint createPoint(int[] x, int[] y)
+            {
+                return createRawPoint(new SecP160R2FieldElement(x), new SecP160R2FieldElement(y), SECP160K1_AFFINE_ZS, false);
             }
         };
     }
