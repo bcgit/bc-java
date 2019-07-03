@@ -109,7 +109,7 @@ public class ASN1InputStream
     protected int readLength()
         throws IOException
     {
-        return readLength(this, limit);
+        return readLength(this, limit, false);
     }
 
     protected void readFully(
@@ -323,7 +323,7 @@ public class ASN1InputStream
         return tagNo;
     }
 
-    static int readLength(InputStream s, int limit)
+    static int readLength(InputStream s, int limit, boolean isParsing)
         throws IOException
     {
         int length = s.read();
@@ -365,7 +365,7 @@ public class ASN1InputStream
                 throw new IOException("corrupted stream - negative length found");
             }
 
-            if (length >= limit)   // after all we must have read at least 1 byte
+            if (length >= limit && !isParsing)   // after all we must have read at least 1 byte
             {
                 throw new IOException("corrupted stream - out of bounds length found: " + length + " >= " + limit);
             }
