@@ -367,7 +367,7 @@ public class ASN1InputStream
 
             if (length >= limit)   // after all we must have read at least 1 byte
             {
-                throw new IOException("corrupted stream - out of bounds length found");
+                throw new IOException("corrupted stream - out of bounds length found: " + length + " >= " + limit);
             }
         }
 
