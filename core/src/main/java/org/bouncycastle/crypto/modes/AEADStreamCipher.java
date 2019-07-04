@@ -1,15 +1,14 @@
 package org.bouncycastle.crypto.modes;
 
-import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.StreamCipher;
 
-
-public interface AEADBlockCipher extends AEADCipher {
+public interface AEADStreamCipher extends AEADCipher {
 
     /**
      * return the cipher this object wraps.
      *
      * @return the cipher this object wraps.
      */
-    public BlockCipher getUnderlyingCipher();
+    public StreamCipher getUnderlyingCipher();
 
 }
