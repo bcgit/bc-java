@@ -51,7 +51,7 @@ public class CMSAuthEnvelopedData
         //
         // read the auth-encrypted content info
         //
-        EncryptedContentInfo authEncInfo = authEnvData.getAuthEncryptedContentInfo();
+        final EncryptedContentInfo authEncInfo = authEnvData.getAuthEncryptedContentInfo();
         this.authEncAlg = authEncInfo.getContentEncryptionAlgorithm();
 
         CMSSecureReadable secureReadable = new CMSSecureReadable()
