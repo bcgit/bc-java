@@ -200,8 +200,16 @@ public class ASN1GeneralizedTime
         }
         else
         {
-            int signPos = stime.length() - 5;
+            int signPos = stime.length() - 6;
             char sign = stime.charAt(signPos);
+            if ((sign == '-' || sign == '+') && stime.indexOf("GMT") == signPos - 3)
+            {
+                // already a GMT string!
+                return stime;
+            }
+
+            signPos = stime.length() - 5;
+            sign = stime.charAt(signPos);
             if (sign == '-' || sign == '+')
             {
                 return stime.substring(0, signPos)
@@ -210,23 +218,21 @@ public class ASN1GeneralizedTime
                     + ":"
                     + stime.substring(signPos + 3);
             }
-            else
+
+            signPos = stime.length() - 3;
+            sign = stime.charAt(signPos);
+            if (sign == '-' || sign == '+')
             {
-                signPos = stime.length() - 3;
-                sign = stime.charAt(signPos);
-                if (sign == '-' || sign == '+')
-                {
-                    return stime.substring(0, signPos)
-                        + "GMT"
-                        + stime.substring(signPos)
-                        + ":00";
-                }
+                return stime.substring(0, signPos)
+                    + "GMT"
+                    + stime.substring(signPos)
+                    + ":00";
             }
         }
-        return stime + calculateGMTOffset();
+        return stime + calculateGMTOffset(stime);
     }
 
-    private String calculateGMTOffset()
+    private String calculateGMTOffset(String stime)
     {
         String sign = "+";
         TimeZone timeZone = TimeZone.getDefault();
@@ -241,17 +247,84 @@ public class ASN1GeneralizedTime
 
         try
         {
-            if (timeZone.useDaylightTime() && timeZone.inDaylightTime(this.getDate()))
+            if (timeZone.useDaylightTime())
             {
-                hours += sign.equals("+") ? 1 : -1;
+                if (hasFractionalSeconds())
+                {
+                    stime = pruneFractionalSeconds(stime);
+                }
+                SimpleDateFormat dateF = calculateGMTDateFormat();
+                if (timeZone.inDaylightTime(
+                    dateF.parse(stime + "GMT" + sign + convert(hours) + ":" + convert(minutes))))
+                {
+                    hours += sign.equals("+") ? 1 : -1;
+                }
             }
         }
         catch (ParseException e)
-        {
+        {       e.printStackTrace();
             // we'll do our best and ignore daylight savings
         }
 
         return "GMT" + sign + convert(hours) + ":" + convert(minutes);
+    }
+
+    private SimpleDateFormat calculateGMTDateFormat()
+    {
+        SimpleDateFormat dateF;
+
+        if (hasFractionalSeconds())
+        {
+            dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSSz");
+        }
+        else if (hasSeconds())
+        {
+            dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
+        }
+        else if (hasMinutes())
+        {
+            dateF = new SimpleDateFormat("yyyyMMddHHmmz");
+        }
+        else
+        {
+            dateF = new SimpleDateFormat("yyyyMMddHHz");
+        }
+
+        dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
+        return dateF;
+    }
+
+    private String pruneFractionalSeconds(String origTime)
+    {
+        // java misinterprets extra digits as being milliseconds...
+        String frac = origTime.substring(14);
+        int index;
+        for (index = 1; index < frac.length(); index++)
+        {
+            char ch = frac.charAt(index);
+            if (!('0' <= ch && ch <= '9'))
+            {
+                break;
+            }
+        }
+
+        if (index - 1 > 3)
+        {
+            frac = frac.substring(0, 4) + frac.substring(index);
+            origTime = origTime.substring(0, 14) + frac;
+        }
+        else if (index - 1 == 1)
+        {
+            frac = frac.substring(0, index) + "00" + frac.substring(index);
+            origTime = origTime.substring(0, 14) + frac;
+        }
+        else if (index - 1 == 2)
+        {
+            frac = frac.substring(0, index) + "0" + frac.substring(index);
+            origTime = origTime.substring(0, 14) + frac;
+        }
+
+        return origTime;
     }
 
     private String convert(int time)
@@ -295,24 +368,7 @@ public class ASN1GeneralizedTime
         else if (stime.indexOf('-') > 0 || stime.indexOf('+') > 0)
         {
             d = this.getTime();
-            if (hasFractionalSeconds())
-            {
-                dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSSz");
-            }
-            else if (hasSeconds())
-            {
-                dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
-            }
-            else if (hasMinutes())
-            {
-                dateF = new SimpleDateFormat("yyyyMMddHHmmz");
-            }
-            else
-            {
-                dateF = new SimpleDateFormat("yyyyMMddHHz");
-            }
-
-            dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
+            dateF = calculateGMTDateFormat();
         }
         else
         {
@@ -338,35 +394,9 @@ public class ASN1GeneralizedTime
 
         if (hasFractionalSeconds())
         {
-            // java misinterprets extra digits as being milliseconds...
-            String frac = d.substring(14);
-            int index;
-            for (index = 1; index < frac.length(); index++)
-            {
-                char ch = frac.charAt(index);
-                if (!('0' <= ch && ch <= '9'))
-                {
-                    break;
-                }
-            }
-
-            if (index - 1 > 3)
-            {
-                frac = frac.substring(0, 4) + frac.substring(index);
-                d = d.substring(0, 14) + frac;
-            }
-            else if (index - 1 == 1)
-            {
-                frac = frac.substring(0, index) + "00" + frac.substring(index);
-                d = d.substring(0, 14) + frac;
-            }
-            else if (index - 1 == 2)
-            {
-                frac = frac.substring(0, index) + "0" + frac.substring(index);
-                d = d.substring(0, 14) + frac;
-            }
+            d = pruneFractionalSeconds(d);
         }
-
+        
         return DateUtil.epochAdjust(dateF.parse(d));
     }
 
