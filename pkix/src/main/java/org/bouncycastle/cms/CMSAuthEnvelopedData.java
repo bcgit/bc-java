@@ -1,5 +1,6 @@
 package org.bouncycastle.cms;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -13,7 +14,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 /**
  * containing class for an CMS AuthEnveloped Data object
  */
-class CMSAuthEnvelopedData
+public class CMSAuthEnvelopedData
 {
     RecipientInformationStore recipientInfoStore;
     ContentInfo contentInfo;
@@ -52,15 +53,14 @@ class CMSAuthEnvelopedData
         //
         EncryptedContentInfo authEncInfo = authEnvData.getAuthEncryptedContentInfo();
         this.authEncAlg = authEncInfo.getContentEncryptionAlgorithm();
-//        final CMSProcessable processable = new CMSProcessableByteArray(
-//            authEncInfo.getEncryptedContent().getOctets());
+
         CMSSecureReadable secureReadable = new CMSSecureReadable()
         {
 
             public InputStream getInputStream()
                 throws IOException, CMSException
             {
-                return null;
+                return new ByteArrayInputStream(authEncInfo.getEncryptedContent().getOctets());
             }
         };
 
@@ -74,5 +74,13 @@ class CMSAuthEnvelopedData
         this.authAttrs = authEnvData.getAuthAttrs();
         this.mac = authEnvData.getMac().getOctets();
         this.unauthAttrs = authEnvData.getUnauthAttrs();
+    }
+
+    /**
+     * return a store of the intended recipients for this message
+     */
+    public RecipientInformationStore getRecipientInfos()
+    {
+        return recipientInfoStore;
     }
 }
