@@ -254,7 +254,7 @@ public class BCStyle
         DefaultLookUp.put("dn", DN_QUALIFIER);
         DefaultLookUp.put("pseudonym", PSEUDONYM);
         DefaultLookUp.put("postaladdress", POSTAL_ADDRESS);
-        DefaultLookUp.put("nameofbirth", NAME_AT_BIRTH);
+        DefaultLookUp.put("nameatbirth", NAME_AT_BIRTH);
         DefaultLookUp.put("countryofcitizenship", COUNTRY_OF_CITIZENSHIP);
         DefaultLookUp.put("countryofresidence", COUNTRY_OF_RESIDENCE);
         DefaultLookUp.put("gender", GENDER);
