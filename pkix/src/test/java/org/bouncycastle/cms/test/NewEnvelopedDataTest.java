@@ -531,6 +531,22 @@ public class NewEnvelopedDataTest
             "l43OVnBpGM+FjQ=="
     );
 
+    public byte[] github539_GostEnvData = Base64.decode(
+        "MIIBxQYJKoZIhvcNAQcDoIIBtjCCAbICAQAxggF8MIIBeAIBADCBojCBlDELMAkG\n" +
+            "A1UEBhMCUlUxFjAUBgNVBAgMDVN2ZXJkbG92c2theWExFTATBgNVBAcMDEVrYXRl\n" +
+            "cmluYnVyZzETMBEGA1UECgwKUm9zdGVsZWNvbTEMMAoGA1UECwwDUklUMQwwCgYD\n" +
+            "VQQDDANNTlAxJTAjBgkqhkiG9w0BCQEWFmdsdWtpaGtoLWFhQHVyYWwucnQucnUC\n" +
+            "CQDihx/vS7OqVzAfBggqhQMHAQEBATATBgcqhQMCAiMBBggqhQMHAQECAgSBrDCB\n" +
+            "qTAoBCCOzeVj2u7vVt05/1UjBxt51k06wrIhalqaFWacp5+8ywQEZwbtgaB9Bgkq\n" +
+            "hQMHAQIFAQGgZjAfBggqhQMHAQEBATATBgcqhQMCAiMBBggqhQMHAQECAgNDAARA\n" +
+            "qOyKoz/eS3Pyd1JadxSNEpereq4be7gRJVy8Qfg80CfchQf+gj5+loND0fm3vtiQ\n" +
+            "dHdylZWk3UInvTB3/QdHkQQIHQro/keNHKMwLQYJKoZIhvcNAQcBMB0GBiqFAwIC\n" +
+            "FTATBAgr82ldAd52+QYHKoUDAgIfAYABQA==");
+
+    public byte[] github539_PrivKey = Base64.decode(
+        "MEgCAQAwHwYIKoUDBwEBAQEwEwYHKoUDAgIjAQYIKoUDBwEBAgIEIgQg2Zw10hDxo6SHNVvUpfyXJesDZaEdoAidtV760MFrZBg="
+    );
+
     public NewEnvelopedDataTest()
     {
     }
@@ -2224,6 +2240,37 @@ public class NewEnvelopedDataTest
             fail("recipients not matched using general recipient ID.");
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testGithub539_Gost3410_2012_KeyTrans()
+        throws Exception
+    {
+        KeyFactory keyFact = KeyFactory.getInstance("ECGOST3410-2012", BC);
+
+        PrivateKey privKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(github539_PrivKey));
+
+        CMSEnvelopedData ed = new CMSEnvelopedData(github539_GostEnvData);
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR28147_gcfb.getId());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(privKey).setProvider(BC));
+
+            assertEquals(".", Strings.fromByteArray(recData));
+        }
     }
 
     public void testGost3410_2012_KeyTrans()
