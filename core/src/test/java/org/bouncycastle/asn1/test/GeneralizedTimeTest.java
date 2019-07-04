@@ -160,12 +160,11 @@ public class GeneralizedTimeTest
         for (int i = 0; i != input.length; i++)
         {
             ASN1GeneralizedTime    t = new ASN1GeneralizedTime(input[i]);
-
             if (output[i].indexOf('G') > 0)   // don't check local time the same way
             {
                 if (!t.getTime().equals(output[i]))
                 {
-                    fail("failed conversion test");
+                    fail("failed GMT conversion test got " + t.getTime() + " expected " + output[i]);
                 }
                 if (!dateF.format(t.getDate()).equals(zOutput[i]))
                 {
@@ -177,7 +176,7 @@ public class GeneralizedTimeTest
                 String offset = calculateGMTOffset(t.getDate());
                 if (!t.getTime().equals(output[i] + offset))
                 {
-                    fail("failed conversion test");
+                    fail("failed conversion test got " + t.getTime() + " expected " + output[i] + offset);
                 }
             }
         }
@@ -215,6 +214,11 @@ public class GeneralizedTimeTest
                 fail("trunc der encoding wrong");
             }
         }
+
+        // check an actual GMT string comes back untampered
+        ASN1GeneralizedTime time = new ASN1GeneralizedTime("20190704031318GMT+00:00");
+
+        isTrue("20190704031318GMT+00:00".equals(time.getTime()));
     }
 
     private String calculateGMTOffset(Date date)
