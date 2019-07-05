@@ -22,7 +22,7 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
 
     private static final byte[] ZEROES = new byte[15];
 
-    private final ChaCha7539Engine cipher = new ChaCha7539Engine();
+    private final ExposedChaCha7539Engine cipher = new ExposedChaCha7539Engine();
     private final Poly1305 mac = new Poly1305();
 
     private boolean encrypting = true;
@@ -240,7 +240,11 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
      * @param mac    a {@link Poly1305} Mac instance to initialize.
      * @param cipher a {@link ChaCha7539Engine} cipher pre-initialized with the nonce and key.
      */
-    private static void initMac(Poly1305 mac, ChaCha7539Engine cipher) {
+    private static void initMac(Poly1305 mac, ExposedChaCha7539Engine cipher) {
+        if (cipher.getCounter() != 0L) {
+            throw new IllegalStateException("cipher not reset (counter != 0)");
+        }
+
         byte[] firstBlock = new byte[64];
         cipher.processBytes(firstBlock, 0, 64, firstBlock, 0);
         mac.init(new KeyParameter(firstBlock, 0, 32));
@@ -307,6 +311,15 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
 
         public byte[] getBuffer() {
             return this.buf;
+        }
+
+    }
+
+    private static class ExposedChaCha7539Engine extends ChaCha7539Engine {
+
+        @Override
+        protected long getCounter() {
+            return super.getCounter();
         }
 
     }
