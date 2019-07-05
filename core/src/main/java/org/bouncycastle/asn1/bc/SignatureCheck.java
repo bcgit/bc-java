@@ -76,7 +76,7 @@ public class SignatureCheck
 
     public ASN1BitString getSignature()
     {
-        return new DERBitString(Arrays.clone(signatureValue.getBytes()), signatureValue.getPadBits());
+        return new DERBitString(signatureValue.getBytes(), signatureValue.getPadBits());
     }
 
     public AlgorithmIdentifier getSignatureAlgorithm()
