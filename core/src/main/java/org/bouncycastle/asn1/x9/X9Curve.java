@@ -97,7 +97,7 @@ public class X9Curve
 
         if (seq.size() == 3)
         {
-            seed = Arrays.clone(((DERBitString)seq.getObjectAt(2)).getBytes());
+            seed = ((DERBitString)seq.getObjectAt(2)).getBytes();
         }   
     }   
 
