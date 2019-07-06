@@ -146,7 +146,6 @@ public class ASN1IntegerTest
         rawInt = Hex.decode("10FF");
         i = new ASN1Integer(rawInt);
         isEquals(i.getValue().intValue(), 4351);
-
     }
 
     public void testInvalidEncoding_00()
@@ -156,8 +155,7 @@ public class ASN1IntegerTest
         try
         {
             byte[] rawInt = Hex.decode("0010FF");
-            ASN1Integer i = new ASN1Integer(rawInt);
-            isEquals(i.getValue().intValue(), 4351);
+            new ASN1Integer(rawInt);
             fail("Expecting illegal argument exception.");
         }
         catch (IllegalArgumentException e)
@@ -173,7 +171,7 @@ public class ASN1IntegerTest
         try
         {
             byte[] rawInt = Hex.decode("FF81FF");
-            ASN1Integer i = new ASN1Integer(rawInt);
+            new ASN1Integer(rawInt);
             fail("Expecting illegal argument exception.");
         }
         catch (IllegalArgumentException e)
@@ -192,8 +190,7 @@ public class ASN1IntegerTest
         try
         {
             byte[] rawInt = Hex.decode("0000000010FF");
-            ASN1Integer i = new ASN1Integer(rawInt);
-            isEquals(i.getValue().intValue(), 4351);
+            new ASN1Integer(rawInt);
             fail("Expecting illegal argument exception.");
         }
         catch (IllegalArgumentException e)
@@ -278,7 +275,6 @@ public class ASN1IntegerTest
         byte[] rawInt = Hex.decode("00000010FF000000");
         ASN1Integer i = new ASN1Integer(rawInt);
         isEquals(72997666816L, i.getValue().longValue());
-
     }
 
     public void testLooseValidEncoding_FF_32BAligned()
@@ -292,7 +288,6 @@ public class ASN1IntegerTest
         byte[] rawInt = Hex.decode("FFFFFF10FF000000");
         ASN1Integer i = new ASN1Integer(rawInt);
         isEquals(-1026513960960L, i.getValue().longValue());
-
     }
 
     public void testLooseValidEncoding_FF_32BAligned_1not0()
@@ -307,7 +302,6 @@ public class ASN1IntegerTest
         byte[] rawInt = Hex.decode("FFFEFF10FF000000");
         ASN1Integer i = new ASN1Integer(rawInt);
         isEquals(-282501490671616L, i.getValue().longValue());
-
     }
 
     public void testLooseValidEncoding_FF_32BAligned_2not0()
