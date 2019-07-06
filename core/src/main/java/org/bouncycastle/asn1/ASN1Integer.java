@@ -172,6 +172,11 @@ public class ASN1Integer
         return new BigInteger(1, bytes);
     }
 
+    public boolean hasValue(BigInteger x)
+    {
+        return getValue().equals(x);
+    }
+
     boolean isConstructed()
     {
         return false;
@@ -191,14 +196,7 @@ public class ASN1Integer
 
     public int hashCode()
     {
-        int value = 0;
-
-        for (int i = 0; i != bytes.length; i++)
-        {
-            value ^= (bytes[i] & 0xff) << (i % 4);
-        }
-
-        return value;
+        return Arrays.hashCode(bytes);
     }
 
     boolean asn1Equals(
