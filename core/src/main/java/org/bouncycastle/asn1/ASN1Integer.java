@@ -169,6 +169,26 @@ public class ASN1Integer
 
     public boolean hasValue(BigInteger x)
     {
+        if (null == x)
+        {
+            return false;
+        }
+
+        // Before constructing BigInteger, check least significant 32 bits
+        int count = bytes.length;
+        int pos = Math.max(0, count - 4);
+
+        int bits = bytes[pos];
+        while (++pos < count)
+        {
+            bits = (bits << 8) | (bytes[pos] & 0xFF);
+        }
+
+        if (x.intValue() != bits)
+        {
+            return false;
+        }
+
         return getValue().equals(x);
     }
 
