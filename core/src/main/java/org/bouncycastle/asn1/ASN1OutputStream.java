@@ -71,6 +71,34 @@ public class ASN1OutputStream
         write(bytes);
     }
 
+    void writeEncoded(
+        int     tag,
+        byte    headByte,
+        byte[]  tailBytes)
+        throws IOException
+    {
+        write(tag);
+        writeLength(1 + tailBytes.length);
+        write(headByte);
+        write(tailBytes);
+    }
+
+    void writeEncoded(
+        int     tag,
+        byte    headByte,
+        byte[]  body,
+        int     bodyOff,
+        int     bodyLen,
+        byte    tailByte)
+        throws IOException
+    {
+        write(tag);
+        writeLength(2 + bodyLen);
+        write(headByte);
+        write(body, bodyOff, bodyLen);
+        write(tailByte);
+    }
+
     void writeTag(int flags, int tagNo)
         throws IOException
     {
