@@ -127,13 +127,7 @@ public class DLBitString
         ASN1OutputStream out)
         throws IOException
     {
-        byte[] string = data;
-        byte[] bytes = new byte[string.length + 1];
-
-        bytes[0] = (byte)getPadBits();
-        System.arraycopy(string, 0, bytes, 1, bytes.length - 1);
-
-        out.writeEncoded(BERTags.BIT_STRING, bytes);
+        out.writeEncoded(BERTags.BIT_STRING, (byte)padBits, data);
     }
 
     static DLBitString fromOctetString(byte[] bytes)

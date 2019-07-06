@@ -127,13 +127,18 @@ public class DERBitString
         ASN1OutputStream out)
         throws IOException
     {
-        byte[] string = derForm(data, padBits);
-        byte[] bytes = new byte[string.length + 1];
-
-        bytes[0] = (byte)getPadBits();
-        System.arraycopy(string, 0, bytes, 1, bytes.length - 1);
-
-        out.writeEncoded(BERTags.BIT_STRING, bytes);
+        int len = data.length;
+        if (0 == len
+            || 0 == padBits
+            || (data[len - 1] == (byte)(data[len - 1] & (0xFF << padBits))))
+        {
+            out.writeEncoded(BERTags.BIT_STRING, (byte)padBits, data);
+        }
+        else
+        {
+            byte der = (byte)(data[len - 1] & (0xFF << padBits));
+            out.writeEncoded(BERTags.BIT_STRING, (byte)padBits, data, 0, len - 1, der);
+        }
     }
 
     static DERBitString fromOctetString(byte[] bytes)
