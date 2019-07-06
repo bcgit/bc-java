@@ -575,30 +575,44 @@ class X509CertificateObject
         }
     }
 
-    public boolean equals(
-        Object o)
+    public boolean equals(Object other)
     {
-        if (o == this)
+        if (other == this)
         {
             return true;
         }
 
-        if (o instanceof X509CertificateObject)
+        if (other instanceof X509CertificateObject)
         {
-            X509CertificateObject other = (X509CertificateObject)o;
+            X509CertificateObject otherX509BC = (X509CertificateObject)other;
 
-            if (this.hashValueSet && other.hashValueSet)
+            if (this.hashValueSet && otherX509BC.hashValueSet
+                && this.hashValue != otherX509BC.hashValue)
             {
-                if (this.hashValue != other.hashValue)
-                {
-                    return false;
-                }
+                return false;
             }
 
-            return this.c.equals(other.c);
+            if (!c.getSerialNumber().equals(otherX509BC.c.getSerialNumber()))
+            {
+                return false;
+            }
+
+            return this.c.equals(otherX509BC.c);
         }
 
-        return super.equals(o);
+        if (other instanceof X509Certificate)
+        {
+            X509Certificate otherX509 = (X509Certificate)other;
+
+            if (!c.getSerialNumber().hasValue(otherX509.getSerialNumber()))
+            {
+                return false;
+            }
+
+            // Fall through to generic case
+        }
+
+        return super.equals(other);
     }
 
     public int hashCode()
