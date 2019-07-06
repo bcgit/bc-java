@@ -74,7 +74,9 @@ class X509CertificateObject
     private BasicConstraints            basicConstraints;
     private boolean[]                   keyUsage;
 
-    private volatile PublicKey          publicKeyValue;
+    private Object                      cacheLock = new Object();
+    private PublicKey                   publicKeyValue;
+
     private volatile boolean            hashValueSet;
     private volatile int                hashValue;
 
@@ -534,11 +536,25 @@ class X509CertificateObject
         try
         {
             // Cache the public key to support repeated-use optimizations
-            if (publicKeyValue == null)
+            synchronized (cacheLock)
             {
-                publicKeyValue = BouncyCastleProvider.getPublicKey(c.getSubjectPublicKeyInfo());
+                if (null != publicKeyValue)
+                {
+                    return publicKeyValue;
+                }
             }
-            return publicKeyValue;
+
+            PublicKey temp = BouncyCastleProvider.getPublicKey(c.getSubjectPublicKeyInfo());
+
+            synchronized (cacheLock)
+            {
+                if (null == publicKeyValue)
+                {
+                    publicKeyValue = temp;
+                }
+
+                return publicKeyValue;
+            }
         }
         catch (IOException e)
         {
@@ -585,7 +601,7 @@ class X509CertificateObject
         return super.equals(o);
     }
 
-    public synchronized int hashCode()
+    public int hashCode()
     {
         if (!hashValueSet)
         {
