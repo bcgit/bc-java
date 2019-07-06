@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Properties;
 
 /**
  * Class representing the ASN.1 ENUMERATED type.
@@ -100,13 +99,11 @@ public class ASN1Enumerated
     public ASN1Enumerated(
         byte[]   bytes)
     {
-        if (!Properties.isOverrideSet("org.bouncycastle.asn1.allow_unsafe_integer"))
+        if (ASN1Integer.isMalformed(bytes))
         {
-            if (ASN1Integer.isMalformed(bytes))
-            {
-                throw new IllegalArgumentException("malformed enumerated");
-            }
+            throw new IllegalArgumentException("malformed enumerated");
         }
+
         this.bytes = Arrays.clone(bytes);
     }
 
