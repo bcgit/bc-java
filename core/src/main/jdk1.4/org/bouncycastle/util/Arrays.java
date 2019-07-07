@@ -571,6 +571,19 @@ public final class Arrays
         return hc;
     }
 
+    public static boolean[] clone(boolean[] data)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+        boolean[] copy = new boolean[data.length];
+
+        System.arraycopy(data, 0, copy, 0, data.length);
+
+        return copy;
+    }
+
     public static byte[] clone(byte[] data)
     {
         if (data == null)
