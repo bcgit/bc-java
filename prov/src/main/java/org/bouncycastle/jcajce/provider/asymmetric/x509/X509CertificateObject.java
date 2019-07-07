@@ -61,6 +61,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -323,7 +324,7 @@ class X509CertificateObject
 
     public boolean[] getKeyUsage()
     {
-        return keyUsage;
+        return Arrays.clone(keyUsage);
     }
 
     public List getExtendedKeyUsage() 
