@@ -329,30 +329,27 @@ class X509CertificateObject
     public List getExtendedKeyUsage() 
         throws CertificateParsingException
     {
-        byte[]  bytes = this.getExtensionBytes("2.5.29.37");
-
-        if (bytes != null)
+        byte[] bytes = this.getExtensionBytes("2.5.29.37");
+        if (null == bytes)
         {
-            try
-            {
-                ASN1InputStream dIn = new ASN1InputStream(bytes);
-                ASN1Sequence    seq = (ASN1Sequence)dIn.readObject();
-                List            list = new ArrayList();
-
-                for (int i = 0; i != seq.size(); i++)
-                {
-                    list.add(((ASN1ObjectIdentifier)seq.getObjectAt(i)).getId());
-                }
-                
-                return Collections.unmodifiableList(list);
-            }
-            catch (Exception e)
-            {
-                throw new CertificateParsingException("error processing extended key usage extension");
-            }
+            return null;
         }
 
-        return null;
+        try
+        {
+            ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(bytes));
+
+            List list = new ArrayList();
+            for (int i = 0; i != seq.size(); i++)
+            {
+                list.add(((ASN1ObjectIdentifier)seq.getObjectAt(i)).getId());
+            }
+            return Collections.unmodifiableList(list);
+        }
+        catch (Exception e)
+        {
+            throw new CertificateParsingException("error processing extended key usage extension");
+        }
     }
     
     public int getBasicConstraints()
