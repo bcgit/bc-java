@@ -127,6 +127,25 @@ public class ASN1Enumerated
         return new BigInteger(bytes);
     }
 
+    public boolean hasValue(BigInteger x)
+    {
+        return null != x
+            // Fast check to avoid allocation
+            && ASN1Integer.intValue(bytes, start, ASN1Integer.SIGN_EXT_SIGNED) == x.intValue()
+            && getValue().equals(x);
+    }
+
+    public int intValueExact()
+    {
+        int count = bytes.length - start;
+        if (count > 4)
+        {
+            throw new ArithmeticException("ASN.1 Enumerated out of int range");
+        }
+
+        return ASN1Integer.intValue(bytes, start, ASN1Integer.SIGN_EXT_SIGNED); 
+    }
+
     boolean isConstructed()
     {
         return false;
