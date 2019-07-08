@@ -2,7 +2,10 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
@@ -1542,6 +1545,27 @@ public class CertTest
         x509.verify(x509.getPublicKey(), "BC");
     }
 
+    private void testCertificateSerialization()
+        throws Exception
+    {
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        X509Certificate x509 = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gostRFC4491_2001));
+
+        oOut.writeObject(x509);
+        
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        x509 = (X509Certificate)oIn.readObject();
+
+        x509.verify(x509.getPublicKey(), "BC");
+    }
+
     private void checkComparison(byte[] encCert)
         throws NoSuchProviderException, CertificateException
     {
@@ -1784,6 +1808,7 @@ public class CertTest
         invalidCRLs();
 
         testForgedSignature();
+        testCertificateSerialization();
 
         checkCertificate(18, emptyDNCert);
 
