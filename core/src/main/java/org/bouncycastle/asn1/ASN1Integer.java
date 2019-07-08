@@ -12,6 +12,9 @@ import org.bouncycastle.util.Properties;
 public class ASN1Integer
     extends ASN1Primitive
 {
+    static final int SIGN_EXT_SIGNED = 0xFFFFFFFF;
+    static final int SIGN_EXT_UNSIGNED = 0xFF;
+
     private final byte[] bytes;
     private final int start;
 
@@ -131,11 +134,6 @@ public class ASN1Integer
         this.start = signBytesToSkip(bytes); 
     }
 
-    public BigInteger getValue()
-    {
-        return new BigInteger(bytes);
-    }
-
     /**
      * in some cases positive values get crammed into a space,
      * that's not quite big enough...
@@ -147,29 +145,39 @@ public class ASN1Integer
         return new BigInteger(1, bytes);
     }
 
+    public BigInteger getValue()
+    {
+        return new BigInteger(bytes);
+    }
+
     public boolean hasValue(BigInteger x)
     {
-        if (null == x)
+        return null != x
+            // Fast check to avoid allocation
+            && intValue(bytes, start, SIGN_EXT_SIGNED) == x.intValue()
+            && getValue().equals(x);
+    }
+
+    public int intPositiveValueExact()
+    {
+        int count = bytes.length - start;
+        if (count > 4 || (count == 4 && 0 != (bytes[start] & 0x80)))
         {
-            return false;
+            throw new ArithmeticException("ASN.1 Integer out of positive int range");
         }
 
-        // Before constructing BigInteger, check least significant 32 bits
-        int count = bytes.length;
-        int pos = Math.max(start, count - 4);
+        return intValue(bytes, start, SIGN_EXT_UNSIGNED);
+    }
 
-        int bits = bytes[pos];
-        while (++pos < count)
+    public int intValueExact()
+    {
+        int count = bytes.length - start;
+        if (count > 4)
         {
-            bits = (bits << 8) | (bytes[pos] & 0xFF);
+            throw new ArithmeticException("ASN.1 Integer out of int range");
         }
 
-        if (x.intValue() != bits)
-        {
-            return false;
-        }
-
-        return getValue().equals(x);
+        return intValue(bytes, start, SIGN_EXT_SIGNED); 
     }
 
     boolean isConstructed()
@@ -232,6 +240,19 @@ public class ASN1Integer
             }
         }
         return true;
+    }
+
+    static int intValue(byte[] bytes, int start, int signExt)
+    {
+        int length = bytes.length;
+        int pos = Math.max(start, length - 4);
+
+        int val = bytes[pos] & signExt;
+        while (++pos < length)
+        {
+            val = (val << 8) | (bytes[pos] & SIGN_EXT_UNSIGNED);
+        }
+        return val;
     }
 
     /**
