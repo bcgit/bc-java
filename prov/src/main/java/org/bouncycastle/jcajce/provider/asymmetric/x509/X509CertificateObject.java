@@ -22,7 +22,7 @@ class X509CertificateObject
     extends X509CertificateImpl
     implements PKCS12BagAttributeCarrier
 {
-    private Object                      cacheLock = new Object();
+    private final Object                cacheLock = new Object();
     private X509CertificateInternal     internalCertValue;
     private PublicKey                   publicKeyValue;
 
