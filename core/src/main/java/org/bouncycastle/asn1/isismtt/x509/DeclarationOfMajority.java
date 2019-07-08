@@ -138,7 +138,7 @@ public class DeclarationOfMajority
             return -1;
         }
 
-        return ASN1Integer.getInstance(declaration, false).getValue().intValue();
+        return ASN1Integer.getInstance(declaration, false).intValueExact();
     }
 
     public ASN1Sequence fullAgeAtCountry()

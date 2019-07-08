@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.asn1;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -30,14 +31,15 @@ public class ParSet
     private int[] w;
     private int[] k;
 
-    private static int checkBigIntegerInIntRangeAndPositive(BigInteger b)
+    private static int checkBigIntegerInIntRangeAndPositive(ASN1Encodable e)
     {
-        if ((b.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) ||
-            (b.compareTo(ZERO) <= 0))
+        ASN1Integer i = (ASN1Integer)e;
+        int value = i.intValueExact();
+        if (value <= 0)
         {
-            throw new IllegalArgumentException("BigInteger not in Range: " + b.toString());
+            throw new IllegalArgumentException("BigInteger not in Range: " + value);
         }
-        return b.intValue();
+        return value;
     }
 
     private ParSet(ASN1Sequence seq)
@@ -46,9 +48,8 @@ public class ParSet
         {
             throw new IllegalArgumentException("sie of seqOfParams = " + seq.size());
         }
-        BigInteger asn1int = ((ASN1Integer)seq.getObjectAt(0)).getValue();
 
-        t = checkBigIntegerInIntRangeAndPositive(asn1int);
+        t = checkBigIntegerInIntRangeAndPositive(seq.getObjectAt(0));
 
         ASN1Sequence seqOfPSh = (ASN1Sequence)seq.getObjectAt(1);
         ASN1Sequence seqOfPSw = (ASN1Sequence)seq.getObjectAt(2);
@@ -67,9 +68,9 @@ public class ParSet
 
         for (int i = 0; i < t; i++)
         {
-            h[i] = checkBigIntegerInIntRangeAndPositive((((ASN1Integer)seqOfPSh.getObjectAt(i))).getValue());
-            w[i] = checkBigIntegerInIntRangeAndPositive((((ASN1Integer)seqOfPSw.getObjectAt(i))).getValue());
-            k[i] = checkBigIntegerInIntRangeAndPositive((((ASN1Integer)seqOfPSK.getObjectAt(i))).getValue());
+            h[i] = checkBigIntegerInIntRangeAndPositive(seqOfPSh.getObjectAt(i));
+            w[i] = checkBigIntegerInIntRangeAndPositive(seqOfPSw.getObjectAt(i));
+            k[i] = checkBigIntegerInIntRangeAndPositive(seqOfPSK.getObjectAt(i));
         }
     }
 

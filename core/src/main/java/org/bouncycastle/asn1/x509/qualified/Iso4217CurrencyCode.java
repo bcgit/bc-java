@@ -39,7 +39,7 @@ public class Iso4217CurrencyCode
         if (obj instanceof ASN1Integer)
         {
             ASN1Integer numericobj = ASN1Integer.getInstance(obj);
-            int numeric = numericobj.getValue().intValue();  
+            int numeric = numericobj.intValueExact();  
             return new Iso4217CurrencyCode(numeric);            
         }
         else
@@ -83,7 +83,7 @@ public class Iso4217CurrencyCode
     
     public int getNumeric()
     {
-        return ((ASN1Integer)obj).getValue().intValue();
+        return ((ASN1Integer)obj).intValueExact();
     }
     
     public ASN1Primitive toASN1Primitive()

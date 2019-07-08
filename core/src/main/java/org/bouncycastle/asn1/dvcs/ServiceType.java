@@ -80,12 +80,12 @@ public class ServiceType
 
     public String toString()
     {
-        int num = value.getValue().intValue();
+        int num = value.intValueExact();
         return "" + num + (
-            num == CPD.getValue().intValue() ? "(CPD)" :
-                num == VSD.getValue().intValue() ? "(VSD)" :
-                    num == VPKC.getValue().intValue() ? "(VPKC)" :
-                        num == CCPD.getValue().intValue() ? "(CCPD)" :
+            num == CPD.value.intValueExact() ? "(CPD)" :
+                num == VSD.value.intValueExact() ? "(VSD)" :
+                    num == VPKC.value.intValueExact() ? "(VPKC)" :
+                        num == CCPD.value.intValueExact() ? "(CCPD)" :
                             "?");
     }
 

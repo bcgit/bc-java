@@ -123,7 +123,7 @@ public class AttributeCertificateIssuer
             V2Form issuer = (V2Form)form;
             if (issuer.getBaseCertificateID() != null)
             {
-                return issuer.getBaseCertificateID().getSerial().getValue().equals(x509Cert.getSerialNumber())
+                return issuer.getBaseCertificateID().getSerial().hasValue(x509Cert.getSerialNumber())
                     && matchesDN(x509Cert.getIssuer(), issuer.getBaseCertificateID().getIssuer());
             }
 

@@ -38,7 +38,7 @@ public class TypeOfBiometricData
         if (obj instanceof ASN1Integer)
         {
             ASN1Integer predefinedBiometricTypeObj = ASN1Integer.getInstance(obj);
-            int  predefinedBiometricType = predefinedBiometricTypeObj.getValue().intValue();
+            int predefinedBiometricType = predefinedBiometricTypeObj.intValueExact();
 
             return new TypeOfBiometricData(predefinedBiometricType);
         }
@@ -75,7 +75,7 @@ public class TypeOfBiometricData
     
     public int getPredefinedBiometricType()
     {
-        return ((ASN1Integer)obj).getValue().intValue();
+        return ((ASN1Integer)obj).intValueExact();
     }
     
     public ASN1ObjectIdentifier getBiometricDataOid()

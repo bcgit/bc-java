@@ -239,7 +239,7 @@ public class CMSSignedDataParser
      */
     public int getVersion()
     {
-        return _signedData.getVersion().getValue().intValue();
+        return _signedData.getVersion().intValueExact();
     }
 
     /**

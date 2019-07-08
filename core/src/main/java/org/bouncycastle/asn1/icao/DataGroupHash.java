@@ -78,7 +78,7 @@ public class DataGroupHash
 
     public int getDataGroupNumber()
     {
-        return dataGroupNumber.getValue().intValue();
+        return dataGroupNumber.intValueExact();
     }
     
     public ASN1OctetString getDataGroupHashValue()

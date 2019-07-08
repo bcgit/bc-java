@@ -39,7 +39,7 @@ public class AuthEnvelopedDataParser
 
         // "It MUST be set to 0."
         this.version = ASN1Integer.getInstance(seq.readObject());
-        if (this.version.getValue().intValue() != 0)
+        if (version.intValueExact() != 0)
         {
             throw new ASN1ParsingException("AuthEnvelopedData version number must be 0");
         }

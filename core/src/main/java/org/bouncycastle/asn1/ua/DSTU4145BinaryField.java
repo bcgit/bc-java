@@ -10,24 +10,23 @@ import org.bouncycastle.asn1.DERSequence;
 public class DSTU4145BinaryField
     extends ASN1Object
 {
-
     private int m, k, j, l;
 
     private DSTU4145BinaryField(ASN1Sequence seq)
     {
-        m = ASN1Integer.getInstance(seq.getObjectAt(0)).getPositiveValue().intValue();
+        m = ASN1Integer.getInstance(seq.getObjectAt(0)).intPositiveValueExact();
 
         if (seq.getObjectAt(1) instanceof ASN1Integer)
         {
-            k = ((ASN1Integer)seq.getObjectAt(1)).getPositiveValue().intValue();
+            k = ((ASN1Integer)seq.getObjectAt(1)).intPositiveValueExact();
         }
         else if (seq.getObjectAt(1) instanceof ASN1Sequence)
         {
             ASN1Sequence coefs = ASN1Sequence.getInstance(seq.getObjectAt(1));
 
-            k = ASN1Integer.getInstance(coefs.getObjectAt(0)).getPositiveValue().intValue();
-            j = ASN1Integer.getInstance(coefs.getObjectAt(1)).getPositiveValue().intValue();
-            l = ASN1Integer.getInstance(coefs.getObjectAt(2)).getPositiveValue().intValue();
+            k = ASN1Integer.getInstance(coefs.getObjectAt(0)).intPositiveValueExact();
+            j = ASN1Integer.getInstance(coefs.getObjectAt(1)).intPositiveValueExact();
+            l = ASN1Integer.getInstance(coefs.getObjectAt(2)).intPositiveValueExact();
         }
         else
         {

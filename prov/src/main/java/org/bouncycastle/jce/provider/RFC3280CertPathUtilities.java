@@ -1604,11 +1604,10 @@ class RFC3280CertPathUtilities
             {
                 try
                 {
-
                     ASN1TaggedObject constraint = ASN1TaggedObject.getInstance(policyConstraints.nextElement());
                     if (constraint.getTagNo() == 0)
                     {
-                        tmpInt = ASN1Integer.getInstance(constraint, false).getValue().intValue();
+                        tmpInt = ASN1Integer.getInstance(constraint, false).intValueExact();
                         if (tmpInt < explicitPolicy)
                         {
                             return tmpInt;
@@ -1662,7 +1661,7 @@ class RFC3280CertPathUtilities
                     ASN1TaggedObject constraint = ASN1TaggedObject.getInstance(policyConstraints.nextElement());
                     if (constraint.getTagNo() == 1)
                     {
-                        tmpInt = ASN1Integer.getInstance(constraint, false).getValue().intValue();
+                        tmpInt = ASN1Integer.getInstance(constraint, false).intValueExact();
                         if (tmpInt < policyMapping)
                         {
                             return tmpInt;
@@ -2103,7 +2102,7 @@ class RFC3280CertPathUtilities
 
         if (iap != null)
         {
-            int _inhibitAnyPolicy = iap.getValue().intValue();
+            int _inhibitAnyPolicy = iap.intValueExact();
 
             if (_inhibitAnyPolicy < inhibitAnyPolicy)
             {
@@ -2395,7 +2394,7 @@ class RFC3280CertPathUtilities
                     case 0:
                         try
                         {
-                            tmpInt = ASN1Integer.getInstance(constraint, false).getValue().intValue();
+                            tmpInt = ASN1Integer.getInstance(constraint, false).intValueExact();
                         }
                         catch (Exception e)
                         {

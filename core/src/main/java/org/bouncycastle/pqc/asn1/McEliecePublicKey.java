@@ -28,11 +28,9 @@ public class McEliecePublicKey
 
     private McEliecePublicKey(ASN1Sequence seq)
     {
-        BigInteger bigN = ((ASN1Integer)seq.getObjectAt(0)).getValue();
-        n = bigN.intValue();
+        n = ((ASN1Integer)seq.getObjectAt(0)).intValueExact();
 
-        BigInteger bigT = ((ASN1Integer)seq.getObjectAt(1)).getValue();
-        t = bigT.intValue();
+        t = ((ASN1Integer)seq.getObjectAt(1)).intValueExact();
 
         g = new GF2Matrix(((ASN1OctetString)seq.getObjectAt(2)).getOctets());
     }

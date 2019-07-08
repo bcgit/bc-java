@@ -147,7 +147,7 @@ public class SignerInformation
      */
     public int getVersion()
     {
-        return info.getVersion().getValue().intValue();
+        return info.getVersion().intValueExact();
     }
 
     public AlgorithmIdentifier getDigestAlgorithmID()

@@ -640,7 +640,7 @@ class RevocationUtilities
                 ASN1Enumerated reasonCode = ASN1Enumerated.getInstance(extValue);
                 if (null != reasonCode)
                 {
-                    reasonCodeValue = reasonCode.getValue().intValue();
+                    reasonCodeValue = reasonCode.intValueExact();
                 }
             }
             catch (Exception e)

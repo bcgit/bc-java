@@ -148,8 +148,7 @@ public class AttributeCertificateHolder
     {
         if (holder.getObjectDigestInfo() != null)
         {
-            return holder.getObjectDigestInfo().getDigestedObjectType()
-                .getValue().intValue();
+            return holder.getObjectDigestInfo().getDigestedObjectType().intValueExact();
         }
         return -1;
     }
@@ -338,7 +337,7 @@ public class AttributeCertificateHolder
         {
             if (holder.getBaseCertificateID() != null)
             {
-                return holder.getBaseCertificateID().getSerial().getValue().equals(x509Cert.getSerialNumber())
+                return holder.getBaseCertificateID().getSerial().hasValue(x509Cert.getSerialNumber())
                     && matchesDN(PrincipalUtil.getIssuerX509Principal(x509Cert), holder.getBaseCertificateID().getIssuer());
             }
 

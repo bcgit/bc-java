@@ -1545,14 +1545,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                                 switch (constraint.getTagNo())
                                 {
                                 case 0:
-                                    tmpInt = ASN1Integer.getInstance(constraint, false).getValue().intValue();
+                                    tmpInt = ASN1Integer.getInstance(constraint, false).intValueExact();
                                     if (tmpInt < explicitPolicy)
                                     {
                                         explicitPolicy = tmpInt;
                                     }
                                     break;
                                 case 1:
-                                    tmpInt = ASN1Integer.getInstance(constraint, false).getValue().intValue();
+                                    tmpInt = ASN1Integer.getInstance(constraint, false).intValueExact();
                                     if (tmpInt < policyMapping)
                                     {
                                         policyMapping = tmpInt;
@@ -1578,7 +1578,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         
                         if (iap != null)
                         {
-                            int _inhibitAnyPolicy = iap.getValue().intValue();
+                            int _inhibitAnyPolicy = iap.intValueExact();
                         
                             if (_inhibitAnyPolicy < inhibitAnyPolicy)
                             {
@@ -1625,7 +1625,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         switch (constraint.getTagNo())
                         {
                         case 0:
-                            int tmpInt = ASN1Integer.getInstance(constraint, false).getValue().intValue();
+                            int tmpInt = ASN1Integer.getInstance(constraint, false).intValueExact();
                             if (tmpInt == 0)
                             {
                                 explicitPolicy = 0;
@@ -2209,7 +2209,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     if (reasonCode != null)
                     {
-                        reason = crlReasons[reasonCode.getValue().intValue()];
+                        reason = crlReasons[reasonCode.intValueExact()];
                     }
                 }
 
