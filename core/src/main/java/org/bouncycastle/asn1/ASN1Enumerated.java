@@ -12,6 +12,7 @@ public class ASN1Enumerated
     extends ASN1Primitive
 {
     private final byte[] bytes;
+    private final int start;
 
     /**
      * return an enumerated from the passed in object
@@ -81,7 +82,8 @@ public class ASN1Enumerated
             throw new IllegalArgumentException("enumerated must be non-negative");
         }
 
-        bytes = BigInteger.valueOf(value).toByteArray();
+        this.bytes = BigInteger.valueOf(value).toByteArray();
+        this.start = 0;
     }
 
     /**
@@ -96,7 +98,8 @@ public class ASN1Enumerated
             throw new IllegalArgumentException("enumerated must be non-negative");
         }
 
-        bytes = value.toByteArray();
+        this.bytes = value.toByteArray();
+        this.start = 0;
     }
 
     /**
@@ -116,6 +119,7 @@ public class ASN1Enumerated
         }
 
         this.bytes = Arrays.clone(bytes);
+        this.start = ASN1Integer.signBytesToSkip(bytes); 
     }
 
     public BigInteger getValue()
@@ -149,6 +153,12 @@ public class ASN1Enumerated
         }
 
         ASN1Enumerated other = (ASN1Enumerated)o;
+
+        // NOTE: This can only happen when loose validation is enabled
+        if (this.start != other.start)
+        {
+            return ASN1Integer.areEqual(this.bytes, this.start, other.bytes, other.start);
+        }
 
         return Arrays.areEqual(this.bytes, other.bytes);
     }
