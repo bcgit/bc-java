@@ -63,7 +63,7 @@ public class DERGraphicString
         }
         else
         {
-            return new DERGraphicString(((ASN1OctetString)o).getOctets());
+            return new DERGraphicString(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 

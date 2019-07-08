@@ -68,7 +68,7 @@ public class DERUniversalString
         }
         else
         {
-            return new DERUniversalString(((ASN1OctetString)o).getOctets());
+            return new DERUniversalString(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 

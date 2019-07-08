@@ -98,7 +98,7 @@ public class ASN1GeneralizedTime
         }
         else
         {
-            return new ASN1GeneralizedTime(((ASN1OctetString)o).getOctets());
+            return new ASN1GeneralizedTime(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 
