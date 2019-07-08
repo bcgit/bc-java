@@ -191,7 +191,7 @@ public class ASN1Integer
 
     public int hashCode()
     {
-        return Arrays.hashCode(bytes);
+        return Arrays.hashCode(bytes, start, bytes.length - start);
     }
 
     boolean asn1Equals(ASN1Primitive o)
