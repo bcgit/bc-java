@@ -129,7 +129,7 @@ public final class BigIntegers
         // Since Java 1.8 could use BigInteger.intValueExact instead
         if (x.bitLength() > 31)
         {
-            throw new IllegalArgumentException("'x' must be at most 31 bits");
+            throw new ArithmeticException("BigInteger out of int range");
         }
 
         return x.intValue(); 
