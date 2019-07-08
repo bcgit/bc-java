@@ -135,6 +135,17 @@ public final class BigIntegers
         return x.intValue(); 
     }
 
+    public static long longValueExact(BigInteger x)
+    {
+        // Since Java 1.8 could use BigInteger.longValueExact instead
+        if (x.bitLength() > 63)
+        {
+            throw new ArithmeticException("BigInteger out of long range");
+        }
+
+        return x.longValue(); 
+    }
+
     public static int getUnsignedByteLength(BigInteger n)
     {
         return (n.bitLength() + 7) / 8;
