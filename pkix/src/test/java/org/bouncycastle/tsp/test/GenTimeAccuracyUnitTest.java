@@ -92,9 +92,9 @@ public class GenTimeAccuracyUnitTest
         ASN1Integer      millis,
         ASN1Integer      micros)
     {
-        assertEquals(secs.getValue().intValue(), accuracy.getSeconds());
-        assertEquals(millis.getValue().intValue(), accuracy.getMillis());
-        assertEquals(micros.getValue().intValue(), accuracy.getMicros());
+        assertEquals(secs.intValueExact(), accuracy.getSeconds());
+        assertEquals(millis.intValueExact(), accuracy.getMillis());
+        assertEquals(micros.intValueExact(), accuracy.getMicros());
     }
     
     private void checkToString(

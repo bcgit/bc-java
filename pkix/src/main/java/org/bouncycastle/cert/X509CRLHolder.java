@@ -166,7 +166,7 @@ public class X509CRLHolder
         {
             TBSCertList.CRLEntry entry = (TBSCertList.CRLEntry)en.nextElement();
 
-            if (entry.getUserCertificate().getValue().equals(serialNumber))
+            if (entry.getUserCertificate().hasValue(serialNumber))
             {
                 return new X509CRLEntryHolder(entry, isIndirect, currentCA);
             }

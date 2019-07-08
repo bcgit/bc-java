@@ -74,7 +74,7 @@ public class BasicOCSPResp
 
     public int getVersion()
     {
-        return data.getVersion().getValue().intValue() + 1;
+        return data.getVersion().intValueExact() + 1;
     }
 
     public RespID getResponderId()

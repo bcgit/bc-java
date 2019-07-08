@@ -103,7 +103,7 @@ public class OCSPReq
 
     public int getVersionNumber()
     {
-        return req.getTbsRequest().getVersion().getValue().intValue() + 1;
+        return req.getTbsRequest().getVersion().intValueExact() + 1;
     }
 
     public GeneralName getRequestorName()

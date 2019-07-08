@@ -121,7 +121,7 @@ public class X509CertificateHolderSelector
                 IssuerAndSerialNumber iAndS = new IssuerAndSerialNumber(certHldr.toASN1Structure());
 
                 return iAndS.getName().equals(this.issuer)
-                    && iAndS.getSerialNumber().getValue().equals(this.serialNumber);
+                    && iAndS.getSerialNumber().hasValue(this.serialNumber);
             }
             else if (subjectKeyId != null)
             {

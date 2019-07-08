@@ -217,7 +217,7 @@ public class TBSCertList
         {
             return 1;
         }
-        return version.getValue().intValue() + 1;
+        return version.intValueExact() + 1;
     }
 
     public ASN1Integer getVersion()

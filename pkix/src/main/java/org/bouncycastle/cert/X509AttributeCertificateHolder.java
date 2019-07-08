@@ -97,7 +97,7 @@ public class X509AttributeCertificateHolder
 
     public int getVersion()
     {
-        return attrCert.getAcinfo().getVersion().getValue().intValue() + 1;
+        return attrCert.getAcinfo().getVersion().intValueExact() + 1;
     }
 
     /**

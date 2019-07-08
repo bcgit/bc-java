@@ -113,7 +113,7 @@ public class CertificatePoliciesValidation
 
                 if (ext != null)
                 {
-                    int extValue = ASN1Integer.getInstance(ext.getParsedValue()).getValue().intValue();
+                    int extValue = ASN1Integer.getInstance(ext.getParsedValue()).intValueExact();
 
                     if (extValue < inhibitAnyPolicy)
                     {

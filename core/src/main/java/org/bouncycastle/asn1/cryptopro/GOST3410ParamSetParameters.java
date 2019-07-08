@@ -57,7 +57,7 @@ public class GOST3410ParamSetParameters
     {
         Enumeration     e = seq.getObjects();
 
-        keySize = ((ASN1Integer)e.nextElement()).getValue().intValue();
+        keySize = ((ASN1Integer)e.nextElement()).intValueExact();
         p = (ASN1Integer)e.nextElement();
         q = (ASN1Integer)e.nextElement();
         a = (ASN1Integer)e.nextElement();

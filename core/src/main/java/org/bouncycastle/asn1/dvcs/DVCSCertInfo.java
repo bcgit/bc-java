@@ -73,7 +73,7 @@ public class DVCSCertInfo
         try
         {
             ASN1Integer encVersion = ASN1Integer.getInstance(x);
-            this.version = encVersion.getValue().intValue();
+            this.version = encVersion.intValueExact();
             x = seq.getObjectAt(i++);
         }
         catch (IllegalArgumentException e)

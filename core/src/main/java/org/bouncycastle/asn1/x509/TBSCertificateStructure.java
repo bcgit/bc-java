@@ -130,7 +130,7 @@ public class TBSCertificateStructure
 
     public int getVersion()
     {
-        return version.getValue().intValue() + 1;
+        return version.intValueExact() + 1;
     }
 
     public ASN1Integer getVersionNumber()

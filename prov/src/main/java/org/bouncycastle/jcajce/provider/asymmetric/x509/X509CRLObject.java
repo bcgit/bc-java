@@ -363,7 +363,7 @@ class X509CRLObject
         {
             TBSCertList.CRLEntry entry = (TBSCertList.CRLEntry)certs.nextElement();
 
-            if (serialNumber.equals(entry.getUserCertificate().getValue()))
+            if (entry.getUserCertificate().hasValue(serialNumber))
             {
                 return new X509CRLEntryObject(entry, isIndirect, previousCertificateIssuer);
             }
@@ -600,7 +600,7 @@ class X509CRLObject
                     }
                 }
 
-                if (entry.getUserCertificate().getValue().equals(serial))
+                if (entry.getUserCertificate().hasValue(serial))
                 {
                     X500Name issuer;
 

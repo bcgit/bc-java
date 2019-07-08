@@ -53,7 +53,7 @@ public class XMSSMTPrivateKey
 
     private XMSSMTPrivateKey(ASN1Sequence seq)
     {
-        if (!ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().equals(BigInteger.valueOf(0)))
+        if (!ASN1Integer.getInstance(seq.getObjectAt(0)).hasValue(BigInteger.valueOf(0)))
         {
             throw new IllegalArgumentException("unknown version of sequence");
         }
@@ -65,7 +65,7 @@ public class XMSSMTPrivateKey
 
         ASN1Sequence keySeq = ASN1Sequence.getInstance(seq.getObjectAt(1));
 
-        this.index = ASN1Integer.getInstance(keySeq.getObjectAt(0)).getValue().intValue();
+        this.index = ASN1Integer.getInstance(keySeq.getObjectAt(0)).intValueExact();
         this.secretKeySeed = Arrays.clone(DEROctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
         this.secretKeyPRF = Arrays.clone(DEROctetString.getInstance(keySeq.getObjectAt(2)).getOctets());
         this.publicSeed = Arrays.clone(DEROctetString.getInstance(keySeq.getObjectAt(3)).getOctets());

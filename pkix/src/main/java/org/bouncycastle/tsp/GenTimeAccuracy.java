@@ -32,7 +32,7 @@ public class GenTimeAccuracy
     {
         if (time != null)
         {
-            return time.getValue().intValue();
+            return time.intValueExact();
         }
 
         return 0;
