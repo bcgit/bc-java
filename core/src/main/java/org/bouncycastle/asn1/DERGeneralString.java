@@ -71,7 +71,7 @@ public class DERGeneralString
         }
         else
         {
-            return new DERGeneralString(((ASN1OctetString)o).getOctets());
+            return new DERGeneralString(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 
