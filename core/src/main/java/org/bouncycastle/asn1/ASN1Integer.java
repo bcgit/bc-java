@@ -13,6 +13,7 @@ public class ASN1Integer
     extends ASN1Primitive
 {
     private final byte[] bytes;
+    private final int start;
 
     /**
      * Return an integer from the passed in object.
@@ -75,10 +76,10 @@ public class ASN1Integer
      *
      * @param value the long representing the value desired.
      */
-    public ASN1Integer(
-        long value)
+    public ASN1Integer(long value)
     {
-        bytes = BigInteger.valueOf(value).toByteArray();
+        this.bytes = BigInteger.valueOf(value).toByteArray();
+        this.start = 0;
     }
 
     /**
@@ -86,10 +87,10 @@ public class ASN1Integer
      *
      * @param value the BigInteger representing the value desired.
      */
-    public ASN1Integer(
-        BigInteger value)
+    public ASN1Integer(BigInteger value)
     {
-        bytes = value.toByteArray();
+        this.bytes = value.toByteArray();
+        this.start = 0;
     }
 
     /**
@@ -114,8 +115,7 @@ public class ASN1Integer
      *
      * @param bytes the byte array representing a 2's complement encoding of a BigInteger.
      */
-    public ASN1Integer(
-        byte[] bytes)
+    public ASN1Integer(byte[] bytes)
     {
         this(bytes, true);
     }
@@ -127,28 +127,8 @@ public class ASN1Integer
             throw new IllegalArgumentException("malformed integer");
         }
 
-        this.bytes = (clone) ? Arrays.clone(bytes) : bytes;
-    }
-
-    /**
-     * Apply the correct validation for an INTEGER primitive following the BER rules.
-     *
-     * @param bytes The raw encoding of the integer.
-     * @return true if the (in)put fails this validation.
-     */
-    static boolean isMalformed(byte[] bytes)
-    {
-        switch (bytes.length)
-        {
-        case 0:
-            return true;
-        case 1:
-            return false;
-        default:
-            return bytes[0] == (bytes[1] >> 7)
-                // Apply loose validation, see note in public constructor ASN1Integer(byte[])
-                && !Properties.isOverrideSet("org.bouncycastle.asn1.allow_unsafe_integer");
-        }
+        this.bytes = clone ? Arrays.clone(bytes) : bytes;
+        this.start = signBytesToSkip(bytes); 
     }
 
     public BigInteger getValue()
@@ -176,7 +156,7 @@ public class ASN1Integer
 
         // Before constructing BigInteger, check least significant 32 bits
         int count = bytes.length;
-        int pos = Math.max(0, count - 4);
+        int pos = Math.max(start, count - 4);
 
         int bits = bytes[pos];
         while (++pos < count)
@@ -214,8 +194,7 @@ public class ASN1Integer
         return Arrays.hashCode(bytes);
     }
 
-    boolean asn1Equals(
-        ASN1Primitive o)
+    boolean asn1Equals(ASN1Primitive o)
     {
         if (!(o instanceof ASN1Integer))
         {
@@ -224,7 +203,13 @@ public class ASN1Integer
 
         ASN1Integer other = (ASN1Integer)o;
 
-        return Arrays.areEqual(bytes, other.bytes);
+        // NOTE: This can only happen when loose validation is enabled
+        if (this.start != other.start)
+        {
+            return areEqual(this.bytes, this.start, other.bytes, other.start);
+        }
+
+        return Arrays.areEqual(this.bytes, other.bytes);
     }
 
     public String toString()
@@ -232,4 +217,52 @@ public class ASN1Integer
         return getValue().toString();
     }
 
+    static boolean areEqual(byte[] a, int aOff, byte[] b, int bOff)
+    {
+        int length = a.length - aOff;
+        if (b.length - bOff != length)
+        {
+            return false;
+        }
+        for (int i = 0; i < length; ++i)
+        {
+            if (a[aOff + i] != b[bOff + i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Apply the correct validation for an INTEGER primitive following the BER rules.
+     *
+     * @param bytes The raw encoding of the integer.
+     * @return true if the (in)put fails this validation.
+     */
+    static boolean isMalformed(byte[] bytes)
+    {
+        switch (bytes.length)
+        {
+        case 0:
+            return true;
+        case 1:
+            return false;
+        default:
+            return bytes[0] == (bytes[1] >> 7)
+                // Apply loose validation, see note in public constructor ASN1Integer(byte[])
+                && !Properties.isOverrideSet("org.bouncycastle.asn1.allow_unsafe_integer");
+        }
+    }
+
+    static int signBytesToSkip(byte[] bytes)
+    {
+        int pos = 0, last = bytes.length - 1;
+        while (pos < last
+            && bytes[pos] == (bytes[pos + 1] >> 7))
+        {
+            ++pos;
+        }
+        return pos;
+    }
 }
