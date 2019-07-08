@@ -47,7 +47,7 @@ public class ASN1IntegerTest
 
         new ASN1Integer(Hex.decode("ffda47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b0e"));
 
-        new ASN1Enumerated(Hex.decode("ffda47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b0e"));
+        new ASN1Enumerated(Hex.decode("005a47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b0e"));
 
         System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "false");
         
@@ -93,6 +93,17 @@ public class ASN1IntegerTest
         try
         {
             new ASN1Enumerated(Hex.decode("ffda47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b0e"));
+
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("malformed enumerated", e.getMessage());
+        }
+
+        try
+        {
+            new ASN1Enumerated(Hex.decode("005a47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b0e"));
 
             fail("no exception");
         }
@@ -209,7 +220,7 @@ public class ASN1IntegerTest
         try
         {
             byte[] rawInt = Hex.decode("FFFFFFFF01FF");
-            ASN1Integer i = new ASN1Integer(rawInt);
+            new ASN1Integer(rawInt);
             fail("Expecting illegal argument exception.");
         }
         catch (IllegalArgumentException e)

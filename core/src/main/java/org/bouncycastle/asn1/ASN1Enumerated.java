@@ -74,9 +74,13 @@ public class ASN1Enumerated
      *
      * @param value the value of this enumerated.
      */
-    public ASN1Enumerated(
-        int         value)
+    public ASN1Enumerated(int value)
     {
+        if (value < 0)
+        {
+            throw new IllegalArgumentException("enumerated must be non-negative");
+        }
+
         bytes = BigInteger.valueOf(value).toByteArray();
     }
 
@@ -85,9 +89,13 @@ public class ASN1Enumerated
      *
      * @param value the value of this enumerated.
      */
-    public ASN1Enumerated(
-        BigInteger   value)
+    public ASN1Enumerated(BigInteger value)
     {
+        if (value.signum() < 0)
+        {
+            throw new IllegalArgumentException("enumerated must be non-negative");
+        }
+
         bytes = value.toByteArray();
     }
 
@@ -96,12 +104,15 @@ public class ASN1Enumerated
      *
      * @param bytes the value of this enumerated as an encoded BigInteger (signed).
      */
-    public ASN1Enumerated(
-        byte[]   bytes)
+    public ASN1Enumerated(byte[] bytes)
     {
         if (ASN1Integer.isMalformed(bytes))
         {
             throw new IllegalArgumentException("malformed enumerated");
+        }
+        if (0 != (bytes[0] & 0x80))
+        {
+            throw new IllegalArgumentException("enumerated must be non-negative");
         }
 
         this.bytes = Arrays.clone(bytes);
