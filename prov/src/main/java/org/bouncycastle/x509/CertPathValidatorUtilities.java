@@ -740,7 +740,7 @@ class CertPathValidatorUtilities
             || reasonCode.getValue().intValue() == 0
             || reasonCode.getValue().intValue() == 1
             || reasonCode.getValue().intValue() == 2
-            || reasonCode.getValue().intValue() == 8)
+            || reasonCode.getValue().intValue() == 10)
         {
 
             // (i) or (j) (1)
