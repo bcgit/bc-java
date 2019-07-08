@@ -165,7 +165,7 @@ public class ASN1Enumerated
 
     public int hashCode()
     {
-        return Arrays.hashCode(bytes);
+        return Arrays.hashCode(bytes, start, bytes.length - start);
     }
 
     private static ASN1Enumerated[] cache = new ASN1Enumerated[12];
