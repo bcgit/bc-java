@@ -203,7 +203,7 @@ public class GeneralSubtree
 
         v.add(base);
 
-        if (minimum != null && !minimum.getValue().equals(ZERO))
+        if (minimum != null && !minimum.hasValue(ZERO))
         {
             v.add(new DERTaggedObject(false, 0, minimum));
         }

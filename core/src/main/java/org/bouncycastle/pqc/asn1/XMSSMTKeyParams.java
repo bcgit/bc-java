@@ -38,8 +38,8 @@ public class XMSSMTKeyParams
     private XMSSMTKeyParams(ASN1Sequence sequence)
     {
         this.version = ASN1Integer.getInstance(sequence.getObjectAt(0));
-        this.height = ASN1Integer.getInstance(sequence.getObjectAt(1)).getValue().intValue();
-        this.layers = ASN1Integer.getInstance(sequence.getObjectAt(2)).getValue().intValue();
+        this.height = ASN1Integer.getInstance(sequence.getObjectAt(1)).intValueExact();
+        this.layers = ASN1Integer.getInstance(sequence.getObjectAt(2)).intValueExact();
         this.treeDigest = AlgorithmIdentifier.getInstance(sequence.getObjectAt(3));
     }
 

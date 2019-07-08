@@ -74,13 +74,14 @@ public class RSAPrivateKey
     {
         Enumeration e = seq.getObjects();
 
-        BigInteger v = ((ASN1Integer)e.nextElement()).getValue();
-        if (v.intValue() != 0 && v.intValue() != 1)
+        ASN1Integer v = (ASN1Integer)e.nextElement();
+        int versionValue = v.intValueExact();
+        if (versionValue < 0 || versionValue > 1)
         {
             throw new IllegalArgumentException("wrong version for RSA private key");
         }
 
-        version = v;
+        version = v.getValue();
         modulus = ((ASN1Integer)e.nextElement()).getValue();
         publicExponent = ((ASN1Integer)e.nextElement()).getValue();
         privateExponent = ((ASN1Integer)e.nextElement()).getValue();

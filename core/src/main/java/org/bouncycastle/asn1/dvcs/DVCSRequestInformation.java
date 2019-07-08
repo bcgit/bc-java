@@ -59,7 +59,7 @@ public class DVCSRequestInformation
         if (seq.getObjectAt(0) instanceof ASN1Integer)
         {
             ASN1Integer encVersion = ASN1Integer.getInstance(seq.getObjectAt(i++));
-            this.version = encVersion.getValue().intValue();
+            this.version = encVersion.intValueExact();
         }
         else
         {

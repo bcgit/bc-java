@@ -135,14 +135,12 @@ public class EvidenceRecord
         }
 
         final ASN1Integer versionNumber = ASN1Integer.getInstance(sequence.getObjectAt(0));
-        if (!versionNumber.getValue().equals(BigIntegers.ONE))
+        if (versionNumber.intValueExact() != 1)
         {
             throw new IllegalArgumentException("incompatible version");
         }
-        else
-        {
-            this.version = versionNumber;
-        }
+
+        this.version = versionNumber;
 
         this.digestAlgorithms = ASN1Sequence.getInstance(sequence.getObjectAt(1));
         for (int i = 2; i != sequence.size() - 1; i++)

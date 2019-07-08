@@ -91,15 +91,15 @@ public class TBSCertificate
         boolean isV1 = false;
         boolean isV2 = false;
  
-        if (version.getValue().equals(BigInteger.valueOf(0)))
+        if (version.hasValue(BigInteger.valueOf(0)))
         {
             isV1 = true;
         }
-        else if (version.getValue().equals(BigInteger.valueOf(1)))
+        else if (version.hasValue(BigInteger.valueOf(1)))
         {
             isV2 = true;
         }
-        else if (!version.getValue().equals(BigInteger.valueOf(2)))
+        else if (!version.hasValue(BigInteger.valueOf(2)))
         {
             throw new IllegalArgumentException("version number not recognised");
         }
@@ -158,7 +158,7 @@ public class TBSCertificate
 
     public int getVersionNumber()
     {
-        return version.getValue().intValue() + 1;
+        return version.intValueExact() + 1;
     }
 
     public ASN1Integer getVersion()

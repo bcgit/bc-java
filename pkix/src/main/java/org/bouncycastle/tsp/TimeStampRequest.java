@@ -78,7 +78,7 @@ public class TimeStampRequest
 
     public int getVersion()
     {
-        return req.getVersion().getValue().intValue();
+        return req.getVersion().intValueExact();
     }
 
     public ASN1ObjectIdentifier getMessageImprintAlgOID()

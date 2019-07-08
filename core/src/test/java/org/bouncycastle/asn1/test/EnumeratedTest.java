@@ -50,7 +50,7 @@ public class EnumeratedTest
 
         assertNotNull("ENUMERATED expected", enumerated);
 
-        assertEquals("Unexpected ENUMERATED value", 1, enumerated.getValue().intValue());
+        assertEquals("Unexpected ENUMERATED value", 1, enumerated.intValueExact());
 
         ASN1Boolean b = ASN1Boolean.getInstance(sequence.getObjectAt(1));
 
@@ -77,13 +77,13 @@ public class EnumeratedTest
 
         assertNotNull("ENUMERATED expected", enumerated1);
 
-        assertEquals("Unexpected ENUMERATED value", 257, enumerated1.getValue().intValue());
+        assertEquals("Unexpected ENUMERATED value", 257, enumerated1.intValueExact());
 
         ASN1Enumerated enumerated2 = ASN1Enumerated.getInstance(sequence.getObjectAt(1));
 
         assertNotNull("ENUMERATED expected", enumerated2);
 
-        assertEquals("Unexpected ENUMERATED value", 514, enumerated2.getValue().intValue());
+        assertEquals("Unexpected ENUMERATED value", 514, enumerated2.intValueExact());
     }
 
     /**
@@ -104,7 +104,7 @@ public class EnumeratedTest
 
         assertNotNull("ENUMERATED expected", enumerated);
 
-        assertEquals("Unexpected ENUMERATED value", 65793, enumerated.getValue().intValue());
+        assertEquals("Unexpected ENUMERATED value", 65793, enumerated.intValueExact());
 
         ASN1ObjectIdentifier objectId = ASN1ObjectIdentifier.getInstance(sequence.getObjectAt(1));
 

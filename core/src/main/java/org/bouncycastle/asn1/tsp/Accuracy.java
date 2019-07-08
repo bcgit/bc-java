@@ -37,33 +37,26 @@ public class Accuracy
         ASN1Integer millis,
         ASN1Integer micros)
     {
+        if (null != millis)
+        {
+            int millisValue = millis.intValueExact();
+            if (millisValue < MIN_MILLIS || millisValue > MAX_MILLIS)
+            {
+                throw new IllegalArgumentException("Invalid millis field : not in (1..999)");
+            }
+        }
+        if (null != micros)
+        {
+            int microsValue = micros.intValueExact();
+            if (microsValue < MIN_MICROS || microsValue > MAX_MICROS)
+            {
+                throw new IllegalArgumentException("Invalid micros field : not in (1..999)");
+            }
+        }
+
         this.seconds = seconds;
-
-        //Verifications
-        if (millis != null
-                && (millis.getValue().intValue() < MIN_MILLIS || millis
-                        .getValue().intValue() > MAX_MILLIS))
-        {
-            throw new IllegalArgumentException(
-                    "Invalid millis field : not in (1..999)");
-        }
-        else
-        {
-            this.millis = millis;
-        }
-
-        if (micros != null
-                && (micros.getValue().intValue() < MIN_MICROS || micros
-                        .getValue().intValue() > MAX_MICROS))
-        {
-            throw new IllegalArgumentException(
-                    "Invalid micros field : not in (1..999)");
-        }
-        else
-        {
-            this.micros = micros;
-        }
-
+        this.millis = millis;
+        this.micros = micros;
     }
 
     private Accuracy(ASN1Sequence seq)
@@ -87,20 +80,18 @@ public class Accuracy
                 {
                 case 0:
                     millis = ASN1Integer.getInstance(extra, false);
-                    if (millis.getValue().intValue() < MIN_MILLIS
-                            || millis.getValue().intValue() > MAX_MILLIS)
+                    int millisValue = millis.intValueExact();
+                    if (millisValue < MIN_MILLIS || millisValue > MAX_MILLIS)
                     {
-                        throw new IllegalArgumentException(
-                                "Invalid millis field : not in (1..999).");
+                        throw new IllegalArgumentException("Invalid millis field : not in (1..999)");
                     }
                     break;
                 case 1:
                     micros = ASN1Integer.getInstance(extra, false);
-                    if (micros.getValue().intValue() < MIN_MICROS
-                            || micros.getValue().intValue() > MAX_MICROS)
+                    int microsValue = micros.intValueExact();
+                    if (microsValue < MIN_MICROS || microsValue > MAX_MICROS)
                     {
-                        throw new IllegalArgumentException(
-                                "Invalid micros field : not in (1..999).");
+                        throw new IllegalArgumentException("Invalid micros field : not in (1..999)");
                     }
                     break;
                 default:

@@ -55,7 +55,7 @@ public class EncryptedData
     private EncryptedData(
         ASN1Sequence seq)
     {
-        int version = ((ASN1Integer)seq.getObjectAt(0)).getValue().intValue();
+        int version = ((ASN1Integer)seq.getObjectAt(0)).intValueExact();
 
         if (version != 0)
         {

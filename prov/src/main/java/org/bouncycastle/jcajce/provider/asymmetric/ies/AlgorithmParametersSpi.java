@@ -119,7 +119,7 @@ public class AlgorithmParametersSpi
 
             if (s.size() == 1)
             {
-                this.currentSpec = new IESParameterSpec(null, null, ASN1Integer.getInstance(s.getObjectAt(0)).getValue().intValue());
+                this.currentSpec = new IESParameterSpec(null, null, ASN1Integer.getInstance(s.getObjectAt(0)).intValueExact());
             }
             else if (s.size() == 2)
             {
@@ -127,11 +127,11 @@ public class AlgorithmParametersSpi
 
                 if (tagged.getTagNo() == 0)
                 {
-                    this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged, false).getOctets(), null, ASN1Integer.getInstance(s.getObjectAt(1)).getValue().intValue());
+                    this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged, false).getOctets(), null, ASN1Integer.getInstance(s.getObjectAt(1)).intValueExact());
                 }
                 else
                 {
-                    this.currentSpec = new IESParameterSpec(null, ASN1OctetString.getInstance(tagged, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(1)).getValue().intValue());
+                    this.currentSpec = new IESParameterSpec(null, ASN1OctetString.getInstance(tagged, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(1)).intValueExact());
                 }
             }
             else if (s.size() == 3)
@@ -139,7 +139,10 @@ public class AlgorithmParametersSpi
                 ASN1TaggedObject tagged1 = ASN1TaggedObject.getInstance(s.getObjectAt(0));
                 ASN1TaggedObject tagged2 = ASN1TaggedObject.getInstance(s.getObjectAt(1));
 
-                this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged1, false).getOctets(), ASN1OctetString.getInstance(tagged2, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(2)).getValue().intValue());
+                this.currentSpec = new IESParameterSpec(
+                    ASN1OctetString.getInstance(tagged1, false).getOctets(),
+                    ASN1OctetString.getInstance(tagged2, false).getOctets(),
+                    ASN1Integer.getInstance(s.getObjectAt(2)).intValueExact());
             }
             else if (s.size() == 4)
             {
@@ -147,8 +150,11 @@ public class AlgorithmParametersSpi
                 ASN1TaggedObject tagged2 = ASN1TaggedObject.getInstance(s.getObjectAt(1));
                 ASN1Sequence     cipherDet = ASN1Sequence.getInstance(s.getObjectAt(3));
 
-                this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged1, false).getOctets(), ASN1OctetString.getInstance(tagged2, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(2)).getValue().intValue(),
-                    ASN1Integer.getInstance(cipherDet.getObjectAt(0)).getValue().intValue(),
+                this.currentSpec = new IESParameterSpec(
+                    ASN1OctetString.getInstance(tagged1, false).getOctets(),
+                    ASN1OctetString.getInstance(tagged2, false).getOctets(),
+                    ASN1Integer.getInstance(s.getObjectAt(2)).intValueExact(),
+                    ASN1Integer.getInstance(cipherDet.getObjectAt(0)).intValueExact(),
                     ASN1OctetString.getInstance(cipherDet.getObjectAt(1)).getOctets());
             }
         }

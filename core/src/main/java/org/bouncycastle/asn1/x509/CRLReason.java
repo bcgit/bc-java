@@ -100,7 +100,7 @@ public class CRLReason
         }
         else if (o != null)
         {
-            return lookup(ASN1Enumerated.getInstance(o).getValue().intValue());
+            return lookup(ASN1Enumerated.getInstance(o).intValueExact());
         }
 
         return null;

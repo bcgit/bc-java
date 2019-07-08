@@ -88,12 +88,12 @@ public class PrivateKeyInfo
 
     private static int getVersionValue(ASN1Integer version)
     {
-        BigInteger bigValue = version.getValue();
-        if (bigValue.compareTo(BigIntegers.ZERO) < 0 || bigValue.compareTo(BigIntegers.ONE) > 0)
+        int versionValue = version.intValueExact();
+        if (versionValue < 0 || versionValue > 1)
         {
             throw new IllegalArgumentException("invalid version for private key info");
         }
-        return bigValue.intValue();
+        return versionValue;
     }
 
     public PrivateKeyInfo(

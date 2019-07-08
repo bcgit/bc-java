@@ -76,7 +76,7 @@ public class CscaMasterList
 
     public int getVersion()
     {
-        return version.getValue().intValue();
+        return version.intValueExact();
     }
 
     public Certificate[] getCertStructs()

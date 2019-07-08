@@ -35,7 +35,7 @@ public class XMSSMTPublicKey
 
     private XMSSMTPublicKey(ASN1Sequence seq)
     {
-        if (!ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().equals(BigInteger.valueOf(0)))
+        if (!ASN1Integer.getInstance(seq.getObjectAt(0)).hasValue(BigInteger.valueOf(0)))
         {
             throw new IllegalArgumentException("unknown version of sequence");
         }

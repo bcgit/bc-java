@@ -60,7 +60,7 @@ public class CCMParameters
 
         if (seq.size() == 2)
         {
-            this.icvLen = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue().intValue();
+            this.icvLen = ASN1Integer.getInstance(seq.getObjectAt(1)).intValueExact();
         }
         else
         {

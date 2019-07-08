@@ -68,7 +68,7 @@ public class LDSSecurityObject
 
         ASN1Sequence datagroupHashSeq = ASN1Sequence.getInstance(e.nextElement());
 
-        if (version.getValue().intValue() == 1)
+        if (version.intValueExact() == 1)
         {
             versionInfo = LDSVersionInfo.getInstance(e.nextElement());
         }
@@ -116,7 +116,7 @@ public class LDSSecurityObject
 
     public int getVersion()
     {
-        return version.getValue().intValue();
+        return version.intValueExact();
     }
 
     public AlgorithmIdentifier getDigestAlgorithmIdentifier()

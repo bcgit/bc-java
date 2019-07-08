@@ -53,7 +53,7 @@ public class CAST5CBCParameters
 
     public int getKeyLength()
     {
-        return keyLength.getValue().intValue();
+        return keyLength.intValueExact();
     }
 
     /**
