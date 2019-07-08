@@ -101,7 +101,7 @@ public class ASN1Boolean
         }
         else
         {
-            return ASN1Boolean.fromOctetString(((ASN1OctetString)o).getOctets());
+            return ASN1Boolean.fromOctetString(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 

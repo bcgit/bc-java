@@ -88,7 +88,7 @@ public class ASN1UTCTime
         }
         else
         {
-            return new ASN1UTCTime(((ASN1OctetString)o).getOctets());
+            return new ASN1UTCTime(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 

@@ -69,7 +69,7 @@ public class DERIA5String
         }
         else
         {
-            return new DERIA5String(((ASN1OctetString)o).getOctets());
+            return new DERIA5String(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 

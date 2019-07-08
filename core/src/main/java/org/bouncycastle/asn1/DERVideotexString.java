@@ -63,7 +63,7 @@ public class DERVideotexString
         }
         else
         {
-            return new DERVideotexString(((ASN1OctetString)o).getOctets());
+            return new DERVideotexString(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 

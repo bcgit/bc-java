@@ -63,7 +63,7 @@ public class DERBitString
         }
         else
         {
-            return fromOctetString(((ASN1OctetString)o).getOctets());
+            return fromOctetString(ASN1OctetString.getInstance(o).getOctets());
         }
     }
     
