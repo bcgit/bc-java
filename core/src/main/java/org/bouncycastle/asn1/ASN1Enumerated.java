@@ -204,14 +204,14 @@ public class ASN1Enumerated
 
         if (value >= cache.length)
         {
-            return new ASN1Enumerated(Arrays.clone(enc));
+            return new ASN1Enumerated(enc);
         }
 
         ASN1Enumerated possibleMatch = cache[value];
 
         if (possibleMatch == null)
         {
-            possibleMatch = cache[value] = new ASN1Enumerated(Arrays.clone(enc));
+            possibleMatch = cache[value] = new ASN1Enumerated(enc);
         }
 
         return possibleMatch;
