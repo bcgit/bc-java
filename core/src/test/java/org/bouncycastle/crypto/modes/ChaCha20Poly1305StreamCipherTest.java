@@ -68,6 +68,44 @@ public class ChaCha20Poly1305StreamCipherTest {
     }
 
     @Test
+    public void testResetAfterDoFinal() throws InvalidCipherTextException {
+        // Ensure the cipher is effectively reset after doFinal(), meaning you can do:
+        //  processAADBytes(...)
+        //  processBytes(...)
+        //  doFinal(...)
+        //  processAADBytes(...)
+        //  processBytes(...)
+        //  doFinal(...)
+        // without a manual reset in between.
+
+        ChaCha20Poly1305StreamCipher cipher = new ChaCha20Poly1305StreamCipher();
+        cipher.init(true, ivParameters());
+
+        cipher.processAADBytes(AAD, 0, AAD.length);
+        int outputSize = cipher.getOutputSize(PLAINTEXT.length);
+        byte[] encrypted1 = new byte[outputSize];
+        cipher.processBytes(PLAINTEXT, 0, PLAINTEXT.length, encrypted1, 0);
+        cipher.doFinal(encrypted1, 0);
+
+        System.out.println("mac1=" + Hex.toHexString(cipher.getMac()));
+        System.out.println("encrypted1=" + Hex.toHexString(encrypted1));
+
+        // TODO this test should pass without re-initializing here, but it doesn't
+        cipher.init(true, ivParameters());
+
+        cipher.processAADBytes(AAD, 0, AAD.length);
+        outputSize = cipher.getOutputSize(PLAINTEXT.length);
+        byte[] encrypted2 = new byte[outputSize];
+        cipher.processBytes(PLAINTEXT, 0, PLAINTEXT.length, encrypted2, 0);
+        cipher.doFinal(encrypted2, 0);
+
+        System.out.println("mac2=" + Hex.toHexString(cipher.getMac()));
+        System.out.println("encrypted2=" + Hex.toHexString(encrypted2));
+
+        assertTrue(Arrays.constantTimeAreEqual(encrypted1, encrypted2));
+    }
+
+    @Test
     public void testEncryptDecrypt() throws InvalidCipherTextException {
         testEncryptDecryptWithParameters(ivParameters());
         testEncryptDecryptWithParameters(aeadParameters());

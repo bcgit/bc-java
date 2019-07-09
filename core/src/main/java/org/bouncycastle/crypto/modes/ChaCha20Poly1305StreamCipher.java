@@ -101,6 +101,8 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
 
             lastMacBlock = Arrays.copyOfRange(output, outputOffset + ciphertextLength, output.length);
 
+            reset();
+
             return ciphertextLength + 16;
         } else {
             int ciphertextLength = data.size() - 16;
@@ -129,6 +131,8 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
 
             lastMacBlock = calculatedMac;
 
+            reset();
+
             return ciphertextLength;
         }
     }
@@ -138,6 +142,8 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
         mac.reset();
         data.reset();
         associatedText.reset();
+
+        Arrays.fill(data.getBuffer(), (byte) 0);
     }
 
     public int processByte(byte in, byte[] out, int outOff) throws DataLengthException {
