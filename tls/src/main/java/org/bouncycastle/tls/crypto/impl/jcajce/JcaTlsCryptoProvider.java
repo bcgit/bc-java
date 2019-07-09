@@ -6,7 +6,6 @@ import java.security.MessageDigest;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
-import java.security.Security;
 
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -95,22 +94,12 @@ public class JcaTlsCryptoProvider
         return new JcaTlsCrypto(helper, keyRandom, nonceRandom);
     }
 
-    public Provider getPkixProvider()
+    public JcaJceHelper getHelper()
     {
-        try
-        {
-            if (Security.getProvider("IBMCertPath") != null)
-            {
-                return Security.getProvider("IBMCertPath");
-            }
-            return helper.createCertificateFactory("X.509").getProvider();
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new IllegalStateException("unable to find CertificateFactory");
-        }
+        return helper;
     }
 
+    @SuppressWarnings("serial")
     private static class NonceEntropySource
        extends SecureRandom
     {
