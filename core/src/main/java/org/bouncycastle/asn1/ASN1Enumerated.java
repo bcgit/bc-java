@@ -173,18 +173,12 @@ public class ASN1Enumerated
 
         ASN1Enumerated other = (ASN1Enumerated)o;
 
-        // NOTE: This can only happen when loose validation is enabled
-        if (this.start != other.start)
-        {
-            return ASN1Integer.areEqual(this.bytes, this.start, other.bytes, other.start);
-        }
-
         return Arrays.areEqual(this.bytes, other.bytes);
     }
 
     public int hashCode()
     {
-        return Arrays.hashCode(bytes, start, bytes.length - start);
+        return Arrays.hashCode(bytes);
     }
 
     private static ASN1Enumerated[] cache = new ASN1Enumerated[12];
