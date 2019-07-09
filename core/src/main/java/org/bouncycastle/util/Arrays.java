@@ -1035,7 +1035,7 @@ public final class Arrays
     /**
      * Fill input array by zeros
      *
-     * @param array input array
+     * @param data input array
      */
     public static void clear(byte[] data)
     {
