@@ -139,9 +139,10 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
 
     public void reset() {
         cipher.reset();
-        mac.reset();
         data.reset();
         associatedText.reset();
+
+        initMac(mac, cipher);
 
         Arrays.fill(data.getBuffer(), (byte) 0);
     }
@@ -321,7 +322,7 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
 
     }
 
-    private static class ExposedChaCha7539Engine extends ChaCha7539Engine {
+    private class ExposedChaCha7539Engine extends ChaCha7539Engine {
 
         @Override
         protected long getCounter() {
