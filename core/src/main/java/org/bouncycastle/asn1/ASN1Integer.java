@@ -199,7 +199,7 @@ public class ASN1Integer
 
     public int hashCode()
     {
-        return Arrays.hashCode(bytes, start, bytes.length - start);
+        return Arrays.hashCode(bytes);
     }
 
     boolean asn1Equals(ASN1Primitive o)
@@ -211,35 +211,12 @@ public class ASN1Integer
 
         ASN1Integer other = (ASN1Integer)o;
 
-        // NOTE: This can only happen when loose validation is enabled
-        if (this.start != other.start)
-        {
-            return areEqual(this.bytes, this.start, other.bytes, other.start);
-        }
-
         return Arrays.areEqual(this.bytes, other.bytes);
     }
 
     public String toString()
     {
         return getValue().toString();
-    }
-
-    static boolean areEqual(byte[] a, int aOff, byte[] b, int bOff)
-    {
-        int length = a.length - aOff;
-        if (b.length - bOff != length)
-        {
-            return false;
-        }
-        for (int i = 0; i < length; ++i)
-        {
-            if (a[aOff + i] != b[bOff + i])
-            {
-                return false;
-            }
-        }
-        return true;
     }
 
     static int intValue(byte[] bytes, int start, int signExt)
