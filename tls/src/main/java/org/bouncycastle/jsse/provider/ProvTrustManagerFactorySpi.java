@@ -4,12 +4,10 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchProviderException;
-import java.security.Provider;
 import java.security.cert.CertPathParameters;
 import java.security.cert.Certificate;
 import java.security.cert.PKIXParameters;
@@ -26,6 +24,8 @@ import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactorySpi;
+
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 class ProvTrustManagerFactorySpi
     extends TrustManagerFactorySpi
@@ -108,13 +108,13 @@ class ProvTrustManagerFactorySpi
         return ks;
     }
 
-    protected final Provider pkixProvider;
+    protected final JcaJceHelper helper;
 
     protected ProvX509TrustManager x509TrustManager;
 
-    ProvTrustManagerFactorySpi(Provider pkixProvider)
+    ProvTrustManagerFactorySpi(JcaJceHelper helper)
     {
-        this.pkixProvider = pkixProvider;
+        this.helper = helper;
     }
 
     @Override
@@ -164,7 +164,7 @@ class ProvTrustManagerFactorySpi
 
         try
         {
-            this.x509TrustManager = new ProvX509TrustManager(pkixProvider, trustAnchors);
+            this.x509TrustManager = new ProvX509TrustManager(helper, trustAnchors);
         }
         catch (InvalidAlgorithmParameterException e)
         {
@@ -178,30 +178,20 @@ class ProvTrustManagerFactorySpi
     {
         if (spec instanceof CertPathTrustManagerParameters)
         {
-            try
+            CertPathParameters certPathParameters = ((CertPathTrustManagerParameters)spec).getParameters();
+            if (!(certPathParameters instanceof PKIXParameters))
             {
-                CertPathParameters param = ((CertPathTrustManagerParameters)spec).getParameters();
-
-                if (!(param instanceof PKIXParameters))
-                {
-                    throw new InvalidAlgorithmParameterException("parameters must inherit from PKIXParameters");
-                }
-
-                PKIXParameters pkixParam = (PKIXParameters)param;
-
-                this.x509TrustManager = new ProvX509TrustManager(pkixProvider, pkixParam);
+                throw new InvalidAlgorithmParameterException("parameters must inherit from PKIXParameters");
             }
-            catch (GeneralSecurityException e)
-            {
-                throw new InvalidAlgorithmParameterException("unable to process parameters: " + e.getMessage(), e);
-            }
+
+            this.x509TrustManager = new ProvX509TrustManager(helper, (PKIXParameters)certPathParameters);
+        }
+        else if (null == spec)
+        {
+            throw new InvalidAlgorithmParameterException("spec cannot be null");
         }
         else
         {
-            if (spec == null)
-            {
-                throw new InvalidAlgorithmParameterException("spec cannot be null");
-            }
             throw new InvalidAlgorithmParameterException("unknown spec: " + spec.getClass().getName());
         }
     }
