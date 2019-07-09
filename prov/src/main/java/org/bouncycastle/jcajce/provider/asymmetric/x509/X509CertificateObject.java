@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1BitString;
@@ -23,7 +22,7 @@ class X509CertificateObject
     implements PKCS12BagAttributeCarrier
 {
     private final Object                cacheLock = new Object();
-    private X509CertificateInternal     internalCertValue;
+    private X509CertificateInternal     internalCertificateValue;
     private PublicKey                   publicKeyValue;
 
     private volatile boolean            hashValueSet;
@@ -77,37 +76,33 @@ class X509CertificateObject
 
         if (other instanceof X509CertificateObject)
         {
-            X509CertificateObject otherX509BC = (X509CertificateObject)other;
+            X509CertificateObject otherBC = (X509CertificateObject)other;
 
-            if (this.hashValueSet && otherX509BC.hashValueSet
-                && this.hashValue != otherX509BC.hashValue)
+            if (this.hashValueSet && otherBC.hashValueSet)
             {
-                return false;
+                if (this.hashValue != otherBC.hashValue)
+                {
+                    return false;
+                }
             }
-
-            if (!c.getSerialNumber().equals(otherX509BC.c.getSerialNumber()))
+            else if (null == internalCertificateValue)
             {
-                return false;
-            }
-        }
-        else if (other instanceof X509Certificate)
-        {
-            X509Certificate otherX509 = (X509Certificate)other;
-
-            if (!c.getSerialNumber().hasValue(otherX509.getSerialNumber()))
-            {
-                return false;
+                ASN1BitString signature = c.getSignature();
+                if (null != signature && !signature.equals(otherBC.c.getSignature()))
+                {
+                    return false;
+                }
             }
         }
 
-        return getInternalCert().equals(other);
+        return getInternalCertificate().equals(other);
     }
 
     public int hashCode()
     {
         if (!hashValueSet)
         {
-            hashValue = getInternalCert().hashCode();
+            hashValue = getInternalCertificate().hashCode();
             hashValueSet = true;
         }
 
@@ -124,7 +119,7 @@ class X509CertificateObject
         try
         {
             int hashCode = 0;
-            byte[] certData = getInternalCert().getEncoded();
+            byte[] certData = getInternalCertificate().getEncoded();
             for (int i = 1; i < certData.length; i++)
             {
                  hashCode += certData[i] * i;
@@ -152,13 +147,13 @@ class X509CertificateObject
         return attrCarrier.getBagAttributeKeys();
     }
 
-    private X509CertificateInternal getInternalCert()
+    private X509CertificateInternal getInternalCertificate()
     {
         synchronized (cacheLock)
         {
-            if (null != internalCertValue)
+            if (null != internalCertificateValue)
             {
-                return internalCertValue;
+                return internalCertificateValue;
             }
         }
 
@@ -176,12 +171,12 @@ class X509CertificateObject
 
         synchronized (cacheLock)
         {
-            if (null == internalCertValue)
+            if (null == internalCertificateValue)
             {
-                internalCertValue = temp;
+                internalCertificateValue = temp;
             }
 
-            return internalCertValue;
+            return internalCertificateValue;
         }
     }
 
@@ -190,13 +185,13 @@ class X509CertificateObject
     {
         try
         {
-            byte[] bytes = getExtensionBytes(c, "2.5.29.19");
-            if (null == bytes)
+            byte[] extOctets = getExtensionOctets(c, "2.5.29.19");
+            if (null == extOctets)
             {
                 return null;
             }
 
-            return BasicConstraints.getInstance(ASN1Primitive.fromByteArray(bytes));
+            return BasicConstraints.getInstance(ASN1Primitive.fromByteArray(extOctets));
         }
         catch (Exception e)
         {
@@ -208,15 +203,15 @@ class X509CertificateObject
     {
         try
         {
-            byte[] bytes = getExtensionBytes(c, "2.5.29.15");
-            if (null == bytes)
+            byte[] extOctets = getExtensionOctets(c, "2.5.29.15");
+            if (null == extOctets)
             {
                 return null;
             }
 
-            ASN1BitString bits = DERBitString.getInstance(ASN1Primitive.fromByteArray(bytes));
+            ASN1BitString bits = DERBitString.getInstance(ASN1Primitive.fromByteArray(extOctets));
 
-            bytes = bits.getBytes();
+            byte[] bytes = bits.getBytes();
             int length = (bytes.length * 8) - bits.getPadBits();
 
             boolean[] keyUsage = new boolean[(length < 9) ? 9 : length];

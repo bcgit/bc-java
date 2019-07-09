@@ -34,6 +34,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -277,15 +278,15 @@ abstract class X509CertificateImpl
     public List getExtendedKeyUsage() 
         throws CertificateParsingException
     {
-        byte[] bytes = getExtensionBytes(c, "2.5.29.37");
-        if (null == bytes)
+        byte[] extOctets = getExtensionOctets(c, "2.5.29.37");
+        if (null == extOctets)
         {
             return null;
         }
 
         try
         {
-            ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(bytes));
+            ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(extOctets));
 
             List list = new ArrayList();
             for (int i = 0; i != seq.size(); i++)
@@ -367,22 +368,16 @@ abstract class X509CertificateImpl
 
     public byte[] getExtensionValue(String oid) 
     {
-        Extensions exts = c.getTBSCertificate().getExtensions();
-
-        if (exts != null)
+        ASN1OctetString extValue = getExtensionValue(c, oid);
+        if (null != extValue)
         {
-            Extension   ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
-
-            if (ext != null)
+            try
             {
-                try
-                {
-                    return ext.getExtnValue().getEncoded();
-                }
-                catch (Exception e)
-                {
-                    throw new IllegalStateException("error parsing " + e.toString());
-                }
+                return extValue.getEncoded();
+            }
+            catch (Exception e)
+            {
+                throw new IllegalStateException("error parsing " + e.toString());
             }
         }
 
@@ -702,15 +697,15 @@ abstract class X509CertificateImpl
     private static Collection getAlternativeNames(org.bouncycastle.asn1.x509.Certificate c, String oid)
         throws CertificateParsingException
     {
-        byte[] extVal = getExtensionBytes(c, oid);
-        if (extVal == null)
+        byte[] extOctets = getExtensionOctets(c, oid);
+        if (extOctets == null)
         {
             return null;
         }
         try
         {
             Collection temp = new ArrayList();
-            Enumeration it = ASN1Sequence.getInstance(extVal).getObjects();
+            Enumeration it = ASN1Sequence.getInstance(extOctets).getObjects();
             while (it.hasMoreElements())
             {
                 GeneralName genName = GeneralName.getInstance(it.nextElement());
@@ -765,7 +760,17 @@ abstract class X509CertificateImpl
         }
     }
 
-    protected static byte[] getExtensionBytes(org.bouncycastle.asn1.x509.Certificate c, String oid)
+    protected static byte[] getExtensionOctets(org.bouncycastle.asn1.x509.Certificate c, String oid)
+    {
+        ASN1OctetString extValue = getExtensionValue(c, oid);
+        if (null != extValue)
+        {
+            return extValue.getOctets();
+        }
+        return null;
+    }
+
+    protected static ASN1OctetString getExtensionValue(org.bouncycastle.asn1.x509.Certificate c, String oid)
     {
         Extensions exts = c.getTBSCertificate().getExtensions();
         if (null != exts)
@@ -773,7 +778,7 @@ abstract class X509CertificateImpl
             Extension ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
             if (null != ext)
             {
-                return ext.getExtnValue().getOctets();
+                return ext.getExtnValue();
             }
         }
         return null;
