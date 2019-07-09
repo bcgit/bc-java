@@ -9,7 +9,7 @@ import org.bouncycastle.util.Arrays;
 
 public class Curve25519FieldElement extends ECFieldElement.AbstractFp
 {
-    public static final BigInteger Q = Curve25519.q;
+    public static final BigInteger Q = Nat256.toBigInteger(Curve25519Field.P);
 
     // Calculated as ECConstants.TWO.modPow(Q.shiftRight(2), Q)
     private static final int[] PRECOMP_POW2 = new int[]{ 0x4a0ea0b0, 0xc4ee1b27, 0xad2fe478, 0x2f431806,
