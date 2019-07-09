@@ -13,7 +13,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 public class SecP160K1Curve extends ECCurve.AbstractFp
 {
-    public static final BigInteger q = SecP160R2Curve.q;
+    public static final BigInteger q = SecP160R2FieldElement.Q;
 
     private static final int SECP160K1_DEFAULT_COORDS = COORD_JACOBIAN;
     private static final ECFieldElement[] SECP160K1_AFFINE_ZS = new ECFieldElement[] { new SecP160R2FieldElement(ECConstants.ONE) }; 
