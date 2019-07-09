@@ -156,7 +156,7 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvTrustManagerFactorySpi(cryptoProvider.getPkixProvider());
+                return new ProvTrustManagerFactorySpi(cryptoProvider.getHelper());
             }
         });
         addAlias("Alg.Alias.TrustManagerFactory.X.509", "PKIX");

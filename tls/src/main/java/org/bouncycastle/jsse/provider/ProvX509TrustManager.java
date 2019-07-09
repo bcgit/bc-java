@@ -7,6 +7,7 @@ import java.security.Provider;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
@@ -25,6 +26,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIServerName;
@@ -54,25 +56,25 @@ class ProvX509TrustManager
         return result;
     }
 
-    private final Provider pkixProvider;
+    private final JcaJceHelper helper;
     private final Set<X509Certificate> trustedCerts;
     private final PKIXParameters baseParameters;
     private final X509TrustManager exportX509TrustManager;
 
-    ProvX509TrustManager(Provider pkixProvider, Set<TrustAnchor> trustAnchors)
+    ProvX509TrustManager(JcaJceHelper helper, Set<TrustAnchor> trustAnchors)
         throws InvalidAlgorithmParameterException
     {
-        this.pkixProvider = pkixProvider;
+        this.helper = helper;
         this.trustedCerts = getTrustedCerts(trustAnchors);
         this.baseParameters = new PKIXBuilderParameters(trustAnchors, new X509CertSelector());
         this.baseParameters.setRevocationEnabled(false);
         this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
     }
 
-    ProvX509TrustManager(Provider pkixProvider, PKIXParameters baseParameters)
+    ProvX509TrustManager(JcaJceHelper helper, PKIXParameters baseParameters)
         throws InvalidAlgorithmParameterException
     {
-        this.pkixProvider = pkixProvider;
+        this.helper = helper;
         this.trustedCerts = getTrustedCerts(baseParameters.getTrustAnchors());
         if (baseParameters instanceof PKIXBuilderParameters)
         {
@@ -181,6 +183,9 @@ class ProvX509TrustManager
              * TODO[jsse] When 'isServer', make use of any status responses (OCSP) via
              * BCExtendedSSLSession.getStatusResponses()
              */
+
+            CertificateFactory certFactory = helper.createCertificateFactory("X.509");
+            Provider pkixProvider = certFactory.getProvider();
 
             CertStore certStore = CertStore.getInstance("Collection",
                 new CollectionCertStoreParameters(Arrays.asList(chain)), pkixProvider);
