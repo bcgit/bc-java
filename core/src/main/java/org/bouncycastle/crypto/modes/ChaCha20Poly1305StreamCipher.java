@@ -203,7 +203,7 @@ public class ChaCha20Poly1305StreamCipher implements AEADStreamCipher {
             // no associated text provided by a AEADParameter at
             // initialization, just use the accumulated associatedText
 
-            return associatedText.getBuffer();
+            return Arrays.copyOf(associatedText.getBuffer(), associatedText.size());
         } else {
             // associated text was provided at initialization by
             // an AEADParameter, prepend that to the accumulated associatedText

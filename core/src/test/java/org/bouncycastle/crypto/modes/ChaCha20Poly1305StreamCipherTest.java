@@ -49,6 +49,10 @@ public class ChaCha20Poly1305StreamCipherTest {
         "070000004041424344454647"
     );
 
+    private static final byte[] TAG = Hex.decode(
+        "1ae10b594f09e26a7e902ecbd0600691"
+    );
+
     @Test(expected = IllegalArgumentException.class)
     public void testRequiredKeySizeIv() {
         ChaCha20Poly1305StreamCipher cipher = new ChaCha20Poly1305StreamCipher();
@@ -90,6 +94,14 @@ public class ChaCha20Poly1305StreamCipherTest {
         assertNotNull(lastMac1);
         assertEquals(16, lastMac1.length);
 
+        if (parameters instanceof AEADParameters) {
+            byte[] initialAssociatedText = ((AEADParameters) parameters).getAssociatedText();
+
+            if (initialAssociatedText == null || initialAssociatedText.length == 0) {
+                assertTrue(Arrays.constantTimeAreEqual(TAG, lastMac1));
+            }
+        }
+
         cipher.init(false, parameters);
         cipher.processAADBytes(AAD, 0, AAD.length);
 
@@ -105,7 +117,6 @@ public class ChaCha20Poly1305StreamCipherTest {
         byte[] lastMac2 = cipher.getMac();
         assertNotNull(lastMac2);
         assertEquals(16, lastMac2.length);
-
         assertTrue(Arrays.constantTimeAreEqual(lastMac1, lastMac2));
     }
 
