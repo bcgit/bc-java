@@ -6,10 +6,12 @@ import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat224;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class SecP224K1FieldElement extends ECFieldElement.AbstractFp
 {
-    public static final BigInteger Q = SecP224K1Curve.q;
+    public static final BigInteger Q = new BigInteger(1,
+        Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFE56D"));
 
     // Calculated as ECConstants.TWO.modPow(Q.shiftRight(2), Q)
     private static final int[] PRECOMP_POW2 = new int[]{ 0x33bfd202, 0xdcfad133, 0x2287624a, 0xc3811ba8,

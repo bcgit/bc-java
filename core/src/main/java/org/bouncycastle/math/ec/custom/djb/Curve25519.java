@@ -13,7 +13,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 public class Curve25519 extends ECCurve.AbstractFp
 {
-    public static final BigInteger q = Nat256.toBigInteger(Curve25519Field.P);
+    public static final BigInteger q = Curve25519FieldElement.Q;
 
     private static final BigInteger C_a = new BigInteger(1, Hex.decode("2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA984914A144"));
     private static final BigInteger C_b = new BigInteger(1, Hex.decode("7B425ED097B425ED097B425ED097B425ED097B425ED097B4260B5E9C7710C864"));

@@ -13,8 +13,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 public class SecP521R1Curve extends ECCurve.AbstractFp
 {
-    public static final BigInteger q = new BigInteger(1,
-        Hex.decode("01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
+    public static final BigInteger q = SecP521R1FieldElement.Q;
 
     private static final int SECP521R1_DEFAULT_COORDS = COORD_JACOBIAN;
     private static final ECFieldElement[] SECP521R1_AFFINE_ZS = new ECFieldElement[] { new SecP521R1FieldElement(ECConstants.ONE) }; 
