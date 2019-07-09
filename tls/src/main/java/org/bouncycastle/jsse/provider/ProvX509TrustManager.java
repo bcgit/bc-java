@@ -4,8 +4,11 @@ import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
+import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertStore;
+import java.security.cert.CertStoreParameters;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
@@ -15,7 +18,7 @@ import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,22 +42,8 @@ class ProvX509TrustManager
 {
     private static final Logger LOG = Logger.getLogger(ProvX509TrustManager.class.getName());
 
-    private static Set<X509Certificate> getTrustedCerts(Set<TrustAnchor> trustAnchors)
-    {
-        Set<X509Certificate> result = new HashSet<X509Certificate>(trustAnchors.size());
-        for (TrustAnchor trustAnchor : trustAnchors)
-        {
-            if (trustAnchor != null)
-            {
-                X509Certificate trustedCert = trustAnchor.getTrustedCert();
-                if (trustedCert != null)
-                {
-                    result.add(trustedCert);
-                }
-            }
-        }
-        return result;
-    }
+    private static final boolean provCheckRevocation = PropertyUtils
+        .getBooleanSystemProperty("com.sun.net.ssl.checkRevocation", false);
 
     private final JcaJceHelper helper;
     private final Set<X509Certificate> trustedCerts;
@@ -66,8 +55,13 @@ class ProvX509TrustManager
     {
         this.helper = helper;
         this.trustedCerts = getTrustedCerts(trustAnchors);
-        this.baseParameters = new PKIXBuilderParameters(trustAnchors, new X509CertSelector());
-        this.baseParameters.setRevocationEnabled(false);
+
+        // Setup PKIX parameters
+        {
+            this.baseParameters = new PKIXBuilderParameters(trustAnchors, null);
+            this.baseParameters.setRevocationEnabled(provCheckRevocation);
+        }
+
         this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
     }
 
@@ -76,21 +70,30 @@ class ProvX509TrustManager
     {
         this.helper = helper;
         this.trustedCerts = getTrustedCerts(baseParameters.getTrustAnchors());
-        if (baseParameters instanceof PKIXBuilderParameters)
+
+        // Setup PKIX parameters
         {
-            this.baseParameters = baseParameters;
+            if (baseParameters instanceof PKIXBuilderParameters)
+            {
+                this.baseParameters = (PKIXBuilderParameters)baseParameters.clone();
+                this.baseParameters.setTargetCertConstraints(null);
+            }
+            else
+            {
+                this.baseParameters = new PKIXBuilderParameters(baseParameters.getTrustAnchors(), null);
+                this.baseParameters.setAnyPolicyInhibited(baseParameters.isAnyPolicyInhibited());
+                this.baseParameters.setCertPathCheckers(baseParameters.getCertPathCheckers());
+                this.baseParameters.setCertStores(baseParameters.getCertStores());
+                this.baseParameters.setDate(baseParameters.getDate());
+                this.baseParameters.setExplicitPolicyRequired(baseParameters.isExplicitPolicyRequired());
+                this.baseParameters.setInitialPolicies(baseParameters.getInitialPolicies());
+                this.baseParameters.setPolicyMappingInhibited(baseParameters.isPolicyMappingInhibited());
+                this.baseParameters.setPolicyQualifiersRejected(baseParameters.getPolicyQualifiersRejected());
+                this.baseParameters.setRevocationEnabled(baseParameters.isRevocationEnabled());
+                this.baseParameters.setSigProvider(baseParameters.getSigProvider());
+            }
         }
-        else
-        {
-            this.baseParameters = new PKIXBuilderParameters(baseParameters.getTrustAnchors(), baseParameters.getTargetCertConstraints());
-            this.baseParameters.setCertStores(baseParameters.getCertStores());
-            this.baseParameters.setRevocationEnabled(baseParameters.isRevocationEnabled());
-            this.baseParameters.setCertPathCheckers(baseParameters.getCertPathCheckers());
-            this.baseParameters.setDate(baseParameters.getDate());
-            this.baseParameters.setAnyPolicyInhibited(baseParameters.isAnyPolicyInhibited());
-            this.baseParameters.setPolicyMappingInhibited(baseParameters.isPolicyMappingInhibited());
-            this.baseParameters.setExplicitPolicyRequired(baseParameters.isExplicitPolicyRequired());
-        }
+
         this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
     }
 
@@ -143,20 +146,34 @@ class ProvX509TrustManager
     private void checkTrusted(X509Certificate[] chain, String authType, Socket socket, boolean isServer)
         throws CertificateException
     {
-        validatePath(chain, authType, isServer);
+        X509Certificate[] trustedChain = validateChain(chain, authType, isServer);
 
-        checkExtendedTrust(chain, authType, socket, isServer);
+        checkExtendedTrust(trustedChain, authType, socket, isServer);
     }
 
     private void checkTrusted(X509Certificate[] chain, String authType, SSLEngine engine, boolean isServer)
         throws CertificateException
     {
-        validatePath(chain, authType, isServer);
+        X509Certificate[] trustedChain = validateChain(chain, authType, isServer);
 
-        checkExtendedTrust(chain, authType, engine, isServer);
+        checkExtendedTrust(trustedChain, authType, engine, isServer);
     }
 
-    private void validatePath(X509Certificate[] chain, String authType, boolean isServer)
+    private CertStoreParameters getCertStoreParameters(X509Certificate[] chain)
+    {
+        ArrayList<X509Certificate> certs = new ArrayList<X509Certificate>(chain.length);
+        certs.add(chain[0]);
+        for (int i = 1; i < chain.length; ++i)
+        {
+            if (!trustedCerts.contains(chain[i]))
+            {
+                certs.add(chain[i]);
+            }
+        }
+        return new CollectionCertStoreParameters(certs);   
+    }
+
+    private X509Certificate[] validateChain(X509Certificate[] chain, String authType, boolean isServer)
         throws CertificateException
     {
         if (null == chain || chain.length < 1)
@@ -171,10 +188,15 @@ class ProvX509TrustManager
         // TODO[jsse] Further 'authType'-related checks (at least for server certificates)
 //        String validationAuthType = isServer ? authType : null;
 
+        /*
+         * RFC 8446 4.4.2 "For maximum compatibility, all implementations SHOULD be prepared to
+         * handle potentially extraneous certificates and arbitrary orderings from any TLS version,
+         * with the exception of the end-entity certificate which MUST be first."
+         */
         X509Certificate eeCert = chain[0];
         if (trustedCerts.contains(eeCert))
         {
-            return;
+            return new X509Certificate[]{ eeCert };
         }
 
         try
@@ -184,34 +206,28 @@ class ProvX509TrustManager
              * BCExtendedSSLSession.getStatusResponses()
              */
 
-            CertificateFactory certFactory = helper.createCertificateFactory("X.509");
-            Provider pkixProvider = certFactory.getProvider();
+            // TODO Can we cache the CertificateFactory instance?
+            CertificateFactory certificateFactory = helper.createCertificateFactory("X.509");
+            Provider pkixProvider = certificateFactory.getProvider();
 
-            CertStore certStore = CertStore.getInstance("Collection",
-                new CollectionCertStoreParameters(Arrays.asList(chain)), pkixProvider);
+            CertStore certStore = CertStore.getInstance("Collection", getCertStoreParameters(chain), pkixProvider);
 
-            CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", pkixProvider);
+            X509CertSelector certSelector = new X509CertSelector();
+            certSelector.setCertificate(eeCert);
 
-            X509CertSelector constraints = (X509CertSelector)baseParameters.getTargetCertConstraints().clone();
+            PKIXBuilderParameters certPathParameters = (PKIXBuilderParameters)baseParameters.clone();
+            certPathParameters.addCertStore(certStore);
+            certPathParameters.setTargetCertConstraints(certSelector);
 
-            constraints.setCertificate(eeCert);
-
-            PKIXBuilderParameters param = (PKIXBuilderParameters)baseParameters.clone();
-
-            param.addCertStore(certStore);
-            param.setTargetCertConstraints(constraints);
-
-            @SuppressWarnings("unused")
-            PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)pathBuilder.build(param);
-
-            // TODO[jsse] Use the resulting chain for post-validation checks instead of the input chain?
+            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", pkixProvider);
+            PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(certPathParameters);
 
             /*
              * TODO[jsse] Determine 'chainsToPublicCA' based on the trust anchor for the result
              * chain. SunJSSE appears to consider this to be any trusted cert in original-location
              * cacerts file with alias.contains(" [jdk")
              */
-//            X509Certificate taCert = result.getTrustAnchor().getTrustedCert();
+            return getTrustedChain(result.getCertPath(), result.getTrustAnchor());
         }
         catch (GeneralSecurityException e)
         {
@@ -219,7 +235,7 @@ class ProvX509TrustManager
         }
     }
 
-    static void checkExtendedTrust(X509Certificate[] chain, String authType, Socket socket, boolean isServer)
+    static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, Socket socket, boolean isServer)
         throws CertificateException
     {
         if (socket instanceof SSLSocket && socket.isConnected())
@@ -227,28 +243,28 @@ class ProvX509TrustManager
             SSLSocket sslSocket = (SSLSocket)socket;
             BCExtendedSSLSession sslSession = getHandshakeSession(sslSocket);
             BCSSLParameters sslParameters = getSSLParameters(sslSocket);
-            checkExtendedTrust(chain, authType, isServer, sslSession, sslParameters);
+            checkExtendedTrust(trustedChain, authType, isServer, sslSession, sslParameters);
         }
     }
 
-    static void checkExtendedTrust(X509Certificate[] chain, String authType, SSLEngine engine, boolean isServer)
+    static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, SSLEngine engine, boolean isServer)
         throws CertificateException
     {
         if (null != engine)
         {
             BCExtendedSSLSession sslSession = getHandshakeSession(engine);
             BCSSLParameters sslParameters = getSSLParameters(engine);
-            checkExtendedTrust(chain, authType, isServer, sslSession, sslParameters);
+            checkExtendedTrust(trustedChain, authType, isServer, sslSession, sslParameters);
         }
     }
 
-    private static void checkExtendedTrust(X509Certificate[] chain, String authType, boolean isServer,
+    private static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, boolean isServer,
         BCExtendedSSLSession sslSession, BCSSLParameters sslParameters) throws CertificateException
     {
         String endpointIDAlg = sslParameters.getEndpointIdentificationAlgorithm();
         if (null != endpointIDAlg && endpointIDAlg.length() > 0)
         {
-            checkEndpointID(chain[0], endpointIDAlg, isServer, sslSession);
+            checkEndpointID(trustedChain[0], endpointIDAlg, isServer, sslSession);
         }
 
         // TODO[jsse] SunJSSE also does some AlgorithmConstraints-related checks here. 
@@ -369,5 +385,42 @@ class ProvX509TrustManager
             throw new CertificateException("No SSL parameters for socket");
         }
         return sslParameters;
+    }
+
+    private static X509Certificate getTrustedCert(TrustAnchor trustAnchor) throws CertificateException
+    {
+        X509Certificate trustedCert = trustAnchor.getTrustedCert();
+        if (null == trustedCert)
+        {
+            throw new CertificateException("No certificate for TrustAnchor");
+        }
+        return trustedCert;
+    }
+
+    private static Set<X509Certificate> getTrustedCerts(Set<TrustAnchor> trustAnchors)
+    {
+        Set<X509Certificate> result = new HashSet<X509Certificate>(trustAnchors.size());
+        for (TrustAnchor trustAnchor : trustAnchors)
+        {
+            if (null != trustAnchor)
+            {
+                X509Certificate trustedCert = trustAnchor.getTrustedCert();
+                if (null != trustedCert)
+                {
+                    result.add(trustedCert);
+                }
+            }
+        }
+        return result;
+    }
+
+    private static X509Certificate[] getTrustedChain(CertPath certPath, TrustAnchor trustAnchor)
+        throws CertificateException
+    {
+        List<? extends Certificate> certificates = certPath.getCertificates();
+        X509Certificate[] result = new X509Certificate[certificates.size() + 1];
+        certificates.toArray(result);
+        result[result.length - 1] = getTrustedCert(trustAnchor);
+        return result;
     }
 }
