@@ -17,6 +17,7 @@ import java.security.spec.RSAPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
@@ -266,6 +267,18 @@ public class PSSTest
         
         s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
         
+        s.initVerify(pubKey);
+        s.update(msg1a);
+        if (!s.verify(sig1c))
+        {
+            fail("SHA512 signature verification failed");
+        }
+
+
+        s = Signature.getInstance(PKCSObjectIdentifiers.id_RSASSA_PSS.getId(), "BC");
+
+        s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
+
         s.initVerify(pubKey);
         s.update(msg1a);
         if (!s.verify(sig1c))
