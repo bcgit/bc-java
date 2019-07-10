@@ -16,6 +16,11 @@ import java.util.Enumeration;
 public class DERSet
     extends ASN1Set
 {
+    public static DERSet convert(ASN1Set set)
+    {
+        return (DERSet)set.toDERObject();
+    }
+
     private int bodyLength = -1;
 
     /**
