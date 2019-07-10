@@ -130,6 +130,11 @@ public class DLBitString
         out.writeEncoded(BERTags.BIT_STRING, (byte)padBits, data);
     }
 
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
+
     static DLBitString fromOctetString(byte[] bytes)
     {
         if (bytes.length < 1)

@@ -99,7 +99,7 @@ public abstract class ASN1Set
     implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
     private Vector set = new Vector();
-    private boolean isSorted = false;
+    boolean isSorted = false;
 
     /**
      * return an ASN1Set from the given object.

@@ -120,4 +120,14 @@ public class DERSet
             dOut.writeObject((ASN1Encodable)obj);
         }
     }
+
+    ASN1Primitive toDERObject()
+    {
+        return isSorted ? this : super.toDERObject();
+    }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
 }

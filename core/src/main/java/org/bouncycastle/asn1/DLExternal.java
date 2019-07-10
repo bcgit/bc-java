@@ -53,6 +53,11 @@ public class DLExternal
         super(directReference, indirectReference, dataValueDescriptor, encoding, externalData);
     }
 
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
+
     int encodedLength()
         throws IOException
     {
