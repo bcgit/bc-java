@@ -93,39 +93,35 @@ public abstract class ASN1TaggedObject
         }
     }
     
-    boolean asn1Equals(
-        ASN1Primitive o)
+    boolean asn1Equals(ASN1Primitive other)
     {
-        if (!(o instanceof ASN1TaggedObject))
+        if (!(other instanceof ASN1TaggedObject))
         {
             return false;
         }
-        
-        ASN1TaggedObject other = (ASN1TaggedObject)o;
-        
-        if (tagNo != other.tagNo || empty != other.empty || explicit != other.explicit)
+
+        ASN1TaggedObject that = (ASN1TaggedObject)other;
+
+        if (this.tagNo != that.tagNo || this.empty != that.empty || this.explicit != that.explicit)
         {
             return false;
         }
-        
-        if(obj == null)
+
+        if (null == this.obj)
         {
-            if (other.obj != null)
-            {
-                return false;
-            }
+            return null == that.obj;
         }
-        else
+        else if (null == that.obj)
         {
-            if (!(obj.toASN1Primitive().equals(other.obj.toASN1Primitive())))
-            {
-                return false;
-            }
+            return false;
         }
-        
-        return true;
+
+        ASN1Primitive p1 = this.obj.toASN1Primitive();
+        ASN1Primitive p2 = that.obj.toASN1Primitive();
+
+        return p1 == p2 || p1.asn1Equals(p2);
     }
-    
+
     public int hashCode()
     {
         int code = tagNo;
