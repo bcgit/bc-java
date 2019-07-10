@@ -98,18 +98,40 @@ public class DERSequence
      */
     void encode(ASN1OutputStream out) throws IOException
     {
-        int length = getBodyLength();
-
         out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
-        out.writeLength(length);
 
         DEROutputStream derOut = out.getDERSubStream();
 
         int count = elements.length;
-        for (int i = 0; i < count; ++i)
+        if (bodyLength >= 0 || count > 16)
         {
-            ASN1Primitive derObject = elements[i].toASN1Primitive().toDERObject();
-            derObject.encode(derOut);
+            out.writeLength(getBodyLength());
+
+            for (int i = 0; i < count; ++i)
+            {
+                ASN1Primitive derObject = elements[i].toASN1Primitive().toDERObject();
+                derObject.encode(derOut);
+            }
+        }
+        else
+        {
+            int totalLength = 0;
+
+            ASN1Primitive[] derObjects = new ASN1Primitive[count];
+            for (int i = 0; i < count; ++i)
+            {
+                ASN1Primitive derObject = elements[i].toASN1Primitive().toDERObject();
+                derObjects[i] = derObject;
+                totalLength += derObject.encodedLength();
+            }
+
+            this.bodyLength = totalLength;
+            out.writeLength(totalLength);
+
+            for (int i = 0; i < count; ++i)
+            {
+                derObjects[i].encode(out);
+            }
         }
     }
 

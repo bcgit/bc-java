@@ -90,17 +90,39 @@ public class DLSequence
      */
     void encode(ASN1OutputStream out) throws IOException
     {
-        int length = getBodyLength();
-
         out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
-        out.writeLength(length);
 
         ASN1OutputStream dlOut = out.getDLSubStream();
 
         int count = elements.length;
-        for (int i = 0; i < count; ++i)
+        if (bodyLength >= 0 || count > 16)
         {
-            dlOut.writeObject(elements[i]);
+            out.writeLength(getBodyLength());
+
+            for (int i = 0; i < count; ++i)
+            {
+                dlOut.writeObject(elements[i]);
+            }
+        }
+        else
+        {
+            int totalLength = 0;
+
+            ASN1Primitive[] dlObjects = new ASN1Primitive[count];
+            for (int i = 0; i < count; ++i)
+            {
+                ASN1Primitive dlObject = elements[i].toASN1Primitive().toDLObject();
+                dlObjects[i] = dlObject;
+                totalLength += dlObject.encodedLength();
+            }
+
+            this.bodyLength = totalLength;
+            out.writeLength(bodyLength);
+
+            for (int i = 0; i < count; ++i)
+            {
+                dlOut.writeObject(dlObjects[i]);
+            }
         }
     }
 
