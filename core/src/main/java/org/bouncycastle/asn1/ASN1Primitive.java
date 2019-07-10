@@ -10,7 +10,6 @@ public abstract class ASN1Primitive
 {
     ASN1Primitive()
     {
-
     }
 
     /**
@@ -52,7 +51,7 @@ public abstract class ASN1Primitive
         return (o instanceof ASN1Encodable) && asn1Equals(((ASN1Encodable)o).toASN1Primitive());
     }
 
-    public ASN1Primitive toASN1Primitive()
+    public final ASN1Primitive toASN1Primitive()
     {
         return this;
     }
