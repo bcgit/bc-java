@@ -29,7 +29,7 @@ public class DEROutputStream
         }
     }
 
-    ASN1OutputStream getDERSubStream()
+    DEROutputStream getDERSubStream()
     {
         return this;
     }

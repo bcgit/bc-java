@@ -28,4 +28,9 @@ public class DLOutputStream
             throw new IOException("null object detected");
         }
     }
+
+    ASN1OutputStream getDLSubStream()
+    {
+        return this;
+    }
 }
