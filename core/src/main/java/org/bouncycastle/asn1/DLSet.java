@@ -143,4 +143,9 @@ public class DLSet
             dOut.writeObject((ASN1Encodable)obj);
         }
     }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
 }
