@@ -109,4 +109,9 @@ public class DLTaggedObject
             out.writeEncoded(BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo, ZERO_BYTES);
         }
     }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
 }

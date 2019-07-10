@@ -141,6 +141,16 @@ public class DERBitString
         }
     }
 
+    ASN1Primitive toDERObject()
+    {
+        return this;
+    }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
+
     static DERBitString fromOctetString(byte[] bytes)
     {
         if (bytes.length < 1)
