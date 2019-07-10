@@ -81,39 +81,32 @@ public class DERTaggedObject
         ASN1OutputStream out)
         throws IOException
     {
-        if (!empty)
-        {
-            ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
-
-            if (explicit)
-            {
-                out.writeTag(BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo);
-                out.writeLength(primitive.encodedLength());
-                out.writeObject(primitive);
-            }
-            else
-            {
-                //
-                // need to mark constructed types...
-                //
-                int flags;
-                if (primitive.isConstructed())
-                {
-                    flags = BERTags.CONSTRUCTED | BERTags.TAGGED;
-                }
-                else
-                {
-                    flags = BERTags.TAGGED;
-                }
-
-                out.writeTag(flags, tagNo);
-                out.writeImplicitObject(primitive);
-            }
-        }
-        else
+        if (empty)
         {
             out.writeEncoded(BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo, ZERO_BYTES);
+            return;
         }
+
+        ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+
+        if (explicit)
+        {
+            out.writeTag(BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo);
+            out.writeLength(primitive.encodedLength());
+
+            primitive.encode(out.getDERSubStream());
+            return;
+        }
+
+        int flags = BERTags.TAGGED;
+        if (primitive.isConstructed())
+        {
+            flags |= BERTags.CONSTRUCTED;
+        }
+
+        out.writeTag(flags, tagNo);
+
+        primitive.encode(out.getDERSubStream().getImplicitOutputStream());
     }
 
     ASN1Primitive toDERObject()

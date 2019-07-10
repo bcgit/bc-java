@@ -147,9 +147,7 @@ public class ASN1OutputStream
         os.write(0x00);
     }
 
-    public void writeObject(
-        ASN1Encodable obj)
-        throws IOException
+    public void writeObject(ASN1Encodable obj) throws IOException
     {
         if (obj != null)
         {
@@ -161,17 +159,14 @@ public class ASN1OutputStream
         }
     }
 
-    void writeImplicitObject(ASN1Primitive obj)
-        throws IOException
+    public void writeObject(ASN1Primitive primitive) throws IOException
     {
-        if (obj != null)
-        {
-            obj.encode(new ImplicitOutputStream(os));
-        }
-        else
+        if (null == primitive)
         {
             throw new IOException("null object detected");
         }
+
+        primitive.encode(this);
     }
 
     public void close()
@@ -196,6 +191,11 @@ public class ASN1OutputStream
         return new DLOutputStream(os);
     }
 
+    ASN1OutputStream getImplicitOutputStream()
+    {
+        return new ImplicitOutputStream(os);
+    }
+
     private class ImplicitOutputStream
         extends ASN1OutputStream
     {
@@ -206,8 +206,7 @@ public class ASN1OutputStream
             super(os);
         }
 
-        public void write(int b)
-            throws IOException
+        public void write(int b) throws IOException
         {
             if (first)
             {
@@ -218,5 +217,40 @@ public class ASN1OutputStream
                 super.write(b);
             }
         }
+
+        void write(byte[] bytes, int off, int len) throws IOException
+        {
+            if (len > 0)
+            {
+                if (first)
+                {
+                    first = false;
+                    ++off;
+                    --len;
+                }
+
+                super.write(bytes, off, len);
+            }
+        }
+
+        DEROutputStream getDERSubStream()
+        {
+            if (first)
+            {
+                throw new IllegalStateException();
+            }
+
+            return ASN1OutputStream.this.getDERSubStream();
+        } 
+
+        ASN1OutputStream getDLSubStream()
+        {
+            if (first)
+            {
+                throw new IllegalStateException();
+            }
+
+            return ASN1OutputStream.this.getDLSubStream();
+        } 
     }
 }
