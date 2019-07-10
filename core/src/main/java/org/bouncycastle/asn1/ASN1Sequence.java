@@ -193,10 +193,19 @@ public abstract class ASN1Sequence
     protected ASN1Sequence(ASN1EncodableVector v)
     {
         int count = v.size();
-        ASN1Encodable[] tmp = new ASN1Encodable[count];
-        for (int i = 0; i < count; ++i)
+
+        ASN1Encodable[] tmp;
+        if (count < 1)
         {
-            tmp[i] = v.get(i);
+            tmp = EMPTY_ELEMENTS;
+        }
+        else
+        {
+            tmp = new ASN1Encodable[count];
+            for (int i = 0; i < count; ++i)
+            {
+                tmp[i] = v.get(i);
+            }
         }
 
         this.elements = tmp;
@@ -213,12 +222,14 @@ public abstract class ASN1Sequence
 
     ASN1Sequence(ASN1Encodable[] array, boolean clone)
     {
-        this.elements = clone ? array.clone() : array;
+        this.elements = !clone              ? array
+                      : array.length < 1    ? EMPTY_ELEMENTS
+                      : array.clone();
     }
 
     public ASN1Encodable[] toArray()
     {
-        return EMPTY_ELEMENTS == elements ? EMPTY_ELEMENTS : elements.clone();
+        return elements.length < 1 ? EMPTY_ELEMENTS : elements.clone();
     }
 
     public Enumeration getObjects()
