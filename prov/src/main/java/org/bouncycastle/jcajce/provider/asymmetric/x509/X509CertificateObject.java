@@ -1,10 +1,11 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
-import java.io.IOException;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.util.Enumeration;
+
+import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -15,7 +16,6 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 class X509CertificateObject
     extends X509CertificateImpl
@@ -23,7 +23,9 @@ class X509CertificateObject
 {
     private final Object                cacheLock = new Object();
     private X509CertificateInternal     internalCertificateValue;
+    private X500Principal               issuerValue;
     private PublicKey                   publicKeyValue;
+    private X500Principal               subjectValue;
 
     private volatile boolean            hashValueSet;
     private volatile int                hashValue;
@@ -36,34 +38,77 @@ class X509CertificateObject
         super(bcHelper, c, createBasicConstraints(c), createKeyUsage(c));
     }
 
-    public PublicKey getPublicKey()
+    public X500Principal getIssuerX500Principal()
     {
-        try
+        synchronized (cacheLock)
         {
-            // Cache the public key to support repeated-use optimizations
-            synchronized (cacheLock)
+            if (null != issuerValue)
             {
-                if (null != publicKeyValue)
-                {
-                    return publicKeyValue;
-                }
+                return issuerValue;
+            }
+        }
+
+        X500Principal temp = super.getIssuerX500Principal();
+
+        synchronized (cacheLock)
+        {
+            if (null == issuerValue)
+            {
+                issuerValue = temp;
             }
 
-            PublicKey temp = BouncyCastleProvider.getPublicKey(c.getSubjectPublicKeyInfo());
+            return issuerValue;
+        }
+    }
 
-            synchronized (cacheLock)
+    public PublicKey getPublicKey()
+    {
+        // Cache the public key to support repeated-use optimizations
+        synchronized (cacheLock)
+        {
+            if (null != publicKeyValue)
             {
-                if (null == publicKeyValue)
-                {
-                    publicKeyValue = temp;
-                }
-
                 return publicKeyValue;
             }
         }
-        catch (IOException e)
+
+        PublicKey temp = super.getPublicKey();
+        if (null == temp)
         {
-            return null;   // should never happen...
+            return null;
+        }
+
+        synchronized (cacheLock)
+        {
+            if (null == publicKeyValue)
+            {
+                publicKeyValue = temp;
+            }
+
+            return publicKeyValue;
+        }
+    }
+
+    public X500Principal getSubjectX500Principal()
+    {
+        synchronized (cacheLock)
+        {
+            if (null != subjectValue)
+            {
+                return subjectValue;
+            }
+        }
+
+        X500Principal temp = super.getSubjectX500Principal();
+
+        synchronized (cacheLock)
+        {
+            if (null == subjectValue)
+            {
+                subjectValue = temp;
+            }
+
+            return subjectValue;
         }
     }
 
