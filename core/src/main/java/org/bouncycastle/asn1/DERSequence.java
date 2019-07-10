@@ -12,6 +12,11 @@ import java.util.Enumeration;
 public class DERSequence
     extends ASN1Sequence
 {
+    public static DERSequence convert(ASN1Sequence seq)
+    {
+        return (DERSequence)seq.toDERObject();
+    }
+
     private int bodyLength = -1;
 
     /**
@@ -103,5 +108,15 @@ public class DERSequence
 
             dOut.writeObject((ASN1Encodable)obj);
         }
+    }
+
+    ASN1Primitive toDERObject()
+    {
+        return this;
+    }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
     }
 }

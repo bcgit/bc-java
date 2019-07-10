@@ -101,4 +101,9 @@ public class DLSequence
             dOut.writeObject((ASN1Encodable)obj);
         }
     }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
 }
