@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
@@ -85,21 +84,18 @@ public class DERUniversalString
 
     public String getString()
     {
-        StringBuffer    buf = new StringBuffer("#");
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        ASN1OutputStream            aOut = new ASN1OutputStream(bOut);
-        
+        StringBuffer buf = new StringBuffer("#");
+
+        byte[] string;
         try
         {
-            aOut.writeObject(this);
+            string = getEncoded();
         }
         catch (IOException e)
         {
            throw new ASN1ParsingException("internal error encoding UniversalString");
         }
-        
-        byte[]    string = bOut.toByteArray();
-        
+
         for (int i = 0; i != string.length; i++)
         {
             buf.append(table[(string[i] >>> 4) & 0xf]);

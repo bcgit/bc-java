@@ -454,6 +454,11 @@ public class ASN1GeneralizedTime
         return new DERGeneralizedTime(time);
     }
 
+    ASN1Primitive toDLObject()
+    {
+        return new DERGeneralizedTime(time);
+    }
+
     boolean asn1Equals(
         ASN1Primitive o)
     {

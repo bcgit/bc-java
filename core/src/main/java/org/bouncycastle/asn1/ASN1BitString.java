@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1;
 
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,20 +133,17 @@ public abstract class ASN1BitString
      */
     public String getString()
     {
-        StringBuffer          buf = new StringBuffer("#");
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ASN1OutputStream aOut = new ASN1OutputStream(bOut);
+        StringBuffer buf = new StringBuffer("#");
 
+        byte[] string;
         try
         {
-            aOut.writeObject(this);
+            string = getEncoded();
         }
         catch (IOException e)
         {
             throw new ASN1ParsingException("Internal error encoding BitString: " + e.getMessage(), e);
         }
-
-        byte[]    string = bOut.toByteArray();
 
         for (int i = 0; i != string.length; i++)
         {
