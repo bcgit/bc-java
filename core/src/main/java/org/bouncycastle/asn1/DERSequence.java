@@ -109,4 +109,14 @@ public class DERSequence
             dOut.writeObject((ASN1Encodable)obj);
         }
     }
+
+    ASN1Primitive toDERObject()
+    {
+        return this;
+    }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
 }

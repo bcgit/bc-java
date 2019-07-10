@@ -113,4 +113,14 @@ public class DERGeneralizedTime
     {
         out.writeEncoded(BERTags.GENERALIZED_TIME, getDERTime());
     }
+
+    ASN1Primitive toDERObject()
+    {
+        return this;
+    }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
 }

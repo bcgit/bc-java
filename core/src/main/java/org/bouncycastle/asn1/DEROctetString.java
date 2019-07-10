@@ -48,6 +48,16 @@ public class DEROctetString
         out.writeEncoded(BERTags.OCTET_STRING, string);
     }
 
+    ASN1Primitive toDERObject()
+    {
+        return this;
+    }
+
+    ASN1Primitive toDLObject()
+    {
+        return this;
+    }
+
     static void encode(
         DEROutputStream derOut,
         byte[]          bytes)
