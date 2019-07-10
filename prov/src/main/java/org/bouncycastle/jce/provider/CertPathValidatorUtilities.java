@@ -162,16 +162,11 @@ class CertPathValidatorUtilities
         Exception invalidKeyEx = null;
 
         X509CertSelector certSelectX509 = new X509CertSelector();
-        X500Name certIssuer = PrincipalUtils.getEncodedIssuerPrincipal(cert);
 
-        try
-        {
-            certSelectX509.setSubject(certIssuer.getEncoded());
-        }
-        catch (IOException ex)
-        {
-            throw new AnnotatedException("Cannot set subject search criteria for trust anchor.", ex);
-        }
+        final X500Principal certIssuerPrincipal = cert.getIssuerX500Principal();
+        certSelectX509.setSubject(certIssuerPrincipal);
+
+        X500Name certIssuerName = null;
 
         Iterator iter = trustAnchors.iterator();
         while (iter.hasNext() && trust == null)
@@ -188,13 +183,20 @@ class CertPathValidatorUtilities
                     trust = null;
                 }
             }
-            else if (trust.getCAName() != null
+            else if (trust.getCA() != null
+                && trust.getCAName() != null
                 && trust.getCAPublicKey() != null)
             {
+                if (certIssuerName == null)
+                {
+                    certIssuerName = X500Name.getInstance(certIssuerPrincipal.getEncoded());
+                }
+
                 try
                 {
-                    X500Name caName = PrincipalUtils.getCA(trust);
-                    if (certIssuer.equals(caName))
+                    X500Name caName = X500Name.getInstance(trust.getCA().getEncoded());
+
+                    if (certIssuerName.equals(caName))
                     {
                         trustPublicKey = trust.getCAPublicKey();
                     }
