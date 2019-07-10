@@ -53,11 +53,11 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetString;
-import org.bouncycastle.asn1.BEROutputStream;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -1629,14 +1629,14 @@ public class PKCS12KeyStoreSpi
         AuthenticatedSafe auth = new AuthenticatedSafe(info);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        DEROutputStream asn1Out;
+        ASN1OutputStream asn1Out;
         if (useDEREncoding)
         {
             asn1Out = new DEROutputStream(bOut);
         }
         else
         {
-            asn1Out = new BEROutputStream(bOut);
+            asn1Out = new ASN1OutputStream(bOut);
         }
 
         asn1Out.writeObject(auth);
@@ -1680,7 +1680,7 @@ public class PKCS12KeyStoreSpi
         }
         else
         {
-            asn1Out = new BEROutputStream(stream);
+            asn1Out = new ASN1OutputStream(stream);
         }
 
         asn1Out.writeObject(pfx);
