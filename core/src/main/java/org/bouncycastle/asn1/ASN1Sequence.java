@@ -3,7 +3,7 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.NoSuchElementException;
 
 import org.bouncycastle.util.Arrays;
 
@@ -60,7 +60,10 @@ public abstract class ASN1Sequence
     extends ASN1Primitive
     implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
-    protected Vector seq = new Vector();
+    private static final ASN1Encodable[] EMPTY_ELEMENTS = new ASN1Encodable[0];
+
+    // NOTE: Only non-final to support LazyEncodedSequence
+    ASN1Encodable[] elements;
 
     /**
      * Return an ASN1Sequence from the given object.
@@ -171,79 +174,92 @@ public abstract class ASN1Sequence
      */
     protected ASN1Sequence()
     {
+        this.elements = EMPTY_ELEMENTS;
     }
 
     /**
      * Create a SEQUENCE containing one object.
      * @param obj the object to be put in the SEQUENCE.
      */
-    protected ASN1Sequence(
-        ASN1Encodable obj)
+    protected ASN1Sequence(ASN1Encodable obj)
     {
-        seq.addElement(obj);
+        this.elements = new ASN1Encodable[]{ obj };
     }
 
     /**
      * Create a SEQUENCE containing a vector of objects.
      * @param v the vector of objects to be put in the SEQUENCE.
      */
-    protected ASN1Sequence(
-        ASN1EncodableVector v)
+    protected ASN1Sequence(ASN1EncodableVector v)
     {
-        for (int i = 0; i != v.size(); i++)
+        int count = v.size();
+        ASN1Encodable[] tmp = new ASN1Encodable[count];
+        for (int i = 0; i < count; ++i)
         {
-            seq.addElement(v.get(i));
+            tmp[i] = v.get(i);
         }
+
+        this.elements = tmp;
     }
 
     /**
      * Create a SEQUENCE containing an array of objects.
      * @param array the array of objects to be put in the SEQUENCE.
      */
-    protected ASN1Sequence(
-        ASN1Encodable[]   array)
+    protected ASN1Sequence(ASN1Encodable[] array)
     {
-        for (int i = 0; i != array.length; i++)
-        {
-            seq.addElement(array[i]);
-        }
+        this(array, true);
+    }
+
+    ASN1Sequence(ASN1Encodable[] array, boolean clone)
+    {
+        this.elements = clone ? array.clone() : array;
     }
 
     public ASN1Encodable[] toArray()
     {
-        ASN1Encodable[] values = new ASN1Encodable[this.size()];
-
-        for (int i = 0; i != this.size(); i++)
-        {
-            values[i] = this.getObjectAt(i);
-        }
-
-        return values;
+        return EMPTY_ELEMENTS == elements ? EMPTY_ELEMENTS : elements.clone();
     }
 
     public Enumeration getObjects()
     {
-        return seq.elements();
+        return new Enumeration()
+        {
+            private int pos = 0;
+
+            public boolean hasMoreElements()
+            {
+                return pos < elements.length;
+            }
+
+            public Object nextElement()
+            {
+                if (pos >= elements.length)
+                {
+                    throw new NoSuchElementException("ASN1Sequence Enumeration");
+                }
+                return elements[pos++];
+            }
+        };
     }
 
     public ASN1SequenceParser parser()
     {
-        final ASN1Sequence outer = this;
+        // NOTE: Call size() here to 'force' a LazyEncodedSequence
+        final int count = size();
 
         return new ASN1SequenceParser()
         {
-            private final int max = size();
-
-            private int index;
+            private int pos = 0;
 
             public ASN1Encodable readObject() throws IOException
             {
-                if (index == max)
+                if (count == pos)
                 {
                     return null;
                 }
-                
-                ASN1Encodable obj = getObjectAt(index++);
+
+                ASN1Encodable obj = elements[pos++];
                 if (obj instanceof ASN1Sequence)
                 {
                     return ((ASN1Sequence)obj).parser();
@@ -258,12 +274,12 @@ public abstract class ASN1Sequence
 
             public ASN1Primitive getLoadedObject()
             {
-                return outer;
+                return ASN1Sequence.this;
             }
-            
+
             public ASN1Primitive toASN1Primitive()
             {
-                return outer;
+                return ASN1Sequence.this;
             }
         };
     }
@@ -274,10 +290,9 @@ public abstract class ASN1Sequence
      * @param index the sequence number (starting at zero) of the object
      * @return the object at the sequence position indicated by index.
      */
-    public ASN1Encodable getObjectAt(
-        int index)
+    public ASN1Encodable getObjectAt(int index)
     {
-        return (ASN1Encodable)seq.elementAt(index);
+        return elements[index];
     }
 
     /**
@@ -287,23 +302,12 @@ public abstract class ASN1Sequence
      */
     public int size()
     {
-        return seq.size();
+        return elements.length;
     }
 
     public int hashCode()
     {
-        Enumeration             e = this.getObjects();
-        int                     hashCode = size();
-
-        while (e.hasMoreElements())
-        {
-            Object o = getNext(e);
-            hashCode *= 17;
-
-            hashCode ^= o.hashCode();
-        }
-
-        return hashCode;
+        return Arrays.hashCode(elements);
     }
 
     boolean asn1Equals(ASN1Primitive other)
@@ -315,18 +319,16 @@ public abstract class ASN1Sequence
 
         ASN1Sequence that = (ASN1Sequence)other;
 
-        if (this.size() != that.size())
+        int count = this.size();
+        if (that.size() != count)
         {
             return false;
         }
 
-        Enumeration s1 = this.getObjects();
-        Enumeration s2 = that.getObjects();
-
-        while (s1.hasMoreElements())
+        for (int i = 0; i < count; ++i)
         {
-            ASN1Primitive p1 = getNext(s1).toASN1Primitive();
-            ASN1Primitive p2 = getNext(s2).toASN1Primitive();
+            ASN1Primitive p1 = this.elements[i].toASN1Primitive();
+            ASN1Primitive p2 = that.elements[i].toASN1Primitive();
 
             if (p1 != p2 && !p1.asn1Equals(p2))
             {
@@ -350,11 +352,7 @@ public abstract class ASN1Sequence
      */
     ASN1Primitive toDERObject()
     {
-        ASN1Sequence derSeq = new DERSequence();
-
-        derSeq.seq = this.seq;
-
-        return derSeq;
+        return new DERSequence(elements, false);
     }
 
     /**
@@ -363,11 +361,7 @@ public abstract class ASN1Sequence
      */
     ASN1Primitive toDLObject()
     {
-        ASN1Sequence dlSeq = new DLSequence();
-
-        dlSeq.seq = this.seq;
-
-        return dlSeq;
+        return new DLSequence(elements, false);
     }
 
     boolean isConstructed()
@@ -380,11 +374,30 @@ public abstract class ASN1Sequence
 
     public String toString() 
     {
-        return seq.toString();
+        // NOTE: Call size() here to 'force' a LazyEncodedSequence
+        int count = size();
+        if (0 == count)
+        {
+            return "[]";
+        }
+
+        StringBuffer sb = new StringBuffer();
+        sb.append('[');
+        for (int i = 0;;)
+        {
+            sb.append(elements[i]);
+            if (++i >= count)
+            {
+                break;
+            }
+            sb.append(", ");
+        }
+        sb.append(']');
+        return sb.toString();
     }
 
     public Iterator<ASN1Encodable> iterator()
     {
-        return new Arrays.Iterator<ASN1Encodable>(toArray());
+        return new Arrays.Iterator<ASN1Encodable>(elements);
     }
 }

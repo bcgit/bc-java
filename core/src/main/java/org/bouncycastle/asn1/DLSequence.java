@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 /**
  * The DLSequence encodes a SEQUENCE using definite length form.
@@ -48,21 +47,26 @@ public class DLSequence
         super(array);
     }
 
+    DLSequence(ASN1Encodable[] array, boolean clone)
+    {
+        super(array, clone);
+    }
+
     private int getBodyLength()
         throws IOException
     {
         if (bodyLength < 0)
         {
-            int length = 0;
+            int count = elements.length;
+            int totalLength = 0;
 
-            for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+            for (int i = 0; i < count; ++i)
             {
-                Object obj = e.nextElement();
-
-                length += ((ASN1Encodable)obj).toASN1Primitive().toDLObject().encodedLength();
+                ASN1Primitive dlObject = elements[i].toASN1Primitive().toDLObject();
+                totalLength += dlObject.encodedLength();
             }
 
-            bodyLength = length;
+            this.bodyLength = totalLength;
         }
 
         return bodyLength;
@@ -84,9 +88,7 @@ public class DLSequence
      * ASN.1 descriptions given. Rather than just outputting SEQUENCE,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out) throws IOException
     {
         int length = getBodyLength();
 
@@ -94,10 +96,11 @@ public class DLSequence
         out.writeLength(length);
 
         ASN1OutputStream dlOut = out.getDLSubStream();
-        for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+
+        int count = elements.length;
+        for (int i = 0; i < count; ++i)
         {
-            ASN1Encodable enc = (ASN1Encodable)e.nextElement();
-            dlOut.writeObject(enc);
+            dlOut.writeObject(elements[i]);
         }
     }
 
