@@ -15,9 +15,7 @@ public class DEROutputStream
         super(os);
     }
 
-    public void writeObject(
-        ASN1Encodable obj)
-        throws IOException
+    public void writeObject(ASN1Encodable obj) throws IOException
     {
         if (obj != null)
         {
@@ -27,6 +25,16 @@ public class DEROutputStream
         {
             throw new IOException("null object detected");
         }
+    }
+
+    public void writeObject(ASN1Primitive primitive) throws IOException
+    {
+        if (null == primitive)
+        {
+            throw new IOException("null object detected");
+        }
+
+        primitive.toDERObject().encode(this);
     }
 
     DEROutputStream getDERSubStream()
