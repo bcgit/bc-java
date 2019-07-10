@@ -420,38 +420,32 @@ public abstract class ASN1Set
         return derSet;
     }
 
-    boolean asn1Equals(
-        ASN1Primitive o)
+    boolean asn1Equals(ASN1Primitive other)
     {
-        if (!(o instanceof ASN1Set))
+        if (!(other instanceof ASN1Set))
         {
             return false;
         }
 
-        ASN1Set   other = (ASN1Set)o;
+        ASN1Set that = (ASN1Set)other;
 
-        if (this.size() != other.size())
+        if (this.size() != that.size())
         {
             return false;
         }
 
         Enumeration s1 = this.getObjects();
-        Enumeration s2 = other.getObjects();
+        Enumeration s2 = that.getObjects();
 
         while (s1.hasMoreElements())
         {
-            ASN1Encodable obj1 = getNext(s1);
-            ASN1Encodable obj2 = getNext(s2);
+            ASN1Primitive p1 = getNext(s1).toASN1Primitive();
+            ASN1Primitive p2 = getNext(s2).toASN1Primitive();
 
-            ASN1Primitive o1 = obj1.toASN1Primitive();
-            ASN1Primitive o2 = obj2.toASN1Primitive();
-
-            if (o1 == o2 || o1.equals(o2))
+            if (p1 != p2 && !p1.asn1Equals(p2))
             {
-                continue;
+                return false;
             }
-
-            return false;
         }
 
         return true;

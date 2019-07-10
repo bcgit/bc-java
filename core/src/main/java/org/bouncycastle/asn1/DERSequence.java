@@ -96,17 +96,16 @@ public class DERSequence
         ASN1OutputStream out)
         throws IOException
     {
-        ASN1OutputStream        dOut = out.getDERSubStream();
-        int                     length = getBodyLength();
+        int length = getBodyLength();
 
         out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
         out.writeLength(length);
 
+        DEROutputStream derOut = out.getDERSubStream();
         for (Enumeration e = this.getObjects(); e.hasMoreElements();)
         {
-            Object    obj = e.nextElement();
-
-            dOut.writeObject((ASN1Encodable)obj);
+            ASN1Encodable enc = (ASN1Encodable)e.nextElement();
+            enc.toASN1Primitive().toDERObject().encode(derOut);
         }
     }
 
