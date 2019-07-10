@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 /**
  * Indefinite length SEQUENCE of objects.
@@ -51,26 +50,27 @@ public class BERSequence
     int encodedLength()
         throws IOException
     {
-        int length = 0;
-        for (Enumeration e = getObjects(); e.hasMoreElements();)
+        int count = elements.length;
+        int totalLength = 0;
+
+        for (int i = 0; i < count; ++i)
         {
-            length += ((ASN1Encodable)e.nextElement()).toASN1Primitive().encodedLength();
+            ASN1Primitive p = elements[i].toASN1Primitive();
+            totalLength += p.encodedLength();
         }
 
-        return 2 + length + 2;
+        return 2 + totalLength + 2;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out) throws IOException
     {
         out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
         out.write(0x80);
 
-        Enumeration e = getObjects();
-        while (e.hasMoreElements())
+        int count = elements.length;
+        for (int i = 0; i < count; ++i)
         {
-            out.writeObject((ASN1Encodable)e.nextElement());
+            out.writeObject(elements[i]);
         }
 
         out.write(0x00);
