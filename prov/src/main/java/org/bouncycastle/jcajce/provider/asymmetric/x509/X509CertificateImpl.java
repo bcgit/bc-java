@@ -1,6 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -54,6 +56,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -641,7 +644,16 @@ abstract class X509CertificateImpl
 
         signature.initVerify(key);
 
-        signature.update(this.getTBSCertificate());
+        try
+        {
+            OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(signature), 512);
+
+            c.getTBSCertificate().encodeTo(sigOut, ASN1Encoding.DER);
+        }
+        catch (IOException e)
+        {
+            throw new CertificateEncodingException(e.toString());
+        }
 
         if (!signature.verify(this.getSignature()))
         {

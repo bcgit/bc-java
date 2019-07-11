@@ -80,13 +80,13 @@ class OperatorHelper
         String digestName = getDigestName(algorithm);
         try
         {
-            dig = helper.createDigest(digestName);
+            dig = helper.createMessageDigest(digestName);
         }
         catch (NoSuchAlgorithmException e)
         {
             if (algorithm >= HashAlgorithmTags.SHA256 && algorithm <= HashAlgorithmTags.SHA224)
             {
-                dig = helper.createDigest("SHA" + digestName.substring(4));
+                dig = helper.createMessageDigest("SHA" + digestName.substring(4));
             }
             else
             {
