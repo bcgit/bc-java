@@ -18,13 +18,13 @@ public class JcaBlobVerifier
     JcaBlobVerifier(JcaJceHelper helper)
         throws NoSuchProviderException, NoSuchAlgorithmException
     {
-        this.sha1Digest = helper.createDigest("SHA-1");
+        this.sha1Digest = helper.createMessageDigest("SHA-1");
 
         // MD5 may not always be available - we'll die later if we actually need it.
         MessageDigest md5;
         try
         {
-            md5 = helper.createDigest("MD5");
+            md5 = helper.createMessageDigest("MD5");
         }
         catch (NoSuchAlgorithmException e)
         {

@@ -68,7 +68,7 @@ public class JcaKeyFingerprintCalculator
 
             try
             {
-                MessageDigest digest = helper.createDigest("MD5");
+                MessageDigest digest = helper.createMessageDigest("MD5");
 
                 byte[]  bytes = new MPInteger(rK.getModulus()).getEncoded();
                 digest.update(bytes, 2, bytes.length - 2);
@@ -97,7 +97,7 @@ public class JcaKeyFingerprintCalculator
             {
                 byte[]             kBytes = publicPk.getEncodedContents();
 
-                MessageDigest   digest = helper.createDigest("SHA1");
+                MessageDigest digest = helper.createMessageDigest("SHA1");
 
                 digest.update((byte)0x99);
                 digest.update((byte)(kBytes.length >> 8));
