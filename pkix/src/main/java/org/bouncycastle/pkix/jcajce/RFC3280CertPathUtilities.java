@@ -38,6 +38,7 @@ import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.util.Arrays;
 
 class RFC3280CertPathUtilities
@@ -400,7 +401,7 @@ class RFC3280CertPathUtilities
         PublicKey defaultCRLSignKey,
         PKIXExtendedParameters paramsPKIX,
         List certPathCerts,
-        PKIXJcaJceHelper helper)
+        JcaJceHelper helper)
         throws AnnotatedException
     {
         // (f)
@@ -863,7 +864,7 @@ class RFC3280CertPathUtilities
         CertStatus certStatus,
         ReasonsMask reasonMask,
         List certPathCerts,
-        PKIXJcaJceHelper helper)
+        JcaJceHelper helper)
         throws AnnotatedException, CRLNotFoundException
     {
         Date currentDate = new Date(System.currentTimeMillis());

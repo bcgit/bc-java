@@ -98,6 +98,23 @@ public class ClientHello
      * @throws IOException
      */
     public static ClientHello parse(ByteArrayInputStream messageInput, OutputStream dtlsOutput)
+        throws TlsFatalAlert
+    {
+        try
+        {
+            return implParse(messageInput, dtlsOutput);
+        }
+        catch (TlsFatalAlert e)
+        {
+            throw e;
+        }
+        catch (IOException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error, e);
+        }
+    }
+
+    private static ClientHello implParse(ByteArrayInputStream messageInput, OutputStream dtlsOutput)
         throws IOException
     {
         InputStream input = messageInput;
@@ -125,7 +142,8 @@ public class ClientHello
         }
 
         int cipher_suites_length = TlsUtils.readUint16(input);
-        if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0)
+        if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0
+            || messageInput.available() < cipher_suites_length)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }

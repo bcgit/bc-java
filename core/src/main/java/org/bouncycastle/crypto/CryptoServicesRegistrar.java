@@ -28,7 +28,8 @@ public final class CryptoServicesRegistrar
     private static final ThreadLocal<Map<String, Object[]>> threadProperties = new ThreadLocal<Map<String, Object[]>>();
     private static final Map<String, Object[]> globalProperties = Collections.synchronizedMap(new HashMap<String, Object[]>());
 
-    private static volatile SecureRandom defaultSecureRandom;
+    private static final Object cacheLock = new Object();
+    private static SecureRandom defaultSecureRandom;
 
     static
     {
@@ -103,16 +104,28 @@ public final class CryptoServicesRegistrar
      * Return the default source of randomness.
      *
      * @return the default SecureRandom
-     * @throws IllegalStateException if no source of randomness has been provided.
      */
     public static SecureRandom getSecureRandom()
     {
-        if (defaultSecureRandom == null)
+        synchronized (cacheLock)
         {
-            return new SecureRandom();
+            if (null != defaultSecureRandom)
+            {
+                return defaultSecureRandom;
+            }
         }
-        
-        return defaultSecureRandom;
+
+        SecureRandom tmp = new SecureRandom();
+
+        synchronized (cacheLock)
+        {
+            if (null == defaultSecureRandom)
+            {
+                defaultSecureRandom = tmp;
+            }
+
+            return defaultSecureRandom;
+        }
     }
 
     /**
@@ -124,7 +137,10 @@ public final class CryptoServicesRegistrar
     {
         checkPermission(CanSetDefaultRandom);
 
-        defaultSecureRandom = secureRandom;
+        synchronized (cacheLock)
+        {
+            defaultSecureRandom = secureRandom;
+        }
     }
 
     /**
