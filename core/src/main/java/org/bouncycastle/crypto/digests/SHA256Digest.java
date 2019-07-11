@@ -271,42 +271,34 @@ public class SHA256Digest
     }
 
     /* SHA-256 functions */
-    private int Ch(
-        int    x,
-        int    y,
-        int    z)
+    private static int Ch(int x, int y, int z)
     {
         return (x & y) ^ ((~x) & z);
+//        return z ^ (x & (y ^ z));
     }
 
-    private int Maj(
-        int    x,
-        int    y,
-        int    z)
+    private static int Maj(int x, int y, int z)
     {
-        return (x & y) ^ (x & z) ^ (y & z);
+//        return (x & y) ^ (x & z) ^ (y & z);
+        return (x & y) | (z & (x ^ y));
     }
 
-    private int Sum0(
-        int    x)
+    private static int Sum0(int x)
     {
         return ((x >>> 2) | (x << 30)) ^ ((x >>> 13) | (x << 19)) ^ ((x >>> 22) | (x << 10));
     }
 
-    private int Sum1(
-        int    x)
+    private static int Sum1(int x)
     {
         return ((x >>> 6) | (x << 26)) ^ ((x >>> 11) | (x << 21)) ^ ((x >>> 25) | (x << 7));
     }
 
-    private int Theta0(
-        int    x)
+    private static int Theta0(int x)
     {
         return ((x >>> 7) | (x << 25)) ^ ((x >>> 18) | (x << 14)) ^ (x >>> 3);
     }
 
-    private int Theta1(
-        int    x)
+    private static int Theta1(int x)
     {
         return ((x >>> 17) | (x << 15)) ^ ((x >>> 19) | (x << 13)) ^ (x >>> 10);
     }
