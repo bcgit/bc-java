@@ -130,7 +130,7 @@ public class DERSequence
 
             for (int i = 0; i < count; ++i)
             {
-                derObjects[i].encode(out);
+                derObjects[i].encode(derOut);
             }
         }
     }
