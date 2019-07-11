@@ -46,12 +46,18 @@ class DTLSRecordLayer
 //        long sequenceNumber = TlsUtils.readUint48(data, dataOff + 5);
 
         int length = TlsUtils.readUint16(data, dataOff + 11);
-        if (dataLen != RECORD_HEADER_LENGTH + length)
+        if (dataLen < RECORD_HEADER_LENGTH + length)
         {
             return null;
         }
 
-        return Arrays.copyOfRange(data, dataOff + RECORD_HEADER_LENGTH, dataOff + dataLen);
+        if (length > MAX_FRAGMENT_LENGTH)
+        {
+            return null;
+        }
+
+        // NOTE: We ignore/drop any data after the first record 
+        return Arrays.copyOfRange(data, dataOff + RECORD_HEADER_LENGTH, dataOff + RECORD_HEADER_LENGTH + length);
     }
 
     static void sendHelloVerifyRequestRecord(DatagramSender sender, long recordSeq, byte[] message) throws IOException

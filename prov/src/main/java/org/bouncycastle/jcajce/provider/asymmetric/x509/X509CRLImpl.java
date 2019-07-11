@@ -1,6 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -41,6 +43,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.TBSCertList;
+import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.util.Arrays;
@@ -239,7 +242,17 @@ abstract class X509CRLImpl
         }
 
         sig.initVerify(key);
-        sig.update(this.getTBSCertList());
+        
+        try
+        {
+            OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(sig), 512);
+
+            c.getTBSCertList().encodeTo(sigOut, ASN1Encoding.DER);
+        }
+        catch (IOException e)
+        {
+            throw new CRLException(e.toString());
+        }
 
         if (!sig.verify(this.getSignature()))
         {
@@ -354,7 +367,7 @@ abstract class X509CRLImpl
     {
         try
         {
-            return c.getTBSCertList().getEncoded("DER");
+            return c.getTBSCertList().getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {

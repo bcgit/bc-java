@@ -485,17 +485,7 @@ class RevocationUtilities
             {
                 if (genNames[j].getTagNo() == GeneralName.directoryName)
                 {
-                    try
-                    {
-                        issuers.add(X500Name.getInstance(genNames[j].getName()
-                            .toASN1Primitive().getEncoded()));
-                    }
-                    catch (IOException e)
-                    {
-                        throw new AnnotatedException(
-                            "CRL issuer information from distribution point cannot be decoded.",
-                            e);
-                    }
+                    issuers.add(X500Name.getInstance(genNames[j].getName()));
                 }
             }
         }
