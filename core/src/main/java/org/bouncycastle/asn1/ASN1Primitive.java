@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Base class for ASN.1 primitive objects. These are the actual objects used to generate byte encodings.
@@ -10,6 +11,27 @@ public abstract class ASN1Primitive
 {
     ASN1Primitive()
     {
+    }
+
+    public void encodeTo(OutputStream output) throws IOException
+    {
+        encode(new ASN1OutputStream(output));
+    }
+
+    public void encodeTo(OutputStream output, String encoding) throws IOException
+    {
+        if (encoding.equals(ASN1Encoding.DER))
+        {
+            toDERObject().encode(new DEROutputStream(output));
+        }
+        else if (encoding.equals(ASN1Encoding.DL))
+        {
+            toDLObject().encode(new DLOutputStream(output));
+        }
+        else
+        {
+            encodeTo(output);
+        }
     }
 
     /**
