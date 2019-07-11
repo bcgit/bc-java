@@ -649,6 +649,8 @@ abstract class X509CertificateImpl
             OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(signature), 512);
 
             c.getTBSCertificate().encodeTo(sigOut, ASN1Encoding.DER);
+
+            sigOut.close();
         }
         catch (IOException e)
         {

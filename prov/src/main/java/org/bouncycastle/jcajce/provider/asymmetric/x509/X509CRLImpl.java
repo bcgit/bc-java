@@ -248,6 +248,8 @@ abstract class X509CRLImpl
             OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(sig), 512);
 
             c.getTBSCertList().encodeTo(sigOut, ASN1Encoding.DER);
+
+            sigOut.close();
         }
         catch (IOException e)
         {
