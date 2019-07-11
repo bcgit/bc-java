@@ -143,8 +143,8 @@ public class ASN1OutputStream
     protected void writeNull()
         throws IOException
     {
-        os.write(BERTags.NULL);
-        os.write(0x00);
+        write(BERTags.NULL);
+        write(0x00);
     }
 
     public void writeObject(ASN1Encodable obj) throws IOException
@@ -216,6 +216,11 @@ public class ASN1OutputStream
             {
                 super.write(b);
             }
+        }
+
+        void write(byte[] bytes) throws IOException
+        {
+            write(bytes, 0, bytes.length);
         }
 
         void write(byte[] bytes, int off, int len) throws IOException
