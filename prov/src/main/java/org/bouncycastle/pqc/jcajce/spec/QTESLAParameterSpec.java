@@ -15,10 +15,12 @@ public class QTESLAParameterSpec
      * Available security categories.
      */
     public static final String HEURISTIC_I = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I);
-    public static final String HEURISTIC_III_SIZE = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SIZE);
-    public static final String HEURISTIC_III_SPEED = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SPEED);
-    public static final String PROVABLY_SECURE_I = QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_I);
-    public static final String PROVABLY_SECURE_III = QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_III);
+    public static final String HEURISTIC_II = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_II);
+    public static final String HEURISTIC_III = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III);
+    public static final String HEURISTIC_V = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_V);
+    public static final String HEURISTIC_V_SIZE = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_V_SIZE);
+    public static final String HEURISTIC_P_I = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_P_I);
+    public static final String HEURISTIC_P_III = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_P_III);
 
     private String securityCategory;
 
