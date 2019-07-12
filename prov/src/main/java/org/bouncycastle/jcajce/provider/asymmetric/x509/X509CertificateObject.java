@@ -2,7 +2,10 @@ package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateParsingException;
+import java.util.Date;
 import java.util.Enumeration;
 
 import javax.security.auth.x500.X500Principal;
@@ -26,6 +29,7 @@ class X509CertificateObject
     private X500Principal               issuerValue;
     private PublicKey                   publicKeyValue;
     private X500Principal               subjectValue;
+    private long[]                      validityValues;
 
     private volatile boolean            hashValueSet;
     private volatile int                hashValue;
@@ -36,6 +40,21 @@ class X509CertificateObject
         throws CertificateParsingException
     {
         super(bcHelper, c, createBasicConstraints(c), createKeyUsage(c));
+    }
+
+    public void checkValidity(Date date) throws CertificateExpiredException, CertificateNotYetValidException
+    {
+        long checkTime = date.getTime();
+        long[] validityValues = getValidityValues();
+
+        if (checkTime > validityValues[1])  // for other VM compatibility
+        {
+            throw new CertificateExpiredException("certificate expired on " + c.getEndDate().getTime());
+        }
+        if (checkTime < validityValues[0])
+        {
+            throw new CertificateNotYetValidException("certificate not valid till " + c.getStartDate().getTime());
+        }
     }
 
     public X500Principal getIssuerX500Principal()
@@ -109,6 +128,33 @@ class X509CertificateObject
             }
 
             return subjectValue;
+        }
+    }
+
+    public long[] getValidityValues()
+    {
+        synchronized (cacheLock)
+        {
+            if (null != validityValues)
+            {
+                return validityValues;
+            }
+        }
+
+        long[] temp = new long[]
+        {
+            super.getNotBefore().getTime(),
+            super.getNotAfter().getTime()
+        };
+
+        synchronized (cacheLock)
+        {
+            if (null == validityValues)
+            {
+                validityValues = temp;
+            }
+
+            return validityValues;
         }
     }
 
