@@ -85,9 +85,19 @@ abstract class X509CertificateImpl
         this.keyUsage = keyUsage;
     }
 
+    public X500Name getIssuerX500Name()
+    {
+        return c.getIssuer();
+    }
+
     public TBSCertificate getTBSCertificateNative()
     {
         return c.getTBSCertificate();
+    }
+
+    public X500Name getSubjectX500Name()
+    {
+        return c.getSubject();
     }
 
     public void checkValidity()
