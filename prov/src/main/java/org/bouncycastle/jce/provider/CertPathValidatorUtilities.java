@@ -917,7 +917,7 @@ class CertPathValidatorUtilities
             }
             else
             {
-                certIssuer = X500Name.getInstance(certificateIssuer.getEncoded());
+                certIssuer = PrincipalUtils.getX500Name(certificateIssuer);
             }
 
             if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(certIssuer))
@@ -1283,10 +1283,10 @@ class CertPathValidatorUtilities
         {
             selector.setSubject(PrincipalUtils.getIssuerPrincipal(cert).getEncoded());
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             throw new AnnotatedException(
-                           "Subject criteria for certificate selector to find issuer certificate could not be set.", e);
+                "Subject criteria for certificate selector to find issuer certificate could not be set.", e);
         }
 
         try
