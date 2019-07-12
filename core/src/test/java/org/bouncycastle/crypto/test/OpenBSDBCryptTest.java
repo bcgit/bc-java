@@ -28,7 +28,7 @@ public class OpenBSDBCryptTest
     };
 
     private final static String[] bcryptTest2b = { // from: http://stackoverflow.com/questions/11654684/verifying-a-bcrypt-hash
-        "$2a$10$.TtQJ4Jr6isd4Hp.mVfZeuh6Gws4rOQ/vdBczhDx.19NFK0Y84Dle", "ππππππππ"
+        "$2a$10$.TtQJ4Jr6isd4Hp.mVfZeuh6Gws4rOQ/vdBczhDx.19NFK0Y84Dle", "\u03c0\u03c0\u03c0\u03c0\u03c0\u03c0\u03c0\u03c0"
     };
 
     private final static String[][] bcryptTest3 = // from: https://bitbucket.org/vadim/bcrypt.net/src/464c41416dc9/BCrypt.Net.Test/TestBCrypt.cs - plain - salt - expected
