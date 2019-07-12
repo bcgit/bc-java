@@ -19,7 +19,7 @@ public abstract class KeyPairGeneratorTest
     protected final void performKeyPairEncodingTest(KeyPair keyPair)
     {
         try
-        {;
+        {
             PublicKey pubKey = keyPair.getPublic();
             PrivateKey privKey = keyPair.getPrivate();
 

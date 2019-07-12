@@ -45,6 +45,15 @@ class QTESLASecureRandomFactory
     }
 
 
+    public static FixedSecureRandom getFixedNoDiscard(byte[] seed, int strength)
+    {
+        QTESLASecureRandomFactory teslaRNG = new QTESLASecureRandomFactory(seed, null);
+        teslaRNG.init(strength);
+        byte[] burn = new byte[strength / 8];
+        teslaRNG.nextBytes(burn);
+        return new FixedSecureRandom(burn);
+    }
+
     private QTESLASecureRandomFactory(byte[] seed, byte[] personalization)
     {
         this.seed = seed;
