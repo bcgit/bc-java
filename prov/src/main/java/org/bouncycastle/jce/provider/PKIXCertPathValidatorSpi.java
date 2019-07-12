@@ -239,7 +239,7 @@ public class PKIXCertPathValidatorSpi
                 workingPublicKey = trust.getCAPublicKey();
             }
         }
-        catch (IllegalArgumentException ex)
+        catch (RuntimeException ex)
         {
             throw new ExtCertPathValidatorException("Subject of trust anchor could not be (re)encoded.", ex, certPath,
                     -1);
