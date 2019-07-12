@@ -19,17 +19,18 @@ public abstract class ASN1Object
 
     public void encodeTo(OutputStream output, String encoding) throws IOException
     {
+        ASN1Primitive p = toASN1Primitive();
         if (encoding.equals(ASN1Encoding.DER))
         {
-            toASN1Primitive().toDERObject().encode(new DEROutputStream(output));
+            p.toDERObject().encode(new DEROutputStream(output));
         }
         else if (encoding.equals(ASN1Encoding.DL))
         {
-            toASN1Primitive().toDLObject().encode(new DLOutputStream(output));
+            p.toDLObject().encode(new DLOutputStream(output));
         }
         else
         {
-            encodeTo(output);
+            p.encode(new ASN1OutputStream(output));
         }
     }
 
