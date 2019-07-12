@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.DSTU7564Digest;
 import org.bouncycastle.crypto.macs.DSTU7564Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -51,6 +52,7 @@ public class DSTU7564Test
         hash512Tests();
         macTests();
         overflowTest();
+        keySizeTest();
     }
 
     private void overflowTest()
@@ -544,6 +546,31 @@ public class DSTU7564Test
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
+    }
+
+    private void keySizeTest()
+    {
+        doKeySizeTest(new DSTU7564Mac(512));
+        doKeySizeTest(new DSTU7564Mac(256));
+    }
+
+    private void doKeySizeTest(Mac dstuMac)
+    {
+        /* Define message */
+        final byte[] myMessage = "1234567890123456".getBytes();
+
+        /* Determine underlying engine size */
+        final int myEngineSize = dstuMac.getMacSize() == 32 ? 64 : 128;
+
+        /* Define key (can be any multiple of engineSize) */
+        final byte[] myKey = new byte[myEngineSize];
+
+        /* Initialise Mac (will fail with ArrayIndexOutOfBoundsException) */
+        dstuMac.init(new KeyParameter(myKey));
+        final int myOutSize = dstuMac.getMacSize();
+        final byte[] myOut = new byte[myOutSize];
+        dstuMac.update(myMessage, 0, myMessage.length);
+        dstuMac.doFinal(myOut, 0);
     }
 
     private void hash256Tests()
