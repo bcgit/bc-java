@@ -190,24 +190,16 @@ public class ASN1InputStream
         return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
     }
 
-    ASN1EncodableVector buildEncodableVector()
-        throws IOException
+    ASN1EncodableVector buildDEREncodableVector(DefiniteLengthInputStream dIn) throws IOException
     {
+        ASN1InputStream subStream = new ASN1InputStream(dIn);
         ASN1EncodableVector v = new ASN1EncodableVector();
-        ASN1Primitive o;
-
-        while ((o = readObject()) != null)
+        ASN1Primitive p;
+        while ((p = subStream.readObject()) != null)
         {
-            v.add(o);
+            v.add(p);
         }
-
         return v;
-    }
-
-    ASN1EncodableVector buildDEREncodableVector(
-        DefiniteLengthInputStream dIn) throws IOException
-    {
-        return new ASN1InputStream(dIn).buildEncodableVector();
     }
 
     public ASN1Primitive readObject()
