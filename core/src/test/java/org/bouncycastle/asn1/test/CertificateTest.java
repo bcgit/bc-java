@@ -253,6 +253,10 @@ public class CertificateTest
         "/5LdslDjfqV2nUc2GqDPn38PATL26SRJKlCvU2NagdID3WM="
     );
 
+    // malformed cert
+    byte[] bangerCert = Base64.decode("MIIBSKADAgECAgECMA0GCSqGSIb3DQEEBAUAMCUxCzAJBgNVBAMMAkFVMRYwFAYDVQQKDA1CaXVuYHkgQGFzdGtlMB4XDTcwMDExMTQyNjAwMVoXDTcwMDEwNzAwMDAwMlowNjELMQkGA1UBAwwCQVUxFjAUBgNVAQwMDUJsdW5jeSZDY3Nzb2UxDzANBgNVAQsMBlRlc3cgNTAYMBAGBisOBwMDATAGAgEBAgECAwQAAgEDoYGVMIGSMGEGA1YdIwEB/wRXNVWAFDZPdpTPzKi7o8EJokoQU2uqCHRRoTqkOzA2NAs2CgYDVQYDDAJHVTEWMBQGA1QECQwNQmhwbmR5J0Ngc3RsYDAPMA0CA1UECwwGUWVzdyA0hQECMCAGA1UdDgEB/wQWBBQ2T3OSzciou6PBCqRJEFNrqgh2UTALBgNVHQkEBAMGBBE=\n");
+
+
    String[] subjects = 
    {
        "C=AU,ST=Victoria,L=South Melbourne,O=Connect 4 Pty Ltd,OU=Webserver Team,CN=www2.connect4.com.au,E=webmaster@connect4.com.au",
@@ -579,6 +583,18 @@ public class CertificateTest
         }
     }
 
+    private void checkMalformed()
+    {
+        try
+        {
+            TBSCertificate cert = TBSCertificate.getInstance(bangerCert);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected - anything else is not!
+        }
+    }
+    
     public void performTest()
         throws Exception
     {
@@ -592,6 +608,7 @@ public class CertificateTest
         checkAttributeCertificate(8,cert8);
         checkV1AttributeCertificate(9, attrCertv1);
         checkDudCertificate();
+        checkMalformed();
     }
 
     public static void main(
