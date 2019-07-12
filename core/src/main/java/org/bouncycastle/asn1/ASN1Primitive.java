@@ -30,7 +30,7 @@ public abstract class ASN1Primitive
         }
         else
         {
-            encodeTo(output);
+            encode(new ASN1OutputStream(output));
         }
     }
 
@@ -71,6 +71,16 @@ public abstract class ASN1Primitive
         }
 
         return (o instanceof ASN1Encodable) && asn1Equals(((ASN1Encodable)o).toASN1Primitive());
+    }
+
+    public final boolean equals(ASN1Encodable other)
+    {
+        return this == other || asn1Equals(other.toASN1Primitive());
+    }
+
+    public final boolean equals(ASN1Primitive other)
+    {
+        return this == other || asn1Equals(other);
     }
 
     public final ASN1Primitive toASN1Primitive()

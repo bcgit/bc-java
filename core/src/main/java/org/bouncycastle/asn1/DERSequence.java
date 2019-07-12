@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Definite length SEQUENCE, encoding tells explicit number of bytes
@@ -58,6 +59,16 @@ public class DERSequence
     DERSequence(ASN1Encodable[] array, boolean clone)
     {
         super(array, clone);
+    }
+
+    public void encodeTo(OutputStream output) throws IOException
+    {
+        encode(new DEROutputStream(output));
+    }
+
+    public void encodeTo(OutputStream output, String encoding) throws IOException
+    {
+        encode(new DEROutputStream(output));
     }
 
     private int getBodyLength()
