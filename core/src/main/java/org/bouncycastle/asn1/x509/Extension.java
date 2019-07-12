@@ -239,7 +239,7 @@ public class Extension
      * @return a new Extension with the encoding of value in the bytes of the extension's OCTET STRING.
      * @throws IOException if the value cannot be encoded into bytes.
      */
-    public static Extension createExtension(
+    public static Extension create(
         ASN1ObjectIdentifier extnId,
         boolean critical,
         ASN1Encodable value)
