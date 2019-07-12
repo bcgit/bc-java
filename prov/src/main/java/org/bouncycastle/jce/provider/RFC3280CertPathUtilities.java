@@ -30,7 +30,6 @@ import java.util.TimeZone;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -707,7 +706,7 @@ class RFC3280CertPathUtilities
         {
             crlselect.addIssuerName(PrincipalUtils.getIssuerPrincipal(crl).getEncoded());
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             throw new AnnotatedException("Cannot extract issuer from CRL." + e, e);
         }
@@ -2027,13 +2026,12 @@ class RFC3280CertPathUtilities
                  * omitted and a distribution point name of the certificate
                  * issuer.
                  */
-                ASN1Primitive issuer = null;
+                X500Name issuer;
                 try
                 {
-                    issuer = new ASN1InputStream(PrincipalUtils.getEncodedIssuerPrincipal(cert).getEncoded())
-                        .readObject();
+                    issuer = PrincipalUtils.getEncodedIssuerPrincipal(cert);
                 }
-                catch (Exception e)
+                catch (RuntimeException e)
                 {
                     throw new AnnotatedException("Issuer from certificate for CRL could not be reencoded.", e);
                 }
