@@ -244,8 +244,10 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(PQCObjectIdentifiers.mcElieceCca2, new McElieceCCA2KeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.rainbow, new RainbowKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_I, new QTESLAKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_III_size, new QTESLAKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_III_speed, new QTESLAKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_II, new QTESLAKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_III, new QTESLAKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_V, new QTESLAKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_V_SIZE, new QTESLAKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_p_I, new QTESLAKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_p_III, new QTESLAKeyFactorySpi());
     }
