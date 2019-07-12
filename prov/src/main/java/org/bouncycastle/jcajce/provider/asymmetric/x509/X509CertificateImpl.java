@@ -56,6 +56,8 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.TBSCertificate;
+import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
@@ -67,6 +69,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 abstract class X509CertificateImpl
     extends X509Certificate
+    implements BCX509Certificate
 {
     protected JcaJceHelper bcHelper;
     protected org.bouncycastle.asn1.x509.Certificate c;
@@ -80,6 +83,11 @@ abstract class X509CertificateImpl
         this.c = c;
         this.basicConstraints = basicConstraints;
         this.keyUsage = keyUsage;
+    }
+
+    public TBSCertificate getTBSCertificateNative()
+    {
+        return c.getTBSCertificate();
     }
 
     public void checkValidity()
