@@ -129,7 +129,6 @@ public class Argon2Test
      * @throws Exception
      */
     private void testVectorsFromInternetDraft()
-        throws Exception
     {
         byte[] ad = Hex.decode("040404040404040404040404");
         byte[] secret = Hex.decode("0303030303030303");
@@ -219,7 +218,6 @@ public class Argon2Test
     }
 
     public static void main(String[] args)
-        throws Exception
     {
         runTest(new Argon2Test());
     }
