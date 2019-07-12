@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Enumeration;
 
 /**
@@ -65,6 +66,16 @@ public class DERSet
         boolean                  doSort)
     {
         super(v, doSort);
+    }
+
+    public void encodeTo(OutputStream output) throws IOException
+    {
+        encode(new DEROutputStream(output));
+    }
+
+    public void encodeTo(OutputStream output, String encoding) throws IOException
+    {
+        encode(new DEROutputStream(output));
     }
 
     private int getBodyLength()
