@@ -160,6 +160,34 @@ public class DSTU7624Test
                 + Hex.toHexString(expectedMac)
                 + " got " + Hex.toHexString(mac));
         }
+
+        // check that reset correctly on doFinal()
+        dstu7624Mac.update(authtext, 0, authtext.length);
+        dstu7624Mac.doFinal(mac, 0);
+
+        if (!Arrays.areEqual(mac, expectedMac))
+        {
+            fail("Failed MAC test reset - expected "
+                + Hex.toHexString(expectedMac)
+                + " got " + Hex.toHexString(mac));
+        }
+
+        // check that init reset correctly
+        dstu7624Mac.init(new KeyParameter(key));
+        dstu7624Mac.init(new KeyParameter(key));
+        dstu7624Mac.update(authtext, 0, authtext.length);
+        dstu7624Mac.doFinal(mac, 0);
+
+        if (!Arrays.areEqual(mac, expectedMac))
+        {
+            fail("Failed MAC test double init - expected "
+                + Hex.toHexString(expectedMac)
+                + " got " + Hex.toHexString(mac));
+        }
+
+        // check simple reset
+        dstu7624Mac = new DSTU7624Mac(512, 128);
+        dstu7624Mac.reset();
     }
 
     private void KeyWrapTests()

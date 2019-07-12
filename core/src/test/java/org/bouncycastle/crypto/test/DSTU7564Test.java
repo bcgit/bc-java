@@ -384,6 +384,34 @@ public class DSTU7564Test
                 + Hex.toHexString(expectedMac)
                 + " got " + Hex.toHexString(mac));
         }
+
+        // check doFinal() has reset
+        dstu7564mac.update(input, 0, input.length);
+        dstu7564mac.doFinal(mac, 0);
+
+        if (!Arrays.areEqual(expectedMac, mac))
+        {
+            fail("Failed mac test reset - expected "
+                + Hex.toHexString(expectedMac)
+                + " got " + Hex.toHexString(mac));
+        }
+
+        // check that init reset correctly
+        dstu7564mac.init(new KeyParameter(key));
+        dstu7564mac.init(new KeyParameter(key));
+        dstu7564mac.update(input, 0, input.length);
+        dstu7564mac.doFinal(mac, 0);
+
+        if (!Arrays.areEqual(expectedMac, mac))
+        {
+            fail("Failed mac test double init - expected "
+                + Hex.toHexString(expectedMac)
+                + " got " + Hex.toHexString(mac));
+        }
+
+        // check simple reset
+        dstu7564mac = new DSTU7564Mac(macBitSize);
+        dstu7564mac.reset();
     }
 
     private void hash512Tests()
