@@ -3,18 +3,23 @@ package org.bouncycastle.jce.provider.test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.Security;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
+import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -163,6 +168,50 @@ public class GOST3412Test
         }
     }
 
+    private void testCTR()
+        throws Exception
+    {
+        testG3413CTRInit(8);
+
+        try
+        {
+            testG3413CTRInit(16);
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue(e.getMessage().endsWith("IV must be 8 bytes long."));
+        }
+    }
+
+    private void testG3413CTRInit(final int pIVLen)
+        throws Exception
+    {
+        /* Create the generator and generate a key */
+        KeyGenerator myGenerator = KeyGenerator.getInstance("GOST3412-2015", "BC");
+
+        /* Initialise the generator */
+        myGenerator.init(256);
+        SecretKey myKey = myGenerator.generateKey();
+
+        /* Create IV */
+        byte[] myIV = new byte[pIVLen];
+        CryptoServicesRegistrar.getSecureRandom().nextBytes(myIV);
+
+        /* Create a G3413CTR Cipher */
+        Cipher myCipher = Cipher.getInstance("GOST3412-2015" + "/CTR/NoPadding", "BC");
+        myCipher.init(Cipher.ENCRYPT_MODE, myKey, new IvParameterSpec(myIV));
+
+        byte[] msg = Strings.toByteArray("G3413CTR JCA init Bug fixed");
+
+        byte[] enc = myCipher.doFinal(msg);
+        
+        myCipher.init(Cipher.DECRYPT_MODE, myKey, new IvParameterSpec(myIV));
+
+        byte[] dec = myCipher.doFinal(enc);
+
+        isTrue(areEqual(msg, dec));
+    }
+
     public void performTest()
         throws Exception
     {
@@ -193,6 +242,8 @@ public class GOST3412Test
         {
             fail("mac test failed.");
         }
+
+        testCTR();
     }
 
     public static void main(
