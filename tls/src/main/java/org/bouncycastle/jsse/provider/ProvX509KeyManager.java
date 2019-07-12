@@ -23,9 +23,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.TBSCertificate;
 
 class ProvX509KeyManager
     extends X509ExtendedKeyManager
@@ -248,28 +246,8 @@ class ProvX509KeyManager
         return false;
     }
 
-    private boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)
+    private static boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)
     {
-        try
-        {
-            Extensions exts = TBSCertificate.getInstance(c.getTBSCertificate()).getExtensions();
-            if (exts != null)
-            {
-                KeyUsage ku = KeyUsage.fromExtensions(exts);
-                if (ku != null)
-                {
-                    int bits = ku.getBytes()[0] & 0xff;
-                    if ((bits & keyUsageBits) != keyUsageBits)
-                    {
-                        return false;
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
-        return true;
+        return ProvX509KeyManagerSimple.isSuitableKeyUsage(keyUsageBits, c);
     }
 }

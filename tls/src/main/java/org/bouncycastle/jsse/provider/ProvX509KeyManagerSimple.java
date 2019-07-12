@@ -24,9 +24,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.TBSCertificate;
 
 class ProvX509KeyManagerSimple
     extends X509ExtendedKeyManager
@@ -209,29 +207,32 @@ class ProvX509KeyManagerSimple
         return false;
     }
 
-    private boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)
+    static boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)
     {
         try
         {
-            Extensions exts = TBSCertificate.getInstance(c.getTBSCertificate()).getExtensions();
-            if (exts != null)
+            boolean[] keyUsage = c.getKeyUsage();
+            if (null == keyUsage)
             {
-                KeyUsage ku = KeyUsage.fromExtensions(exts);
-                if (ku != null)
+                return true;
+            }
+
+            int bits = 0, count = Math.min(32, keyUsage.length);
+            for (int i = 0; i < count; ++i)
+            {
+                if (keyUsage[i])
                 {
-                    int bits = ku.getBytes()[0] & 0xff;
-                    if ((bits & keyUsageBits) != keyUsageBits)
-                    {
-                        return false;
-                    }
+                    int u = i & 7, v = i - u;
+                    bits |= (0x80 >>> u) << v;
                 }
             }
+
+            return (bits & keyUsageBits) == keyUsageBits;
         }
         catch (Exception e)
         {
             return false;
         }
-        return true;
     }
 
     private static class Credential
