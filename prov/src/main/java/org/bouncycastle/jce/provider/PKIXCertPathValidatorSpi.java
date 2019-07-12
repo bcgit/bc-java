@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
@@ -481,6 +482,24 @@ public class PKIXCertPathValidatorSpi
     static void checkCertificate(X509Certificate cert)
         throws AnnotatedException
     {
+        if (cert instanceof BCX509Certificate)
+        {
+            RuntimeException cause = null;
+            try
+            {
+                if (null != ((BCX509Certificate)cert).getTBSCertificateNative())
+                {
+                    return;
+                }
+            }
+            catch (RuntimeException e)
+            {
+                cause = e;
+            }
+
+            throw new AnnotatedException("unable to process TBSCertificate", cause);
+        }
+
         try
         {
             TBSCertificate.getInstance(cert.getTBSCertificate());
