@@ -6,10 +6,13 @@ package org.bouncycastle.pqc.crypto.qtesla;
 public class QTESLASecurityCategory
 {
     public static final int HEURISTIC_I = 0;
-    public static final int HEURISTIC_III_SIZE = 1;
-    public static final int HEURISTIC_III_SPEED = 2;
-    public static final int PROVABLY_SECURE_I = 3;
-    public static final int PROVABLY_SECURE_III = 4;
+    public static final int HEURISTIC_II = 1;
+    public static final int HEURISTIC_III = 2;
+    public static final int HEURISTIC_V = 3;
+    public static final int HEURISTIC_V_SIZE = 4;
+    public static final int HEURISTIC_P_I = 5;
+    public static final int HEURISTIC_P_III = 6;
+
 
     private QTESLASecurityCategory()
     {
@@ -20,10 +23,12 @@ public class QTESLASecurityCategory
         switch (securityCategory)
         {
         case HEURISTIC_I:
-        case HEURISTIC_III_SIZE:
-        case HEURISTIC_III_SPEED:
-        case PROVABLY_SECURE_I:
-        case PROVABLY_SECURE_III:
+        case HEURISTIC_II:
+        case HEURISTIC_III:
+        case HEURISTIC_V:
+        case HEURISTIC_V_SIZE:
+        case HEURISTIC_P_I:
+        case HEURISTIC_P_III:
             break;
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
@@ -35,15 +40,20 @@ public class QTESLASecurityCategory
         switch (securityCategory)
         {
         case HEURISTIC_I:
-            return Polynomial.PRIVATE_KEY_I;
-        case HEURISTIC_III_SIZE:
-            return Polynomial.PRIVATE_KEY_III_SIZE;
-        case HEURISTIC_III_SPEED:
-            return Polynomial.PRIVATE_KEY_III_SPEED;
-        case PROVABLY_SECURE_I:
-            return Polynomial.PRIVATE_KEY_I_P;
-        case PROVABLY_SECURE_III:
-            return Polynomial.PRIVATE_KEY_III_P;
+            return QTesla1.CRYPTO_SECRETKEYBYTES;
+        case HEURISTIC_II:
+            return QTesla2.CRYPTO_SECRETKEYBYTES;
+        case HEURISTIC_III:
+            return QTesla3.CRYPTO_SECRETKEYBYTES;
+        case HEURISTIC_V:
+            return QTesla5.CRYPTO_SECRETKEYBYTES;
+        case HEURISTIC_V_SIZE:
+            return QTesla5Size.CRYPTO_SECRETKEYBYTES;
+        case HEURISTIC_P_I:
+            return QTesla1p.CRYPTO_SECRETKEYBYTES;
+        case HEURISTIC_P_III:
+            return QTesla3p.CRYPTO_SECRETKEYBYTES;
+
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
         }
@@ -54,15 +64,20 @@ public class QTESLASecurityCategory
         switch (securityCategory)
         {
         case HEURISTIC_I:
-            return Polynomial.PUBLIC_KEY_I;
-        case HEURISTIC_III_SIZE:
-            return Polynomial.PUBLIC_KEY_III_SIZE;
-        case HEURISTIC_III_SPEED:
-            return Polynomial.PUBLIC_KEY_III_SPEED;
-        case PROVABLY_SECURE_I:
-            return Polynomial.PUBLIC_KEY_I_P;
-        case PROVABLY_SECURE_III:
-            return Polynomial.PUBLIC_KEY_III_P;
+            return QTesla1.CRYPTO_PUBLICKEYBYTES;
+        case HEURISTIC_II:
+            return QTesla2.CRYPTO_PUBLICKEYBYTES;
+        case HEURISTIC_III:
+            return QTesla3.CRYPTO_PUBLICKEYBYTES;
+        case HEURISTIC_V:
+            return QTesla5.CRYPTO_PUBLICKEYBYTES;
+        case HEURISTIC_V_SIZE:
+            return QTesla5Size.CRYPTO_PUBLICKEYBYTES;
+        case HEURISTIC_P_I:
+            return QTesla1p.CRYPTO_PUBLICKEYBYTES;
+        case HEURISTIC_P_III:
+            return QTesla3p.CRYPTO_PUBLICKEYBYTES;
+
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
         }
@@ -73,15 +88,20 @@ public class QTESLASecurityCategory
         switch (securityCategory)
         {
         case HEURISTIC_I:
-            return Polynomial.SIGNATURE_I;
-        case HEURISTIC_III_SIZE:
-            return Polynomial.SIGNATURE_III_SIZE;
-        case HEURISTIC_III_SPEED:
-            return Polynomial.SIGNATURE_III_SPEED;
-        case PROVABLY_SECURE_I:
-            return Polynomial.SIGNATURE_I_P;
-        case PROVABLY_SECURE_III:
-            return Polynomial.SIGNATURE_III_P;
+            return QTesla1.SIGNATURE_SIZE;
+
+        case HEURISTIC_II:
+            return QTesla2.CRYPTO_BYTES;
+        case HEURISTIC_III:
+            return QTesla3.CRYPTO_BYTES;
+        case HEURISTIC_V:
+            return QTesla5.CRYPTO_BYTES;
+        case HEURISTIC_V_SIZE:
+            return QTesla5Size.CRYPTO_BYTES;
+        case HEURISTIC_P_I:
+            return QTesla1p.CRYPTO_BYTES;
+        case HEURISTIC_P_III:
+            return QTesla3p.CRYPTO_BYTES;
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
         }
@@ -99,13 +119,17 @@ public class QTESLASecurityCategory
         {
         case HEURISTIC_I:
             return "qTESLA-I";
-        case HEURISTIC_III_SIZE:
-            return "qTESLA-III-size";
-        case HEURISTIC_III_SPEED:
-            return "qTESLA-III-speed";
-        case PROVABLY_SECURE_I:
+        case HEURISTIC_II:
+            return "qTESLA-II";
+        case HEURISTIC_III:
+            return "qTESLA-III";
+        case HEURISTIC_V:
+            return "qTESLA-V";
+        case HEURISTIC_V_SIZE:
+            return "qTESLA-V-SIZE";
+        case HEURISTIC_P_I:
             return "qTESLA-p-I";
-        case PROVABLY_SECURE_III:
+        case HEURISTIC_P_III:
             return "qTESLA-p-III";
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);

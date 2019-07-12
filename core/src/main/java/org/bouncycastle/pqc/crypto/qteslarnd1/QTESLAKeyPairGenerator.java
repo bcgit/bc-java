@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.qtesla;
+package org.bouncycastle.pqc.crypto.qteslarnd1;
 
 import java.security.SecureRandom;
 
@@ -45,34 +45,20 @@ public final class QTESLAKeyPairGenerator
         switch (securityCategory)
         {
         case QTESLASecurityCategory.HEURISTIC_I:
-            QTesla1.generateKeyPair(publicKey, privateKey, secureRandom);
+            QTESLA.generateKeyPairI(publicKey, privateKey, secureRandom);
             break;
-
-        case QTESLASecurityCategory.HEURISTIC_II:
-            QTesla2.generateKeyPair(publicKey, privateKey, secureRandom);
+        case QTESLASecurityCategory.HEURISTIC_III_SIZE:
+            QTESLA.generateKeyPairIIISize(publicKey, privateKey, secureRandom);
             break;
-
-
-        case QTESLASecurityCategory.HEURISTIC_III:
-            QTesla3.generateKeyPair(publicKey, privateKey, secureRandom);
+        case QTESLASecurityCategory.HEURISTIC_III_SPEED:
+            QTESLA.generateKeyPairIIISpeed(publicKey, privateKey, secureRandom);
             break;
-
-        case QTESLASecurityCategory.HEURISTIC_V:
-            QTesla5.generateKeyPair(publicKey, privateKey, secureRandom);
+        case QTESLASecurityCategory.PROVABLY_SECURE_I:
+            QTESLA.generateKeyPairIP(publicKey, privateKey, secureRandom);
             break;
-
-        case QTESLASecurityCategory.HEURISTIC_V_SIZE:
-            QTesla5Size.generateKeyPair(publicKey, privateKey, secureRandom);
+        case QTESLASecurityCategory.PROVABLY_SECURE_III:
+            QTESLA.generateKeyPairIIIP(publicKey, privateKey, secureRandom);
             break;
-
-        case QTESLASecurityCategory.HEURISTIC_P_I:
-            QTesla1p.generateKeyPair(publicKey, privateKey, secureRandom);
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_P_III:
-            QTesla3p.generateKeyPair(publicKey, privateKey, secureRandom);
-            break;
-
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
         }

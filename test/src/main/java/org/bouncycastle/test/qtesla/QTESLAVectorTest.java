@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLASigner;
+import org.bouncycastle.pqc.crypto.qteslarnd1.QTESLAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.qteslarnd1.QTESLAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.qteslarnd1.QTESLASecurityCategory;
+import org.bouncycastle.pqc.crypto.qteslarnd1.QTESLASigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 

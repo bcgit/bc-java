@@ -20,8 +20,10 @@ import org.bouncycastle.util.Integers;
 class Utils
 {
     static final AlgorithmIdentifier AlgID_qTESLA_I = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_I);
-    static final AlgorithmIdentifier AlgID_qTESLA_III_size = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_III_size);
-    static final AlgorithmIdentifier AlgID_qTESLA_III_speed = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_III_speed);
+    static final AlgorithmIdentifier AlgID_qTESLA_II = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_II);
+    static final AlgorithmIdentifier AlgID_qTESLA_III = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_III);
+    static final AlgorithmIdentifier AlgID_qTESLA_V = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_V);
+    static final AlgorithmIdentifier AlgID_qTESLA_V_SIZE = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_V_SIZE);
     static final AlgorithmIdentifier AlgID_qTESLA_p_I = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_p_I);
     static final AlgorithmIdentifier AlgID_qTESLA_p_III = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_p_III);
 
@@ -38,10 +40,12 @@ class Utils
     static
     {
         categories.put(PQCObjectIdentifiers.qTESLA_I, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_I));
-        categories.put(PQCObjectIdentifiers.qTESLA_III_size, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_III_SIZE));
-        categories.put(PQCObjectIdentifiers.qTESLA_III_speed, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_III_SPEED));
-        categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_I));
-        categories.put(PQCObjectIdentifiers.qTESLA_p_III, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_III));
+        categories.put(PQCObjectIdentifiers.qTESLA_II, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_II));
+        categories.put(PQCObjectIdentifiers.qTESLA_III, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_III));
+        categories.put(PQCObjectIdentifiers.qTESLA_V, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_V));
+        categories.put(PQCObjectIdentifiers.qTESLA_V_SIZE, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_V_SIZE));
+        categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_P_I));
+        categories.put(PQCObjectIdentifiers.qTESLA_p_III, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_P_III));
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -55,13 +59,17 @@ class Utils
         {
         case QTESLASecurityCategory.HEURISTIC_I:
             return AlgID_qTESLA_I;
-        case QTESLASecurityCategory.HEURISTIC_III_SIZE:
-            return AlgID_qTESLA_III_size;
-        case QTESLASecurityCategory.HEURISTIC_III_SPEED:
-            return AlgID_qTESLA_III_speed;
-        case QTESLASecurityCategory.PROVABLY_SECURE_I:
+        case QTESLASecurityCategory.HEURISTIC_II:
+            return AlgID_qTESLA_II;
+        case QTESLASecurityCategory.HEURISTIC_III:
+            return AlgID_qTESLA_III;
+        case QTESLASecurityCategory.HEURISTIC_V:
+            return AlgID_qTESLA_V;
+        case QTESLASecurityCategory.HEURISTIC_V_SIZE:
+            return AlgID_qTESLA_V_SIZE;
+        case QTESLASecurityCategory.HEURISTIC_P_I:
             return AlgID_qTESLA_p_I;
-        case QTESLASecurityCategory.PROVABLY_SECURE_III:
+        case QTESLASecurityCategory.HEURISTIC_P_III:
             return AlgID_qTESLA_p_III;
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
