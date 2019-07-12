@@ -41,27 +41,27 @@ public class QTESLASigner
      */
     public void init(boolean forSigning, CipherParameters param)
     {
-         if (forSigning)
-         {
-             if (param instanceof ParametersWithRandom)
-             {
-                 this.secureRandom = ((ParametersWithRandom)param).getRandom();
-                 privateKey = (QTESLAPrivateKeyParameters)((ParametersWithRandom)param).getParameters();
-             }
-             else
-             {
-                 this.secureRandom = CryptoServicesRegistrar.getSecureRandom();
-                 privateKey = (QTESLAPrivateKeyParameters)param;
-             }
-             publicKey = null;
-             QTESLASecurityCategory.validate(privateKey.getSecurityCategory());
-         }
-         else
-         {
-             privateKey = null;
-             publicKey = (QTESLAPublicKeyParameters)param;
-             QTESLASecurityCategory.validate(publicKey.getSecurityCategory());
-         }
+        if (forSigning)
+        {
+            if (param instanceof ParametersWithRandom)
+            {
+                this.secureRandom = ((ParametersWithRandom)param).getRandom();
+                privateKey = (QTESLAPrivateKeyParameters)((ParametersWithRandom)param).getParameters();
+            }
+            else
+            {
+                this.secureRandom = CryptoServicesRegistrar.getSecureRandom();
+                privateKey = (QTESLAPrivateKeyParameters)param;
+            }
+            publicKey = null;
+            QTESLASecurityCategory.validate(privateKey.getSecurityCategory());
+        }
+        else
+        {
+            privateKey = null;
+            publicKey = (QTESLAPublicKeyParameters)param;
+            QTESLASecurityCategory.validate(publicKey.getSecurityCategory());
+        }
     }
 
     /**
@@ -77,20 +77,34 @@ public class QTESLASigner
         switch (privateKey.getSecurityCategory())
         {
         case QTESLASecurityCategory.HEURISTIC_I:
-            QTESLA.signingI(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+            QTesla1.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
-        case QTESLASecurityCategory.HEURISTIC_III_SIZE:
-            QTESLA.signingIIISize(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+
+        case QTESLASecurityCategory.HEURISTIC_II:
+            QTesla2.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
-        case QTESLASecurityCategory.HEURISTIC_III_SPEED:
-            QTESLA.signingIIISpeed(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+
+        case QTESLASecurityCategory.HEURISTIC_III:
+            QTesla3.signing(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
-        case QTESLASecurityCategory.PROVABLY_SECURE_I:
-            QTESLA.signingIP(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+
+        case QTESLASecurityCategory.HEURISTIC_V:
+            QTesla5.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
-        case QTESLASecurityCategory.PROVABLY_SECURE_III:
-            QTESLA.signingIIIP(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+
+        case QTESLASecurityCategory.HEURISTIC_V_SIZE:
+            QTesla5Size.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
+
+        case QTESLASecurityCategory.HEURISTIC_P_I:
+            QTesla1p.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+            break;
+
+        case QTESLASecurityCategory.HEURISTIC_P_III:
+            QTesla3p.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+            break;
+
+
         default:
             throw new IllegalArgumentException("unknown security category: " + privateKey.getSecurityCategory());
         }
@@ -101,7 +115,7 @@ public class QTESLASigner
     /**
      * Verify the signature against the passed in message.
      *
-     * @param message the message that was supposed to have been signed.
+     * @param message   the message that was supposed to have been signed.
      * @param signature the signature of the message
      * @return true if the signature passes, false otherwise.
      */
@@ -112,20 +126,34 @@ public class QTESLASigner
         switch (publicKey.getSecurityCategory())
         {
         case QTESLASecurityCategory.HEURISTIC_I:
-            status = QTESLA.verifyingI(message, signature, 0, signature.length, publicKey.getPublicData());
+            status = QTesla1.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
             break;
-        case QTESLASecurityCategory.HEURISTIC_III_SIZE:
-            status = QTESLA.verifyingIIISize(message, signature, 0, signature.length, publicKey.getPublicData());
+
+
+        case QTESLASecurityCategory.HEURISTIC_II:
+            status = QTesla2.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
             break;
-        case QTESLASecurityCategory.HEURISTIC_III_SPEED:
-            status = QTESLA.verifyingIIISpeed(message, signature, 0, signature.length, publicKey.getPublicData());
+
+        case QTESLASecurityCategory.HEURISTIC_III:
+            status = QTesla3.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
             break;
-        case QTESLASecurityCategory.PROVABLY_SECURE_I:
-            status = QTESLA.verifyingPI(message, signature, 0, signature.length, publicKey.getPublicData());
+
+        case QTESLASecurityCategory.HEURISTIC_V:
+            status = QTesla5.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
             break;
-        case QTESLASecurityCategory.PROVABLY_SECURE_III:
-            status = QTESLA.verifyingPIII(message, signature, 0, signature.length, publicKey.getPublicData());
+
+        case QTESLASecurityCategory.HEURISTIC_V_SIZE:
+            status = QTesla5Size.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
             break;
+
+        case QTESLASecurityCategory.HEURISTIC_P_I:
+            status = QTesla1p.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
+            break;
+
+        case QTESLASecurityCategory.HEURISTIC_P_III:
+            status = QTesla3p.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
+            break;
+
         default:
             throw new IllegalArgumentException("unknown security category: " + publicKey.getSecurityCategory());
         }

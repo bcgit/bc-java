@@ -145,11 +145,20 @@ public interface BCObjectIdentifiers
      * qTESLA
      */
     public static final ASN1ObjectIdentifier qTESLA = bc_sig.branch("4");
-    public static final ASN1ObjectIdentifier qTESLA_I = qTESLA.branch("1");
-    public static final ASN1ObjectIdentifier qTESLA_III_size = qTESLA.branch("2");
-    public static final ASN1ObjectIdentifier qTESLA_III_speed = qTESLA.branch("3");
-    public static final ASN1ObjectIdentifier qTESLA_p_I = qTESLA.branch("4");
-    public static final ASN1ObjectIdentifier qTESLA_p_III = qTESLA.branch("5");
+
+    public static final ASN1ObjectIdentifier qTESLA_Rnd1_I = qTESLA.branch("1");
+    public static final ASN1ObjectIdentifier qTESLA_Rnd1_III_size = qTESLA.branch("2");
+    public static final ASN1ObjectIdentifier qTESLA_Rnd1_III_speed = qTESLA.branch("3");
+    public static final ASN1ObjectIdentifier qTESLA_Rnd1_p_I = qTESLA.branch("4");
+    public static final ASN1ObjectIdentifier qTESLA_Rnd1_p_III = qTESLA.branch("5");
+
+    public static final ASN1ObjectIdentifier qTESLA_I = qTESLA.branch("6");
+    public static final ASN1ObjectIdentifier qTESLA_II = qTESLA.branch("7");
+    public static final ASN1ObjectIdentifier qTESLA_III = qTESLA.branch("8");
+    public static final ASN1ObjectIdentifier qTESLA_V = qTESLA.branch("9");
+    public static final ASN1ObjectIdentifier qTESLA_V_SIZE = qTESLA.branch("10");
+    public static final ASN1ObjectIdentifier qTESLA_p_I = qTESLA.branch("11");
+    public static final ASN1ObjectIdentifier qTESLA_p_III = qTESLA.branch("12");
 
     /**
      * key_exchange(3) algorithms

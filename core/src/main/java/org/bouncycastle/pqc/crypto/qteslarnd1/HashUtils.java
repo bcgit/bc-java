@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.qtesla;
+package org.bouncycastle.pqc.crypto.qteslarnd1;
 
 import org.bouncycastle.crypto.digests.CSHAKEDigest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -6,8 +6,8 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 class HashUtils
 {
 
-    static final int SECURE_HASH_ALGORITHM_KECCAK_128_RATE = 168;
-    static final int SECURE_HASH_ALGORITHM_KECCAK_256_RATE = 136;
+    public static final int SECURE_HASH_ALGORITHM_KECCAK_128_RATE = 168;
+    public static final int SECURE_HASH_ALGORITHM_KECCAK_256_RATE = 136;
 
     /***************************************************************************************************************************************************************
      * Description:	The Secure-Hash-Algorithm-3 Extendable-Output Function That Generally Supports 128 Bits of Security Strength, If the Output is Sufficiently Long
@@ -36,7 +36,7 @@ class HashUtils
 
     static void customizableSecureHashAlgorithmKECCAK128Simple(byte[] output, int outputOffset, int outputLength, short continuousTimeStochasticModelling, byte[] input, int inputOffset, int inputLength)
     {
-        CSHAKEDigest dig = new CSHAKEDigest(128, null, new byte[]{(byte)continuousTimeStochasticModelling, (byte)(continuousTimeStochasticModelling >> 8)});
+        CSHAKEDigest dig = new CSHAKEDigest(128, null, new byte[] {(byte)continuousTimeStochasticModelling, (byte)(continuousTimeStochasticModelling >> 8) });
         dig.update(input, inputOffset, inputLength);
 
         dig.doFinal(output, outputOffset, outputLength);
@@ -44,7 +44,7 @@ class HashUtils
 
     static void customizableSecureHashAlgorithmKECCAK256Simple(byte[] output, int outputOffset, int outputLength, short continuousTimeStochasticModelling, byte[] input, int inputOffset, int inputLength)
     {
-        CSHAKEDigest dig = new CSHAKEDigest(256, null, new byte[]{(byte)continuousTimeStochasticModelling, (byte)(continuousTimeStochasticModelling >> 8)});
+        CSHAKEDigest dig = new CSHAKEDigest(256, null, new byte[] {(byte)continuousTimeStochasticModelling, (byte)(continuousTimeStochasticModelling >> 8) });
         dig.update(input, inputOffset, inputLength);
 
         dig.doFinal(output, outputOffset, outputLength);

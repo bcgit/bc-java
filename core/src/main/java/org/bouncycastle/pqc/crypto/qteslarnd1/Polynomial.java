@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.qtesla;
+package org.bouncycastle.pqc.crypto.qteslarnd1;
 
 import org.bouncycastle.util.Arrays;
 

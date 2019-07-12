@@ -156,39 +156,57 @@ public class SignatureSpi
         }
     }
 
-    static public class HeuristicIIISize
+    static public class HeuristicII
         extends SignatureSpi
     {
-        public HeuristicIIISize()
+        public HeuristicII()
         {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SIZE), new NullDigest(), new QTESLASigner());
+            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_II), new NullDigest(), new QTESLASigner());
         }
     }
 
-    static public class HeuristicIIISpeed
+    static public class HeuristicIII
         extends SignatureSpi
     {
-        public HeuristicIIISpeed()
+        public HeuristicIII()
         {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SPEED), new NullDigest(), new QTESLASigner());
+            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III), new NullDigest(), new QTESLASigner());
         }
     }
 
-    static public class ProvablySecureI
+    static public class HeuristicV
         extends SignatureSpi
     {
-        public ProvablySecureI()
+        public HeuristicV()
         {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_I), new NullDigest(), new QTESLASigner());
+            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_V), new NullDigest(), new QTESLASigner());
         }
     }
 
-    static public class ProvablySecureIII
+    static public class HeuristicV_SIZE
         extends SignatureSpi
     {
-        public ProvablySecureIII()
+        public HeuristicV_SIZE()
         {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_III), new NullDigest(), new QTESLASigner());
+            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_V_SIZE), new NullDigest(), new QTESLASigner());
+        }
+    }
+
+    static public class PI
+        extends SignatureSpi
+    {
+        public PI()
+        {
+            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_P_I), new NullDigest(), new QTESLASigner());
+        }
+    }
+
+    static public class PIII
+        extends SignatureSpi
+    {
+        public PIII()
+        {
+            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_P_III), new NullDigest(), new QTESLASigner());
         }
     }
 }
