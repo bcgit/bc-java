@@ -38,6 +38,9 @@ public class DSTU7564Mac
     public void init(CipherParameters params)
         throws IllegalArgumentException
     {
+        paddedKey = null;
+        reset();
+
         if (params instanceof KeyParameter)
         {
             byte[] key = ((KeyParameter)params).getKey();
@@ -111,7 +114,11 @@ public class DSTU7564Mac
 
         inputLength = 0;
 
-        return engine.doFinal(out, outOff);
+        int res = engine.doFinal(out, outOff);
+
+        reset();
+        
+        return res;
     }
 
     public void reset()
