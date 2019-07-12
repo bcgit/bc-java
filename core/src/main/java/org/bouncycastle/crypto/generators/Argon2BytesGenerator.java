@@ -30,7 +30,7 @@ public class Argon2BytesGenerator
 
     /* Minimum and maximum digest size in bytes */
     private static final int MIN_OUTLEN = 4;
-    
+
     /* Minimum and maximum number of passes */
     private static final int MIN_ITERATIONS = 1;
 
@@ -158,75 +158,17 @@ public class Argon2BytesGenerator
         }
     }
 
-    private static class FillBlock {
-    	
-    	Block R = new Block();
-    	Block Z = new Block();
-    	
-    	Block addressBlock = new Block();
-    	Block zeroBlock = new Block();
-    	Block inputBlock = new Block();
-         
-    private void fillBlock(Block X, Block Y, Block currentBlock, boolean withXor)
-    {
-        R.xor(X, Y);
-        Z.copyBlock(R);
-
-        /* Apply Blake2 on columns of 64-bit words: (0,1,...,15) , then
-        (16,17,..31)... finally (112,113,...127) */
-        for (int i = 0; i < 8; i++)
-        {
-
-            int i16 = 16 * i;
-			roundFunction(Z,
-                i16, i16 + 1, i16 + 2,
-                i16 + 3, i16 + 4, i16 + 5,
-                i16 + 6, i16 + 7, i16 + 8,
-                i16 + 9, i16 + 10, i16 + 11,
-                i16 + 12, i16 + 13, i16 + 14,
-                i16 + 15
-            );
-        }
-
-        /* Apply Blake2 on rows of 64-bit words: (0,1,16,17,...112,113), then
-        (2,3,18,19,...,114,115).. finally (14,15,30,31,...,126,127) */
-        for (int i = 0; i < 8; i++)
-        {
-
-            int i2 = 2 * i;
-			roundFunction(Z,
-                i2, i2 + 1, i2 + 16,
-                i2 + 17, i2 + 32, i2 + 33,
-                i2 + 48, i2 + 49, i2 + 64,
-                i2 + 65, i2 + 80, i2 + 81,
-                i2 + 96, i2 + 97, i2 + 112,
-                i2 + 113
-            );
-
-        }
-
-        if (withXor)
-        {
-            currentBlock.xor(R, Z, currentBlock);
-        }
-        else
-        {
-            currentBlock.xor(R, Z);
-        }
-    }
-    }
-
     private void fillMemoryBlocks()
     {
-    	FillBlock filler = new FillBlock();
-    	Position position = new Position();
+        FillBlock filler = new FillBlock();
+        Position position = new Position();
         for (int i = 0; i < parameters.getIterations(); i++)
         {
             for (int j = 0; j < ARGON2_SYNC_POINTS; j++)
             {
                 for (int k = 0; k < parameters.getLanes(); k++)
                 {
-                	position.update(i, k, j, 0);
+                    position.update(i, k, j, 0);
                     fillSegment(filler, position);
                 }
             }
@@ -265,8 +207,14 @@ public class Argon2BytesGenerator
             Block refBlock = memory[((laneLength) * refLane + refColumn)];
             Block currentBlock = memory[currentOffset];
 
-            boolean withXor = isWithXor(position);
-            filler.fillBlock(prevBlock, refBlock, currentBlock, withXor);
+            if (isWithXor(position))
+            {
+                filler.fillBlockWithXor(prevBlock, refBlock, currentBlock);
+            }
+            else
+            {
+                filler.fillBlock(prevBlock, refBlock, currentBlock);
+            }
         }
     }
 
@@ -338,8 +286,8 @@ public class Argon2BytesGenerator
     private void nextAddresses(FillBlock filler, Block zeroBlock, Block inputBlock, Block addressBlock)
     {
         inputBlock.v[6]++;
-        filler.fillBlock(zeroBlock, inputBlock, addressBlock, false);
-        filler.fillBlock(zeroBlock, addressBlock, addressBlock, false);
+        filler.fillBlock(zeroBlock, inputBlock, addressBlock);
+        filler.fillBlock(zeroBlock, addressBlock, addressBlock);
     }
 
     /* 1.2 Computing the index of the reference block */
@@ -515,10 +463,10 @@ public class Argon2BytesGenerator
     }
 
     private static void roundFunction(Block block,
-                               int v0, int v1, int v2, int v3,
-                               int v4, int v5, int v6, int v7,
-                               int v8, int v9, int v10, int v11,
-                               int v12, int v13, int v14, int v15)
+                                      int v0, int v1, int v2, int v3,
+                                      int v4, int v5, int v6, int v7,
+                                      int v8, int v9, int v10, int v11,
+                                      int v12, int v13, int v14, int v15)
     {
 
         F(block, v0, v4, v8, v12);
@@ -568,14 +516,14 @@ public class Argon2BytesGenerator
     private void initialize(byte[] password, int outputLength)
     {
         byte[] initialHash = initialHash(parameters, outputLength, password);
-        
+
         fillFirstBlocks(initialHash);
     }
 
     private static void addIntToLittleEndian(Digest digest, int n)
     {
-        digest.update((byte)(n       ));
-        digest.update((byte)(n >>>  8));
+        digest.update((byte)(n));
+        digest.update((byte)(n >>> 8));
         digest.update((byte)(n >>> 16));
         digest.update((byte)(n >>> 24));
     }
@@ -632,11 +580,79 @@ public class Argon2BytesGenerator
     {
         return (long)(x & 0xffffffffL);
     }
-    
+
+    private static class FillBlock
+    {
+        Block R = new Block();
+        Block Z = new Block();
+
+        Block addressBlock = new Block();
+        Block zeroBlock = new Block();
+        Block inputBlock = new Block();
+
+        private void applyBlake()
+        {
+            /* Apply Blake2 on columns of 64-bit words: (0,1,...,15) , then
+            (16,17,..31)... finally (112,113,...127) */
+            for (int i = 0; i < 8; i++)
+            {
+
+                int i16 = 16 * i;
+                roundFunction(Z,
+                    i16, i16 + 1, i16 + 2,
+                    i16 + 3, i16 + 4, i16 + 5,
+                    i16 + 6, i16 + 7, i16 + 8,
+                    i16 + 9, i16 + 10, i16 + 11,
+                    i16 + 12, i16 + 13, i16 + 14,
+                    i16 + 15
+                );
+            }
+
+            /* Apply Blake2 on rows of 64-bit words: (0,1,16,17,...112,113), then
+            (2,3,18,19,...,114,115).. finally (14,15,30,31,...,126,127) */
+            for (int i = 0; i < 8; i++)
+            {
+
+                int i2 = 2 * i;
+                roundFunction(Z,
+                    i2, i2 + 1, i2 + 16,
+                    i2 + 17, i2 + 32, i2 + 33,
+                    i2 + 48, i2 + 49, i2 + 64,
+                    i2 + 65, i2 + 80, i2 + 81,
+                    i2 + 96, i2 + 97, i2 + 112,
+                    i2 + 113
+                );
+            }
+        }
+
+        private void fillBlock(Block X, Block Y, Block currentBlock)
+        {
+            if (X == zeroBlock)
+            {
+                R.copyBlock(Y);
+            }
+            else
+            {
+                R.xor(X, Y);
+            }
+            Z.copyBlock(R);
+            applyBlake();
+            currentBlock.xor(R, Z);
+        }
+
+        private void fillBlockWithXor(Block X, Block Y, Block currentBlock)
+        {
+            R.xor(X, Y);
+            Z.copyBlock(R);
+            applyBlake();
+            currentBlock.xor(R, Z, currentBlock);
+        }
+    }
+
     private static class Block
     {
-    	private static final int SIZE = ARGON2_QWORDS_IN_BLOCK;
-    	
+        private static final int SIZE = ARGON2_QWORDS_IN_BLOCK;
+
         /* 128 * 8 Byte QWords */
         private final long[] v;
 
@@ -698,7 +714,7 @@ public class Argon2BytesGenerator
                 v[i] = v[i] ^ other.v[i];
             }
         }
-        
+
         public String toString()
         {
             StringBuffer result = new StringBuffer();
@@ -723,17 +739,18 @@ public class Argon2BytesGenerator
         int lane;
         int slice;
         int index;
-        
+
         Position()
         {
-        	
+
         }
 
-		void update(int pass, int lane, int slice, int index) {
-			this.pass = pass;
-			this.lane = lane;
-			this.slice = slice;
-			this.index = index;
-		}
+        void update(int pass, int lane, int slice, int index)
+        {
+            this.pass = pass;
+            this.lane = lane;
+            this.slice = slice;
+            this.index = index;
+        }
     }
 }
