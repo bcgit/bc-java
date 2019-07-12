@@ -68,7 +68,7 @@ public class GOST3412_2015
     {
         public CTR()
         {
-            super(new BufferedBlockCipher(new G3413CTRBlockCipher(new GOST3412_2015Engine())), 128);
+            super(new BufferedBlockCipher(new G3413CTRBlockCipher(new GOST3412_2015Engine())), true,64);
         }
 
     }
