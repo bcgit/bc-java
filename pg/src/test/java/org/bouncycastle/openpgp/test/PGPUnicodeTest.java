@@ -74,7 +74,7 @@ public class PGPUnicodeTest
         {
             BigInteger keyId = new BigInteger("362961283C48132B9F14C5C3EC87272EFCB986D2", 16);
 
-            String passphrase = new String("Händle".getBytes("UTF-16"), "UTF-16");
+            String passphrase = new String("H\u00e4ndle".getBytes("UTF-16"), "UTF-16");
 //            FileInputStream passwordFile = new FileInputStream("testdata/passphrase_for_test.txt");
 //            byte[] password = new byte[passwordFile.available()];
 //            passwordFile.read(password);
