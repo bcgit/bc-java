@@ -199,7 +199,7 @@ public abstract class JceKeyAgreeRecipient
         }
     }
 
-    private Key unwrapSessionKey(ASN1ObjectIdentifier wrapAlg, SecretKey agreedKey, ASN1ObjectIdentifier contentEncryptionAlgorithm, byte[] encryptedContentEncryptionKey)
+    protected Key unwrapSessionKey(ASN1ObjectIdentifier wrapAlg, SecretKey agreedKey, ASN1ObjectIdentifier contentEncryptionAlgorithm, byte[] encryptedContentEncryptionKey)
         throws CMSException, InvalidKeyException, NoSuchAlgorithmException
     {
         Cipher keyCipher = helper.createCipher(wrapAlg);
