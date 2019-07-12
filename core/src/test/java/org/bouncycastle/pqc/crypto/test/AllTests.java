@@ -26,6 +26,7 @@ public class AllTests
         suite.addTestSuite(NTRUSignatureKeyTest.class);
         suite.addTestSuite(NTRUSignerTest.class);
         suite.addTestSuite(NTRUSigningParametersTest.class);
+        suite.addTestSuite(QTESLATest.class);
         suite.addTestSuite(XMSSMTPrivateKeyTest.class);
         suite.addTestSuite(XMSSMTPublicKeyTest.class);
         suite.addTestSuite(XMSSMTSignatureTest.class);
