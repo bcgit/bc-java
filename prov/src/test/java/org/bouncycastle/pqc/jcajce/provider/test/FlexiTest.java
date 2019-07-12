@@ -24,7 +24,10 @@ public abstract class FlexiTest
 
     protected void setUp()
     {
-        Security.addProvider(new BouncyCastlePQCProvider());
+        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastlePQCProvider());
+        }
         // initialize sources of randomness
         rand = new Random();
         sr = new SecureRandom();
