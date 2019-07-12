@@ -24,7 +24,9 @@ public class BCRSAPublicKey
 
     private BigInteger modulus;
     private BigInteger publicExponent;
+
     private transient AlgorithmIdentifier algorithmIdentifier;
+    private transient RSAKeyParameters rsaPublicKey;
 
     BCRSAPublicKey(
         RSAKeyParameters key)
@@ -32,6 +34,7 @@ public class BCRSAPublicKey
         this.algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
         this.modulus = key.getModulus();
         this.publicExponent = key.getExponent();
+        this.rsaPublicKey = key;
     }
 
     BCRSAPublicKey(
@@ -40,6 +43,7 @@ public class BCRSAPublicKey
         this.algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
         this.modulus = spec.getModulus();
         this.publicExponent = spec.getPublicExponent();
+        this.rsaPublicKey = new RSAKeyParameters(false, modulus, publicExponent);
     }
 
     BCRSAPublicKey(
@@ -48,6 +52,7 @@ public class BCRSAPublicKey
         this.algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
         this.modulus = key.getModulus();
         this.publicExponent = key.getPublicExponent();
+        this.rsaPublicKey = new RSAKeyParameters(false, modulus, publicExponent);
     }
 
     BCRSAPublicKey(
@@ -65,6 +70,7 @@ public class BCRSAPublicKey
             this.algorithmIdentifier = info.getAlgorithm();
             this.modulus = pubKey.getModulus();
             this.publicExponent = pubKey.getPublicExponent();
+            this.rsaPublicKey = new RSAKeyParameters(false, modulus, publicExponent);
         }
         catch (IOException e)
         {
@@ -105,6 +111,11 @@ public class BCRSAPublicKey
     public byte[] getEncoded()
     {
         return KeyUtil.getEncodedSubjectPublicKeyInfo(algorithmIdentifier, new org.bouncycastle.asn1.pkcs.RSAPublicKey(getModulus(), getPublicExponent()));
+    }
+
+    RSAKeyParameters engineGetKeyParameters()
+    {
+        return rsaPublicKey;
     }
 
     public int hashCode()
@@ -160,6 +171,7 @@ public class BCRSAPublicKey
         {
             algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
         }
+        this.rsaPublicKey = new RSAKeyParameters(false, modulus, publicExponent);
     }
 
     private void writeObject(

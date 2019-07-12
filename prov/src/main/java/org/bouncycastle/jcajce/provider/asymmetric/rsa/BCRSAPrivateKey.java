@@ -29,17 +29,15 @@ public class BCRSAPrivateKey
     protected BigInteger modulus;
     protected BigInteger privateExponent;
 
-    private transient PKCS12BagAttributeCarrierImpl   attrCarrier = new PKCS12BagAttributeCarrierImpl();
-
-    protected BCRSAPrivateKey()
-    {
-    }
+    protected transient RSAKeyParameters rsaPrivateKey;
+    protected transient PKCS12BagAttributeCarrierImpl   attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
     BCRSAPrivateKey(
         RSAKeyParameters key)
     {
         this.modulus = key.getModulus();
         this.privateExponent = key.getExponent();
+        this.rsaPrivateKey = key;
     }
 
     BCRSAPrivateKey(
@@ -47,6 +45,7 @@ public class BCRSAPrivateKey
     {
         this.modulus = spec.getModulus();
         this.privateExponent = spec.getPrivateExponent();
+        this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
     }
 
     BCRSAPrivateKey(
@@ -54,12 +53,14 @@ public class BCRSAPrivateKey
     {
         this.modulus = key.getModulus();
         this.privateExponent = key.getPrivateExponent();
+        this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
     }
 
     BCRSAPrivateKey(org.bouncycastle.asn1.pkcs.RSAPrivateKey key)
     {
         this.modulus = key.getModulus();
         this.privateExponent = key.getPrivateExponent();
+        this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
     }
 
     public BigInteger getModulus()
@@ -80,6 +81,11 @@ public class BCRSAPrivateKey
     public String getFormat()
     {
         return "PKCS#8";
+    }
+
+    RSAKeyParameters engineGetKeyParameters()
+    {
+        return rsaPrivateKey;
     }
 
     public byte[] getEncoded()
@@ -135,6 +141,7 @@ public class BCRSAPrivateKey
         in.defaultReadObject();
 
         this.attrCarrier = new PKCS12BagAttributeCarrierImpl();
+        this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
     }
 
     private void writeObject(
