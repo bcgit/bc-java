@@ -407,24 +407,7 @@ public abstract class ASN1Set
 
     public int hashCode()
     {
-        int count = elements.length;
-        int hc = count + 1;
-
-        for (int i = 0; i < count; ++i)
-        {
-            ASN1Encodable e = this.elements[i];
-
-            // unfortunately null was allowed as a substitute for DER null
-            if (null == e)
-            {
-                e = DERNull.INSTANCE;
-            }
-
-            hc *= 257;
-            hc ^= e.hashCode();
-        }
-
-        return hc;
+        return Arrays.hashCode(elements);
     }
 
     /**
@@ -474,12 +457,8 @@ public abstract class ASN1Set
 
         for (int i = 0; i < count; ++i)
         {
-            ASN1Encodable e1 = this.elements[i];
-            ASN1Encodable e2 = that.elements[i];
-
-            // unfortunately null was allowed as a substitute for DER null
-            ASN1Primitive p1 = null == e1 ? DERNull.INSTANCE : e1.toASN1Primitive();
-            ASN1Primitive p2 = null == e2 ? DERNull.INSTANCE : e2.toASN1Primitive();
+            ASN1Primitive p1 = this.elements[i].toASN1Primitive();
+            ASN1Primitive p2 = that.elements[i].toASN1Primitive();
 
             if (p1 != p2 && !p1.asn1Equals(p2))
             {
