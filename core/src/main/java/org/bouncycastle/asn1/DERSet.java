@@ -3,6 +3,7 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * A DER encoded SET object
@@ -66,6 +67,11 @@ public class DERSet
         boolean                  doSort)
     {
         super(v, doSort);
+    }
+
+    DERSet(Vector v, boolean isSorted)
+    {
+        super(v, isSorted);
     }
 
     public void encodeTo(OutputStream output) throws IOException

@@ -98,8 +98,8 @@ public abstract class ASN1Set
     extends ASN1Primitive
     implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
-    private Vector set = new Vector();
-    boolean isSorted = false;
+    private final Vector set;
+    protected final boolean isSorted;
 
     /**
      * return an ASN1Set from the given object.
@@ -225,16 +225,21 @@ public abstract class ASN1Set
 
     protected ASN1Set()
     {
+        this.set = new Vector(0);
+        this.isSorted = true;
     }
 
     /**
      * Create a SET containing one object
      * @param obj object to be added to the SET.
      */
-    protected ASN1Set(
-        ASN1Encodable obj)
+    protected ASN1Set(ASN1Encodable obj)
     {
-        set.addElement(obj);
+        Vector tmp = new Vector(1);
+        tmp.addElement(obj);
+
+        this.set = tmp;
+        this.isSorted = true;
     }
 
     /**
@@ -242,19 +247,22 @@ public abstract class ASN1Set
      * @param v a vector of objects to make up the SET.
      * @param doSort true if should be sorted DER style, false otherwise.
      */
-    protected ASN1Set(
-        ASN1EncodableVector v,
-        boolean                  doSort)
+    protected ASN1Set(ASN1EncodableVector v, boolean doSort)
     {
-        for (int i = 0; i != v.size(); i++)
+        int size = v.size();
+        Vector tmp = new Vector(size);
+        for (int i = 0; i < size; ++i)
         {
-            set.addElement(v.get(i));
+            tmp.addElement(v.get(i));
         }
 
         if (doSort)
         {
-            this.sort();
+            sort(tmp);
         }
+
+        this.set = tmp;
+        this.isSorted = doSort;
     }
 
     /**
@@ -262,19 +270,28 @@ public abstract class ASN1Set
      * @param array an array of objects to make up the SET.
      * @param doSort true if should be sorted DER style, false otherwise.
      */
-    protected ASN1Set(
-        ASN1Encodable[]   array,
-        boolean doSort)
+    protected ASN1Set(ASN1Encodable[] array, boolean doSort)
     {
-        for (int i = 0; i != array.length; i++)
+        int size = array.length;
+        Vector tmp = new Vector(size);
+        for (int i = 0; i < size; ++i)
         {
-            set.addElement(array[i]);
+            tmp.addElement(array[i]);
         }
 
         if (doSort)
         {
-            this.sort();
+            sort(tmp);
         }
+
+        this.set = tmp;
+        this.isSorted = doSort;
+    }
+
+    ASN1Set(Vector v, boolean isSorted)
+    {
+        this.set = v;
+        this.isSorted = isSorted;
     }
 
     public Enumeration getObjects()
@@ -380,31 +397,25 @@ public abstract class ASN1Set
      */
     ASN1Primitive toDERObject()
     {
+        Vector v;
         if (isSorted)
         {
-            ASN1Set derSet = new DERSet();
-
-            derSet.set = this.set;
-
-            return derSet;
+            v = set;
         }
         else
         {
-            Vector v = new Vector();
-
-            for (int i = 0; i != set.size(); i++)
+            int size = set.size();
+            v = new Vector(size);
+            for (int i = 0; i < size; ++i)
             {
-                v.addElement(set.elementAt(i));
+                Object obj = set.elementAt(i);
+                v.addElement(obj);
             }
 
-            ASN1Set derSet = new DERSet();
-
-            derSet.set = v;
-
-            derSet.sort();
-
-            return derSet;
+            sort(v);
         }
+
+        return new DERSet(v, isSorted);
     }
 
     /**
@@ -413,11 +424,7 @@ public abstract class ASN1Set
      */
     ASN1Primitive toDLObject()
     {
-        ASN1Set derSet = new DLSet();
-
-        derSet.set = this.set;
-
-        return derSet;
+        return new DLSet(set, isSorted);
     }
 
     boolean asn1Equals(ASN1Primitive other)
@@ -464,83 +471,6 @@ public abstract class ASN1Set
         return encObj;
     }
 
-    /**
-     * return true if a <= b (arrays are assumed padded with zeros).
-     */
-    private boolean lessThanOrEqual(
-         byte[] a,
-         byte[] b)
-    {
-        int len = Math.min(a.length, b.length);
-        for (int i = 0; i != len; ++i)
-        {
-            if (a[i] != b[i])
-            {
-                return (a[i] & 0xff) < (b[i] & 0xff);
-            }
-        }
-        return len == a.length;
-    }
-
-    private byte[] getDEREncoded(
-        ASN1Encodable obj)
-    {
-        try
-        {
-            return obj.toASN1Primitive().getEncoded(ASN1Encoding.DER);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalArgumentException("cannot encode object added to SET");
-        }
-    }
-
-    protected void sort()
-    {
-        if (!isSorted)
-        {
-            isSorted = true;
-            if (set.size() > 1)
-            {
-                boolean    swapped = true;
-                int        lastSwap = set.size() - 1;
-
-                while (swapped)
-                {
-                    int    index = 0;
-                    int    swapIndex = 0;
-                    byte[] a = getDEREncoded((ASN1Encodable)set.elementAt(0));
-
-                    swapped = false;
-
-                    while (index != lastSwap)
-                    {
-                        byte[] b = getDEREncoded((ASN1Encodable)set.elementAt(index + 1));
-
-                        if (lessThanOrEqual(a, b))
-                        {
-                            a = b;
-                        }
-                        else
-                        {
-                            Object  o = set.elementAt(index);
-
-                            set.setElementAt(set.elementAt(index + 1), index);
-                            set.setElementAt(o, index + 1);
-
-                            swapped = true;
-                            swapIndex = index;
-                        }
-
-                        index++;
-                    }
-
-                    lastSwap = swapIndex;
-                }
-            }
-        }
-    }
-
     boolean isConstructed()
     {
         return true;
@@ -557,5 +487,79 @@ public abstract class ASN1Set
     public Iterator<ASN1Encodable> iterator()
     {
         return new Arrays.Iterator<ASN1Encodable>(toArray());
+    }
+
+    private static byte[] getDEREncoded(ASN1Encodable obj)
+    {
+        try
+        {
+            return obj.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException("cannot encode object added to SET");
+        }
+    }
+
+    /**
+     * return true if a <= b (arrays are assumed padded with zeros).
+     */
+    private static boolean lessThanOrEqual(
+         byte[] a,
+         byte[] b)
+    {
+        int len = Math.min(a.length, b.length);
+        for (int i = 0; i != len; ++i)
+        {
+            if (a[i] != b[i])
+            {
+                return (a[i] & 0xff) < (b[i] & 0xff);
+            }
+        }
+        return len == a.length;
+    }
+
+    private static void sort(Vector set)
+    {
+        if (set.size() < 2)
+        {
+            return;
+        }
+
+        boolean swapped = true;
+        int lastSwap = set.size() - 1;
+
+        while (swapped)
+        {
+            int index = 0;
+            int swapIndex = 0;
+            byte[] a = getDEREncoded((ASN1Encodable)set.elementAt(0));
+
+            swapped = false;
+
+            while (index != lastSwap)
+            {
+                byte[] b = getDEREncoded((ASN1Encodable)set.elementAt(index + 1));
+
+                if (lessThanOrEqual(a, b))
+                {
+                    a = b;
+                }
+                else
+                {
+                    Object o = set.elementAt(index);
+
+                    set.setElementAt(set.elementAt(index + 1), index);
+                    set.setElementAt(o, index + 1);
+
+                    swapped = true;
+                    swapIndex = index;
+                }
+
+                index++;
+            }
+
+            lastSwap = swapIndex;
+        }
     }
 }
