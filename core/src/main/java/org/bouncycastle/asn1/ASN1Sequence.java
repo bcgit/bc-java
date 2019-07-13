@@ -350,13 +350,6 @@ public abstract class ASN1Sequence
         return true;
     }
 
-    private ASN1Encodable getNext(Enumeration e)
-    {
-        ASN1Encodable encObj = (ASN1Encodable)e.nextElement();
-
-        return encObj;
-    }
-
     /**
      * Change current SEQUENCE object to be encoded as {@link DERSequence}.
      * This is part of Distinguished Encoding Rules form serialization.
