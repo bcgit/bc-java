@@ -2,7 +2,6 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Enumeration;
 
 /**
  * A DER encoded SET object
@@ -88,16 +87,16 @@ public class DERSet
     {
         if (bodyLength < 0)
         {
-            int length = 0;
+            int count = elements.length;
+            int totalLength = 0;
 
-            for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+            for (int i = 0; i < count; ++i)
             {
-                Object    obj = e.nextElement();
-
-                length += ((ASN1Encodable)obj).toASN1Primitive().toDERObject().encodedLength();
+                ASN1Primitive derObject = elements[i].toASN1Primitive().toDERObject();
+                totalLength += derObject.encodedLength();
             }
 
-            bodyLength = length;
+            this.bodyLength = totalLength;
         }
 
         return bodyLength;
@@ -119,20 +118,42 @@ public class DERSet
      * ASN.1 descriptions given. Rather than just outputting SET,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out) throws IOException
     {
-        int length = getBodyLength();
-
         out.write(BERTags.SET | BERTags.CONSTRUCTED);
-        out.writeLength(length);
 
         DEROutputStream derOut = out.getDERSubStream();
-        for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+
+        int count = elements.length;
+        if (bodyLength >= 0 || count > 16)
         {
-            ASN1Encodable enc = (ASN1Encodable)e.nextElement();
-            enc.toASN1Primitive().toDERObject().encode(derOut);
+            out.writeLength(getBodyLength());
+
+            for (int i = 0; i < count; ++i)
+            {
+                ASN1Primitive derObject = elements[i].toASN1Primitive().toDERObject();
+                derObject.encode(derOut);
+            }
+        }
+        else
+        {
+            int totalLength = 0;
+
+            ASN1Primitive[] derObjects = new ASN1Primitive[count];
+            for (int i = 0; i < count; ++i)
+            {
+                ASN1Primitive derObject = elements[i].toASN1Primitive().toDERObject();
+                derObjects[i] = derObject;
+                totalLength += derObject.encodedLength();
+            }
+
+            this.bodyLength = totalLength;
+            out.writeLength(totalLength);
+
+            for (int i = 0; i < count; ++i)
+            {
+                derObjects[i].encode(derOut);
+            }
         }
     }
 
