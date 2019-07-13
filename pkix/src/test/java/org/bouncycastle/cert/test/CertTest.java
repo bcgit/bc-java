@@ -27,12 +27,14 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
 import java.security.spec.DSAParameterSpec;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.PSSParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -1152,7 +1154,7 @@ public class CertTest
             + "RRsRsjse3i2/KClFVd6YLZ+7K1BE0WxFyY2bbytkwQJSxvv3vLSuweFUbhNxutb68wl/yW4GLy4b"
             + "1QdyswNxrNDXTuu5ILKhRDDuWeocz83aG2KGtr3JlFyr3biWGEyn5WUOE6tbONoQDJ0oPYgI6CAc"
             + "EHdUp0lioOCt6UOw7Cs=");
-    
+
     private final byte[] gostRFC4491_94 = Base64.decode(
         "MIICCzCCAboCECMO42BGlSTOxwvklBgufuswCAYGKoUDAgIEMGkxHTAbBgNVBAMM" +
             "FEdvc3RSMzQxMC05NCBleGFtcGxlMRIwEAYDVQQKDAlDcnlwdG9Qcm8xCzAJBgNV" +
@@ -1262,32 +1264,42 @@ public class CertTest
             "MDkGA1UEAwwy0JDQu9C10LrRgdCw0L3QtNGAINCh0LXRgNCz0LXQtdCy0LjRhyDQn9GD0YjQutC40L2CBAonsNswCgYIKoUD" +
             "BwEBAwIDQQDL2un6Wxn0frStAheZsd34ANDFwAb0rCOInrXsi6HOAxgIuS+9iICiQNTRlQ6x9LSWOUf+aa7kDDU5P4Ovd5od");
 
+    private byte[] x25519Cert = Base64.decode(
+        "MIIBLDCB36ADAgECAghWAUdKKo3DMDAFBgMrZXAwGTEXMBUGA1UEAwwOSUVURiBUZX" +
+            "N0IERlbW8wHhcNMTYwODAxMTIxOTI0WhcNNDAxMjMxMjM1OTU5WjAZMRcwFQYDVQQD" +
+            "DA5JRVRGIFRlc3QgRGVtbzAqMAUGAytlbgMhAIUg8AmJMKdUdIt93LQ+91oNvzoNJj" +
+            "ga9OukqY6qm05qo0UwQzAPBgNVHRMBAf8EBTADAQEAMA4GA1UdDwEBAAQEAwIDCDAg" +
+            "BgNVHQ4BAQAEFgQUmx9e7e0EM4Xk97xiPFl1uQvIuzswBQYDK2VwA0EAryMB/t3J5v" +
+            "/BzKc9dNZIpDmAgs3babFOTQbs+BolzlDUwsPrdGxO3YNGhW7Ibz3OGhhlxXrCe1Cg" +
+            "w1AH9efZBw=="
+    );
+    
     private static byte[] gost_2012_privateKey = Base64.decode(
         "MEgCAQAwHwYIKoUDBwEBBgEwEwYHKoUDAgIkAAYIKoUDBwEBAgIEIgQg0MVlKYHb5/AwO1ZjNW8nhjyX3IgHo7nPSKuvKf87" +
             "tTU=");
 
     private static DSAParameters def2048Params = new DSAParameters(
         new BigInteger("95475cf5d93e596c3fcd1d902add02f427f5f3c7210313bb45fb4d5b" +
-                        "b2e5fe1cbd678cd4bbdd84c9836be1f31c0777725aeb6c2fc38b85f4" +
-                        "8076fa76bcd8146cc89a6fb2f706dd719898c2083dc8d896f84062e2" +
-                        "c9c94d137b054a8d8096adb8d51952398eeca852a0af12df83e475aa" +
-                        "65d4ec0c38a9560d5661186ff98b9fc9eb60eee8b030376b236bc73b" +
-                        "e3acdbd74fd61c1d2475fa3077b8f080467881ff7e1ca56fee066d79" +
-                        "506ade51edbb5443a563927dbc4ba520086746175c8885925ebc64c6" +
-                        "147906773496990cb714ec667304e261faee33b3cbdf008e0c3fa906" +
-                        "50d97d3909c9275bf4ac86ffcb3d03e6dfc8ada5934242dd6d3bcca2" +
-                        "a406cb0b", 16),
+            "b2e5fe1cbd678cd4bbdd84c9836be1f31c0777725aeb6c2fc38b85f4" +
+            "8076fa76bcd8146cc89a6fb2f706dd719898c2083dc8d896f84062e2" +
+            "c9c94d137b054a8d8096adb8d51952398eeca852a0af12df83e475aa" +
+            "65d4ec0c38a9560d5661186ff98b9fc9eb60eee8b030376b236bc73b" +
+            "e3acdbd74fd61c1d2475fa3077b8f080467881ff7e1ca56fee066d79" +
+            "506ade51edbb5443a563927dbc4ba520086746175c8885925ebc64c6" +
+            "147906773496990cb714ec667304e261faee33b3cbdf008e0c3fa906" +
+            "50d97d3909c9275bf4ac86ffcb3d03e6dfc8ada5934242dd6d3bcca2" +
+            "a406cb0b", 16),
         new BigInteger("f8183668ba5fc5bb06b5981e6d8b795d30b8978d43ca0ec572e37e09939a9773", 16),
         new BigInteger("42debb9da5b3d88cc956e08787ec3f3a09bba5f48b889a74aaf53174" +
-                        "aa0fbe7e3c5b8fcd7a53bef563b0e98560328960a9517f4014d3325f" +
-                        "c7962bf1e049370d76d1314a76137e792f3f0db859d095e4a5b93202" +
-                        "4f079ecf2ef09c797452b0770e1350782ed57ddf794979dcef23cb96" +
-                        "f183061965c4ebc93c9c71c56b925955a75f94cccf1449ac43d586d0" +
-                        "beee43251b0b2287349d68de0d144403f13e802f4146d882e057af19" +
-                        "b6f6275c6676c8fa0e3ca2713a3257fd1b27d0639f695e347d8d1cf9" +
-                        "ac819a26ca9b04cb0eb9b7b035988d15bbac65212a55239cfc7e58fa" +
-                        "e38d7250ab9991ffbc97134025fe8ce04c4399ad96569be91a546f49" +
-                        "78693c7a", 16),
+            "aa0fbe7e3c5b8fcd7a53bef563b0e98560328960a9517f4014d3325f" +
+            "c7962bf1e049370d76d1314a76137e792f3f0db859d095e4a5b93202" +
+            "4f079ecf2ef09c797452b0770e1350782ed57ddf794979dcef23cb96" +
+            "f183061965c4ebc93c9c71c56b925955a75f94cccf1449ac43d586d0" +
+            "beee43251b0b2287349d68de0d144403f13e802f4146d882e057af19" +
+            "b6f6275c6676c8fa0e3ca2713a3257fd1b27d0639f695e347d8d1cf9" +
+            "ac819a26ca9b04cb0eb9b7b035988d15bbac65212a55239cfc7e58fa" +
+            "e38d7250ab9991ffbc97134025fe8ce04c4399ad96569be91a546f49" +
+            "78693c7a", 16),
         new DSAValidationParameters(Hex.decode("b0b4417601b59cbc9d8ac8f935cadaec4f5fbb2f23785609ae466748d9b5a536"), 497));
 
     private PublicKey dudPublicKey = new PublicKey()
@@ -1330,6 +1342,35 @@ public class CertTest
             Certificate cert = fact.generateCertificate(bIn);
 
             PublicKey k = cert.getPublicKey();
+//            System.out.println("****** " + id + " ******");
+//            System.out.println(cert);
+        }
+        catch (Exception e)
+        {
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+        }
+
+    }
+
+    public void checkCertificate(
+        int id,
+        byte[] bytes,
+        PublicKey pubKey)
+    {
+        ByteArrayInputStream bIn;
+        String dump = "";
+
+        try
+        {
+            bIn = new ByteArrayInputStream(bytes);
+
+            CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
+
+            Certificate cert = fact.generateCertificate(bIn);
+
+            PublicKey k = cert.getPublicKey();
+
+            cert.verify(pubKey);
 //            System.out.println("****** " + id + " ******");
 //            System.out.println(cert);
         }
@@ -1545,7 +1586,7 @@ public class CertTest
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
 
         isTrue(!certGen.hasExtension(Extension.authorityKeyIdentifier));
-        
+
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
         cert.checkValidity(new Date());
@@ -1588,13 +1629,13 @@ public class CertTest
         X509CertificateHolder certHolder = certGen.build(sigGen);
 
         isEquals(new Extension(new ASN1ObjectIdentifier("2.5.29.15"), true,
-                        new X509KeyUsage(X509KeyUsage.encipherOnly).getEncoded()), certGen.getExtension(new ASN1ObjectIdentifier("2.5.29.15")));
+            new X509KeyUsage(X509KeyUsage.encipherOnly).getEncoded()), certGen.getExtension(new ASN1ObjectIdentifier("2.5.29.15")));
 
         certGen.replaceExtension(new Extension(new ASN1ObjectIdentifier("2.5.29.15"), true,
-                                new X509KeyUsage(X509KeyUsage.digitalSignature).getEncoded()));
-        
+            new X509KeyUsage(X509KeyUsage.digitalSignature).getEncoded()));
+
         isEquals(new Extension(new ASN1ObjectIdentifier("2.5.29.15"), true,
-                        new X509KeyUsage(X509KeyUsage.digitalSignature).getEncoded()), certGen.getExtension(new ASN1ObjectIdentifier("2.5.29.15")));
+            new X509KeyUsage(X509KeyUsage.digitalSignature).getEncoded()), certGen.getExtension(new ASN1ObjectIdentifier("2.5.29.15")));
 
         cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certHolder);
 
@@ -2160,6 +2201,98 @@ public class CertTest
 
     }
 
+    private void checkCreationEd448()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        PrivateKey privKey;
+        PublicKey pubKey;
+
+        try
+        {
+            KeyPairGenerator g = KeyPairGenerator.getInstance("EdDSA", BC);
+
+            g.initialize(new ECGenParameterSpec("Ed448"), new SecureRandom());
+
+            KeyPair p = g.generateKeyPair();
+
+            privKey = p.getPrivate();
+            pubKey = p.getPublic();
+        }
+        catch (Exception e)
+        {
+            fail("error setting up keys - " + e.toString());
+            return;
+        }
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 3
+        //
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(privKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        cert.verify(pubKey);
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        // System.out.println(cert);
+
+
+        //
+        // create the certificate - version 1
+        //
+        sigGen = new JcaContentSignerBuilder("Ed448").setProvider(BC).build(privKey);
+        JcaX509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen1.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        cert.verify(pubKey);
+
+        bIn = new ByteArrayInputStream(cert.getEncoded());
+        fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(cert);
+
+        //
+        // exception test
+        //
+        try
+        {
+            certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), dudPublicKey);
+
+
+            fail("key without encoding not detected in v1");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+    }
+
     public void checkCRLCreation1()
         throws Exception
     {
@@ -2183,7 +2316,7 @@ public class CertTest
         Extension authOrig = crlGen.getExtension(Extension.authorityKeyIdentifier);
 
         crlGen.removeExtension(Extension.authorityKeyIdentifier);
-        
+
         isTrue(!crlGen.hasExtension(Extension.authorityKeyIdentifier));
 
         if (!crl.getIssuer().equals(new X500Name("CN=Test CA")))
@@ -2653,7 +2786,7 @@ public class CertTest
         ContentSigner signer = new JcaContentSignerBuilder(
             "RSAPSS",
             new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 20, 1))
-                                        .setProvider(BC).build(pair.getPrivate());
+            .setProvider(BC).build(pair.getPrivate());
         X509CRLHolder crlHolder = crlGen.build(signer);
 
         X509CRL crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
@@ -3312,7 +3445,7 @@ public class CertTest
             new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 20, 1))
             .setProvider("BC").build(privKey);
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
-        
+
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
         cert.checkValidity(new Date());
@@ -4052,7 +4185,7 @@ public class CertTest
         {
             Security.addProvider(new BouncyCastlePQCProvider());
         }
-        
+
         testDirect();
         testIndirect();
         testIndirect2();
@@ -4082,9 +4215,11 @@ public class CertTest
         checkSelfSignedCertificate(17, gost341094B);
         checkSelfSignedCertificate(18, gost34102001A);
         checkSelfSignedCertificate(19, sha3Cert);
-
         checkSelfSignedCertificateAndKey(20, gost_2012_cert, "ECGOST3410-2012-256", gost_2012_privateKey);
         checkCRL(1, crl1);
+
+        checkCertificate(21, x25519Cert,
+            KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
 
         checkCreation1();
         checkCreation2();
@@ -4096,6 +4231,8 @@ public class CertTest
         checkCreation7();
         checkCreation8();
         checkCreation9();
+
+        checkCreationEd448();
 
         checkCreationQTESLA();
         checkCreationDSA();
@@ -4164,7 +4301,7 @@ public class CertTest
         String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
-        
+
         runTest(new CertTest());
     }
 }

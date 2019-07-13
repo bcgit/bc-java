@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -127,6 +128,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_512);
         algorithms.put("SHA3-512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA3_512);
         algorithms.put("SHA512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA512);
+
+        algorithms.put("ED25519", EdECObjectIdentifiers.id_Ed25519);
+        algorithms.put("ED448", EdECObjectIdentifiers.id_Ed448);
 
 //        algorithms.put("RIPEMD160WITHSM2", GMObjectIdentifiers.sm2sign_with_rmd160);
 //        algorithms.put("SHA1WITHSM2", GMObjectIdentifiers.sm2sign_with_sha1);
@@ -253,6 +257,10 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 //        noParams.add(GMObjectIdentifiers.sm2sign_with_sha384);
 //        noParams.add(GMObjectIdentifiers.sm2sign_with_sha512);
         noParams.add(GMObjectIdentifiers.sm2sign_with_sm3);
+
+        // EdDSA
+        noParams.add(EdECObjectIdentifiers.id_Ed25519);
+        noParams.add(EdECObjectIdentifiers.id_Ed448);
 
         //
         // PKCS 1.5 encrypted  algorithms

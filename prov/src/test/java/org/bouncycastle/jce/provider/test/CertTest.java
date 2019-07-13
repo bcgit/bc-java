@@ -25,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1157,6 +1158,34 @@ public class CertTest
 
     }
 
+    public void checkCertificate(
+        int id,
+        byte[] bytes,
+        PublicKey pubKey)
+    {
+        ByteArrayInputStream bIn;
+        String dump = "";
+
+        try
+        {
+            bIn = new ByteArrayInputStream(bytes);
+
+            CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
+
+            Certificate cert = fact.generateCertificate(bIn);
+
+            PublicKey k = cert.getPublicKey();
+
+            cert.verify(pubKey);
+            //            System.out.println(cert);
+        }
+        catch (Exception e)
+        {
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+        }
+
+    }
+
     public void checkNameCertificate(
         int id,
         byte[] bytes)
@@ -1758,7 +1787,8 @@ public class CertTest
         checkCertificate(6, oldEcdsa);
         checkCertificate(7, cert7);
         checkCertificate(8, sm_sign);
-        checkCertificate(9, x25519Cert);
+        checkCertificate(9, x25519Cert,
+            KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
 
         checkComparison(cert1);
 
