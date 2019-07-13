@@ -100,7 +100,7 @@ public abstract class ASN1Set
 {
     private static final ASN1Encodable[] EMPTY_ELEMENTS = new ASN1Encodable[0];
 
-    private final ASN1Encodable[] elements;
+    protected final ASN1Encodable[] elements;
     protected final boolean isSorted;
 
     /**
