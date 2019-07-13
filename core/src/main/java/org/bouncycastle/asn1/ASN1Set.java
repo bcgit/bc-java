@@ -558,44 +558,45 @@ public abstract class ASN1Set
 
     private static void sort(ASN1Encodable[] t)
     {
-        if (t.length < 2)
+        int count = t.length;
+        if (count < 2)
         {
             return;
         }
 
-        boolean swapped = true;
-        int lastSwap = t.length - 1;
+        ASN1Encodable ei = t[0];
+        byte[] bi = getDEREncoded(ei);;
 
-        while (swapped)
+        for (int i = 1; i < count; ++i)
         {
-            int index = 0;
-            int swapIndex = 0;
-            byte[] a = getDEREncoded(t[0]);
+            ASN1Encodable e2 = t[i];
+            byte[] b2 = getDEREncoded(e2);
 
-            swapped = false;
-
-            while (index != lastSwap)
+            if (lessThanOrEqual(bi, b2))
             {
-                byte[] b = getDEREncoded(t[index + 1]);
-
-                if (lessThanOrEqual(a, b))
-                {
-                    a = b;
-                }
-                else
-                {
-                    ASN1Encodable e = t[index];
-                    t[index] = t[index + 1];
-                    t[index + 1] = e;
-
-                    swapped = true;
-                    swapIndex = index;
-                }
-
-                index++;
+                t[i - 1] = ei;
+                ei = e2;
+                bi = b2;
+                continue;
             }
 
-            lastSwap = swapIndex;
+            int j = i;
+            while (--j > 0)
+            {
+                ASN1Encodable e1 = t[j - 1];
+                byte[] b1 = getDEREncoded(e1);
+
+                if (lessThanOrEqual(b1, b2))
+                {
+                    break;
+                }
+
+                t[j] = e1;
+            }
+
+            t[j] = e2;
         }
+
+        t[count - 1] = ei;
     }
 }
