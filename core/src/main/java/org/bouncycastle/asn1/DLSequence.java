@@ -117,7 +117,7 @@ public class DLSequence
             }
 
             this.bodyLength = totalLength;
-            out.writeLength(bodyLength);
+            out.writeLength(totalLength);
 
             for (int i = 0; i < count; ++i)
             {

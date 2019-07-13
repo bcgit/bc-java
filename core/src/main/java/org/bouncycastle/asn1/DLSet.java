@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 /**
  * The DLSet encodes ASN.1 SET value without element ordering,
@@ -100,16 +99,16 @@ public class DLSet
     {
         if (bodyLength < 0)
         {
-            int length = 0;
+            int count = elements.length;
+            int totalLength = 0;
 
-            for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+            for (int i = 0; i < count; ++i)
             {
-                Object obj = e.nextElement();
-
-                length += ((ASN1Encodable)obj).toASN1Primitive().toDLObject().encodedLength();
+                ASN1Primitive dlObject = elements[i].toASN1Primitive().toDLObject();
+                totalLength += dlObject.encodedLength();
             }
 
-            bodyLength = length;
+            this.bodyLength = totalLength;
         }
 
         return bodyLength;
@@ -131,20 +130,41 @@ public class DLSet
      * ASN.1 descriptions given. Rather than just outputting SET,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out) throws IOException
     {
-        int length = getBodyLength();
-
         out.write(BERTags.SET | BERTags.CONSTRUCTED);
-        out.writeLength(length);
 
         ASN1OutputStream dlOut = out.getDLSubStream();
-        for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+
+        int count = elements.length;
+        if (bodyLength >= 0 || count > 16)
         {
-            ASN1Encodable enc = (ASN1Encodable)e.nextElement();
-            dlOut.writeObject(enc);
+            out.writeLength(getBodyLength());
+
+            for (int i = 0; i < count; ++i)
+            {
+                dlOut.writeObject(elements[i]);
+            }
+        }
+        else
+        {
+            int totalLength = 0;
+
+            ASN1Primitive[] dlObjects = new ASN1Primitive[count];
+            for (int i = 0; i < count; ++i)
+            {
+                ASN1Primitive dlObject = elements[i].toASN1Primitive().toDLObject();
+                dlObjects[i] = dlObject;
+                totalLength += dlObject.encodedLength();
+            }
+
+            this.bodyLength = totalLength;
+            out.writeLength(totalLength);
+
+            for (int i = 0; i < count; ++i)
+            {
+                dlOut.writeObject(dlObjects[i]);
+            }
         }
     }
 
