@@ -2,6 +2,7 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * The DLSet encodes ASN.1 SET value without element ordering,
@@ -88,6 +89,11 @@ public class DLSet
         ASN1Encodable[] a)
     {
         super(a, false);
+    }
+
+    DLSet(Vector v, boolean isSorted)
+    {
+        super(v, isSorted);
     }
 
     private int getBodyLength()
