@@ -99,14 +99,7 @@ public class AuthorityInformationAccess
     
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector vec = new ASN1EncodableVector();
-        
-        for (int i = 0; i != descriptions.length; i++)
-        {
-            vec.add(descriptions[i]);
-        }
-        
-        return new DERSequence(vec);
+        return new DERSequence(descriptions);
     }
 
     public String toString()

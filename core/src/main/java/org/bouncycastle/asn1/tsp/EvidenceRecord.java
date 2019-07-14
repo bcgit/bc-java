@@ -221,7 +221,7 @@ public class EvidenceRecord
 
     public ASN1Primitive toASN1Primitive()
     {
-        final ASN1EncodableVector vector = new ASN1EncodableVector();
+        final ASN1EncodableVector vector = new ASN1EncodableVector(5);
 
         vector.add(version);
         vector.add(digestAlgorithms);

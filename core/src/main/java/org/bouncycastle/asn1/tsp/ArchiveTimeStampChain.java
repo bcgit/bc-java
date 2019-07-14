@@ -54,9 +54,9 @@ public class ArchiveTimeStampChain
 
     private ArchiveTimeStampChain(final ASN1Sequence sequence)
     {
-        final ASN1EncodableVector vector = new ASN1EncodableVector();
-        final Enumeration objects = sequence.getObjects();
+        final ASN1EncodableVector vector = new ASN1EncodableVector(sequence.size());
 
+        final Enumeration objects = sequence.getObjects();
         while (objects.hasMoreElements())
         {
             vector.add(ArchiveTimeStamp.getInstance(objects.nextElement()));
@@ -85,7 +85,7 @@ public class ArchiveTimeStampChain
      */
     public ArchiveTimeStampChain append(final ArchiveTimeStamp archiveTimeStamp)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(archiveTimestamps.size() + 1);
 
         for (int i = 0; i != archiveTimestamps.size(); i++)
         {

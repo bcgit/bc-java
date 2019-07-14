@@ -91,8 +91,7 @@ public class EncryptionInfo
 
     public ASN1Primitive toASN1Primitive()
     {
-
-        final ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
         v.add(encryptionInfoType);
         v.add(encryptionInfoValue);
 

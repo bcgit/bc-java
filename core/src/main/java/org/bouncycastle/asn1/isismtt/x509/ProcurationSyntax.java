@@ -213,7 +213,7 @@ public class ProcurationSyntax
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector vec = new ASN1EncodableVector();
+        ASN1EncodableVector vec = new ASN1EncodableVector(3);
         if (country != null)
         {
             vec.add(new DERTaggedObject(true, 1, new DERPrintableString(country, true)));

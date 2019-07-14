@@ -228,7 +228,7 @@ public class PrivateKeyInfo
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(5);
 
         v.add(version);
         v.add(privateKeyAlgorithm);

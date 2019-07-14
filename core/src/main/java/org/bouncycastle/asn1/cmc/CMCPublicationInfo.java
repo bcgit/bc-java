@@ -32,7 +32,7 @@ public class CMCPublicationInfo
     {
         this.hashAlg = hashAlg;
 
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(anchorHashes.length);
         for (int i = 0; i != anchorHashes.length; i++)
         {
              v.add(new DEROctetString(Arrays.clone(anchorHashes[i])));
@@ -92,7 +92,7 @@ public class CMCPublicationInfo
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(hashAlg);
         v.add(certHashes);

@@ -195,7 +195,7 @@ public class TSTInfo
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector seq = new ASN1EncodableVector();
+        ASN1EncodableVector seq = new ASN1EncodableVector(10);
         seq.add(version);
 
         seq.add(tsaPolicyId);

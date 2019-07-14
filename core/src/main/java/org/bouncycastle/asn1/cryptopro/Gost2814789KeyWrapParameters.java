@@ -73,7 +73,7 @@ public class Gost2814789KeyWrapParameters
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         v.add(encryptionParamSet);
         if (ukm != null)

@@ -94,7 +94,7 @@ public class TimeStampTokenEvidence
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(timeStampAndCRLs.length);
 
         for (int i = 0; i != timeStampAndCRLs.length; i++)
         {

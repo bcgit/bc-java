@@ -113,7 +113,7 @@ public class CertHash
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector vec = new ASN1EncodableVector();
+        ASN1EncodableVector vec = new ASN1EncodableVector(2);
         vec.add(hashAlgorithm);
         vec.add(new DEROctetString(certificateHash));
         return new DERSequence(vec);

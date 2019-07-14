@@ -237,7 +237,7 @@ public class AuthEnvelopedData
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(7);
 
         v.add(version);
 
