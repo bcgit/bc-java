@@ -3,7 +3,6 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Vector;
 
 /**
  * Note: this class is for processing DER/DL encoded sequences only.
@@ -107,21 +106,15 @@ class LazyEncodedSequence
     {
         if (null != encoded)
         {
-            Vector v = new Vector();
+            ASN1EncodableVector v = new ASN1EncodableVector();
+
             Enumeration en = new LazyConstructionEnumeration(encoded);
             while (en.hasMoreElements())
             {
-                v.addElement(en.nextElement());
+                v.add((ASN1Primitive)en.nextElement());
             }
 
-            int count = v.size();
-            ASN1Encodable[] tmp = new ASN1Encodable[count];
-            for (int i = 0; i < count; ++i)
-            {
-                tmp[i] = (ASN1Primitive)v.elementAt(i);
-            }
-
-            this.elements = tmp;
+            this.elements = v.takeElements();
             this.encoded = null;
         }
     }

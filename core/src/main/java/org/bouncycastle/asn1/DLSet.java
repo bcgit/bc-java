@@ -63,30 +63,27 @@ public class DLSet
     }
 
     /**
-     * @param obj - a single object that makes up the set.
+     * @param element - a single object that makes up the set.
      */
-    public DLSet(
-        ASN1Encodable obj)
+    public DLSet(ASN1Encodable element)
     {
-        super(obj);
+        super(element);
     }
 
     /**
-     * @param v - a vector of objects making up the set.
+     * @param elementVector - a vector of objects making up the set.
      */
-    public DLSet(
-        ASN1EncodableVector v)
+    public DLSet(ASN1EncodableVector elementVector)
     {
-        super(v, false);
+        super(elementVector, false);
     }
 
     /**
      * create a set from an array of objects.
      */
-    public DLSet(
-        ASN1Encodable[] a)
+    public DLSet(ASN1Encodable[] elements)
     {
-        super(a, false);
+        super(elements, false);
     }
 
     DLSet(boolean isSorted, ASN1Encodable[] elements)
@@ -94,8 +91,7 @@ public class DLSet
         super(isSorted, elements);
     }
 
-    private int getBodyLength()
-        throws IOException
+    private int getBodyLength() throws IOException
     {
         if (bodyLength < 0)
         {
@@ -114,8 +110,7 @@ public class DLSet
         return bodyLength;
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength() throws IOException
     {
         int length = getBodyLength();
 

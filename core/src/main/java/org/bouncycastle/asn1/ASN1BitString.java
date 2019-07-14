@@ -111,7 +111,7 @@ public abstract class ASN1BitString
     {
         if (data == null)
         {
-            throw new NullPointerException("data cannot be null");
+            throw new NullPointerException("'data' cannot be null");
         }
         if (data.length == 0 && padBits != 0)
         {
