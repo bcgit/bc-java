@@ -98,16 +98,10 @@ public class CscaMasterList
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector seq = new ASN1EncodableVector();
+        ASN1EncodableVector seq = new ASN1EncodableVector(2);
 
         seq.add(version);
-
-        ASN1EncodableVector certSet = new ASN1EncodableVector();
-        for (int i = 0; i < certList.length; i++)
-        {
-            certSet.add(certList[i]);
-        }
-        seq.add(new DERSet(certSet));
+        seq.add(new DERSet(certList));
 
         return new DERSequence(seq);
     }

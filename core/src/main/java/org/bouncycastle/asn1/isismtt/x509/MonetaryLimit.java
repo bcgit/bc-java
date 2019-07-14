@@ -117,7 +117,7 @@ public class MonetaryLimit
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector seq = new ASN1EncodableVector();
+        ASN1EncodableVector seq = new ASN1EncodableVector(3);
         seq.add(currency);
         seq.add(amount);
         seq.add(exponent);

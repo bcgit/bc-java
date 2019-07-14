@@ -144,7 +144,7 @@ public class SignedData
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(6);
 
         v.add(version);
         v.add(digestAlgorithms);

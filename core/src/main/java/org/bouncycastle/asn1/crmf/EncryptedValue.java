@@ -143,7 +143,7 @@ public class EncryptedValue
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(6);
 
         addOptional(v, 0, intendedAlg);
         addOptional(v, 1, symmAlg);

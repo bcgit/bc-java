@@ -53,33 +53,18 @@ public class SigningCertificateV2
     public SigningCertificateV2(
         ESSCertIDv2[] certs)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        for (int i=0; i < certs.length; i++)
-        {
-            v.add(certs[i]);
-        }
-        this.certs = new DERSequence(v);
+        this.certs = new DERSequence(certs);
     }
 
     public SigningCertificateV2(
         ESSCertIDv2[] certs,
         PolicyInformation[] policies)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        for (int i=0; i < certs.length; i++)
-        {
-            v.add(certs[i]);
-        }
-        this.certs = new DERSequence(v);
+        this.certs = new DERSequence(certs);
 
         if (policies != null)
         {
-            v = new ASN1EncodableVector();
-            for (int i=0; i < policies.length; i++)
-            {
-                v.add(policies[i]);
-            }
-            this.policies = new DERSequence(v);
+            this.policies = new DERSequence(policies);
         }
     }
 
@@ -122,7 +107,7 @@ public class SigningCertificateV2
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         v.add(certs);
 

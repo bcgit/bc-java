@@ -109,7 +109,7 @@ public class RSAPublicKey
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(usage);
         v.add(new UnsignedInteger(0x01, getModulus()));

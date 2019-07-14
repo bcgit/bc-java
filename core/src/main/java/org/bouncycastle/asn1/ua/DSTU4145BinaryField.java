@@ -94,8 +94,7 @@ public class DSTU4145BinaryField
      */
     public ASN1Primitive toASN1Primitive()
     {
-
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         v.add(new ASN1Integer(m));
         if (j == 0) //Trinomial
@@ -104,7 +103,7 @@ public class DSTU4145BinaryField
         }
         else
         {
-            ASN1EncodableVector coefs = new ASN1EncodableVector();
+            ASN1EncodableVector coefs = new ASN1EncodableVector(3);
             coefs.add(new ASN1Integer(k));
             coefs.add(new ASN1Integer(j));
             coefs.add(new ASN1Integer(l));

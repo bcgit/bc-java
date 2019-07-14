@@ -108,7 +108,7 @@ public class SignerAttribute
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(values.length);
 
         for (int i = 0; i != values.length; i++)
         {

@@ -144,7 +144,7 @@ public class TBSRequest
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector    v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(4);
 
         //
         // if default don't include - unless explicitly provided. Not strictly correct

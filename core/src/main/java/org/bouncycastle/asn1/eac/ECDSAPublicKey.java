@@ -314,7 +314,7 @@ public class ECDSAPublicKey
 
     public ASN1EncodableVector getASN1EncodableVector(ASN1ObjectIdentifier oid, boolean publicPointOnly)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(8);
         v.add(oid);
 
         if (!publicPointOnly)

@@ -107,7 +107,7 @@ public class BiometricData
     
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector seq = new ASN1EncodableVector();
+        ASN1EncodableVector seq = new ASN1EncodableVector(4);
         seq.add(typeOfBiometricData);
         seq.add(hashAlgorithm);
         seq.add(biometricDataHash); 

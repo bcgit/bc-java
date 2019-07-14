@@ -35,7 +35,7 @@ public class PublishTrustAnchors
         this.seqNumber = new ASN1Integer(seqNumber);
         this.hashAlgorithm = hashAlgorithm;
 
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(anchorHashes.length);
         for (int i = 0; i != anchorHashes.length; i++)
         {
              v.add(new DEROctetString(Arrays.clone(anchorHashes[i])));
@@ -93,7 +93,7 @@ public class PublishTrustAnchors
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(seqNumber);
         v.add(hashAlgorithm);
