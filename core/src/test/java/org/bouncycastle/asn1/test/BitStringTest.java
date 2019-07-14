@@ -40,9 +40,9 @@ public class BitStringTest
         }
         catch (NullPointerException e)
         {
-            if (!"data cannot be null".equals(e.getMessage()))
+            if (!"'data' cannot be null".equals(e.getMessage()))
             {
-                fail("Unexpected exception");
+                fail("Unexpected exception: " + e.getMessage());
             }
         }
 
