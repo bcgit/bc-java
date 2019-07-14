@@ -174,7 +174,7 @@ public class ASN1ObjectIdentifier
     {
         if (identifier == null)
         {
-            throw new IllegalArgumentException("'identifier' cannot be null");
+            throw new NullPointerException("'identifier' cannot be null");
         }
         if (!isValidIdentifier(identifier))
         {
