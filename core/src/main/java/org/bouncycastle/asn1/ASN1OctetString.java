@@ -174,7 +174,7 @@ public abstract class ASN1OctetString
     {
         if (string == null)
         {
-            throw new NullPointerException("string cannot be null");
+            throw new NullPointerException("'string' cannot be null");
         }
         this.string = string;
     }

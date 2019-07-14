@@ -98,8 +98,6 @@ public abstract class ASN1Set
     extends ASN1Primitive
     implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
-    private static final ASN1Encodable[] EMPTY_ELEMENTS = new ASN1Encodable[0];
-
     protected final ASN1Encodable[] elements;
     protected final boolean isSorted;
 
@@ -227,94 +225,78 @@ public abstract class ASN1Set
 
     protected ASN1Set()
     {
-        this.elements = EMPTY_ELEMENTS;
+        this.elements = ASN1EncodableVector.EMPTY_ELEMENTS;
         this.isSorted = true;
     }
 
     /**
      * Create a SET containing one object
-     * @param obj object to be added to the SET.
+     * @param element object to be added to the SET.
      */
-    protected ASN1Set(ASN1Encodable obj)
+    protected ASN1Set(ASN1Encodable element)
     {
-        this.elements = new ASN1Encodable[]{ obj };
+        if (null == element)
+        {
+            throw new NullPointerException("'element' cannot be null");
+        }
+
+        this.elements = new ASN1Encodable[]{ element };
         this.isSorted = true;
     }
 
     /**
      * Create a SET containing a vector of objects.
-     * @param v a vector of objects to make up the SET.
+     * @param elementVector a vector of objects to make up the SET.
      * @param doSort true if should be sorted DER style, false otherwise.
      */
-    protected ASN1Set(ASN1EncodableVector v, boolean doSort)
+    protected ASN1Set(ASN1EncodableVector elementVector, boolean doSort)
     {
-        int count = v.size();
+        if (null == elementVector)
+        {
+            throw new NullPointerException("'elementVector' cannot be null");
+        }
 
         ASN1Encodable[] tmp;
-        switch (count)
+        if (doSort && elementVector.size() >= 2)
         {
-        case 0:
-            tmp = EMPTY_ELEMENTS;
-            break;
-        case 1:
-            tmp = new ASN1Encodable[]{ v.get(0) };
-            break;
-        default:
-        {
-            tmp = new ASN1Encodable[count];
-            for (int i = 0; i < count; ++i)
-            {
-                tmp[i] = v.get(i);
-            }
-            if (doSort)
-            {
-                sort(tmp);
-            }
-            break;
+            tmp = elementVector.copyElements();
+            sort(tmp);
         }
+        else
+        {
+            tmp = elementVector.takeElements();
         }
 
         this.elements = tmp;
-        this.isSorted = doSort;
+        this.isSorted = doSort || tmp.length < 2;
     }
 
     /**
      * Create a SET containing an array of objects.
-     * @param array an array of objects to make up the SET.
+     * @param elements an array of objects to make up the SET.
      * @param doSort true if should be sorted DER style, false otherwise.
      */
-    protected ASN1Set(ASN1Encodable[] array, boolean doSort)
+    protected ASN1Set(ASN1Encodable[] elements, boolean doSort)
     {
-        int count = array.length;
-
-        ASN1Encodable[] tmp;
-        switch (count)
+        if (Arrays.isNullOrContainsNull(elements))
         {
-        case 0:
-            tmp = EMPTY_ELEMENTS;
-            break;
-        case 1:
-            tmp = new ASN1Encodable[]{ array[0] };
-            break;
-        default:
-        {
-            tmp = array.clone();
-            if (doSort)
-            {
-                sort(tmp);
-            }
-            break;
+            throw new NullPointerException("'elements' cannot be null, or contain null");
         }
+
+        ASN1Encodable[] tmp = ASN1EncodableVector.cloneElements(elements);
+        if (doSort && tmp.length >= 2)
+        {
+            sort(tmp);
         }
 
         this.elements = tmp;
-        this.isSorted = doSort;
+        this.isSorted = doSort || tmp.length < 2;
     }
 
     ASN1Set(boolean isSorted, ASN1Encodable[] elements)
     {
         this.elements = elements;
-        this.isSorted = isSorted;
+        this.isSorted = isSorted || elements.length < 2;
     }
 
     public Enumeration getObjects()
@@ -362,7 +344,7 @@ public abstract class ASN1Set
 
     public ASN1Encodable[] toArray()
     {
-        return elements.length < 1 ? EMPTY_ELEMENTS : elements.clone();
+        return ASN1EncodableVector.cloneElements(elements);
     }
 
     public ASN1SetParser parser()
@@ -424,11 +406,10 @@ public abstract class ASN1Set
         else
         {
             tmp = elements.clone();
-
             sort(tmp);
         }
 
-        return new DERSet(isSorted, tmp);
+        return new DERSet(true, tmp);
     }
 
     /**

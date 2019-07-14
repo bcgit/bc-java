@@ -23,32 +23,28 @@ public class BERSequence
     /**
      * Create a sequence containing one object
      */
-    public BERSequence(
-        ASN1Encodable obj)
+    public BERSequence(ASN1Encodable element)
     {
-        super(obj);
+        super(element);
     }
 
     /**
      * Create a sequence containing a vector of objects.
      */
-    public BERSequence(
-        ASN1EncodableVector v)
+    public BERSequence(ASN1EncodableVector elementVector)
     {
-        super(v);
+        super(elementVector);
     }
 
     /**
      * Create a sequence containing an array of objects.
      */
-    public BERSequence(
-        ASN1Encodable[]   array)
+    public BERSequence(ASN1Encodable[] elements)
     {
-        super(array);
+        super(elements);
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength() throws IOException
     {
         int count = elements.length;
         int totalLength = 0;

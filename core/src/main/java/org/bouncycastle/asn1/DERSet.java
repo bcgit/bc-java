@@ -32,39 +32,35 @@ public class DERSet
 
     /**
      * create a set containing one object
-     * @param obj the object to go in the set
+     * @param element the object to go in the set
      */
-    public DERSet(
-        ASN1Encodable obj)
+    public DERSet(ASN1Encodable element)
     {
-        super(obj);
+        super(element);
     }
 
     /**
      * create a set containing a vector of objects.
-     * @param v the vector of objects to make up the set.
+     * @param elementVector the vector of objects to make up the set.
      */
-    public DERSet(
-        ASN1EncodableVector v)
+    public DERSet(ASN1EncodableVector elementVector)
     {
-        super(v, true);
-    }
-    
-    /**
-     * create a set containing an array of objects.
-     * @param a the array of objects to make up the set.
-     */
-    public DERSet(
-        ASN1Encodable[]   a)
-    {
-        super(a, true);
+        super(elementVector, true);
     }
 
-    DERSet(
-        ASN1EncodableVector v,
-        boolean                  doSort)
+    /**
+     * create a set containing an array of objects.
+     * @param elements the array of objects to make up the set.
+     */
+    public DERSet(ASN1Encodable[] elements)
     {
-        super(v, doSort);
+        super(elements, true);
+    }
+
+    // TODO This method should be removed once no callers pass doSort==false
+    DERSet(ASN1EncodableVector elementVector, boolean doSort)
+    {
+        super(elementVector, doSort);
     }
 
     DERSet(boolean isSorted, ASN1Encodable[] elements)
@@ -82,8 +78,7 @@ public class DERSet
         encode(new DEROutputStream(output));
     }
 
-    private int getBodyLength()
-        throws IOException
+    private int getBodyLength() throws IOException
     {
         if (bodyLength < 0)
         {
@@ -102,8 +97,7 @@ public class DERSet
         return bodyLength;
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength() throws IOException
     {
         int length = getBodyLength();
 
