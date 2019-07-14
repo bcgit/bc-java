@@ -110,7 +110,7 @@ public class ExtendedKeyUsage
     public ExtendedKeyUsage(
         KeyPurposeId[]  usages)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(usages.length);
 
         for (int i = 0; i != usages.length; i++)
         {
@@ -127,12 +127,12 @@ public class ExtendedKeyUsage
     public ExtendedKeyUsage(
         Vector usages)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        Enumeration         e = usages.elements();
+        ASN1EncodableVector v = new ASN1EncodableVector(usages.size());
 
+        Enumeration e = usages.elements();
         while (e.hasMoreElements())
         {
-            KeyPurposeId  o = KeyPurposeId.getInstance(e.nextElement());
+            KeyPurposeId o = KeyPurposeId.getInstance(e.nextElement());
 
             v.add(o);
             this.usageTable.put(o, o);

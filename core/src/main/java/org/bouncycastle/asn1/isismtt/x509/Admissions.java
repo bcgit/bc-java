@@ -167,7 +167,7 @@ public class Admissions
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector vec = new ASN1EncodableVector();
+        ASN1EncodableVector vec = new ASN1EncodableVector(3);
         
         if (admissionAuthority != null)
         {

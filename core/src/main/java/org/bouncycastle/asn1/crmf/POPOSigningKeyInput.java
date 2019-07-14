@@ -116,7 +116,7 @@ public class POPOSigningKeyInput
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         if (sender != null)
         {

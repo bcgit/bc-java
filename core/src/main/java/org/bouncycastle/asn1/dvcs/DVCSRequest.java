@@ -71,7 +71,7 @@ public class DVCSRequest
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
         v.add(requestInformation);
         v.add(data);
         if (transactionIdentifier != null)

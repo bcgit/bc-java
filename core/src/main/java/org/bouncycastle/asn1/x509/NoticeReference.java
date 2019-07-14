@@ -34,10 +34,9 @@ public class NoticeReference
 
     private static ASN1EncodableVector convertVector(Vector numbers)
     {
-        ASN1EncodableVector av = new ASN1EncodableVector();
+        ASN1EncodableVector av = new ASN1EncodableVector(numbers.size());
 
         Enumeration it = numbers.elements();
-
         while (it.hasMoreElements())
         {
             Object o = it.nextElement();
@@ -162,7 +161,7 @@ public class NoticeReference
     */
    public ASN1Primitive toASN1Primitive()
    {
-      ASN1EncodableVector av = new ASN1EncodableVector();
+      ASN1EncodableVector av = new ASN1EncodableVector(2);
       av.add (organization);
       av.add (noticeNumbers);
       return new DERSequence (av);

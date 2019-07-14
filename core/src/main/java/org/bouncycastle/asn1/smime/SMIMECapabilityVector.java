@@ -23,7 +23,7 @@ public class SMIMECapabilityVector
         ASN1ObjectIdentifier capability,
         int                 value)
     {
-        ASN1EncodableVector  v = new ASN1EncodableVector();
+        ASN1EncodableVector  v = new ASN1EncodableVector(2);
 
         v.add(capability);
         v.add(new ASN1Integer(value));
@@ -35,7 +35,7 @@ public class SMIMECapabilityVector
         ASN1ObjectIdentifier capability,
         ASN1Encodable params)
     {
-        ASN1EncodableVector  v = new ASN1EncodableVector();
+        ASN1EncodableVector  v = new ASN1EncodableVector(2);
 
         v.add(capability);
         v.add(params);

@@ -131,7 +131,7 @@ public class CMCStatusInfoV2
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(4);
 
         v.add(cMCStatus);
         v.add(bodyList);
