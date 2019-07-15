@@ -57,15 +57,9 @@ public class DERSet
         super(elements, true);
     }
 
-    // TODO This method should be removed once no callers pass doSort==false
-    DERSet(ASN1EncodableVector elementVector, boolean doSort)
-    {
-        super(elementVector, doSort);
-    }
-
     DERSet(boolean isSorted, ASN1Encodable[] elements)
     {
-        super(isSorted, elements);
+        super(checkSorted(isSorted), elements);
     }
 
     public void encodeTo(OutputStream output) throws IOException
@@ -159,5 +153,14 @@ public class DERSet
     ASN1Primitive toDLObject()
     {
         return this;
+    }
+
+    private static boolean checkSorted(boolean isSorted)
+    {
+        if (!isSorted)
+        {
+            throw new IllegalStateException("DERSet elements should always be in sorted order");
+        }
+        return isSorted;
     }
 }
