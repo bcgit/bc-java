@@ -14,6 +14,7 @@ public class Integers
         if (0 == (i >>> 24)) { n +=  8; i <<=  8; }
         if (0 == (i >>> 28)) { n +=  4; i <<=  4; }
         if (0 == (i >>> 30)) { n +=  2; i <<=  2; }
+        n -= (i >>> 31);
         return n;
     }
 
