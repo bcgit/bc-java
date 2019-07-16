@@ -133,7 +133,7 @@ public abstract class ASN1TaggedObject
         // compare the encodings...
         if (obj != null)
         {
-            code ^= obj.hashCode();
+            code ^= obj.toASN1Primitive().hashCode();
         }
 
         return code;

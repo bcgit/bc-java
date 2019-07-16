@@ -389,7 +389,17 @@ public abstract class ASN1Set
 
     public int hashCode()
     {
-        return Arrays.hashCode(elements);
+//        return Arrays.hashCode(elements);
+        int i = elements.length;
+        int hc = i + 1;
+
+        while (--i >= 0)
+        {
+            hc *= 257;
+            hc ^= elements[i].toASN1Primitive().hashCode();
+        }
+
+        return hc;
     }
 
     /**
