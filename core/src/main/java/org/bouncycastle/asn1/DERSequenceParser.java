@@ -3,7 +3,7 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 
 /**
- * Parser class for DER SEQUENCEs.
+ * @deprecated Use DLSequenceParser instead
  */
 public class DERSequenceParser
     implements ASN1SequenceParser
@@ -36,7 +36,7 @@ public class DERSequenceParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-         return new DERSequence(_parser.readVector());
+         return new DLSequence(_parser.readVector());
     }
 
     /**
