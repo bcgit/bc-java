@@ -11,10 +11,9 @@ public abstract class ASN1TaggedObject
     extends ASN1Primitive
     implements ASN1TaggedObjectParser
 {
-    int             tagNo;
-    boolean         empty = false;
-    boolean         explicit = true;
-    ASN1Encodable obj = null;
+    final int           tagNo;
+    final boolean       explicit;
+    final ASN1Encodable obj;
 
     static public ASN1TaggedObject getInstance(
         ASN1TaggedObject    obj,
@@ -33,7 +32,7 @@ public abstract class ASN1TaggedObject
     {
         if (obj == null || obj instanceof ASN1TaggedObject) 
         {
-                return (ASN1TaggedObject)obj;
+            return (ASN1TaggedObject)obj;
         }
         else if (obj instanceof byte[])
         {
@@ -65,34 +64,16 @@ public abstract class ASN1TaggedObject
         int             tagNo,
         ASN1Encodable   obj)
     {
-        if (obj instanceof ASN1Choice)
+        if (null == obj)
         {
-            this.explicit = true;
+            throw new NullPointerException("'obj' cannot be null");
         }
-        else
-        {
-            this.explicit = explicit;
-        }
-        
+
         this.tagNo = tagNo;
-
-        if (this.explicit)
-        {
-            this.obj = obj;
-        }
-        else
-        {
-            ASN1Primitive prim = obj.toASN1Primitive();
-
-            if (prim instanceof ASN1Set)
-            {
-                ASN1Set s = null;
-            }
-
-            this.obj = obj;
-        }
+        this.explicit = explicit || (obj instanceof ASN1Choice);
+        this.obj = obj;
     }
-    
+
     boolean asn1Equals(ASN1Primitive other)
     {
         if (!(other instanceof ASN1TaggedObject))
@@ -102,16 +83,7 @@ public abstract class ASN1TaggedObject
 
         ASN1TaggedObject that = (ASN1TaggedObject)other;
 
-        if (this.tagNo != that.tagNo || this.empty != that.empty || this.explicit != that.explicit)
-        {
-            return false;
-        }
-
-        if (null == this.obj)
-        {
-            return null == that.obj;
-        }
-        else if (null == that.obj)
+        if (this.tagNo != that.tagNo || this.explicit != that.explicit)
         {
             return false;
         }
@@ -124,19 +96,7 @@ public abstract class ASN1TaggedObject
 
     public int hashCode()
     {
-        int code = tagNo;
-
-        // TODO: actually this is wrong - the problem is that a re-encoded
-        // object may end up with a different hashCode due to implicit
-        // tagging. As implicit tagging is ambiguous if a sequence is involved
-        // it seems the only correct method for both equals and hashCode is to
-        // compare the encodings...
-        if (obj != null)
-        {
-            code ^= obj.toASN1Primitive().hashCode();
-        }
-
-        return code;
+        return tagNo ^ (explicit ? 0x0F : 0xF0) ^ obj.toASN1Primitive().hashCode();
     }
 
     /**
@@ -163,9 +123,12 @@ public abstract class ASN1TaggedObject
         return explicit;
     }
 
+    /**
+     * @deprecated Will be removed (always returns false).
+     */
     public boolean isEmpty()
     {
-        return empty;
+        return false;
     }
 
     /**
@@ -177,12 +140,7 @@ public abstract class ASN1TaggedObject
      */
     public ASN1Primitive getObject()
     {
-        if (obj != null)
-        {
-            return obj.toASN1Primitive();
-        }
-
-        return null;
+        return obj.toASN1Primitive();
     }
 
     /**
