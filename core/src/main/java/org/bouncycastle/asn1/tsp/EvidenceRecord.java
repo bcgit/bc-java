@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * <a href="https://tools.ietf.org/html/rfc4998">RFC 4998</a>:
@@ -65,6 +64,11 @@ public class EvidenceRecord
         }
 
         return null;
+    }
+
+    public static EvidenceRecord getInstance(ASN1TaggedObject tagged, boolean explicit)
+    {
+        return getInstance(ASN1Sequence.getInstance(tagged, explicit));
     }
 
     private EvidenceRecord(
