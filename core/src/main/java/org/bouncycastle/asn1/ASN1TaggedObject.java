@@ -22,7 +22,7 @@ public abstract class ASN1TaggedObject
     {
         if (explicit)
         {
-            return (ASN1TaggedObject)obj.getObject();
+            return getInstance(obj.getObject());
         }
 
         throw new IllegalArgumentException("implicitly tagged tagged object");
