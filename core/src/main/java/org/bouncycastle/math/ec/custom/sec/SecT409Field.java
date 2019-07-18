@@ -41,11 +41,37 @@ public class SecT409Field
         z[6] = x[6];
     }
 
+    private static void addTo(long[] x, long[] z)
+    {
+        z[0] ^= x[0];
+        z[1] ^= x[1];
+        z[2] ^= x[2];
+        z[3] ^= x[3];
+        z[4] ^= x[4];
+        z[5] ^= x[5];
+        z[6] ^= x[6];
+    }
+
     public static long[] fromBigInteger(BigInteger x)
     {
         long[] z = Nat448.fromBigInteger64(x);
         reduce39(z, 0);
         return z;
+    }
+
+    public static void halfTrace(long[] x, long[] z)
+    {
+        long[] tt = Nat.create64(13);
+
+        Nat448.copy64(x, z);
+        for (int i = 1; i < 409; i += 2)
+        {
+            implSquare(z, tt);
+            reduce(tt, z);
+            implSquare(z, tt);
+            reduce(tt, z);
+            addTo(x, z);
+        }
     }
 
     public static void invert(long[] x, long[] z)
