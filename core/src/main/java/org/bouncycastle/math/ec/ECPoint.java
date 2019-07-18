@@ -1441,35 +1441,46 @@ public abstract class ECPoint
             if (ECConstants.TWO.equals(cofactor))
             {
                 /*
-                 *  Check that the trace of (X + A) is 0, then there exists a solution to L^2 + L = X + A,
-                 *  and so a halving is possible, so this point is the double of another.  
+                 * Check that 0 == Tr(X + A); then there exists a solution to L^2 + L = X + A, and
+                 * so a halving is possible, so this point is the double of another.
+                 * 
+                 * Note: Tr(A) == 1 for cofactor 2 curves.
                  */
                 ECPoint N = this.normalize();
                 ECFieldElement X = N.getAffineXCoord();
-                ECFieldElement rhs = X.add(curve.getA());
-                return ((ECFieldElement.AbstractF2m)rhs).trace() == 0;
+                return 0 != ((ECFieldElement.AbstractF2m)X).trace();
             }
             if (ECConstants.FOUR.equals(cofactor))
             {
                 /*
                  * Solve L^2 + L = X + A to find the half of this point, if it exists (fail if not).
-                 * Generate both possibilities for the square of the half-point's x-coordinate (w),
-                 * and check if Tr(w + A) == 0 for at least one; then a second halving is possible
-                 * (see comments for cofactor 2 above), so this point is four times another.
                  * 
-                 * Note: Tr(x^2) == Tr(x). 
+                 * Note: Tr(A) == 0 for cofactor 4 curves.
                  */
                 ECPoint N = this.normalize();
                 ECFieldElement X = N.getAffineXCoord();
-                ECFieldElement lambda = ((ECCurve.AbstractF2m)curve).solveQuadraticEquation(X.add(curve.getA()));
-                if (lambda == null)
+                ECFieldElement L = ((ECCurve.AbstractF2m)curve).solveQuadraticEquation(X.add(curve.getA()));
+                if (null == L)
                 {
                     return false;
                 }
-                ECFieldElement w = X.multiply(lambda).add(N.getAffineYCoord()); 
-                ECFieldElement t = w.add(curve.getA());
-                return ((ECFieldElement.AbstractF2m)t).trace() == 0
-                    || ((ECFieldElement.AbstractF2m)(t.add(X))).trace() == 0;
+
+                /*
+                 * A solution exists, therefore 0 == Tr(X + A) == Tr(X).
+                 */
+                ECFieldElement Y = N.getAffineYCoord();
+                ECFieldElement T = X.multiply(L).add(Y);
+
+                /*
+                 * Either T or (T + X) is the square of a half-point's x coordinate (hx). In either
+                 * case, the half-point can be halved again when 0 == Tr(hx + A).
+                 * 
+                 * Note: Tr(hx + A) == Tr(hx) == Tr(hx^2) == Tr(T) == Tr(T + X)
+                 *
+                 * Check that 0 == Tr(T); then there exists a solution to L^2 + L = hx + A, and so a
+                 * second halving is possible and this point is four times some other.
+                 */
+                return 0 == ((ECFieldElement.AbstractF2m)T).trace();
             }
 
             return super.satisfiesOrder();
