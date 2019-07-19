@@ -160,6 +160,18 @@ public class SecT409FieldElement extends ECFieldElement.AbstractF2m
         return new SecT409FieldElement(z);
     }
 
+    public ECFieldElement halfTrace()
+    {
+        long[] z = Nat448.create64();
+        SecT409Field.halfTrace(x, z);
+        return new SecT409FieldElement(z); 
+    }
+
+    public boolean hasFastTrace()
+    {
+        return true;
+    }
+
     public int trace()
     {
         return SecT409Field.trace(x);
