@@ -510,26 +510,28 @@ public abstract class ECFieldElement
                 throw new IllegalStateException("Half-trace only defined for odd m");
             }
 
-            ECFieldElement fe = this;
-            ECFieldElement ht = fe;
-            for (int i = 2; i < m; i += 2)
+            ECFieldElement ht = this;
+            for (int i = 1; i < m; i += 2)
             {
-                fe = fe.squarePow(2);
-                ht = ht.add(fe);
+                ht = ht.squarePow(2).add(this);
             }
 
             return ht;
         }
 
+        public boolean hasFastTrace()
+        {
+            return false;
+        }
+
         public int trace()
         {
             int m = this.getFieldSize();
-            ECFieldElement fe = this;
-            ECFieldElement tr = fe;
+
+            ECFieldElement tr = this;
             for (int i = 1; i < m; ++i)
             {
-                fe = fe.square();
-                tr = tr.add(fe);
+                tr = tr.square().add(this);
             }
             if (tr.isZero())
             {
