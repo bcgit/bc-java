@@ -115,8 +115,7 @@ public class TraceOptimizer
         ECFieldElement tr = fe;
         for (int i = 1; i < m; ++i)
         {
-            fe = fe.square();
-            tr = tr.add(fe);
+            tr = tr.square().add(fe);
         }
         BigInteger b = tr.toBigInteger();
         if (b.bitLength() > 1)

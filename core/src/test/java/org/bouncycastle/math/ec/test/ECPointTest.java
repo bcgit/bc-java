@@ -7,6 +7,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
@@ -462,14 +463,42 @@ public class ECPointTest extends TestCase
     {
         assertTrue(g.isValid());
 
-        BigInteger h = c.getCofactor();
-        if (h != null && h.compareTo(ECConstants.ONE) > 0)
+        if (ECAlgorithms.isF2mCurve(c))
         {
-            if (ECAlgorithms.isF2mCurve(c))
+            BigInteger h = c.getCofactor();
+            if (null != h)
             {
-                ECPoint order2 = c.createPoint(ECConstants.ZERO, c.getB().sqrt().toBigInteger());
-                ECPoint bad = g.add(order2);
-                assertFalse(bad.isValid());
+                if (!h.testBit(0))
+                {
+                    ECFieldElement sqrtB = c.getB().sqrt();
+                    ECPoint order2 = c.createPoint(ECConstants.ZERO, sqrtB.toBigInteger());
+                    assertTrue(order2.twice().isInfinity());
+                    assertFalse(order2.isValid());
+                    ECPoint bad2 = g.add(order2);
+                    assertFalse(bad2.isValid());
+                    ECPoint good2 = bad2.add(order2);
+                    assertTrue(good2.isValid());
+
+                    if (!h.testBit(1))
+                    {
+                        ECFieldElement L = solveQuadraticEquation(c, c.getA());
+                        assertNotNull(L);
+                        ECFieldElement T = sqrtB;
+                        ECFieldElement x = T.sqrt();
+                        ECFieldElement y = T.add(x.multiply(L));
+                        ECPoint order4 = c.createPoint(x.toBigInteger(), y.toBigInteger());
+                        assertTrue(order4.twice().equals(order2));
+                        assertFalse(order4.isValid());
+                        ECPoint bad4_1 = g.add(order4);
+                        assertFalse(bad4_1.isValid());
+                        ECPoint bad4_2 = bad4_1.add(order4);
+                        assertFalse(bad4_2.isValid());
+                        ECPoint bad4_3 = bad4_2.add(order4);
+                        assertFalse(bad4_3.isValid());
+                        ECPoint good4 = bad4_3.add(order4);
+                        assertTrue(good4.isValid());
+                    }
+                }
             }
         }
     }
@@ -657,6 +686,39 @@ public class ECPointTest extends TestCase
         String hex)
     {
         return new BigInteger(1, Hex.decode(hex));
+    }
+
+    private static ECFieldElement solveQuadraticEquation(ECCurve c, ECFieldElement rhs)
+    {
+        if (rhs.isZero())
+        {
+            return rhs;
+        }
+
+        ECFieldElement gamma, z, zeroElement = c.fromBigInteger(ECConstants.ZERO);
+
+        int m = c.getFieldSize();
+        Random rand = new Random();
+        do
+        {
+            ECFieldElement t = c.fromBigInteger(new BigInteger(m, rand));
+            z = zeroElement;
+            ECFieldElement w = rhs;
+            for (int i = 1; i < m; i++)
+            {
+                ECFieldElement w2 = w.square();
+                z = z.square().add(w2.multiply(t));
+                w = w2.add(rhs);
+            }
+            if (!w.isZero())
+            {
+                return null;
+            }
+            gamma = z.square().add(z);
+        }
+        while (gamma.isZero());
+
+        return z;
     }
 
     public static Test suite()
