@@ -95,6 +95,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.asymmetric.rsa;
     exports org.bouncycastle.jcajce.provider.asymmetric.util;
     exports org.bouncycastle.jcajce.provider.asymmetric.x509;
+    open org.bouncycastle.jcajce.provider.edec to java.base;
     exports org.bouncycastle.jcajce.provider.config;
     exports org.bouncycastle.jcajce.provider.digest;
     exports org.bouncycastle.jcajce.provider.drbg;
@@ -144,6 +145,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.sphincs;
     exports org.bouncycastle.pqc.jcajce.provider.util;
     exports org.bouncycastle.pqc.jcajce.provider.xmss;
+    open org.bouncycastle.pqc.jcajce.provider.qtesla to java.base;
     exports org.bouncycastle.pqc.jcajce.spec;
     exports org.bouncycastle.pqc.math.linearalgebra;
     exports org.bouncycastle.util;
