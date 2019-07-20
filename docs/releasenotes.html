@@ -31,12 +31,15 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
 <li>GOST3412-2015 CTR mode was unusable at the JCE level. This has been fixed.</li>
 <li>The DSTU MACs were failing to reset fully on doFinal(). This has been fixed.</li>
 <li>The DSTU MACs would throw an exception if the key was a multiple of the size as the MAC's underlying buffer size. This has been fixed.</li>
+<li>EdEC and QTESLA were not previously usable with the post Java 9 module structure. This is now fixed.
+<li>ECNR was not correctly bounds checking the input and could produce invalid signatures. This is now fixed.</li>
 </ul>
 
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>QTESLA is now updated with the round 2 changes. Note: the security catergories, and in some cases key generation and signatures, have changed. For people interested in comparison, the round 1 version is now moved to org.bouncycastle.pqc.crypto.qteslarnd1 - this package will be deleted in 1.64. Please keep in mind that QTESLA may continue to evolve.</li>
 <li>Support has been added for generating Ed25519/Ed448 signed certificates.</li>
+<li>A method for recovering the message/digest value from an ECNR signature has been added.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
