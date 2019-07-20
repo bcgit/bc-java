@@ -122,7 +122,7 @@ public class UserNotice
     
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector av = new ASN1EncodableVector();
+        ASN1EncodableVector av = new ASN1EncodableVector(2);
       
         if (noticeRef != null)
         {

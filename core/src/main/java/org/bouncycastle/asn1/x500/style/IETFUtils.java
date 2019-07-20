@@ -434,39 +434,41 @@ public class IETFUtils
 
     public static String canonicalize(String s)
     {
-        String value = Strings.toLowerCase(s);
-
-        if (value.length() > 0 && value.charAt(0) == '#')
+        if (s.length() > 0 && s.charAt(0) == '#')
         {
-            ASN1Primitive obj = decodeObject(value);
-
+            ASN1Primitive obj = decodeObject(s);
             if (obj instanceof ASN1String)
             {
-                value = Strings.toLowerCase(((ASN1String)obj).getString());
+                s = ((ASN1String)obj).getString();
             }
         }
 
-        if (value.length() > 1)
+        s = Strings.toLowerCase(s);
+
+        int length = s.length();
+        if (length < 2)
         {
-            int start = 0;
-            while (start + 1 < value.length() && value.charAt(start) == '\\' && value.charAt(start + 1) == ' ')
-            {
-                start += 2;
-            }
-
-            int end = value.length() - 1;
-            while (end - 1 > 0 && value.charAt(end - 1) == '\\' && value.charAt(end) == ' ')
-            {
-                end -= 2;
-            }
-
-            if (start > 0 || end < value.length() - 1)
-            {
-                value = value.substring(start, end + 1);
-            }
+            return s;
         }
 
-        return stripInternalSpaces(value);
+        int start = 0, last = length - 1;
+        while (start < last && s.charAt(start) == '\\' && s.charAt(start + 1) == ' ')
+        {
+            start += 2;
+        }
+
+        int end = last, first = start + 1;
+        while (end > first && s.charAt(end - 1) == '\\' && s.charAt(end) == ' ')
+        {
+            end -= 2;
+        }
+
+        if (start > 0 || end < last)
+        {
+            s = s.substring(start, end + 1);
+        }
+
+        return stripInternalSpaces(s);
     }
 
     public static String canonicalString(ASN1Encodable value)

@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 /**
  * The DLSet encodes ASN.1 SET value without element ordering,
@@ -64,54 +63,54 @@ public class DLSet
     }
 
     /**
-     * @param obj - a single object that makes up the set.
+     * @param element - a single object that makes up the set.
      */
-    public DLSet(
-        ASN1Encodable obj)
+    public DLSet(ASN1Encodable element)
     {
-        super(obj);
+        super(element);
     }
 
     /**
-     * @param v - a vector of objects making up the set.
+     * @param elementVector - a vector of objects making up the set.
      */
-    public DLSet(
-        ASN1EncodableVector v)
+    public DLSet(ASN1EncodableVector elementVector)
     {
-        super(v, false);
+        super(elementVector, false);
     }
 
     /**
      * create a set from an array of objects.
      */
-    public DLSet(
-        ASN1Encodable[] a)
+    public DLSet(ASN1Encodable[] elements)
     {
-        super(a, false);
+        super(elements, false);
     }
 
-    private int getBodyLength()
-        throws IOException
+    DLSet(boolean isSorted, ASN1Encodable[] elements)
+    {
+        super(isSorted, elements);
+    }
+
+    private int getBodyLength() throws IOException
     {
         if (bodyLength < 0)
         {
-            int length = 0;
+            int count = elements.length;
+            int totalLength = 0;
 
-            for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+            for (int i = 0; i < count; ++i)
             {
-                Object obj = e.nextElement();
-
-                length += ((ASN1Encodable)obj).toASN1Primitive().toDLObject().encodedLength();
+                ASN1Primitive dlObject = elements[i].toASN1Primitive().toDLObject();
+                totalLength += dlObject.encodedLength();
             }
 
-            bodyLength = length;
+            this.bodyLength = totalLength;
         }
 
         return bodyLength;
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength() throws IOException
     {
         int length = getBodyLength();
 
@@ -126,20 +125,41 @@ public class DLSet
      * ASN.1 descriptions given. Rather than just outputting SET,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out) throws IOException
     {
-        int length = getBodyLength();
-
         out.write(BERTags.SET | BERTags.CONSTRUCTED);
-        out.writeLength(length);
 
         ASN1OutputStream dlOut = out.getDLSubStream();
-        for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+
+        int count = elements.length;
+        if (bodyLength >= 0 || count > 16)
         {
-            ASN1Encodable enc = (ASN1Encodable)e.nextElement();
-            dlOut.writeObject(enc);
+            out.writeLength(getBodyLength());
+
+            for (int i = 0; i < count; ++i)
+            {
+                dlOut.writeObject(elements[i]);
+            }
+        }
+        else
+        {
+            int totalLength = 0;
+
+            ASN1Primitive[] dlObjects = new ASN1Primitive[count];
+            for (int i = 0; i < count; ++i)
+            {
+                ASN1Primitive dlObject = elements[i].toASN1Primitive().toDLObject();
+                dlObjects[i] = dlObject;
+                totalLength += dlObject.encodedLength();
+            }
+
+            this.bodyLength = totalLength;
+            out.writeLength(totalLength);
+
+            for (int i = 0; i < count; ++i)
+            {
+                dlOut.writeObject(dlObjects[i]);
+            }
         }
     }
 

@@ -185,7 +185,7 @@ public class PersonalData
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector vec = new ASN1EncodableVector();
+        ASN1EncodableVector vec = new ASN1EncodableVector(6);
         vec.add(nameOrPseudonym);
         if (nameDistinguisher != null)
         {

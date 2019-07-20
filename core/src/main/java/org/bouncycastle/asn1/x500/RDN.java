@@ -44,7 +44,7 @@ public class RDN
      */
     public RDN(ASN1ObjectIdentifier oid, ASN1Encodable value)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         v.add(oid);
         v.add(value);

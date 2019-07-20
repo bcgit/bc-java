@@ -3,8 +3,10 @@ package org.bouncycastle.asn1.cms;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.tsp.EvidenceRecord;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
@@ -23,10 +25,17 @@ public class Evidence
     implements ASN1Choice
 {
     private TimeStampTokenEvidence tstEvidence;
+    private EvidenceRecord ersEvidence;
+    private ASN1Sequence otherEvidence;
 
     public Evidence(TimeStampTokenEvidence tstEvidence)
     {
         this.tstEvidence = tstEvidence;
+    }
+
+    public Evidence(EvidenceRecord ersEvidence)
+    {
+        this.ersEvidence = ersEvidence;
     }
 
     private Evidence(ASN1TaggedObject tagged)
@@ -34,6 +43,18 @@ public class Evidence
         if (tagged.getTagNo() == 0)
         {
             this.tstEvidence = TimeStampTokenEvidence.getInstance(tagged, false);
+        }
+        else if (tagged.getTagNo() == 1)
+        {
+            this.ersEvidence = EvidenceRecord.getInstance(tagged, false);
+        }
+        else if (tagged.getTagNo() == 2)
+        {
+            this.otherEvidence = ASN1Sequence.getInstance(tagged, false);
+        }
+        else
+        {
+            throw new IllegalArgumentException("unknown tag in Evidence");
         }
     }
 
@@ -63,18 +84,34 @@ public class Evidence
         throw new IllegalArgumentException("unknown object in getInstance");
     }
 
+    public static Evidence getInstance(
+        ASN1TaggedObject obj,
+        boolean          explicit)
+    {
+        return getInstance(obj.getObject()); // must be explicitly tagged
+    }
+
     public TimeStampTokenEvidence getTstEvidence()
     {
         return tstEvidence;
     }
 
+    public EvidenceRecord getErsEvidence()
+        {
+            return ersEvidence;
+        }
+
     public ASN1Primitive toASN1Primitive()
     {
-       if (tstEvidence != null)
-       {
-           return new DERTaggedObject(false, 0, tstEvidence);
-       }
+        if (tstEvidence != null)
+        {
+            return new DERTaggedObject(false, 0, tstEvidence);
+        }
+        if (ersEvidence != null)
+        {
+            return new DERTaggedObject(false, 1, ersEvidence);
+        }
 
-       return null;
+        return new DERTaggedObject(false, 2, otherEvidence);
     }
 }

@@ -64,11 +64,34 @@ public class SecT571Field
         }
     }
 
+    private static void addTo(long[] x, long[] z)
+    {
+        for (int i = 0; i < 9; ++i)
+        {
+            z[i] ^= x[i];
+        }
+    }
+
     public static long[] fromBigInteger(BigInteger x)
     {
         long[] z = Nat576.fromBigInteger64(x);
         reduce5(z, 0);
         return z;
+    }
+
+    public static void halfTrace(long[] x, long[] z)
+    {
+        long[] tt = Nat576.createExt64();
+
+        Nat576.copy64(x, z);
+        for (int i = 1; i < 571; i += 2)
+        {
+            implSquare(z, tt);
+            reduce(tt, z);
+            implSquare(z, tt);
+            reduce(tt, z);
+            addTo(x, z);
+        }
     }
 
     public static void invert(long[] x, long[] z)

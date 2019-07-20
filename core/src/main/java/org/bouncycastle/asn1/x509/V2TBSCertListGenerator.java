@@ -132,7 +132,7 @@ public class V2TBSCertListGenerator
     {
         if (reason != 0)
         {
-            ASN1EncodableVector v = new ASN1EncodableVector();
+            ASN1EncodableVector v = new ASN1EncodableVector(2);
 
             if (reason < reasons.length)
             {
@@ -156,11 +156,8 @@ public class V2TBSCertListGenerator
         }
         else if (invalidityDate != null)
         {
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            v.add(createInvalidityDateExtension(invalidityDate));
-
-            internalAddCRLEntry(userCertificate, revocationDate, new DERSequence(v));
+            internalAddCRLEntry(userCertificate, revocationDate,
+                new DERSequence(createInvalidityDateExtension(invalidityDate)));
         }
         else
         {
@@ -170,7 +167,7 @@ public class V2TBSCertListGenerator
 
     private void internalAddCRLEntry(ASN1Integer userCertificate, Time revocationDate, ASN1Sequence extensions)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(userCertificate);
         v.add(revocationDate);
@@ -185,7 +182,7 @@ public class V2TBSCertListGenerator
 
     public void addCRLEntry(ASN1Integer userCertificate, Time revocationDate, Extensions extensions)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(userCertificate);
         v.add(revocationDate);
@@ -217,7 +214,7 @@ public class V2TBSCertListGenerator
             throw new IllegalStateException("Not all mandatory fields set in V2 TBSCertList generator.");
         }
 
-        ASN1EncodableVector  v = new ASN1EncodableVector();
+        ASN1EncodableVector  v = new ASN1EncodableVector(7);
 
         v.add(version);
         v.add(signature);
@@ -245,7 +242,7 @@ public class V2TBSCertListGenerator
 
     private static ASN1Sequence createReasonExtension(int reasonCode)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         CRLReason crlReason = CRLReason.lookup(reasonCode);
 
@@ -264,7 +261,7 @@ public class V2TBSCertListGenerator
 
     private static ASN1Sequence createInvalidityDateExtension(ASN1GeneralizedTime invalidityDate)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         try
         {

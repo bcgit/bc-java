@@ -90,7 +90,7 @@ public class IssuingDistributionPoint
         this.onlyContainsUserCerts = onlyContainsUserCerts;
         this.onlySomeReasons = onlySomeReasons;
 
-        ASN1EncodableVector vec = new ASN1EncodableVector();
+        ASN1EncodableVector vec = new ASN1EncodableVector(6);
         if (distributionPoint != null)
         {                                    // CHOICE item so explicitly tagged
             vec.add(new DERTaggedObject(true, 0, distributionPoint));

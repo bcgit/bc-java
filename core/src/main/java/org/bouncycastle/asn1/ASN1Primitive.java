@@ -75,7 +75,7 @@ public abstract class ASN1Primitive
 
     public final boolean equals(ASN1Encodable other)
     {
-        return this == other || asn1Equals(other.toASN1Primitive());
+        return this == other || (null != other && asn1Equals(other.toASN1Primitive()));
     }
 
     public final boolean equals(ASN1Primitive other)

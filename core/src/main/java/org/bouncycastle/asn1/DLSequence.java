@@ -19,41 +19,37 @@ public class DLSequence
 
     /**
      * create a sequence containing one object
-     * @param obj the object to go in the sequence.
+     * @param element the object to go in the sequence.
      */
-    public DLSequence(
-        ASN1Encodable obj)
+    public DLSequence(ASN1Encodable element)
     {
-        super(obj);
+        super(element);
     }
 
     /**
      * create a sequence containing a vector of objects.
-     * @param v the vector of objects to make up the sequence.
+     * @param elementVector the vector of objects to make up the sequence.
      */
-    public DLSequence(
-        ASN1EncodableVector v)
+    public DLSequence(ASN1EncodableVector elementVector)
     {
-        super(v);
+        super(elementVector);
     }
 
     /**
      * create a sequence containing an array of objects.
-     * @param array the array of objects to make up the sequence.
+     * @param elements the array of objects to make up the sequence.
      */
-    public DLSequence(
-        ASN1Encodable[] array)
+    public DLSequence(ASN1Encodable[] elements)
     {
-        super(array);
+        super(elements);
     }
 
-    DLSequence(ASN1Encodable[] array, boolean clone)
+    DLSequence(ASN1Encodable[] elements, boolean clone)
     {
-        super(array, clone);
+        super(elements, clone);
     }
 
-    private int getBodyLength()
-        throws IOException
+    private int getBodyLength() throws IOException
     {
         if (bodyLength < 0)
         {
@@ -72,8 +68,7 @@ public class DLSequence
         return bodyLength;
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength() throws IOException
     {
         int length = getBodyLength();
 
@@ -117,7 +112,7 @@ public class DLSequence
             }
 
             this.bodyLength = totalLength;
-            out.writeLength(bodyLength);
+            out.writeLength(totalLength);
 
             for (int i = 0; i < count; ++i)
             {

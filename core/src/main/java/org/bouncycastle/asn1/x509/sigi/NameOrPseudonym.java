@@ -179,7 +179,7 @@ public class NameOrPseudonym
         }
         else
         {
-            ASN1EncodableVector vec1 = new ASN1EncodableVector();
+            ASN1EncodableVector vec1 = new ASN1EncodableVector(2);
             vec1.add(surname);
             vec1.add(givenName);
             return new DERSequence(vec1);

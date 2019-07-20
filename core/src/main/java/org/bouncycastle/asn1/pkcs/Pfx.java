@@ -70,7 +70,7 @@ public class Pfx
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(new ASN1Integer(3));
         v.add(contentInfo);
