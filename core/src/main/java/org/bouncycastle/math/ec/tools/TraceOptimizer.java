@@ -111,18 +111,37 @@ public class TraceOptimizer
 
     private static int calculateTrace(ECFieldElement fe)
     {
+//        int m = fe.getFieldSize();
+//        ECFieldElement tr = fe;
+//        for (int i = 1; i < m; ++i)
+//        {
+//            tr = tr.square().add(fe);
+//        }
+
         int m = fe.getFieldSize();
+        int k = 31 - Integers.numberOfLeadingZeros(m);
+        int mk = 1;
+
         ECFieldElement tr = fe;
-        for (int i = 1; i < m; ++i)
+        while (k > 0)
         {
-            tr = tr.square().add(fe);
+            tr = tr.squarePow(mk).add(tr);
+            mk = m >>> --k;
+            if (0 != (mk & 1))
+            {
+                tr = tr.square().add(fe);
+            }
         }
-        BigInteger b = tr.toBigInteger();
-        if (b.bitLength() > 1)
+
+        if (tr.isZero())
         {
-            throw new IllegalStateException();
+            return 0;
         }
-        return b.intValue();
+        if (tr.isOne())
+        {
+            return 1;
+        }
+        throw new IllegalStateException("Internal error in trace calculation");
     }
 
     private static ArrayList enumToList(Enumeration en)
