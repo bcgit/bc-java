@@ -7,6 +7,7 @@ import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Integers;
 
 public abstract class ECFieldElement
     implements ECConstants
@@ -510,27 +511,59 @@ public abstract class ECFieldElement
                 throw new IllegalStateException("Half-trace only defined for odd m");
             }
 
-            ECFieldElement fe = this;
-            ECFieldElement ht = fe;
-            for (int i = 2; i < m; i += 2)
+//            ECFieldElement ht = this;
+//            for (int i = 1; i < m; i += 2)
+//            {
+//                ht = ht.squarePow(2).add(this);
+//            }
+
+            int n = (m + 1) >>> 1;
+            int k = 31 - Integers.numberOfLeadingZeros(n);
+            int nk = 1;
+
+            ECFieldElement ht = this;
+            while (k > 0)
             {
-                fe = fe.squarePow(2);
-                ht = ht.add(fe);
+                ht = ht.squarePow(nk << 1).add(ht);
+                nk = n >>> --k;
+                if (0 != (nk & 1))
+                {
+                    ht = ht.squarePow(2).add(this);
+                }
             }
 
             return ht;
         }
 
+        public boolean hasFastTrace()
+        {
+            return false;
+        }
+
         public int trace()
         {
             int m = this.getFieldSize();
-            ECFieldElement fe = this;
-            ECFieldElement tr = fe;
-            for (int i = 1; i < m; ++i)
+
+//            ECFieldElement tr = this;
+//            for (int i = 1; i < m; ++i)
+//            {
+//                tr = tr.square().add(this);
+//            }
+
+            int k = 31 - Integers.numberOfLeadingZeros(m);
+            int mk = 1;
+
+            ECFieldElement tr = this;
+            while (k > 0)
             {
-                fe = fe.square();
-                tr = tr.add(fe);
+                tr = tr.squarePow(mk).add(tr);
+                mk = m >>> --k;
+                if (0 != (mk & 1))
+                {
+                    tr = tr.square().add(this);
+                }
             }
+
             if (tr.isZero())
             {
                 return 0;

@@ -181,7 +181,7 @@ public class CertificateBody
     private ASN1Primitive profileToASN1Object()
         throws IOException
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(7);
 
         v.add(certificateProfileIdentifier);
         v.add(certificationAuthorityReference);
@@ -264,7 +264,7 @@ public class CertificateBody
     private ASN1Primitive requestToASN1Object()
         throws IOException
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(certificateProfileIdentifier);
         v.add(new DERApplicationSpecific(false, EACTags.CARDHOLDER_PUBLIC_KEY_TEMPLATE, publicKey));

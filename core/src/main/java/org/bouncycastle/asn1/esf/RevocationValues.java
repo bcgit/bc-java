@@ -134,7 +134,7 @@ public class RevocationValues
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
         if (null != this.crlVals)
         {
             v.add(new DERTaggedObject(true, 0, this.crlVals));

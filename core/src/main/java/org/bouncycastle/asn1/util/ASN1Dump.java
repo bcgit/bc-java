@@ -127,16 +127,7 @@ public class ASN1Dump
 
             buf.append(nl);
 
-            if (o.isEmpty())
-            {
-                buf.append(tab);
-                buf.append("EMPTY");
-                buf.append(nl);
-            }
-            else
-            {
-                _dumpAsString(tab, verbose, o.getObject(), buf);
-            }
+            _dumpAsString(tab, verbose, o.getObject(), buf);
         }
         else if (obj instanceof ASN1Set)
         {

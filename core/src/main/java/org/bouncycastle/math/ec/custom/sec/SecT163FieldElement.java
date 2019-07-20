@@ -159,6 +159,18 @@ public class SecT163FieldElement extends ECFieldElement.AbstractF2m
         return new SecT163FieldElement(z);
     }
 
+    public ECFieldElement halfTrace()
+    {
+        long[] z = Nat192.create64();
+        SecT163Field.halfTrace(x, z);
+        return new SecT163FieldElement(z); 
+    }
+
+    public boolean hasFastTrace()
+    {
+        return true;
+    }
+
     public int trace()
     {
         return SecT163Field.trace(x);

@@ -27,7 +27,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERSequenceParser;
+import org.bouncycastle.asn1.DLSequenceParser;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedData;
@@ -763,7 +763,7 @@ public class PKCS12StoreTest
         }
 
         ASN1Encodable outer = new ASN1StreamParser(data).readObject();
-        if (!(outer instanceof DERSequenceParser))
+        if (!(outer instanceof DLSequenceParser))
         {
             fail("Failed DER encoding test.");
         }
@@ -791,7 +791,7 @@ public class PKCS12StoreTest
         }
 
         outer = new ASN1StreamParser(data).readObject();
-        if (!(outer instanceof DERSequenceParser))
+        if (!(outer instanceof DLSequenceParser))
         {
             fail("Failed DER encoding test.");
         }
@@ -821,7 +821,7 @@ public class PKCS12StoreTest
         }
 
         outer = new ASN1StreamParser(data).readObject();
-        if (!(outer instanceof DERSequenceParser))
+        if (!(outer instanceof DLSequenceParser))
         {
             fail("Failed DER encoding test.");
         }
@@ -1502,7 +1502,7 @@ public class PKCS12StoreTest
         kS.load(new ByteArrayInputStream(data), passwd);     // check MAC
 
         ASN1Encodable obj = new ASN1StreamParser(data).readObject();
-        if (!(obj instanceof DERSequenceParser))
+        if (!(obj instanceof DLSequenceParser))
         {
             fail("Failed DER conversion test.");
         }
@@ -1511,7 +1511,7 @@ public class PKCS12StoreTest
         kS.load(new ByteArrayInputStream(data), passwd); //check MAC
 
         obj = new ASN1StreamParser(data).readObject();
-        if (!(obj instanceof DERSequenceParser))
+        if (!(obj instanceof DLSequenceParser))
         {
             fail("Failed deep DER conversion test - outer.");
         }
@@ -1519,7 +1519,7 @@ public class PKCS12StoreTest
         Pfx pfx = Pfx.getInstance(obj);
 
         obj = new ASN1StreamParser(ASN1OctetString.getInstance(pfx.getAuthSafe().getContent()).getOctets()).readObject();
-        if (!(obj instanceof DERSequenceParser))
+        if (!(obj instanceof DLSequenceParser))
         {
             fail("Failed deep DER conversion test - inner.");
         }

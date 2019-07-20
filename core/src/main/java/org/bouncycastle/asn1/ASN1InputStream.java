@@ -192,6 +192,11 @@ public class ASN1InputStream
 
     ASN1EncodableVector buildDEREncodableVector(DefiniteLengthInputStream dIn) throws IOException
     {
+        if (dIn.getRemaining() < 1)
+        {
+            return new ASN1EncodableVector(0);
+        }
+
         ASN1InputStream subStream = new ASN1InputStream(dIn);
         ASN1EncodableVector v = new ASN1EncodableVector();
         ASN1Primitive p;

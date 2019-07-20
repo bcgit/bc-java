@@ -81,7 +81,7 @@ public class OtherRevVals
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
         v.add(this.otherRevValType);
         v.add(this.otherRevVals);
         return new DERSequence(v);

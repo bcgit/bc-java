@@ -40,7 +40,7 @@ public class RevRepContentBuilder
 
     public RevRepContent build()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(new DERSequence(status));
 

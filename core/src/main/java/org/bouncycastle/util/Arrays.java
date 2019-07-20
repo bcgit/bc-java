@@ -1044,4 +1044,21 @@ public final class Arrays
             java.util.Arrays.fill(data, (byte)0x00);
         }
     }
+
+    public static boolean isNullOrContainsNull(Object[] array)
+    {
+        if (null == array)
+        {
+            return true;
+        }
+        int count = array.length;
+        for (int i = 0; i < count; ++i)
+        {
+            if (null == array[i])
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }

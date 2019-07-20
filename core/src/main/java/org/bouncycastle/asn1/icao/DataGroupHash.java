@@ -88,7 +88,7 @@ public class DataGroupHash
     
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector seq = new ASN1EncodableVector();
+        ASN1EncodableVector seq = new ASN1EncodableVector(2);
         seq.add(dataGroupNumber);
         seq.add(dataGroupHashValue);  
 

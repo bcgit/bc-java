@@ -107,11 +107,11 @@ public class DERIA5String
     {
         if (string == null)
         {
-            throw new NullPointerException("string cannot be null");
+            throw new NullPointerException("'string' cannot be null");
         }
         if (validate && !isIA5String(string))
         {
-            throw new IllegalArgumentException("string contains illegal characters");
+            throw new IllegalArgumentException("'string' contains illegal characters");
         }
 
         this.string = Strings.toByteArray(string);

@@ -922,6 +922,27 @@ public abstract class ECCurve
          */
         protected ECFieldElement solveQuadraticEquation(ECFieldElement beta)
         {
+            ECFieldElement.AbstractF2m betaF2m = (ECFieldElement.AbstractF2m)beta;
+
+            boolean fastTrace = betaF2m.hasFastTrace();
+            if (fastTrace && 0 != betaF2m.trace())
+            {
+                return null;
+            }
+
+            int m = this.getFieldSize();
+
+            // For odd m, use the half-trace 
+            if (0 != (m & 1))
+            {
+                ECFieldElement r = betaF2m.halfTrace();
+                if (fastTrace || r.square().add(r).add(beta).isZero())
+                {
+                    return r;
+                }
+                return null;
+            }
+
             if (beta.isZero())
             {
                 return beta;
@@ -929,7 +950,6 @@ public abstract class ECCurve
 
             ECFieldElement gamma, z, zeroElement = this.fromBigInteger(ECConstants.ZERO);
 
-            int m = this.getFieldSize();
             Random rand = new Random();
             do
             {

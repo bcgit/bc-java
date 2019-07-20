@@ -72,9 +72,9 @@ public class ASN1StreamParser
             switch (tag)
             {
                 case BERTags.SET:
-                    return new DERSetParser(this);
+                    return new DLSetParser(this);
                 case BERTags.SEQUENCE:
-                    return new DERSequenceParser(this);
+                    return new DLSequenceParser(this);
                 case BERTags.OCTET_STRING:
                     return new BEROctetStringParser(this);
             }
@@ -192,9 +192,9 @@ public class ASN1StreamParser
                         //
                         return new BEROctetStringParser(new ASN1StreamParser(defIn));
                     case BERTags.SEQUENCE:
-                        return new DERSequenceParser(new ASN1StreamParser(defIn));
+                        return new DLSequenceParser(new ASN1StreamParser(defIn));
                     case BERTags.SET:
-                        return new DERSetParser(new ASN1StreamParser(defIn));
+                        return new DLSetParser(new ASN1StreamParser(defIn));
                     case BERTags.EXTERNAL:
                         return new DERExternalParser(new ASN1StreamParser(defIn));
                     default:

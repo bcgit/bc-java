@@ -232,7 +232,7 @@ public class PKIHeader
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(12);
 
         v.add(pvno);
         v.add(sender);
