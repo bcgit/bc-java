@@ -3,13 +3,24 @@ package org.bouncycastle.crypto.test;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.TigerDigest;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECNRSigner;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -29,7 +40,7 @@ public class ECNRTest
 
     byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("700000017569056646655505781757157107570501575775705779575555657156756655"));
 
-    SecureRandom    k = new TestRandomBigInteger(kData);
+    SecureRandom k = new TestRandomBigInteger(kData);
 
     private void ecNR239bitPrime()
     {
@@ -80,6 +91,63 @@ public class ECNRTest
         }
     }
 
+    private void rangeTest()
+    {
+        /* Create the generator */
+        ECKeyPairGenerator myGenerator = new ECKeyPairGenerator();
+        SecureRandom myRandom = new SecureRandom();
+        String myCurve = "brainpoolP192t1";
+
+        /* Lookup the parameters */
+        final X9ECParameters x9 = ECNamedCurveTable.getByName(myCurve);
+
+        /* Initialise the generator */
+        final ASN1ObjectIdentifier myOid = ECNamedCurveTable.getOID(myCurve);
+        ECNamedDomainParameters myDomain = new ECNamedDomainParameters(myOid, x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+        ECKeyGenerationParameters myParams = new ECKeyGenerationParameters(myDomain, myRandom);
+        myGenerator.init(myParams);
+
+        /* Create the key Pair */
+        AsymmetricCipherKeyPair myPair = myGenerator.generateKeyPair();
+
+        /* Create the digest and the output buffer */
+        Digest myDigest = new TigerDigest();
+        byte[] myArtifact = new byte[myDigest.getDigestSize()];
+        final byte[] myMessage = "Hello there. How is life treating you?".getBytes();
+        myDigest.update(myMessage, 0, myMessage.length);
+        myDigest.doFinal(myArtifact, 0);
+
+        /* Create signer */
+        ECNRSigner signer = new ECNRSigner();
+        signer.init(true, myPair.getPrivate());
+
+        try
+        {
+            signer.generateSignature(myArtifact);
+            fail("out of range input not caught");
+        }
+        catch (DataLengthException e)
+        {
+            isTrue(e.getMessage().equals("input too large for ECNR key"));
+        }
+
+        //
+        // check upper bound
+        BigInteger order = ((ECPublicKeyParameters)myPair.getPublic()).getParameters().getN();
+
+        signer.init(true, myPair.getPrivate());
+        byte[] msg = BigIntegers.asUnsignedByteArray(order.subtract(BigIntegers.ONE));
+        BigInteger[] sig = signer.generateSignature(msg);
+
+        signer.init(false, myPair.getPublic());
+        if (!signer.verifySignature(msg, sig[0], sig[1]))
+        {
+            fail("ECNR failed 2");
+        }
+
+        isTrue(Arrays.areEqual(msg, signer.getRecoveredMessage(sig[0], sig[1])));
+    }
+
     public String getName()
     {
         return "ECNR";
@@ -88,10 +156,11 @@ public class ECNRTest
     public void performTest()
     {
         ecNR239bitPrime();
+        rangeTest();
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         runTest(new ECNRTest());
     }
