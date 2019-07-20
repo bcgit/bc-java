@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 /**
  * Indefinite length <code>SET</code> and <code>SET OF</code> constructs.
@@ -30,57 +29,54 @@ public class BERSet
     /**
      * Create a SET containing one object.
      *
-     * @param obj - a single object that makes up the set.
+     * @param element - a single object that makes up the set.
      */
-    public BERSet(
-        ASN1Encodable obj)
+    public BERSet(ASN1Encodable element)
     {
-        super(obj);
+        super(element);
     }
 
     /**
      * Create a SET containing multiple objects.
-     * @param v a vector of objects making up the set.
+     * @param elementVector a vector of objects making up the set.
      */
-    public BERSet(
-        ASN1EncodableVector v)
+    public BERSet(ASN1EncodableVector elementVector)
     {
-        super(v, false);
+        super(elementVector, false);
     }
 
     /**
      * Create a SET from an array of objects.
-     * @param a an array of ASN.1 objects.
+     * @param elements an array of ASN.1 objects.
      */
-    public BERSet(
-        ASN1Encodable[]   a)
+    public BERSet(ASN1Encodable[] elements)
     {
-        super(a, false);
+        super(elements, false);
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength() throws IOException
     {
-        int length = 0;
-        for (Enumeration e = getObjects(); e.hasMoreElements();)
+        int count = elements.length;
+        int totalLength = 0;
+
+        for (int i = 0; i < count; ++i)
         {
-            length += ((ASN1Encodable)e.nextElement()).toASN1Primitive().encodedLength();
+            ASN1Primitive p = elements[i].toASN1Primitive();
+            totalLength += p.encodedLength();
         }
 
-        return 2 + length + 2;
+        return 2 + totalLength + 2;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out) throws IOException
     {
         out.write(BERTags.SET | BERTags.CONSTRUCTED);
         out.write(0x80);
 
-        Enumeration e = getObjects();
-        while (e.hasMoreElements())
+        int count = elements.length;
+        for (int i = 0; i < count; ++i)
         {
-            out.writeObject((ASN1Encodable)e.nextElement());
+            out.writeObject(elements[i]);
         }
 
         out.write(0x00);

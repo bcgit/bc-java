@@ -457,7 +457,7 @@ public class SignedMailValidatorTest extends TestCase
             {
                 found = true;
                 assertEquals(text, message.getText(Locale.ENGLISH, TimeZone
-                        .getTimeZone("GMT")));
+                        .getTimeZone("GMT")).replace("Greenwich Mean Time", "GMT"));
                 break;
             }
         }

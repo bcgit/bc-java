@@ -69,7 +69,7 @@ public class DVCSRequestInformationBuilder
 
     public DVCSRequestInformation build()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(9);
 
         if (version != DEFAULT_VERSION)
         {

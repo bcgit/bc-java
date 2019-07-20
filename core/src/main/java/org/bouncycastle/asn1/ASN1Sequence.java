@@ -60,8 +60,6 @@ public abstract class ASN1Sequence
     extends ASN1Primitive
     implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
-    private static final ASN1Encodable[] EMPTY_ELEMENTS = new ASN1Encodable[0];
-
     // NOTE: Only non-final to support LazyEncodedSequence
     ASN1Encodable[] elements;
 
@@ -174,62 +172,59 @@ public abstract class ASN1Sequence
      */
     protected ASN1Sequence()
     {
-        this.elements = EMPTY_ELEMENTS;
+        this.elements = ASN1EncodableVector.EMPTY_ELEMENTS;
     }
 
     /**
      * Create a SEQUENCE containing one object.
      * @param obj the object to be put in the SEQUENCE.
      */
-    protected ASN1Sequence(ASN1Encodable obj)
+    protected ASN1Sequence(ASN1Encodable element)
     {
-        this.elements = new ASN1Encodable[]{ obj };
+        if (null == element)
+        {
+            throw new NullPointerException("'element' cannot be null");
+        }
+
+        this.elements = new ASN1Encodable[]{ element };
     }
 
     /**
      * Create a SEQUENCE containing a vector of objects.
-     * @param v the vector of objects to be put in the SEQUENCE.
+     * @param elementVector the vector of objects to be put in the SEQUENCE.
      */
-    protected ASN1Sequence(ASN1EncodableVector v)
+    protected ASN1Sequence(ASN1EncodableVector elementVector)
     {
-        int count = v.size();
-
-        ASN1Encodable[] tmp;
-        if (count < 1)
+        if (null == elementVector)
         {
-            tmp = EMPTY_ELEMENTS;
-        }
-        else
-        {
-            tmp = new ASN1Encodable[count];
-            for (int i = 0; i < count; ++i)
-            {
-                tmp[i] = v.get(i);
-            }
+            throw new NullPointerException("'elementVector' cannot be null");
         }
 
-        this.elements = tmp;
+        this.elements = elementVector.takeElements();
     }
 
     /**
      * Create a SEQUENCE containing an array of objects.
      * @param array the array of objects to be put in the SEQUENCE.
      */
-    protected ASN1Sequence(ASN1Encodable[] array)
+    protected ASN1Sequence(ASN1Encodable[] elements)
     {
-        this(array, true);
+        if (Arrays.isNullOrContainsNull(elements))
+        {
+            throw new NullPointerException("'elements' cannot be null, or contain null");
+        }
+
+        this.elements = ASN1EncodableVector.cloneElements(elements);
     }
 
-    ASN1Sequence(ASN1Encodable[] array, boolean clone)
+    ASN1Sequence(ASN1Encodable[] elements, boolean clone)
     {
-        this.elements = !clone              ? array
-                      : array.length < 1    ? EMPTY_ELEMENTS
-                      : array.clone();
+        this.elements = clone ? ASN1EncodableVector.cloneElements(elements) : elements;
     }
 
     public ASN1Encodable[] toArray()
     {
-        return elements.length < 1 ? EMPTY_ELEMENTS : elements.clone();
+        return ASN1EncodableVector.cloneElements(elements);
     }
 
     public Enumeration getObjects()
@@ -318,7 +313,17 @@ public abstract class ASN1Sequence
 
     public int hashCode()
     {
-        return Arrays.hashCode(elements);
+//        return Arrays.hashCode(elements);
+        int i = elements.length;
+        int hc = i + 1;
+
+        while (--i >= 0)
+        {
+            hc *= 257;
+            hc ^= elements[i].toASN1Primitive().hashCode();
+        }
+
+        return hc;
     }
 
     boolean asn1Equals(ASN1Primitive other)
@@ -348,13 +353,6 @@ public abstract class ASN1Sequence
         }
 
         return true;
-    }
-
-    private ASN1Encodable getNext(Enumeration e)
-    {
-        ASN1Encodable encObj = (ASN1Encodable)e.nextElement();
-
-        return encObj;
     }
 
     /**

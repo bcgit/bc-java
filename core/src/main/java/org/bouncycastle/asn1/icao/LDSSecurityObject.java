@@ -136,17 +136,11 @@ public class LDSSecurityObject
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector seq = new ASN1EncodableVector();
+        ASN1EncodableVector seq = new ASN1EncodableVector(4);
 
         seq.add(version);
         seq.add(digestAlgorithmIdentifier);
-
-        ASN1EncodableVector seqname = new ASN1EncodableVector();
-        for (int i = 0; i < datagroupHash.length; i++)
-        {
-            seqname.add(datagroupHash[i]);
-        }
-        seq.add(new DERSequence(seqname));
+        seq.add(new DERSequence(datagroupHash));
 
         if (versionInfo != null)
         {

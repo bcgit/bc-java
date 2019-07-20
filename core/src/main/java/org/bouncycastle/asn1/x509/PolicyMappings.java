@@ -60,14 +60,14 @@ public class PolicyMappings
      */
     public PolicyMappings(Hashtable mappings)
     {
-        ASN1EncodableVector dev = new ASN1EncodableVector();
-        Enumeration it = mappings.keys();
+        ASN1EncodableVector dev = new ASN1EncodableVector(mappings.size());
 
+        Enumeration it = mappings.keys();
         while (it.hasMoreElements())
         {
             String idp = (String)it.nextElement();
             String sdp = (String)mappings.get(idp);
-            ASN1EncodableVector dv = new ASN1EncodableVector();
+            ASN1EncodableVector dv = new ASN1EncodableVector(2);
             dv.add(new ASN1ObjectIdentifier(idp));
             dv.add(new ASN1ObjectIdentifier(sdp));
             dev.add(new DERSequence(dv));
@@ -78,7 +78,7 @@ public class PolicyMappings
 
     public PolicyMappings(CertPolicyId issuerDomainPolicy, CertPolicyId subjectDomainPolicy)
     {
-        ASN1EncodableVector dv = new ASN1EncodableVector();
+        ASN1EncodableVector dv = new ASN1EncodableVector(2);
         dv.add(issuerDomainPolicy);
         dv.add(subjectDomainPolicy);
 
@@ -87,11 +87,11 @@ public class PolicyMappings
 
     public PolicyMappings(CertPolicyId[] issuerDomainPolicy, CertPolicyId[] subjectDomainPolicy)
     {
-        ASN1EncodableVector dev = new ASN1EncodableVector();
+        ASN1EncodableVector dev = new ASN1EncodableVector(issuerDomainPolicy.length);
 
         for (int i = 0; i != issuerDomainPolicy.length; i++)
         {
-            ASN1EncodableVector dv = new ASN1EncodableVector();
+            ASN1EncodableVector dv = new ASN1EncodableVector(2);
             dv.add(issuerDomainPolicy[i]);
             dv.add(subjectDomainPolicy[i]);
             dev.add(new DERSequence(dv));

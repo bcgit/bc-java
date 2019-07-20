@@ -520,7 +520,7 @@ public class NistCertPathReviewerTest
         {
             ErrorBundle msg = (ErrorBundle) result.getErrors(index).iterator().next();
             assertEquals(messageId,msg.getId());
-            assertEquals(message,msg.getText(Locale.ENGLISH,TimeZone.getTimeZone("GMT")));
+            assertEquals(message,msg.getText(Locale.ENGLISH,TimeZone.getTimeZone("GMT")).replace("Greenwich Mean Time", "GMT"));
         }
     }
     

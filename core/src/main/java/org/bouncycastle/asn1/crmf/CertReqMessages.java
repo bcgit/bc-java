@@ -40,12 +40,7 @@ public class CertReqMessages
     public CertReqMessages(
         CertReqMsg[] msgs)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        for (int i = 0; i < msgs.length; i++)
-        {
-            v.add(msgs[i]);
-        }
-        content = new DERSequence(v);
+        content = new DERSequence(msgs);
     }
 
     public CertReqMsg[] toCertReqMsgArray()

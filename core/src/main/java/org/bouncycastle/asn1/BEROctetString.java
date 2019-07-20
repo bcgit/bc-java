@@ -213,15 +213,12 @@ public class BEROctetString
 
     static BEROctetString fromSequence(ASN1Sequence seq)
     {
-        ASN1OctetString[]     v = new ASN1OctetString[seq.size()];
-        Enumeration e = seq.getObjects();
-        int                   index = 0;
-
-        while (e.hasMoreElements())
+        int count = seq.size();
+        ASN1OctetString[] v = new ASN1OctetString[count];
+        for (int i = 0; i < count; ++i)
         {
-            v[index++] = (ASN1OctetString)e.nextElement();
+            v[i] = (ASN1OctetString)seq.getObjectAt(i);
         }
-
         return new BEROctetString(v);
     }
 }

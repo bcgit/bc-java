@@ -36,14 +36,9 @@ public class GenRepContent
         content = new DERSequence(itv);
     }
 
-    public GenRepContent(InfoTypeAndValue[] itv)
+    public GenRepContent(InfoTypeAndValue[] itvs)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        for (int i = 0; i < itv.length; i++)
-        {
-            v.add(itv[i]);
-        }
-        content = new DERSequence(v);
+        content = new DERSequence(itvs);
     }
 
     public InfoTypeAndValue[] toInfoTypeAndValueArray()

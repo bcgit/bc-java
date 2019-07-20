@@ -172,7 +172,7 @@ public class ResponseData
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(5);
 
         if (versionPresent || !version.equals(V1))
         {

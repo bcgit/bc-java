@@ -83,7 +83,7 @@ public class CertificationRequest
     public ASN1Primitive toASN1Primitive()
     {
         // Construct the CertificateRequest
-        ASN1EncodableVector  v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(reqInfo);
         v.add(sigAlgId);
