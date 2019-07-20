@@ -271,6 +271,23 @@ public abstract class Nat
         System.arraycopy(x, xOff, z, zOff, len);
     }
 
+    public static long[] copy64(int len, long[] x)
+    {
+        long[] z = new long[len];
+        System.arraycopy(x, 0, z, 0, len);
+        return z;
+    }
+
+    public static void copy64(int len, long[] x, long[] z)
+    {
+        System.arraycopy(x, 0, z, 0, len);
+    }
+
+    public static void copy64(int len, long[] x, int xOff, long[] z, int zOff)
+    {
+        System.arraycopy(x, xOff, z, zOff, len);
+    }
+
     public static int[] create(int len)
     {
         return new int[len];
