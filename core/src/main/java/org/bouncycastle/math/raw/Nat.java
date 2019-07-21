@@ -427,6 +427,24 @@ public abstract class Nat
         return z;
     }
 
+    public static long[] fromBigInteger64(int bits, BigInteger x)
+    {
+        if (x.signum() < 0 || x.bitLength() > bits)
+        {
+            throw new IllegalArgumentException();
+        }
+
+        int len = (bits + 63) >> 6;
+        long[] z = create64(len);
+        int i = 0;
+        while (x.signum() != 0)
+        {
+            z[i++] = x.longValue();
+            x = x.shiftRight(64);
+        }
+        return z;
+    }
+
     public static int getBit(int[] x, int bit)
     {
         if (bit == 0)
