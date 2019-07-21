@@ -350,10 +350,12 @@ public class SecT409Field
 
     protected static void implSquare(long[] x, long[] zz)
     {
-        for (int i = 0; i < 6; ++i)
-        {
-            Interleave.expand64To128(x[i], zz, i << 1);
-        }
+        Interleave.expand64To128(x[0], zz,  0);
+        Interleave.expand64To128(x[1], zz,  2);
+        Interleave.expand64To128(x[2], zz,  4);
+        Interleave.expand64To128(x[3], zz,  6);
+        Interleave.expand64To128(x[4], zz,  8);
+        Interleave.expand64To128(x[5], zz, 10);
         zz[12] = Interleave.expand32to64((int)x[6]);
     }
 }
