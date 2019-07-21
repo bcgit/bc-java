@@ -54,9 +54,7 @@ public class SecT409Field
 
     public static long[] fromBigInteger(BigInteger x)
     {
-        long[] z = Nat448.fromBigInteger64(x);
-        reduce39(z, 0);
-        return z;
+        return Nat.fromBigInteger64(409, x);
     }
 
     public static void halfTrace(long[] x, long[] z)

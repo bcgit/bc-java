@@ -55,9 +55,7 @@ public class SecT283Field
 
     public static long[] fromBigInteger(BigInteger x)
     {
-        long[] z = Nat320.fromBigInteger64(x);
-        reduce37(z, 0);
-        return z;
+        return Nat.fromBigInteger64(283, x);
     }
 
     public static void halfTrace(long[] x, long[] z)
