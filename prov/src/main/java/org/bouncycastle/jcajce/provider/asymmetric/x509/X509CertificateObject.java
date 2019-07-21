@@ -176,7 +176,7 @@ class X509CertificateObject
                     return false;
                 }
             }
-            else if (null == internalCertificateValue)
+            else if (null == internalCertificateValue || null == otherBC.internalCertificateValue)
             {
                 ASN1BitString signature = c.getSignature();
                 if (null != signature && !signature.equals(otherBC.c.getSignature()))
