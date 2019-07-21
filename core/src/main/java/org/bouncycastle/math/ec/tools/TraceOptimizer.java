@@ -69,13 +69,24 @@ public class TraceOptimizer
         {
             for (int i = 0; i < m; ++i)
             {
-                BigInteger zi = ONE.shiftLeft(i);
-                ECFieldElement fe = c.fromBigInteger(zi);
-                int tr = calculateTrace(fe);
-                if (tr != 0)
+                if (0 == (i & 1) && 0 != i)
                 {
-                    nonZeroTraceBits.add(Integers.valueOf(i));
-                    System.out.print(" " + i);
+                    if (nonZeroTraceBits.contains(Integers.valueOf(i >>> 1)))
+                    {
+                        nonZeroTraceBits.add(Integers.valueOf(i));
+                        System.out.print(" " + i);
+                    }
+                }
+                else
+                {
+                    BigInteger zi = ONE.shiftLeft(i);
+                    ECFieldElement fe = c.fromBigInteger(zi);
+                    int tr = calculateTrace(fe);
+                    if (tr != 0)
+                    {
+                        nonZeroTraceBits.add(Integers.valueOf(i));
+                        System.out.print(" " + i);
+                    }
                 }
             }
             System.out.println();
