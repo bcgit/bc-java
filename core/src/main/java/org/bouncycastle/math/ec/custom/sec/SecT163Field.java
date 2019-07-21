@@ -355,9 +355,6 @@ public class SecT163Field
     {
         Interleave.expand64To128(x[0], zz, 0);
         Interleave.expand64To128(x[1], zz, 2);
-
-        long x2 = x[2];
-        zz[4] = Interleave.expand32to64((int)x2);
-        zz[5] = Interleave.expand8to16((int)(x2 >>> 32)) & 0xFFFFFFFFL;
+        Interleave.expand64To128(x[2], zz, 4);
     }
 }

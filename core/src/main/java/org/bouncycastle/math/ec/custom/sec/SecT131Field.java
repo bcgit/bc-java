@@ -348,7 +348,6 @@ public class SecT131Field
     {
         Interleave.expand64To128(x[0], zz, 0);
         Interleave.expand64To128(x[1], zz, 2);
-
         zz[4] = Interleave.expand8to16((int)x[2]) & 0xFFFFFFFFL;
     }
 }
