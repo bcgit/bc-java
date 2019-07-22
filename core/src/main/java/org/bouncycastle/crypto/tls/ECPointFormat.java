@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 4492 5.1.2
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class ECPointFormat
 {
