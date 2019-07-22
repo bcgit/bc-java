@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 4492 5.4. (Errata ID: 2389)
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class ECBasisType
 {

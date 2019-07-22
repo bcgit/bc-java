@@ -6,6 +6,8 @@ import java.io.OutputStream;
 
 /**
  * RFC 5246 7.4.1.4.1
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class SignatureAndHashAlgorithm
 {

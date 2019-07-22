@@ -17,6 +17,9 @@ import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class DefaultTlsCipherFactory
     extends AbstractTlsCipherFactory
 {

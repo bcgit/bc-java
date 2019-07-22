@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 4681
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class UserMappingType
 {

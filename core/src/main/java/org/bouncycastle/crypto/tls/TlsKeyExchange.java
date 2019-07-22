@@ -6,6 +6,8 @@ import java.io.OutputStream;
 
 /**
  * A generic interface for key exchange implementations in (D)TLS.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public interface TlsKeyExchange
 {

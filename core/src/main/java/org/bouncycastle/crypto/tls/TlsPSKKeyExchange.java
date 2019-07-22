@@ -23,6 +23,8 @@ import org.bouncycastle.util.io.Streams;
 
 /**
  * (D)TLS PSK key exchange (RFC 4279).
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class TlsPSKKeyExchange
     extends AbstractTlsKeyExchange

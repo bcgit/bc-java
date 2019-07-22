@@ -8,6 +8,9 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class DefaultTlsSignerCredentials
     extends AbstractTlsSignerCredentials
 {
