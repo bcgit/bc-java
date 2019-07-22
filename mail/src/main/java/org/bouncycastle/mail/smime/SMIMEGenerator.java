@@ -73,7 +73,6 @@ public class SMIMEGenerator
             MimeMessage     msg = new MimeMessage((Session) null) {
                 // avoid the call of updateMessageID to prevent
                 // DNS issues when trying to evaluate the local host's name
-                @Override
                 protected void updateMessageID() throws MessagingException {
                     // do nothing
                 }
