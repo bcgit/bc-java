@@ -5,6 +5,9 @@ import java.io.IOException;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCredentials
 {
     protected TlsContext context;

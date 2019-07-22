@@ -10,6 +10,9 @@ import java.util.Vector;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class ServerNameList
 {
     protected Vector serverNameList;

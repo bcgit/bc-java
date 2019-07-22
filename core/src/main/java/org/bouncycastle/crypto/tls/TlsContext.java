@@ -4,6 +4,9 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.prng.RandomGenerator;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public interface TlsContext
 {
     RandomGenerator getNonceRandomGenerator();

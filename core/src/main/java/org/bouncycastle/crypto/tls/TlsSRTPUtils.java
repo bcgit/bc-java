@@ -9,6 +9,8 @@ import org.bouncycastle.util.Integers;
 
 /**
  * RFC 5764 DTLS Extension to Establish Keys for SRTP.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class TlsSRTPUtils
 {
