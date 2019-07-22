@@ -6,6 +6,7 @@ import java.security.Provider;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.crypto.KeyGenerator;
 import javax.mail.Header;
@@ -24,6 +25,8 @@ import org.bouncycastle.util.Strings;
 public class SMIMEGenerator
 {
     private static Map BASE_CIPHER_NAMES = new HashMap();
+    private final static Properties dummyProps = new Properties();
+    private final static Session dummySession;
     
     static
     {
@@ -31,6 +34,9 @@ public class SMIMEGenerator
         BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES128_CBC,  "AES");
         BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES192_CBC,  "AES");
         BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES256_CBC,  "AES");
+        
+        dummyProps.put("mail.from", "dummy@example.com");
+        dummySession = Session.getDefaultInstance(dummyProps);
     }
 
     protected boolean                     useBase64 = true;
@@ -70,7 +76,7 @@ public class SMIMEGenerator
         //
         try
         {
-            MimeMessage     msg = new MimeMessage((Session)null);
+            MimeMessage     msg = new MimeMessage(dummySession);
 
             Enumeration     e = content.getAllHeaders();
 
