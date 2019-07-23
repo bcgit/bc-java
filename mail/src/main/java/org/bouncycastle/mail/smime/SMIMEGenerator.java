@@ -70,7 +70,13 @@ public class SMIMEGenerator
         //
         try
         {
-            MimeMessage     msg = new MimeMessage((Session)null);
+            MimeMessage     msg = new MimeMessage((Session) null) {
+                // avoid the call of updateMessageID to prevent
+                // DNS issues when trying to evaluate the local host's name
+                protected void updateMessageID() throws MessagingException {
+                    // do nothing
+                }
+            };
 
             Enumeration     e = content.getAllHeaders();
 
