@@ -335,7 +335,7 @@ public class ASN1ObjectIdentifier
 
         out.write(BERTags.OBJECT_IDENTIFIER);
         out.writeLength(enc.length);
-        out.write(enc);
+        out.write(enc, 0, enc.length);
     }
 
     public int hashCode()
