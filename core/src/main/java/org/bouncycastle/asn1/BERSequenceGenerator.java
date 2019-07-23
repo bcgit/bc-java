@@ -55,7 +55,7 @@ public class BERSequenceGenerator
         ASN1Encodable object)
         throws IOException
     {
-        object.toASN1Primitive().encode(new BEROutputStream(_out));
+        object.toASN1Primitive().encodeTo(_out);
     }
 
     /**
