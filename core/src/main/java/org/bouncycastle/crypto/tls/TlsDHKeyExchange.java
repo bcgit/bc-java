@@ -16,6 +16,8 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 
 /**
  * (D)TLS DH key exchange.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class TlsDHKeyExchange
     extends AbstractTlsKeyExchange

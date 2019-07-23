@@ -14,6 +14,8 @@ import org.bouncycastle.util.io.Streams;
 
 /**
  * RFC 3546 3.6
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class OCSPStatusRequest
 {

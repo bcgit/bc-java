@@ -12,6 +12,8 @@ import org.bouncycastle.util.Arrays;
  * The difference is that padding is concatenated versus XORed with the key
  * <p>
  * H(K + opad, H(K + ipad, text))
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class SSL3Mac
     implements Mac

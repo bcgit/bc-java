@@ -20,6 +20,8 @@ import org.bouncycastle.asn1.ASN1Primitive;
  * </pre>
  *
  * @see org.bouncycastle.asn1.x509.Certificate
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class Certificate
 {

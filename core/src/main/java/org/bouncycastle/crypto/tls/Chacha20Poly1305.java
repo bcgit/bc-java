@@ -13,6 +13,8 @@ import org.bouncycastle.util.Pack;
 
 /**
  * draft-ietf-tls-chacha20-poly1305-04
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class Chacha20Poly1305 implements TlsCipher
 {

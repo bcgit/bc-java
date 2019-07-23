@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.tls;
 
 /*
  * draft-ietf-tls-negotiated-ff-dhe-01
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class FiniteFieldDHEGroup
 {

@@ -8,6 +8,8 @@ import org.bouncycastle.util.Strings;
 
 /**
  * RFC 6066 5.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class URLAndHash
 {
