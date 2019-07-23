@@ -5,6 +5,9 @@ import java.io.IOException;
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.params.DHParameters;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
 {
