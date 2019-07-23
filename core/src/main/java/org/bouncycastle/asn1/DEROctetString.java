@@ -58,11 +58,8 @@ public class DEROctetString
         return this;
     }
 
-    static void encode(
-        DEROutputStream derOut,
-        byte[]          bytes)
-        throws IOException
+    static void encode(DEROutputStream derOut, byte[] buf, int off, int len) throws IOException
     {
-        derOut.writeEncoded(BERTags.OCTET_STRING, bytes);
+        derOut.writeEncoded(BERTags.OCTET_STRING, buf, off, len);
     }
 }

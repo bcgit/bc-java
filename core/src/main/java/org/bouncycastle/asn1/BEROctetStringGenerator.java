@@ -89,7 +89,7 @@ public class BEROctetStringGenerator
 
             if (_off == _buf.length)
             {
-                DEROctetString.encode(_derOut, _buf);
+                DEROctetString.encode(_derOut, _buf, 0, _buf.length);
                 _off = 0;
             }
         }
@@ -107,7 +107,7 @@ public class BEROctetStringGenerator
                     break;
                 }
 
-                DEROctetString.encode(_derOut, _buf);
+                DEROctetString.encode(_derOut, _buf, 0, _buf.length);
                 _off = 0;
 
                 off += numToCopy;
@@ -120,10 +120,7 @@ public class BEROctetStringGenerator
         {
             if (_off != 0)
             {
-                byte[] bytes = new byte[_off];
-                System.arraycopy(_buf, 0, bytes, 0, _off);
-                
-                DEROctetString.encode(_derOut, bytes);
+                DEROctetString.encode(_derOut, _buf, 0, _off);
             }
             
              writeBEREnd();
