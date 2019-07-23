@@ -3,6 +3,9 @@ package org.bouncycastle.crypto.tls;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class BasicTlsPSKIdentity
     implements TlsPSKIdentity
 {

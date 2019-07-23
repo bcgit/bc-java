@@ -7,6 +7,9 @@ import java.io.OutputStream;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class CertificateStatus
 {
     protected short statusType;

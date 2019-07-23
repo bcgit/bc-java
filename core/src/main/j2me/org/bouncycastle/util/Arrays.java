@@ -1102,6 +1102,17 @@ public final class Arrays
         }
     }
 
+    public static void clear(int[] array)
+    {
+        if (array != null)
+        {
+            for (int i = 0; i < array.length; i++)
+            {
+                array[i] = 0;
+            }
+        }
+    }
+
     /**
      * Iterator backed by a specific array.
      */
