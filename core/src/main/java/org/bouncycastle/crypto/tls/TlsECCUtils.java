@@ -27,6 +27,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class TlsECCUtils
 {
     public static final Integer EXT_elliptic_curves = Integers.valueOf(ExtensionType.elliptic_curves);

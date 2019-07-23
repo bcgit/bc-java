@@ -33,19 +33,19 @@ class X509CRLObject
 
         if (other instanceof X509CRLObject)
         {
-            X509CRLObject otherCRLBC = (X509CRLObject)other;
+            X509CRLObject otherBC = (X509CRLObject)other;
 
-            if (this.hashValueSet && otherCRLBC.hashValueSet)
+            if (this.hashValueSet && otherBC.hashValueSet)
             {
-                if (this.hashValue != otherCRLBC.hashValue)
+                if (this.hashValue != otherBC.hashValue)
                 {
                     return false;
                 }
             }
-            else if (null == internalCRLValue)
+            else if (null == internalCRLValue || null == otherBC.internalCRLValue)
             {
                 ASN1BitString signature = c.getSignature();
-                if (null != signature && !signature.equals(otherCRLBC.c.getSignature()))
+                if (null != signature && !signature.equals(otherBC.c.getSignature()))
                 {
                     return false;
                 }

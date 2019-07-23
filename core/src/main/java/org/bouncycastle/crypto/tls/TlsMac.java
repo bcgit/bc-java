@@ -9,6 +9,8 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class TlsMac
 {

@@ -23,6 +23,8 @@ import org.bouncycastle.util.io.TeeInputStream;
 
 /**
  * (D)TLS SRP key exchange (RFC 5054).
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 {

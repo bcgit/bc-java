@@ -118,31 +118,37 @@ public class SCrypt
         int[] blockY = new int[BCount];
 
         int[] X = new int[BCount];
-        int[][] V = new int[N][];
+        int[] V = new int[N * BCount];
 
         try
         {
             System.arraycopy(B, BOff, X, 0, BCount);
 
-            for (int i = 0; i < N; ++i)
+            int off = 0;
+            for (int i = 0; i < N; i += 2)
             {
-                V[i] = Arrays.clone(X);
+                System.arraycopy(X, 0, V, off, BCount);
+                off += BCount;
                 BlockMix(X, blockX1, blockX2, blockY, r);
+                System.arraycopy(blockY, 0, V, off, BCount);
+                off += BCount;
+                BlockMix(blockY, blockX1, blockX2, X, r);
             }
 
             int mask = N - 1;
             for (int i = 0; i < N; ++i)
             {
                 int j = X[BCount - 16] & mask;
-                Xor(X, V[j], 0, X);
-                BlockMix(X, blockX1, blockX2, blockY, r);
+                System.arraycopy(V, j * BCount, blockY, 0, BCount);
+                Xor(blockY, X, 0, blockY);
+                BlockMix(blockY, blockX1, blockX2, X, r);
             }
 
             System.arraycopy(X, 0, B, BOff, BCount);
         }
         finally
         {
-            ClearAll(V);
+            Clear(V);
             ClearAll(new int[][]{X, blockX1, blockX2, blockY});
         }
     }
@@ -163,8 +169,6 @@ public class SCrypt
             YOff = halfLen + BOff - YOff;
             BOff += 16;
         }
-
-        System.arraycopy(Y, 0, B, 0, Y.length);
     }
 
     private static void Xor(int[] a, int[] b, int bOff, int[] output)

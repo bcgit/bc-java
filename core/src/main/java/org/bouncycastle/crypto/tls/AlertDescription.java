@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 5246 7.2.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class AlertDescription
 {

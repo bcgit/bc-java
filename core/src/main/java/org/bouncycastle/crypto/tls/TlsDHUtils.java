@@ -19,6 +19,9 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class TlsDHUtils
 {
     static final BigInteger TWO = BigInteger.valueOf(2);
