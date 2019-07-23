@@ -21,6 +21,8 @@ import org.bouncycastle.asn1.x500.X500Name;
  *
  * @see ClientCertificateType
  * @see X500Name
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class CertificateRequest
 {

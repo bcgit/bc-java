@@ -8,6 +8,8 @@ package org.bouncycastle.crypto.tls;
  * reserved for private use. Values 0xFF01 and 0xFF02 indicate that the client supports arbitrary
  * prime and characteristic-2 curves, respectively (the curve parameters must be encoded explicitly
  * in ECParameters).
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class NamedCurve
 {

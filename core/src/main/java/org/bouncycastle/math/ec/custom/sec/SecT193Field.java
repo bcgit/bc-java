@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.raw.Interleave;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 
 public class SecT193Field
@@ -47,9 +48,7 @@ public class SecT193Field
 
     public static long[] fromBigInteger(BigInteger x)
     {
-        long[] z = Nat256.fromBigInteger64(x);
-        reduce63(z, 0);
-        return z;
+        return Nat.fromBigInteger64(193, x);
     }
 
     public static void halfTrace(long[] x, long[] z)

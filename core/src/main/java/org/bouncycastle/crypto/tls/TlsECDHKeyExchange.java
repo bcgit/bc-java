@@ -16,6 +16,8 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 
 /**
  * (D)TLS ECDH key exchange (see RFC 4492).
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 {

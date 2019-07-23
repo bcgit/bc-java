@@ -6,6 +6,9 @@ import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public abstract class AbstractTlsServer
     extends AbstractTlsPeer
     implements TlsServer

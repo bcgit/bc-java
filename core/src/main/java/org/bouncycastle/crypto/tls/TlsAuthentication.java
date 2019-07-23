@@ -4,6 +4,8 @@ import java.io.IOException;
 
 /**
  * Base interface to provide TLS authentication credentials.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public interface TlsAuthentication
 {

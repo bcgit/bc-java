@@ -6,6 +6,8 @@ import java.io.OutputStream;
 
 /**
  * A queue for bytes. This file could be more optimized.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class ByteQueue
 {
