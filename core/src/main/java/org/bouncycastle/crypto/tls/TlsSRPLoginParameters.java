@@ -4,6 +4,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class TlsSRPLoginParameters
 {
     protected SRP6GroupParameters group;

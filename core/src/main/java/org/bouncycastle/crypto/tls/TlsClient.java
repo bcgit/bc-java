@@ -6,6 +6,8 @@ import java.util.Vector;
 
 /**
  * Interface describing a TLS client endpoint.
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public interface TlsClient
     extends TlsPeer

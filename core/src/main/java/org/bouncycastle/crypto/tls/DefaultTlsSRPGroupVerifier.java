@@ -6,6 +6,9 @@ import java.util.Vector;
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 
+/**
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
+ */
 public class DefaultTlsSRPGroupVerifier
     implements TlsSRPGroupVerifier
 {

@@ -12,6 +12,8 @@ import org.bouncycastle.util.Strings;
 /**
  * An implementation of {@link TlsSRPIdentityManager} that simulates the existence of "unknown" identities
  * to obscure the fact that there is no verifier for them. 
+ *
+ * @deprecated Migrate to the (D)TLS API in org.bouncycastle.tls (bctls jar).
  */
 public class SimulatedTlsSRPIdentityManager
     implements TlsSRPIdentityManager
