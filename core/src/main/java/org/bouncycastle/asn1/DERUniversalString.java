@@ -129,7 +129,7 @@ public class DERUniversalString
         ASN1OutputStream out)
         throws IOException
     {
-        out.writeEncoded(BERTags.UNIVERSAL_STRING, this.getOctets());
+        out.writeEncoded(BERTags.UNIVERSAL_STRING, string);
     }
     
     boolean asn1Equals(
