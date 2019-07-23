@@ -107,7 +107,7 @@ public class BERApplicationSpecific
 
         out.writeTag(classBits, tag);
         out.write(0x80);
-        out.write(octets);
+        out.write(octets, 0, octets.length);
         out.write(0x00);
         out.write(0x00);
     }

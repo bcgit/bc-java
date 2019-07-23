@@ -68,7 +68,7 @@ public class ASN1OutputStream
     {
         write(tag);
         writeLength(bytes.length);
-        write(bytes);
+        write(bytes, 0, bytes.length);
     }
 
     void writeEncoded(
@@ -80,7 +80,7 @@ public class ASN1OutputStream
         write(tag);
         writeLength(1 + tailBytes.length);
         write(headByte);
-        write(tailBytes);
+        write(tailBytes, 0, tailBytes.length);
     }
 
     void writeEncoded(
@@ -137,7 +137,7 @@ public class ASN1OutputStream
     {
         writeTag(flags, tagNo);
         writeLength(bytes.length);
-        write(bytes);
+        write(bytes, 0, bytes.length);
     }
 
     protected void writeNull()
