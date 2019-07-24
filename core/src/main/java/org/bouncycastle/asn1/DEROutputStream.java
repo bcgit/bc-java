@@ -19,7 +19,7 @@ public class DEROutputStream
     {
         if (obj != null)
         {
-            obj.toASN1Primitive().toDERObject().encode(this);
+            obj.toASN1Primitive().toDERObject().encode(this, true);
         }
         else
         {
@@ -34,7 +34,12 @@ public class DEROutputStream
             throw new IOException("null object detected");
         }
 
-        primitive.toDERObject().encode(this);
+        primitive.toDERObject().encode(this, true);
+    }
+
+    void writePrimitive(ASN1Primitive primitive, boolean withTag) throws IOException
+    {
+        primitive.toDERObject().encode(this, withTag);
     }
 
     DEROutputStream getDERSubStream()

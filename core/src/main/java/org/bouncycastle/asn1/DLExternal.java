@@ -67,8 +67,7 @@ public class DLExternal
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
      */
-    void encode(ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         if (directReference != null)
@@ -85,6 +84,7 @@ public class DLExternal
         }
         DERTaggedObject obj = new DERTaggedObject(true, encoding, externalContent);
         baos.write(obj.getEncoded(ASN1Encoding.DL));
-        out.writeEncoded(BERTags.CONSTRUCTED, BERTags.EXTERNAL, baos.toByteArray());
+        
+        out.writeEncoded(withTag, BERTags.CONSTRUCTED, BERTags.EXTERNAL, baos.toByteArray());
     }
 }

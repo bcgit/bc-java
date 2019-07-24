@@ -142,11 +142,9 @@ public class DERIA5String
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.IA5_STRING, string);
+        out.writeEncoded(withTag, BERTags.IA5_STRING, string);
     }
 
     public int hashCode()

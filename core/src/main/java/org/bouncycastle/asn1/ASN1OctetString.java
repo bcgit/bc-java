@@ -242,8 +242,7 @@ public abstract class ASN1OctetString
         return new DEROctetString(string);
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
 
     public String toString()
     {

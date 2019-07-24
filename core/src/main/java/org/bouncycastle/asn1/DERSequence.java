@@ -60,12 +60,12 @@ public class DERSequence
 
     public void encodeTo(OutputStream output) throws IOException
     {
-        encode(new DEROutputStream(output));
+        encode(new DEROutputStream(output), true);
     }
 
     public void encodeTo(OutputStream output, String encoding) throws IOException
     {
-        encode(new DEROutputStream(output));
+        encode(new DEROutputStream(output), true);
     }
 
     private int getBodyLength() throws IOException
@@ -102,9 +102,12 @@ public class DERSequence
      * ASN.1 descriptions given. Rather than just outputting SEQUENCE,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
-    void encode(ASN1OutputStream out) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
+        if (withTag)
+        {
+            out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
+        }
 
         DEROutputStream derOut = out.getDERSubStream();
 
@@ -116,7 +119,7 @@ public class DERSequence
             for (int i = 0; i < count; ++i)
             {
                 ASN1Primitive derObject = elements[i].toASN1Primitive().toDERObject();
-                derObject.encode(derOut);
+                derObject.encode(derOut, true);
             }
         }
         else
@@ -136,7 +139,7 @@ public class DERSequence
 
             for (int i = 0; i < count; ++i)
             {
-                derObjects[i].encode(derOut);
+                derObjects[i].encode(derOut, true);
             }
         }
     }
