@@ -68,18 +68,8 @@ public class BERSet
         return 2 + totalLength + 2;
     }
 
-    void encode(ASN1OutputStream out) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.write(BERTags.SET | BERTags.CONSTRUCTED);
-        out.write(0x80);
-
-        int count = elements.length;
-        for (int i = 0; i < count; ++i)
-        {
-            out.writeObject(elements[i]);
-        }
-
-        out.write(0x00);
-        out.write(0x00);
+        out.writeEncodedIndef(withTag, BERTags.SET | BERTags.CONSTRUCTED, elements);
     }
 }

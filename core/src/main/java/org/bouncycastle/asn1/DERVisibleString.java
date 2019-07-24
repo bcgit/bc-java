@@ -118,13 +118,11 @@ public class DERVisibleString
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.VISIBLE_STRING, this.string);
+        out.writeEncoded(withTag, BERTags.VISIBLE_STRING, this.string);
     }
-    
+
     boolean asn1Equals(
         ASN1Primitive o)
     {

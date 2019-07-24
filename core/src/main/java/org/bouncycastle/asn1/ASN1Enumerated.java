@@ -156,13 +156,11 @@ public class ASN1Enumerated
         return 1 + StreamUtil.calculateBodyLength(bytes.length) + bytes.length;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.ENUMERATED, bytes);
+        out.writeEncoded(withTag, BERTags.ENUMERATED, bytes);
     }
-    
+
     boolean asn1Equals(
         ASN1Primitive  o)
     {
