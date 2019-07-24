@@ -54,6 +54,11 @@ public class BERSet
         super(elements, false);
     }
 
+    BERSet(boolean isSorted, ASN1Encodable[] elements)
+    {
+        super(isSorted, elements);
+    }
+
     int encodedLength() throws IOException
     {
         int count = elements.length;
