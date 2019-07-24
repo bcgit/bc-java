@@ -123,21 +123,19 @@ public class DERBitString
         return 1 + StreamUtil.calculateBodyLength(data.length + 1) + data.length + 1;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         int len = data.length;
         if (0 == len
             || 0 == padBits
             || (data[len - 1] == (byte)(data[len - 1] & (0xFF << padBits))))
         {
-            out.writeEncoded(BERTags.BIT_STRING, (byte)padBits, data);
+            out.writeEncoded(withTag, BERTags.BIT_STRING, (byte)padBits, data);
         }
         else
         {
             byte der = (byte)(data[len - 1] & (0xFF << padBits));
-            out.writeEncoded(BERTags.BIT_STRING, (byte)padBits, data, 0, len - 1, der);
+            out.writeEncoded(withTag, BERTags.BIT_STRING, (byte)padBits, data, 0, len - 1, der);
         }
     }
 

@@ -145,11 +145,14 @@ public class DERBMPString
     }
 
     void encode(
-        ASN1OutputStream out)
+        ASN1OutputStream out, boolean withTag)
         throws IOException
     {
         int count = string.length;
-        out.write(BERTags.BMP_STRING);
+        if (withTag)
+        {
+            out.write(BERTags.BMP_STRING);
+        }
         out.writeLength(count * 2);
 
         byte[] buf = new byte[8];

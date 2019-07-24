@@ -46,30 +46,24 @@ public class DLTaggedObject
         }
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
 
-        if (explicit)
-        {
-            out.writeTag(BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo);
-            out.writeLength(primitive.encodedLength());
-
-            out.getDLSubStream().writeObject(primitive);
-            return;
-        }
-
         int flags = BERTags.TAGGED;
-        if (primitive.isConstructed())
+        if (explicit || primitive.isConstructed())
         {
             flags |= BERTags.CONSTRUCTED;
         }
 
-        out.writeTag(flags, tagNo);
+        out.writeTag(withTag, flags, tagNo);
 
-        out.getDLSubStream().getImplicitOutputStream().writeObject(primitive);
+        if (explicit)
+        {
+            out.writeLength(primitive.encodedLength());
+        }
+
+        out.getDLSubStream().writePrimitive(primitive, explicit);
     }
 
     ASN1Primitive toDLObject()

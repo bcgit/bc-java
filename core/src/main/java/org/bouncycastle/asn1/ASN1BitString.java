@@ -318,6 +318,5 @@ public abstract class ASN1BitString
         return new DLBitString(data, padBits);
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
 }

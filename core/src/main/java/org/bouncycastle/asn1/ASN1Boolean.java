@@ -152,11 +152,9 @@ public class ASN1Boolean
         return 3;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.BOOLEAN, value);
+        out.writeEncoded(withTag, BERTags.BOOLEAN, value);
     }
 
     protected boolean asn1Equals(

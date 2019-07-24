@@ -190,11 +190,9 @@ public class ASN1Integer
         return 1 + StreamUtil.calculateBodyLength(bytes.length) + bytes.length;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.INTEGER, bytes);
+        out.writeEncoded(withTag, BERTags.INTEGER, bytes);
     }
 
     public int hashCode()
