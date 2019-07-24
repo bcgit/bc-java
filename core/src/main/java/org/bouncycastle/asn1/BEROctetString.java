@@ -211,7 +211,7 @@ public class BEROctetString
         ASN1OctetString[] v = new ASN1OctetString[count];
         for (int i = 0; i < count; ++i)
         {
-            v[i] = (ASN1OctetString)seq.getObjectAt(i);
+            v[i] = ASN1OctetString.getInstance(seq.getObjectAt(i));
         }
         return new BEROctetString(v);
     }
