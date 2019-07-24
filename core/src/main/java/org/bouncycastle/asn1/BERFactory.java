@@ -7,11 +7,21 @@ class BERFactory
 
     static BERSequence createSequence(ASN1EncodableVector v)
     {
-        return v.size() < 1 ? EMPTY_SEQUENCE : new BERSequence(v);
+        if (v.size() < 1)
+        {
+            return EMPTY_SEQUENCE;
+        }
+
+        return new BERSequence(v);
     }
 
     static BERSet createSet(ASN1EncodableVector v)
     {
-        return v.size() < 1 ? EMPTY_SET : new BERSet(v);
+        if (v.size() < 1)
+        {
+            return EMPTY_SET;
+        }
+
+        return new BERSet(v);
     }
 }
