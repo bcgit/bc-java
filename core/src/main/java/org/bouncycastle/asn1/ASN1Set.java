@@ -153,7 +153,7 @@ public abstract class ASN1Set
      * dealing with implicitly tagged sets you really <b>should</b>
      * be using this method.
      *
-     * @param obj the tagged object.
+     * @param taggedObject the tagged object.
      * @param explicit true if the object is meant to be explicitly tagged
      *          false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
@@ -161,66 +161,66 @@ public abstract class ASN1Set
      * @return an ASN1Set instance.
      */
     public static ASN1Set getInstance(
-        ASN1TaggedObject    obj,
+        ASN1TaggedObject    taggedObject,
         boolean             explicit)
     {
         if (explicit)
         {
-            if (!obj.isExplicit())
+            if (!taggedObject.isExplicit())
             {
                 throw new IllegalArgumentException("object implicit - explicit expected.");
             }
 
-            return (ASN1Set)obj.getObject();
+            return getInstance(taggedObject.getObject());
         }
-        else
+
+        ASN1Primitive o = taggedObject.getObject();
+
+        /*
+         * constructed object which appears to be explicitly tagged and it's really implicit means
+         * we have to add the surrounding set.
+         */
+        if (taggedObject.isExplicit())
         {
-            ASN1Primitive o = obj.getObject();
-
-            //
-            // constructed object which appears to be explicitly tagged
-            // and it's really implicit means we have to add the
-            // surrounding set.
-            //
-            if (obj.isExplicit())
+            if (taggedObject instanceof BERTaggedObject)
             {
-                if (obj instanceof BERTaggedObject)
-                {
-                    return new BERSet(o);
-                }
-                else
-                {
-                    return new DLSet(o);
-                }
+                return new BERSet(o);
             }
-            else
-            {
-                if (o instanceof ASN1Set)
-                {
-                    return (ASN1Set)o;
-                }
 
-                //
-                // in this case the parser returns a sequence, convert it
-                // into a set.
-                //
-                if (o instanceof ASN1Sequence)
-                {
-                    ASN1Sequence s = (ASN1Sequence)o;
-
-                    if (obj instanceof BERTaggedObject)
-                    {
-                        return new BERSet(s.toArray());
-                    }
-                    else
-                    {
-                        return new DLSet(s.toArray());
-                    }
-                }
-            }
+            return new DLSet(o);
         }
 
-        throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
+        if (o instanceof ASN1Set)
+        {
+            ASN1Set s = (ASN1Set)o;
+
+            if (taggedObject instanceof BERTaggedObject)
+            {
+                return s;
+            }
+
+            return (ASN1Set)s.toDLObject();
+        }
+
+        /*
+         * in this case the parser returns a sequence, convert it into a set.
+         */
+        if (o instanceof ASN1Sequence)
+        {
+            ASN1Sequence s = (ASN1Sequence)o;
+
+            // NOTE: Will force() a LazyEncodedSequence
+            ASN1Encodable[] elements = s.toArrayInternal();
+
+            if (taggedObject instanceof BERTaggedObject)
+            {
+                return new BERSet(false, elements);
+            }
+
+            return new DLSet(false, elements);
+        }
+
+        throw new IllegalArgumentException("unknown object in getInstance: " + taggedObject.getClass().getName());
     }
 
     protected ASN1Set()

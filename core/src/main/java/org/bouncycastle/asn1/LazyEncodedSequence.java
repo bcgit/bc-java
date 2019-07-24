@@ -65,6 +65,13 @@ class LazyEncodedSequence
         return super.toArray();
     }
 
+    ASN1Encodable[] toArrayInternal()
+    {
+        force();
+
+        return super.toArrayInternal();
+    }
+
     synchronized int encodedLength()
         throws IOException
     {
