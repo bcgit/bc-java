@@ -1,9 +1,9 @@
 package org.bouncycastle.asn1;
 
-class DERFactory
+class DLFactory
 {
-    static final ASN1Sequence EMPTY_SEQUENCE = new DERSequence();
-    static final ASN1Set EMPTY_SET = new DERSet();
+    static final ASN1Sequence EMPTY_SEQUENCE = new DLSequence();
+    static final ASN1Set EMPTY_SET = new DLSet();
 
     static ASN1Sequence createSequence(ASN1EncodableVector v)
     {
@@ -12,7 +12,7 @@ class DERFactory
             return EMPTY_SEQUENCE;
         }
 
-        return new DERSequence(v);
+        return new DLSequence(v);
     }
 
     static ASN1Set createSet(ASN1EncodableVector v)
@@ -22,6 +22,6 @@ class DERFactory
             return EMPTY_SET;
         }
 
-        return new DERSet(v);
+        return new DLSet(v);
     }
 }
