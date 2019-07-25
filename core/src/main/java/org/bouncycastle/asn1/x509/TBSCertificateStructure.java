@@ -80,7 +80,7 @@ public class TBSCertificateStructure
         //
         // some certficates don't include a version number - we assume v1
         //
-        if (seq.getObjectAt(0) instanceof DERTaggedObject)
+        if (seq.getObjectAt(0) instanceof ASN1TaggedObject)
         {
             version = ASN1Integer.getInstance((ASN1TaggedObject)seq.getObjectAt(0), true);
         }
