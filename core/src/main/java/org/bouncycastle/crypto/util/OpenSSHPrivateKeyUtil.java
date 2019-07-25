@@ -7,8 +7,8 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
@@ -187,7 +187,8 @@ public class OpenSSHPrivateKeyUtil
             }
             else if (sequence.size() == 4)
             {
-                if (sequence.getObjectAt(3) instanceof DERTaggedObject && sequence.getObjectAt(2) instanceof DERTaggedObject)
+                if (sequence.getObjectAt(3) instanceof ASN1TaggedObject
+                    && sequence.getObjectAt(2) instanceof ASN1TaggedObject)
                 {
                     ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(sequence);
                     ASN1ObjectIdentifier curveOID = (ASN1ObjectIdentifier)ecPrivateKey.getParameters();
