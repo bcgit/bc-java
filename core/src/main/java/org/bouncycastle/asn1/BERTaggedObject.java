@@ -47,7 +47,7 @@ public class BERTaggedObject
 
     boolean isConstructed()
     {
-        return explicit || obj.toASN1Primitive().toDERObject().isConstructed();
+        return explicit || obj.toASN1Primitive().isConstructed();
     }
 
     int encodedLength()
