@@ -101,7 +101,7 @@ public class ASN1StreamParser
         {
             // Note: !CONSTRUCTED => IMPLICIT
             DefiniteLengthInputStream defIn = (DefiniteLengthInputStream)_in;
-            return new DERTaggedObject(false, tag, new DEROctetString(defIn.toByteArray()));
+            return new DLTaggedObject(false, tag, new DEROctetString(defIn.toByteArray()));
         }
 
         ASN1EncodableVector v = readVector();
@@ -114,8 +114,8 @@ public class ASN1StreamParser
         }
 
         return v.size() == 1
-            ?   new DERTaggedObject(true, tag, v.get(0))
-            :   new DERTaggedObject(false, tag, DERFactory.createSequence(v));
+            ?   new DLTaggedObject(true, tag, v.get(0))
+            :   new DLTaggedObject(false, tag, DLFactory.createSequence(v));
     }
 
     public ASN1Encodable readObject()
@@ -230,10 +230,14 @@ public class ASN1StreamParser
 
     ASN1EncodableVector readVector() throws IOException
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1Encodable obj = readObject();
+        if (null == obj)
+        {
+            return new ASN1EncodableVector(0);
+        }
 
-        ASN1Encodable obj;
-        while ((obj = readObject()) != null)
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        do
         {
             if (obj instanceof InMemoryRepresentable)
             {
@@ -244,7 +248,7 @@ public class ASN1StreamParser
                 v.add(obj.toASN1Primitive());
             }
         }
-
+        while ((obj = readObject()) != null);
         return v;
     }
 }

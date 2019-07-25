@@ -160,7 +160,7 @@ public class ASN1InputStream
                     //
                     // yes, people actually do this...
                     //
-                    ASN1EncodableVector v = buildDEREncodableVector(defIn);
+                    ASN1EncodableVector v = readVector(defIn);
                     ASN1OctetString[] strings = new ASN1OctetString[v.size()];
 
                     for (int i = 0; i != strings.length; i++)
@@ -176,12 +176,12 @@ public class ASN1InputStream
                     }
                     else
                     {
-                        return DERFactory.createSequence(buildDEREncodableVector(defIn));   
+                        return DLFactory.createSequence(readVector(defIn));   
                     }
                 case SET:
-                    return DERFactory.createSet(buildDEREncodableVector(defIn));
+                    return DLFactory.createSet(readVector(defIn));
                 case EXTERNAL:
-                    return new DLExternal(buildDEREncodableVector(defIn));
+                    return new DLExternal(readVector(defIn));
                 default:
                     throw new IOException("unknown tag " + tagNo + " encountered");
             }
@@ -190,7 +190,7 @@ public class ASN1InputStream
         return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
     }
 
-    ASN1EncodableVector buildDEREncodableVector(DefiniteLengthInputStream dIn) throws IOException
+    ASN1EncodableVector readVector(DefiniteLengthInputStream dIn) throws IOException
     {
         if (dIn.getRemaining() < 1)
         {
