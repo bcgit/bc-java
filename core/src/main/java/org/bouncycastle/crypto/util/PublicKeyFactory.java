@@ -62,6 +62,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Factory to create asymmetric public key parameters for asymmetric ciphers from range of
@@ -435,7 +436,7 @@ public class PublicKeyFactory
                 throw new IllegalArgumentException("error recovering public key");
             }
 
-            byte[] keyEnc = key.getOctets();
+            byte[] keyEnc = Arrays.clone(key.getOctets());
 
             if (keyInfo.getAlgorithm().getAlgorithm().equals(UAObjectIdentifiers.dstu4145le))
             {
