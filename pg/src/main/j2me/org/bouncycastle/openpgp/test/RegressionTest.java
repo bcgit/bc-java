@@ -1,7 +1,7 @@
 package org.bouncycastle.openpgp.test;
 
+import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
-import org.bouncycastle.util.test.TestResult;
 
 public class RegressionTest
 {
@@ -13,20 +13,8 @@ public class RegressionTest
         new BcPGPRSATest()
     };
 
-    public static void main(
-        String[]    args)
+    public static void main(String[] args)
     {
-        for (int i = 0; i != tests.length; i++)
-        {
-            TestResult  result = tests[i].perform();
-            
-            if (result.getException() != null)
-            {
-                result.getException().printStackTrace();
-            }
-            
-            System.out.println(result);
-        }
+        SimpleTest.runTests(tests);
     }
 }
-
