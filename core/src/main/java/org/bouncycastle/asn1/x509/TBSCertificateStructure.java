@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 
@@ -112,7 +111,7 @@ public class TBSCertificateStructure
 
         for (int extras = seq.size() - (seqStart + 6) - 1; extras > 0; extras--)
         {
-            DERTaggedObject extra = (DERTaggedObject)seq.getObjectAt(seqStart + 6 + extras);
+            ASN1TaggedObject extra = ASN1TaggedObject.getInstance(seq.getObjectAt(seqStart + 6 + extras));
 
             switch (extra.getTagNo())
             {
