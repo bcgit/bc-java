@@ -515,9 +515,8 @@ public final class Arrays
 
         while (--i >= 0)
         {
-            Object o = data[i];
             hc *= 257;
-            hc ^= (null == o ? 0 : o.hashCode());
+            hc ^= Objects.hashCode(data[i]);
         }
 
         return hc;
