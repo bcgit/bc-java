@@ -21,9 +21,10 @@ public class AllTests
         TestSuite suite = new TestSuite("JCAJCE Provider Tests");
 
         suite.addTestSuite(ECAlgorithmParametersTest.class);
+        suite.addTestSuite(GeneralKeyTest.class);
+        suite.addTestSuite(HybridRandomProviderTest.class);
         suite.addTestSuite(PrivateConstructorTest.class);
         suite.addTestSuite(RandomTest.class);
-        suite.addTestSuite(HybridRandomProviderTest.class);
         suite.addTestSuite(RFC3211WrapTest.class);
 
         return new BCTestSetup(suite);
