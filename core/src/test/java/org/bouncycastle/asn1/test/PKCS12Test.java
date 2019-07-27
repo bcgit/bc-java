@@ -1,11 +1,9 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.DLSequence;
@@ -164,12 +162,9 @@ public class PKCS12Test
 
         b = new SafeBag(PKCSObjectIdentifiers.pkcs8ShroudedKeyBag, encInfo.toASN1Primitive(), b.getBagAttributes());
 
-        ByteArrayOutputStream abOut = new ByteArrayOutputStream();
-        ASN1OutputStream      berOut = new ASN1OutputStream(abOut);
+        byte[] contentOctets = new DLSequence(b).getEncoded();
 
-        berOut.writeObject(new DLSequence(b));
-
-        c[0] = new ContentInfo(PKCSObjectIdentifiers.data, new BEROctetString(abOut.toByteArray()));
+        c[0] = new ContentInfo(PKCSObjectIdentifiers.data, new BEROctetString(contentOctets));
 
         //
         // certificates
@@ -188,12 +183,9 @@ public class PKCS12Test
         //
         authSafe = new AuthenticatedSafe(c);
 
-        abOut = new ByteArrayOutputStream();
-        berOut = new ASN1OutputStream(abOut);
+        contentOctets = authSafe.getEncoded();
 
-        berOut.writeObject(authSafe);
-
-        info = new ContentInfo(PKCSObjectIdentifiers.data, new BEROctetString(abOut.toByteArray()));
+        info = new ContentInfo(PKCSObjectIdentifiers.data, new BEROctetString(contentOctets));
 
         mData = new MacData(new DigestInfo(algId, dInfo.getDigest()), salt, itCount);
 
@@ -202,13 +194,8 @@ public class PKCS12Test
         //
         // comparison test
         //
-
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
-
-        aOut.writeObject(bag);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), pkcs12))
+        byte[] pfxEncoding = bag.getEncoded();
+        if (!Arrays.areEqual(pfxEncoding, pkcs12))
         {
             fail("failed comparison test");
         }

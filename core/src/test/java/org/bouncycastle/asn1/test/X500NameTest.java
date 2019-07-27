@@ -1,15 +1,11 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
@@ -65,12 +61,10 @@ public class X500NameTest
     {
         return "X500Name";
     }
-    
-    private static X500Name fromBytes(
-        byte[]  bytes) 
-        throws IOException
+
+    private static X500Name fromBytes(byte[] bytes) throws IOException
     {
-        return X500Name.getInstance(new ASN1InputStream(new ByteArrayInputStream(bytes)).readObject());
+        return X500Name.getInstance(ASN1Primitive.fromByteArray(bytes));
     }
 
     private ASN1Encodable createEntryValue(ASN1ObjectIdentifier oid, String value)
@@ -308,9 +302,6 @@ public class X500NameTest
 
         compositeTest();
          */
-        ByteArrayOutputStream bOut;
-        ASN1OutputStream aOut;
-        ASN1InputStream aIn;
        /*
         //
         // getValues test
@@ -334,16 +325,8 @@ public class X500NameTest
         //
         for (int i = 0; i != subjects.length; i++)
         {
-            X500Name    name = new X500Name(subjects[i]);
-
-            bOut = new ByteArrayOutputStream();
-            aOut = new ASN1OutputStream(bOut);
-
-            aOut.writeObject(name);
-
-            aIn = new ASN1InputStream(new ByteArrayInputStream(bOut.toByteArray()));
-
-            name = X500Name.getInstance(aIn.readObject());
+            X500Name name = new X500Name(subjects[i]);
+            name = X500Name.getInstance(ASN1Primitive.fromByteArray(name.getEncoded()));
             if (!name.toString().equals(subjects[i]))
             {
                 fail("failed regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);
@@ -352,16 +335,8 @@ public class X500NameTest
 
         for (int i = 0; i < hexSubjects.length; i += 2)
         {
-            X500Name    name = new X500Name(hexSubjects[i]);
-
-            bOut = new ByteArrayOutputStream();
-            aOut = new ASN1OutputStream(bOut);
-
-            aOut.writeObject(name);
-
-            aIn = new ASN1InputStream(new ByteArrayInputStream(bOut.toByteArray()));
-
-            name = X500Name.getInstance(aIn.readObject());
+            X500Name name = new X500Name(hexSubjects[i]);
+            name = X500Name.getInstance(ASN1Primitive.fromByteArray(name.getEncoded()));
             if (!name.toString().equals(hexSubjects[i + 1]))
             {
                 fail("failed hex regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);

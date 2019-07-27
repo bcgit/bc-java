@@ -11,9 +11,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AttCertValidityPeriod;
 import org.bouncycastle.asn1.x509.Attribute;
@@ -338,10 +338,7 @@ public class X509AttributeCertificateHolder
             verifier = verifierProvider.get((acinfo.getSignature()));
 
             OutputStream sOut = verifier.getOutputStream();
-            DEROutputStream dOut = new DEROutputStream(sOut);
-
-            dOut.writeObject(acinfo);
-
+            acinfo.encodeTo(sOut, ASN1Encoding.DER);
             sOut.close();
         }
         catch (Exception e)
