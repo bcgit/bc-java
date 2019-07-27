@@ -14,12 +14,13 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AttributeCertificate;
@@ -87,14 +88,11 @@ class CertUtils
         }
     }
 
-    private static byte[] generateSig(ContentSigner signer, ASN1Encodable tbsObj)
+    private static byte[] generateSig(ContentSigner signer, ASN1Object tbsObj)
         throws IOException
     {
         OutputStream sOut = signer.getOutputStream();
-        DEROutputStream dOut = new DEROutputStream(sOut);
-
-        dOut.writeObject(tbsObj);
-
+        tbsObj.encodeTo(sOut, ASN1Encoding.DER);
         sOut.close();
 
         return signer.getSignature();

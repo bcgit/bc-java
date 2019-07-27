@@ -7,6 +7,7 @@ import java.io.InputStream;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1OutputStream;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1SetParser;
@@ -148,24 +149,18 @@ public class CMSTest
     {
         try
         {
-            ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(compData));
-            
-            ContentInfo     info = ContentInfo.getInstance(aIn.readObject());
-            CompressedData  data = CompressedData.getInstance(info.getContent());
-            
+            ContentInfo info = ContentInfo.getInstance(ASN1Primitive.fromByteArray(compData));
+            CompressedData data = CompressedData.getInstance(info.getContent());
+
             data = new CompressedData(data.getCompressionAlgorithmIdentifier(), data.getEncapContentInfo());
             info = new ContentInfo(CMSObjectIdentifiers.compressedData, data);
-            
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
-            
-            aOut.writeObject(info);
-            
-            if (!isSameAs(bOut.toByteArray(), compData))
+
+            byte[] encoding = info.getEncoded();
+            if (!isSameAs(encoding, compData))
             {
                 return new SimpleTestResult(false, getName() + ": CMS compression failed to re-encode");
             }
-            
+
             return new SimpleTestResult(true, getName() + ": Okay");
         }
         catch (Exception e)
@@ -181,25 +176,24 @@ public class CMSTest
             //
             // Key trans
             //
-            ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(envDataKeyTrns));
-            
-            ContentInfo     info = ContentInfo.getInstance(aIn.readObject());
-            EnvelopedData   envData = EnvelopedData.getInstance(info.getContent());
-            ASN1Set         s = envData.getRecipientInfos();
-            
+            ContentInfo info = ContentInfo.getInstance(ASN1Primitive.fromByteArray(envDataKeyTrns));
+            EnvelopedData envData = EnvelopedData.getInstance(info.getContent());
+            ASN1Set s = envData.getRecipientInfos();
+
             if (s.size() != 1)
             {
                 return new SimpleTestResult(false, getName() + ": CMS KeyTrans enveloped, wrong number of recipients");
             }
-            
-            RecipientInfo   recip = RecipientInfo.getInstance(s.getObjectAt(0));
+
+            RecipientInfo recip = RecipientInfo.getInstance(s.getObjectAt(0));
 
             if (recip.getInfo() instanceof KeyTransRecipientInfo)
             {
-                KeyTransRecipientInfo   inf = KeyTransRecipientInfo.getInstance(recip.getInfo());
-                
-                inf = new KeyTransRecipientInfo(inf.getRecipientIdentifier(), inf.getKeyEncryptionAlgorithm(), inf.getEncryptedKey());
-                
+                KeyTransRecipientInfo inf = KeyTransRecipientInfo.getInstance(recip.getInfo());
+
+                inf = new KeyTransRecipientInfo(inf.getRecipientIdentifier(), inf.getKeyEncryptionAlgorithm(),
+                    inf.getEncryptedKey());
+
                 s = new DERSet(new RecipientInfo(inf));
             }
             else
@@ -207,15 +201,11 @@ public class CMSTest
                 return new SimpleTestResult(false, getName() + ": CMS KeyTrans enveloped, wrong recipient type");
             }
 
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
-            
             envData = new EnvelopedData(envData.getOriginatorInfo(), s, envData.getEncryptedContentInfo(), envData.getUnprotectedAttrs());
             info = new ContentInfo(CMSObjectIdentifiers.envelopedData, envData);
-            
-            aOut.writeObject(info);
-            
-            if (!isSameAs(bOut.toByteArray(), envDataKeyTrns))
+
+            byte[] encoding = info.getEncoded();
+            if (!isSameAs(encoding, envDataKeyTrns))
             {
                 return new SimpleTestResult(false, getName() + ": CMS KeyTrans enveloped failed to re-encode");
             }
@@ -223,42 +213,37 @@ public class CMSTest
             //
             // KEK
             //
-            aIn = new ASN1InputStream(new ByteArrayInputStream(envDataKEK));
-            
-            info = ContentInfo.getInstance(aIn.readObject());
+            info = ContentInfo.getInstance(ASN1Primitive.fromByteArray(envDataKEK));
             envData = EnvelopedData.getInstance(info.getContent());
             s = envData.getRecipientInfos();
-            
+
             if (s.size() != 1)
             {
                 return new SimpleTestResult(false, getName() + ": CMS KEK enveloped, wrong number of recipients");
             }
-            
+
             recip = RecipientInfo.getInstance(s.getObjectAt(0));
 
             if (recip.getInfo() instanceof KEKRecipientInfo)
             {
-                KEKRecipientInfo   inf = KEKRecipientInfo.getInstance(recip.getInfo());
-                
+                KEKRecipientInfo inf = KEKRecipientInfo.getInstance(recip.getInfo());
+
                 inf = new KEKRecipientInfo(inf.getKekid(), inf.getKeyEncryptionAlgorithm(), inf.getEncryptedKey());
-                
+
                 s = new DERSet(new RecipientInfo(inf));
             }
             else
             {
                 return new SimpleTestResult(false, getName() + ": CMS KEK enveloped, wrong recipient type");
             }
-            
-            bOut = new ByteArrayOutputStream();
-            aOut = new ASN1OutputStream(bOut);
-            
-            envData = new EnvelopedData(envData.getOriginatorInfo(), s, envData.getEncryptedContentInfo(), envData.getUnprotectedAttrs());
+
+            envData = new EnvelopedData(envData.getOriginatorInfo(), s, envData.getEncryptedContentInfo(),
+                envData.getUnprotectedAttrs());
             info = new ContentInfo(CMSObjectIdentifiers.envelopedData, envData);
-            
-            aOut.writeObject(info);
-            
-            if (!isSameAs(bOut.toByteArray(), envDataKEK))
-            {                                                         System.out.println(new String(Base64.encode(bOut.toByteArray())));
+
+            encoding = info.getEncoded();
+            if (!isSameAs(encoding, envDataKEK))
+            {
                 return new SimpleTestResult(false, getName() + ": CMS KEK enveloped failed to re-encode");
             }
 
@@ -293,29 +278,24 @@ public class CMSTest
             return new SimpleTestResult(false, getName() + ": CMS enveloped failed - " + e.toString(), e);
         }
     }
-    
+
     private TestResult signedTest()
     {
         try
         {
-            ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(signedData));
-            
-            ContentInfo     info = ContentInfo.getInstance(aIn.readObject());
-            SignedData      sData = SignedData.getInstance(info.getContent());
-            
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
-            
-            sData = new SignedData(sData.getDigestAlgorithms(), sData.getEncapContentInfo(), sData.getCertificates(), sData.getCRLs(), sData.getSignerInfos());
+            ContentInfo info = ContentInfo.getInstance(ASN1Primitive.fromByteArray(signedData));
+            SignedData sData = SignedData.getInstance(info.getContent());
+
+            sData = new SignedData(sData.getDigestAlgorithms(), sData.getEncapContentInfo(), sData.getCertificates(),
+                sData.getCRLs(), sData.getSignerInfos());
             info = new ContentInfo(CMSObjectIdentifiers.signedData, sData);
-            
-            aOut.writeObject(info);
-            
-            if (!isSameAs(bOut.toByteArray(), signedData))
+
+            byte[] encoding = info.getEncoded();
+            if (!isSameAs(encoding, signedData))
             {
                 return new SimpleTestResult(false, getName() + ": CMS signed failed to re-encode");
             }
-            
+
             return new SimpleTestResult(true, getName() + ": Okay");
         }
         catch (Exception e)
@@ -323,7 +303,7 @@ public class CMSTest
             return new SimpleTestResult(false, getName() + ": CMS signed failed - " + e.toString(), e);
         }
     }
-    
+
     public TestResult perform()
     {
         TestResult  res = compressionTest();

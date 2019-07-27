@@ -9,10 +9,33 @@ import java.util.Enumeration;
  */
 public class ASN1OutputStream
 {
+    public static ASN1OutputStream create(OutputStream out)
+    {
+        return new ASN1OutputStream(out);
+    }
+
+    public static ASN1OutputStream create(OutputStream out, String encoding)
+    {
+        if (encoding.equals(ASN1Encoding.DER))
+        {
+            return new DEROutputStream(out);
+        }
+        else if (encoding.equals(ASN1Encoding.DL))
+        {
+            return new DLOutputStream(out);
+        }
+        else
+        {
+            return new ASN1OutputStream(out);
+        }
+    }
+
     private OutputStream os;
 
-    public ASN1OutputStream(
-        OutputStream    os)
+    /**
+     * @deprecated Use {@link ASN1OutputStream#create(OutputStream)} instead.
+     */
+    public ASN1OutputStream(OutputStream os)
     {
         this.os = os;
     }
