@@ -552,23 +552,36 @@ public abstract class ASN1Set
             return;
         }
 
-        ASN1Encodable ei = t[0];
-        byte[] bi = getDEREncoded(ei);;
+        ASN1Encodable eh = t[0], ei = t[1];
+        byte[] bh = getDEREncoded(eh), bi = getDEREncoded(ei);;
 
-        for (int i = 1; i < count; ++i)
+        if (lessThanOrEqual(bi, bh))
+        {
+            ASN1Encodable et = ei; ei = eh; eh = et;
+            byte[] bt = bi; bi = bh; bh = bt;
+        }
+
+        for (int i = 2; i < count; ++i)
         {
             ASN1Encodable e2 = t[i];
             byte[] b2 = getDEREncoded(e2);
 
             if (lessThanOrEqual(bi, b2))
             {
-                t[i - 1] = ei;
-                ei = e2;
-                bi = b2;
+                t[i - 2] = eh;
+                eh = ei; bh = bi;
+                ei = e2; bi = b2;
                 continue;
             }
 
-            int j = i;
+            if (lessThanOrEqual(bh, b2))
+            {
+                t[i - 2] = eh;
+                eh = e2; bh = b2;
+                continue;
+            }
+
+            int j = i - 1;
             while (--j > 0)
             {
                 ASN1Encodable e1 = t[j - 1];
@@ -585,6 +598,7 @@ public abstract class ASN1Set
             t[j] = e2;
         }
 
+        t[count - 2] = eh;
         t[count - 1] = ei;
     }
 }
