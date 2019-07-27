@@ -22,7 +22,7 @@ public class ASN1EncodableVector
     {
         if (initialCapacity < 0)
         {
-            throw new IllegalArgumentException("'initialCapacity' must not ne negative");
+            throw new IllegalArgumentException("'initialCapacity' must not be negative");
         }
 
         this.elements = (initialCapacity == 0) ? EMPTY_ELEMENTS : new ASN1Encodable[initialCapacity];
@@ -56,6 +56,10 @@ public class ASN1EncodableVector
         }
 
         int otherElementCount = other.size();
+        if (otherElementCount < 1)
+        {
+            return;
+        }
 
         int capacity = elements.length;
         int minCapacity = elementCount + otherElementCount;
@@ -64,7 +68,8 @@ public class ASN1EncodableVector
             reallocate(minCapacity);
         }
 
-        for (int i = 0; i < otherElementCount; ++i)
+        int i = 0;
+        do
         {
             ASN1Encodable otherElement = other.get(i);
             if (null == otherElement)
@@ -74,6 +79,7 @@ public class ASN1EncodableVector
 
             this.elements[elementCount + i] = otherElement;
         }
+        while (++i < otherElementCount);
 
         this.elementCount = minCapacity;
     }
