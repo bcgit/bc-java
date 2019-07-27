@@ -4,10 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OutputStream;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -42,13 +43,8 @@ public class OIDTest
         {
             fail("oid ID didn't match", o, encO);
         }
-        
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        DEROutputStream          dOut = new DEROutputStream(bOut);
 
-        dOut.writeObject(o);
-
-        byte[]                    bytes = bOut.toByteArray();
+        byte[] bytes = o.getEncoded(ASN1Encoding.DER);
 
         if (bytes.length != enc.length)
         {
@@ -68,17 +64,8 @@ public class OIDTest
         String  oid)
         throws IOException
     {
-        ASN1ObjectIdentifier     o = new ASN1ObjectIdentifier(oid);
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
-        
-        aOut.writeObject(o);
-        
-        ByteArrayInputStream    bIn = new ByteArrayInputStream(bOut.toByteArray());
-        ASN1InputStream         aIn = new ASN1InputStream(bIn);
-        
-        o = (ASN1ObjectIdentifier)aIn.readObject();
-        
+        ASN1ObjectIdentifier o = new ASN1ObjectIdentifier(oid);
+        o = (ASN1ObjectIdentifier)ASN1Primitive.fromByteArray(o.getEncoded());
         if (!o.getId().equals(oid))
         {
             fail("failed oid check for " + oid);

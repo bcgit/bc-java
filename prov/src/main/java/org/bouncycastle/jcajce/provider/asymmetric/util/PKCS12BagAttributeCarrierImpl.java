@@ -83,13 +83,12 @@ public class PKCS12BagAttributeCarrierImpl
         else
         {
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-            ASN1OutputStream aOut = new ASN1OutputStream(bOut);
+            ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
 
-            Enumeration             e = this.getBagAttributeKeys();
-
+            Enumeration e = this.getBagAttributeKeys();
             while (e.hasMoreElements())
             {
-                ASN1ObjectIdentifier    oid = (ASN1ObjectIdentifier)e.nextElement();
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
 
                 aOut.writeObject(oid);
                 aOut.writeObject((ASN1Encodable)pkcs12Attributes.get(oid));

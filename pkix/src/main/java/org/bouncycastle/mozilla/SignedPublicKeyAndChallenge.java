@@ -11,9 +11,9 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.X509EncodedKeySpec;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.mozilla.PublicKeyAndChallenge;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -82,10 +82,7 @@ public class SignedPublicKeyAndChallenge
         ContentVerifier verifier = verifierProvider.get(spkacSeq.getSignatureAlgorithm());
 
         OutputStream sOut = verifier.getOutputStream();
-        DEROutputStream dOut = new DEROutputStream(sOut);
-
-        dOut.writeObject(spkacSeq.getPublicKeyAndChallenge());
-
+        spkacSeq.getPublicKeyAndChallenge().encodeTo(sOut, ASN1Encoding.DER);
         sOut.close();
 
         return verifier.verify(spkacSeq.getSignature().getOctets());

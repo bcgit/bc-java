@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Hashtable;
@@ -50,12 +49,10 @@ public class X509NameTest
     {
         return "X509Name";
     }
-    
-    private static X509Name fromBytes(
-        byte[]  bytes) 
-        throws IOException
+
+    private static X509Name fromBytes(byte[] bytes) throws IOException
     {
-        return X509Name.getInstance(new ASN1InputStream(new ByteArrayInputStream(bytes)).readObject());
+        return X509Name.getInstance(ASN1Primitive.fromByteArray(bytes));
     }
 
     private ASN1Encodable createEntryValue(ASN1ObjectIdentifier oid, String value)
@@ -324,17 +321,8 @@ public class X509NameTest
         //
         for (int i = 0; i != subjects.length; i++)
         {
-            X509Name    name = new X509Name(subjects[i]);
-
-            bOut = new ByteArrayOutputStream();
-            aOut = new ASN1OutputStream(bOut);
-
-            aOut.writeObject(name);
-
-            aIn = new ASN1InputStream(new ByteArrayInputStream(bOut.toByteArray()));
-
-            name = X509Name.getInstance(aIn.readObject());
-
+            X509Name name = new X509Name(subjects[i]);
+            name = X509Name.getInstance(ASN1Primitive.fromByteArray(name.getEncoded()));
             if (!name.toString().equals(subjects[i]))
             {
                 fail("failed regeneration test " + i + " got " + name.toString());
@@ -623,10 +611,10 @@ public class X509NameTest
         //
         // composite test
         //
-        byte[]  enc = Hex.decode("305e310b300906035504061302415531283026060355040a0c1f546865204c6567696f6e206f662074686520426f756e637920436173746c653125301006035504070c094d656c626f75726e653011060355040b0c0a4173636f742056616c65");
-        ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(enc));
+        byte[] enc = Hex.decode(
+            "305e310b300906035504061302415531283026060355040a0c1f546865204c6567696f6e206f662074686520426f756e637920436173746c653125301006035504070c094d656c626f75726e653011060355040b0c0a4173636f742056616c65");
 
-        X509Name    n = X509Name.getInstance(aIn.readObject());
+        X509Name n = X509Name.getInstance(ASN1Primitive.fromByteArray(enc));
 
         if (!n.toString().equals("C=AU,O=The Legion of the Bouncy Castle,L=Melbourne+OU=Ascot Vale"))
         {
@@ -646,18 +634,13 @@ public class X509NameTest
 
         n = new X509Name("C=AU, O=The Legion of the Bouncy Castle, L=Melbourne + OU=Ascot Vale");
 
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ASN1OutputStream aOut = new ASN1OutputStream(bOut);
-
-        aOut.writeObject(n);
-
-        byte[]  enc2 = bOut.toByteArray();
+        byte[] enc2 = n.getEncoded();
 
         if (!Arrays.areEqual(enc, enc2))
         {
-            //fail("Failed composite string to encoding test");
+            fail("Failed composite string to encoding test");
         }
-        
+
         //
         // dud name test - handle empty DN without barfing.
         //

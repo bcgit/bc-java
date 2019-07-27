@@ -82,17 +82,17 @@ public class EqualsAndHashCodeTest
         
         try
         {
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
-            
+            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
+
             for (int i = 0; i != values.length; i++)
             {
                 aOut.writeObject(values[i]);
             }
 
-            ByteArrayInputStream    bIn = new ByteArrayInputStream(bOut.toByteArray());
-            ASN1InputStream         aIn = new ASN1InputStream(bIn);
-            
+            ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+            ASN1InputStream aIn = new ASN1InputStream(bIn);
+
             for (int i = 0; i != values.length; i++)
             {
                 ASN1Primitive o = aIn.readObject();

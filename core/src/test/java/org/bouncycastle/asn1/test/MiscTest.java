@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -105,11 +104,11 @@ public class MiscTest
         byte[] data = Base64.decode("MA4ECAECAwQFBgcIAgIAgAMCBSAWBWhlbGxvMAoECAECAwQFBgcIFgtodHRwOi8vdGVzdA==");
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ASN1OutputStream aOut = new ASN1OutputStream(bOut);
+        ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
 
         for (int i = 0; i != values.length; i++)
         {
-            aOut.writeObject(values[i]);
+            aOut.writeObject(values[i].toASN1Primitive());
         }
 
         if (!areEqual(bOut.toByteArray(), data))
@@ -117,7 +116,7 @@ public class MiscTest
             fail("Failed data check");
         }
 
-        ASN1InputStream aIn = new ASN1InputStream(bOut.toByteArray());
+        ASN1InputStream aIn = new ASN1InputStream(data);
 
         for (int i = 0; i != values.length; i++)
         {
