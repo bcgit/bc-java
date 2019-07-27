@@ -510,19 +510,38 @@ public abstract class ASN1Set
     /**
      * return true if a <= b (arrays are assumed padded with zeros).
      */
-    private static boolean lessThanOrEqual(
-         byte[] a,
-         byte[] b)
+    private static boolean lessThanOrEqual(byte[] a, byte[] b)
     {
-        int len = Math.min(a.length, b.length);
-        for (int i = 0; i != len; ++i)
+//        assert a.length >= 2 && b.length >= 2;
+
+        /*
+         * NOTE: Set elements in DER encodings are ordered first according to their tags (class and
+         * number); the CONSTRUCTED bit is not part of the tag.
+         * 
+         * For SET-OF, this is unimportant. All elements have the same tag and DER requires them to
+         * either all be in constructed form or all in primitive form, according to that tag. The
+         * elements are effectively ordered according to their content octets.
+         * 
+         * For SET, the elements will have distinct tags, and each will be in constructed or
+         * primitive form accordingly. Failing to ignore the CONSTRUCTED bit could therefore lead to
+         * ordering inversions.
+         */
+        int a0 = a[0] & ~BERTags.CONSTRUCTED;
+        int b0 = b[0] & ~BERTags.CONSTRUCTED;
+        if (a0 != b0)
+        {
+            return a0 < b0;
+        }
+
+        int last = Math.min(a.length, b.length) - 1;
+        for (int i = 1; i < last; ++i)
         {
             if (a[i] != b[i])
             {
-                return (a[i] & 0xff) < (b[i] & 0xff);
+                return (a[i] & 0xFF) < (b[i] & 0xFF);
             }
         }
-        return len == a.length;
+        return (a[last] & 0xFF) <= (b[last] & 0xFF);
     }
 
     private static void sort(ASN1Encodable[] t)
