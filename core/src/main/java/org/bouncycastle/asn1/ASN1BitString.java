@@ -221,7 +221,7 @@ public abstract class ASN1BitString
         return hc ^ padBits;
     }
 
-    protected boolean asn1Equals(
+    boolean asn1Equals(
         ASN1Primitive o)
     {
         if (!(o instanceof ASN1BitString))
