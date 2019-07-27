@@ -105,6 +105,20 @@ public class ASN1OutputStream
     final void writeEncoded(
         boolean withTag,
         int     tag,
+        byte    contents)
+        throws IOException
+    {
+        if (withTag)
+        {
+            write(tag);
+        }
+        writeLength(1);
+        write(contents);
+    }
+
+    final void writeEncoded(
+        boolean withTag,
+        int     tag,
         byte[]  contents)
         throws IOException
     {
