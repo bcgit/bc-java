@@ -39,7 +39,6 @@ public class CMSEnvelopedGenerator
     public static final String  ECDH_SHA1KDF    = X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme.getId();
     public static final String  ECMQV_SHA1KDF   = X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme.getId();
 
-    final List oldRecipientInfoGenerators = new ArrayList();
     final List recipientInfoGenerators = new ArrayList();
 
     protected CMSAttributeTableGenerator unprotectedAttributeGenerator = null;
@@ -49,7 +48,7 @@ public class CMSEnvelopedGenerator
     /**
      * base constructor
      */
-    public CMSEnvelopedGenerator()
+    protected CMSEnvelopedGenerator()
     {
     }
 
