@@ -1,23 +1,39 @@
 package org.bouncycastle.cms.test;
 
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.GCMParameters;
+import org.bouncycastle.asn1.cms.Time;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.cms.CMSAuthEnvelopedData;
+import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.RecipientInformation;
+import org.bouncycastle.cms.RecipientInformationStore;
+import org.bouncycastle.cms.bc.BcCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
+import org.junit.Assert;
+
+import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.Security;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
-
-import junit.framework.Assert;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.bouncycastle.cms.CMSAuthEnvelopedData;
-import org.bouncycastle.cms.RecipientInformation;
-import org.bouncycastle.cms.RecipientInformationStore;
-import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Base64;
+import java.util.Date;
+import java.util.Hashtable;
 
 public class AuthEnvelopedDataTest
     extends TestCase
@@ -130,5 +146,25 @@ public class AuthEnvelopedDataTest
         byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(privKey).setProvider(BC));
 
         Assert.assertEquals("auth-enveloped data", Strings.fromByteArray(recData));
+    }
+
+    public void testAttributes() throws CertificateEncodingException, IOException, CMSException {
+        OutputEncryptor candidate = new BcCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM).build();
+
+        Assert.assertEquals(NISTObjectIdentifiers.id_aes128_GCM, candidate.getAlgorithmIdentifier().getAlgorithm());
+        Assert.assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
+
+        Assert.assertTrue( candidate instanceof BcCMSContentEncryptorBuilder.MacProvider);
+        BcCMSContentEncryptorBuilder.MacProvider macProvider = ((BcCMSContentEncryptorBuilder.MacProvider) candidate);
+
+        Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+        Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                new DERSet(new Time(new Date())));
+        attrs.put(testAttr.getAttrType(), testAttr);
+        AttributeTable table = new AttributeTable(attrs);
+
+        byte[] encodedAuthAttributes = macProvider.addAuthenticatedAttributes(table);
+        Assert.assertEquals(table.size(),ASN1Set.getInstance(encodedAuthAttributes).size());
+
     }
 }
