@@ -1,11 +1,10 @@
 package org.bouncycastle.crypto.util;
 
-import java.io.OutputStream;
-
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.CAST5CBCParameters;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -28,11 +27,15 @@ import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.io.CipherOutputStream;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.paddings.PKCS7Padding;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.RC2Parameters;
+
+import java.io.OutputStream;
 
 /**
  * Factory methods for creating Cipher objects and CipherOutputStreams.
@@ -79,6 +82,19 @@ public class CipherFactory
 
             cipher.init(forEncryption, encKey);
 
+            return cipher;
+        }
+        else if(encAlg.equals(NISTObjectIdentifiers.id_aes128_GCM)
+            || encAlg.equals(NISTObjectIdentifiers.id_aes192_GCM)
+            || encAlg.equals(NISTObjectIdentifiers.id_aes256_GCM))
+        {
+            AEADBlockCipher cipher = createAEADCipher(encryptionAlgID.getAlgorithm());
+            GCMParameters gcmParameters = GCMParameters.getInstance(encryptionAlgID.getParameters());
+            if(!(encKey instanceof KeyParameter)){
+                throw new IllegalArgumentException("key data must be accessible for GCM operation") ;
+            }
+            AEADParameters aeadParameters = new AEADParameters((KeyParameter) encKey, gcmParameters.getIcvLen() * 8, gcmParameters.getNonce());
+            cipher.init(forEncryption, aeadParameters);
             return cipher;
         }
         else
@@ -134,6 +150,19 @@ public class CipherFactory
             }
 
             return cipher;
+        }
+    }
+
+    private static AEADBlockCipher createAEADCipher(ASN1ObjectIdentifier algorithm){
+        if (NISTObjectIdentifiers.id_aes128_GCM.equals(algorithm)
+                || NISTObjectIdentifiers.id_aes192_GCM.equals(algorithm)
+                || NISTObjectIdentifiers.id_aes256_GCM.equals(algorithm))
+        {
+            return new GCMBlockCipher(new AESEngine());
+        }
+        else
+        {
+            throw new IllegalArgumentException("cannot recognise cipher: " + algorithm);
         }
     }
 

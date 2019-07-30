@@ -21,10 +21,10 @@ public abstract class RecipientInformation
     private RecipientOperator     operator;
 
     RecipientInformation(
-        AlgorithmIdentifier     keyEncAlg,
-        AlgorithmIdentifier     messageAlgorithm,
-        CMSSecureReadable       secureReadable,
-        AuthAttributesProvider  additionalData)
+        AlgorithmIdentifier keyEncAlg,
+        AlgorithmIdentifier messageAlgorithm,
+        CMSSecureReadable secureReadable,
+        AuthAttributesProvider additionalData)
     {
         this.keyEncAlg = keyEncAlg;
         this.messageAlgorithm = messageAlgorithm;
@@ -170,7 +170,17 @@ public abstract class RecipientInformation
 
         if (additionalData != null)
         {
-            return new CMSTypedStream(secureReadable.getInputStream());
+            if (additionalData.isAead())
+            {
+                // TODO: this needs to be done after reading the encrypted data
+                operator.getAADStream().write(additionalData.getAuthAttributes().getEncoded(ASN1Encoding.DER));
+
+                return new CMSTypedStream(operator.getInputStream(secureReadable.getInputStream()));
+            }
+            else
+            {
+                return new CMSTypedStream(secureReadable.getInputStream());
+            }
         }
 
         return new CMSTypedStream(operator.getInputStream(secureReadable.getInputStream()));

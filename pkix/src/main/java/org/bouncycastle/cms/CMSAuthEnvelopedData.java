@@ -64,16 +64,34 @@ public class CMSAuthEnvelopedData
             }
         };
 
-        //
-        // build the RecipientInformationStore
-        //
-        this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
-            recipientInfos, this.authEncAlg, secureReadable);
-
-        // FIXME These need to be passed to the AEAD cipher as AAD (Additional Authenticated Data)
         this.authAttrs = authEnvData.getAuthAttrs();
         this.mac = authEnvData.getMac().getOctets();
         this.unauthAttrs = authEnvData.getUnauthAttrs();
+
+        //
+        // build the RecipientInformationStore
+        //
+        if (authAttrs != null)
+        {
+            this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
+                recipientInfos, this.authEncAlg, secureReadable, new AuthAttributesProvider()
+                {
+                    public ASN1Set getAuthAttributes()
+                    {
+                        return authAttrs;
+                    }
+
+                    public boolean isAead()
+                    {
+                        return true;
+                    }
+                });
+        }
+        else
+        {
+            this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
+                recipientInfos, this.authEncAlg, secureReadable);
+        }
     }
 
     /**
