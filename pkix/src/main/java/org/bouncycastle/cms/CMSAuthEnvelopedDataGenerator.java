@@ -7,71 +7,63 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetString;
-import org.bouncycastle.asn1.BERSet;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.AuthEnvelopedData;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
-import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.GenericKey;
-import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.operator.OutputAEADEncryptor;
 
-/**
- * General class for generating a CMS enveloped-data message.
- *
- * A simple example of usage.
- *
- * <pre>
- *       CMSTypedData msg     = new CMSProcessableByteArray("Hello World!".getBytes());
- *
- *       CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
- *
- *       edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(recipientCert).setProvider("BC"));
- *
- *       CMSEnvelopedData ed = edGen.generate(
- *                                       msg,
- *                                       new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC)
- *                                              .setProvider("BC").build());
- *
- * </pre>
- */
-public class CMSEnvelopedDataGenerator
-    extends CMSEnvelopedGenerator
+public class CMSAuthEnvelopedDataGenerator
+    extends CMSAuthEnvelopedGenerator
 {
     /**
      * base constructor
      */
-    public CMSEnvelopedDataGenerator()
+    public CMSAuthEnvelopedDataGenerator()
     {
     }
 
-    private CMSEnvelopedData doGenerate(
+    private CMSAuthEnvelopedData doGenerate(
         CMSTypedData content,
-        OutputEncryptor contentEncryptor)
+        OutputAEADEncryptor contentEncryptor)
         throws CMSException
     {
-        ASN1EncodableVector     recipientInfos = new ASN1EncodableVector();
-        AlgorithmIdentifier     encAlgId;
-        ASN1OctetString         encContent;
+        ASN1EncodableVector recipientInfos = new ASN1EncodableVector();
+        AlgorithmIdentifier encAlgId;
+        ASN1OctetString encContent;
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
+        ASN1Set authenticatedAttrSet = null;
         try
         {
             OutputStream cOut = contentEncryptor.getOutputStream(bOut);
 
             content.write(cOut);
+            
+            if (authAttrsGenerator != null)
+            {
+                AttributeTable attrTable = authAttrsGenerator.getAttributes(new HashMap());
+
+                authenticatedAttrSet = new DERSet(attrTable.toASN1EncodableVector());
+
+                contentEncryptor.getAADStream().write(authenticatedAttrSet.getEncoded(ASN1Encoding.DER));
+            }
 
             cOut.close();
         }
         catch (IOException e)
         {
-            throw new CMSException("");
+            throw new CMSException("unable to process authenticated content: " + e.getMessage(), e);
         }
 
         byte[] encryptedContent = bOut.toByteArray();
@@ -89,36 +81,36 @@ public class CMSEnvelopedDataGenerator
             recipientInfos.add(recipient.generate(encKey));
         }
 
-        EncryptedContentInfo  eci = new EncryptedContentInfo(
+        EncryptedContentInfo eci = new EncryptedContentInfo(
                         content.getContentType(),
                         encAlgId,
                         encContent);
 
         ASN1Set unprotectedAttrSet = null;
-        if (unprotectedAttributeGenerator != null)
+        if (unauthAttrsGenerator != null)
         {
-            AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(new HashMap());
+            AttributeTable attrTable = unauthAttrsGenerator.getAttributes(new HashMap());
 
-            unprotectedAttrSet = new BERSet(attrTable.toASN1EncodableVector());
+            unprotectedAttrSet = new DLSet(attrTable.toASN1EncodableVector());
         }
 
         ContentInfo contentInfo = new ContentInfo(
-                CMSObjectIdentifiers.envelopedData,
-                new EnvelopedData(originatorInfo, new DERSet(recipientInfos), eci, unprotectedAttrSet));
+                CMSObjectIdentifiers.authEnvelopedData,
+                new AuthEnvelopedData(originatorInfo, new DERSet(recipientInfos), eci, authenticatedAttrSet, new DEROctetString(contentEncryptor.getMAC()), unprotectedAttrSet));
 
-        return new CMSEnvelopedData(contentInfo);
+        return new CMSAuthEnvelopedData(contentInfo);
     }
 
     /**
-     * generate an enveloped object that contains an CMS Enveloped Data
+     * generate an auth-enveloped object that contains an CMS Enveloped Data
      * object using the given provider.
      *
      * @param content the content to be encrypted
      * @param contentEncryptor the symmetric key based encryptor to encrypt the content with.
      */
-    public CMSEnvelopedData generate(
+    public CMSAuthEnvelopedData generate(
         CMSTypedData content,
-        OutputEncryptor contentEncryptor)
+        OutputAEADEncryptor contentEncryptor)
         throws CMSException
     {
         return doGenerate(content, contentEncryptor);

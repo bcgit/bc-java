@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.util;
 
-import java.security.SecureRandom;
-
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -12,6 +10,8 @@ import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.generators.DESKeyGenerator;
 import org.bouncycastle.crypto.generators.DESedeKeyGenerator;
+
+import java.security.SecureRandom;
 
 /**
  * Factory methods for generating secret key generators for symmetric ciphers.
@@ -45,6 +45,18 @@ public class CipherKeyGeneratorFactory
         {
             return createCipherKeyGenerator(random, 256);
         }
+        else if (NISTObjectIdentifiers.id_aes128_GCM.equals(algorithm))
+        {
+            return createCipherKeyGenerator(random, 128);
+        }
+        else if (NISTObjectIdentifiers.id_aes192_GCM.equals(algorithm))
+        {
+            return createCipherKeyGenerator(random, 192);
+        }
+        else if (NISTObjectIdentifiers.id_aes256_GCM.equals(algorithm))
+            {
+                return createCipherKeyGenerator(random, 256);
+            }
         else if (PKCSObjectIdentifiers.des_EDE3_CBC.equals(algorithm))
         {
             DESedeKeyGenerator keyGen = new DESedeKeyGenerator();
