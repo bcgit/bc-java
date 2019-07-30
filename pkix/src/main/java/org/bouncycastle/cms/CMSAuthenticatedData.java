@@ -151,6 +151,11 @@ public class CMSAuthenticatedData
                     {
                         return authAttrs;
                     }
+
+                    public boolean isAead()
+                    {
+                        return false;
+                    }
                 });
             }
             catch (OperatorCreationException e)
