@@ -153,7 +153,7 @@ public abstract class ASN1Set
      * dealing with implicitly tagged sets you really <b>should</b>
      * be using this method.
      *
-     * @param obj the tagged object.
+     * @param taggedObject the tagged object.
      * @param explicit true if the object is meant to be explicitly tagged
      *          false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
@@ -161,66 +161,66 @@ public abstract class ASN1Set
      * @return an ASN1Set instance.
      */
     public static ASN1Set getInstance(
-        ASN1TaggedObject    obj,
+        ASN1TaggedObject    taggedObject,
         boolean             explicit)
     {
         if (explicit)
         {
-            if (!obj.isExplicit())
+            if (!taggedObject.isExplicit())
             {
                 throw new IllegalArgumentException("object implicit - explicit expected.");
             }
 
-            return (ASN1Set)obj.getObject();
+            return getInstance(taggedObject.getObject());
         }
-        else
+
+        ASN1Primitive o = taggedObject.getObject();
+
+        /*
+         * constructed object which appears to be explicitly tagged and it's really implicit means
+         * we have to add the surrounding set.
+         */
+        if (taggedObject.isExplicit())
         {
-            ASN1Primitive o = obj.getObject();
-
-            //
-            // constructed object which appears to be explicitly tagged
-            // and it's really implicit means we have to add the
-            // surrounding set.
-            //
-            if (obj.isExplicit())
+            if (taggedObject instanceof BERTaggedObject)
             {
-                if (obj instanceof BERTaggedObject)
-                {
-                    return new BERSet(o);
-                }
-                else
-                {
-                    return new DLSet(o);
-                }
+                return new BERSet(o);
             }
-            else
-            {
-                if (o instanceof ASN1Set)
-                {
-                    return (ASN1Set)o;
-                }
 
-                //
-                // in this case the parser returns a sequence, convert it
-                // into a set.
-                //
-                if (o instanceof ASN1Sequence)
-                {
-                    ASN1Sequence s = (ASN1Sequence)o;
-
-                    if (obj instanceof BERTaggedObject)
-                    {
-                        return new BERSet(s.toArray());
-                    }
-                    else
-                    {
-                        return new DLSet(s.toArray());
-                    }
-                }
-            }
+            return new DLSet(o);
         }
 
-        throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
+        if (o instanceof ASN1Set)
+        {
+            ASN1Set s = (ASN1Set)o;
+
+            if (taggedObject instanceof BERTaggedObject)
+            {
+                return s;
+            }
+
+            return (ASN1Set)s.toDLObject();
+        }
+
+        /*
+         * in this case the parser returns a sequence, convert it into a set.
+         */
+        if (o instanceof ASN1Sequence)
+        {
+            ASN1Sequence s = (ASN1Sequence)o;
+
+            // NOTE: Will force() a LazyEncodedSequence
+            ASN1Encodable[] elements = s.toArrayInternal();
+
+            if (taggedObject instanceof BERTaggedObject)
+            {
+                return new BERSet(false, elements);
+            }
+
+            return new DLSet(false, elements);
+        }
+
+        throw new IllegalArgumentException("unknown object in getInstance: " + taggedObject.getClass().getName());
     }
 
     protected ASN1Set()
@@ -465,8 +465,7 @@ public abstract class ASN1Set
         return true;
     }
 
-    abstract void encode(ASN1OutputStream out)
-            throws IOException;
+    abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
 
     public String toString() 
     {
@@ -511,19 +510,38 @@ public abstract class ASN1Set
     /**
      * return true if a <= b (arrays are assumed padded with zeros).
      */
-    private static boolean lessThanOrEqual(
-         byte[] a,
-         byte[] b)
+    private static boolean lessThanOrEqual(byte[] a, byte[] b)
     {
-        int len = Math.min(a.length, b.length);
-        for (int i = 0; i != len; ++i)
+//        assert a.length >= 2 && b.length >= 2;
+
+        /*
+         * NOTE: Set elements in DER encodings are ordered first according to their tags (class and
+         * number); the CONSTRUCTED bit is not part of the tag.
+         * 
+         * For SET-OF, this is unimportant. All elements have the same tag and DER requires them to
+         * either all be in constructed form or all in primitive form, according to that tag. The
+         * elements are effectively ordered according to their content octets.
+         * 
+         * For SET, the elements will have distinct tags, and each will be in constructed or
+         * primitive form accordingly. Failing to ignore the CONSTRUCTED bit could therefore lead to
+         * ordering inversions.
+         */
+        int a0 = a[0] & ~BERTags.CONSTRUCTED;
+        int b0 = b[0] & ~BERTags.CONSTRUCTED;
+        if (a0 != b0)
+        {
+            return a0 < b0;
+        }
+
+        int last = Math.min(a.length, b.length) - 1;
+        for (int i = 1; i < last; ++i)
         {
             if (a[i] != b[i])
             {
-                return (a[i] & 0xff) < (b[i] & 0xff);
+                return (a[i] & 0xFF) < (b[i] & 0xFF);
             }
         }
-        return len == a.length;
+        return (a[last] & 0xFF) <= (b[last] & 0xFF);
     }
 
     private static void sort(ASN1Encodable[] t)
@@ -534,23 +552,36 @@ public abstract class ASN1Set
             return;
         }
 
-        ASN1Encodable ei = t[0];
-        byte[] bi = getDEREncoded(ei);;
+        ASN1Encodable eh = t[0], ei = t[1];
+        byte[] bh = getDEREncoded(eh), bi = getDEREncoded(ei);;
 
-        for (int i = 1; i < count; ++i)
+        if (lessThanOrEqual(bi, bh))
+        {
+            ASN1Encodable et = ei; ei = eh; eh = et;
+            byte[] bt = bi; bi = bh; bh = bt;
+        }
+
+        for (int i = 2; i < count; ++i)
         {
             ASN1Encodable e2 = t[i];
             byte[] b2 = getDEREncoded(e2);
 
             if (lessThanOrEqual(bi, b2))
             {
-                t[i - 1] = ei;
-                ei = e2;
-                bi = b2;
+                t[i - 2] = eh;
+                eh = ei; bh = bi;
+                ei = e2; bi = b2;
                 continue;
             }
 
-            int j = i;
+            if (lessThanOrEqual(bh, b2))
+            {
+                t[i - 2] = eh;
+                eh = e2; bh = b2;
+                continue;
+            }
+
+            int j = i - 1;
             while (--j > 0)
             {
                 ASN1Encodable e1 = t[j - 1];
@@ -567,6 +598,7 @@ public abstract class ASN1Set
             t[j] = e2;
         }
 
+        t[count - 2] = eh;
         t[count - 1] = ei;
     }
 }

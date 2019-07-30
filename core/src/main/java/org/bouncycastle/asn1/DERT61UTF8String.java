@@ -120,11 +120,9 @@ public class DERT61UTF8String
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.T61_STRING, string);
+        out.writeEncoded(withTag, BERTags.T61_STRING, string);
     }
 
     /**

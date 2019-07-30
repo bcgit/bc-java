@@ -186,8 +186,7 @@ public abstract class ASN1TaggedObject
         return new DLTaggedObject(explicit, tagNo, obj);
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
 
     public String toString()
     {

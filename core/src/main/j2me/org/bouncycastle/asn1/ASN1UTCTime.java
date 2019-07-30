@@ -220,22 +220,11 @@ public class ASN1UTCTime
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
-    void encode(
-        ASN1OutputStream  out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.write(BERTags.UTC_TIME);
-
-        int length = time.length;
-
-        out.writeLength(length);
-
-        for (int i = 0; i != length; i++)
-        {
-            out.write((byte)time[i]);
-        }
+        out.writeEncoded(withTag, BERTags.UTC_TIME, time);
     }
-    
+
     boolean asn1Equals(
         ASN1Primitive o)
     {

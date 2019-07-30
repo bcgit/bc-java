@@ -154,17 +154,17 @@ public abstract class ASN1ApplicationSpecific
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
      */
-    void encode(ASN1OutputStream out) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        int classBits = BERTags.APPLICATION;
+        int flags = BERTags.APPLICATION;
         if (isConstructed)
         {
-            classBits |= BERTags.CONSTRUCTED;
+            flags |= BERTags.CONSTRUCTED;
         }
 
-        out.writeEncoded(classBits, tag, octets);
+        out.writeEncoded(withTag, flags, tag, octets);
     }
-    
+
     boolean asn1Equals(
         ASN1Primitive o)
     {

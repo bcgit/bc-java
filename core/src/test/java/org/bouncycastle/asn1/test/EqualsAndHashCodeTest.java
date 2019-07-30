@@ -56,8 +56,8 @@ public class EqualsAndHashCodeTest
                 new DERApplicationSpecific(0, data),
                 new DERBitString(data),
                 new DERBMPString("hello world"),
-                new ASN1Boolean(true),
-                new ASN1Boolean(false),
+                ASN1Boolean.getInstance(true),
+                ASN1Boolean.getInstance(false),
                 new ASN1Enumerated(100),
                 new DERGeneralizedTime("20070315173729Z"),
                 new DERGeneralString("hello world"),
@@ -82,17 +82,17 @@ public class EqualsAndHashCodeTest
         
         try
         {
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
-            
+            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
+
             for (int i = 0; i != values.length; i++)
             {
                 aOut.writeObject(values[i]);
             }
 
-            ByteArrayInputStream    bIn = new ByteArrayInputStream(bOut.toByteArray());
-            ASN1InputStream         aIn = new ASN1InputStream(bIn);
-            
+            ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+            ASN1InputStream aIn = new ASN1InputStream(bIn);
+
             for (int i = 0; i != values.length; i++)
             {
                 ASN1Primitive o = aIn.readObject();

@@ -125,13 +125,11 @@ public class DERUniversalString
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.UNIVERSAL_STRING, this.getOctets());
+        out.writeEncoded(withTag, BERTags.UNIVERSAL_STRING, string);
     }
-    
+
     boolean asn1Equals(
         ASN1Primitive o)
     {

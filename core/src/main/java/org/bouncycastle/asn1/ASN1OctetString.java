@@ -105,28 +105,78 @@ public abstract class ASN1OctetString
     /**
      * return an Octet String from a tagged object.
      *
-     * @param obj the tagged object holding the object we want.
+     * @param taggedObject the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *              be converted.
      */
     public static ASN1OctetString getInstance(
-        ASN1TaggedObject    obj,
+        ASN1TaggedObject    taggedObject,
         boolean             explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        if (explicit)
+        {
+            if (!taggedObject.isExplicit())
+            {
+                throw new IllegalArgumentException("object implicit - explicit expected.");
+            }
 
-        if (explicit || o instanceof ASN1OctetString)
-        {
-            return getInstance(o);
+            return getInstance(taggedObject.getObject());
         }
-        else
+
+        ASN1Primitive o = taggedObject.getObject();
+
+        /*
+         * constructed object which appears to be explicitly tagged and it's really implicit means
+         * we have to add the surrounding octet string.
+         */
+        if (taggedObject.isExplicit())
         {
-            return BEROctetString.fromSequence(ASN1Sequence.getInstance(o));
+            ASN1OctetString singleSegment = ASN1OctetString.getInstance(o);
+
+            if (taggedObject instanceof BERTaggedObject)
+            {
+                return new BEROctetString(new ASN1OctetString[]{ singleSegment });
+            }
+
+            // TODO Should really be similar to the BERTaggedObject case above:
+//            return new DLOctetString(new ASN1OctetString[]{ singleSegment });
+            return (ASN1OctetString)new BEROctetString(new ASN1OctetString[]{ singleSegment }).toDLObject();
         }
+
+        if (o instanceof ASN1OctetString)
+        {
+            ASN1OctetString s = (ASN1OctetString)o;
+
+            if (taggedObject instanceof BERTaggedObject)
+            {
+                return s;
+            }
+
+            return (ASN1OctetString)s.toDLObject();
+        }
+
+        /*
+         * in this case the parser returns a sequence, convert it into an octet string.
+         */
+        if (o instanceof ASN1Sequence)
+        {
+            ASN1Sequence s = (ASN1Sequence)o;
+
+            if (taggedObject instanceof BERTaggedObject)
+            {
+                return BEROctetString.fromSequence(s);
+            }
+
+            // TODO Should really be similar to the BERTaggedObject case above:
+//            return DLOctetString.fromSequence(s);
+            return (ASN1OctetString)BEROctetString.fromSequence(s).toDLObject();
+        }
+
+        throw new IllegalArgumentException("unknown object in getInstance: " + taggedObject.getClass().getName());
     }
-    
+
     /**
      * return an Octet String from the given object.
      *
@@ -242,8 +292,7 @@ public abstract class ASN1OctetString
         return new DEROctetString(string);
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
 
     public String toString()
     {

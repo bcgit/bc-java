@@ -51,14 +51,9 @@ public class CryptoRegressionTest
         new PKCS12Test()
     };
 
-    public static void main(
-        String[]    args)
+    public static void main(String[] args)
     {
-        for (int i = 0; i != tests.length; i++)
-        {
-            TestResult  result = tests[i].perform();
-            System.out.println(result);
-        }
+        SimpleTest.runTests(tests);
     }
 }
 

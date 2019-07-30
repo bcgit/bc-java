@@ -53,7 +53,7 @@ public class DERSequenceGenerator
         ASN1Encodable object)
         throws IOException
     {
-        object.toASN1Primitive().encode(new DEROutputStream(_bOut));
+        object.toASN1Primitive().encodeTo(_bOut, ASN1Encoding.DER);
     }
 
     /**
