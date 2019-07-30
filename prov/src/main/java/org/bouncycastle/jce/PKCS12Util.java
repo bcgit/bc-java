@@ -1,6 +1,5 @@
 package org.bouncycastle.jce;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import javax.crypto.Mac;
@@ -9,13 +8,12 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
-import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.Pfx;
@@ -37,16 +35,9 @@ public class PKCS12Util
     public static byte[] convertToDefiniteLength(byte[] berPKCS12File)
         throws IOException
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        DEROutputStream dOut = new DEROutputStream(bOut);
-
         Pfx pfx = Pfx.getInstance(berPKCS12File);
 
-        bOut.reset();
-
-        dOut.writeObject(pfx);
-
-        return bOut.toByteArray();
+        return pfx.getEncoded(ASN1Encoding.DER);
     }
 
     /**
@@ -66,16 +57,11 @@ public class PKCS12Util
         ContentInfo info = pfx.getAuthSafe();
 
         ASN1OctetString content = ASN1OctetString.getInstance(info.getContent());
+        ASN1Primitive obj = ASN1Primitive.fromByteArray(content.getOctets());
 
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        DEROutputStream dOut = new DEROutputStream(bOut);
+        byte[] derEncoding = obj.getEncoded(ASN1Encoding.DER);
 
-        ASN1InputStream contentIn = new ASN1InputStream(content.getOctets());
-        ASN1Primitive obj = contentIn.readObject();
-
-        dOut.writeObject(obj);
-
-        info = new ContentInfo(info.getContentType(), new DEROctetString(bOut.toByteArray()));
+        info = new ContentInfo(info.getContentType(), new DEROctetString(derEncoding));
 
         MacData mData = pfx.getMacData();
         try
@@ -93,14 +79,10 @@ public class PKCS12Util
         {
             throw new IOException("error constructing MAC: " + e.toString());
         }
-        
+
         pfx = new Pfx(info, mData);
 
-        bOut.reset();
-        
-        dOut.writeObject(pfx);
-        
-        return bOut.toByteArray();
+        return pfx.getEncoded(ASN1Encoding.DER);
     }
 
     private static byte[] calculatePbeMac(

@@ -1,8 +1,6 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cmc.CertificationRequest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -39,14 +37,9 @@ public class CMCCertificationRequestTest
         byte[]  req)
         throws Exception
     {
-        CertificationRequest    r = CertificationRequest.getInstance(req);
+        CertificationRequest r = CertificationRequest.getInstance(req);
 
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        DEROutputStream          dOut = new DEROutputStream(bOut);
-
-        dOut.writeObject(r.toASN1Primitive());
-
-        byte[]                    bytes = bOut.toByteArray();
+        byte[] bytes = r.getEncoded(ASN1Encoding.DER);
 
         if (bytes.length != req.length)
         {

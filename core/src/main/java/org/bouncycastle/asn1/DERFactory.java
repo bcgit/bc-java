@@ -7,11 +7,21 @@ class DERFactory
 
     static ASN1Sequence createSequence(ASN1EncodableVector v)
     {
-        return v.size() < 1 ? EMPTY_SEQUENCE : new DLSequence(v);
+        if (v.size() < 1)
+        {
+            return EMPTY_SEQUENCE;
+        }
+
+        return new DERSequence(v);
     }
 
     static ASN1Set createSet(ASN1EncodableVector v)
     {
-        return v.size() < 1 ? EMPTY_SET : new DLSet(v);
+        if (v.size() < 1)
+        {
+            return EMPTY_SET;
+        }
+
+        return new DERSet(v);
     }
 }

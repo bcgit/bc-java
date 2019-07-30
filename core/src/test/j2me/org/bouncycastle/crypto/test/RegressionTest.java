@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
-import org.bouncycastle.util.test.TestResult;
 
 public final class RegressionTest
 {
@@ -55,14 +55,8 @@ public final class RegressionTest
         new WhirlpoolDigestTest()
     };
 
-    public static void main(
-        String[]    args)
+    public static void main(String[] args)
     {
-        for (int i = 0; i != tests.length; i++)
-        {
-            TestResult  result = tests[i].perform();
-            System.out.println(result);
-        }
+        SimpleTest.runTests(tests);
     }
 }
-

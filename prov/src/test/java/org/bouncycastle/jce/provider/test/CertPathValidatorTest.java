@@ -1,7 +1,6 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -53,7 +52,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
@@ -770,12 +768,7 @@ public class CertPathValidatorTest
         {
             try
             {
-                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                ASN1OutputStream aOut = new ASN1OutputStream(bOut);
-
-                aOut.writeObject(c.getIssuer());
-
-                return new X500Principal(bOut.toByteArray());
+                return new X500Principal(c.getIssuer().getEncoded());
             }
             catch (IOException e)
             {
@@ -792,12 +785,7 @@ public class CertPathValidatorTest
         {
             try
             {
-                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                ASN1OutputStream aOut = new ASN1OutputStream(bOut);
-
-                aOut.writeObject(c.getSubject());
-
-                return new X500Principal(bOut.toByteArray());
+                return new X500Principal(c.getSubject().getEncoded());
             }
             catch (IOException e)
             {

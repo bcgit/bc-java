@@ -53,7 +53,7 @@ public class ECKeyPairGenerator
         {
             d = BigIntegers.createRandomBigInteger(nBitLength, random);
 
-            if (d.compareTo(TWO) < 0  || (d.compareTo(n) >= 0))
+            if (d.compareTo(ONE) < 0  || (d.compareTo(n) >= 0))
             {
                 continue;
             }
