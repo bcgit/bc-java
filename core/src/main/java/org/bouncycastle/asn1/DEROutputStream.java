@@ -5,12 +5,17 @@ import java.io.OutputStream;
 
 /**
  * Stream that outputs encoding based on distinguished encoding rules.
+ * 
+ * @deprecated Will be removed from public API.
  */
 public class DEROutputStream
     extends ASN1OutputStream
 {
-    public DEROutputStream(
-        OutputStream    os)
+    /**
+     * @deprecated Use {@link ASN1OutputStream#create(OutputStream, String)} with
+     *             {@link ASN1Encoding#DER} instead.
+     */
+    public DEROutputStream(OutputStream os)
     {
         super(os);
     }
@@ -19,7 +24,7 @@ public class DEROutputStream
     {
         if (obj != null)
         {
-            obj.toASN1Primitive().toDERObject().encode(this);
+            obj.toASN1Primitive().toDERObject().encode(this, true);
         }
         else
         {
@@ -34,7 +39,12 @@ public class DEROutputStream
             throw new IOException("null object detected");
         }
 
-        primitive.toDERObject().encode(this);
+        primitive.toDERObject().encode(this, true);
+    }
+
+    void writePrimitive(ASN1Primitive primitive, boolean withTag) throws IOException
+    {
+        primitive.toDERObject().encode(this, withTag);
     }
 
     DEROutputStream getDERSubStream()

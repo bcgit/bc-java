@@ -33,7 +33,7 @@ public class GeneralNames
         ASN1TaggedObject obj,
         boolean          explicit)
     {
-        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+        return new GeneralNames(ASN1Sequence.getInstance(obj, explicit));
     }
 
     public static GeneralNames fromExtensions(Extensions extensions, ASN1ObjectIdentifier extOID)

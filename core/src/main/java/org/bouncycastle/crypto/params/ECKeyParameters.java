@@ -3,19 +3,24 @@ package org.bouncycastle.crypto.params;
 public class ECKeyParameters
     extends AsymmetricKeyParameter
 {
-    ECDomainParameters params;
+    private final ECDomainParameters parameters;
 
     protected ECKeyParameters(
         boolean             isPrivate,
-        ECDomainParameters  params)
+        ECDomainParameters  parameters)
     {
         super(isPrivate);
 
-        this.params = params;
+        if (null == parameters)
+        {
+            throw new NullPointerException("'parameters' cannot be null");
+        }
+
+        this.parameters = parameters;
     }
 
     public ECDomainParameters getParameters()
     {
-        return params;
+        return parameters;
     }
 }

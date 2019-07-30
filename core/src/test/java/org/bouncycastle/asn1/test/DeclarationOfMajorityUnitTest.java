@@ -3,8 +3,7 @@ package org.bouncycastle.asn1.test;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.isismtt.x509.DeclarationOfMajority;
 
 public class DeclarationOfMajorityUnitTest
@@ -59,11 +58,7 @@ public class DeclarationOfMajorityUnitTest
 
         checkValues(decl, type, dateOfBirth, notYoungerThan);
 
-        ASN1InputStream aIn = new ASN1InputStream(decl.toASN1Primitive().getEncoded());
-
-        DERTaggedObject info = (DERTaggedObject)aIn.readObject();
-
-        decl = DeclarationOfMajority.getInstance(info);
+        decl = DeclarationOfMajority.getInstance(ASN1Primitive.fromByteArray(decl.getEncoded()));
 
         checkValues(decl, type, dateOfBirth, notYoungerThan);
     }

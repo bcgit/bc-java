@@ -65,6 +65,13 @@ class LazyEncodedSequence
         return super.toArray();
     }
 
+    ASN1Encodable[] toArrayInternal()
+    {
+        force();
+
+        return super.toArrayInternal();
+    }
+
     synchronized int encodedLength()
         throws IOException
     {
@@ -76,15 +83,15 @@ class LazyEncodedSequence
         return super.toDLObject().encodedLength();
     }
 
-    synchronized void encode(ASN1OutputStream out) throws IOException
+    synchronized void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         if (null != encoded)
         {
-            out.writeEncoded(BERTags.SEQUENCE | BERTags.CONSTRUCTED, encoded);
+            out.writeEncoded(withTag, BERTags.SEQUENCE | BERTags.CONSTRUCTED, encoded);
         }
         else
         {
-            super.toDLObject().encode(out);
+            super.toDLObject().encode(out, withTag);
         }
     }
 

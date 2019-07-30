@@ -1,14 +1,11 @@
 package org.bouncycastle.mozilla.test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.security.PublicKey;
 import java.security.Security;
 
-import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.mozilla.PublicKeyAndChallenge;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -67,19 +64,10 @@ public class SPKACTest
         // Most cases this will be a string of length zero.
         if (challenge == null)
         {
-            fail(":Error - " + testName + " challenge was null.");
+            fail("Error - " + testName + " challenge was null.");
         }
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(req);
-        ASN1InputStream dIn = new ASN1InputStream(bIn);
-
-
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        DEROutputStream dOut = new DEROutputStream(bOut);
-
-        dOut.writeObject(spkac.toASN1Primitive());
-
-        byte[] bytes = bOut.toByteArray();
+        byte[] bytes = spkac.toASN1Primitive().getEncoded(ASN1Encoding.DER);
 
         if (bytes.length != req.length)
         {
@@ -131,19 +119,10 @@ public class SPKACTest
         // Most cases this will be a string of length zero.
         if (challenge == null)
         {
-            fail(":Error - " + testName + " challenge was null.");
+            fail("Error - " + testName + " challenge was null.");
         }
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(req);
-        ASN1InputStream dIn = new ASN1InputStream(bIn);
-
-
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        DEROutputStream dOut = new DEROutputStream(bOut);
-
-        dOut.writeObject(spkac.toASN1Structure());
-
-        byte[] bytes = bOut.toByteArray();
+        byte[] bytes = spkac.toASN1Structure().getEncoded(ASN1Encoding.DER);
 
         if (bytes.length != req.length)
         {

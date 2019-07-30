@@ -52,30 +52,24 @@ public class DERTaggedObject
         }
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
 
-        if (explicit)
-        {
-            out.writeTag(BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo);
-            out.writeLength(primitive.encodedLength());
-
-            primitive.encode(out.getDERSubStream());
-            return;
-        }
-
         int flags = BERTags.TAGGED;
-        if (primitive.isConstructed())
+        if (explicit || primitive.isConstructed())
         {
             flags |= BERTags.CONSTRUCTED;
         }
 
-        out.writeTag(flags, tagNo);
+        out.writeTag(withTag, flags, tagNo);
 
-        primitive.encode(out.getDERSubStream().getImplicitOutputStream());
+        if (explicit)
+        {
+            out.writeLength(primitive.encodedLength());
+        }
+
+        primitive.encode(out.getDERSubStream(), explicit);
     }
 
     ASN1Primitive toDERObject()

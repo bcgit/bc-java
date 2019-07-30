@@ -125,12 +125,11 @@ public class DERGeneralString
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    void encode(ASN1OutputStream out)
-        throws IOException 
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.GENERAL_STRING, string);
+        out.writeEncoded(withTag, BERTags.GENERAL_STRING, string);
     }
-    
+
     public int hashCode() 
     {
         return Arrays.hashCode(string);

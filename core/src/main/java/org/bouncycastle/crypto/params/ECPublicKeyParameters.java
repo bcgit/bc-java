@@ -5,19 +5,19 @@ import org.bouncycastle.math.ec.ECPoint;
 public class ECPublicKeyParameters
     extends ECKeyParameters
 {
-    private final ECPoint Q;
+    private final ECPoint q;
 
     public ECPublicKeyParameters(
-        ECPoint             Q,
-        ECDomainParameters  params)
+        ECPoint             q,
+        ECDomainParameters  parameters)
     {
-        super(false, params);
+        super(false, parameters);
 
-        this.Q = ECDomainParameters.validate(params.getCurve(), Q);
+        this.q = parameters.validatePublicPoint(q);
     }
 
     public ECPoint getQ()
     {
-        return Q;
+        return q;
     }
 }

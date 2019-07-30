@@ -83,9 +83,12 @@ public class DLSequence
      * ASN.1 descriptions given. Rather than just outputting SEQUENCE,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
-    void encode(ASN1OutputStream out) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
+        if (withTag)
+        {
+            out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
+        }
 
         ASN1OutputStream dlOut = out.getDLSubStream();
 
@@ -96,7 +99,7 @@ public class DLSequence
 
             for (int i = 0; i < count; ++i)
             {
-                dlOut.writeObject(elements[i]);
+                dlOut.writePrimitive(elements[i].toASN1Primitive(), true);
             }
         }
         else
@@ -116,7 +119,7 @@ public class DLSequence
 
             for (int i = 0; i < count; ++i)
             {
-                dlOut.writeObject(dlObjects[i]);
+                dlOut.writePrimitive(dlObjects[i], true);
             }
         }
     }

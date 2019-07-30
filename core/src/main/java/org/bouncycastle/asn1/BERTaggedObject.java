@@ -47,7 +47,7 @@ public class BERTaggedObject
 
     boolean isConstructed()
     {
-        return explicit || obj.toASN1Primitive().toDERObject().isConstructed();
+        return explicit || obj.toASN1Primitive().isConstructed();
     }
 
     int encodedLength()
@@ -69,11 +69,9 @@ public class BERTaggedObject
         }
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeTag(BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo);
+        out.writeTag(withTag, BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo);
         out.write(0x80);
 
         if (!explicit)
@@ -105,17 +103,36 @@ public class BERTaggedObject
                 throw new ASN1Exception("not implemented: " + obj.getClass().getName());
             }
 
-            while (e.hasMoreElements())
-            {
-                out.writeObject((ASN1Encodable)e.nextElement());
-            }
+            out.writeElements(e);
         }
         else
         {
-            out.writeObject(obj);
+            out.writePrimitive(obj.toASN1Primitive(), true);
         }
 
         out.write(0x00);
         out.write(0x00);
+
+//        ASN1Primitive primitive = obj.toASN1Primitive();
+//
+//        int flags = BERTags.TAGGED;
+//        if (explicit || primitive.isConstructed())
+//        {
+//            flags |= BERTags.CONSTRUCTED;
+//        }
+//
+//        out.writeTag(withTag, flags, tagNo);
+//
+//        if (explicit)
+//        {
+//            out.write(0x80);
+//            out.writePrimitive(obj.toASN1Primitive(), true);
+//            out.write(0x00);
+//            out.write(0x00);
+//        }
+//        else
+//        {
+//            out.writePrimitive(obj.toASN1Primitive(), false);
+//        }
     }
 }

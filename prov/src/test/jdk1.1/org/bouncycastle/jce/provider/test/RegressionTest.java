@@ -3,9 +3,8 @@ package org.bouncycastle.jce.provider.test;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.test.SimpleTestResult;
+import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
-import org.bouncycastle.util.test.TestResult;
 
 public class RegressionTest
 {
@@ -26,21 +25,10 @@ public class RegressionTest
         new CertPathBuilderTest()
     };
 
-    public static void main(
-        String[]    args)
+    public static void main(String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        for (int i = 0; i != tests.length; i++)
-        {
-            TestResult  result = tests[i].perform();
-            
-            if (((SimpleTestResult)result).getException() != null)
-            {
-                ((SimpleTestResult)result).getException().printStackTrace();
-            }
-            System.out.println(result);
-        }
+        SimpleTest.runTests(tests);
     }
 }
-

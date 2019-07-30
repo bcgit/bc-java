@@ -1,11 +1,10 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.util.Strings;
@@ -80,19 +79,15 @@ public class EncryptedPrivateKeyInfoTest
             fail("test " + id + " failed construction - exception " + e.toString(), e);
         }
 
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        DEROutputStream         dOut = new DEROutputStream(bOut);
-
+        byte[] bytes = null;
         try
         {
-            dOut.writeObject(info);
+            bytes = info.getEncoded(ASN1Encoding.DER);
         }
         catch (Exception e)
         {
             fail("test " + id + " failed writing - exception " + e.toString(), e);
         }
-
-        byte[]  bytes = bOut.toByteArray();
 
         if (bytes.length != sample.length)
         {

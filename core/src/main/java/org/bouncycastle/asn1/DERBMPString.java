@@ -145,18 +145,49 @@ public class DERBMPString
     }
 
     void encode(
-        ASN1OutputStream out)
+        ASN1OutputStream out, boolean withTag)
         throws IOException
     {
-        out.write(BERTags.BMP_STRING);
-        out.writeLength(string.length * 2);
-
-        for (int i = 0; i != string.length; i++)
+        int count = string.length;
+        if (withTag)
         {
-            char c = string[i];
+            out.write(BERTags.BMP_STRING);
+        }
+        out.writeLength(count * 2);
 
-            out.write((byte)(c >> 8));
-            out.write((byte)c);
+        byte[] buf = new byte[8];
+
+        int i = 0, limit = count & -4;
+        while (i < limit)
+        {
+            char c0 = string[i], c1 = string[i + 1], c2 = string[i + 2], c3 = string[i + 3];
+            i += 4;
+
+            buf[0] = (byte)(c0 >> 8);
+            buf[1] = (byte)c0;
+            buf[2] = (byte)(c1 >> 8);
+            buf[3] = (byte)c1;
+            buf[4] = (byte)(c2 >> 8);
+            buf[5] = (byte)c2;
+            buf[6] = (byte)(c3 >> 8);
+            buf[7] = (byte)c3;
+
+            out.write(buf, 0, 8);
+        }
+        if (i < count)
+        {
+            int bufPos = 0;
+            do
+            {
+                char c0 = string[i];
+                i += 1;
+
+                buf[bufPos++] = (byte)(c0 >> 8);
+                buf[bufPos++] = (byte)c0;
+            }
+            while (i < count);
+
+            out.write(buf, 0, bufPos);
         }
     }
 }

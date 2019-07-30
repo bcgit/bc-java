@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.text.ParseException;
@@ -9,9 +7,7 @@ import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -101,13 +97,10 @@ public class GenerationTest
 
         gen.setSubjectPublicKeyInfo(info);
 
-        TBSCertificate              tbs = gen.generateTBSCertificate();
-        ByteArrayOutputStream       bOut = new ByteArrayOutputStream();
-        ASN1OutputStream            aOut = new ASN1OutputStream(bOut);
+        TBSCertificate tbs = gen.generateTBSCertificate();
 
-        aOut.writeObject(tbs);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), v1Cert))
+        byte[] encoding = tbs.getEncoded();
+        if (!Arrays.areEqual(encoding, v1Cert))
         {
             fail("failed v1 cert generation");
         }
@@ -115,15 +108,10 @@ public class GenerationTest
         //
         // read back test
         //
-        ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(v1Cert));
-        ASN1Primitive       o = aIn.readObject();
+        ASN1Primitive o = ASN1Primitive.fromByteArray(v1Cert);
 
-        bOut = new ByteArrayOutputStream();
-        aOut = new ASN1OutputStream(bOut);
-
-        aOut.writeObject(o);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), v1Cert))
+        encoding = o.getEncoded();
+        if (!Arrays.areEqual(encoding, v1Cert))
         {
             fail("failed v1 cert read back test");
         }
@@ -175,13 +163,10 @@ public class GenerationTest
 
         gen.setExtensions(ex);
 
-        TBSCertificate              tbs = gen.generateTBSCertificate();
-        ByteArrayOutputStream       bOut = new ByteArrayOutputStream();
-        ASN1OutputStream            aOut = new ASN1OutputStream(bOut);
+        TBSCertificate tbs = gen.generateTBSCertificate();
 
-        aOut.writeObject(tbs);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), v3Cert))
+        byte[] encoding = tbs.getEncoded();
+        if (!Arrays.areEqual(encoding, v3Cert))
         {
             fail("failed v3 cert generation");
         }
@@ -189,15 +174,10 @@ public class GenerationTest
         //
         // read back test
         //
-        ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(v3Cert));
-        ASN1Primitive       o = aIn.readObject();
+        ASN1Primitive o = ASN1Primitive.fromByteArray(v3Cert);
 
-        bOut = new ByteArrayOutputStream();
-        aOut = new ASN1OutputStream(bOut);
-
-        aOut.writeObject(o);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), v3Cert))
+        encoding = o.getEncoded();
+        if (!Arrays.areEqual(encoding, v3Cert))
         {
             fail("failed v3 cert read back test");
         }
@@ -245,13 +225,10 @@ public class GenerationTest
 
         gen.setExtensions(ex);
 
-        TBSCertificate              tbs = gen.generateTBSCertificate();
-        ByteArrayOutputStream       bOut = new ByteArrayOutputStream();
-        ASN1OutputStream            aOut = new ASN1OutputStream(bOut);
+        TBSCertificate tbs = gen.generateTBSCertificate();
 
-        aOut.writeObject(tbs);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), v3CertNullSubject))
+        byte[] encoding = tbs.getEncoded();
+        if (!Arrays.areEqual(encoding, v3CertNullSubject))
         {
             fail("failed v3 null sub cert generation");
         }
@@ -259,15 +236,10 @@ public class GenerationTest
         //
         // read back test
         //
-        ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(v3CertNullSubject));
-        ASN1Primitive       o = aIn.readObject();
+        ASN1Primitive o = ASN1Primitive.fromByteArray(v3CertNullSubject);
 
-        bOut = new ByteArrayOutputStream();
-        aOut = new ASN1OutputStream(bOut);
-
-        aOut.writeObject(o);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), v3CertNullSubject))
+        encoding = o.getEncoded();
+        if (!Arrays.areEqual(encoding, v3CertNullSubject))
         {
             fail("failed v3 null sub cert read back test");
         }
@@ -309,15 +281,12 @@ public class GenerationTest
 
         gen.setExtensions(ex);
 
-        TBSCertList                 tbs = gen.generateTBSCertList();
-        ByteArrayOutputStream       bOut = new ByteArrayOutputStream();
-        ASN1OutputStream            aOut = new ASN1OutputStream(bOut);
+        TBSCertList tbs = gen.generateTBSCertList();
 
-        aOut.writeObject(tbs);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), v2CertList))
+        byte[] encoding = tbs.getEncoded();
+        if (!Arrays.areEqual(encoding, v2CertList))
         {
-            System.out.println(new String(Base64.encode(bOut.toByteArray())));
+            System.out.println(new String(Base64.encode(encoding)));
             fail("failed v2 cert list generation");
         }
 
@@ -337,15 +306,10 @@ public class GenerationTest
         //
         // read back test
         //
-        ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(v2CertList));
-        ASN1Primitive o = aIn.readObject();
+        ASN1Primitive o = ASN1Primitive.fromByteArray(v2CertList);
 
-        bOut = new ByteArrayOutputStream();
-        aOut = new ASN1OutputStream(bOut);
-
-        aOut.writeObject(o);
-
-        if (!Arrays.areEqual(bOut.toByteArray(), v2CertList))
+        encoding = o.getEncoded();
+        if (!Arrays.areEqual(encoding, v2CertList))
         {
             fail("failed v2 cert list read back test");
         }
