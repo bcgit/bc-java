@@ -197,6 +197,11 @@ public class ProtectedPKIMessageBuilder
     public ProtectedPKIMessage build(MacCalculator macCalculator)
         throws CMPException
     {
+        if (null == body)
+        {
+            throw new IllegalStateException("body must be set before building");
+        }
+
         finaliseHeader(macCalculator.getAlgorithmIdentifier());
 
         PKIHeader header = hdrBuilder.build();
@@ -223,6 +228,11 @@ public class ProtectedPKIMessageBuilder
     public ProtectedPKIMessage build(ContentSigner signer)
         throws CMPException
     {
+        if (null == body)
+        {
+            throw new IllegalStateException("body must be set before building");
+        }
+
         finaliseHeader(signer.getAlgorithmIdentifier());
 
         PKIHeader header = hdrBuilder.build();
