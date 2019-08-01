@@ -43,6 +43,11 @@ public class ChaChaPoly1305
     private final byte[] cachedBytes;
 
     /**
+     * The lastMac.
+     */
+    private byte[] lastMac;
+
+    /**
      * number of bytes in the cache.
      */
     private int cacheBytes;
@@ -270,6 +275,16 @@ public class ChaChaPoly1305
     }
 
     /**
+     * Obtain the last calculated Mac.
+     * @return the last calculated Mac
+     */
+    public byte[] getMac() {
+       return lastMac == null
+              ? new byte[MACSIZE]
+              : Arrays.clone(lastMac);
+    }
+
+    /**
      * Finish processing.
      * @param out the output buffer
      * @param outOff the offset from which to start writing output
@@ -342,8 +357,13 @@ public class ChaChaPoly1305
         /* complete the data portion of the Mac */
         completeDataMac();
 
+        /* Calculate the Mac */
+        lastMac = new byte[MACSIZE];
+        polyMac.doFinal(lastMac, 0);
+
         /* Update and return the mac in the output buffer */
-        return polyMac.doFinal(out, outOff);
+        System.arraycopy(lastMac, 0, out, outOff, MACSIZE);
+        return MACSIZE;
     }
 
     /**
@@ -371,54 +391,41 @@ public class ChaChaPoly1305
         /* Count how much we have processed */
         int processed = 0;
 
-        /* If we have at least MACSIZE data */
-        if (len >= MACSIZE) {
-            /* If we have cached mac bytes */
+        /* Calculate the number of bytes to process from the cache */
+        final int numInputBytes = len - MACSIZE;
+        int numCacheBytes = Math.max(cacheBytes + numInputBytes, 0);
+        numCacheBytes = Math.min(cacheBytes, numCacheBytes);
+
+        /* If we should process bytes from the cache */
+        if (numCacheBytes > 0) {
+            /* Process any required cachedBytes */
+            polyMac.update(cachedBytes, 0, numCacheBytes);
+            dataLength += numCacheBytes;
+
+            /* Process the cached bytes */
+            processed = theCipher.processBytes(cachedBytes, 0, numCacheBytes, out, outOff);
+
+            /* Move any remaining cached bytes down in the buffer */
+            cacheBytes -= numCacheBytes;
             if (cacheBytes > 0) {
-                /* Process any existing cachedBytes */
-                polyMac.update(cachedBytes, 0, cacheBytes);
-                dataLength += cacheBytes;
-
-                /* Process the cached bytes */
-                processed = theCipher.processBytes(cachedBytes, 0, cacheBytes, out, outOff);
+                System.arraycopy(cachedBytes, numCacheBytes, cachedBytes, 0, cacheBytes);
             }
-
-            /* Determine how many bytes to process */
-            final int numBytes = len - MACSIZE;
-            if (numBytes > 0) {
-                /* Process the data */
-                polyMac.update(in, inOff, numBytes);
-                dataLength += numBytes;
-
-                /* Process the input */
-                processed += theCipher.processBytes(in, inOff, numBytes, out, outOff + processed);
-            }
-
-            /* Store the remaining input into the cache */
-            System.arraycopy(in, inOff + numBytes, cachedBytes, 0, MACSIZE);
-            cacheBytes = MACSIZE;
-
-            /* else all new data will be placed into the cache */
-        } else {
-            /* Calculate number of bytes in the cache to process */
-            final int numBytes = cacheBytes + len - MACSIZE;
-            if (numBytes > 0) {
-                /* Process the excess cachedBytes */
-                polyMac.update(cachedBytes, 0, numBytes);
-                dataLength += numBytes;
-
-                /* Process the cached bytes */
-                processed = theCipher.processBytes(cachedBytes, 0, numBytes, out, outOff);
-
-                /* Move remaining cached bytes down */
-                cacheBytes -= numBytes;
-                System.arraycopy(cachedBytes, numBytes, cachedBytes, 0, cacheBytes);
-            }
-
-            /* Store the data into the cache */
-            System.arraycopy(in, inOff, cachedBytes, cacheBytes, len);
-            cacheBytes += len;
         }
+
+        /* Process any excess bytes from the input buffer */
+        if (numInputBytes > 0) {
+            /* Process the data */
+            polyMac.update(in, inOff, numInputBytes);
+            dataLength += numInputBytes;
+
+            /* Process the input */
+            processed += theCipher.processBytes(in, inOff, numInputBytes, out, outOff + processed);
+        }
+
+        /* Store the remaining input into the cache */
+        final int numToCache = Math.min(len, MACSIZE);
+        System.arraycopy(in, inOff + len - numToCache, cachedBytes, cacheBytes, numToCache);
+        cacheBytes += numToCache;
 
         /* Return the number of bytes processed */
         return processed;
@@ -438,12 +445,12 @@ public class ChaChaPoly1305
         /* complete the data portion of the Mac */
         completeDataMac();
 
-        /* Update and return the mac in the output buffer */
-        final byte[] mac = new byte[MACSIZE];
-        polyMac.doFinal(mac, 0);
+        /* Calculate the Mac */
+        lastMac = new byte[MACSIZE];
+        polyMac.doFinal(lastMac, 0);
 
-        /* Check that the buffers compare */
-        if (!Arrays.constantTimeAreEqual(mac, cachedBytes)) {
+        /* Check that the calculated Mac is identical to that contained in the cache */
+        if (!Arrays.constantTimeAreEqual(lastMac, cachedBytes)) {
             throw new InvalidCipherTextException("mac check failed");
         }
 
@@ -456,12 +463,10 @@ public class ChaChaPoly1305
      */
     private void completeAEADMac() {
         /* Pad to boundary */
-        final int xtra = (int) aeadLength % MACSIZE;
-        if (xtra != 0) {
-            final int numPadding = MACSIZE - xtra;
-            polyMac.update(PADDING, 0, numPadding);
-        }
-        aeadComplete = true;
+        padToBoundary(aeadLength);
+
+        /* Set flag */
+       aeadComplete = true;
     }
 
     /**
@@ -469,16 +474,25 @@ public class ChaChaPoly1305
      */
     private void completeDataMac() {
         /* Pad to boundary */
-        final int xtra = (int) dataLength % MACSIZE;
-        if (xtra != 0) {
-            final int numPadding = MACSIZE - xtra;
-            polyMac.update(PADDING, 0, numPadding);
-        }
+        padToBoundary(dataLength);
 
         /* Write the lengths */
         final byte[] len = new byte[16]; // 2 * Long.BYTES
         Pack.longToLittleEndian(aeadLength, len, 0);
         Pack.longToLittleEndian(dataLength, len, 8); // Long.BYTES
         polyMac.update(len, 0, len.length);
+    }
+
+    /**
+     * Pad to boundary.
+     * @param pDataLen the length of the data to pad
+     */
+    private void padToBoundary(final long pDataLen) {
+        /* Pad to boundary */
+        final int xtra = (int) pDataLen % MACSIZE;
+        if (xtra != 0) {
+            final int numPadding = MACSIZE - xtra;
+            polyMac.update(PADDING, 0, numPadding);
+        }
     }
 }
