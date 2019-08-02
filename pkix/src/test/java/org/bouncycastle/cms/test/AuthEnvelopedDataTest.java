@@ -168,7 +168,6 @@ public class AuthEnvelopedDataTest
 
         authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
         {
-            @Override
             public AttributeTable getAttributes(Map parameters)
                 throws CMSAttributeTableGenerationException
             {

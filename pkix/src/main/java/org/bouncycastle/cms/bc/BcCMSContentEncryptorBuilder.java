@@ -147,13 +147,11 @@ public class BcCMSContentEncryptorBuilder
             return (AEADBlockCipher)cipher;
         }
 
-        @Override
         public OutputStream getAADStream()
         {
             return new AADStream(aeadCipher);
         }
 
-        @Override
         public byte[] getMAC()
         {
             return aeadCipher.getMac();
