@@ -435,7 +435,7 @@ public class ECAlgorithms
 
         if (glvEndomorphism.hasEfficientPointMap())
         {
-            return ECAlgorithms.implSumOfMultiplies(glvEndomorphism, ps, abs);
+            return implSumOfMultiplies(glvEndomorphism, ps, abs);
         }
 
         ECPoint[] pqs = new ECPoint[len << 1];
@@ -446,9 +446,8 @@ public class ECAlgorithms
             pqs[j++] = p;
             pqs[j++] = q;
         }
-        
-        return ECAlgorithms.implSumOfMultiplies(pqs, abs);
 
+        return implSumOfMultiplies(pqs, abs);
     }
 
     static ECPoint implSumOfMultiplies(ECEndomorphism endomorphism, ECPoint[] ps, BigInteger[] ks)
