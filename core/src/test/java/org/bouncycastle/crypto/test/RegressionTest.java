@@ -168,7 +168,8 @@ public class RegressionTest
             new Argon2Test(),
             new OpenSSHKeyParsingTests(),
             new EthereumIESTest(),
-            new BigIntegersTest()
+            new BigIntegersTest(),
+            new ZucTest()
         };
 
     public static void main(String[] args)

@@ -87,7 +87,8 @@ public class RegressionTest
         new GOST3410KeyPairTest(),
         new EdECTest(),
         new OpenSSHSpecTests(),
-        new SM2CipherTest()
+        new SM2CipherTest(),
+        new ZucTest()
     };
 
     public static void main(String[] args)
