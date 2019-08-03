@@ -62,6 +62,14 @@ public class BaseStreamCipher
     protected BaseStreamCipher(
         StreamCipher engine,
         int ivLength,
+        int keySizeInBits)
+    {
+        this(engine, ivLength, keySizeInBits, -1);
+    }
+
+    protected BaseStreamCipher(
+        StreamCipher engine,
+        int ivLength,
         int keySizeInBits,
         int digest)
     {

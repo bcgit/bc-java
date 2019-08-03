@@ -1,6 +1,5 @@
 package org.bouncycastle.math.ec.custom.sec.test;
 
-import static org.junit.Assert.assertArrayEquals;
 
 import java.util.Arrays;
 
@@ -20,7 +19,7 @@ public class SecP128R1FieldTest extends TestCase
         SecP128R1Field.multiply(x, y, z);
 
         int[] expected = new int[]{ 0x01FFFF01, 0, 0, 0 };
-        assertArrayEquals(expected, z);
+        assertTrue(Arrays.equals(expected, z));
     }
 
     public void testReduce32()
@@ -30,6 +29,6 @@ public class SecP128R1FieldTest extends TestCase
         SecP128R1Field.reduce32(0xFFFFFFFF, z);
 
         int[] expected = new int[]{ 1, 1, 0, 4 };
-        assertArrayEquals(expected, z);
+        assertTrue(Arrays.equals(expected, z));
     }
 }

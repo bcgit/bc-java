@@ -6,29 +6,35 @@ import org.bouncycastle.util.Memoable;
  * Zuc256Mac implementation.
  * Based on http://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf
  */
-public class Zuc256Engine extends Zuc128Engine {
+public class Zuc256Engine
+    extends Zuc128Engine
+{
     /* the constants D */
-    private static final byte[] EK_d = new byte[] {
-            0b0100010, 0b0101111, 0b0100100, 0b0101010, 0b1101101, 0b1000000, 0b1000000, 0b1000000,
-            0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1010010, 0b0010000, 0b0110000
+    private static final byte[] EK_d = new byte[]{
+        0x22, 0x2f, 0x24, 0x2a, 0x6d, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x52, 0x10, 0x30
+//        0b0100010, 0b0101111, 0b0100100, 0b0101010, 0b1101101, 0b1000000, 0b1000000, 0b1000000,
+//        0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1010010, 0b0010000, 0b0110000
     };
 
     /* the constants D for 32 bit Mac*/
-    private static final byte[] EK_d32  = new byte[] {
-            0b0100010, 0b0101111, 0b0100101, 0b0101010, 0b1101101, 0b1000000, 0b1000000, 0b1000000,
-            0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1010010, 0b0010000, 0b0110000
+    private static final byte[] EK_d32 = new byte[]{
+         0x22, 0x2f, 0x25, 0x2a, 0x6d, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x52, 0x10, 0x30
+//        0b0100010, 0b0101111, 0b0100101, 0b0101010, 0b1101101, 0b1000000, 0b1000000, 0b1000000,
+//        0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1010010, 0b0010000, 0b0110000
     };
 
     /* the constants D for 64 bit Mac */
-    private static final byte[] EK_d64 = new byte[] {
-            0b0100011, 0b0101111, 0b0100100, 0b0101010, 0b1101101, 0b1000000, 0b1000000, 0b1000000,
-            0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1010010, 0b0010000, 0b0110000
+    private static final byte[] EK_d64 = new byte[]{
+        0x23, 0x2f, 0x24, 0x2a, 0x6d, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x52, 0x10, 0x30
+//        0b0100011, 0b0101111, 0b0100100, 0b0101010, 0b1101101, 0b1000000, 0b1000000, 0b1000000,
+//        0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1010010, 0b0010000, 0b0110000
     };
 
     /* the constants D for 128 bit Mac */
-    private static final byte[] EK_d128 = new byte[] {
-            0b0100011, 0b0101111, 0b0100101, 0b0101010, 0b1101101, 0b1000000, 0b1000000, 0b1000000,
-            0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1010010, 0b0010000, 0b0110000
+    private static final byte[] EK_d128 = new byte[]{
+        0x23, 0x2f, 0x25, 0x2a, 0x6d, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x52, 0x10, 0x30
+//        0b0100011, 0b0101111, 0b0100101, 0b0101010, 0b1101101, 0b1000000, 0b1000000, 0b1000000,
+//        0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1000000, 0b1010010, 0b0010000, 0b0110000
     };
 
     /**
@@ -39,80 +45,96 @@ public class Zuc256Engine extends Zuc128Engine {
     /**
      * Constructor for streamCipher.
      */
-    public Zuc256Engine() {
+    public Zuc256Engine()
+    {
         theD = EK_d;
     }
 
     /**
      * Constructor for Mac.
+     *
      * @param pLength the Mac length
      */
-    public Zuc256Engine(final int pLength) {
-        switch (pLength) {
-            case 32:
-                theD = EK_d32;
-                break;
-            case 64:
-                theD = EK_d64;
-                break;
-            case 128:
-                theD = EK_d128;
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported length: " + pLength);
+    protected Zuc256Engine(final int pLength)
+    {
+        switch (pLength)
+        {
+        case 32:
+            theD = EK_d32;
+            break;
+        case 64:
+            theD = EK_d64;
+            break;
+        case 128:
+            theD = EK_d128;
+            break;
+        default:
+            throw new IllegalArgumentException("Unsupported length: " + pLength);
         }
     }
 
     /**
      * Constructor for Memoable.
+     *
      * @param pSource the source engine
      */
-    private Zuc256Engine(final Zuc256Engine pSource){
+    private Zuc256Engine(final Zuc256Engine pSource)
+    {
         super(pSource);
     }
 
     /**
      * Obtain Max iterations.
+     *
      * @return the maximum iterations
      */
-    protected int getMaxIterations() {
+    protected int getMaxIterations()
+    {
         return 625;
     }
 
     /**
      * Obtain Algorithm Name.
+     *
      * @return the name
      */
-    public String getAlgorithmName() {
+    public String getAlgorithmName()
+    {
         return "Zuc-256";
     }
 
     /**
      * Build a 31-bit integer from constituent parts.
+     *
      * @param a part A
      * @param b part B
      * @param c part C
      * @param d part D
      * @return the built integer
      */
-    private static int MAKEU31(byte a, byte b, byte c, byte d) {
+    private static int MAKEU31(byte a, byte b, byte c, byte d)
+    {
         return (((a & 0xFF) << 23) | ((b & 0xFF) << 16) | ((c & 0xFF) << 8) | (d & 0xFF));
     }
 
     /**
      * Process key and IV into LFSR.
+     *
      * @param pLFSR the LFSR
-     * @param k the key
-     * @param iv the iv
+     * @param k     the key
+     * @param iv    the iv
      */
     protected void setKeyAndIV(final int[] pLFSR,
                                final byte[] k,
-                               final byte[] iv) {
+                               final byte[] iv)
+    {
         /* Check lengths */
-        if (k == null || k.length != 32) {
+        if (k == null || k.length != 32)
+        {
             throw new IllegalArgumentException("A key of 32 bytes is needed");
         }
-        if (iv == null || iv.length != 25) {
+        if (iv == null || iv.length != 25)
+        {
             throw new IllegalArgumentException("An IV of 25 bytes is needed");
         }
 
@@ -137,18 +159,22 @@ public class Zuc256Engine extends Zuc128Engine {
 
     /**
      * Create a copy of the engine.
+     *
      * @return the copy
      */
-    public Zuc256Engine copy() {
+    public Zuc256Engine copy()
+    {
         return new Zuc256Engine(this);
     }
 
     /**
      * Reset from saved engine state.
+     *
      * @param pState teh state to restore
      */
-    public void reset(final Memoable pState) {
-        final Zuc256Engine e = (Zuc256Engine) pState;
+    public void reset(final Memoable pState)
+    {
+        final Zuc256Engine e = (Zuc256Engine)pState;
         super.reset(pState);
         theD = e.theD;
     }

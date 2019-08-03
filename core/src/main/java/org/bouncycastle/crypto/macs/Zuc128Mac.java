@@ -3,13 +3,15 @@ package org.bouncycastle.crypto.macs;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.Zuc128Engine;
+import org.bouncycastle.crypto.engines.Zuc256Engine;
 
 /**
  * Zuc128Mac implementation.
  * Based on http://www.qtc.jp/3GPP/Specs/eea3eia3specificationv16.pdf
  */
 public class Zuc128Mac
-        implements Mac {
+    implements Mac
+{
     /**
      * The Maximum Bit Mask.
      */
@@ -18,7 +20,7 @@ public class Zuc128Mac
     /**
      * The Zuc128 Engine.
      */
-    private final Zuc128Engine theEngine;
+    private final InternalZuc128Engine theEngine;
 
     /**
      * The calculated Mac in words.
@@ -48,33 +50,40 @@ public class Zuc128Mac
     /**
      * Constructor.
      */
-    public Zuc128Mac() {
-        theEngine = new Zuc128Engine();
+    public Zuc128Mac()
+    {
+        theEngine = new InternalZuc128Engine();
         theKeyStream = new int[2];
     }
 
     /**
      * Obtain Algorithm Name.
+     *
      * @return the name
      */
-    public String getAlgorithmName() {
+    public String getAlgorithmName()
+    {
         return "Zuc128Mac";
     }
 
     /**
      * Obtain Mac Size.
+     *
      * @return the size in Bytes
      */
-    public int getMacSize() {
+    public int getMacSize()
+    {
         return 4; // Integer.Bytes
     }
 
     /**
      * Initialise the Mac.
+     *
      * @param pParams the parameters
      */
-    public void init(final CipherParameters pParams) {
-       /* Initialise the engine */
+    public void init(final CipherParameters pParams)
+    {
+        /* Initialise the engine */
         theEngine.init(true, pParams);
         theState = theEngine.copy();
         initKeyStream();
@@ -83,13 +92,15 @@ public class Zuc128Mac
     /**
      * Initialise the keyStream.
      */
-    private void initKeyStream() {
+    private void initKeyStream()
+    {
         /* Initialise the Mac */
         theMac = 0;
 
         /* Initialise the KeyStream */
-        for (int i = 0; i < theKeyStream.length - 1; i++) {
-            theKeyStream[i] = theEngine.makeKeyStreamWord();
+        for (int i = 0; i < theKeyStream.length - 1; i++)
+        {
+            theKeyStream[i] = theEngine.createKeyStreamWord();
         }
         theWordIndex = theKeyStream.length - 1;
         theByteIndex = 3; //Integer.BYTES - 1;
@@ -97,17 +108,21 @@ public class Zuc128Mac
 
     /**
      * Update the mac with a single byte.
+     *
      * @param in the byte to update with
      */
-    public void update(final byte in) {
+    public void update(final byte in)
+    {
         /* shift for next byte */
         shift4NextByte();
 
         /* Loop through the bits */
         final int bitBase = theByteIndex * 8; //Byte.SIZE;
-        for (int bitMask = TOPBIT, bitNo = 0; bitMask > 0; bitMask >>= 1, bitNo++) {
+        for (int bitMask = TOPBIT, bitNo = 0; bitMask > 0; bitMask >>= 1, bitNo++)
+        {
             /* If the bit is set */
-            if ((in & bitMask) != 0) {
+            if ((in & bitMask) != 0)
+            {
                 /* update theMac */
                 updateMac(bitBase + bitNo);
             }
@@ -117,35 +132,42 @@ public class Zuc128Mac
     /**
      * Shift for next byte.
      */
-    private void shift4NextByte() {
+    private void shift4NextByte()
+    {
         /* Adjust the byte index */
         theByteIndex = (theByteIndex + 1) % 4; //Integer.BYTES;
 
         /* Adjust keyStream if required */
-        if (theByteIndex == 0) {
-            theKeyStream[theWordIndex] = theEngine.makeKeyStreamWord();
+        if (theByteIndex == 0)
+        {
+            theKeyStream[theWordIndex] = theEngine.createKeyStreamWord();
             theWordIndex = (theWordIndex + 1) % theKeyStream.length;
         }
     }
 
     /**
      * Update the Mac.
+     *
      * @param bitNo the bit number
      */
-    private void updateMac(final int bitNo) {
+    private void updateMac(final int bitNo)
+    {
         /* Update the Mac */
         theMac ^= getKeyStreamWord(bitNo);
     }
 
     /**
      * Obtain the keyStreamWord.
+     *
      * @param bitNo the bitNumber
      * @return the word
      */
-    private int getKeyStreamWord(final int bitNo) {
+    private int getKeyStreamWord(final int bitNo)
+    {
         /* Access the first word and return it if this is bit 0 */
         final int myFirst = theKeyStream[theWordIndex];
-        if (bitNo == 0) {
+        if (bitNo == 0)
+        {
             return myFirst;
         }
 
@@ -156,23 +178,29 @@ public class Zuc128Mac
 
     /**
      * Update the mac.
-     * @param in the input buffer
+     *
+     * @param in    the input buffer
      * @param inOff the starting offset in the input buffer
-     * @param len the length of data to process
+     * @param len   the length of data to process
      */
-    public void update(final byte[] in, final int inOff, final int len) {
-        for (int byteNo = 0; byteNo < len; byteNo++) {
+    public void update(final byte[] in, final int inOff, final int len)
+    {
+        for (int byteNo = 0; byteNo < len; byteNo++)
+        {
             update(in[inOff + byteNo]);
         }
     }
 
     /**
      * Obtain the final word.
+     *
      * @return the final word
      */
-    private int getFinalWord() {
-        if (theByteIndex != 0) {
-            return theEngine.makeKeyStreamWord();
+    private int getFinalWord()
+    {
+        if (theByteIndex != 0)
+        {
+            return theEngine.createKeyStreamWord();
         }
         theWordIndex = (theWordIndex + 1) % theKeyStream.length;
         return theKeyStream[theWordIndex];
@@ -180,11 +208,13 @@ public class Zuc128Mac
 
     /**
      * Finalize the mac.
-     * @param out the output buffer
+     *
+     * @param out    the output buffer
      * @param outOff the starting offset in the input buffer
      * @return the size of the mac
      */
-    public int doFinal(final byte[] out, final int outOff) {
+    public int doFinal(final byte[] out, final int outOff)
+    {
         /* Finish the Mac and output it */
         shift4NextByte();
         theMac ^= getKeyStreamWord(theByteIndex * 8); //Byte.SIZE
@@ -197,8 +227,21 @@ public class Zuc128Mac
     }
 
     @Override
-    public void reset() {
-        theEngine.reset(theState);
+    public void reset()
+    {
+        if (theState != null)
+        {
+            theEngine.reset(theState);
+        }
         initKeyStream();
+    }
+
+    private static class InternalZuc128Engine
+        extends Zuc128Engine
+    {
+        int createKeyStreamWord()
+        {
+            return super.makeKeyStreamWord();
+        }
     }
 }
