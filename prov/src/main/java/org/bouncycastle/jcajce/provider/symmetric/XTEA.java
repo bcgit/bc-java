@@ -52,11 +52,9 @@ public final class XTEA
 
         public void configure(ConfigurableProvider provider)
         {
-
             provider.addAlgorithm("Cipher.XTEA", PREFIX + "$ECB");
             provider.addAlgorithm("KeyGenerator.XTEA", PREFIX + "$KeyGen");
             provider.addAlgorithm("AlgorithmParameters.XTEA", PREFIX + "$AlgParams");
-
         }
     }
 }
