@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.macs;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.Zuc128Engine;
-import org.bouncycastle.crypto.engines.Zuc256Engine;
 
 /**
  * Zuc128Mac implementation.
@@ -226,7 +225,6 @@ public class Zuc128Mac
         return getMacSize();
     }
 
-    @Override
     public void reset()
     {
         if (theState != null)
