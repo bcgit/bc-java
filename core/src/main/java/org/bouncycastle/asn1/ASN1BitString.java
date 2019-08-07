@@ -99,6 +99,17 @@ public abstract class ASN1BitString
         return result;
     }
 
+    protected ASN1BitString(byte data, int padBits)
+    {
+        if (padBits > 7 || padBits < 0)
+        {
+            throw new IllegalArgumentException("pad bits cannot be greater than 7 or less than 0");
+        }
+
+        this.data = new byte[]{ data };
+        this.padBits = padBits;
+    }
+
     /**
      * Base constructor.
      *
