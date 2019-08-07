@@ -67,20 +67,9 @@ public class DLBitString
         }
     }
 
-    protected DLBitString(
-        byte    data,
-        int     padBits)
+    protected DLBitString(byte data, int padBits)
     {
-        this(toByteArray(data), padBits);
-    }
-
-    private static byte[] toByteArray(byte data)
-    {
-        byte[] rv = new byte[1];
-
-        rv[0] = data;
-
-        return rv;
+        super(data, padBits);
     }
 
     /**
