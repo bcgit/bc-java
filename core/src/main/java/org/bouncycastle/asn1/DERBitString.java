@@ -66,21 +66,10 @@ public class DERBitString
             return fromOctetString(ASN1OctetString.getInstance(o).getOctets());
         }
     }
-    
-    protected DERBitString(
-        byte    data,
-        int     padBits)
+
+    protected DERBitString(byte data, int padBits)
     {
-        this(toByteArray(data), padBits);
-    }
-
-    private static byte[] toByteArray(byte data)
-    {
-        byte[] rv = new byte[1];
-
-        rv[0] = data;
-
-        return rv;
+        super(data, padBits);
     }
 
     /**
