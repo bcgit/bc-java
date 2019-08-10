@@ -95,7 +95,7 @@ public class Accuracy
                     }
                     break;
                 default:
-                    throw new IllegalArgumentException("Invalig tag number");
+                    throw new IllegalArgumentException("Invalid tag number");
                 }
             }
         }
