@@ -2,13 +2,13 @@ package org.bouncycastle.crypto.macs;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.engines.Zuc256Engine;
+import org.bouncycastle.crypto.engines.Zuc256CoreEngine;
 
 /**
- * Zuc128Engine implementation.
+ * Zuc256 Mac implementation.
  * Based on http://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf
  */
-public class Zuc256Mac
+public final class Zuc256Mac
     implements Mac
 {
     /**
@@ -39,7 +39,7 @@ public class Zuc256Mac
     /**
      * The initialised state.
      */
-    private Zuc256Engine theState;
+    private Zuc256CoreEngine theState;
 
     /**
      * The current word index.
@@ -238,7 +238,7 @@ public class Zuc256Mac
         updateMac(theByteIndex * 8); //Byte.SIZE)
         for (int i = 0; i < theMac.length; i++)
         {
-            Zuc256Engine.encode32be(theMac[i], out, outOff + i * 4); //Integer.BYTES)
+            Zuc256CoreEngine.encode32be(theMac[i], out, outOff + i * 4); //Integer.BYTES)
         }
 
         /* Reset the Mac */
@@ -259,7 +259,7 @@ public class Zuc256Mac
     }
 
     private static class InternalZuc256Engine
-        extends Zuc256Engine
+        extends Zuc256CoreEngine
     {
         public InternalZuc256Engine(int pLength)
         {
