@@ -2,7 +2,9 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.engines.Zuc128CoreEngine;
 import org.bouncycastle.crypto.engines.Zuc128Engine;
+import org.bouncycastle.crypto.engines.Zuc256CoreEngine;
 import org.bouncycastle.crypto.engines.Zuc256Engine;
 import org.bouncycastle.crypto.macs.Zuc128Mac;
 import org.bouncycastle.crypto.macs.Zuc256Mac;
@@ -127,7 +129,7 @@ public class ZucTest
          */
         void testTheCipher()
         {
-            final Zuc128Engine myEngine = new Zuc128Engine();
+            final Zuc128CoreEngine myEngine = new Zuc128Engine();
             testCipher(myEngine, TEST4);
             testCipher(myEngine, TEST5);
             testStreamLimit(myEngine, TEST5, ZUC128LIMIT);
@@ -154,7 +156,7 @@ public class ZucTest
          */
         void testTheCipher()
         {
-            final Zuc256Engine myEngine = new Zuc256Engine();
+            final Zuc256CoreEngine myEngine = new Zuc256Engine();
             testCipher(myEngine, TEST4);
             testCipher(myEngine, TEST5);
             testStreamLimit(myEngine, TEST5, ZUC256LIMIT);

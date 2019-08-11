@@ -2,13 +2,13 @@ package org.bouncycastle.crypto.macs;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.engines.Zuc128Engine;
+import org.bouncycastle.crypto.engines.Zuc128CoreEngine;
 
 /**
- * Zuc128Mac implementation.
+ * Zuc128 Mac implementation.
  * Based on http://www.qtc.jp/3GPP/Specs/eea3eia3specificationv16.pdf
  */
-public class Zuc128Mac
+public final class Zuc128Mac
     implements Mac
 {
     /**
@@ -34,7 +34,7 @@ public class Zuc128Mac
     /**
      * The initialised state.
      */
-    private Zuc128Engine theState;
+    private Zuc128CoreEngine theState;
 
     /**
      * The current word index.
@@ -218,7 +218,7 @@ public class Zuc128Mac
         shift4NextByte();
         theMac ^= getKeyStreamWord(theByteIndex * 8); //Byte.SIZE
         theMac ^= getFinalWord();
-        Zuc128Engine.encode32be(theMac, out, outOff);
+        Zuc128CoreEngine.encode32be(theMac, out, outOff);
 
         /* Reset the Mac */
         reset();
@@ -235,7 +235,7 @@ public class Zuc128Mac
     }
 
     private static class InternalZuc128Engine
-        extends Zuc128Engine
+        extends Zuc128CoreEngine
     {
         int createKeyStreamWord()
         {
