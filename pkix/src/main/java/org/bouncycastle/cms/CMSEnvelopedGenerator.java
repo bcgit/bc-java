@@ -1,14 +1,14 @@
 package org.bouncycastle.cms;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * General class for generating a CMS enveloped-data message.
@@ -43,6 +43,7 @@ public class CMSEnvelopedGenerator
     final List recipientInfoGenerators = new ArrayList();
 
     protected CMSAttributeTableGenerator unprotectedAttributeGenerator = null;
+    protected CMSAttributeTableGenerator authenticatedAttributeGenerator = null;
 
     protected OriginatorInfo originatorInfo;
 
@@ -57,6 +58,12 @@ public class CMSEnvelopedGenerator
     {
         this.unprotectedAttributeGenerator = unprotectedAttributeGenerator;
     }
+
+    public void setAuthenticatedAttributeGenerator(CMSAttributeTableGenerator authenticatedAttributeGenerator)
+    {
+        this.authenticatedAttributeGenerator = authenticatedAttributeGenerator;
+    }
+
 
     public void setOriginatorInfo(OriginatorInformation originatorInfo)
     {

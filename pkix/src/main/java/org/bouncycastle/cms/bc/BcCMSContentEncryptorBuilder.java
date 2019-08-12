@@ -1,8 +1,6 @@
 package org.bouncycastle.cms.bc;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
@@ -15,7 +13,6 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Integers;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.HashMap;
@@ -125,11 +122,11 @@ public class BcCMSContentEncryptorBuilder
         }
     }
 
-    public interface MacProvider{
-        byte[] addAuthenticatedAttributes(AttributeTable authAttributes) throws IOException;
+    public interface ProtectionProvider {
+        void additionalAuthenticatedAttributes(byte[] aad);
         byte[] getMac();
     }
-    private class CMSAuthOutputEncryptor extends CMSOutputEncryptor implements MacProvider {
+    private class CMSAuthOutputEncryptor extends CMSOutputEncryptor implements ProtectionProvider {
         CMSAttributeTableGenerator authenticatedAttributeGenerator;
 
         CMSAuthOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, SecureRandom random)
@@ -149,10 +146,8 @@ public class BcCMSContentEncryptorBuilder
         }
 
         byte[] aad = null;
-        public byte[] addAuthenticatedAttributes(AttributeTable authAttributes) throws IOException {
-            aad = new DERSet(authAttributes.toASN1EncodableVector())
-                        .toASN1Primitive().getEncoded();
-            return aad;
+        public void additionalAuthenticatedAttributes(byte[] aad) {
+            this.aad = aad;
         }
 
         public byte[] getMac() {

@@ -1,25 +1,32 @@
 package org.bouncycastle.cms;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Iterator;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSet;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.AuthEnvelopedData;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cms.bc.BcCMSContentEncryptorBuilder;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * General class for generating a CMS enveloped-data message.
@@ -58,6 +65,11 @@ public class CMSEnvelopedDataGenerator
         if (!oldRecipientInfoGenerators.isEmpty())
         {
             throw new IllegalStateException("can only use addRecipientGenerator() with this method");
+        }
+
+        if(authenticatedAttributeGenerator != null
+                && !(contentEncryptor instanceof BcCMSContentEncryptorBuilder.ProtectionProvider)){
+            throw new IllegalStateException("can only protect attributes using authenticating encryption algorithms");
         }
 
         ASN1EncodableVector     recipientInfos = new ASN1EncodableVector();
@@ -107,12 +119,40 @@ public class CMSEnvelopedDataGenerator
             unprotectedAttrSet = new BERSet(attrTable.toASN1EncodableVector());
         }
 
+        if(contentEncryptor instanceof BcCMSContentEncryptorBuilder.ProtectionProvider){
+            BcCMSContentEncryptorBuilder.ProtectionProvider protectionProvider = (BcCMSContentEncryptorBuilder.ProtectionProvider) contentEncryptor;
+            Map<String, Object> parameters = getBaseAuthEnvelopedParameters(content.getContentType(), contentEncryptor.getAlgorithmIdentifier());
+            ASN1Set authedAttrs = null;
+            if (authenticatedAttributeGenerator != null){
+                 authedAttrs = new DERSet(authenticatedAttributeGenerator.getAttributes(Collections.unmodifiableMap(parameters)).toASN1EncodableVector());
+                try {
+                    protectionProvider.additionalAuthenticatedAttributes(authedAttrs.getEncoded(ASN1Encoding.DER));
+                } catch (IOException e) {
+                    throw new CMSException("could not encode authenticated attirbutes", e);
+                }
+            }
+
+            DEROctetString mac = new DEROctetString(protectionProvider.getMac());
+
+            ContentInfo contentInfo = new ContentInfo(
+                    CMSObjectIdentifiers.authEnvelopedData,
+                    new AuthEnvelopedData(originatorInfo, new DERSet(recipientInfos), eci, authedAttrs, mac, unprotectedAttrSet));
+
+            return new CMSAuthEnvelopedData(contentInfo);
+        }
+
         ContentInfo contentInfo = new ContentInfo(
                 CMSObjectIdentifiers.envelopedData,
                 new EnvelopedData(originatorInfo, new DERSet(recipientInfos), eci, unprotectedAttrSet));
 
         return new CMSEnvelopedData(contentInfo);
     }
+        protected Map<String, Object> getBaseAuthEnvelopedParameters(ASN1ObjectIdentifier contentType, AlgorithmIdentifier macAlgId){
+            Map<String, Object> param = new HashMap<String, Object>();
+            param.put(CMSAttributeTableGenerator.CONTENT_TYPE, contentType);
+            param.put(CMSAttributeTableGenerator.MAC_ALGORITHM_IDENTIFIER,  macAlgId);
+            return param;
+        }
 
     /**
      * generate an enveloped object that contains an CMS Enveloped Data

@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -33,37 +32,28 @@ import org.bouncycastle.asn1.DERTaggedObject;
  * </pre>
  */
 public class AuthEnvelopedData
-    extends ASN1Object
+    extends EnvelopedData
 {
-    private ASN1Integer version;
-    private OriginatorInfo originatorInfo;
-    private ASN1Set recipientInfos;
-    private EncryptedContentInfo authEncryptedContentInfo;
     private ASN1Set authAttrs;
     private ASN1OctetString mac;
-    private ASN1Set unauthAttrs;
 
     public AuthEnvelopedData(
         OriginatorInfo originatorInfo,
         ASN1Set recipientInfos,
         EncryptedContentInfo authEncryptedContentInfo,
+        //authAttrs are transmitted as byte[] since we need to keep it exactly the way they were as mac was calculated
         ASN1Set authAttrs,
         ASN1OctetString mac,
         ASN1Set unauthAttrs)
     {
+        super(originatorInfo,recipientInfos,authEncryptedContentInfo,unauthAttrs);
         // "It MUST be set to 0."
         this.version = new ASN1Integer(0);
 
-        this.originatorInfo = originatorInfo;
-
-        // "There MUST be at least one element in the collection."
-        this.recipientInfos = recipientInfos;
-        if (this.recipientInfos.size() == 0)
+        if (getRecipientInfos().size() == 0)
         {
             throw new IllegalArgumentException("AuthEnvelopedData requires at least 1 RecipientInfo");
         }
-
-        this.authEncryptedContentInfo = authEncryptedContentInfo;
 
         // "The authAttrs MUST be present if the content type carried in
         // EncryptedContentInfo is not id-data."
@@ -77,8 +67,6 @@ public class AuthEnvelopedData
         }
 
         this.mac = mac;
-
-        this.unauthAttrs = unauthAttrs;
     }
 
     /**
@@ -86,20 +74,21 @@ public class AuthEnvelopedData
      * <p>
      * @param seq An ASN1Sequence with AuthEnvelopedData
      */
-    private AuthEnvelopedData(
+     static AuthEnvelopedData fromSequence(
         ASN1Sequence seq)
     {
         int index = 0;
 
         // "It MUST be set to 0."
         ASN1Primitive tmp = seq.getObjectAt(index++).toASN1Primitive();
-        version = ASN1Integer.getInstance(tmp);
+        ASN1Integer version = ASN1Integer.getInstance(tmp);
         if (version.intValueExact() != 0)
         {
             throw new IllegalArgumentException("AuthEnvelopedData version number must be 0");
         }
 
         tmp = seq.getObjectAt(index++).toASN1Primitive();
+        OriginatorInfo originatorInfo = null;
         if (tmp instanceof ASN1TaggedObject)
         {
             originatorInfo = OriginatorInfo.getInstance((ASN1TaggedObject)tmp, false);
@@ -107,41 +96,38 @@ public class AuthEnvelopedData
         }
 
         // "There MUST be at least one element in the collection."
-        recipientInfos = ASN1Set.getInstance(tmp);
-        if (this.recipientInfos.size() == 0)
+        ASN1Set recipientInfos = ASN1Set.getInstance(tmp);
+        if (recipientInfos.size() == 0)
         {
             throw new IllegalArgumentException("AuthEnvelopedData requires at least 1 RecipientInfo");
         }
 
         tmp = seq.getObjectAt(index++).toASN1Primitive();
-        authEncryptedContentInfo = EncryptedContentInfo.getInstance(tmp);
+        EncryptedContentInfo authEncryptedContentInfo = EncryptedContentInfo.getInstance(tmp);
 
         tmp = seq.getObjectAt(index++).toASN1Primitive();
+        ASN1Set authAttrs= null;
         if (tmp instanceof ASN1TaggedObject)
         {
             authAttrs = ASN1Set.getInstance((ASN1TaggedObject)tmp, false);
             tmp = seq.getObjectAt(index++).toASN1Primitive();
         }
-        else
+        // "The authAttrs MUST be present if the content type carried in
+        // EncryptedContentInfo is not id-data."
+        else if (!authEncryptedContentInfo.getContentType().equals(CMSObjectIdentifiers.data))
         {
-            // "The authAttrs MUST be present if the content type carried in
-            // EncryptedContentInfo is not id-data."
-            if (!authEncryptedContentInfo.getContentType().equals(CMSObjectIdentifiers.data))
-            {
-                if (authAttrs == null || authAttrs.size() == 0)
-                {
-                    throw new IllegalArgumentException("authAttrs must be present with non-data content");
-                }
-            }
+            throw new IllegalArgumentException("authAttrs must be present with non-data content");
         }
 
-        mac = ASN1OctetString.getInstance(tmp);
+        ASN1OctetString mac = ASN1OctetString.getInstance(tmp);
 
+        ASN1Set unauthAttrs = null;
         if (seq.size() > index)
         {
             tmp = seq.getObjectAt(index).toASN1Primitive();
             unauthAttrs = ASN1Set.getInstance((ASN1TaggedObject)tmp, false);
         }
+        return new AuthEnvelopedData(originatorInfo,recipientInfos,authEncryptedContentInfo,authAttrs,mac, unauthAttrs);
     }
 
     /**
@@ -191,30 +177,10 @@ public class AuthEnvelopedData
 
         if (obj instanceof ASN1Sequence)
         {
-            return new AuthEnvelopedData((ASN1Sequence)obj);
+            return fromSequence((ASN1Sequence)obj);
         }
 
         throw new IllegalArgumentException("Invalid AuthEnvelopedData: " + obj.getClass().getName());
-    }
-
-    public ASN1Integer getVersion()
-    {
-        return version;
-    }
-
-    public OriginatorInfo getOriginatorInfo()
-    {
-        return originatorInfo;
-    }
-
-    public ASN1Set getRecipientInfos()
-    {
-        return recipientInfos;
-    }
-
-    public EncryptedContentInfo getAuthEncryptedContentInfo()
-    {
-        return authEncryptedContentInfo;
     }
 
     public ASN1Set getAuthAttrs()
@@ -227,11 +193,6 @@ public class AuthEnvelopedData
         return mac;
     }
 
-    public ASN1Set getUnauthAttrs()
-    {
-        return unauthAttrs;
-    }
-
     /**
      * Produce an object suitable for an ASN1OutputStream.
      */
@@ -239,30 +200,30 @@ public class AuthEnvelopedData
     {
         ASN1EncodableVector v = new ASN1EncodableVector(7);
 
-        v.add(version);
+        v.add(getVersion());
 
-        if (originatorInfo != null)
+        if (getOriginatorInfo() != null)
         {
-            v.add(new DERTaggedObject(false, 0, originatorInfo));
+            v.add(new DERTaggedObject(false, 0, getOriginatorInfo()));
         }
 
-        v.add(recipientInfos);
-        v.add(authEncryptedContentInfo);
+        v.add(getRecipientInfos());
+        v.add(getEncryptedContentInfo());
 
         // "authAttrs optionally contains the authenticated attributes."
-        if (authAttrs != null)
+        if (authAttrs != null && authAttrs.size() != 0)
         {
             // "AuthAttributes MUST be DER encoded, even if the rest of the
             // AuthEnvelopedData structure is BER encoded."
-            v.add(new DERTaggedObject(false, 1, authAttrs));
+            v.add( new DERTaggedObject(false, 1, authAttrs));
         }
 
         v.add(mac);
 
         // "unauthAttrs optionally contains the unauthenticated attributes."
-        if (unauthAttrs != null)
+        if (getUnprotectedAttrs() != null)
         {
-            v.add(new DERTaggedObject(false, 2, unauthAttrs));
+            v.add(new DERTaggedObject(false, 2, getUnprotectedAttrs()));
         }
 
         return new BERSequence(v);

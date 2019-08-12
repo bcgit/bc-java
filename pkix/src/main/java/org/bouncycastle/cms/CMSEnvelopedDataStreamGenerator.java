@@ -1,10 +1,5 @@
 package org.bouncycastle.cms;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Iterator;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -19,6 +14,11 @@ import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * General class for generating a CMS enveloped-data message stream.
@@ -300,6 +300,13 @@ public class CMSEnvelopedDataStreamGenerator
     
             _envGen.close();
             _cGen.close();
+        }
+    }
+
+    private class CmsAuthEnvelopedDataOutputStream extends CmsEnvelopedDataOutputStream{
+
+        public CmsAuthEnvelopedDataOutputStream(OutputStream out, BERSequenceGenerator cGen, BERSequenceGenerator envGen, BERSequenceGenerator eiGen) {
+            super(out, cGen, envGen, eiGen);
         }
     }
 }
