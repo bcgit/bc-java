@@ -1,7 +1,6 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
 import org.bouncycastle.crypto.CipherKeyGenerator;
-import org.bouncycastle.crypto.engines.XSalsa20Engine;
 import org.bouncycastle.crypto.engines.Zuc128Engine;
 import org.bouncycastle.crypto.engines.Zuc256Engine;
 import org.bouncycastle.crypto.macs.Zuc128Mac;
