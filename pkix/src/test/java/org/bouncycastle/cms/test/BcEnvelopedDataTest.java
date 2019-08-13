@@ -1,30 +1,12 @@
 package org.bouncycastle.cms.test;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Security;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Hashtable;
-import java.util.Iterator;
-
-import javax.crypto.SecretKey;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -66,6 +48,24 @@ import org.bouncycastle.operator.bc.BcSymmetricKeyUnwrapper;
 import org.bouncycastle.operator.bc.BcSymmetricKeyWrapper;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+
+import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.Security;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Hashtable;
+import java.util.Iterator;
 
 public class BcEnvelopedDataTest
     extends TestCase
@@ -517,6 +517,13 @@ public class BcEnvelopedDataTest
     {
         tryKeyTrans(CMSAlgorithm.AES256_CBC, NISTObjectIdentifiers.id_aes256_CBC, 32, DEROctetString.class);
     }
+
+    public void testKeyTransAES256GCM()
+            throws Exception
+    {
+        tryKeyTrans(CMSAlgorithm.AES256_GCM, NISTObjectIdentifiers.id_aes256_GCM, 32, DERSequence.class);
+    }
+
 
     private void tryKeyTrans(ASN1ObjectIdentifier generatorOID, ASN1ObjectIdentifier checkOID, int keySize, Class asn1Params)
         throws Exception

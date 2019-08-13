@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.cms;
 
-import java.util.Enumeration;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -11,6 +9,8 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+
+import java.util.Enumeration;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> EnvelopedData object.
@@ -27,7 +27,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 public class EnvelopedData
     extends ASN1Object
 {
-    private ASN1Integer              version;
+    protected ASN1Integer              version;
     private OriginatorInfo          originatorInfo;
     private ASN1Set                 recipientInfos;
     private EncryptedContentInfo    encryptedContentInfo;
