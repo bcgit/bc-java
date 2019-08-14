@@ -149,18 +149,21 @@ public class CertificateRequest
             supportedSignatureAlgorithms = TlsUtils.parseSupportedSignatureAlgorithms(input);
         }
 
-        Vector certificateAuthorities = new Vector();
-        byte[] certAuthData = TlsUtils.readOpaque16(input);
-        if (certAuthData.length > 0)
+        Vector certificateAuthorities = null;
         {
-            ByteArrayInputStream bis = new ByteArrayInputStream(certAuthData);
-            do
+            byte[] certAuthData = TlsUtils.readOpaque16(input);
+            if (certAuthData.length > 0)
             {
-                byte[] derEncoding = TlsUtils.readOpaque16(bis, 1);
-                ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
-                certificateAuthorities.addElement(X500Name.getInstance(asn1));
+                certificateAuthorities = new Vector();
+                ByteArrayInputStream bis = new ByteArrayInputStream(certAuthData);
+                do
+                {
+                    byte[] derEncoding = TlsUtils.readOpaque16(bis, 1);
+                    ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
+                    certificateAuthorities.addElement(X500Name.getInstance(asn1));
+                }
+                while (bis.available() > 0);
             }
-            while (bis.available() > 0);
         }
 
         return new CertificateRequest(certificateTypes, supportedSignatureAlgorithms, certificateAuthorities);

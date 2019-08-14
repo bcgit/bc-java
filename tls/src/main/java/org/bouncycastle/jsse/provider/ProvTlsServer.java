@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509ExtendedKeyManager;
+import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIMatcher;
@@ -236,11 +237,24 @@ class ProvTlsServer
             serverSigAlgs = JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
         }
 
-        Vector certificateAuthorities = new Vector();
-        BCX509ExtendedTrustManager x509TrustManager = manager.getContextData().getX509TrustManager();
-        for (X509Certificate caCert : x509TrustManager.getAcceptedIssuers())
+        Vector certificateAuthorities = null;
         {
-            certificateAuthorities.addElement(X500Name.getInstance(caCert.getSubjectX500Principal().getEncoded()));
+            Set<X500Principal> caSubjects = new HashSet<X500Principal>();
+
+            BCX509ExtendedTrustManager x509TrustManager = manager.getContextData().getX509TrustManager();
+            for (X509Certificate caCert : x509TrustManager.getAcceptedIssuers())
+            {
+                caSubjects.add(caCert.getSubjectX500Principal());
+            }
+
+            if (!caSubjects.isEmpty())
+            {
+                certificateAuthorities = new Vector(caSubjects.size());
+                for (X500Principal caSubject : caSubjects)
+                {
+                    certificateAuthorities.addElement(X500Name.getInstance(caSubject.getEncoded()));
+                }
+            }
         }
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
