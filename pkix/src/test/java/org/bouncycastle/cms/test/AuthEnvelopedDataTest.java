@@ -3,15 +3,29 @@ package org.bouncycastle.cms.test;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.GCMParameters;
+import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.cms.CMSAttributeTableGenerationException;
+import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.CMSAuthEnvelopedData;
+import org.bouncycastle.cms.CMSAuthEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.bc.BcCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyTransAuthEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.AADProcessor;
+import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -25,6 +39,9 @@ import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Map;
 
 public class AuthEnvelopedDataTest
     extends TestCase
@@ -140,24 +157,41 @@ public class AuthEnvelopedDataTest
     }
 
     public void testAttributes() throws CertificateEncodingException, IOException, CMSException {
+        byte[] message = Strings.toByteArray("Hello, world!");
         OutputEncryptor candidate = new BcCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM).build();
 
         Assert.assertEquals(NISTObjectIdentifiers.id_aes128_GCM, candidate.getAlgorithmIdentifier().getAlgorithm());
         Assert.assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
 
-        Assert.assertTrue( candidate instanceof BcCMSContentEncryptorBuilder.ProtectionProvider);
-        /*
-        BcCMSContentEncryptorBuilder.ProtectionProvider macProvider = ((BcCMSContentEncryptorBuilder.ProtectionProvider) candidate);
+        Assert.assertTrue( candidate instanceof AADProcessor);
 
-        Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
-        Attribute testAttr = new Attribute(CMSAttributes.signingTime,
-                new DERSet(new Time(new Date())));
-        attrs.put(testAttr.getAttrType(), testAttr);
-        AttributeTable table = new AttributeTable(attrs);
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
 
-        byte[] encodedAuthAttributes = macProvider.additionalAuthenticatedAttributes(table.toASN1EncodableVector());
-        Assert.assertEquals(table.size(), ASN1Set.getInstance(encodedAuthAttributes).size());
-*/
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor) candidate;
+
+        authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+                 Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                     new DERSet(new Time(new Date())));
+                 attrs.put(testAttr.getAttrType(), testAttr);
+                 return new AttributeTable(attrs);
+            }
+        });
+
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        RecipientInformationStore recipients = authData.getRecipientInfos();
+
+        RecipientInformation recipient = recipients.getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertEquals("Hello, world!", Strings.fromByteArray(recData));
     }
-
 }

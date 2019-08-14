@@ -140,11 +140,9 @@ public class DERNumericString
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(BERTags.NUMERIC_STRING, string);
+        out.writeEncoded(withTag, BERTags.NUMERIC_STRING, string);
     }
 
     public int hashCode()

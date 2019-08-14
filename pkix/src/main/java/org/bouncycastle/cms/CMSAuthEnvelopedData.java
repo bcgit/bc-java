@@ -11,7 +11,6 @@ import java.io.InputStream;
  */
 public class CMSAuthEnvelopedData extends CMSEnvelopedData
 {
-
     private ASN1Set             authAttrs;
     private byte[]              mac;
 

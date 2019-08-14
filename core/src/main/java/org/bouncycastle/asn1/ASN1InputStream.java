@@ -160,7 +160,7 @@ public class ASN1InputStream
                     //
                     // yes, people actually do this...
                     //
-                    ASN1EncodableVector v = buildDEREncodableVector(defIn);
+                    ASN1EncodableVector v = readVector(defIn);
                     ASN1OctetString[] strings = new ASN1OctetString[v.size()];
 
                     for (int i = 0; i != strings.length; i++)
@@ -176,12 +176,12 @@ public class ASN1InputStream
                     }
                     else
                     {
-                        return DERFactory.createSequence(buildDEREncodableVector(defIn));   
+                        return DLFactory.createSequence(readVector(defIn));   
                     }
                 case SET:
-                    return DERFactory.createSet(buildDEREncodableVector(defIn));
+                    return DLFactory.createSet(readVector(defIn));
                 case EXTERNAL:
-                    return new DLExternal(buildDEREncodableVector(defIn));
+                    return new DLExternal(readVector(defIn));
                 default:
                     throw new IOException("unknown tag " + tagNo + " encountered");
             }
@@ -190,7 +190,7 @@ public class ASN1InputStream
         return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
     }
 
-    ASN1EncodableVector buildDEREncodableVector(DefiniteLengthInputStream dIn) throws IOException
+    ASN1EncodableVector readVector(DefiniteLengthInputStream dIn) throws IOException
     {
         if (dIn.getRemaining() < 1)
         {
@@ -397,25 +397,53 @@ public class ASN1InputStream
     private static char[] getBMPCharBuffer(DefiniteLengthInputStream defIn)
         throws IOException
     {
-        int len = defIn.getRemaining() / 2;
-        char[] buf = new char[len];
-        int totalRead = 0;
-        while (totalRead < len)
+        int remainingBytes = defIn.getRemaining();
+        if (0 != (remainingBytes & 1))
         {
-            int ch1 = defIn.read();
-            if (ch1 < 0)
-            {
-                break;
-            }
-            int ch2 = defIn.read();
-            if (ch2 < 0)
-            {
-                break;
-            }
-            buf[totalRead++] = (char)((ch1 << 8) | (ch2 & 0xff));
+            throw new IOException("malformed BMPString encoding encountered");
         }
 
-        return buf;
+        char[] string = new char[remainingBytes / 2];
+        int stringPos = 0;
+
+        byte[] buf = new byte[8];
+        while (remainingBytes >= 8)
+        {
+            if (Streams.readFully(defIn, buf, 0, 8) != 8)
+            {
+                throw new EOFException("EOF encountered in middle of BMPString");
+            }
+
+            string[stringPos    ] = (char)((buf[0] << 8) | (buf[1] & 0xFF));
+            string[stringPos + 1] = (char)((buf[2] << 8) | (buf[3] & 0xFF));
+            string[stringPos + 2] = (char)((buf[4] << 8) | (buf[5] & 0xFF));
+            string[stringPos + 3] = (char)((buf[6] << 8) | (buf[7] & 0xFF));
+            stringPos += 4;
+            remainingBytes -= 8;
+        }
+        if (remainingBytes > 0)
+        {
+            if (Streams.readFully(defIn, buf, 0, remainingBytes) != remainingBytes)
+            {
+                throw new EOFException("EOF encountered in middle of BMPString");
+            }
+
+            int bufPos = 0;
+            do
+            {
+                int b1 = buf[bufPos++] << 8;
+                int b2 = buf[bufPos++] & 0xFF;
+                string[stringPos++] = (char)(b1 | b2);
+            }
+            while (bufPos < remainingBytes);
+        }
+
+        if (0 != defIn.getRemaining() || string.length != stringPos)
+        {
+            throw new IllegalStateException();
+        }
+
+        return string;
     }
 
     static ASN1Primitive createPrimitiveDERObject(

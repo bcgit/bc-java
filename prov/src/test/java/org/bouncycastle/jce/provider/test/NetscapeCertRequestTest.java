@@ -1,14 +1,13 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.netscape.NetscapeCertRequest;
@@ -68,15 +67,11 @@ public class NetscapeCertRequestTest
 
             nscr.setPublicKey (kp.getPublic());
             nscr.sign (kp.getPrivate());
-            
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DEROutputStream deros = new DEROutputStream (baos);
-            deros.writeObject (nscr);
-            deros.close();
 
-            
+            byte[] derEncoding = nscr.getEncoded(ASN1Encoding.DER);
+
             ASN1InputStream     in2 =
-                new ASN1InputStream (new ByteArrayInputStream(baos.toByteArray()));
+                new ASN1InputStream (new ByteArrayInputStream(derEncoding));
             ASN1Sequence        spkac2 = (ASN1Sequence)in2.readObject ();
 
             // System.out.println("SPKAC2: \n"+DERDump.dumpAsString (spkac2));

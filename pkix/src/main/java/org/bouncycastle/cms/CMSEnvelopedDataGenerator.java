@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.bc.BcCMSContentEncryptorBuilder;
+import org.bouncycastle.operator.AADProcessor;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
 
@@ -62,16 +62,6 @@ public class CMSEnvelopedDataGenerator
         OutputEncryptor contentEncryptor)
         throws CMSException
     {
-        if (!oldRecipientInfoGenerators.isEmpty())
-        {
-            throw new IllegalStateException("can only use addRecipientGenerator() with this method");
-        }
-
-        if(authenticatedAttributeGenerator != null
-                && !(contentEncryptor instanceof BcCMSContentEncryptorBuilder.ProtectionProvider)){
-            throw new IllegalStateException("can only protect attributes using authenticating encryption algorithms");
-        }
-
         ASN1EncodableVector     recipientInfos = new ASN1EncodableVector();
         AlgorithmIdentifier     encAlgId;
         ASN1OctetString         encContent;
@@ -119,20 +109,20 @@ public class CMSEnvelopedDataGenerator
             unprotectedAttrSet = new BERSet(attrTable.toASN1EncodableVector());
         }
 
-        if(contentEncryptor instanceof BcCMSContentEncryptorBuilder.ProtectionProvider){
-            BcCMSContentEncryptorBuilder.ProtectionProvider protectionProvider = (BcCMSContentEncryptorBuilder.ProtectionProvider) contentEncryptor;
+        if(contentEncryptor instanceof AADProcessor){
+            AADProcessor aadProcessor = (AADProcessor) contentEncryptor;
             Map<String, Object> parameters = getBaseAuthEnvelopedParameters(content.getContentType(), contentEncryptor.getAlgorithmIdentifier());
             ASN1Set authedAttrs = null;
             if (authenticatedAttributeGenerator != null){
                  authedAttrs = new DERSet(authenticatedAttributeGenerator.getAttributes(Collections.unmodifiableMap(parameters)).toASN1EncodableVector());
                 try {
-                    protectionProvider.additionalAuthenticatedAttributes(authedAttrs.getEncoded(ASN1Encoding.DER));
+                    aadProcessor.getAADStream().write(authedAttrs.getEncoded(ASN1Encoding.DER));
                 } catch (IOException e) {
                     throw new CMSException("could not encode authenticated attirbutes", e);
                 }
             }
 
-            DEROctetString mac = new DEROctetString(protectionProvider.getMac());
+            DEROctetString mac = new DEROctetString(aadProcessor.getMAC());
 
             ContentInfo contentInfo = new ContentInfo(
                     CMSObjectIdentifiers.authEnvelopedData,

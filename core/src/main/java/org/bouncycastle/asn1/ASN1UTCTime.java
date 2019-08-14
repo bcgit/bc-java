@@ -275,11 +275,9 @@ public class ASN1UTCTime
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
-    void encode(ASN1OutputStream out) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.write(BERTags.UTC_TIME);
-        out.writeLength(time.length);
-        out.write(time, 0, time.length);
+        out.writeEncoded(withTag, BERTags.UTC_TIME, time);
     }
 
     boolean asn1Equals(

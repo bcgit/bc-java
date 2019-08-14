@@ -11,9 +11,9 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -377,14 +377,11 @@ public class X509v3CertificateBuilder
         }
     }
 
-    private static byte[] generateSig(ContentSigner signer, ASN1Encodable tbsObj)
+    private static byte[] generateSig(ContentSigner signer, ASN1Object tbsObj)
         throws IOException
     {
         OutputStream sOut = signer.getOutputStream();
-        DEROutputStream dOut = new DEROutputStream(sOut);
-
-        dOut.writeObject(tbsObj);
-
+        tbsObj.encodeTo(sOut, ASN1Encoding.DER);
         sOut.close();
 
         return signer.getSignature();

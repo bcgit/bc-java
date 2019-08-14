@@ -2,21 +2,45 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Enumeration;
 
 /**
  * Stream that produces output based on the default encoding for the passed in objects.
  */
 public class ASN1OutputStream
 {
+    public static ASN1OutputStream create(OutputStream out)
+    {
+        return new ASN1OutputStream(out);
+    }
+
+    public static ASN1OutputStream create(OutputStream out, String encoding)
+    {
+        if (encoding.equals(ASN1Encoding.DER))
+        {
+            return new DEROutputStream(out);
+        }
+        else if (encoding.equals(ASN1Encoding.DL))
+        {
+            return new DLOutputStream(out);
+        }
+        else
+        {
+            return new ASN1OutputStream(out);
+        }
+    }
+
     private OutputStream os;
 
-    public ASN1OutputStream(
-        OutputStream    os)
+    /**
+     * @deprecated Use {@link ASN1OutputStream#create(OutputStream)} instead.
+     */
+    public ASN1OutputStream(OutputStream os)
     {
         this.os = os;
     }
 
-    void writeLength(
+    final void writeLength(
         int length)
         throws IOException
     {
@@ -43,47 +67,103 @@ public class ASN1OutputStream
         }
     }
 
-    void write(int b)
+    final void write(int b)
         throws IOException
     {
         os.write(b);
     }
 
-    void write(byte[] bytes)
-        throws IOException
-    {
-        os.write(bytes);
-    }
-
-    void write(byte[] bytes, int off, int len)
+    final void write(byte[] bytes, int off, int len)
         throws IOException
     {
         os.write(bytes, off, len);
     }
 
-    void writeEncoded(
-        int     tag,
-        byte[]  bytes)
+    final void writeElements(ASN1Encodable[] elements)
         throws IOException
     {
-        write(tag);
-        writeLength(bytes.length);
-        write(bytes);
+        int count = elements.length;
+        for (int i = 0; i < count; ++i)
+        {
+            ASN1Primitive primitive = elements[i].toASN1Primitive();
+
+            writePrimitive(primitive, true);
+        }
     }
 
-    void writeEncoded(
+    final void writeElements(Enumeration elements)
+        throws IOException
+    {
+        while (elements.hasMoreElements())
+        {
+            ASN1Primitive primitive = ((ASN1Encodable)elements.nextElement()).toASN1Primitive();
+
+            writePrimitive(primitive, true);
+        }
+    }
+
+    final void writeEncoded(
+        boolean withTag,
+        int     tag,
+        byte    contents)
+        throws IOException
+    {
+        if (withTag)
+        {
+            write(tag);
+        }
+        writeLength(1);
+        write(contents);
+    }
+
+    final void writeEncoded(
+        boolean withTag,
+        int     tag,
+        byte[]  contents)
+        throws IOException
+    {
+        if (withTag)
+        {
+            write(tag);
+        }
+        writeLength(contents.length);
+        write(contents, 0, contents.length);
+    }
+
+    final void writeEncoded(
+        boolean withTag,
+        int     tag,
+        byte[]  contents,
+        int     contentsOff,
+        int     contentsLen)
+        throws IOException
+    {
+        if (withTag)
+        {
+            write(tag);
+        }
+        writeLength(contentsLen);
+        write(contents, contentsOff, contentsLen);
+    }
+
+    final void writeEncoded(
+        boolean withTag,
         int     tag,
         byte    headByte,
         byte[]  tailBytes)
         throws IOException
     {
-        write(tag);
+        if (withTag)
+        {
+            write(tag);
+        }
         writeLength(1 + tailBytes.length);
         write(headByte);
-        write(tailBytes);
+        write(tailBytes, 0, tailBytes.length);
     }
 
-    void writeEncoded(
+    final void writeEncoded(
+        boolean withTag,
         int     tag,
         byte    headByte,
         byte[]  body,
@@ -92,16 +172,68 @@ public class ASN1OutputStream
         byte    tailByte)
         throws IOException
     {
-        write(tag);
+        if (withTag)
+        {
+            write(tag);
+        }
         writeLength(2 + bodyLen);
         write(headByte);
         write(body, bodyOff, bodyLen);
         write(tailByte);
     }
 
-    void writeTag(int flags, int tagNo)
+    final void writeEncoded(boolean withTag, int flags, int tagNo, byte[] contents)
         throws IOException
     {
+        writeTag(withTag, flags, tagNo);
+        writeLength(contents.length);
+        write(contents, 0, contents.length);
+    }
+
+    final void writeEncodedIndef(boolean withTag, int flags, int tagNo, byte[] contents)
+        throws IOException
+    {
+        writeTag(withTag, flags, tagNo);
+        write(0x80);
+        write(contents, 0, contents.length);
+        write(0x00);
+        write(0x00);
+    }
+
+    final void writeEncodedIndef(boolean withTag, int tag, ASN1Encodable[] elements)
+        throws IOException
+    {
+        if (withTag)
+        {
+            write(tag);
+        }
+        write(0x80);
+        writeElements(elements);
+        write(0x00);
+        write(0x00);
+    }
+
+    final void writeEncodedIndef(boolean withTag, int tag, Enumeration elements)
+        throws IOException
+    {
+        if (withTag)
+        {
+            write(tag);
+        }
+        write(0x80);
+        writeElements(elements);
+        write(0x00);
+        write(0x00);
+    }
+
+    final void writeTag(boolean withTag, int flags, int tagNo)
+        throws IOException
+    {
+        if (!withTag)
+        {
+            return;
+        }
+
         if (tagNo < 31)
         {
             write(flags | tagNo);
@@ -132,14 +264,9 @@ public class ASN1OutputStream
         }
     }
 
-    void writeEncoded(int flags, int tagNo, byte[] bytes)
-        throws IOException
-    {
-        writeTag(flags, tagNo);
-        writeLength(bytes.length);
-        write(bytes);
-    }
-
+    /**
+     * @deprecated Will be removed.
+     */
     protected void writeNull()
         throws IOException
     {
@@ -151,7 +278,7 @@ public class ASN1OutputStream
     {
         if (obj != null)
         {
-            obj.toASN1Primitive().encode(this);
+            obj.toASN1Primitive().encode(this, true);
         }
         else
         {
@@ -166,7 +293,12 @@ public class ASN1OutputStream
             throw new IOException("null object detected");
         }
 
-        primitive.encode(this);
+        primitive.encode(this, true);
+    }
+
+    void writePrimitive(ASN1Primitive primitive, boolean withTag) throws IOException
+    {
+        primitive.encode(this, withTag);
     }
 
     public void close()
@@ -189,73 +321,5 @@ public class ASN1OutputStream
     ASN1OutputStream getDLSubStream()
     {
         return new DLOutputStream(os);
-    }
-
-    ASN1OutputStream getImplicitOutputStream()
-    {
-        return new ImplicitOutputStream(os);
-    }
-
-    private class ImplicitOutputStream
-        extends ASN1OutputStream
-    {
-        private boolean first = true;
-
-        public ImplicitOutputStream(OutputStream os)
-        {
-            super(os);
-        }
-
-        public void write(int b) throws IOException
-        {
-            if (first)
-            {
-                first = false;
-            }
-            else
-            {
-                super.write(b);
-            }
-        }
-
-        void write(byte[] bytes) throws IOException
-        {
-            write(bytes, 0, bytes.length);
-        }
-
-        void write(byte[] bytes, int off, int len) throws IOException
-        {
-            if (len > 0)
-            {
-                if (first)
-                {
-                    first = false;
-                    ++off;
-                    --len;
-                }
-
-                super.write(bytes, off, len);
-            }
-        }
-
-        DEROutputStream getDERSubStream()
-        {
-            if (first)
-            {
-                throw new IllegalStateException();
-            }
-
-            return ASN1OutputStream.this.getDERSubStream();
-        } 
-
-        ASN1OutputStream getDLSubStream()
-        {
-            if (first)
-            {
-                throw new IllegalStateException();
-            }
-
-            return ASN1OutputStream.this.getDLSubStream();
-        } 
     }
 }

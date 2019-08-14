@@ -99,6 +99,17 @@ public abstract class ASN1BitString
         return result;
     }
 
+    protected ASN1BitString(byte data, int padBits)
+    {
+        if (padBits > 7 || padBits < 0)
+        {
+            throw new IllegalArgumentException("pad bits cannot be greater than 7 or less than 0");
+        }
+
+        this.data = new byte[]{ data };
+        this.padBits = padBits;
+    }
+
     /**
      * Base constructor.
      *
@@ -221,7 +232,7 @@ public abstract class ASN1BitString
         return hc ^ padBits;
     }
 
-    protected boolean asn1Equals(
+    boolean asn1Equals(
         ASN1Primitive o)
     {
         if (!(o instanceof ASN1BitString))
@@ -318,6 +329,5 @@ public abstract class ASN1BitString
         return new DLBitString(data, padBits);
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
 }

@@ -3,8 +3,8 @@ package org.bouncycastle.jce.provider.test;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
-import org.bouncycastle.util.test.TestResult;
 
 public class RegressionTest
 {
@@ -87,27 +87,16 @@ public class RegressionTest
         new GOST3410KeyPairTest(),
         new EdECTest(),
         new OpenSSHSpecTests(),
-        new SM2CipherTest()
+        new SM2CipherTest(),
+        new ZucTest()
     };
 
-    public static void main(
-        String[]    args)
+    public static void main(String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
 
         System.out.println("Testing " + Security.getProvider("BC").getInfo() + " version: " + Security.getProvider("BC").getVersion());
-        
-        for (int i = 0; i != tests.length; i++)
-        {
-            TestResult  result = tests[i].perform();
-            
-            if (result.getException() != null)
-            {
-                result.getException().printStackTrace();
-            }
-            
-            System.out.println(result);
-        }
+
+        SimpleTest.runTests(tests);
     }
 }
-

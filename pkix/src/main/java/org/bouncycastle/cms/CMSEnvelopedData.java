@@ -3,6 +3,7 @@ package org.bouncycastle.cms;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.AuthEnvelopedData;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
@@ -100,8 +101,26 @@ public class CMSEnvelopedData
             //
             // build the RecipientInformationStore
             //
-            this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
-                recipientInfos, this.encAlg, secureReadable);
+            if(envData instanceof AuthEnvelopedData && ((AuthEnvelopedData) envData).getAuthAttrs() != null){
+                this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
+                        recipientInfos, this.encAlg, secureReadable, new AuthAttributesProvider()
+                            {
+                                public ASN1Set getAuthAttributes()
+                                {
+                                    return ((AuthEnvelopedData) envData).getAuthAttrs();
+                                }
+
+                                public boolean isAead()
+                                {
+                                    return true;
+                                }
+                            });
+            }
+            else
+            {
+                this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
+                        recipientInfos, this.encAlg, secureReadable);
+            }
 
             this.unprotectedAttributes = envData.getUnprotectedAttrs();
         }

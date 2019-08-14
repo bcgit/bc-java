@@ -1652,15 +1652,22 @@ public class NewEnvelopedDataTest
         RecipientInformationStore recipients;
         Collection c;
         Iterator it;
-        ContentInfo eContentInfo = ContentInfo.getInstance(edData);
 
-        EnvelopedData envD = EnvelopedData.getInstance(eContentInfo.getContent());
+        // Locate the MAC within 'edData' and modify it to trigger failed authentication
+        {
+            ContentInfo eContentInfo = ContentInfo.getInstance(edData);
+            EnvelopedData envD = EnvelopedData.getInstance(eContentInfo.getContent());
+            EncryptedContentInfo eInfo = envD.getEncryptedContentInfo();
 
-        EncryptedContentInfo eInfo = envD.getEncryptedContentInfo();
+            int macPos = indexOf(edData, eInfo.getEncryptedContent().getOctets());
+            if (macPos < 0)
+            {
+                fail("MAC not locatable");
+            }
+            edData[macPos + 10] ^= 0xFF;
+        }
 
-        eInfo.getEncryptedContent().getOctets()[10] ^= 0xff;
-
-        ed = new CMSEnvelopedData(new ContentInfo(eContentInfo.getContentType(), new EnvelopedData(envD.getOriginatorInfo(), envD.getRecipientInfos(), eInfo, envD.getUnprotectedAttrs())).getEncoded());
+        ed = new CMSEnvelopedData(edData);
 
         recipients = ed.getRecipientInfos();
 
@@ -2714,6 +2721,34 @@ public class NewEnvelopedDataTest
             fail("recipients not matched using general recipient ID.");
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    private int indexOf(byte[] data, byte[] subData)
+    {
+        byte subData0 = subData[0];
+        for (int i = 0; i <= data.length - subData.length; ++i)
+        {
+            if (data[i] != subData0)
+            {
+                continue;
+            }
+
+            int matchPos = i;
+            for (int j = 1; j < subData.length; ++j)
+            {
+                if (data[i + j] != subData[j])
+                {
+                    matchPos = -1;
+                    break;
+                }
+            }
+
+            if (matchPos >= 0)
+            {
+                return matchPos;
+            }
+        }
+        return -1;
     }
 
     private void processInput(ECPrivateKey ecKey, byte[] expected, String input, AlgorithmIdentifier wrapAlg)

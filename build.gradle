@@ -47,8 +47,8 @@ task printProperties << {
 subprojects {
     apply plugin: 'eclipse'
 
-    sourceCompatibility = 1.5
-    targetCompatibility = 1.5
+    sourceCompatibility = 8
+    targetCompatibility = 8
     version = '1.59'
 
     test {

@@ -327,15 +327,9 @@ public class ASN1ObjectIdentifier
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
-    void encode(
-        ASN1OutputStream out)
-        throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        byte[] enc = getBody();
-
-        out.write(BERTags.OBJECT_IDENTIFIER);
-        out.writeLength(enc.length);
-        out.write(enc);
+        out.writeEncoded(withTag, BERTags.OBJECT_IDENTIFIER, getBody());
     }
 
     public int hashCode()
