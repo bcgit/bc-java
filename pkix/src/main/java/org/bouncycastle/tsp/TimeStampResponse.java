@@ -216,7 +216,12 @@ public class TimeStampResponse
     {
         if (ASN1Encoding.DL.equals(encoding))
         {
-            return new DLSequence(new ASN1Encodable[] { resp.getStatus(), timeStampToken.toCMSSignedData().toASN1Structure() }).getEncoded(encoding);
+            final ASN1Encodable[] encodable =
+                timeStampToken == null ?
+                new ASN1Encodable[] { resp.getStatus() } :
+                new ASN1Encodable[] { resp.getStatus(),
+                                      timeStampToken.toCMSSignedData().toASN1Structure() };
+            return new DLSequence(encodable).getEncoded(encoding);
         }
         return resp.getEncoded(encoding);
     }
