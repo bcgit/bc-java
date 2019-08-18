@@ -4,8 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
@@ -214,15 +212,6 @@ public class TimeStampResponse
      */
     public byte[] getEncoded(String encoding) throws IOException
     {
-        if (ASN1Encoding.DL.equals(encoding))
-        {
-            final ASN1Encodable[] encodable =
-                timeStampToken == null ?
-                new ASN1Encodable[] { resp.getStatus() } :
-                new ASN1Encodable[] { resp.getStatus(),
-                                      timeStampToken.toCMSSignedData().toASN1Structure() };
-            return new DLSequence(encodable).getEncoded(encoding);
-        }
         return resp.getEncoded(encoding);
     }
 }
