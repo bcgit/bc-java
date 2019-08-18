@@ -208,7 +208,9 @@ public class TimeStampResponse
     }
 
     /**
-     * return the ASN.1 encoded representation of this object.
+     * return the ASN.1 encoded representation of this object for the specific encoding type.
+     *
+     * @param encoding encoding style ("DER", "DL", "BER")
      */
     public byte[] getEncoded(String encoding) throws IOException
     {
