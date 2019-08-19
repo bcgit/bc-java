@@ -63,7 +63,7 @@ For those who are interested, there are 2 mailing lists for participation in thi
 *   [dev-crypto-request@bouncycastle.org](mailto:dev-crypto-request@bouncycastle.org)  
     This mailing list is for discussion of development of the package. This includes bugs, comments, requests for enhancements, questions about use or operation.
 
-**NOTE:**You need to be subscribed to send mail to the above mailing list.
+**NOTE:** You need to be subscribed to send mail to the above mailing list.
 
 ## Feedback and Contributions
 
