@@ -264,8 +264,8 @@ class QTesla1p
 
         for (k = 0; k < PARAM_K; k++)
         {      // Compute w = az - tc
-            QTesla1PPolynomial.poly_mul(w, k * PARAM_N, a, k * PARAM_N, z_ntt);
             QTesla1PPolynomial.sparse_mul32(Tc, k * PARAM_N, pk_t, (k * PARAM_N), pos_list, sign_list);
+            QTesla1PPolynomial.poly_mul(w, k * PARAM_N, a, k * PARAM_N, z_ntt);
             QTesla1PPolynomial.poly_sub(w, k * PARAM_N, w, k * PARAM_N, Tc, k * PARAM_N);
         }
 
@@ -601,7 +601,7 @@ class QTesla1p
     static void sample_y(long[] y, byte[] seed, int seedOffset, int nonce)
     { // Sample polynomial y, such that each coefficient is in the range [-B,B]
         int i = 0, pos = 0, nblocks = PARAM_N;
-        byte buf[] = new byte[PARAM_N * BPLUS1BYTES];
+        byte buf[] = new byte[PARAM_N * BPLUS1BYTES+1];
         int nbytes = BPLUS1BYTES;
         short dmsp = (short)(nonce << 8);
 
@@ -696,7 +696,7 @@ class QTesla1p
     private static int absolute(int value)
     {
 
-        return ((value >> 31) ^ value) - (value >> 31);
+        return ((value >> RADIX32 - 1) ^ value) - (value >> RADIX32 - 1);
 
     }
 
@@ -859,257 +859,41 @@ class QTesla1p
         };
 
 
-        static void sample_gauss_polly(int nonce, byte[] randomnessExtended, int randomOffset, long[] poly, int polyOffset)
+
+
+
+        static void sample_gauss_polly(int nonce, byte[] seed, int seedOffset, long[] poly, int polyOffset)
         {
             int dmsp = nonce << 8;
 
+            byte samp[] = new byte[CHUNK_SIZE*CDT_COLS * 4]; // This is int32_t in C, we will treat it as byte[] in java
+            int c[] = new int[CDT_COLS];
+            int borrow, sign;
+            int mask = (-1) >>> 1;
+
             for (int chunk = 0; chunk < PARAM_N; chunk += CHUNK_SIZE)
             {
-                kmxGauss(poly, polyOffset, chunk, randomnessExtended, randomOffset, dmsp++);
-            }
 
-        }
-
-        static void kmxGauss(long[] z, int zpos, int chunk, byte[] seed, int seedOffset, int nonce)
-        {
-            int[] sampk = new int[(CHUNK_SIZE + CDT_ROWS) * CDT_COLS];
-            int[] sampg = new int[CHUNK_SIZE + CDT_ROWS];
-
-            {
-                // In the C Implementation they cast between uint_8 and int32 a lot, this is one of those situations.
-                byte[] sampkBytes = new byte[sampk.length * 4];
                 HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
-                    sampkBytes, 0, CHUNK_SIZE * CDT_COLS * 4, (short)nonce, seed, seedOffset, CRYPTO_SEEDBYTES);
-                int i, t;
+                    samp, 0, CHUNK_SIZE * CDT_COLS * 4, (short)dmsp++, seed, seedOffset, CRYPTO_SEEDBYTES);
 
-                int offset = CHUNK_SIZE * CDT_COLS * 4;
-
-                for (i = 0; i < cdt_v.length; i++)
-                {
-                    sampkBytes[offset++] = (byte)(cdt_v[i]);
-                    sampkBytes[offset++] = (byte)(cdt_v[i] >>> 8);
-                    sampkBytes[offset++] = (byte)(cdt_v[i] >>> 16);
-                    sampkBytes[offset++] = (byte)(cdt_v[i] >>> 24);
+                for (int i = 0; i < CHUNK_SIZE; i++) {
+                    poly[ polyOffset+ chunk+i] = 0;
+                    for (int j = 1; j < CDT_ROWS; j++) {
+                        borrow = 0;
+                        for (int k = CDT_COLS-1; k >= 0; k--) {
+                            c[k] = (int)(( at(samp, 0,i*CDT_COLS+k) & mask) - (cdt_v[j*CDT_COLS+k] + borrow));
+                            borrow = c[k] >> (RADIX32-1);
+                        }
+                        poly[polyOffset+chunk+i] += ~borrow & 1;
+                    }
+                    sign =  at(samp,0,i*CDT_COLS) >> (RADIX32-1);
+                    poly[polyOffset+chunk+i] = (sign & -poly[polyOffset+chunk+i]) | (~sign & poly[polyOffset+chunk+i]);
                 }
 
-                for (i = 0, t = 0; t < sampkBytes.length; t += 4, i++)
-                {
-                    sampk[i] = Pack.littleEndianToInt(sampkBytes, t);
-                }
-
-            }
-
-            for (int i = 0; i < CHUNK_SIZE; i++)
-            {
-                sampg[i] = i << 16;
-            }
-
-            for (int i = 0; i < CDT_ROWS; i++)
-            {
-                sampg[CHUNK_SIZE + i] = (int)(0xFFFF0000L ^ i);
-            }
-
-            knuthMergeExchangeKG(sampk, sampg, CHUNK_SIZE + CDT_ROWS);
-
-            int prev_inx = 0;
-            for (int i = 0; i < CHUNK_SIZE + CDT_ROWS; i++)
-            {
-                int curr_inx = sampg[i] & 0xFFFF;
-                // prev_inx < curr_inx => prev_inx - curr_inx < 0 => (prev_inx - curr_inx) >> 31 = 0xF...F else 0x0...0
-                prev_inx ^= (curr_inx ^ prev_inx) & ((prev_inx - curr_inx) >> (RADIX32 - 1));
-                int neg = (sampk[i * CDT_COLS] >> (RADIX - 1));  // Only the (so far unused) msb of the leading word
-                sampg[i] |= ((neg & -prev_inx) ^ (~neg & prev_inx)) & 0xFFFFL;
-            }
-
-            knuthMergeExchangeG(sampg, CHUNK_SIZE + CDT_ROWS);
-
-            for (int i = 0; i < CHUNK_SIZE; i++)
-            {
-                z[zpos + i + chunk] = (sampg[i] << (RADIX32 - 16)) >> (RADIX32 - 16);
             }
 
         }
-
-
-        static void knuthMergeExchangeKG(int[] a, int g[], int n)
-        {
-            int t = 1;
-            while (t < n - t)
-            {
-                t += t;
-            }
-            for (int p = t; p > 0; p >>= 1)
-            {
-                int apPtr = p * CDT_COLS;
-                int a_iPtr = 0;
-                int ap_iPtr = apPtr;
-                int gpPtr = p;
-
-                int neg = ~0;
-
-                for (int i = 0; i < n - p; i++, a_iPtr += CDT_COLS, ap_iPtr += CDT_COLS)
-                {
-                    if (!((i & p) != 0))
-                    {
-                        {
-                            int diff = 0, swapa;
-                            int swapg;
-                            {
-
-                                {
-
-                                    {
-                                        {
-                                            diff = (diff + (a[ap_iPtr + 1] & (neg >>> 1))) - (a[a_iPtr + 1] & ((neg >>> 1))) >> (32 - 1);
-                                        }
-                                        ;
-                                        {
-                                            {
-                                                diff = (diff + (a[ap_iPtr] & ((neg >>> 1))) - (a[a_iPtr] & ((neg >>> 1)))) >> (32 - 1);
-                                            }
-                                            ;
-                                            {
-                                                swapa = (a[a_iPtr] ^ a[ap_iPtr]) & diff;
-                                                a[a_iPtr] ^= swapa;
-                                                a[ap_iPtr] ^= swapa;
-                                            }
-                                            ;
-                                        }
-                                        ;
-                                        {
-                                            swapa = (a[a_iPtr + 1] ^ a[ap_iPtr + 1]) & diff;
-                                            a[a_iPtr + 1] ^= swapa;
-                                            a[ap_iPtr + 1] ^= swapa;
-                                        }
-                                        ;
-                                    }
-                                    ;
-
-                                }
-                                ;
-
-                            }
-                            ;
-                            {
-                                swapg = (g[i] ^ g[gpPtr + i]) & diff;
-                                g[i] ^= swapg;
-                                g[gpPtr + i] ^= swapg;
-                            }
-                            ;
-                        }
-                        ;
-                    }
-                }
-
-
-                for (int q = t; q > p; q >>= 1)
-                {
-                    int ap_iPtr_ = apPtr;
-                    int aq_iPtr = q * CDT_COLS;
-                    int gqPtr = q;
-                    for (int i = 0; i < n - q; i++, ap_iPtr_ += CDT_COLS, aq_iPtr += CDT_COLS)
-                    {
-                        if (!((i & p) != 0))
-                        {
-                            {
-                                int diff = 0, swapa;
-                                int swapg;
-                                {
-
-                                    ;
-                                    {
-
-                                        ;
-                                        {
-                                            {
-                                                diff = (diff + (a[aq_iPtr + 1] & (neg >>> 1))) - (a[ap_iPtr_ + 1] & (neg >>> 1)) >> (32 - 1);
-                                            }
-                                            ;
-                                            {
-                                                {
-                                                    diff = (diff + (a[aq_iPtr] & (neg >>> 1))) - (a[ap_iPtr_] & (neg >>> 1)) >> (32 - 1);
-                                                }
-                                                ;
-                                                {
-                                                    swapa = (a[ap_iPtr_] ^ a[aq_iPtr]) & diff;
-                                                    a[ap_iPtr_] ^= swapa;
-                                                    a[aq_iPtr] ^= swapa;
-                                                }
-                                                ;
-                                            }
-                                            ;
-                                            {
-                                                swapa = (a[ap_iPtr_ + 1] ^ a[aq_iPtr + 1]) & diff;
-                                                a[ap_iPtr_ + 1] ^= swapa;
-                                                a[aq_iPtr + 1] ^= swapa;
-                                            }
-                                            ;
-                                        }
-                                        ;
-
-                                        ;
-                                    }
-                                    ;
-
-                                    ;
-                                }
-                                ;
-                                {
-                                    swapg = (g[gpPtr + i] ^ g[gqPtr + i]) & diff;
-                                    g[gpPtr + i] ^= swapg;
-                                    g[gqPtr + i] ^= swapg;
-                                }
-                                ;
-                            }
-                            ;
-
-                        }
-                    }
-                }
-
-            }
-        }
-
-
-        static void knuthMergeExchangeG(int a[], int n)
-        {
-            int t = 1;
-            while (t < n - t)
-            {
-                t += t;
-            }
-            for (int p = t; p > 0; p >>= 1)
-            {
-
-                int apPtr = p;
-                for (int i = 0; i < n - p; i++)
-                {
-                    if (!((i & p) != 0))
-                    {
-                        int diff = ((a[apPtr + i] & 0x7FFFFFFF) - (a[i] & 0x7FFFFFFF)) >> (32 - 1);
-                        int swap = (a[i] ^ a[apPtr + i]) & diff;
-                        a[i] ^= swap;
-                        a[apPtr + i] ^= swap;
-                    }
-                }
-
-                for (int q = t; q > p; q >>= 1)
-                {
-                    int aqPtr = q;
-                    for (int i = 0; i < n - q; i++)
-                    {
-                        if (!((i & p) != 0))
-                        {
-                            int diff = ((a[aqPtr + i] & 0x7FFFFFFF) - (a[apPtr + i] & 0x7FFFFFFF)) >> (32 - 1);
-                            int swap = (a[apPtr + i] ^ a[aqPtr + i]) & diff;
-                            a[apPtr + i] ^= swap;
-                            a[aqPtr + i] ^= swap;
-                        }
-                    }
-                }
-            }
-        }
-
 
     }
 
@@ -1448,14 +1232,7 @@ class QTesla1p
         static void poly_mul(long[] result, long[] x, long[] y)
         { // Polynomial multiplication result = x*y, with in place reduction for (X^N+1)
             // The input x is assumed to be in NTT form
-//            long[] y_ntt = new long[PARAM_N];
-//
-//            for (int i = 0; i < PARAM_N; i++)
-//            {
-//                y_ntt[i] = y[i];
-//            }
-//
-//            ntt(y_ntt, zeta);
+
             poly_pointwise(result, x, y);
             nttinv(result, zetainv);
         }

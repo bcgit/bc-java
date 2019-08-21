@@ -5,11 +5,7 @@ package org.bouncycastle.pqc.crypto.qtesla;
  */
 public class QTESLASecurityCategory
 {
-    public static final int HEURISTIC_I = 0;
-    public static final int HEURISTIC_II = 1;
-    public static final int HEURISTIC_III = 2;
-    public static final int HEURISTIC_V = 3;
-    public static final int HEURISTIC_V_SIZE = 4;
+
     public static final int HEURISTIC_P_I = 5;
     public static final int HEURISTIC_P_III = 6;
 
@@ -22,11 +18,6 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_I:
-        case HEURISTIC_II:
-        case HEURISTIC_III:
-        case HEURISTIC_V:
-        case HEURISTIC_V_SIZE:
         case HEURISTIC_P_I:
         case HEURISTIC_P_III:
             break;
@@ -39,16 +30,6 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_I:
-            return QTesla1.CRYPTO_SECRETKEYBYTES;
-        case HEURISTIC_II:
-            return QTesla2.CRYPTO_SECRETKEYBYTES;
-        case HEURISTIC_III:
-            return QTesla3.CRYPTO_SECRETKEYBYTES;
-        case HEURISTIC_V:
-            return QTesla5.CRYPTO_SECRETKEYBYTES;
-        case HEURISTIC_V_SIZE:
-            return QTesla5Size.CRYPTO_SECRETKEYBYTES;
         case HEURISTIC_P_I:
             return QTesla1p.CRYPTO_SECRETKEYBYTES;
         case HEURISTIC_P_III:
@@ -63,16 +44,6 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_I:
-            return QTesla1.CRYPTO_PUBLICKEYBYTES;
-        case HEURISTIC_II:
-            return QTesla2.CRYPTO_PUBLICKEYBYTES;
-        case HEURISTIC_III:
-            return QTesla3.CRYPTO_PUBLICKEYBYTES;
-        case HEURISTIC_V:
-            return QTesla5.CRYPTO_PUBLICKEYBYTES;
-        case HEURISTIC_V_SIZE:
-            return QTesla5Size.CRYPTO_PUBLICKEYBYTES;
         case HEURISTIC_P_I:
             return QTesla1p.CRYPTO_PUBLICKEYBYTES;
         case HEURISTIC_P_III:
@@ -87,17 +58,7 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_I:
-            return QTesla1.SIGNATURE_SIZE;
 
-        case HEURISTIC_II:
-            return QTesla2.CRYPTO_BYTES;
-        case HEURISTIC_III:
-            return QTesla3.CRYPTO_BYTES;
-        case HEURISTIC_V:
-            return QTesla5.CRYPTO_BYTES;
-        case HEURISTIC_V_SIZE:
-            return QTesla5Size.CRYPTO_BYTES;
         case HEURISTIC_P_I:
             return QTesla1p.CRYPTO_BYTES;
         case HEURISTIC_P_III:
@@ -117,16 +78,6 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_I:
-            return "qTESLA-I";
-        case HEURISTIC_II:
-            return "qTESLA-II";
-        case HEURISTIC_III:
-            return "qTESLA-III";
-        case HEURISTIC_V:
-            return "qTESLA-V";
-        case HEURISTIC_V_SIZE:
-            return "qTESLA-V-SIZE";
         case HEURISTIC_P_I:
             return "qTESLA-p-I";
         case HEURISTIC_P_III:
