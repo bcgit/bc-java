@@ -76,25 +76,7 @@ public class QTESLASigner
 
         switch (privateKey.getSecurityCategory())
         {
-        case QTESLASecurityCategory.HEURISTIC_I:
-            QTesla1.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
-            break;
 
-        case QTESLASecurityCategory.HEURISTIC_II:
-            QTesla2.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_III:
-            QTesla3.signing(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_V:
-            QTesla5.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_V_SIZE:
-            QTesla5Size.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
-            break;
 
         case QTESLASecurityCategory.HEURISTIC_P_I:
             QTesla1p.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
@@ -125,26 +107,6 @@ public class QTESLASigner
 
         switch (publicKey.getSecurityCategory())
         {
-        case QTESLASecurityCategory.HEURISTIC_I:
-            status = QTesla1.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
-            break;
-
-
-        case QTESLASecurityCategory.HEURISTIC_II:
-            status = QTesla2.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_III:
-            status = QTesla3.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_V:
-            status = QTesla5.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_V_SIZE:
-            status = QTesla5Size.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
-            break;
 
         case QTESLASecurityCategory.HEURISTIC_P_I:
             status = QTesla1p.verifying(message, signature, 0, signature.length, publicKey.getPublicData());

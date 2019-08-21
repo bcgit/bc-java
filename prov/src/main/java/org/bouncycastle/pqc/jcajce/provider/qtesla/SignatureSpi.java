@@ -41,7 +41,7 @@ public class SignatureSpi
         if (publicKey instanceof BCqTESLAPublicKey)
         {
             CipherParameters param = ((BCqTESLAPublicKey)publicKey).getKeyParams();
-            
+
             digest.reset();
             signer.init(false, param);
         }
@@ -147,50 +147,6 @@ public class SignatureSpi
         }
     }
 
-    static public class HeuristicI
-        extends SignatureSpi
-    {
-        public HeuristicI()
-        {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I), new NullDigest(), new QTESLASigner());
-        }
-    }
-
-    static public class HeuristicII
-        extends SignatureSpi
-    {
-        public HeuristicII()
-        {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_II), new NullDigest(), new QTESLASigner());
-        }
-    }
-
-    static public class HeuristicIII
-        extends SignatureSpi
-    {
-        public HeuristicIII()
-        {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III), new NullDigest(), new QTESLASigner());
-        }
-    }
-
-    static public class HeuristicV
-        extends SignatureSpi
-    {
-        public HeuristicV()
-        {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_V), new NullDigest(), new QTESLASigner());
-        }
-    }
-
-    static public class HeuristicV_SIZE
-        extends SignatureSpi
-    {
-        public HeuristicV_SIZE()
-        {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_V_SIZE), new NullDigest(), new QTESLASigner());
-        }
-    }
 
     static public class PI
         extends SignatureSpi

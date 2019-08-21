@@ -44,27 +44,6 @@ public final class QTESLAKeyPairGenerator
 
         switch (securityCategory)
         {
-        case QTESLASecurityCategory.HEURISTIC_I:
-            QTesla1.generateKeyPair(publicKey, privateKey, secureRandom);
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_II:
-            QTesla2.generateKeyPair(publicKey, privateKey, secureRandom);
-            break;
-
-
-        case QTESLASecurityCategory.HEURISTIC_III:
-            QTesla3.generateKeyPair(publicKey, privateKey, secureRandom);
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_V:
-            QTesla5.generateKeyPair(publicKey, privateKey, secureRandom);
-            break;
-
-        case QTESLASecurityCategory.HEURISTIC_V_SIZE:
-            QTesla5Size.generateKeyPair(publicKey, privateKey, secureRandom);
-            break;
-
         case QTESLASecurityCategory.HEURISTIC_P_I:
             QTesla1p.generateKeyPair(publicKey, privateKey, secureRandom);
             break;

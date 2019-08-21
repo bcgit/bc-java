@@ -34,11 +34,6 @@ public class PublicKeyFactory
 
     static
     {
-        converters.put(PQCObjectIdentifiers.qTESLA_I, new QTeslaConverter());
-        converters.put(PQCObjectIdentifiers.qTESLA_II, new QTeslaConverter());
-        converters.put(PQCObjectIdentifiers.qTESLA_III, new QTeslaConverter());
-        converters.put(PQCObjectIdentifiers.qTESLA_V, new QTeslaConverter());
-        converters.put(PQCObjectIdentifiers.qTESLA_V_SIZE, new QTeslaConverter());
         converters.put(PQCObjectIdentifiers.qTESLA_p_I, new QTeslaConverter());
         converters.put(PQCObjectIdentifiers.qTESLA_p_III, new QTeslaConverter());
         converters.put(PQCObjectIdentifiers.sphincs256, new SPHINCSConverter());
