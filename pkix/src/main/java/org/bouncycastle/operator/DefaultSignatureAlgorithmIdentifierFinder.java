@@ -170,11 +170,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("XMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128);
         algorithms.put("XMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256);
 
-        algorithms.put("QTESLA-I", BCObjectIdentifiers.qTESLA_I);
-        algorithms.put("QTESLA-II", BCObjectIdentifiers.qTESLA_II);
-        algorithms.put("QTESLA-III", BCObjectIdentifiers.qTESLA_III);
-        algorithms.put("QTESLA-V", BCObjectIdentifiers.qTESLA_V);
-        algorithms.put("QTESLA-V-SIZE", BCObjectIdentifiers.qTESLA_V_SIZE);
         algorithms.put("QTESLA-P-I", BCObjectIdentifiers.qTESLA_p_I);
         algorithms.put("QTESLA-P-III", BCObjectIdentifiers.qTESLA_p_III);
 
@@ -239,11 +234,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         // qTESLA
         //
-        noParams.add(BCObjectIdentifiers.qTESLA_I);
-        noParams.add(BCObjectIdentifiers.qTESLA_II);
-        noParams.add(BCObjectIdentifiers.qTESLA_III);
-        noParams.add(BCObjectIdentifiers.qTESLA_V);
-        noParams.add(BCObjectIdentifiers.qTESLA_V_SIZE);
         noParams.add(BCObjectIdentifiers.qTESLA_p_I);
         noParams.add(BCObjectIdentifiers.qTESLA_p_III);
 

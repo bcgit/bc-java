@@ -181,7 +181,7 @@ public final class BouncyCastleProvider extends Provider
         put("X509Store.CRL/LDAP", "org.bouncycastle.jce.provider.X509StoreLDAPCRLs");
         put("X509Store.ATTRIBUTECERTIFICATE/LDAP", "org.bouncycastle.jce.provider.X509StoreLDAPAttrCerts");
         put("X509Store.CERTIFICATEPAIR/LDAP", "org.bouncycastle.jce.provider.X509StoreLDAPCertPairs");
-        
+
         //
         // X509StreamParser
         //
@@ -243,11 +243,6 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(PQCObjectIdentifiers.mcEliece, new McElieceKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.mcElieceCca2, new McElieceCCA2KeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.rainbow, new RainbowKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_I, new QTESLAKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_II, new QTESLAKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_III, new QTESLAKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_V, new QTESLAKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_V_SIZE, new QTESLAKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_p_I, new QTESLAKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_p_III, new QTESLAKeyFactorySpi());
     }

@@ -121,11 +121,6 @@ public interface PQCObjectIdentifiers
      * qTESLA
      */
     public static final ASN1ObjectIdentifier qTESLA = BCObjectIdentifiers.qTESLA;
-    public static final ASN1ObjectIdentifier qTESLA_I = BCObjectIdentifiers.qTESLA_I;
-    public static final ASN1ObjectIdentifier qTESLA_II = BCObjectIdentifiers.qTESLA_II;
-    public static final ASN1ObjectIdentifier qTESLA_III = BCObjectIdentifiers.qTESLA_III;
-    public static final ASN1ObjectIdentifier qTESLA_V = BCObjectIdentifiers.qTESLA_V;
-    public static final ASN1ObjectIdentifier qTESLA_V_SIZE = BCObjectIdentifiers.qTESLA_V_SIZE;
     public static final ASN1ObjectIdentifier qTESLA_p_I = BCObjectIdentifiers.qTESLA_p_I;
     public static final ASN1ObjectIdentifier qTESLA_p_III = BCObjectIdentifiers.qTESLA_p_III;
 }
