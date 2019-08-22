@@ -14,8 +14,8 @@ public class QTESLAParameterSpec
     /**
      * Available security categories.
      */
-     public static final String HEURISTIC_P_I = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_P_I);
-    public static final String HEURISTIC_P_III = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_P_III);
+    public static final String PROVABLY_SECURE_I = QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_I);
+    public static final String PROVABLY_SECURE_III = QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_III);
 
     private String securityCategory;
 

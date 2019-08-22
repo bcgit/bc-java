@@ -44,11 +44,11 @@ public final class QTESLAKeyPairGenerator
 
         switch (securityCategory)
         {
-        case QTESLASecurityCategory.HEURISTIC_P_I:
+        case QTESLASecurityCategory.PROVABLY_SECURE_I:
             QTesla1p.generateKeyPair(publicKey, privateKey, secureRandom);
             break;
 
-        case QTESLASecurityCategory.HEURISTIC_P_III:
+        case QTESLASecurityCategory.PROVABLY_SECURE_III:
             QTesla3p.generateKeyPair(publicKey, privateKey, secureRandom);
             break;
 
