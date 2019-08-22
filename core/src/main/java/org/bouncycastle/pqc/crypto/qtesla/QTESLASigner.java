@@ -76,17 +76,12 @@ public class QTESLASigner
 
         switch (privateKey.getSecurityCategory())
         {
-
-
-        case QTESLASecurityCategory.HEURISTIC_P_I:
+        case QTESLASecurityCategory.PROVABLY_SECURE_I:
             QTesla1p.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
-
-        case QTESLASecurityCategory.HEURISTIC_P_III:
+        case QTESLASecurityCategory.PROVABLY_SECURE_III:
             QTesla3p.generateSignature(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
-
-
         default:
             throw new IllegalArgumentException("unknown security category: " + privateKey.getSecurityCategory());
         }
@@ -108,11 +103,11 @@ public class QTESLASigner
         switch (publicKey.getSecurityCategory())
         {
 
-        case QTESLASecurityCategory.HEURISTIC_P_I:
+        case QTESLASecurityCategory.PROVABLY_SECURE_I:
             status = QTesla1p.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
             break;
 
-        case QTESLASecurityCategory.HEURISTIC_P_III:
+        case QTESLASecurityCategory.PROVABLY_SECURE_III:
             status = QTesla3p.verifying(message, signature, 0, signature.length, publicKey.getPublicData());
             break;
 

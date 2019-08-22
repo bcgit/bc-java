@@ -5,10 +5,8 @@ package org.bouncycastle.pqc.crypto.qtesla;
  */
 public class QTESLASecurityCategory
 {
-
-    public static final int HEURISTIC_P_I = 5;
-    public static final int HEURISTIC_P_III = 6;
-
+    public static final int PROVABLY_SECURE_I = 5;
+    public static final int PROVABLY_SECURE_III = 6;
 
     private QTESLASecurityCategory()
     {
@@ -18,8 +16,8 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_P_I:
-        case HEURISTIC_P_III:
+        case PROVABLY_SECURE_I:
+        case PROVABLY_SECURE_III:
             break;
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
@@ -30,9 +28,9 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_P_I:
+        case PROVABLY_SECURE_I:
             return QTesla1p.CRYPTO_SECRETKEYBYTES;
-        case HEURISTIC_P_III:
+        case PROVABLY_SECURE_III:
             return QTesla3p.CRYPTO_SECRETKEYBYTES;
 
         default:
@@ -44,9 +42,9 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_P_I:
+        case PROVABLY_SECURE_I:
             return QTesla1p.CRYPTO_PUBLICKEYBYTES;
-        case HEURISTIC_P_III:
+        case PROVABLY_SECURE_III:
             return QTesla3p.CRYPTO_PUBLICKEYBYTES;
 
         default:
@@ -59,9 +57,9 @@ public class QTESLASecurityCategory
         switch (securityCategory)
         {
 
-        case HEURISTIC_P_I:
+        case PROVABLY_SECURE_I:
             return QTesla1p.CRYPTO_BYTES;
-        case HEURISTIC_P_III:
+        case PROVABLY_SECURE_III:
             return QTesla3p.CRYPTO_BYTES;
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
@@ -78,9 +76,9 @@ public class QTESLASecurityCategory
     {
         switch (securityCategory)
         {
-        case HEURISTIC_P_I:
+        case PROVABLY_SECURE_I:
             return "qTESLA-p-I";
-        case HEURISTIC_P_III:
+        case PROVABLY_SECURE_III:
             return "qTESLA-p-III";
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);

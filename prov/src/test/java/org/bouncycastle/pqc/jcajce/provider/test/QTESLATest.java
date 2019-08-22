@@ -91,7 +91,7 @@ public class QTESLATest
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("qTESLA", "BCPQC");
 
-        kpGen.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.HEURISTIC_P_I), secureRandom);
+        kpGen.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.PROVABLY_SECURE_I), secureRandom);
 
         KeyPair kp = kpGen.generateKeyPair();
 
@@ -111,7 +111,7 @@ public class QTESLATest
 
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("qTESLA", "BCPQC");
 
-        kpGen.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.HEURISTIC_P_III), secureRandom);
+        kpGen.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.PROVABLY_SECURE_III), secureRandom);
 
         KeyPair kp = kpGen.generateKeyPair();
 

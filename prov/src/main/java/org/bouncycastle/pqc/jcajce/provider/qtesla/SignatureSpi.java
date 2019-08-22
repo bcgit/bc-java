@@ -153,7 +153,7 @@ public class SignatureSpi
     {
         public PI()
         {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_P_I), new NullDigest(), new QTESLASigner());
+            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_I), new NullDigest(), new QTESLASigner());
         }
     }
 
@@ -162,7 +162,7 @@ public class SignatureSpi
     {
         public PIII()
         {
-            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_P_III), new NullDigest(), new QTESLASigner());
+            super(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_III), new NullDigest(), new QTESLASigner());
         }
     }
 }
