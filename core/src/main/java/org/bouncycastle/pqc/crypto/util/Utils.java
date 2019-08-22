@@ -34,8 +34,8 @@ class Utils
 
     static
     {
-        categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_P_I));
-        categories.put(PQCObjectIdentifiers.qTESLA_p_III, Integers.valueOf(QTESLASecurityCategory.HEURISTIC_P_III));
+        categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_I));
+        categories.put(PQCObjectIdentifiers.qTESLA_p_III, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_III));
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -47,9 +47,9 @@ class Utils
     {
         switch (securityCategory)
         {
-        case QTESLASecurityCategory.HEURISTIC_P_I:
+        case QTESLASecurityCategory.PROVABLY_SECURE_I:
             return AlgID_qTESLA_p_I;
-        case QTESLASecurityCategory.HEURISTIC_P_III:
+        case QTESLASecurityCategory.PROVABLY_SECURE_III:
             return AlgID_qTESLA_p_III;
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
