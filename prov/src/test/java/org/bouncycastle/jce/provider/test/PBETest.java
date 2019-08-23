@@ -438,8 +438,6 @@ public class PBETest
             SecretKeyFactory    fact = SecretKeyFactory.getInstance(hmacName, "BC");
 
             key = fact.generateSecret(new PBEKeySpec("hello".toCharArray(), new byte[20], 100, 160));
-
-            mac = Mac.getInstance("HMAC-SHA1", "BC");
         }
         catch (Exception e)
         {
@@ -449,6 +447,8 @@ public class PBETest
 
         try
         {
+            mac = Mac.getInstance("HMAC-SHA1", "BC");
+
             mac.init(key);
         }
         catch (Exception e)
