@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.digests.MD2Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.digests.TigerDigest;
 import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
@@ -41,6 +42,7 @@ public interface PBE
     static final int        SHA3_256     = 11;
     static final int        SHA3_384     = 12;
     static final int        SHA3_512     = 13;
+    static final int        SM3          = 14;
 
     static final int        PKCS5S1      = 0;
     static final int        PKCS5S2      = 1;
@@ -122,6 +124,9 @@ public interface PBE
                     break;
                 case SHA3_512:
                     generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA3_512());
+                    break;
+                case SM3:
+                    generator = new PKCS5S2ParametersGenerator(new SM3Digest());
                     break;
                 default:
                     throw new IllegalStateException("unknown digest scheme for PBE PKCS5S2 encryption.");
