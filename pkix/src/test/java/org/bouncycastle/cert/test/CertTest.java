@@ -3265,7 +3265,7 @@ public class CertTest
         //
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("qTESLA", "BCPQC");
 
-        kpg.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.HEURISTIC_P_I), new SecureRandom());
+        kpg.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.PROVABLY_SECURE_I), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
