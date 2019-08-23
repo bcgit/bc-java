@@ -302,6 +302,7 @@ public class PBETest
     private byte[] hMac1 = Hex.decode("bcc42174ccb04f425d9a5c8c4a95d6fd7c372911");
     private byte[] hMac2 = Hex.decode("cb1d8bdb6aca9e3fa8980d6eb41ab28a7eb2cfd6");
     private byte[] hMac3 = Hex.decode("514aa173a302c770689269aac08eb8698e5879ac");
+    private byte[] hMac4 = Hex.decode("d24b4eb0e5bd611d4ca88bd6428d14ee2e004c7e");
 
     private Cipher makePBECipherUsingParam(
         String  algorithm,
@@ -673,6 +674,7 @@ public class PBETest
         testPBEHMac("PBEWithHMacRIPEMD160", hMac2);
 
         testPBEonSecretKeyHmac("PBKDF2WithHmacSHA1", hMac3);
+        testPBEonSecretKeyHmac("PBKDF2WithHMacSM3", hMac4);
 
         testCipherNameWithWrap("PBEWITHSHA256AND128BITAES-CBC-BC", "AES/CBC/PKCS5Padding");
         testCipherNameWithWrap("PBEWITHSHAAND40BITRC4", "RC4");
