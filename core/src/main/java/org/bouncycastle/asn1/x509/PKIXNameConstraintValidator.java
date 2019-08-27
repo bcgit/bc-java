@@ -325,11 +325,28 @@ public class PKIXNameConstraintValidator
             return false;
         }
 
+        int start = 0;
+        RDN subtreeRdnStart = RDN.getInstance(subtree.getObjectAt(0));
+        for (int j = 0; j < dns.size(); j++)
+        {
+            start = j;
+            RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
+            if (dnsRdn.equals(subtreeRdnStart))
+            {
+                break;
+            }
+        }
+
+        if (subtree.size() > dns.size() - start)
+        {
+            return false;
+        }
+
         for (int j = 0; j < subtree.size(); j++)
         {
             // both subtree and dns are a ASN.1 Name and the elements are a RDN
             RDN subtreeRdn = RDN.getInstance(subtree.getObjectAt(j));
-            RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
+            RDN dnsRdn = RDN.getInstance(dns.getObjectAt(start + j));
 
             // check if types and values of all naming attributes are matching, other types which are not restricted are allowed, see https://tools.ietf.org/html/rfc5280#section-7.1
             if (subtreeRdn.size() == dnsRdn.size())

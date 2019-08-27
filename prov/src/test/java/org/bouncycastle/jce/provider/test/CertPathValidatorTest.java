@@ -360,9 +360,38 @@ public class CertPathValidatorTest
         }
     }
 
+
+    private void constraintTest()
+        throws Exception
+    {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+
+        X509Certificate rootCert = (X509Certificate)cf.generateCertificate(this.getClass().getResourceAsStream("CERT_CI_ECDSA_NIST.pem"));
+        X509Certificate interCert = (X509Certificate)cf.generateCertificate(this.getClass().getResourceAsStream("CERT_EUM_ECDSA_NIST.pem"));
+        X509Certificate finalCert = (X509Certificate)cf.generateCertificate(this.getClass().getResourceAsStream("CERT_EUICC_ECDSA_NIST.pem"));
+
+        List list = new ArrayList();
+        list.add(interCert);
+        list.add(finalCert);
+
+        CertPath certPath = cf.generateCertPath(list);
+
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(rootCert, null));
+
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX", "BC");
+        PKIXParameters param = new PKIXParameters(trust);
+        param.setRevocationEnabled(false);
+
+        cpv.validate(certPath, param);
+
+    }
+
     public void performTest()
         throws Exception
     {
+        constraintTest();
+
         CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
 
         // initialise CertStore
