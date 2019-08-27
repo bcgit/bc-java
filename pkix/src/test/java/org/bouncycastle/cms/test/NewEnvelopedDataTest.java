@@ -1486,7 +1486,7 @@ public class NewEnvelopedDataTest
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES192_CCM, NISTObjectIdentifiers.id_aes192_CCM);
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES256_CCM, NISTObjectIdentifiers.id_aes256_CCM);
 
-        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_CCM, NISTObjectIdentifiers.id_aes128_CCM, new CCMParameters(nonce, 13).getEncoded());
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_CCM, NISTObjectIdentifiers.id_aes128_CCM, new CCMParameters(nonce, 14).getEncoded());
     }
 
     public void testAES192KEK()
