@@ -5,6 +5,7 @@ public abstract class X448Field
     public static final int SIZE = 16;
 
     private static final int M28 = 0x0FFFFFFF;
+    private static final long U32 = 0xFFFFFFFFL;
 
     protected X448Field() {}
 
@@ -692,7 +693,7 @@ public abstract class X448Field
         int u4_2 = u4 * 2;
         int u5_2 = u5 * 2;
         int u6_2 = u6 * 2;
-        
+
         int s0 = x0 + u0;
         int s1 = x1 + u1;
         int s2 = x2 + u2;
@@ -702,6 +703,12 @@ public abstract class X448Field
         int s6 = x6 + u6;
         int s7 = x7 + u7;
 
+        /*
+         * NOTE: Currently s1_2 and/or s5_2 might reach 0x80000000 (because our carry chains land at
+         * x[1], x[5], x[9], x[13]). So extra care is needed to ensure they are treated as unsigned
+         * multiplicands below. To avoid depending on the precise carry chains, we assume this
+         * affects all the s?_2 variables.
+         */
         int s0_2 = s0 * 2;
         int s1_2 = s1 * 2;
         int s2_2 = s2 * 2;
@@ -724,9 +731,9 @@ public abstract class X448Field
                  + (long)u5 * u3_2
                  + (long)u4 * u4;
         long h0  = (long)s0 * s0;
-        long h8  = (long)s7 * s1_2
-                 + (long)s6 * s2_2
-                 + (long)s5 * s3_2
+        long h8  = (long)s7 * (s1_2 & U32)
+                 + (long)s6 * (s2_2 & U32)
+                 + (long)s5 * (s3_2 & U32)
                  + (long)s4 * s4;
 
         c        = f0 + g0 + h8 - f8;
@@ -742,10 +749,10 @@ public abstract class X448Field
         long g9  = (long)u7 * u2_2
                  + (long)u6 * u3_2
                  + (long)u5 * u4_2;
-        long h1  = (long)s1 * s0_2;
-        long h9  = (long)s7 * s2_2
-                 + (long)s6 * s3_2
-                 + (long)s5 * s4_2;
+        long h1  = (long)s1 * (s0_2 & U32);
+        long h9  = (long)s7 * (s2_2 & U32)
+                 + (long)s6 * (s3_2 & U32)
+                 + (long)s5 * (s4_2 & U32);
 
         c       += f1 + g1 + h9 - f9;
         z1       = (int)c & M28; c >>>= 28;
@@ -762,10 +769,10 @@ public abstract class X448Field
         long g10 = (long)u7 * u3_2
                  + (long)u6 * u4_2
                  + (long)u5 * u5;
-        long h2  = (long)s2 * s0_2
+        long h2  = (long)s2 * (s0_2 & U32)
                  + (long)s1 * s1;
-        long h10 = (long)s7 * s3_2
-                 + (long)s6 * s4_2
+        long h10 = (long)s7 * (s3_2 & U32)
+                 + (long)s6 * (s4_2 & U32)
                  + (long)s5 * s5;
 
         c       += f2 + g2 + h10 - f10;
@@ -781,10 +788,10 @@ public abstract class X448Field
                  + (long)u2 * u1_2;
         long g11 = (long)u7 * u4_2
                  + (long)u6 * u5_2;
-        long h3  = (long)s3 * s0_2
-                 + (long)s2 * s1_2;
-        long h11 = (long)s7 * s4_2
-                 + (long)s6 * s5_2;
+        long h3  = (long)s3 * (s0_2 & U32)
+                 + (long)s2 * (s1_2 & U32);
+        long h11 = (long)s7 * (s4_2 & U32)
+                 + (long)s6 * (s5_2 & U32);
 
         c       += f3 + g3 + h11 - f11;
         z3       = (int)c & M28; c >>>= 28;
@@ -801,10 +808,10 @@ public abstract class X448Field
                  + (long)u2 * u2;
         long g12 = (long)u7 * u5_2
                  + (long)u6 * u6;
-        long h4  = (long)s4 * s0_2
-                 + (long)s3 * s1_2
+        long h4  = (long)s4 * (s0_2 & U32)
+                 + (long)s3 * (s1_2 & U32)
                  + (long)s2 * s2;
-        long h12 = (long)s7 * s5_2
+        long h12 = (long)s7 * (s5_2 & U32)
                  + (long)s6 * s6;
 
         c       += f4 + g4 + h12 - f12;
@@ -820,10 +827,10 @@ public abstract class X448Field
                  + (long)u4 * u1_2
                  + (long)u3 * u2_2;
         long g13 = (long)u7 * u6_2;
-        long h5  = (long)s5 * s0_2
-                 + (long)s4 * s1_2
-                 + (long)s3 * s2_2;
-        long h13 = (long)s7 * s6_2;
+        long h5  = (long)s5 * (s0_2 & U32)
+                 + (long)s4 * (s1_2 & U32)
+                 + (long)s3 * (s2_2 & U32);
+        long h13 = (long)s7 * (s6_2 & U32);
 
         c       += f5 + g5 + h13 - f13;
         z5       = (int)c & M28; c >>>= 28;
@@ -840,9 +847,9 @@ public abstract class X448Field
                  + (long)u4 * u2_2
                  + (long)u3 * u3;
         long g14 = (long)u7 * u7;
-        long h6  = (long)s6 * s0_2
-                 + (long)s5 * s1_2
-                 + (long)s4 * s2_2
+        long h6  = (long)s6 * (s0_2 & U32)
+                 + (long)s5 * (s1_2 & U32)
+                 + (long)s4 * (s2_2 & U32)
                  + (long)s3 * s3;
         long h14 = (long)s7 * s7;
 
@@ -859,10 +866,10 @@ public abstract class X448Field
                  + (long)u6 * u1_2
                  + (long)u5 * u2_2
                  + (long)u4 * u3_2;
-        long h7  = (long)s7 * s0_2
-                 + (long)s6 * s1_2
-                 + (long)s5 * s2_2
-                 + (long)s4 * s3_2;
+        long h7  = (long)s7 * (s0_2 & U32)
+                 + (long)s6 * (s1_2 & U32)
+                 + (long)s5 * (s2_2 & U32)
+                 + (long)s4 * (s3_2 & U32);
 
         c       += f7 + g7;
         z7       = (int)c & M28; c >>>= 28;
