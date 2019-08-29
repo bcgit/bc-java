@@ -12,6 +12,8 @@ import org.bouncycastle.util.Strings;
 
 public abstract class Ed448
 {
+    // x^2 + y^2 == 1 - 39081 * x^2 * y^2
+
     public static final class Algorithm
     {
         public static final int Ed448 = 0;
@@ -107,6 +109,46 @@ public abstract class Ed448
     private static boolean checkContextVar(byte[] ctx)
     {
         return ctx != null && ctx.length < 256;
+    }
+
+    private static int checkPoint(int[] x, int[] y)
+    {
+        int[] t = X448Field.create();
+        int[] u = X448Field.create();
+        int[] v = X448Field.create();
+
+        X448Field.sqr(x, u);
+        X448Field.sqr(y, v);
+        X448Field.mul(u, v, t);
+        X448Field.add(u, v, u);
+        X448Field.mul(t, -C_d, t);
+        X448Field.subOne(t);
+        X448Field.add(t, u, t);
+        X448Field.normalize(t);
+
+        return X448Field.isZero(t);
+    }
+
+    private static int checkPoint(int[] x, int[] y, int[] z)
+    {
+        int[] t = X448Field.create();
+        int[] u = X448Field.create();
+        int[] v = X448Field.create();
+        int[] w = X448Field.create();
+
+        X448Field.sqr(x, u);
+        X448Field.sqr(y, v);
+        X448Field.sqr(z, w);
+        X448Field.mul(u, v, t);
+        X448Field.add(u, v, u);
+        X448Field.mul(u, w, u);
+        X448Field.sqr(w, w);
+        X448Field.mul(t, -C_d, t);
+        X448Field.sub(t, w, t);
+        X448Field.add(t, u, t);
+        X448Field.normalize(t);
+
+        return X448Field.isZero(t);
     }
 
     private static boolean checkPointVar(byte[] p)
@@ -253,7 +295,7 @@ public abstract class Ed448
         encode24((int)(n >>> 32), bs, off + 4);
     }
 
-    private static void encodePoint(PointExt p, byte[] r, int rOff)
+    private static int encodePoint(PointExt p, byte[] r, int rOff)
     {
         int[] x = X448Field.create();
         int[] y = X448Field.create();
@@ -264,8 +306,12 @@ public abstract class Ed448
         X448Field.normalize(x);
         X448Field.normalize(y);
 
+        int result = checkPoint(x, y);
+
         X448Field.encode(y, r, rOff);
         r[rOff + POINT_BYTES - 1] = (byte)((x[0] & 1) << 7);
+
+        return result;
     }
 
     public static void generatePrivateKey(SecureRandom random, byte[] k)
@@ -461,9 +507,7 @@ public abstract class Ed448
         scalarMultStrausVar(nS, nA, pA, pR);
 
         byte[] check = new byte[POINT_BYTES];
-        encodePoint(pR, check, 0);
-
-        return Arrays.areEqual(check, R);
+        return 0 != encodePoint(pR, check, 0) && Arrays.areEqual(check, R);
     }
 
     private static void pointAdd(PointExt p, PointExt r)
@@ -1180,7 +1224,10 @@ public abstract class Ed448
     {
         PointExt p = new PointExt();
         scalarMultBase(k, p);
-        encodePoint(p, r, rOff);
+        if (0 == encodePoint(p, r, rOff))
+        {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -1198,6 +1245,10 @@ public abstract class Ed448
 
         PointExt p = new PointExt();
         scalarMultBase(n, p);
+        if (0 == checkPoint(p.x, p.y, p.z))
+        {
+            throw new IllegalStateException();
+        }
         X448Field.copy(p.x, 0, x, 0);
         X448Field.copy(p.y, 0, y, 0);
     }

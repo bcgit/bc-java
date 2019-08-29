@@ -14,6 +14,8 @@ import org.bouncycastle.util.Strings;
 
 public abstract class Ed25519
 {
+    // -x^2 + y^2 == 1 + 0x52036CEE2B6FFE738CC740797779E89800700A4D4141D8AB75EB4DCA135978A3 * x^2 * y^2
+
     public static final class Algorithm
     {
         public static final int Ed25519 = 0;
@@ -118,6 +120,46 @@ public abstract class Ed25519
     {
         return ctx == null && phflag == 0x00 
             || ctx != null && ctx.length < 256;
+    }
+
+    private static int checkPoint(int[] x, int[] y)
+    {
+        int[] t = X25519Field.create();
+        int[] u = X25519Field.create();
+        int[] v = X25519Field.create();
+
+        X25519Field.sqr(x, u);
+        X25519Field.sqr(y, v);
+        X25519Field.mul(u, v, t);
+        X25519Field.sub(v, u, v);
+        X25519Field.mul(t, C_d, t);
+        X25519Field.addOne(t);
+        X25519Field.sub(t, v, t);
+        X25519Field.normalize(t);
+
+        return X25519Field.isZero(t);
+    }
+
+    private static int checkPoint(int[] x, int[] y, int[] z)
+    {
+        int[] t = X25519Field.create();
+        int[] u = X25519Field.create();
+        int[] v = X25519Field.create();
+        int[] w = X25519Field.create();
+
+        X25519Field.sqr(x, u);
+        X25519Field.sqr(y, v);
+        X25519Field.sqr(z, w);
+        X25519Field.mul(u, v, t);
+        X25519Field.sub(v, u, v);
+        X25519Field.mul(v, w, v);
+        X25519Field.sqr(w, w);
+        X25519Field.mul(t, C_d, t);
+        X25519Field.add(t, w, t);
+        X25519Field.sub(t, v, t);
+        X25519Field.normalize(t);
+
+        return X25519Field.isZero(t);
     }
 
     private static boolean checkPointVar(byte[] p)
@@ -247,7 +289,7 @@ public abstract class Ed25519
         encode24((int)(n >>> 32), bs, off + 4);
     }
 
-    private static void encodePoint(PointAccum p, byte[] r, int rOff)
+    private static int encodePoint(PointAccum p, byte[] r, int rOff)
     {
         int[] x = X25519Field.create();
         int[] y = X25519Field.create();
@@ -258,8 +300,12 @@ public abstract class Ed25519
         X25519Field.normalize(x);
         X25519Field.normalize(y);
 
+        int result = checkPoint(x, y);
+
         X25519Field.encode(y, r, rOff);
         r[rOff + POINT_BYTES - 1] |= ((x[0] & 1) << 7);
+
+        return result;
     }
 
     public static void generatePrivateKey(SecureRandom random, byte[] k)
@@ -455,9 +501,7 @@ public abstract class Ed25519
         scalarMultStrausVar(nS, nA, pA, pR);
 
         byte[] check = new byte[POINT_BYTES];
-        encodePoint(pR, check, 0);
-
-        return Arrays.areEqual(check, R);
+        return 0 != encodePoint(pR, check, 0) && Arrays.areEqual(check, R);
     }
 
     private static void pointAdd(PointExt p, PointAccum r)
@@ -1154,7 +1198,10 @@ public abstract class Ed25519
     {
         PointAccum p = new PointAccum();
         scalarMultBase(k, p);
-        encodePoint(p, r, rOff);
+        if (0 == encodePoint(p, r, rOff))
+        {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -1172,6 +1219,10 @@ public abstract class Ed25519
 
         PointAccum p = new PointAccum();
         scalarMultBase(n, p);
+        if (0 == checkPoint(p.x, p.y, p.z))
+        {
+            throw new IllegalStateException();
+        }
         X25519Field.copy(p.y, 0, y, 0);
         X25519Field.copy(p.z, 0, z, 0);
     }
