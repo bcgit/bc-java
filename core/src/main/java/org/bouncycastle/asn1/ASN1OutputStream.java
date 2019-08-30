@@ -276,14 +276,13 @@ public class ASN1OutputStream
 
     public void writeObject(ASN1Encodable obj) throws IOException
     {
-        if (obj != null)
-        {
-            obj.toASN1Primitive().encode(this, true);
-        }
-        else
+        if (null == obj)
         {
             throw new IOException("null object detected");
         }
+
+        writePrimitive(obj.toASN1Primitive(), true);
+        flushInternal();
     }
 
     public void writeObject(ASN1Primitive primitive) throws IOException
@@ -293,7 +292,8 @@ public class ASN1OutputStream
             throw new IOException("null object detected");
         }
 
-        primitive.encode(this, true);
+        writePrimitive(primitive, true);
+        flushInternal();
     }
 
     void writePrimitive(ASN1Primitive primitive, boolean withTag) throws IOException
@@ -311,6 +311,12 @@ public class ASN1OutputStream
         throws IOException
     {
         os.flush();
+    }
+
+    void flushInternal()
+        throws IOException
+    {
+        // Placeholder to support future internal buffering
     }
 
     DEROutputStream getDERSubStream()

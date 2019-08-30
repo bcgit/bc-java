@@ -15,23 +15,12 @@ public abstract class ASN1Primitive
 
     public void encodeTo(OutputStream output) throws IOException
     {
-        encode(new ASN1OutputStream(output), true);
+        ASN1OutputStream.create(output).writeObject(this);
     }
 
     public void encodeTo(OutputStream output, String encoding) throws IOException
     {
-        if (encoding.equals(ASN1Encoding.DER))
-        {
-            toDERObject().encode(new DEROutputStream(output), true);
-        }
-        else if (encoding.equals(ASN1Encoding.DL))
-        {
-            toDLObject().encode(new DLOutputStream(output), true);
-        }
-        else
-        {
-            encode(new ASN1OutputStream(output), true);
-        }
+        ASN1OutputStream.create(output, encoding).writeObject(this);
     }
 
     /**
