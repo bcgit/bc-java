@@ -58,16 +58,6 @@ public class DERSequence
         super(elements, clone);
     }
 
-    public void encodeTo(OutputStream output) throws IOException
-    {
-        encode(new DEROutputStream(output), true);
-    }
-
-    public void encodeTo(OutputStream output, String encoding) throws IOException
-    {
-        encode(new DEROutputStream(output), true);
-    }
-
     private int getBodyLength() throws IOException
     {
         if (bodyLength < 0)
