@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.security.InvalidKeyException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.Security;
 
@@ -311,7 +311,7 @@ public class AESTest
             in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
             fail("no exception on reuse");
         }
-        catch (InvalidKeyException e)
+        catch (InvalidAlgorithmParameterException e)
         {
             isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for GCM encryption"));
         }
