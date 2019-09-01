@@ -879,7 +879,11 @@ public class BaseBlockCipher
                 aeadParams = new AEADParameters((KeyParameter)ivParam.getParameters(), aeadCipher.getMac().length * 8, ivParam.getIV());
             }
         }
-        catch (final Exception e)
+        catch (IllegalArgumentException e)
+        {
+            throw new InvalidAlgorithmParameterException(e.getMessage(), e);
+        }
+        catch (Exception e)
         {
             throw new InvalidKeyOrParametersException(e.getMessage(), e);
         }
