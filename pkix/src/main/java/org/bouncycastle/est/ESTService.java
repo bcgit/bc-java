@@ -59,7 +59,7 @@ public class ESTService
     private final String server;
     private final ESTClientProvider clientProvider;
 
-    private static final Pattern pathInvalid = Pattern.compile("^[0-9a-zA-Z_\\-.~!$&'()*+,;:=]+");
+    private static final Pattern pathInValid = Pattern.compile("^[0-9a-zA-Z_\\-.~!$&'()*+,;:=]+");
 
     ESTService(
         String serverAuthority, String label,
@@ -630,7 +630,7 @@ public class ESTService
             throw new IllegalArgumentException("Label set but after trimming '/' is not zero length string.");
         }
 
-        if (!pathInvalid.matcher(label).matches())
+        if (!pathInValid.matcher(label).matches())
         {
             throw new IllegalArgumentException("Server path " + label + " contains invalid characters");
         }
