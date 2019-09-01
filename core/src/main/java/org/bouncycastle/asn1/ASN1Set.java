@@ -393,10 +393,10 @@ public abstract class ASN1Set
         int i = elements.length;
         int hc = i + 1;
 
+        // NOTE: Order-independent contribution of elements to avoid sorting
         while (--i >= 0)
         {
-            hc *= 257;
-            hc ^= elements[i].toASN1Primitive().hashCode();
+            hc += elements[i].toASN1Primitive().hashCode();
         }
 
         return hc;
@@ -446,10 +446,13 @@ public abstract class ASN1Set
             return false;
         }
 
+        DERSet dis = (DERSet)this.toDERObject();
+        DERSet dat = (DERSet)that.toDERObject();
+
         for (int i = 0; i < count; ++i)
         {
-            ASN1Primitive p1 = this.elements[i].toASN1Primitive();
-            ASN1Primitive p2 = that.elements[i].toASN1Primitive();
+            ASN1Primitive p1 = dis.elements[i].toASN1Primitive();
+            ASN1Primitive p2 = dat.elements[i].toASN1Primitive();
 
             if (p1 != p2 && !p1.asn1Equals(p2))
             {

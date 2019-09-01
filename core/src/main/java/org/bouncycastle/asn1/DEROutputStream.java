@@ -20,28 +20,6 @@ public class DEROutputStream
         super(os);
     }
 
-    public void writeObject(ASN1Encodable obj) throws IOException
-    {
-        if (obj != null)
-        {
-            obj.toASN1Primitive().toDERObject().encode(this, true);
-        }
-        else
-        {
-            throw new IOException("null object detected");
-        }
-    }
-
-    public void writeObject(ASN1Primitive primitive) throws IOException
-    {
-        if (null == primitive)
-        {
-            throw new IOException("null object detected");
-        }
-
-        primitive.toDERObject().encode(this, true);
-    }
-
     void writePrimitive(ASN1Primitive primitive, boolean withTag) throws IOException
     {
         primitive.toDERObject().encode(this, withTag);

@@ -14,24 +14,12 @@ public abstract class ASN1Object
 {
     public void encodeTo(OutputStream output) throws IOException
     {
-        toASN1Primitive().encode(ASN1OutputStream.create(output), true);
+        ASN1OutputStream.create(output).writeObject(this);
     }
 
     public void encodeTo(OutputStream output, String encoding) throws IOException
     {
-        ASN1Primitive p = toASN1Primitive();
-        if (encoding.equals(ASN1Encoding.DER))
-        {
-            p.toDERObject().encode(ASN1OutputStream.create(output, ASN1Encoding.DER), true);
-        }
-        else if (encoding.equals(ASN1Encoding.DL))
-        {
-            p.toDLObject().encode(ASN1OutputStream.create(output, ASN1Encoding.DL), true);
-        }
-        else
-        {
-            p.encode(ASN1OutputStream.create(output), true);
-        }
+        ASN1OutputStream.create(output, encoding).writeObject(this);
     }
 
     /**
