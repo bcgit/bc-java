@@ -38,7 +38,7 @@ public final class CryptoServicesRegistrar
             new BigInteger("fca682ce8e12caba26efccf7110e526db078b05edecbcd1eb4a208f3ae1617ae01f35b91a47e6df63413c5e12ed0899bcd132acd50d99151bdc43ee737592e17", 16),
             new BigInteger("962eddcc369cba8ebb260ee6b6a126d9346e38c5", 16),
             new BigInteger("678471b27a9cf44ee91a49c5147db1a9aaf244f05a434d6486931d2d14271b9e35030b71fd73da179069b32e2935630e1c2062354d0da20a6c416e50be794ca4", 16),
-            new DSAValidationParameters(Hex.decode("b869c82b35d70e1b1ff91b28e37a62ecdc34409b"), 123));
+            new DSAValidationParameters(Hex.decodeStrict("b869c82b35d70e1b1ff91b28e37a62ecdc34409b"), 123));
 
         DSAParameters def768Params = new DSAParameters(
             new BigInteger("e9e642599d355f37c97ffd3567120b8e25c9cd43e927b3a9670fbec5" +
@@ -50,7 +50,7 @@ public final class CryptoServicesRegistrar
                            "a31d23c4dbbcbe06174544401a5b2c020965d8c2bd2171d366844577" +
                            "1f74ba084d2029d83c1c158547f3a9f1a2715be23d51ae4d3e5a1f6a" +
                            "7064f316933a346d3f529252", 16),
-            new DSAValidationParameters(Hex.decode("77d0f8c4dad15eb8c4f2f8d6726cefd96d5bb399"), 263));
+            new DSAValidationParameters(Hex.decodeStrict("77d0f8c4dad15eb8c4f2f8d6726cefd96d5bb399"), 263));
 
         DSAParameters def1024Params = new DSAParameters(
             new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80" +
@@ -64,7 +64,7 @@ public final class CryptoServicesRegistrar
                             "b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2bb3a675916ea37f" +
                             "0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06" +
                             "928b665e807b552564014c3bfecf492a", 16),
-            new DSAValidationParameters(Hex.decode("8d5155894229d5e689ee01e6018a237e2cae64cd"), 92));
+            new DSAValidationParameters(Hex.decodeStrict("8d5155894229d5e689ee01e6018a237e2cae64cd"), 92));
 
         DSAParameters def2048Params = new DSAParameters(
             new BigInteger("95475cf5d93e596c3fcd1d902add02f427f5f3c7210313bb45fb4d5b" +
@@ -88,7 +88,7 @@ public final class CryptoServicesRegistrar
                             "ac819a26ca9b04cb0eb9b7b035988d15bbac65212a55239cfc7e58fa" +
                             "e38d7250ab9991ffbc97134025fe8ce04c4399ad96569be91a546f49" +
                             "78693c7a", 16),
-            new DSAValidationParameters(Hex.decode("b0b4417601b59cbc9d8ac8f935cadaec4f5fbb2f23785609ae466748d9b5a536"), 497));
+            new DSAValidationParameters(Hex.decodeStrict("b0b4417601b59cbc9d8ac8f935cadaec4f5fbb2f23785609ae466748d9b5a536"), 497));
 
         localSetGlobalProperty(Property.DSA_DEFAULT_PARAMS, new Object[] { def512Params, def768Params, def1024Params, def2048Params });
         localSetGlobalProperty(Property.DH_DEFAULT_PARAMS, new Object[] { toDH(def512Params), toDH(def768Params), toDH(def1024Params), toDH(def2048Params) });

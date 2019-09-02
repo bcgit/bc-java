@@ -27,10 +27,10 @@ public class SecP128R1Curve extends ECCurve.AbstractFp
         this.infinity = new SecP128R1Point(this, null, null);
 
         this.a = fromBigInteger(new BigInteger(1,
-            Hex.decode("FFFFFFFDFFFFFFFFFFFFFFFFFFFFFFFC")));
+            Hex.decodeStrict("FFFFFFFDFFFFFFFFFFFFFFFFFFFFFFFC")));
         this.b = fromBigInteger(new BigInteger(1,
-            Hex.decode("E87579C11079F43DD824993C2CEE5ED3")));
-        this.order = new BigInteger(1, Hex.decode("FFFFFFFE0000000075A30D1B9038A115"));
+            Hex.decodeStrict("E87579C11079F43DD824993C2CEE5ED3")));
+        this.order = new BigInteger(1, Hex.decodeStrict("FFFFFFFE0000000075A30D1B9038A115"));
         this.cofactor = BigInteger.valueOf(1);
 
         this.coord = SECP128R1_DEFAULT_COORDS;

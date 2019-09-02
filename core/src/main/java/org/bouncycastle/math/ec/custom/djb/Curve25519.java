@@ -15,8 +15,8 @@ public class Curve25519 extends ECCurve.AbstractFp
 {
     public static final BigInteger q = Curve25519FieldElement.Q;
 
-    private static final BigInteger C_a = new BigInteger(1, Hex.decode("2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA984914A144"));
-    private static final BigInteger C_b = new BigInteger(1, Hex.decode("7B425ED097B425ED097B425ED097B425ED097B425ED097B4260B5E9C7710C864"));
+    private static final BigInteger C_a = new BigInteger(1, Hex.decodeStrict("2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA984914A144"));
+    private static final BigInteger C_b = new BigInteger(1, Hex.decodeStrict("7B425ED097B425ED097B425ED097B425ED097B425ED097B4260B5E9C7710C864"));
 
     private static final int CURVE25519_DEFAULT_COORDS = COORD_JACOBIAN_MODIFIED;
     private static final ECFieldElement[] CURVE25519_AFFINE_ZS = new ECFieldElement[] {
@@ -32,7 +32,7 @@ public class Curve25519 extends ECCurve.AbstractFp
 
         this.a = fromBigInteger(C_a);
         this.b = fromBigInteger(C_b);
-        this.order = new BigInteger(1, Hex.decode("1000000000000000000000000000000014DEF9DEA2F79CD65812631A5CF5D3ED"));
+        this.order = new BigInteger(1, Hex.decodeStrict("1000000000000000000000000000000014DEF9DEA2F79CD65812631A5CF5D3ED"));
         this.cofactor = BigInteger.valueOf(8);
 
         this.coord = CURVE25519_DEFAULT_COORDS;

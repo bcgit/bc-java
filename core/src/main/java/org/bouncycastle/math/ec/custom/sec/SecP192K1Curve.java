@@ -28,7 +28,7 @@ public class SecP192K1Curve extends ECCurve.AbstractFp
 
         this.a = fromBigInteger(ECConstants.ZERO);
         this.b = fromBigInteger(BigInteger.valueOf(3));
-        this.order = new BigInteger(1, Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFE26F2FC170F69466A74DEFD8D"));
+        this.order = new BigInteger(1, Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFE26F2FC170F69466A74DEFD8D"));
         this.cofactor = BigInteger.valueOf(1);
 
         this.coord = SECP192K1_DEFAULT_COORDS;

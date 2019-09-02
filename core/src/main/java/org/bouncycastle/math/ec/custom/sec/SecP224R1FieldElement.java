@@ -12,7 +12,7 @@ import org.bouncycastle.util.encoders.Hex;
 public class SecP224R1FieldElement extends ECFieldElement.AbstractFp
 {
     public static final BigInteger Q = new BigInteger(1,
-        Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001"));
+        Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001"));
 
     protected int[] x;
 

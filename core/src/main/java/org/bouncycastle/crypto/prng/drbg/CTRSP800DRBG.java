@@ -157,7 +157,7 @@ public class CTRSP800DRBG
 
     // -- Internal state migration ---
     
-    private static final byte[] K_BITS = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F");
+    private static final byte[] K_BITS = Hex.decodeStrict("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F");
 
     // 1. If (number_of_bits_to_return > max_number_of_bits), then return an
     // ERROR_FLAG.

@@ -25,9 +25,9 @@ public class SecT131R1Curve extends AbstractF2m
 
         this.infinity = new SecT131R1Point(this, null, null);
 
-        this.a = fromBigInteger(new BigInteger(1, Hex.decode("07A11B09A76B562144418FF3FF8C2570B8")));
-        this.b = fromBigInteger(new BigInteger(1, Hex.decode("0217C05610884B63B9C6C7291678F9D341")));
-        this.order = new BigInteger(1, Hex.decode("0400000000000000023123953A9464B54D"));
+        this.a = fromBigInteger(new BigInteger(1, Hex.decodeStrict("07A11B09A76B562144418FF3FF8C2570B8")));
+        this.b = fromBigInteger(new BigInteger(1, Hex.decodeStrict("0217C05610884B63B9C6C7291678F9D341")));
+        this.order = new BigInteger(1, Hex.decodeStrict("0400000000000000023123953A9464B54D"));
         this.cofactor = BigInteger.valueOf(2);
 
         this.coord = SECT131R1_DEFAULT_COORDS;
