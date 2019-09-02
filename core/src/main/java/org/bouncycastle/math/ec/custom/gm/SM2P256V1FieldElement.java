@@ -11,7 +11,7 @@ import org.bouncycastle.util.encoders.Hex;
 public class SM2P256V1FieldElement extends ECFieldElement.AbstractFp
 {
     public static final BigInteger Q = new BigInteger(1,
-        Hex.decode("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF"));
+        Hex.decodeStrict("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF"));
 
     protected int[] x;
 

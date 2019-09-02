@@ -78,7 +78,7 @@ public class SM2Signer
         {
             baseParam = param;
             // the default value, string value is "1234567812345678"
-            userID = Hex.decode("31323334353637383132333435363738");
+            userID = Hex.decodeStrict("31323334353637383132333435363738");
         }
 
         if (forSigning)

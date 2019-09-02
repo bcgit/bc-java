@@ -9,7 +9,7 @@ public class SRP6StandardGroups
 {
     private static BigInteger fromHex(String hex)
     {
-        return new BigInteger(1, Hex.decode(hex));
+        return new BigInteger(1, Hex.decodeStrict(hex));
     }
 
     private static SRP6GroupParameters fromNG(String hexN, String hexG)

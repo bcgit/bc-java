@@ -15,8 +15,8 @@ import org.bouncycastle.util.encoders.Hex;
 public class ARIAEngine
     implements BlockCipher
 {
-    private static final byte[][] C = { Hex.decode("517cc1b727220a94fe13abe8fa9a6ee0"),
-        Hex.decode("6db14acc9e21c820ff28b1d5ef5de2b0"), Hex.decode("db92371d2126e9700324977504e8c90e") };
+    private static final byte[][] C = { Hex.decodeStrict("517cc1b727220a94fe13abe8fa9a6ee0"),
+        Hex.decodeStrict("6db14acc9e21c820ff28b1d5ef5de2b0"), Hex.decodeStrict("db92371d2126e9700324977504e8c90e") };
 
     private static final byte[] SB1_sbox = { (byte)0x63, (byte)0x7c, (byte)0x77, (byte)0x7b, (byte)0xf2, (byte)0x6b,
         (byte)0x6f, (byte)0xc5, (byte)0x30, (byte)0x01, (byte)0x67, (byte)0x2b, (byte)0xfe, (byte)0xd7, (byte)0xab,

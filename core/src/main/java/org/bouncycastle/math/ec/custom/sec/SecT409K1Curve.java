@@ -29,7 +29,7 @@ public class SecT409K1Curve extends AbstractF2m
 
         this.a = fromBigInteger(BigInteger.valueOf(0));
         this.b = fromBigInteger(BigInteger.valueOf(1));
-        this.order = new BigInteger(1, Hex.decode("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE5F83B2D4EA20400EC4557D5ED3E3E7CA5B4B5C83B8E01E5FCF"));
+        this.order = new BigInteger(1, Hex.decodeStrict("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE5F83B2D4EA20400EC4557D5ED3E3E7CA5B4B5C83B8E01E5FCF"));
         this.cofactor = BigInteger.valueOf(4);
 
         this.coord = SECT409K1_DEFAULT_COORDS;

@@ -352,7 +352,7 @@ public class DSAParametersGenerator
     {
 // A.2.3 Verifiable Canonical Generation of the Generator g
         BigInteger e = p.subtract(ONE).divide(q);
-        byte[] ggen = Hex.decode("6767656E");
+        byte[] ggen = Hex.decodeStrict("6767656E");
 
         // 7. U = domain_parameter_seed || "ggen" || index || count.
         byte[] U = new byte[seed.length + ggen.length + 1 + 2];
