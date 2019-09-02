@@ -136,6 +136,11 @@ class DTLSRecordLayer
         setPlaintextLimit(MAX_FRAGMENT_LENGTH);
     }
 
+    boolean isClosed()
+    {
+        return closed;
+    }
+
     void resetAfterHelloVerifyRequestClient()
     {
         currentEpoch.getReplayWindow().reset();

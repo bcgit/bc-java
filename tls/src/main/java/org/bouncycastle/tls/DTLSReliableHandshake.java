@@ -213,6 +213,11 @@ class DTLSReliableHandshake
 
         for (;;)
         {
+            if (recordLayer.isClosed())
+            {
+                throw new TlsFatalAlert(AlertDescription.user_canceled);
+            }
+
             Message pending = getPendingMessage();
             if (pending != null)
             {

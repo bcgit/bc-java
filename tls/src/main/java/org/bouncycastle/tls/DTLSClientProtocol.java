@@ -52,6 +52,7 @@ public class DTLSClientProtocol
         }
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(state.clientContext, state.client, transport);
+        client.notifyCloseHandle(recordLayer);
 
         try
         {

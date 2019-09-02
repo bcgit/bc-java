@@ -76,6 +76,8 @@ public class TlsClientProtocol
         this.tlsClient.init(tlsClientContext);
         this.recordStream.init(tlsClientContext);
 
+        tlsClient.notifyCloseHandle(this);
+
         beginHandshake(false);
 
         if (blocking)

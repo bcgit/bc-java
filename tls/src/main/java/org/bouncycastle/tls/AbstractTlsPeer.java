@@ -12,14 +12,30 @@ public abstract class AbstractTlsPeer
 {
     private final TlsCrypto crypto;
 
+    private volatile TlsCloseable closeHandle;
+
     protected AbstractTlsPeer(TlsCrypto crypto)
     {
         this.crypto = crypto;
     }
 
+    public void cancel() throws IOException
+    {
+        TlsCloseable closeHandle = this.closeHandle;
+        if (null != closeHandle)
+        {
+            closeHandle.close();
+        }
+    }
+
     public TlsCrypto getCrypto()
     {
         return crypto;
+    }
+
+    public void notifyCloseHandle(TlsCloseable closeHandle)
+    {
+        this.closeHandle = closeHandle;
     }
 
     public int getHandshakeTimeoutMillis()
