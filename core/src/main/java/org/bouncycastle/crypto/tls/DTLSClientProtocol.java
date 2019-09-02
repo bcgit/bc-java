@@ -46,6 +46,7 @@ public class DTLSClientProtocol
         client.init(state.clientContext);
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext, client, ContentType.handshake);
+        client.notifyCloseHandle(recordLayer);
 
         TlsSession sessionToResume = state.client.getSessionToResume();
         if (sessionToResume != null && sessionToResume.isResumable())

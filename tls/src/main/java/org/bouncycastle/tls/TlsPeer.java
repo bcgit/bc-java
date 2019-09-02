@@ -11,6 +11,10 @@ public interface TlsPeer
 {
     TlsCrypto getCrypto();
 
+    void notifyCloseHandle(TlsCloseable closehandle);
+
+    void cancel() throws IOException;
+
     /**
      * <p>
      * NOTE: Currently only respected by DTLS protocols.

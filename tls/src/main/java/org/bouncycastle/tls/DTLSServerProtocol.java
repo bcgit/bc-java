@@ -56,8 +56,7 @@ public class DTLSServerProtocol
         securityParameters.extendedPadding = server.shouldUseExtendedPadding();
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(state.serverContext, state.server, transport);
-
-        // TODO Need to handle sending of HelloVerifyRequest without entering a full connection
+        server.notifyCloseHandle(recordLayer);
 
         try
         {

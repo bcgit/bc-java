@@ -60,6 +60,7 @@ public class DTLSServerProtocol
         server.init(state.serverContext);
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.serverContext, server, ContentType.handshake);
+        server.notifyCloseHandle(recordLayer);
 
         // TODO Need to handle sending of HelloVerifyRequest without entering a full connection
 

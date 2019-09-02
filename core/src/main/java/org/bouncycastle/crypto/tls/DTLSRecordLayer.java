@@ -44,6 +44,11 @@ class DTLSRecordLayer
         setPlaintextLimit(MAX_FRAGMENT_LENGTH);
     }
 
+    boolean isClosed()
+    {
+        return closed;
+    }
+
     void setPlaintextLimit(int plaintextLimit)
     {
         this.plaintextLimit = plaintextLimit;
