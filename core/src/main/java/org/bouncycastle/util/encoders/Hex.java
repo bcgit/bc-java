@@ -11,7 +11,7 @@ import org.bouncycastle.util.Strings;
  */
 public class Hex
 {
-    private static final Encoder encoder = new HexEncoder();
+    private static final HexEncoder encoder = new HexEncoder();
 
     public static String toHexString(
         byte[] data)
@@ -147,5 +147,41 @@ public class Hex
         throws IOException
     {
         return encoder.decode(data, out);
+    }
+
+    /**
+     * Decode the hexadecimal-encoded string strcitly i.e. any non-hexadecimal characters will be
+     * considered an error.
+     *
+     * @return a byte array representing the decoded data.
+     */
+    public static byte[] decodeStrict(String str)
+    {
+        try
+        {
+            return encoder.decodeStrict(str, 0, str.length());
+        }
+        catch (Exception e)
+        {
+            throw new DecoderException("exception decoding Hex string: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Decode the hexadecimal-encoded string strcitly i.e. any non-hexadecimal characters will be
+     * considered an error.
+     *
+     * @return a byte array representing the decoded data.
+     */
+    public static byte[] decodeStrict(String str, int off, int len)
+    {
+        try
+        {
+            return encoder.decodeStrict(str, off, len);
+        }
+        catch (Exception e)
+        {
+            throw new DecoderException("exception decoding Hex string: " + e.getMessage(), e);
+        }
     }
 }

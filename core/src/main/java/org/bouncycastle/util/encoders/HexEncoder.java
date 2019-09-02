@@ -187,4 +187,39 @@ public class HexEncoder
 
         return length;
     }
+
+    byte[] decodeStrict(String str, int off, int len) throws IOException
+    {
+        if (null == str)
+        {
+            throw new NullPointerException("'str' cannot be null");
+        }
+        if (off < 0 || len < 0 || off > (str.length() - len))
+        {
+            throw new IndexOutOfBoundsException("invalid offset and/or length specified");
+        }
+        if (0 != (len & 1))
+        {
+            throw new IOException("a hexadecimal encoding must have an even number of characters");
+        }
+
+        int resultLen = len >>> 1;
+        byte[] result = new byte[resultLen];
+
+        int strPos = off;
+        for (int i = 0; i < resultLen; ++i)
+        {
+            byte b1 = decodingTable[str.charAt(strPos++)];
+            byte b2 = decodingTable[str.charAt(strPos++)];
+
+            int n = (b1 << 4) | b2;
+            if (n < 0)
+            {
+                throw new IOException("invalid characters encountered in Hex string");
+            }
+
+            result[i] = (byte)n;
+        }
+        return result;
+    }
 }
