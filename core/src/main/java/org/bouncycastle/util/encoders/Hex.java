@@ -12,7 +12,7 @@ import org.bouncycastle.util.Strings;
 public class Hex
 {
     private static final Encoder encoder = new HexEncoder();
-    
+
     public static String toHexString(
         byte[] data)
     {
@@ -38,7 +38,7 @@ public class Hex
     {
         return encode(data, 0, data.length);
     }
-    
+
     /**
      * encode the input data producing a Hex encoded byte array.
      *
@@ -50,7 +50,7 @@ public class Hex
         int       length)
     {
         ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        
+
         try
         {
             encoder.encode(data, off, length, bOut);
@@ -59,7 +59,7 @@ public class Hex
         {
             throw new EncoderException("exception encoding Hex string: " + e.getMessage(), e);
         }
-        
+
         return bOut.toByteArray();
     }
 
@@ -75,7 +75,7 @@ public class Hex
     {
         return encoder.encode(data, 0, data.length, out);
     }
-    
+
     /**
      * Hex encode the byte data writing it to the given output stream.
      *
@@ -90,7 +90,7 @@ public class Hex
     {
         return encoder.encode(data, off, length, out);
     }
-    
+
     /**
      * decode the Hex encoded input data. It is assumed the input data is valid.
      *
@@ -100,7 +100,7 @@ public class Hex
         byte[]    data)
     {
         ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        
+
         try
         {
             encoder.decode(data, 0, data.length, bOut);
@@ -112,7 +112,7 @@ public class Hex
         
         return bOut.toByteArray();
     }
-    
+
     /**
      * decode the Hex encoded String data - whitespace will be ignored.
      *
@@ -122,7 +122,7 @@ public class Hex
         String    data)
     {
         ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        
+
         try
         {
             encoder.decode(data, bOut);
@@ -131,10 +131,10 @@ public class Hex
         {
             throw new DecoderException("exception decoding Hex string: " + e.getMessage(), e);
         }
-        
+
         return bOut.toByteArray();
     }
-    
+
     /**
      * decode the Hex encoded String data writing it to the given output stream,
      * whitespace characters will be ignored.
