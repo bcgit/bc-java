@@ -95,6 +95,7 @@ class DTLSRecordLayer
     private final DatagramTransport transport;
 
     private final ByteQueue recordQueue = new ByteQueue();
+    private final Object writeLock = new Object();
 
     private volatile boolean closed = false;
     private volatile boolean failed = false;
@@ -757,13 +758,12 @@ class DTLSRecordLayer
     }
 
     /*
-     * Currently synchronized here to ensure heartbeat sends and application data sends don't
+     * Currently uses synchronization to ensure heartbeat sends and application data sends don't
      * interfere with each other. It may be overly cautious; the sequence number allocation is
      * atomic, and if we synchronize only on the datagram send instead, then the only effect should
      * be possible reordering of records (which might surprise a reliable transport implementation).
      */
-    private synchronized void sendRecord(short contentType, byte[] buf, int off, int len)
-        throws IOException
+    private void sendRecord(short contentType, byte[] buf, int off, int len) throws IOException
     {
         // Never send anything until a valid ClientHello has been received
         if (writeVersion == null)
@@ -785,23 +785,25 @@ class DTLSRecordLayer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        int recordEpoch = writeEpoch.getEpoch();
-        long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
+        synchronized (writeLock)
+        {
+            int recordEpoch = writeEpoch.getEpoch();
+            long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
+            long macSequenceNumber = getMacSequenceNumber(recordEpoch, recordSequenceNumber);
+            byte[] ciphertext = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType, buf, off, len);
 
-        byte[] ciphertext = writeEpoch.getCipher().encodePlaintext(
-            getMacSequenceNumber(recordEpoch, recordSequenceNumber), contentType, buf, off, len);
+            // TODO Check the ciphertext length?
 
-        // TODO Check the ciphertext length?
+            byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
+            TlsUtils.writeUint8(contentType, record, 0);
+            TlsUtils.writeVersion(writeVersion, record, 1);
+            TlsUtils.writeUint16(recordEpoch, record, 3);
+            TlsUtils.writeUint48(recordSequenceNumber, record, 5);
+            TlsUtils.writeUint16(ciphertext.length, record, 11);
+            System.arraycopy(ciphertext, 0, record, RECORD_HEADER_LENGTH, ciphertext.length);
 
-        byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
-        TlsUtils.writeUint8(contentType, record, 0);
-        TlsUtils.writeVersion(writeVersion, record, 1);
-        TlsUtils.writeUint16(recordEpoch, record, 3);
-        TlsUtils.writeUint48(recordSequenceNumber, record, 5);
-        TlsUtils.writeUint16(ciphertext.length, record, 11);
-        System.arraycopy(ciphertext, 0, record, RECORD_HEADER_LENGTH, ciphertext.length);
-
-        sendDatagram(transport, record);
+            sendDatagram(transport, record);
+        }
     }
 
     private static long getMacSequenceNumber(int epoch, long sequence_number)
