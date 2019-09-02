@@ -1186,7 +1186,7 @@ public class X509Name
     {
         try
         {
-            return ASN1Primitive.fromByteArray(Hex.decode(oValue.substring(1)));
+            return ASN1Primitive.fromByteArray(Hex.decodeStrict(oValue, 1, oValue.length() - 1));
         }
         catch (IOException e)
         {
