@@ -29,7 +29,7 @@ public class SecT283K1Curve extends AbstractF2m
 
         this.a = fromBigInteger(BigInteger.valueOf(0));
         this.b = fromBigInteger(BigInteger.valueOf(1));
-        this.order = new BigInteger(1, Hex.decode("01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE9AE2ED07577265DFF7F94451E061E163C61"));
+        this.order = new BigInteger(1, Hex.decodeStrict("01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE9AE2ED07577265DFF7F94451E061E163C61"));
         this.cofactor = BigInteger.valueOf(4);
 
         this.coord = SECT283K1_DEFAULT_COORDS;

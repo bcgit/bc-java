@@ -56,7 +56,7 @@ public class CustomNamedCurves
 {
     private static X9ECPoint configureBasepoint(ECCurve curve, String encoding)
     {
-        X9ECPoint G = new X9ECPoint(curve, Hex.decode(encoding));
+        X9ECPoint G = new X9ECPoint(curve, Hex.decodeStrict(encoding));
         WNafUtil.configureBasepoint(G.getPoint());
         return G;
     }
@@ -104,7 +104,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("000E0D4D696E6768756151750CC03A4473D03679");
+            byte[] S = Hex.decodeStrict("000E0D4D696E6768756151750CC03A4473D03679");
             ECCurve curve = configureCurve(new SecP128R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "04161FF7528B899B2D0C28607CA52C5B86CF5AC8395BAFEB13C02DA292DDED7A83");
@@ -147,7 +147,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("1053CDE42C14D696E67687561517533BF3F83345");
+            byte[] S = Hex.decodeStrict("1053CDE42C14D696E67687561517533BF3F83345");
             ECCurve curve = configureCurve(new SecP160R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "044A96B5688EF573284664698968C38BB913CBFC8223A628553168947D59DCC912042351377AC5FB32");
@@ -162,7 +162,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("B99B99B099B323E02709A4D696E6768756151751");
+            byte[] S = Hex.decodeStrict("B99B99B099B323E02709A4D696E6768756151751");
             ECCurve curve = configureCurve(new SecP160R2Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "0452DCB034293A117E1F4FF11B30F7199D3144CE6DFEAFFEF2E331F296E071FA0DF9982CFEA7D43F2E");
@@ -205,7 +205,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("3045AE6FC8422F64ED579528D38120EAE12196D5");
+            byte[] S = Hex.decodeStrict("3045AE6FC8422F64ED579528D38120EAE12196D5");
             ECCurve curve = configureCurve(new SecP192R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "04188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF101207192B95FFC8DA78631011ED6B24CDD573F977A11E794811");
@@ -248,7 +248,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("BD71344799D5C7FCDC45B59FA3B9AB8F6A948BC5");
+            byte[] S = Hex.decodeStrict("BD71344799D5C7FCDC45B59FA3B9AB8F6A948BC5");
             ECCurve curve = configureCurve(new SecP224R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "04B70E0CBD6BB4BF7F321390B94A03C1D356C21122343280D6115C1D21BD376388B5F723FB4C22DFE6CD4375A05A07476444D5819985007E34");
@@ -291,7 +291,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("C49D360886E704936A6678E1139D26B7819F7E90");
+            byte[] S = Hex.decodeStrict("C49D360886E704936A6678E1139D26B7819F7E90");
             ECCurve curve = configureCurve(new SecP256R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "046B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C2964FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5");
@@ -306,7 +306,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("A335926AA319A27A1D00896A6773A4827ACDAC73");
+            byte[] S = Hex.decodeStrict("A335926AA319A27A1D00896A6773A4827ACDAC73");
             ECCurve curve = configureCurve(new SecP384R1Curve());
             X9ECPoint G = configureBasepoint(curve, "04"
                 + "AA87CA22BE8B05378EB1C71EF320AD746E1D3B628BA79B9859F741E082542A385502F25DBF55296C3A545E3872760AB7"
@@ -322,7 +322,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("D09E8800291CB85396CC6717393284AAA0DA64BA");
+            byte[] S = Hex.decodeStrict("D09E8800291CB85396CC6717393284AAA0DA64BA");
             ECCurve curve = configureCurve(new SecP521R1Curve());
             X9ECPoint G = configureBasepoint(curve, "04"
                 + "00C6858E06B70404E9CD9E3ECB662395B4429C648139053FB521F828AF606B4D3DBAA14B5E77EFE75928FE1DC127A2FFA8DE3348B3C1856A429BF97E7E31C2E5BD66"
@@ -338,7 +338,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("10E723AB14D696E6768756151756FEBF8FCB49A9");
+            byte[] S = Hex.decodeStrict("10E723AB14D696E6768756151756FEBF8FCB49A9");
             ECCurve curve = configureCurve(new SecT113R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "04009D73616F35F4AB1407D73562C10F00A52830277958EE84D1315ED31886");
@@ -353,7 +353,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("10C0FB15760860DEF1EEF4D696E676875615175D");
+            byte[] S = Hex.decodeStrict("10C0FB15760860DEF1EEF4D696E676875615175D");
             ECCurve curve = configureCurve(new SecT113R2Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "0401A57A6A7B26CA5EF52FCDB816479700B3ADC94ED1FE674C06E695BABA1D");
@@ -368,7 +368,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("4D696E676875615175985BD3ADBADA21B43A97E2");
+            byte[] S = Hex.decodeStrict("4D696E676875615175985BD3ADBADA21B43A97E2");
             ECCurve curve = configureCurve(new SecT131R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "040081BAF91FDF9833C40F9C181343638399078C6E7EA38C001F73C8134B1B4EF9E150");
@@ -383,7 +383,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("985BD3ADBAD4D696E676875615175A21B43A97E3");
+            byte[] S = Hex.decodeStrict("985BD3ADBAD4D696E676875615175A21B43A97E3");
             ECCurve curve = configureCurve(new SecT131R2Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "040356DCD8F2F95031AD652D23951BB366A80648F06D867940A5366D9E265DE9EB240F");
@@ -413,7 +413,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("24B7B137C8A14D696E6768756151756FD0DA2E5C");
+            byte[] S = Hex.decodeStrict("24B7B137C8A14D696E6768756151756FD0DA2E5C");
             ECCurve curve = configureCurve(new SecT163R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "040369979697AB43897789566789567F787A7876A65400435EDB42EFAFB2989D51FEFCE3C80988F41FF883");
@@ -428,7 +428,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("85E25BFE5C86226CDB12016F7553F9D0E693A268");
+            byte[] S = Hex.decodeStrict("85E25BFE5C86226CDB12016F7553F9D0E693A268");
             ECCurve curve = configureCurve(new SecT163R2Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "0403F0EBA16286A2D57EA0991168D4994637E8343E3600D51FBC6C71A0094FA2CDD545B11C5C0C797324F1");
@@ -443,7 +443,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("103FAEC74D696E676875615175777FC5B191EF30");
+            byte[] S = Hex.decodeStrict("103FAEC74D696E676875615175777FC5B191EF30");
             ECCurve curve = configureCurve(new SecT193R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "0401F481BC5F0FF84A74AD6CDF6FDEF4BF6179625372D8C0C5E10025E399F2903712CCF3EA9E3A1AD17FB0B3201B6AF7CE1B05");
@@ -458,7 +458,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("10B7B4D696E676875615175137C8A16FD0DA2211");
+            byte[] S = Hex.decodeStrict("10B7B4D696E676875615175137C8A16FD0DA2211");
             ECCurve curve = configureCurve(new SecT193R2Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "0400D9B67D192E0367C803F39E1A7E82CA14A651350AAE617E8F01CE94335607C304AC29E7DEFBD9CA01F596F927224CDECF6C");
@@ -488,7 +488,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("74D59FF07F6B413D0EA14B344B20A2DB049B50C3");
+            byte[] S = Hex.decodeStrict("74D59FF07F6B413D0EA14B344B20A2DB049B50C3");
             ECCurve curve = configureCurve(new SecT233R1Curve());
             X9ECPoint G = configureBasepoint(curve,
                 "0400FAC9DFCBAC8313BB2139F1BB755FEF65BC391F8B36F8F8EB7371FD558B01006A08A41903350678E58528BEBF8A0BEFF867A7CA36716F7E01F81052");
@@ -534,7 +534,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("77E2B07370EB0F832A6DD5B62DFC88CD06BB84BE");
+            byte[] S = Hex.decodeStrict("77E2B07370EB0F832A6DD5B62DFC88CD06BB84BE");
             ECCurve curve = configureCurve(new SecT283R1Curve());
             X9ECPoint G = configureBasepoint(curve, "04"
                 + "05F939258DB7DD90E1934F8C70B0DFEC2EED25B8557EAC9C80E2E198F8CDBECD86B12053"
@@ -566,7 +566,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("4099B5A457F9D69F79213D094C4BCD4D4262210B");
+            byte[] S = Hex.decodeStrict("4099B5A457F9D69F79213D094C4BCD4D4262210B");
             ECCurve curve = configureCurve(new SecT409R1Curve());
             X9ECPoint G = configureBasepoint(curve, "04"
                 + "015D4860D088DDB3496B0C6064756260441CDE4AF1771D4DB01FFE5B34E59703DC255A868A1180515603AEAB60794E54BB7996A7"
@@ -598,7 +598,7 @@ public class CustomNamedCurves
     {
         protected X9ECParameters createParameters()
         {
-            byte[] S = Hex.decode("2AA058F73A0E33AB486B0F610410C53A7F132310");
+            byte[] S = Hex.decodeStrict("2AA058F73A0E33AB486B0F610410C53A7F132310");
             ECCurve curve = configureCurve(new SecT571R1Curve());
             X9ECPoint G = configureBasepoint(curve, "04"
                 + "0303001D34B856296C16C0D40D3CD7750A93D1D2955FA80AA5F40FC8DB7B2ABDBDE53950F4C0D293CDD711A35B67FB1499AE60038614F1394ABFA3B4C850D927E1E7769C8EEC2D19"

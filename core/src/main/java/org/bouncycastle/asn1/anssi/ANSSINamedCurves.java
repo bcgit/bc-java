@@ -20,7 +20,7 @@ public class ANSSINamedCurves
 {
     private static X9ECPoint configureBasepoint(ECCurve curve, String encoding)
     {
-        X9ECPoint G = new X9ECPoint(curve, Hex.decode(encoding));
+        X9ECPoint G = new X9ECPoint(curve, Hex.decodeStrict(encoding));
         WNafUtil.configureBasepoint(G.getPoint());
         return G;
     }
@@ -30,10 +30,9 @@ public class ANSSINamedCurves
         return curve;
     }
 
-    private static BigInteger fromHex(
-        String hex)
+    private static BigInteger fromHex(String hex)
     {
-        return new BigInteger(1, Hex.decode(hex));
+        return new BigInteger(1, Hex.decodeStrict(hex));
     }
 
     /*

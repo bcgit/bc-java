@@ -33,7 +33,7 @@ public class TlsDHUtils
      */
     private static BigInteger fromHex(String hex)
     {
-        return new BigInteger(1, Hex.decode(hex));
+        return new BigInteger(1, Hex.decodeStrict(hex));
     }
 
     private static DHParameters fromSafeP(String hexP)
