@@ -65,7 +65,7 @@ public abstract class Ed25519
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
-    private static Object precompLock = new Object();
+    private static final Object precompLock = new Object();
     // TODO[ed25519] Convert to PointPrecomp
     private static PointExt[] precompBaseTable = null;
     private static int[] precompBase = null;
