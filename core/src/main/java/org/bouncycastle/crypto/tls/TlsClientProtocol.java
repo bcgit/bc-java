@@ -91,6 +91,8 @@ public class TlsClientProtocol
         this.tlsClient.init(tlsClientContext);
         this.recordStream.init(tlsClientContext);
 
+        tlsClient.notifyCloseHandle(this);
+
         TlsSession sessionToResume = tlsClient.getSessionToResume();
         if (sessionToResume != null && sessionToResume.isResumable())
         {
