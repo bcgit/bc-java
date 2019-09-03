@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -14,7 +15,7 @@ import org.bouncycastle.util.test.TestFailedException;
 
 public class AEADTestUtil
 {
-    public static void testTampering(Test test, AEADBlockCipher cipher, CipherParameters params)
+    public static void testTampering(Test test, AEADCipher cipher, CipherParameters params)
         throws InvalidCipherTextException
     {
         byte[] plaintext = new byte[1000];
@@ -76,7 +77,7 @@ public class AEADTestUtil
         throw new TestFailedException(SimpleTestResult.failed(test, message, expected, result));
     }
 
-    public static void testReset(Test test, AEADBlockCipher cipher1, AEADBlockCipher cipher2, CipherParameters params)
+    public static void testReset(Test test, AEADCipher cipher1, AEADBlockCipher cipher2, CipherParameters params)
         throws InvalidCipherTextException
     {
         cipher1.init(true, params);
@@ -96,7 +97,7 @@ public class AEADTestUtil
     }
 
     private static void checkReset(Test test,
-                                   AEADBlockCipher cipher,
+                                   AEADCipher cipher,
                                    CipherParameters params,
                                    boolean encrypt,
                                    byte[] pretext,
@@ -183,7 +184,7 @@ public class AEADTestUtil
         }
     }
 
-    private static void crypt(AEADBlockCipher cipher, byte[] plaintext, byte[] output)
+    private static void crypt(AEADCipher cipher, byte[] plaintext, byte[] output)
         throws InvalidCipherTextException
     {
         int len = cipher.processBytes(plaintext, 0, plaintext.length, output, 0);
