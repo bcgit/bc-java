@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.macs.SipHash;
 import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -353,19 +352,18 @@ public class ChaCha20Poly1305Test
         encCipher = initCipher(true, parameters);
         checkTestCase(encCipher, decCipher, testName + " (reused)", SA, P, C, T);
 
-        // TODO Consider reuse issues
-//        // Key reuse
-//        AEADParameters keyReuseParams = AEADTestUtil.reuseKey(parameters);
-//
-//        try
-//        {
-//            encCipher.init(true, keyReuseParams);
-//            fail("no exception");
-//        }
-//        catch (IllegalArgumentException e)
-//        {
-//            isTrue("wrong message", "cannot reuse nonce for ChaCha20Poly1305 encryption".equals(e.getMessage()));
-//        }
+        // Key reuse
+        AEADParameters keyReuseParams = AEADTestUtil.reuseKey(parameters);
+
+        try
+        {
+            encCipher.init(true, keyReuseParams);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong message", "cannot reuse nonce for ChaCha20Poly1305 encryption".equals(e.getMessage()));
+        }
     }
 
     private void testExceptions() throws InvalidCipherTextException
@@ -374,7 +372,7 @@ public class ChaCha20Poly1305Test
 
         try
         {
-            c = new ChaCha20Poly1305(new ChaCha7539Engine(), new SipHash());
+            c = new ChaCha20Poly1305(new SipHash());
 
             fail("incorrect mac size not picked up");
         }
@@ -407,26 +405,25 @@ public class ChaCha20Poly1305Test
 
         c.doFinal(buf, 0);
 
-        // TODO Consider reuse issues
-//        try
-//        {
-//            c.doFinal(buf, 0);
-//            fail("no exception on reuse");
-//        }
-//        catch (IllegalStateException e)
-//        {
-//            isTrue("wrong message", e.getMessage().equals("ChaCha20Poly1305 cipher cannot be reused for encryption"));
-//        }
-//
-//        try
-//        {
-//            c.init(true, aeadParameters);
-//            fail("no exception on reuse");
-//        }
-//        catch (IllegalArgumentException e)
-//        {
-//            isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for ChaCha20Poly1305 encryption"));
-//        }
+        try
+        {
+            c.doFinal(buf, 0);
+            fail("no exception on reuse");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("ChaCha20Poly1305 cannot be reused for encryption"));
+        }
+
+        try
+        {
+            c.init(true, aeadParameters);
+            fail("no exception on reuse");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for ChaCha20Poly1305 encryption"));
+        }
     }
 
     public static void main(String[] args)

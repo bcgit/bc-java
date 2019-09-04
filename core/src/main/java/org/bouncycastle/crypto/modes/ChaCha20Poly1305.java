@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.macs.Poly1305;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -19,24 +18,31 @@ public class ChaCha20Poly1305
 {
     private static final class State
     {
-        public static final int UNINITIALIZED = 0;
-        public static final int ENC_AAD = 1;
-        public static final int ENC_DATA = 2;
-        public static final int DEC_AAD = 3;
-        public static final int DEC_DATA = 4;
+        static final int UNINITIALIZED  = 0;
+        static final int ENC_INIT       = 1;
+        static final int ENC_AAD        = 2;
+        static final int ENC_DATA       = 3;
+        static final int ENC_FINAL      = 4;
+        static final int DEC_INIT       = 5;
+        static final int DEC_AAD        = 6;
+        static final int DEC_DATA       = 7;
+        static final int DEC_FINAL      = 8;
     }
 
+    private static final int BUF_SIZE = 64;
+    private static final int KEY_SIZE = 32;
+    private static final int NONCE_SIZE = 12;
     private static final int MAC_SIZE = 16;
-    private static final int BUF_SIZE = MAC_SIZE * 4;
     private static final byte[] ZEROES = new byte[MAC_SIZE - 1];
 
-    // TODO RFC 7593 allows up to 2^64 - 1
-    private static final long AAD_LIMIT = Long.MAX_VALUE;
+    private static final long AAD_LIMIT = Long.MAX_VALUE - Long.MIN_VALUE;
     private static final long DATA_LIMIT = ((1L << 32) - 1) * 64;
 
-    private final StreamCipher chacha20;
+    private final ChaCha7539Engine chacha20;
     private final Mac poly1305;
 
+    private final byte[] key = new byte[KEY_SIZE];
+    private final byte[] nonce = new byte[NONCE_SIZE];
     private final byte[] buf = new byte[BUF_SIZE + MAC_SIZE];
     private final byte[] mac = new byte[MAC_SIZE];
 
@@ -49,15 +55,11 @@ public class ChaCha20Poly1305
 
     public ChaCha20Poly1305()
     {
-        this(new ChaCha7539Engine(), new Poly1305());
+        this(new Poly1305());
     }
 
-    public ChaCha20Poly1305(StreamCipher chacha20, Mac poly1305)
+    public ChaCha20Poly1305(Mac poly1305)
     {
-        if (null == chacha20)
-        {
-            throw new NullPointerException("'chacha20' cannot be null");
-        }
         if (null == poly1305)
         {
             throw new NullPointerException("'poly1305' cannot be null");
@@ -67,7 +69,7 @@ public class ChaCha20Poly1305
             throw new IllegalArgumentException("'poly1305' must be a 128-bit MAC");
         }
 
-        this.chacha20 = chacha20;
+        this.chacha20 = new ChaCha7539Engine();
         this.poly1305 = poly1305;
     }
 
@@ -78,29 +80,82 @@ public class ChaCha20Poly1305
 
     public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
     {
-        this.state = forEncryption ? State.ENC_AAD : State.DEC_AAD;
-
+        KeyParameter initKeyParam;
+        byte[] initNonce;
         CipherParameters chacha20Params;
+
         if (params instanceof AEADParameters)
         {
-            AEADParameters param = (AEADParameters)params;
+            AEADParameters aeadParams = (AEADParameters)params;
 
-            int macSizeBits = param.getMacSize();
+            int macSizeBits = aeadParams.getMacSize();
             if ((MAC_SIZE * 8) != macSizeBits)
             {
                 throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
             }
 
-            chacha20Params = new ParametersWithIV(param.getKey(), param.getNonce());
+            initKeyParam = aeadParams.getKey();
+            initNonce = aeadParams.getNonce();
+            chacha20Params = new ParametersWithIV(initKeyParam, initNonce);
 
-            this.initialAAD = param.getAssociatedText();
+            this.initialAAD = aeadParams.getAssociatedText();
+        }
+        else if (params instanceof ParametersWithIV)
+        {
+            ParametersWithIV ivParams = (ParametersWithIV)params;
+
+            initKeyParam = (KeyParameter)ivParams.getParameters();
+            initNonce = ivParams.getIV();
+            chacha20Params = ivParams;
+
+            this.initialAAD = null;
         }
         else
         {
             throw new IllegalArgumentException("invalid parameters passed to ChaCha20Poly1305");
         }
 
-        chacha20.init(forEncryption, chacha20Params);
+        // Validate key
+        if (null == initKeyParam)
+        {
+            if (State.UNINITIALIZED == state)
+            {
+                throw new IllegalArgumentException("Key must be specified in initial init");
+            }
+        }
+        else
+        {
+            if (KEY_SIZE != initKeyParam.getKey().length)
+            {
+                throw new IllegalArgumentException("Key must be 256 bits");
+            }
+        }
+
+        // Validate nonce
+        if (null == initNonce || NONCE_SIZE != initNonce.length)
+        {
+            throw new IllegalArgumentException("Nonce must be 96 bits");
+        }
+
+        // Check for encryption with reused nonce
+        if (State.UNINITIALIZED != state && forEncryption && Arrays.areEqual(nonce, initNonce))
+        {
+            if (null == initKeyParam || Arrays.areEqual(key, initKeyParam.getKey()))
+            {
+                throw new IllegalArgumentException("cannot reuse nonce for ChaCha20Poly1305 encryption");
+            }
+        }
+
+        if (null != initKeyParam)
+        {
+            System.arraycopy(initKeyParam.getKey(), 0, key, 0, KEY_SIZE);
+        }
+
+        System.arraycopy(initNonce, 0, nonce, 0, NONCE_SIZE);
+
+        chacha20.init(true, chacha20Params);
+
+        this.state = forEncryption ? State.ENC_INIT : State.DEC_INIT;
 
         reset(true, false);
     }
@@ -111,9 +166,11 @@ public class ChaCha20Poly1305
 
         switch (state)
         {
+        case State.DEC_INIT:
         case State.DEC_AAD:
         case State.DEC_DATA:
             return Math.max(0, total - MAC_SIZE);
+        case State.ENC_INIT:
         case State.ENC_AAD:
         case State.ENC_DATA:
             return total + MAC_SIZE;
@@ -128,10 +185,12 @@ public class ChaCha20Poly1305
 
         switch (state)
         {
+        case State.DEC_INIT:
         case State.DEC_AAD:
         case State.DEC_DATA:
             total = Math.max(0, total - MAC_SIZE);
             break;
+        case State.ENC_INIT:
         case State.ENC_AAD:
         case State.ENC_DATA:
             break;
@@ -144,18 +203,10 @@ public class ChaCha20Poly1305
 
     public void processAADByte(byte in)
     {
-        switch (state)
-        {
-        case State.DEC_AAD:
-        case State.ENC_AAD:
-        {
-            this.aadCount = incrementCount(aadCount, 1, AAD_LIMIT);
-            poly1305.update(in);
-            break;
-        }
-        default:
-            throw new IllegalStateException();
-        }
+        checkAAD();
+
+        this.aadCount = incrementCount(aadCount, 1, AAD_LIMIT);
+        poly1305.update(in);
     }
 
     public void processAADBytes(byte[] in, int inOff, int len)
@@ -177,26 +228,18 @@ public class ChaCha20Poly1305
             throw new DataLengthException("Input buffer too short");
         }
 
-        switch (state)
+        checkAAD();
+
+        if (len > 0)
         {
-        case State.DEC_AAD:
-        case State.ENC_AAD:
-        {
-            if (len > 0)
-            {
-                this.aadCount = incrementCount(aadCount, len, AAD_LIMIT);
-                poly1305.update(in, inOff, len);
-            }
-            break;
-        }
-        default:
-            throw new IllegalStateException();
+            this.aadCount = incrementCount(aadCount, len, AAD_LIMIT);
+            poly1305.update(in, inOff, len);
         }
     }
 
     public int processByte(byte in, byte[] out, int outOff) throws DataLengthException
     {
-        checkAAD();
+        checkData();
 
         switch (state)
         {
@@ -259,7 +302,7 @@ public class ChaCha20Poly1305
             throw new IllegalArgumentException("'outOff' cannot be negative");
         }
 
-        checkAAD();
+        checkData();
 
         int resultLen = 0;
 
@@ -283,16 +326,36 @@ public class ChaCha20Poly1305
         }
         case State.ENC_DATA:
         {
-            for (int i = 0; i < len; ++i)
+            if (bufPos != 0)
             {
-                buf[bufPos] = in[inOff + i];
-                if (++bufPos == BUF_SIZE)
+                while (len > 0)
                 {
-                    processData(buf, 0, BUF_SIZE, out, outOff + resultLen);
-                    poly1305.update(out, outOff + resultLen, BUF_SIZE);
-                    this.bufPos = 0;
-                    resultLen += BUF_SIZE;
+                    --len;
+                    buf[bufPos] = in[inOff++];
+                    if (++bufPos == BUF_SIZE)
+                    {
+                        processData(buf, 0, BUF_SIZE, out, outOff);
+                        poly1305.update(out, outOff, BUF_SIZE);
+                        this.bufPos = 0;
+                        resultLen = BUF_SIZE;
+                        break;
+                    }
                 }
+            }
+
+            while (len >= BUF_SIZE)
+            {
+                processData(in, inOff, BUF_SIZE, out, outOff + resultLen);
+                poly1305.update(out, outOff + resultLen, BUF_SIZE);
+                inOff += BUF_SIZE;
+                len -= BUF_SIZE;
+                resultLen += BUF_SIZE;
+            }
+
+            if (len > 0)
+            {
+                System.arraycopy(in, inOff, buf, 0, len);
+                this.bufPos = len;
             }
             break;
         }
@@ -314,9 +377,9 @@ public class ChaCha20Poly1305
             throw new IllegalArgumentException("'outOff' cannot be negative");
         }
 
-        Arrays.clear(mac);
+        checkData();
 
-        checkAAD();
+        Arrays.clear(mac);
 
         int resultLen = 0;
 
@@ -342,7 +405,7 @@ public class ChaCha20Poly1305
                 processData(buf, 0, resultLen, out, outOff);
             }
 
-            finishData();
+            finishData(State.DEC_FINAL);
 
             if (!Arrays.constantTimeAreEqual(MAC_SIZE, mac, 0, buf, resultLen))
             {
@@ -366,7 +429,7 @@ public class ChaCha20Poly1305
                 poly1305.update(out, outOff, bufPos);
             }
 
-            finishData();
+            finishData(State.ENC_FINAL);
 
             System.arraycopy(mac, 0, out, outOff + bufPos, MAC_SIZE);
             break;
@@ -394,27 +457,52 @@ public class ChaCha20Poly1305
     {
         switch (state)
         {
+        case State.DEC_INIT:
+            this.state = State.DEC_AAD;
+            break;
+        case State.ENC_INIT:
+            this.state = State.ENC_AAD;
+            break;
         case State.DEC_AAD:
-        {
-            finishAAD();
-            this.state = State.DEC_DATA;
-            break;
-        }
         case State.ENC_AAD:
-        {
-            finishAAD();
-            this.state = State.ENC_DATA;
             break;
-        }
+        case State.ENC_FINAL:
+            throw new IllegalStateException("ChaCha20Poly1305 cannot be reused for encryption");
+        default:
+            throw new IllegalStateException();
         }
     }
 
-    private void finishAAD()
+    private void checkData()
+    {
+        switch (state)
+        {
+        case State.DEC_INIT:
+        case State.DEC_AAD:
+            finishAAD(State.DEC_DATA);
+            break;
+        case State.ENC_INIT:
+        case State.ENC_AAD:
+            finishAAD(State.ENC_DATA);
+            break;
+        case State.DEC_DATA:
+        case State.ENC_DATA:
+            break;
+        case State.ENC_FINAL:
+            throw new IllegalStateException("ChaCha20Poly1305 cannot be reused for encryption");
+        default:
+            throw new IllegalStateException();
+        }
+    }
+
+    private void finishAAD(int nextState)
     {
         padMAC(aadCount);
+
+        this.state = nextState;
     }
 
-    private void finishData()
+    private void finishData(int nextState)
     {
         padMAC(dataCount);
 
@@ -424,11 +512,13 @@ public class ChaCha20Poly1305
         poly1305.update(lengths, 0, 16);
 
         poly1305.doFinal(mac, 0);
+
+        this.state = nextState;
     }
 
-    private long incrementCount(long count, long increment, long limit)
+    private long incrementCount(long count, int increment, long limit)
     {
-        if (count > (limit - increment))
+        if (count + Long.MIN_VALUE > (limit - increment) + Long.MIN_VALUE)
         {
             throw new IllegalStateException("Limit exceeded");
         }
@@ -473,21 +563,6 @@ public class ChaCha20Poly1305
 
     private void reset(boolean clearMac, boolean resetCipher)
     {
-        switch (state)
-        {
-        case State.DEC_AAD:
-        case State.ENC_AAD:
-            break;
-        case State.DEC_DATA:
-            this.state = State.DEC_AAD;
-            break;
-        case State.ENC_DATA:
-            this.state = State.ENC_AAD;
-            break;
-        default:
-            throw new IllegalStateException();
-        }
-
         Arrays.clear(buf);
 
         if (clearMac)
@@ -499,6 +574,25 @@ public class ChaCha20Poly1305
         this.dataCount = 0L;
         this.bufPos = 0;
 
+        switch (state)
+        {
+        case State.DEC_INIT:
+        case State.ENC_INIT:
+            break;
+        case State.DEC_AAD:
+        case State.DEC_DATA:
+        case State.DEC_FINAL:
+            this.state = State.DEC_INIT;
+            break;
+        case State.ENC_AAD:
+        case State.ENC_DATA:
+        case State.ENC_FINAL:
+            this.state = State.ENC_FINAL;
+            return;
+        default:
+            throw new IllegalStateException();
+        }
+
         if (resetCipher)
         {
             chacha20.reset();
@@ -508,8 +602,7 @@ public class ChaCha20Poly1305
 
         if (null != initialAAD)
         {
-            this.aadCount = incrementCount(aadCount, initialAAD.length, AAD_LIMIT);
-            poly1305.update(initialAAD, 0, initialAAD.length);
+            processAADBytes(initialAAD, 0, initialAAD.length);
         }
     }
 }
