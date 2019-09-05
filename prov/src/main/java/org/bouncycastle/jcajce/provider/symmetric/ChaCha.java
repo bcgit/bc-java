@@ -1,9 +1,12 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
+import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseStreamCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
@@ -42,6 +45,15 @@ public final class ChaCha
         }
     }
 
+    public static class BaseCC20P1305
+        extends BaseBlockCipher
+    {
+        public BaseCC20P1305()
+        {
+            super(new ChaCha20Poly1305(), true, 12);
+        }
+    }
+
     public static class KeyGen7539
         extends BaseKeyGenerator
     {
@@ -57,6 +69,15 @@ public final class ChaCha
         protected String engineToString()
         {
             return "ChaCha7539 IV";
+        }
+    }
+
+    public static class AlgParamsCC1305
+        extends IvAlgorithmParameters
+    {
+        protected String engineToString()
+        {
+            return "ChaCha20-Poly1305 IV";
         }
     }
 
@@ -81,6 +102,15 @@ public final class ChaCha
             provider.addAlgorithm("Alg.Alias.Cipher.CHACHA20", "CHACHA7539");
             provider.addAlgorithm("Alg.Alias.KeyGenerator.CHACHA20", "CHACHA7539");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.CHACHA20", "CHACHA7539");
+
+            provider.addAlgorithm("Alg.Alias.KeyGenerator.CHACHA20-POLY1305", "CHACHA7539");
+            provider.addAlgorithm("Alg.Alias.KeyGenerator." + PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305, "CHACHA7539");
+            provider.addAlgorithm("Cipher.CHACHA20-POLY1305", PREFIX + "$BaseCC20P1305");
+            provider.addAlgorithm("AlgorithmParameters.CHACHA20-POLY1305", PREFIX + "$AlgParamsCC1305");
+            provider.addAlgorithm("Alg.Alias.Cipher." + PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305, "CHACHA20-POLY1305");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305, "CHACHA20-POLY1305");
+            provider.addAlgorithm("Alg.Alias.Cipher.OID." + PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305, "CHACHA20-POLY1305");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters.OID." + PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305, "CHACHA20-POLY1305");
         }
     }
 }
