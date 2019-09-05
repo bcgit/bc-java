@@ -6,7 +6,6 @@ import java.security.Key;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 
-import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -99,8 +98,15 @@ public class ChaCha20Poly1305Test
             decCipher.doFinal(faulty);
             fail("no exception");
         }
-        catch (AEADBadTagException e)
+        catch (Exception e)
         {
+            if (aeadAvailable)
+            {
+                if (!e.getClass().getName().equals("javax.crypto.AEADBadTagException"))
+                {
+                    fail("Tampered AEAD ciphertext should fail with AEADBadTagException when available.");
+                }
+            }
             isEquals("mac check in ChaCha20Poly1305 failed", e.getMessage());
         }
 
@@ -112,8 +118,15 @@ public class ChaCha20Poly1305Test
             decCipher.doFinal(faulty);
             fail("no exception");
         }
-        catch (AEADBadTagException e)
+        catch (Exception e)
         {
+            if (aeadAvailable)
+            {
+                if (!e.getClass().getName().equals("javax.crypto.AEADBadTagException"))
+                {
+                    fail("Tampered AEAD ciphertext should fail with AEADBadTagException when available.");
+                }
+            }
             isEquals("mac check in ChaCha20Poly1305 failed", e.getMessage());
         }
         //
