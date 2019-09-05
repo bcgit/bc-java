@@ -162,7 +162,7 @@ public class Zuc256CoreEngine
      *
      * @return the copy
      */
-    public Zuc256CoreEngine copy()
+    public Memoable copy()
     {
         return new Zuc256CoreEngine(this);
     }

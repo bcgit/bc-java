@@ -415,7 +415,7 @@ public abstract class ASN1Set
         }
         else
         {
-            tmp = elements.clone();
+            tmp = (ASN1Encodable[])elements.clone();
             sort(tmp);
         }
 

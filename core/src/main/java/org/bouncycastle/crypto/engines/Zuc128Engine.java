@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.util.Memoable;
+
 /**
  * Zuc256 implementation.
  * Based on http://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf
@@ -30,7 +32,7 @@ public final class Zuc128Engine
      *
      * @return the copy
      */
-    public Zuc128Engine copy()
+    public Memoable copy()
     {
         return new Zuc128Engine(this);
     }

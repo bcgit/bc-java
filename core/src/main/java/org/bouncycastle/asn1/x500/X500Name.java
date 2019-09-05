@@ -146,7 +146,7 @@ public class X500Name
         RDN[]         rDNs)
     {
         this.style = style;
-        this.rdns = rDNs.clone();
+        this.rdns = (RDN[])rDNs.clone();
         this.rdnSeq = new DERSequence(this.rdns);
     }
 
@@ -172,7 +172,7 @@ public class X500Name
      */
     public RDN[] getRDNs()
     {
-        return rdns.clone();
+        return (RDN[])rdns.clone();
     }
 
     /**
