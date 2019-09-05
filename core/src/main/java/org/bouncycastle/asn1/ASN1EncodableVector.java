@@ -154,6 +154,6 @@ public class ASN1EncodableVector
 
     static ASN1Encodable[] cloneElements(ASN1Encodable[] elements)
     {
-        return elements.length < 1 ? EMPTY_ELEMENTS : elements.clone();
+        return elements.length < 1 ? EMPTY_ELEMENTS : (ASN1Encodable[])elements.clone();
     }
 }

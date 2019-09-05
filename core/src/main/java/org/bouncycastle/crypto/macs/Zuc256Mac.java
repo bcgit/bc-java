@@ -94,7 +94,7 @@ public final class Zuc256Mac
     {
         /* Initialise the engine */
         theEngine.init(true, pParams);
-        theState = theEngine.copy();
+        theState = (Zuc256CoreEngine)theEngine.copy();
         initKeyStream();
     }
 
@@ -115,7 +115,7 @@ public final class Zuc256Mac
             theKeyStream[i] = theEngine.createKeyStreamWord();
         }
         theWordIndex = theKeyStream.length - 1;
-        theByteIndex = Integer.BYTES - 1;
+        theByteIndex = 4 - 1;    // Integer.SIZE
     }
 
     /**

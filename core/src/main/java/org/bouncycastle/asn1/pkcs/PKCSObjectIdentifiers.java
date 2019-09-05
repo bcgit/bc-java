@@ -253,6 +253,17 @@ public interface PKCSObjectIdentifiers
      */
     ASN1ObjectIdentifier id_rsa_KEM              = id_alg.branch("14");
 
+    /**
+     * <pre>
+     * id-alg-AEADChaCha20Poly1305 OBJECT IDENTIFIER ::=
+     * { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+     *    pkcs9(9) smime(16) alg(3) 18 }
+     *
+     * AEADChaCha20Poly1305Nonce ::= OCTET STRING (SIZE(12))
+     * </pre>
+     */
+    ASN1ObjectIdentifier id_alg_AEADChaCha20Poly1305 = id_alg.branch("18");
+
     //
     // id-cti OBJECT IDENTIFIER ::= {iso(1) member-body(2) usa(840)
     // rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) cti(6)}

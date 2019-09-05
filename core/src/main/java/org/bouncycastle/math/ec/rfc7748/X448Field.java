@@ -71,7 +71,7 @@ public abstract class X448Field
 
     public static void cmov(int cond, int[] x, int xOff, int[] z, int zOff)
     {
-        assert 0 == cond || -1 == cond;
+//        assert 0 == cond || -1 == cond;
 
         for (int i = 0; i < SIZE; ++i)
         {
