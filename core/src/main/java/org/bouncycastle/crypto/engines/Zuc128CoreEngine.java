@@ -75,7 +75,7 @@ public class Zuc128CoreEngine
     /**
      * Advanced stream.
      */
-    private final byte[] keyStream = new byte[Integer.BYTES];
+    private final byte[] keyStream = new byte[4];   // Integer.BYTES
 
     /**
      * The iterations.
@@ -141,7 +141,7 @@ public class Zuc128CoreEngine
         setKeyAndIV(newKey, newIV);
 
         /* Save reset state */
-        theResetState = copy();
+        theResetState = (Zuc128CoreEngine)copy();
     }
 
     /**
@@ -229,7 +229,7 @@ public class Zuc128CoreEngine
 
         /* Map the next byte and adjust index */
         final byte out = (byte)(keyStream[theIndex] ^ in);
-        theIndex = (theIndex + 1) % Integer.BYTES;
+        theIndex = (theIndex + 1) % 4; // Integer.BYTES
 
         /* Return the mapped character */
         return out;
@@ -546,7 +546,7 @@ public class Zuc128CoreEngine
      *
      * @return the copy
      */
-    public Zuc128CoreEngine copy()
+    public Memoable copy()
     {
         return new Zuc128CoreEngine(this);
     }

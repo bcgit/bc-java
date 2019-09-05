@@ -67,32 +67,64 @@ public final class Arrays
      * @return true if arrays equal, false otherwise.
      */
     public static boolean constantTimeAreEqual(
-        byte[]  a,
-        byte[]  b)
+        byte[]  expected,
+        byte[]  supplied)
     {
-        if (a == b)
+        if (expected == null || supplied == null)
+        {
+            return false;
+        }
+
+        if (expected == supplied)
         {
             return true;
         }
 
-        if (a == null || b == null)
+        int len = (expected.length < supplied.length) ? expected.length : supplied.length;
+
+        int nonEqual = expected.length ^ supplied.length;
+
+        for (int i = 0; i != len; i++)
         {
-            return false;
+            nonEqual |= (expected[i] ^ supplied[i]);
         }
-
-        if (a.length != b.length)
+        for (int i = len; i < supplied.length; i++)
         {
-            return false;
-        }
-
-        int nonEqual = 0;
-
-        for (int i = 0; i != a.length; i++)
-        {
-            nonEqual |= (a[i] ^ b[i]);
+            nonEqual |= (supplied[i] ^ ~supplied[i]);
         }
 
         return nonEqual == 0;
+    }
+
+    public static boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
+    {
+        if (null == a)
+        {
+            throw new NullPointerException("'a' cannot be null");
+        }
+        if (null == b)
+        {
+            throw new NullPointerException("'b' cannot be null");
+        }
+        if (len < 0)
+        {
+            throw new IllegalArgumentException("'len' cannot be negative");
+        }
+        if (aOff > (a.length - len))
+        {
+            throw new IndexOutOfBoundsException("'aOff' value invalid for specified length");
+        }
+        if (bOff > (b.length - len))
+        {
+            throw new IndexOutOfBoundsException("'bOff' value invalid for specified length");
+        }
+
+        int d = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= (a[aOff + i] ^ b[bOff + i]);
+        }
+        return 0 == d;
     }
 
     public static int compareUnsigned(byte[] a, byte[] b)
@@ -522,37 +554,37 @@ public final class Arrays
 
     public static boolean[] clone(boolean[] data)
     {
-        return null == data ? null : data.clone();
+        return null == data ? null : (boolean[])data.clone();
     }
 
     public static byte[] clone(byte[] data)
     {
-        return null == data ? null : data.clone();
+        return null == data ? null : (byte[])data.clone();
     }
 
     public static char[] clone(char[] data)
     {
-        return null == data ? null : data.clone();
+        return null == data ? null : (char[])data.clone();
     }
 
     public static int[] clone(int[] data)
     {
-        return null == data ? null : data.clone();
+        return null == data ? null : (int[])data.clone();
     }
 
     public static long[] clone(long[] data)
     {
-        return null == data ? null : data.clone();
+        return null == data ? null : (long[])data.clone();
     }
 
     public static short[] clone(short[] data)
     {
-        return null == data ? null : data.clone();
+        return null == data ? null : (short[])data.clone();
     }
 
     public static BigInteger[] clone(BigInteger[] data)
     {
-        return null == data ? null : data.clone();
+        return null == data ? null : (BigInteger[])data.clone();
     }
 
     public static byte[] clone(byte[] data, byte[] existing)
@@ -793,11 +825,11 @@ public final class Arrays
     {
         if (null == a)
         {
-            return b.clone();
+            return (byte[])b.clone();
         }
         if (null == b)
         {
-            return a.clone();
+            return (byte[])a.clone();
         }
 
         byte[] r = new byte[a.length + b.length];
@@ -881,11 +913,11 @@ public final class Arrays
     {
         if (null == a)
         {
-            return b.clone();
+            return (int[])b.clone();
         }
         if (null == b)
         {
-            return a.clone();
+            return (int[])a.clone();
         }
 
         int[] r = new int[a.length + b.length];
@@ -957,9 +989,9 @@ public final class Arrays
     /**
      * Fill input array by zeros
      *
-     * @param array input array
+     * @param data input array
      */
-    public static void clear(byte[] array)
+    public static void clear(byte[] data)
     {
         if (null != data)
         {
@@ -973,6 +1005,23 @@ public final class Arrays
         {
             java.util.Arrays.fill(data, 0);
         }
+    }
+    
+    public static boolean isNullOrContainsNull(Object[] array)
+    {
+        if (null == array)
+        {
+            return true;
+        }
+        int count = array.length;
+        for (int i = 0; i < count; ++i)
+        {
+            if (null == array[i])
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

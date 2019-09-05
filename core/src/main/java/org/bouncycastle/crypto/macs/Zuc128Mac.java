@@ -84,7 +84,7 @@ public final class Zuc128Mac
     {
         /* Initialise the engine */
         theEngine.init(true, pParams);
-        theState = theEngine.copy();
+        theState = (Zuc128CoreEngine)theEngine.copy();
         initKeyStream();
     }
 
