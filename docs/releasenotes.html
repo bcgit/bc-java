@@ -33,6 +33,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
 <li>The DSTU MACs would throw an exception if the key was a multiple of the size as the MAC's underlying buffer size. This has been fixed.</li>
 <li>EdEC and QTESLA were not previously usable with the post Java 9 module structure. This is now fixed.
 <li>ECNR was not correctly bounds checking the input and could produce invalid signatures. This is now fixed.</li>
+<li>ASN.1: Enforce no leading zeroes in OID branches (longer than 1 character).</li>
+<li>TLS: Fix X448 support in JcaTlsCrypto.</li>
+<li>Fixed field reduction for secp128r1 custom curve.</li>
+<li>Fixed unsigned multiplications in X448 field squaring.</li>
 </ul>
 
 <h3>2.1.3 Additional Features and Functionality</h3>
@@ -41,6 +45,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
 <li>Support has been added for generating Ed25519/Ed448 signed certificates.</li>
 <li>A method for recovering the message/digest value from an ECNR signature has been added.</li>
 <li>Support for the ZUC-128 and ZUC-256 ciphers and MACs has been added to the provider and the lightweight API.</li>
+<li>Support has been added for ChaCha20-Poly1305 AEAD mode from RFC 7539.</li>
+<li>Improved performance for multiple ECDSA verifications using same public key.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
