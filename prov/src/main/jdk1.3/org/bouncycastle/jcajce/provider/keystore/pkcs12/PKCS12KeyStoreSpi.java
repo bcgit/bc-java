@@ -51,6 +51,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
@@ -492,7 +493,7 @@ public class PKCS12KeyStoreSpi
     public Key engineGetKey(
         String alias,
         char[] password)
-        throws NoSuchAlgorithmException, UnrecoverableKeyException
+        throws NoSuchAlgorithmException
     {
         if (alias == null)
         {
@@ -1547,7 +1548,7 @@ public class PKCS12KeyStoreSpi
         AuthenticatedSafe auth = new AuthenticatedSafe(info);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        DEROutputStream asn1Out;
+        ASN1OutputStream asn1Out;
         if (useDEREncoding)
         {
             asn1Out = new DEROutputStream(bOut);

@@ -218,7 +218,7 @@ public abstract class SimpleTest
             TestResult result = tests[i].perform();
             if (!result.isSuccessful())
             {
-                failures.add(result);
+                failures.addElement(result);
             }
 
             if (result.getException() != null)

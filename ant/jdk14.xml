@@ -30,6 +30,7 @@
                 <exclude name="**/keybox/**/*.java"/>
             </fileset>
             <fileset dir="pkix/src/main/java">
+                <exclude name="**/JceKeyTransAuthEnvelopedRecipient.java"/>
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/jcajce/*.java"/>
             </fileset>
@@ -87,10 +88,12 @@
                 <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
                 <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
+                <exclude name="**/bouncycastle/cms/test/AuthEnvelopedDataTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java"/>
             <fileset dir="prov/src/test/java">
                 <exclude name="**/AEADTest.java"/>
+                <exclude name="**/jce/provider/test/ChaCha20Poly1305Test.java"/>
                 <exclude name="**/DetDSATest.java"/>
                 <exclude name="**/ECDSA5Test.java"/>
                 <exclude name="**/CRL5Test.java"/>
@@ -110,6 +113,8 @@
                 <exclude name="**/pqc/**/EncryptionKeyTest.java"/>
                 <exclude name="**/pqc/**/BitStringTest.java"/>
                 <exclude name="**/jcajce/provider/test/*.java"/>
+		<exclude name="**/jce/provider/test/nist/PKITSTest.java"/>
+		<exclude name="**/jce/provider/test/nist/NistCertPathTest2.java"/>
                 <exclude name="**/jce/provider/test/JceTestUtil.java"/>
             </fileset>
 

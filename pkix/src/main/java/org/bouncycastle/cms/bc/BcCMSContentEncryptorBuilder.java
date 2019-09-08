@@ -168,14 +168,12 @@ public class BcCMSContentEncryptorBuilder
             this.cipher = cipher;
         }
 
-        @Override
         public void write(byte[] buf, int off, int len)
             throws IOException
         {
             cipher.processAADBytes(buf, off, len);
         }
-
-        @Override
+        
         public void write(int b)
             throws IOException
         {

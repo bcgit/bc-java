@@ -76,3 +76,9 @@ g/private final/s/final//
 w
 q
 %
+
+ed org/bouncycastle/crypto/modes/ChaCha20Poly1305.java <<%
+g/private final/s/final//
+w
+q
+%

@@ -1,552 +1,152 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Principal;
-import java.security.Provider;
 import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.asn1.misc.NetscapeCertType;
-import org.bouncycastle.asn1.misc.NetscapeRevocationURL;
-import org.bouncycastle.asn1.misc.VerisignCzagExtension;
-import org.bouncycastle.asn1.util.ASN1Dump;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x500.style.RFC4519Style;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.Extensions;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 
 class X509CertificateObject
-    extends X509Certificate
+    extends X509CertificateImpl
     implements PKCS12BagAttributeCarrier
 {
-    private JcaJceHelper bcHelper;
-    private org.bouncycastle.asn1.x509.Certificate    c;
-    private BasicConstraints            basicConstraints;
-    private boolean[]                   keyUsage;
-    private boolean                     hashValueSet;
-    private int                         hashValue;
+    private final Object                cacheLock = new Object();
+    private X509CertificateInternal     internalCertificateValue;
+    private X509Principal               issuerValue;
+    private PublicKey                   publicKeyValue;
+    private X509Principal               subjectValue;
+    private long[]                      validityValues;
+
+    private volatile boolean            hashValueSet;
+    private volatile int                hashValue;
 
     private PKCS12BagAttributeCarrier   attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
-    public X509CertificateObject(
-        JcaJceHelper bcHelper,
-        org.bouncycastle.asn1.x509.Certificate    c)
+    X509CertificateObject(JcaJceHelper bcHelper, org.bouncycastle.asn1.x509.Certificate c)
         throws CertificateParsingException
     {
-        this.bcHelper = bcHelper;
-        this.c = c;
-
-        try
-        {
-            byte[]  bytes = this.getExtensionBytes("2.5.29.19");
-
-            if (bytes != null)
-            {
-                basicConstraints = BasicConstraints.getInstance(ASN1Primitive.fromByteArray(bytes));
-            }
-        }
-        catch (Exception e)
-        {
-            throw new CertificateParsingException("cannot construct BasicConstraints: " + e);
-        }
-
-        try
-        {
-            byte[] bytes = this.getExtensionBytes("2.5.29.15");
-            if (bytes != null)
-            {
-                ASN1BitString bits = DERBitString.getInstance(ASN1Primitive.fromByteArray(bytes));
-
-                bytes = bits.getBytes();
-                int length = (bytes.length * 8) - bits.getPadBits();
-
-                keyUsage = new boolean[(length < 9) ? 9 : length];
-
-                for (int i = 0; i != length; i++)
-                {
-                    keyUsage[i] = (bytes[i / 8] & (0x80 >>> (i % 8))) != 0;
-                }
-            }
-            else
-            {
-                keyUsage = null;
-            }
-        }
-        catch (Exception e)
-        {
-            throw new CertificateParsingException("cannot construct KeyUsage: " + e);
-        }
+        super(bcHelper, c, createBasicConstraints(c), createKeyUsage(c));
     }
 
-    public void checkValidity()
-        throws CertificateExpiredException, CertificateNotYetValidException
+    public void checkValidity(Date date) throws CertificateExpiredException, CertificateNotYetValidException
     {
-        this.checkValidity(new Date());
-    }
+        long checkTime = date.getTime();
+        long[] validityValues = getValidityValues();
 
-    public void checkValidity(
-        Date    date)
-        throws CertificateExpiredException, CertificateNotYetValidException
-    {
-        if (date.getTime() > this.getNotAfter().getTime())  // for other VM compatibility
+        if (checkTime > validityValues[1])  // for other VM compatibility
         {
             throw new CertificateExpiredException("certificate expired on " + c.getEndDate().getTime());
         }
-
-        if (date.getTime() < this.getNotBefore().getTime())
+        if (checkTime < validityValues[0])
         {
             throw new CertificateNotYetValidException("certificate not valid till " + c.getStartDate().getTime());
         }
     }
 
-    public int getVersion()
-    {
-        return c.getVersionNumber();
-    }
-
-    public BigInteger getSerialNumber()
-    {
-        return c.getSerialNumber().getValue();
-    }
-
-    public Principal getIssuerDN()
-    {
-        try
-        {
-            return new X509Principal(X500Name.getInstance(c.getIssuer().getEncoded()));
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
-    }
-
-    public Principal getSubjectDN()
-    {
-        return new X509Principal(X500Name.getInstance(c.getSubject().toASN1Primitive()));
-    }
-
-    public Date getNotBefore()
-    {
-        return c.getStartDate().getDate();
-    }
-
-    public Date getNotAfter()
-    {
-        return c.getEndDate().getDate();
-    }
-
-    public byte[] getTBSCertificate()
-        throws CertificateEncodingException
-    {
-        try
-        {
-            return c.getTBSCertificate().getEncoded(ASN1Encoding.DER);
-        }
-        catch (IOException e)
-        {
-            throw new CertificateEncodingException(e.toString());
-        }
-    }
-
-    public byte[] getSignature()
-    {
-        return c.getSignature().getOctets();
-    }
-
-    /**
-     * return a more "meaningful" representation for the signature algorithm used in
-     * the certificate.
-     */
-    public String getSigAlgName()
-    {
-        return X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-    }
-
-    /**
-     * return the object identifier for the signature.
-     */
-    public String getSigAlgOID()
-    {
-        return c.getSignatureAlgorithm().getAlgorithm().getId();
-    }
-
-    /**
-     * return the signature parameters, or null if there aren't any.
-     */
-    public byte[] getSigAlgParams()
-    {
-        if (c.getSignatureAlgorithm().getParameters() != null)
-        {
-            try
-            {
-                return c.getSignatureAlgorithm().getParameters().toASN1Primitive().getEncoded(ASN1Encoding.DER);
-            }
-            catch (IOException e)
-            {
-                return null;
-            }
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    public boolean[] getIssuerUniqueID()
-    {
-        DERBitString    id = c.getTBSCertificate().getIssuerUniqueId();
-
-        if (id != null)
-        {
-            byte[]          bytes = id.getBytes();
-            boolean[]       boolId = new boolean[bytes.length * 8 - id.getPadBits()];
-
-            for (int i = 0; i != boolId.length; i++)
-            {
-                boolId[i] = (bytes[i / 8] & (0x80 >>> (i % 8))) != 0;
-            }
-
-            return boolId;
-        }
-            
-        return null;
-    }
-
-    public boolean[] getSubjectUniqueID()
-    {
-        DERBitString    id = c.getTBSCertificate().getSubjectUniqueId();
-
-        if (id != null)
-        {
-            byte[]          bytes = id.getBytes();
-            boolean[]       boolId = new boolean[bytes.length * 8 - id.getPadBits()];
-
-            for (int i = 0; i != boolId.length; i++)
-            {
-                boolId[i] = (bytes[i / 8] & (0x80 >>> (i % 8))) != 0;
-            }
-
-            return boolId;
-        }
-            
-        return null;
-    }
-
-    public boolean[] getKeyUsage()
-    {
-        return keyUsage;
-    }
-
-    public List getExtendedKeyUsage() 
-        throws CertificateParsingException
-    {
-        byte[]  bytes = this.getExtensionBytes("2.5.29.37");
-
-        if (bytes != null)
-        {
-            try
-            {
-                ASN1InputStream dIn = new ASN1InputStream(bytes);
-                ASN1Sequence    seq = (ASN1Sequence)dIn.readObject();
-                List            list = new ArrayList();
-
-                for (int i = 0; i != seq.size(); i++)
-                {
-                    list.add(((ASN1ObjectIdentifier)seq.getObjectAt(i)).getId());
-                }
-                
-                return Collections.unmodifiableList(list);
-            }
-            catch (Exception e)
-            {
-                throw new CertificateParsingException("error processing extended key usage extension");
-            }
-        }
-
-        return null;
-    }
-    
-    public int getBasicConstraints()
-    {
-        if (basicConstraints != null)
-        {
-            if (basicConstraints.isCA())
-            {
-                if (basicConstraints.getPathLenConstraint() == null)
-                {
-                    return Integer.MAX_VALUE;
-                }
-                else
-                {
-                    return basicConstraints.getPathLenConstraint().intValue();
-                }
-            }
-            else
-            {
-                return -1;
-            }
-        }
-
-        return -1;
-    }
-
-    public Collection getSubjectAlternativeNames()
-        throws CertificateParsingException
-    {
-        return getAlternativeNames(getExtensionBytes(Extension.subjectAlternativeName.getId()));
-    }
-
-    public Collection getIssuerAlternativeNames()
-        throws CertificateParsingException
-    {
-        return getAlternativeNames(getExtensionBytes(Extension.issuerAlternativeName.getId()));
-    }
-
-    public Set getCriticalExtensionOIDs() 
-    {
-        if (this.getVersion() == 3)
-        {
-            Set             set = new HashSet();
-            Extensions  extensions = c.getTBSCertificate().getExtensions();
-
-            if (extensions != null)
-            {
-                Enumeration     e = extensions.oids();
-
-                while (e.hasMoreElements())
-                {
-                    ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-                    Extension       ext = extensions.getExtension(oid);
-
-                    if (ext.isCritical())
-                    {
-                        set.add(oid.getId());
-                    }
-                }
-
-                return set;
-            }
-        }
-
-        return null;
-    }
-
-    private byte[] getExtensionBytes(String oid)
-    {
-        Extensions exts = c.getTBSCertificate().getExtensions();
-
-        if (exts != null)
-        {
-            Extension   ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
-            if (ext != null)
-            {
-                return ext.getExtnValue().getOctets();
-            }
-        }
-
-        return null;
-    }
-
-    public byte[] getExtensionValue(String oid) 
-    {
-        Extensions exts = c.getTBSCertificate().getExtensions();
-
-        if (exts != null)
-        {
-            Extension   ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
-
-            if (ext != null)
-            {
-                try
-                {
-                    return ext.getExtnValue().getEncoded();
-                }
-                catch (Exception e)
-                {
-                    throw new IllegalStateException("error parsing " + e.toString());
-                }
-            }
-        }
-
-        return null;
-    }
-
-    public Set getNonCriticalExtensionOIDs() 
-    {
-        if (this.getVersion() == 3)
-        {
-            Set             set = new HashSet();
-            Extensions  extensions = c.getTBSCertificate().getExtensions();
-
-            if (extensions != null)
-            {
-                Enumeration     e = extensions.oids();
-
-                while (e.hasMoreElements())
-                {
-                    ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-                    Extension       ext = extensions.getExtension(oid);
-
-                    if (!ext.isCritical())
-                    {
-                        set.add(oid.getId());
-                    }
-                }
-
-                return set;
-            }
-        }
-
-        return null;
-    }
-
-    public boolean hasUnsupportedCriticalExtension()
-    {
-        if (this.getVersion() == 3)
-        {
-            Extensions  extensions = c.getTBSCertificate().getExtensions();
-
-            if (extensions != null)
-            {
-                Enumeration     e = extensions.oids();
-
-                while (e.hasMoreElements())
-                {
-                    ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-
-                    if (oid.equals(Extension.keyUsage)
-                     || oid.equals(Extension.certificatePolicies)
-                     || oid.equals(Extension.policyMappings)
-                     || oid.equals(Extension.inhibitAnyPolicy)
-                     || oid.equals(Extension.cRLDistributionPoints)
-                     || oid.equals(Extension.issuingDistributionPoint)
-                     || oid.equals(Extension.deltaCRLIndicator)
-                     || oid.equals(Extension.policyConstraints)
-                     || oid.equals(Extension.basicConstraints)
-                     || oid.equals(Extension.subjectAlternativeName)
-                     || oid.equals(Extension.nameConstraints))
-                    {
-                        continue;
-                    }
-
-                    Extension       ext = extensions.getExtension(oid);
-
-                    if (ext.isCritical())
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     public PublicKey getPublicKey()
     {
-        try
+        // Cache the public key to support repeated-use optimizations
+        synchronized (cacheLock)
         {
-            return BouncyCastleProvider.getPublicKey(c.getSubjectPublicKeyInfo());
+            if (null != publicKeyValue)
+            {
+                return publicKeyValue;
+            }
         }
-        catch (IOException e)
+
+        PublicKey temp = super.getPublicKey();
+        if (null == temp)
         {
-            return null;   // should never happen...
+            return null;
+        }
+
+        synchronized (cacheLock)
+        {
+            if (null == publicKeyValue)
+            {
+                publicKeyValue = temp;
+            }
+
+            return publicKeyValue;
         }
     }
 
-    public byte[] getEncoded()
-        throws CertificateEncodingException
+    public long[] getValidityValues()
     {
-        try
+        synchronized (cacheLock)
         {
-            return c.getEncoded(ASN1Encoding.DER);
+            if (null != validityValues)
+            {
+                return validityValues;
+            }
         }
-        catch (IOException e)
+
+        long[] temp = new long[]
         {
-            throw new CertificateEncodingException(e.toString());
+            super.getNotBefore().getTime(),
+            super.getNotAfter().getTime()
+        };
+
+        synchronized (cacheLock)
+        {
+            if (null == validityValues)
+            {
+                validityValues = temp;
+            }
+
+            return validityValues;
         }
     }
 
-    public boolean equals(
-        Object o)
+    public boolean equals(Object other)
     {
-        if (o == this)
+        if (other == this)
         {
             return true;
         }
 
-        if (o instanceof X509CertificateObject)
+        if (other instanceof X509CertificateObject)
         {
-            X509CertificateObject other = (X509CertificateObject)o;
+            X509CertificateObject otherBC = (X509CertificateObject)other;
 
-            if (this.hashValueSet && other.hashValueSet)
+            if (this.hashValueSet && otherBC.hashValueSet)
             {
-                if (this.hashValue != other.hashValue)
+                if (this.hashValue != otherBC.hashValue)
                 {
                     return false;
                 }
             }
-
-            return this.c.equals(other.c);
+            else if (null == internalCertificateValue || null == otherBC.internalCertificateValue)
+            {
+                ASN1BitString signature = c.getSignature();
+                if (null != signature && !signature.equals(otherBC.c.getSignature()))
+                {
+                    return false;
+                }
+            }
         }
 
-        return super.equals(o);
+        return getInternalCertificate().equals(other);
     }
 
-    public synchronized int hashCode()
+    public int hashCode()
     {
         if (!hashValueSet)
         {
-            hashValue = super.hashCode();
+            hashValue = getInternalCertificate().hashCode();
             hashValueSet = true;
         }
 
@@ -563,7 +163,7 @@ class X509CertificateObject
         try
         {
             int hashCode = 0;
-            byte[] certData = this.getEncoded();
+            byte[] certData = getInternalCertificate().getEncoded();
             for (int i = 1; i < certData.length; i++)
             {
                  hashCode += certData[i] * i;
@@ -576,15 +176,12 @@ class X509CertificateObject
         }
     }
 
-    public void setBagAttribute(
-        ASN1ObjectIdentifier oid,
-        ASN1Encodable        attribute)
+    public void setBagAttribute(ASN1ObjectIdentifier oid, ASN1Encodable attribute)
     {
         attrCarrier.setBagAttribute(oid, attribute);
     }
 
-    public ASN1Encodable getBagAttribute(
-        ASN1ObjectIdentifier oid)
+    public ASN1Encodable getBagAttribute(ASN1ObjectIdentifier oid)
     {
         return attrCarrier.getBagAttribute(oid);
     }
@@ -594,276 +191,85 @@ class X509CertificateObject
         return attrCarrier.getBagAttributeKeys();
     }
 
-    public String toString()
+    private X509CertificateInternal getInternalCertificate()
     {
-        StringBuffer    buf = new StringBuffer();
-        String          nl = Strings.lineSeparator();
-
-        buf.append("  [0]         Version: ").append(this.getVersion()).append(nl);
-        buf.append("         SerialNumber: ").append(this.getSerialNumber()).append(nl);
-        buf.append("             IssuerDN: ").append(this.getIssuerDN()).append(nl);
-        buf.append("           Start Date: ").append(this.getNotBefore()).append(nl);
-        buf.append("           Final Date: ").append(this.getNotAfter()).append(nl);
-        buf.append("            SubjectDN: ").append(this.getSubjectDN()).append(nl);
-        buf.append("           Public Key: ").append(this.getPublicKey()).append(nl);
-        buf.append("  Signature Algorithm: ").append(this.getSigAlgName()).append(nl);
-
-        byte[]  sig = this.getSignature();
-
-        buf.append("            Signature: ").append(new String(Hex.encode(sig, 0, 20))).append(nl);
-        for (int i = 20; i < sig.length; i += 20)
+        synchronized (cacheLock)
         {
-            if (i < sig.length - 20)
+            if (null != internalCertificateValue)
             {
-                buf.append("                       ").append(new String(Hex.encode(sig, i, 20))).append(nl);
-            }
-            else
-            {
-                buf.append("                       ").append(new String(Hex.encode(sig, i, sig.length - i))).append(nl);
+                return internalCertificateValue;
             }
         }
 
-        Extensions extensions = c.getTBSCertificate().getExtensions();
-
-        if (extensions != null)
-        {
-            Enumeration     e = extensions.oids();
-
-            if (e.hasMoreElements())
-            {
-                buf.append("       Extensions: \n");
-            }
-
-            while (e.hasMoreElements())
-            {
-                ASN1ObjectIdentifier     oid = (ASN1ObjectIdentifier)e.nextElement();
-                Extension ext = extensions.getExtension(oid);
-
-                if (ext.getExtnValue() != null)
-                {
-                    byte[]                  octs = ext.getExtnValue().getOctets();
-                    ASN1InputStream         dIn = new ASN1InputStream(octs);
-                    buf.append("                       critical(").append(ext.isCritical()).append(") ");
-                    try
-                    {
-                        if (oid.equals(Extension.basicConstraints))
-                        {
-                            buf.append(BasicConstraints.getInstance(dIn.readObject())).append(nl);
-                        }
-                        else if (oid.equals(Extension.keyUsage))
-                        {
-                            buf.append(KeyUsage.getInstance(dIn.readObject())).append(nl);
-                        }
-                        else if (oid.equals(MiscObjectIdentifiers.netscapeCertType))
-                        {
-                            buf.append(new NetscapeCertType((DERBitString)dIn.readObject())).append(nl);
-                        }
-                        else if (oid.equals(MiscObjectIdentifiers.netscapeRevocationURL))
-                        {
-                            buf.append(new NetscapeRevocationURL((DERIA5String)dIn.readObject())).append(nl);
-                        }
-                        else if (oid.equals(MiscObjectIdentifiers.verisignCzagExtension))
-                        {
-                            buf.append(new VerisignCzagExtension((DERIA5String)dIn.readObject())).append(nl);
-                        }
-                        else 
-                        {
-                            buf.append(oid.getId());
-                            buf.append(" value = ").append(ASN1Dump.dumpAsString(dIn.readObject())).append(nl);
-                            //buf.append(" value = ").append("*****").append(nl);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        buf.append(oid.getId());
-                   //     buf.append(" value = ").append(new String(Hex.encode(ext.getExtnValue().getOctets()))).append(nl);
-                        buf.append(" value = ").append("*****").append(nl);
-                    }
-                }
-                else
-                {
-                    buf.append(nl);
-                }
-            }
-        }
-
-        return buf.toString();
-    }
-
-    public final void verify(
-        PublicKey   key)
-        throws CertificateException, NoSuchAlgorithmException,
-        InvalidKeyException, NoSuchProviderException, SignatureException
-    {
-        Signature   signature;
-        String      sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-        
+        byte[] encoding;
         try
         {
-            signature = bcHelper.createSignature(sigName);
+            encoding = getEncoded();
         }
-        catch (Exception e)
+        catch (CertificateEncodingException e)
         {
-            signature = Signature.getInstance(sigName);
+            encoding = null;
         }
-        
-        checkSignature(key, signature);
-    }
-    
-    public final void verify(
-        PublicKey   key,
-        String      sigProvider)
-        throws CertificateException, NoSuchAlgorithmException,
-        InvalidKeyException, NoSuchProviderException, SignatureException
-    {
-        String    sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-        Signature signature;
 
-        if (sigProvider != null)
-        {
-            signature = Signature.getInstance(sigName, sigProvider);
-        }
-        else
-        {
-            signature = Signature.getInstance(sigName);
-        }
-        
-        checkSignature(key, signature);
-    }
+        X509CertificateInternal temp = new X509CertificateInternal(bcHelper, c, basicConstraints, keyUsage, encoding);
 
-    public final void verify(
-        PublicKey   key,
-        Provider sigProvider)
-        throws CertificateException, NoSuchAlgorithmException,
-        InvalidKeyException, SignatureException
-    {
-        String    sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-        Signature signature;
-
-        if (sigProvider != null)
+        synchronized (cacheLock)
         {
-            try
+            if (null == internalCertificateValue)
             {
-            signature = Signature.getInstance(sigName, sigProvider.getName());
-            }
-            catch (NoSuchProviderException e)
-            {
-                throw new CertificateException("Provider not registered.");
-            }
-        }
-        else
-        {
-            signature = Signature.getInstance(sigName);
-        }
-
-        checkSignature(key, signature);
-    }
-
-    private void checkSignature(
-        PublicKey key, 
-        Signature signature) 
-        throws CertificateException, NoSuchAlgorithmException, 
-            SignatureException, InvalidKeyException
-    {
-        if (!isAlgIdEqual(c.getSignatureAlgorithm(), c.getTBSCertificate().getSignature()))
-        {
-            throw new CertificateException("signature algorithm in TBS cert not same as outer cert");
-        }
-
-        ASN1Encodable params = c.getSignatureAlgorithm().getParameters();
-
-        // TODO This should go after the initVerify?
-        X509SignatureUtil.setSignatureParameters(signature, params);
-
-        signature.initVerify(key);
-
-        signature.update(this.getTBSCertificate());
-
-        if (!signature.verify(this.getSignature()))
-        {
-            throw new SignatureException("certificate does not verify with supplied key");
-        }
-    }
-
-    private boolean isAlgIdEqual(AlgorithmIdentifier id1, AlgorithmIdentifier id2)
-    {
-        if (!id1.getAlgorithm().equals(id2.getAlgorithm()))
-        {
-            return false;
-        }
-
-        if (id1.getParameters() == null)
-        {
-            if (id2.getParameters() != null && !id2.getParameters().equals(DERNull.INSTANCE))
-            {
-                return false;
+                internalCertificateValue = temp;
             }
 
-            return true;
+            return internalCertificateValue;
         }
-
-        if (id2.getParameters() == null)
-        {
-            if (id1.getParameters() != null && !id1.getParameters().equals(DERNull.INSTANCE))
-            {
-                return false;
-            }
-
-            return true;
-        }
-        
-        return id1.getParameters().equals(id2.getParameters());
     }
 
-    private static Collection getAlternativeNames(byte[] extVal)
+    private static BasicConstraints createBasicConstraints(org.bouncycastle.asn1.x509.Certificate c)
         throws CertificateParsingException
     {
-        if (extVal == null)
-        {
-            return null;
-        }
         try
         {
-            Collection temp = new ArrayList();
-            Enumeration it = ASN1Sequence.getInstance(extVal).getObjects();
-            while (it.hasMoreElements())
-            {
-                GeneralName genName = GeneralName.getInstance(it.nextElement());
-                List list = new ArrayList();
-                list.add(Integers.valueOf(genName.getTagNo()));
-                switch (genName.getTagNo())
-                {
-                case GeneralName.ediPartyName:
-                case GeneralName.x400Address:
-                case GeneralName.otherName:
-                    list.add(genName.getEncoded());
-                    break;
-                case GeneralName.directoryName:
-                    list.add(X500Name.getInstance(RFC4519Style.INSTANCE, genName.getName()).toString());
-                    break;
-                case GeneralName.dNSName:
-                case GeneralName.rfc822Name:
-                case GeneralName.uniformResourceIdentifier:
-                    list.add(((ASN1String)genName.getName()).getString());
-                    break;
-                case GeneralName.registeredID:
-                    list.add(ASN1ObjectIdentifier.getInstance(genName.getName()).getId());
-                    break;
-                default:
-                    throw new IOException("Bad tag number: " + genName.getTagNo());
-                }
-
-                temp.add(Collections.unmodifiableList(list));
-            }
-            if (temp.size() == 0)
+            byte[] extOctets = getExtensionOctets(c, "2.5.29.19");
+            if (null == extOctets)
             {
                 return null;
             }
-            return Collections.unmodifiableCollection(temp);
+
+            return BasicConstraints.getInstance(ASN1Primitive.fromByteArray(extOctets));
         }
         catch (Exception e)
         {
-            throw new CertificateParsingException(e.getMessage());
+            throw new CertificateParsingException("cannot construct BasicConstraints: " + e);
+        }
+    }
+
+    private static boolean[] createKeyUsage(org.bouncycastle.asn1.x509.Certificate c) throws CertificateParsingException
+    {
+        try
+        {
+            byte[] extOctets = getExtensionOctets(c, "2.5.29.15");
+            if (null == extOctets)
+            {
+                return null;
+            }
+
+            ASN1BitString bits = DERBitString.getInstance(ASN1Primitive.fromByteArray(extOctets));
+
+            byte[] bytes = bits.getBytes();
+            int length = (bytes.length * 8) - bits.getPadBits();
+
+            boolean[] keyUsage = new boolean[(length < 9) ? 9 : length];
+
+            for (int i = 0; i != length; i++)
+            {
+                keyUsage[i] = (bytes[i / 8] & (0x80 >>> (i % 8))) != 0;
+            }
+
+            return keyUsage;
+        }
+        catch (Exception e)
+        {
+            throw new CertificateParsingException("cannot construct KeyUsage: " + e);
         }
     }
 }

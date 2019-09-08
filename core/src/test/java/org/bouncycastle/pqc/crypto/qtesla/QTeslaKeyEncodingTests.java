@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.encoders.Hex;
 
 public class QTeslaKeyEncodingTests
@@ -700,10 +701,9 @@ public class QTeslaKeyEncodingTests
 
 
         long pk_l[] = new long[pk.length];
-        int i = 0;
-        for (int j : pk)
+        for (int i = 0; i != pk.length; i++)
         {
-            pk_l[i++] = j;
+            pk_l[i] = pk[i];
         }
 
         QTesla1p.encodePublicKey(recodedPk, pk_l, seed, 0);
@@ -817,10 +817,9 @@ public class QTeslaKeyEncodingTests
         byte[] recodedPk = new byte[publicKey.length];
 
         long pk_l[] = new long[pk.length];
-        int i = 0;
-        for (int j : pk)
+        for (int i = 0; i != pk.length; i++)
         {
-            pk_l[i++] = j;
+            pk_l[i] = pk[i];
         }
 
         QTesla3p.encodePublicKey(recodedPk, pk_l, seed, 0);
@@ -872,17 +871,17 @@ public class QTeslaKeyEncodingTests
             line = line.trim();
             if (line.length() > 0)
             {
-                longs.add(Long.parseLong(line));
+                longs.add(Longs.valueOf(Long.parseLong(line)));
             }
         }
 
         bin.close();
 
         long[] l = new long[longs.size()];
-        int i = 0;
-        for (Long lv : longs)
+
+        for (int i = 0; i != l.length; i++)
         {
-            l[i++] = lv;
+            l[i] = ((Long)longs.get(i)).longValue();
         }
 
         return l;
