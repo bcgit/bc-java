@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.symmetric.util;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -1012,6 +1013,40 @@ public class BaseBlockCipher
     protected void engineUpdateAAD(byte[] input, int offset, int length)
     {
         cipher.updateAAD(input, offset, length);
+    }
+
+    protected void engineUpdateAAD(ByteBuffer src)
+    {
+        int remaining = src.remaining();
+        if (remaining < 1)
+        {
+            // No data to update
+        }
+        else if (src.hasArray())
+        {
+            engineUpdateAAD(src.array(), src.arrayOffset() + src.position(), remaining);
+            src.position(src.limit());
+        }
+        else if (remaining <= BUF_SIZE)
+        {
+            byte[] data = new byte[remaining];
+            src.get(data);
+            engineUpdateAAD(data, 0, data.length);
+            Arrays.fill(data, (byte)0);
+        }
+        else
+        {
+            byte[] data = new byte[BUF_SIZE];
+            do
+            {
+                int length = Math.min(data.length, remaining);
+                src.get(data, 0, length);
+                engineUpdateAAD(data, 0, length);
+                remaining -= length;
+            }
+            while (remaining > 0);
+            Arrays.fill(data, (byte)0);
+        }
     }
 
     protected byte[] engineUpdate(

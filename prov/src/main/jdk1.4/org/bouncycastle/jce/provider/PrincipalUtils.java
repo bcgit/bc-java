@@ -33,6 +33,12 @@ class PrincipalUtils
         return new X500Name(RFC4519Style.INSTANCE, trustAnchor.getCAName());
     }
 
+    static X500Name getX500Name(X500Principal principal)
+    {
+        X500Name name = X500Name.getInstance(getEncoded(principal));
+        return notNull(name);
+    }
+    
     /**
      * Returns the issuer of an attribute certificate or certificate.
      *
@@ -51,4 +57,64 @@ class PrincipalUtils
             return X500Name.getInstance(((X500Principal)((X509AttributeCertificate)cert).getIssuer().getPrincipals()[0]).getEncoded());
         }
     }
+
+    private static byte[] getEncoded(X500Principal principal)
+     {
+         byte[] encoding = notNull(principal).getEncoded();
+         return notNull(encoding);
+     }
+
+     private static byte[] notNull(byte[] encoding)
+     {
+         if (null == encoding)
+         {
+             throw new IllegalStateException();
+         }
+         return encoding;
+     }
+
+     private static TrustAnchor notNull(TrustAnchor trustAnchor)
+     {
+         if (null == trustAnchor)
+         {
+             throw new IllegalStateException();
+         }
+         return trustAnchor;
+     }
+
+     private static X509Certificate notNull(X509Certificate certificate)
+     {
+         if (null == certificate)
+         {
+             throw new IllegalStateException();
+         }
+         return certificate;
+     }
+
+     private static X509CRL notNull(X509CRL crl)
+     {
+         if (null == crl)
+         {
+             throw new IllegalStateException();
+         }
+         return crl;
+     }
+
+     private static X500Name notNull(X500Name name)
+     {
+         if (null == name)
+         {
+             throw new IllegalStateException();
+         }
+         return name;
+     }
+
+     private static X500Principal notNull(X500Principal principal)
+     {
+         if (null == principal)
+         {
+             throw new IllegalStateException();
+         }
+         return principal;
+     }
 }
