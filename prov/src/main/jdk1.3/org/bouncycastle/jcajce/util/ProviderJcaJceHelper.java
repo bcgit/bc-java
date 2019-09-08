@@ -2,26 +2,35 @@ package org.bouncycastle.jcajce.util;
 
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertStore;
+import java.security.cert.CertStoreParameters;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 
 import javax.crypto.Cipher;
+import javax.crypto.ExemptionMechanism;
 import javax.crypto.KeyAgreement;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 
-import org.bouncycastle.jcajce.util.JcaJceHelper;
-
+/**
+ * {@link JcaJceHelper} that obtains all algorithms from a specific {@link Provider} instance.
+ */
 public class ProviderJcaJceHelper
     implements JcaJceHelper
 {
@@ -87,7 +96,14 @@ public class ProviderJcaJceHelper
         return KeyPairGenerator.getInstance(algorithm, provider.getName());
     }
 
+    /** @deprecated Use createMessageDigest instead */
     public MessageDigest createDigest(String algorithm)
+        throws NoSuchAlgorithmException, NoSuchProviderException
+    {
+        return MessageDigest.getInstance(algorithm, provider.getName());
+    }
+
+    public MessageDigest createMessageDigest(String algorithm)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
         return MessageDigest.getInstance(algorithm, provider.getName());
@@ -109,5 +125,11 @@ public class ProviderJcaJceHelper
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
         return SecureRandom.getInstance(algorithm, provider.getName());
+    }
+
+    public KeyStore createKeyStore(String type)
+        throws KeyStoreException, NoSuchProviderException
+    {
+        return KeyStore.getInstance(type, provider.getName());
     }
 }

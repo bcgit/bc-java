@@ -89,6 +89,7 @@
                 <exclude name="**/jcajce/spec/DSTU4145ParameterSpec.java" />
             </fileset>
             <fileset dir="pkix/src/main/java">
+                <exclude name="**/JceKeyTransAuthEnvelopedRecipient.java"/>
                 <exclude name="**/cert/jcajce/JcaAttributeCertificateIssuer.java" />
                 <exclude name="**/pkix/jcajce/X509Revoc*.java" />
                 <exclude name="**/pkix/jcajce/Revoc*.java" />
@@ -191,6 +192,7 @@
                 <exclude name="**/pkix/**/TestUtil.java" />
                 <exclude name="**/JournalingSecureRandomEncryptTest.java" />
                 <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
+                <exclude name="**/bouncycastle/cms/test/AuthEnvelopedDataTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/SignedMailValidatorTest.java" />

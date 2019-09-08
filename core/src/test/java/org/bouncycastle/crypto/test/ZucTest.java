@@ -22,6 +22,9 @@ import org.bouncycastle.util.test.SimpleTest;
 public class ZucTest
     extends SimpleTest
 {
+    private static final int INT_SIZE = 32;
+    private static final int BYTE_SIZE = 8;
+    
     /**
      * Test Keys and IV.
      */
@@ -168,6 +171,7 @@ public class ZucTest
      */
     class Zuc128MacTest
     {
+
         /**
          * TestCases.
          */
@@ -194,7 +198,7 @@ public class ZucTest
             testMac(myMac, true, TEST2);
             testMac(myMac, false, TEST3);
             testMac(myMac, true, TEST4);
-            testMacLimit(myMac, TEST4, ZUC128LIMIT - (2 * Integer.SIZE));
+            testMacLimit(myMac, TEST4, ZUC128LIMIT - (2 * INT_SIZE));
 
             // reset without init().
             Zuc128Mac xMac = new Zuc128Mac();
@@ -234,7 +238,7 @@ public class ZucTest
             testMac(myMac, true, TEST2);
             testMac(myMac, false, TEST3);
             testMac(myMac, true, TEST4);
-            testMacLimit(myMac, TEST4, ZUC256LIMIT - (2 * myMac.getMacSize() * Byte.SIZE));
+            testMacLimit(myMac, TEST4, ZUC256LIMIT - (2 * myMac.getMacSize() * BYTE_SIZE));
 
             // reset without init().
             Zuc256Mac xMac = new Zuc256Mac(32);
@@ -274,7 +278,7 @@ public class ZucTest
             testMac(myMac, true, TEST2);
             testMac(myMac, false, TEST3);
             testMac(myMac, true, TEST4);
-            testMacLimit(myMac, TEST4, ZUC256LIMIT - (2 * myMac.getMacSize() * Byte.SIZE));
+            testMacLimit(myMac, TEST4, ZUC256LIMIT - (2 * myMac.getMacSize() * BYTE_SIZE));
         }
     }
 
@@ -309,7 +313,7 @@ public class ZucTest
             testMac(myMac, true, TEST2);
             testMac(myMac, false, TEST3);
             testMac(myMac, true, TEST4);
-            testMacLimit(myMac, TEST4, ZUC256LIMIT - (2 * myMac.getMacSize() * Byte.SIZE));
+            testMacLimit(myMac, TEST4, ZUC256LIMIT - (2 * myMac.getMacSize() * BYTE_SIZE));
         }
     }
 
@@ -407,8 +411,8 @@ public class ZucTest
                          final int pLimit)
     {
         /* Check the limit is a whole number of integers */
-        isTrue("Invalid limit", (pLimit % Integer.SIZE == 0));
-        final int myNumBytes = pLimit / Byte.SIZE;
+        isTrue("Invalid limit", (pLimit % INT_SIZE == 0));
+        final int myNumBytes = pLimit / BYTE_SIZE;
 
         /* Create the maximum # of bytes */
         final byte[] myData = new byte[myNumBytes];
@@ -447,8 +451,8 @@ public class ZucTest
                       final int pLimit)
     {
         /* Check the limit is a whole numbet of integers */
-        isTrue("Invalid limit", (pLimit % Integer.SIZE == 0));
-        final int myNumBytes = pLimit / Byte.SIZE;
+        isTrue("Invalid limit", (pLimit % INT_SIZE == 0));
+        final int myNumBytes = pLimit / BYTE_SIZE;
 
         /* Create the maximum # of bytes */
         final byte[] myData = new byte[myNumBytes];

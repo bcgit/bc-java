@@ -43,7 +43,7 @@ public class JceKeyTransAuthEnvelopedRecipient
 
             public OutputStream getAADStream()
             {
-                return new AADStream(dataCipher);
+                return ;
             }
 
             public byte[] getMAC()
@@ -52,31 +52,5 @@ public class JceKeyTransAuthEnvelopedRecipient
                 return new byte[0];
             }
         });
-    }
-
-    private static class AADStream
-        extends OutputStream
-    {
-        private Cipher cipher;
-        private byte[] oneByte = new byte[1];
-
-        public AADStream(Cipher cipher)
-        {
-            this.cipher = cipher;
-        }
-        
-        public void write(byte[] buf, int off, int len)
-            throws IOException
-        {
-            cipher.updateAAD(buf, off, len);
-        }
-
-        public void write(int b)
-            throws IOException
-        {
-            oneByte[0] = (byte)b;
-
-            cipher.updateAAD(oneByte);
-        }
     }
 }
