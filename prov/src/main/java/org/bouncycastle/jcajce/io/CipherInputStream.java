@@ -90,8 +90,12 @@ public class CipherInputStream
     {
         try
         {
-            finalized = true;
-            return cipher.doFinal();
+            if (!finalized)
+            {
+                finalized = true;
+                return cipher.doFinal();
+            }
+            return null;
         }
         catch (GeneralSecurityException e)
         {
