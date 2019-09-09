@@ -24,7 +24,7 @@ to conform the algorithms to the JCE framework.
 
 <h3>2.1.1 Version</h3>
 Release: 1.63<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, September 10th.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>The ASN.1 parser would throw a large object exception for some objects which could be safely parsed. This has been fixed.</li>
@@ -37,6 +37,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
 <li>TLS: Fix X448 support in JcaTlsCrypto.</li>
 <li>Fixed field reduction for secp128r1 custom curve.</li>
 <li>Fixed unsigned multiplications in X448 field squaring.</li>
+<li>Some issues over subset Name Constraint validation in the CertPath analyser have now been fixed.</li>
+<li>TimeStampResponse.getEncoded() could throw an exception if the TimeStampToken was null. This has been fixed.</li>
+<li>Unnecessary memory usage in the ARGON2 implementation has been removed.</li>
+<li>Param-Z in the GOST-28147 algorithm was not resolving correctly. This has been fixed.</li>
+<li>It is now possible to specify different S-Box parameters for the GOST 28147-89 MAC.</li>
 </ul>
 
 <h3>2.1.3 Additional Features and Functionality</h3>
@@ -47,6 +52,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019
 <li>Support for the ZUC-128 and ZUC-256 ciphers and MACs has been added to the provider and the lightweight API.</li>
 <li>Support has been added for ChaCha20-Poly1305 AEAD mode from RFC 7539.</li>
 <li>Improved performance for multiple ECDSA verifications using same public key.</li>
+<li>Support for PBKDF2withHmacSM3 has been added to the BC provider.</li>
+<li>The S/MIME API has been fixed to avoid unnecessary delays due to DNS resolution of a hosts name in internal MimeMessage preparation.</li>
+<li>The valid path for EST services has been updated to cope with the characters used in the Aruba clearpass EST implementation.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
