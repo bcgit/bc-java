@@ -150,7 +150,7 @@ public class Hex
     }
 
     /**
-     * Decode the hexadecimal-encoded string strcitly i.e. any non-hexadecimal characters will be
+     * Decode the hexadecimal-encoded string strictly i.e. any non-hexadecimal characters will be
      * considered an error.
      *
      * @return a byte array representing the decoded data.
@@ -168,7 +168,7 @@ public class Hex
     }
 
     /**
-     * Decode the hexadecimal-encoded string strcitly i.e. any non-hexadecimal characters will be
+     * Decode the hexadecimal-encoded string strictly i.e. any non-hexadecimal characters will be
      * considered an error.
      *
      * @return a byte array representing the decoded data.
