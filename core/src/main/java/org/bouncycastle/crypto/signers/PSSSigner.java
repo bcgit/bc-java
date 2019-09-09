@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.signers;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -13,6 +12,7 @@ import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSABlindingParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.util.Arrays;
 
 /**
  * RSA-PSS as described in PKCS# 1 v 2.1.

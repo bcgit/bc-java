@@ -1,7 +1,6 @@
 package org.bouncycastle.tsp.cms;
 
 import org.bouncycastle.asn1.ASN1Boolean;
-import org.bouncycastle.asn1.DERBoolean;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attributes;

@@ -152,6 +152,8 @@
                 <exclude name="**/nist/NistCertPathReviewerTest.java" />
                 <exclude name="**/CRL5Test.java" />
                 <exclude name="**/DetDSA*.java" />
+                <exclude name="**/PKITSTest.java" />
+                <exclude name="**/NistCertPathReviewerTest.java" />
                 <exclude name="**/LocalizedMessageTest.java" />
                 <exclude name="**/X509LDAP*.java" />
                 <exclude name="**/tls/test/*.java" />
@@ -173,6 +175,7 @@
                 <exclude name="**/pqc/**/BitStringTest.java" />
                 <exclude name="**/jcajce/provider/test/*.java" />
                 <exclude name="**/jce/provider/test/JceTestUtil.java" />
+		<exclude name="**/ChaCha20Poly1305Test.java"/>
                 <exclude name="**/speedy/**" />
                 <exclude name="**/cavp/**" />
                 <exclude name="**/KDFFeedbackGeneratorTest.java" />
@@ -244,11 +247,15 @@
             <fileset dir="core/src/test/jdk1.4" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}" overwrite="true">
-            <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" >
+                <exclude name="**/NistCertPathReviewerTest.java" />
+            </fileset>
             <fileset dir="pkix/src/test/jdk1.4" includes="**/*.java" >
                 <exclude name="**/mime/test/*.java" />
             </fileset>
-            <fileset dir="mail/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="mail/src/test/jdk1.4" includes="**/*.java" >
+                <exclude name="**/SignedMailValidatorTest.java" />
+            </fileset>
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="core/src/main/jdk1.3" includes="**/*.java" />
