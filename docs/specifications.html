@@ -177,6 +177,7 @@ and has the following implemenations.
 <tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
 <tr><td><b>KCCMBlockCipher</b></td><td>BlockCipher</td><td>DSTU 7624 Packet mode - requires all data up front.</td></tr>
 <tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
+<tr><td><b>ChaCha20Poly1305</b></td><td>AEADCipher</td><td>&nbsp;</td></tr>
 </table>
 </p>
 
@@ -269,6 +270,8 @@ used with the above modes.
 <tr><td><b>VMPCEngine</b></td><td>8 .. 6144</td><td>&nbsp;</td></tr>
 <tr><td><b>Grainv1Engine</b></td><td>80</td><td>64 bit IV</td></tr>
 <tr><td><b>Grain128Engine</b></td><td>128</td><td>96 bit IV</td></tr>
+<tr><td><b>Zuc128Engine</b></td><td>128</td><td>128 bit IV</td></tr>
+<tr><td><b>Zuc256Engine</b></td><td>256</td><td>200 bit IV</td></tr>
 </table>
 
 <h4>Block Asymmetric</h4>
@@ -358,6 +361,8 @@ implementations
 <tr><td><b>SkeinMac</b></td><td>any byte length</td><td>256 bit, 512 bit and 1024 state size variants. Additional parameterisation using SkeinParameters.</td></tr>
 <tr><td><b>SipHash</b></td><td>64 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>VMPCMac</b></td><td>160 bits</td><td>&nbsp;</td></tr>
+<tr><td><b>Zuc128Mac</b></td><td>32 bits</td><td>&nbsp;</td></tr>
+<tr><td><b>Zuc256Mac</b></td><td>32, 64, 128 bits</td><td>&nbsp;</td></tr>
 </table>
 
 <h4>PBE and Password Hashing</h4>
@@ -660,6 +665,8 @@ Note: default key sizes are in bold.
 <tr><td>VMPC</td><td>128/6144<b>(128)</b></td><td>&nbsp;</td></tr>
 <tr><td>Grainv1</b></td><td>80</td><td>64 bit IV</td></tr>
 <tr><td>Grain128</b></td><td>128</td><td>96 bit IV</td></tr>
+<tr><td>Zuc128</b></td><td>128</td><td>128 bit IV</td></tr>
+<tr><td>Zuc256</b></td><td>256</td><td>200 bit IV</td></tr>
 </table>
 
 <h4>Block Asymmetric</h4>
@@ -807,6 +814,10 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <tr><td>Skein-MAC-1024-*</td><td>384, 512, 1024</td><td>e.g. Skein-MAC-1024-1024</td></tr>
 <tr><td>HMac-Tiger</td><td>192</td><td>&nbsp;</td></tr>
 <tr><td>Poly1305-*</td><td>128</td><td>Defined for recent 128 bit block ciphers, e.g. Poly1305-AES, Poly1305-Serpent</td></tr>
+<tr><td>ZUC-128</td><td>32</td><td></td></tr>
+<tr><td>ZUC-256-32</td><td>32</td><td></td></tr>
+<tr><td>ZUC-256-64</td><td>64</td><td></td></tr>
+<tr><td>ZUC-256-128</td><td>128</td><td></td></tr>
 </table>
 
 <p>Examples:
@@ -972,6 +983,7 @@ Defined in Bouncy Castle JCE Provider
 <tr><td>PBKDF2WithHmacSHA3-384</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBKDF2WithHmacSHA3-512</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBKDF2WithHmacGOST3411</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSM3</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBEWithSHAAnd2-KeyTripleDES-CBC</td><td>PKCS12</td><td>128</td><td>16 bit chars</td></tr>
 <tr><td>PBEWithSHAAnd3-KeyTripleDES-CBC</td><td>PKCS12</td><td>192</td><td>16 bit chars</td></tr>
 <tr><td>PBEWithSHAAnd128BitRC2-CBC</td><td>PKCS12</td><td>128</td><td>16 bit chars</td></tr>
