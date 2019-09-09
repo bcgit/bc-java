@@ -1,7 +1,5 @@
 package org.bouncycastle.cert.test;
 
-import java.security.Security;
-
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
 

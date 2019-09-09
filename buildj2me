@@ -84,6 +84,7 @@ then
         rm -rf src/org/bouncycastle/pqc/crypto/*/IndexGenerator*
         rm -rf src/org/bouncycastle/pqc/crypto/xmss
         rm -rf src/org/bouncycastle/pqc/crypto/test/XMSS*
+        rm src/org/bouncycastle/pqc/crypto/qtesla/QTeslaKeyEncodingTests.java
         rm -rf src/org/bouncycastle/gpg/keybox
         rm -rf src/org/bouncycastle/gpg/test
         rm src/org/bouncycastle/asn1/test/MonetaryValueUnitTest.java
