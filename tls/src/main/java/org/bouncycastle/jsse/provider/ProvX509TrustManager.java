@@ -143,20 +143,20 @@ class ProvX509TrustManager
         return trustedCerts.toArray(new X509Certificate[trustedCerts.size()]);
     }
 
-    private void checkTrusted(X509Certificate[] chain, String authType, Socket socket, boolean isServer)
+    private void checkTrusted(X509Certificate[] chain, String authType, Socket socket, boolean checkServerTrusted)
         throws CertificateException
     {
-        X509Certificate[] trustedChain = validateChain(chain, authType, isServer);
+        X509Certificate[] trustedChain = validateChain(chain, authType, checkServerTrusted);
 
-        checkExtendedTrust(trustedChain, authType, socket, isServer);
+        checkExtendedTrust(trustedChain, authType, socket, checkServerTrusted);
     }
 
-    private void checkTrusted(X509Certificate[] chain, String authType, SSLEngine engine, boolean isServer)
+    private void checkTrusted(X509Certificate[] chain, String authType, SSLEngine engine, boolean checkServerTrusted)
         throws CertificateException
     {
-        X509Certificate[] trustedChain = validateChain(chain, authType, isServer);
+        X509Certificate[] trustedChain = validateChain(chain, authType, checkServerTrusted);
 
-        checkExtendedTrust(trustedChain, authType, engine, isServer);
+        checkExtendedTrust(trustedChain, authType, engine, checkServerTrusted);
     }
 
     private CertStoreParameters getCertStoreParameters(X509Certificate[] chain)
@@ -173,7 +173,7 @@ class ProvX509TrustManager
         return new CollectionCertStoreParameters(certs);   
     }
 
-    private X509Certificate[] validateChain(X509Certificate[] chain, String authType, boolean isServer)
+    private X509Certificate[] validateChain(X509Certificate[] chain, String authType, boolean checkServerTrusted)
         throws CertificateException
     {
         if (null == chain || chain.length < 1)
@@ -186,7 +186,7 @@ class ProvX509TrustManager
         }
 
         // TODO[jsse] Further 'authType'-related checks (at least for server certificates)
-//        String validationAuthType = isServer ? authType : null;
+//        String validationAuthType = checkServerTrusted ? authType : null;
 
         /*
          * RFC 8446 4.4.2 "For maximum compatibility, all implementations SHOULD be prepared to
@@ -202,7 +202,7 @@ class ProvX509TrustManager
         try
         {
             /*
-             * TODO[jsse] When 'isServer', make use of any status responses (OCSP) via
+             * TODO[jsse] When 'checkServerTrusted', make use of any status responses (OCSP) via
              * BCExtendedSSLSession.getStatusResponses()
              */
 
@@ -235,46 +235,46 @@ class ProvX509TrustManager
         }
     }
 
-    static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, Socket socket, boolean isServer)
-        throws CertificateException
+    static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, Socket socket,
+        boolean checkServerTrusted) throws CertificateException
     {
         if (socket instanceof SSLSocket && socket.isConnected())
         {
             SSLSocket sslSocket = (SSLSocket)socket;
             BCExtendedSSLSession sslSession = getHandshakeSession(sslSocket);
             BCSSLParameters sslParameters = getSSLParameters(sslSocket);
-            checkExtendedTrust(trustedChain, authType, isServer, sslSession, sslParameters);
+            checkExtendedTrust(trustedChain, authType, checkServerTrusted, sslSession, sslParameters);
         }
     }
 
-    static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, SSLEngine engine, boolean isServer)
-        throws CertificateException
+    static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, SSLEngine engine,
+        boolean checkServerTrusted) throws CertificateException
     {
         if (null != engine)
         {
             BCExtendedSSLSession sslSession = getHandshakeSession(engine);
             BCSSLParameters sslParameters = getSSLParameters(engine);
-            checkExtendedTrust(trustedChain, authType, isServer, sslSession, sslParameters);
+            checkExtendedTrust(trustedChain, authType, checkServerTrusted, sslSession, sslParameters);
         }
     }
 
-    private static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, boolean isServer,
+    private static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, boolean checkServerTrusted,
         BCExtendedSSLSession sslSession, BCSSLParameters sslParameters) throws CertificateException
     {
         String endpointIDAlg = sslParameters.getEndpointIdentificationAlgorithm();
         if (null != endpointIDAlg && endpointIDAlg.length() > 0)
         {
-            checkEndpointID(trustedChain[0], endpointIDAlg, isServer, sslSession);
+            checkEndpointID(trustedChain[0], endpointIDAlg, checkServerTrusted, sslSession);
         }
 
         // TODO[jsse] SunJSSE also does some AlgorithmConstraints-related checks here. 
     }
 
-    private static void checkEndpointID(X509Certificate certificate, String endpointIDAlg, boolean isServer,
+    private static void checkEndpointID(X509Certificate certificate, String endpointIDAlg, boolean checkServerTrusted,
         BCExtendedSSLSession sslSession) throws CertificateException
     {
         String peerHost = sslSession.getPeerHost();
-        if (isServer)
+        if (checkServerTrusted)
         {
             BCSNIHostName sniHostName = getSNIHostName(sslSession);
             if (null != sniHostName)
