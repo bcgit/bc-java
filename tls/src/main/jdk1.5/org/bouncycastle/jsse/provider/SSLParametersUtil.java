@@ -90,8 +90,7 @@ abstract class SSLParametersUtil
 
         if (null != setAlgorithmConstraints)
         {
-            set(ssl, setAlgorithmConstraints,
-                JsseUtils_7.exportAlgorithmConstraints(prov.getAlgorithmConstraints()));
+            set(ssl, setAlgorithmConstraints, JsseUtils_7.exportAlgorithmConstraints(prov.getAlgorithmConstraints()));
         }
 
         if (null != setEndpointIdentificationAlgorithm)
