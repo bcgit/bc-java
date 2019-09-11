@@ -133,7 +133,7 @@ abstract class JsseUtils_7
     }
 
     /*
-     * NOTE: Currently argument is Object type to isolate callers from JDK8 type
+     * NOTE: Currently argument is Object type to isolate callers from JDK7 type
      */
     static BCAlgorithmConstraints importAlgorithmConstraints(Object getAlgorithmConstraintsResult)
     {

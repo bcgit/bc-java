@@ -34,7 +34,7 @@ final class ProvSSLParameters
     private String[] protocols;
     private boolean needClientAuth = false;
     private boolean wantClientAuth = false;
-    private BCAlgorithmConstraints algorithmConstraints;
+    private BCAlgorithmConstraints algorithmConstraints = ProvAlgorithmConstraints.DEFAULT;
     private String endpointIdentificationAlgorithm;
     private boolean useCipherSuitesOrder = true;
     private List<BCSNIMatcher> sniMatchers;
