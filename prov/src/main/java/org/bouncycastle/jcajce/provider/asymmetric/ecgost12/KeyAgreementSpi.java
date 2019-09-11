@@ -163,7 +163,7 @@ public class KeyAgreementSpi
     {
         public ECVKO512()
         {
-            super("ECGOST3410-2012-512", new ECVKOAgreement(new GOST3411_2012_512Digest()), null);
+            super("ECGOST3410-2012-512", new ECVKOAgreement(new GOST3411_2012_256Digest()), null);
         }
     }
 }
