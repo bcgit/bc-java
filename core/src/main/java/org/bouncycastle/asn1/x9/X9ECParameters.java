@@ -82,35 +82,12 @@ public class X9ECParameters
         return null;
     }
 
-    /**
-     * @deprecated Use constructor taking an {@link X9ECPoint} instead.
-     */
-    public X9ECParameters(
-        ECCurve     curve,
-        ECPoint     g,
-        BigInteger  n)
-    {
-        this(curve, g, n, null, null);
-    }
-
     public X9ECParameters(
         ECCurve     curve,
         X9ECPoint   g,
         BigInteger  n)
     {
         this(curve, g, n, null, null);
-    }
-
-    /**
-     * @deprecated Use constructor taking an {@link X9ECPoint} instead.
-     */
-    public X9ECParameters(
-        ECCurve     curve,
-        ECPoint     g,
-        BigInteger  n,
-        BigInteger  h)
-    {
-        this(curve, g, n, h, null);
     }
 
     public X9ECParameters(
@@ -120,19 +97,6 @@ public class X9ECParameters
         BigInteger  h)
     {
         this(curve, g, n, h, null);
-    }
-
-    /**
-     * @deprecated Use constructor taking an {@link X9ECPoint} instead.
-     */
-    public X9ECParameters(
-        ECCurve     curve,
-        ECPoint     g,
-        BigInteger  n,
-        BigInteger  h,
-        byte[]      seed)
-    {
-        this(curve, new X9ECPoint(g, false), n, h, seed);
     }
 
     public X9ECParameters(

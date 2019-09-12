@@ -59,14 +59,14 @@ public class SecT193R1Curve extends AbstractF2m
         return new SecT193FieldElement(x);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
     {
-        return new SecT193R1Point(this, x, y, withCompression);
+        return new SecT193R1Point(this, x, y);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
     {
-        return new SecT193R1Point(this, x, y, zs, withCompression);
+        return new SecT193R1Point(this, x, y, zs);
     }
 
     public ECPoint getInfinity()
@@ -163,7 +163,7 @@ public class SecT193R1Curve extends AbstractF2m
 
             private ECPoint createPoint(long[] x, long[] y)
             {
-                return createRawPoint(new SecT193FieldElement(x), new SecT193FieldElement(y), SECT193R1_AFFINE_ZS, false);
+                return createRawPoint(new SecT193FieldElement(x), new SecT193FieldElement(y), SECT193R1_AFFINE_ZS);
             }
         };
     }

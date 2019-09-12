@@ -7,47 +7,14 @@ import org.bouncycastle.math.raw.Nat256;
 
 public class Curve25519Point extends ECPoint.AbstractFp
 {
-    /**
-     * Create a point which encodes with point compression.
-     * 
-     * @param curve the curve to use
-     * @param x affine x co-ordinate
-     * @param y affine y co-ordinate
-     * 
-     * @deprecated Use ECCurve.createPoint to construct points
-     */
-    public Curve25519Point(ECCurve curve, ECFieldElement x, ECFieldElement y)
-    {
-        this(curve, x, y, false);
-    }
-
-    /**
-     * Create a point that encodes with or without point compresion.
-     * 
-     * @param curve the curve to use
-     * @param x affine x co-ordinate
-     * @param y affine y co-ordinate
-     * @param withCompression if true encode with point compression
-     * 
-     * @deprecated per-point compression property will be removed, refer {@link #getEncoded(boolean)}
-     */
-    public Curve25519Point(ECCurve curve, ECFieldElement x, ECFieldElement y, boolean withCompression)
+    Curve25519Point(ECCurve curve, ECFieldElement x, ECFieldElement y)
     {
         super(curve, x, y);
-
-        if ((x == null) != (y == null))
-        {
-            throw new IllegalArgumentException("Exactly one of the field elements is null");
-        }
-
-        this.withCompression = withCompression;
     }
 
-    Curve25519Point(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+    Curve25519Point(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
     {
         super(curve, x, y, zs);
-
-        this.withCompression = withCompression;
     }
 
     protected ECPoint detach()
@@ -191,7 +158,7 @@ public class Curve25519Point extends ECPoint.AbstractFp
 
         ECFieldElement[] zs = new ECFieldElement[]{ Z3, W3 };
 
-        return new Curve25519Point(curve, X3, Y3, zs, this.withCompression);
+        return new Curve25519Point(curve, X3, Y3, zs);
     }
 
     public ECPoint twice()
@@ -259,7 +226,7 @@ public class Curve25519Point extends ECPoint.AbstractFp
             return this;
         }
 
-        return new Curve25519Point(this.getCurve(), this.x, this.y.negate(), this.zs, this.withCompression);
+        return new Curve25519Point(this.getCurve(), this.x, this.y.negate(), this.zs);
     }
 
     protected Curve25519FieldElement calculateJacobianModifiedW(Curve25519FieldElement Z, int[] ZSquared)
@@ -343,6 +310,6 @@ public class Curve25519Point extends ECPoint.AbstractFp
             Curve25519Field.twice(W3.x, W3.x);
         }
 
-        return new Curve25519Point(this.getCurve(), X3, Y3, new ECFieldElement[]{ Z3, W3 }, this.withCompression);
+        return new Curve25519Point(this.getCurve(), X3, Y3, new ECFieldElement[]{ Z3, W3 });
     }
 }
