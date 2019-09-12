@@ -67,14 +67,14 @@ public class SecP256R1Curve extends ECCurve.AbstractFp
         return new SecP256R1FieldElement(x);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
     {
-        return new SecP256R1Point(this, x, y, withCompression);
+        return new SecP256R1Point(this, x, y);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
     {
-        return new SecP256R1Point(this, x, y, zs, withCompression);
+        return new SecP256R1Point(this, x, y, zs);
     }
 
     public ECPoint getInfinity()
@@ -141,7 +141,7 @@ public class SecP256R1Curve extends ECCurve.AbstractFp
 
             private ECPoint createPoint(int[] x, int[] y)
             {
-                return createRawPoint(new SecP256R1FieldElement(x), new SecP256R1FieldElement(y), SECP256R1_AFFINE_ZS, false);
+                return createRawPoint(new SecP256R1FieldElement(x), new SecP256R1FieldElement(y), SECP256R1_AFFINE_ZS);
             }
         };
     }
