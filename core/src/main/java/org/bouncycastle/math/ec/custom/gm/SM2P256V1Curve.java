@@ -67,14 +67,14 @@ public class SM2P256V1Curve extends ECCurve.AbstractFp
         return new SM2P256V1FieldElement(x);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
     {
-        return new SM2P256V1Point(this, x, y, withCompression);
+        return new SM2P256V1Point(this, x, y);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
     {
-        return new SM2P256V1Point(this, x, y, zs, withCompression);
+        return new SM2P256V1Point(this, x, y, zs);
     }
 
     public ECPoint getInfinity()
@@ -141,7 +141,7 @@ public class SM2P256V1Curve extends ECCurve.AbstractFp
 
             private ECPoint createPoint(int[] x, int[] y)
             {
-                return createRawPoint(new SM2P256V1FieldElement(x), new SM2P256V1FieldElement(y), SM2P256V1_AFFINE_ZS, false);
+                return createRawPoint(new SM2P256V1FieldElement(x), new SM2P256V1FieldElement(y), SM2P256V1_AFFINE_ZS);
             }
         };
     }
