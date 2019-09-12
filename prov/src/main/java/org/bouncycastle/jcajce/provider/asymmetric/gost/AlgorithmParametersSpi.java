@@ -102,7 +102,7 @@ public class AlgorithmParametersSpi
             ASN1Sequence seq = (ASN1Sequence)ASN1Primitive.fromByteArray(params);
 
             this.currentSpec = GOST3410ParameterSpec.fromPublicKeyAlg(
-                new GOST3410PublicKeyAlgParameters(seq));
+                GOST3410PublicKeyAlgParameters.getInstance(seq));
         }
         catch (ClassCastException e)
         {
