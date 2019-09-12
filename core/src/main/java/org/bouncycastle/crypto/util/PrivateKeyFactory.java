@@ -142,7 +142,7 @@ public class PrivateKeyFactory
         }
         else if (algOID.equals(X9ObjectIdentifiers.id_ecPublicKey))
         {
-            X962Parameters params = new X962Parameters((ASN1Primitive)algId.getParameters());
+            X962Parameters params = X962Parameters.getInstance(algId.getParameters());
 
             X9ECParameters x9;
             ECDomainParameters dParams;
