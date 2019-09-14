@@ -1318,61 +1318,8 @@ public class PKCS12KeyStoreSpi
                     {
                         String certId = (String)cs.nextElement();
                         Certificate cert = (Certificate)certs.get(certId);
-                        boolean cAttrSet = false;
 
-                        CertBag cBag = new CertBag(
-                            x509Certificate,
-                            new DEROctetString(cert.getEncoded()));
-                        ASN1EncodableVector fName = new ASN1EncodableVector();
-
-                        if (cert instanceof PKCS12BagAttributeCarrier)
-                        {
-                            PKCS12BagAttributeCarrier bagAttrs = (PKCS12BagAttributeCarrier)cert;
-                            //
-                            // make sure we are using the local alias on store
-                            //
-                            DERBMPString nm = (DERBMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
-                            if (nm == null || !nm.getString().equals(certId))
-                            {
-                                bagAttrs.setBagAttribute(pkcs_9_at_friendlyName, new DERBMPString(certId));
-                            }
-
-                            Enumeration e = bagAttrs.getBagAttributeKeys();
-
-                            while (e.hasMoreElements())
-                            {
-                                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-
-                                // a certificate not immediately linked to a key doesn't require
-                                // a localKeyID and will confuse some PKCS12 implementations.
-                                //
-                                // If we find one, we'll prune it out.
-                                if (oid.equals(PKCSObjectIdentifiers.pkcs_9_at_localKeyId))
-                                {
-                                    continue;
-                                }
-
-                                ASN1EncodableVector fSeq = new ASN1EncodableVector();
-
-                                fSeq.add(oid);
-                                fSeq.add(new DERSet(bagAttrs.getBagAttribute(oid)));
-                                fName.add(new DERSequence(fSeq));
-
-                                cAttrSet = true;
-                            }
-                        }
-
-                        if (!cAttrSet)
-                        {
-                            ASN1EncodableVector fSeq = new ASN1EncodableVector();
-
-                            fSeq.add(pkcs_9_at_friendlyName);
-                            fSeq.add(new DERSet(new DERBMPString(certId)));
-
-                            fName.add(new DERSequence(fSeq));
-                        }
-
-                        SafeBag sBag = new SafeBag(certBag, cBag.toASN1Primitive(), new DERSet(fName));
+                        SafeBag sBag = createSafeBag(certId, cert);
 
                         certSeq.add(sBag);
                     }
@@ -1593,66 +1540,13 @@ public class PKCS12KeyStoreSpi
             {
                 String certId = (String)cs.nextElement();
                 Certificate cert = (Certificate)certs.get(certId);
-                boolean cAttrSet = false;
 
                 if (keys.get(certId) != null)
                 {
                     continue;
                 }
 
-                CertBag cBag = new CertBag(
-                    x509Certificate,
-                    new DEROctetString(cert.getEncoded()));
-                ASN1EncodableVector fName = new ASN1EncodableVector();
-
-                if (cert instanceof PKCS12BagAttributeCarrier)
-                {
-                    PKCS12BagAttributeCarrier bagAttrs = (PKCS12BagAttributeCarrier)cert;
-                    //
-                    // make sure we are using the local alias on store
-                    //
-                    DERBMPString nm = (DERBMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
-                    if (nm == null || !nm.getString().equals(certId))
-                    {
-                        bagAttrs.setBagAttribute(pkcs_9_at_friendlyName, new DERBMPString(certId));
-                    }
-
-                    Enumeration e = bagAttrs.getBagAttributeKeys();
-
-                    while (e.hasMoreElements())
-                    {
-                        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-
-                        // a certificate not immediately linked to a key doesn't require
-                        // a localKeyID and will confuse some PKCS12 implementations.
-                        //
-                        // If we find one, we'll prune it out.
-                        if (oid.equals(PKCSObjectIdentifiers.pkcs_9_at_localKeyId))
-                        {
-                            continue;
-                        }
-
-                        ASN1EncodableVector fSeq = new ASN1EncodableVector();
-
-                        fSeq.add(oid);
-                        fSeq.add(new DERSet(bagAttrs.getBagAttribute(oid)));
-                        fName.add(new DERSequence(fSeq));
-
-                        cAttrSet = true;
-                    }
-                }
-
-                if (!cAttrSet)
-                {
-                    ASN1EncodableVector fSeq = new ASN1EncodableVector();
-
-                    fSeq.add(pkcs_9_at_friendlyName);
-                    fSeq.add(new DERSet(new DERBMPString(certId)));
-
-                    fName.add(new DERSequence(fSeq));
-                }
-
-                SafeBag sBag = new SafeBag(certBag, cBag.toASN1Primitive(), new DERSet(fName));
+                SafeBag sBag = createSafeBag(certId, cert);
 
                 certSeq.add(sBag);
 
@@ -1771,6 +1665,68 @@ public class PKCS12KeyStoreSpi
         Pfx pfx = new Pfx(mainInfo, mData);
 
         pfx.encodeTo(stream, useDEREncoding ? ASN1Encoding.DER : ASN1Encoding.BER);
+    }
+
+    private SafeBag createSafeBag(String certId, Certificate cert)
+        throws CertificateEncodingException
+    {
+        CertBag cBag = new CertBag(
+            x509Certificate,
+            new DEROctetString(cert.getEncoded()));
+        ASN1EncodableVector fName = new ASN1EncodableVector();
+
+        boolean cAttrSet = false;
+        if (cert instanceof PKCS12BagAttributeCarrier)
+        {
+            PKCS12BagAttributeCarrier bagAttrs = (PKCS12BagAttributeCarrier)cert;
+            //
+            // make sure we are using the local alias on store
+            //
+            DERBMPString nm = (DERBMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
+            if (nm == null || !nm.getString().equals(certId))
+            {
+                if (certId != null)
+                {
+                    bagAttrs.setBagAttribute(pkcs_9_at_friendlyName, new DERBMPString(certId));
+                }
+            }
+
+            Enumeration e = bagAttrs.getBagAttributeKeys();
+
+            while (e.hasMoreElements())
+            {
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
+
+                // a certificate not immediately linked to a key doesn't require
+                // a localKeyID and will confuse some PKCS12 implementations.
+                //
+                // If we find one, we'll prune it out.
+                if (oid.equals(PKCSObjectIdentifiers.pkcs_9_at_localKeyId))
+                {
+                    continue;
+                }
+
+                ASN1EncodableVector fSeq = new ASN1EncodableVector();
+
+                fSeq.add(oid);
+                fSeq.add(new DERSet(bagAttrs.getBagAttribute(oid)));
+                fName.add(new DERSequence(fSeq));
+
+                cAttrSet = true;
+            }
+        }
+
+        if (!cAttrSet)
+        {
+            ASN1EncodableVector fSeq = new ASN1EncodableVector();
+
+            fSeq.add(pkcs_9_at_friendlyName);
+            fSeq.add(new DERSet(new DERBMPString(certId)));
+
+            fName.add(new DERSequence(fSeq));
+        }
+
+        return new SafeBag(certBag, cBag.toASN1Primitive(), new DERSet(fName));
     }
 
     private Set getUsedCertificateSet()
