@@ -104,6 +104,35 @@ class PropertyUtils
         return null;
     }
 
+    static String[] getStringArraySystemProperty(String propertyName)
+    {
+        String propertyValue = getStringSystemProperty(propertyName);
+        if (null != propertyValue)
+        {
+            String[] entries = JsseUtils.stripDoubleQuotes(propertyValue.trim()).split(",");
+            String[] result = new String[entries.length];
+            int count = 0;
+            for (String entry : entries)
+            {
+                entry = entry.trim();
+                if (entry.length() < 1)
+                {
+                    continue;
+                }
+
+                result[count++] = entry;
+            }
+            if (count < result.length)
+            {
+                String[] tmp = new String[count];
+                System.arraycopy(result, 0, tmp, 0, count);
+                result = tmp;
+            }
+            return result;
+        }
+        return null;
+    }
+
     private static String getRangeString(int minimumValue, int maximumValue)
     {
         StringBuilder sb = new StringBuilder(32);
