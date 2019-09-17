@@ -52,7 +52,7 @@ abstract class SupportedGroups
 
     private static int[] getJdkTlsNamedGroups(boolean provDisableChar2)
     {
-        String[] names =  PropertyUtils.getStringArraySystemProperty(PROPERTY_NAMED_GROUPS);
+        String[] names = PropertyUtils.getStringArraySystemProperty(PROPERTY_NAMED_GROUPS);
         if (null == names)
         {
             return null;
