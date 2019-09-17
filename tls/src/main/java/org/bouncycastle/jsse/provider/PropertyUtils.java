@@ -124,9 +124,7 @@ class PropertyUtils
             }
             if (count < result.length)
             {
-                String[] tmp = new String[count];
-                System.arraycopy(result, 0, tmp, 0, count);
-                result = tmp;
+                result = JsseUtils.copyOf(result, count);
             }
             return result;
         }
