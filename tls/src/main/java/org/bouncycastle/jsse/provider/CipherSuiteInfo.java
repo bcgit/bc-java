@@ -73,8 +73,7 @@ class CipherSuiteInfo
     private static void decomposeEncryptionAlgorithm(Set<String> decomposition, int encryptionAlgorithm)
     {
         String transformation = getTransformation(encryptionAlgorithm);
-
-        // TODO[jsse] Add "default" decomposition of transformation e.g. AES/CBC/NoPadding
+        decomposition.addAll(JcaAlgorithmDecomposer.INSTANCE.decompose(transformation));
 
         switch (encryptionAlgorithm)
         {

@@ -289,6 +289,11 @@ class ProvSSLContextSpi
         return getArray(m.keySet());
     }
 
+    static CipherSuiteInfo getCipherSuiteInfo(String cipherSuite)
+    {
+        return SUPPORTED_CIPHERSUITE_MAP.get(cipherSuite);
+    }
+
     static KeyManager[] getDefaultKeyManagers() throws Exception
     {
         KeyStoreConfig keyStoreConfig = ProvKeyManagerFactorySpi.getDefaultKeyStore();
