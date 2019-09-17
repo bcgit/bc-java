@@ -3,8 +3,10 @@ package org.bouncycastle.jsse.provider;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.bouncycastle.tls.CipherSuite;
+
 class ProvAlgorithmDecomposer
-    implements AlgorithmDecomposer
+    extends JcaAlgorithmDecomposer
 {
     static final ProvAlgorithmDecomposer INSTANCE = new ProvAlgorithmDecomposer();
 
@@ -12,14 +14,16 @@ class ProvAlgorithmDecomposer
 
     public Set<String> decompose(String algorithm)
     {
-        if (null == algorithm || algorithm.length() < 1)
+        if (algorithm.startsWith("TLS_"))
         {
-            throw new IllegalArgumentException();
+            CipherSuiteInfo cipherSuiteInfo = ProvSSLContextSpi.getCipherSuiteInfo(algorithm);
+            if (null != cipherSuiteInfo
+                && !CipherSuite.isSCSV(cipherSuiteInfo.getCipherSuite()))
+            {
+                return new HashSet<String>(cipherSuiteInfo.getDecomposition());
+            }
         }
 
-        // TODO[jsse]
-        Set<String> result = new HashSet<String>(1);
-        result.add(algorithm);
-        return result;
+        return super.decompose(algorithm);
     }
 }
