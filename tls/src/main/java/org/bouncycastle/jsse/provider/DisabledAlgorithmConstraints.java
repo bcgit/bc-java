@@ -2,7 +2,6 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.AlgorithmParameters;
 import java.security.Key;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
@@ -18,14 +17,7 @@ class DisabledAlgorithmConstraints
             return null;
         }
 
-        Set<String> result = new HashSet<String>();
-        for (String algorithm : algorithms)
-        {
-            // TODO[jsse] toLowerCase?
-            result.add(algorithm);
-        }
-
-        return new DisabledAlgorithmConstraints(decomposer, result);
+        return new DisabledAlgorithmConstraints(decomposer, asUnmodifiableSet(algorithms));
     }
 
     private final Set<String> disabledAlgorithms;
@@ -39,6 +31,7 @@ class DisabledAlgorithmConstraints
 
     public final boolean permits(Set<BCCryptoPrimitive> primitives, String algorithm, AlgorithmParameters parameters)
     {
+        checkPrimitives(primitives);
         checkAlgorithmName(algorithm);
 
         if (containsAnyPartIgnoreCase(disabledAlgorithms, algorithm))
@@ -67,17 +60,10 @@ class DisabledAlgorithmConstraints
         return checkConstraints(primitives, algorithm, key, parameters);
     }
 
-    private void checkAlgorithmName(String algorithm)
-    {
-        if (!isAlgorithmSpecified(algorithm))
-        {
-            throw new IllegalArgumentException("No algorithm name specified");
-        }
-    }
-
     private boolean checkConstraints(Set<BCCryptoPrimitive> primitives, String algorithm, Key key,
         AlgorithmParameters parameters)
     {
+        checkPrimitives(primitives);
         checkKey(key);
 
         if (isAlgorithmSpecified(algorithm)
@@ -93,18 +79,5 @@ class DisabledAlgorithmConstraints
 
         // TODO[jsse] Check whether key size constraints permit the given key
         return true;
-    }
-
-    private void checkKey(Key key)
-    {
-        if (null == key)
-        {
-            throw new NullPointerException("'key' cannot be null");
-        }
-    }
-
-    private boolean isAlgorithmSpecified(String algorithm)
-    {
-        return null != algorithm && algorithm.length() > 0;
     }
 }
