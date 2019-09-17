@@ -27,7 +27,6 @@ public abstract class AbstractTlsServer
     protected boolean clientSentECPointFormats;
     protected CertificateStatusRequest certificateStatusRequest;
 
-    protected ProtocolVersion serverVersion;
     protected int selectedCipherSuite;
     protected Vector clientProtocolNames;
     protected ProtocolName selectedProtocolName;
