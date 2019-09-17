@@ -243,21 +243,16 @@ class ProvSSLContextSpi
 
     private static String[] getJdkTlsProtocols(String propertyName)
     {
-        String prop = PropertyUtils.getStringSystemProperty(propertyName);
-        if (prop == null)
+        String[] protocols = PropertyUtils.getStringArraySystemProperty(propertyName);
+        if (null == protocols)
         {
             return null;
         }
 
-        String[] entries = JsseUtils.stripDoubleQuotes(prop.trim()).split(",");
-        String[] result = new String[entries.length];
+        String[] result = new String[protocols.length];
         int count = 0;
-        for (String entry : entries)
+        for (String protocol : protocols)
         {
-            String protocol = entry.trim();
-            if (protocol.length() < 1)
-                continue;
-
             if (!supportedProtocols.containsKey(protocol))
             {
                 LOG.warning("'" + propertyName + "' contains unsupported protocol: " + protocol);
