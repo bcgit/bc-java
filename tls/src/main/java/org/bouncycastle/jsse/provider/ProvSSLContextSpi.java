@@ -53,7 +53,7 @@ class ProvSSLContextSpi
     private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP = createSupportedCipherSuiteMap();
     private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP_FIPS = createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP);
 
-    private static final Map<String, ProtocolVersion> supportedProtocols = createSupportedProtocols();
+    private static final Map<String, ProtocolVersion> SUPPORTED_PROTOCOLS = createSupportedProtocols();
 
     private static final List<String> DEFAULT_CIPHERSUITE_LIST = createDefaultCipherSuiteList(SUPPORTED_CIPHERSUITE_MAP.keySet());
     private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS = createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST);
@@ -253,7 +253,7 @@ class ProvSSLContextSpi
         int count = 0;
         for (String protocol : protocols)
         {
-            if (!supportedProtocols.containsKey(protocol))
+            if (!SUPPORTED_PROTOCOLS.containsKey(protocol))
             {
                 LOG.warning("'" + propertyName + "' contains unsupported protocol: " + protocol);
             }
@@ -399,7 +399,7 @@ class ProvSSLContextSpi
     {
         if (v != null)
         {
-            for (Map.Entry<String, ProtocolVersion> entry : supportedProtocols.entrySet())
+            for (Map.Entry<String, ProtocolVersion> entry : SUPPORTED_PROTOCOLS.entrySet())
             {
                 if (v.equals(entry.getValue()))
                 {
@@ -428,7 +428,7 @@ class ProvSSLContextSpi
         {
             if (protocol != null)
             {
-                ProtocolVersion version = supportedProtocols.get(protocol);
+                ProtocolVersion version = SUPPORTED_PROTOCOLS.get(protocol);
                 if (version != null)
                 {
                     versions.add(version);
@@ -452,7 +452,7 @@ class ProvSSLContextSpi
 
     String[] getSupportedProtocols()
     {
-        return getKeysArray(supportedProtocols);
+        return getKeysArray(SUPPORTED_PROTOCOLS);
     }
 
     String[] getSupportedCipherSuites(String[] cipherSuites)
@@ -491,7 +491,7 @@ class ProvSSLContextSpi
         }
         for (String protocol : protocols)
         {
-            if (protocol == null || !supportedProtocols.containsKey(protocol))
+            if (protocol == null || !SUPPORTED_PROTOCOLS.containsKey(protocol))
             {
                 return false;
             }
