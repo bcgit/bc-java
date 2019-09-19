@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.util;
 import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 /**
  * A Buffer for dealing with SSH key products.
@@ -33,7 +34,7 @@ class SSHBuffer
 
     public int readU32()
     {
-        if (pos + 4 > buffer.length)
+        if (pos > (buffer.length - 4))
         {
             throw new IllegalArgumentException("4 bytes for U32 exceeds buffer.");
         }
@@ -46,7 +47,12 @@ class SSHBuffer
         return i;
     }
 
-    public byte[] readString()
+    public String readString()
+    {
+        return Strings.fromByteArray(readBlock());
+    }
+
+    public byte[] readBlock()
     {
         int len = readU32();
         if (len == 0)
@@ -54,15 +60,32 @@ class SSHBuffer
             return new byte[0];
         }
 
-        if (pos + len > buffer.length)
+        if (pos > (buffer.length - len))
         {
-            throw new IllegalArgumentException("not enough data for string");
+            throw new IllegalArgumentException("not enough data for block");
         }
 
-        return Arrays.copyOfRange(buffer, pos, pos += len);
+        int start = pos; pos += len;
+        return Arrays.copyOfRange(buffer, start, pos);
     }
 
-    public byte[] readPaddedString()
+    public void skipBlock()
+    {
+        int len = readU32();
+        if (pos > (buffer.length - len))
+        {
+            throw new IllegalArgumentException("not enough data for block");
+        }
+
+        pos += len;
+    }
+
+    public byte[] readPaddedBlock()
+    {
+        return readPaddedBlock(8);
+    }
+
+    public byte[] readPaddedBlock(int blockSize)
     {
         int len = readU32();
         if (len == 0)
@@ -70,16 +93,43 @@ class SSHBuffer
             return new byte[0];
         }
 
-        if (pos + len > buffer.length)
+        if (pos > (buffer.length - len))
         {
-            throw new IllegalArgumentException("not enough data for string");
+            throw new IllegalArgumentException("not enough data for block");
         }
 
-        return Arrays.copyOfRange(buffer, pos, pos += (len - (buffer[pos + len - 1] & 0xff)));
+        int align = len % blockSize;
+        if (0 != align)
+        {
+            throw new IllegalArgumentException("missing padding");
+        }
+
+        int start = pos; pos += len;
+        int end = pos;
+
+        if (len > 0)
+        {
+            // TODO If encryption is supported, should be constant-time
+            int lastByte = buffer[pos - 1] & 0xFF;
+            if (0 < lastByte && lastByte < blockSize)
+            {
+                int padCount = lastByte;
+                end -= padCount;
+
+                for (int i = 1, padPos = end; i <= padCount; ++i, ++padPos)
+                {
+                    if (i != (buffer[padPos] & 0xFF))
+                    {
+                        throw new IllegalArgumentException("incorrect padding");
+                    }
+                }
+            }
+        }
+
+        return Arrays.copyOfRange(buffer, start, end);
     }
 
-
-    public BigInteger positiveBigNum()
+    public BigInteger readBigNumPositive()
     {
         int len = readU32();
         if (pos + len > buffer.length)
@@ -87,9 +137,8 @@ class SSHBuffer
             throw new IllegalArgumentException("not enough data for big num");
         }
 
-        byte[] d = new byte[len];
-        System.arraycopy(buffer, pos, d, 0, d.length);
-        pos += len;
+        int start = pos; pos += len;
+        byte[] d = Arrays.copyOfRange(buffer, start, pos);
         return new BigInteger(1, d);
     }
 
