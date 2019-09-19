@@ -27,24 +27,28 @@ class CipherSuiteInfo
         int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(cipherSuite);
         int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
 
-        Set<String> decomposition = new HashSet<String>();
-        decomposeEncryptionAlgorithm(decomposition, encryptionAlgorithm);
-        decomposeHashAlgorithm(decomposition, hashAlgorithm);
-        decomposeKeyExchangeAlgorithm(decomposition, keyExchangeAlgorithm);
-        decomposeMACAlgorithm(decomposition, encryptionAlgorithmType, macAlgorithm);
+        Set<String> decompositionX509 = new HashSet<String>();
+        decomposeKeyExchangeAlgorithm(decompositionX509, keyExchangeAlgorithm);
 
-        return new CipherSuiteInfo(cipherSuite, name, Collections.unmodifiableSet(decomposition));
+        Set<String> decompositionTLS = new HashSet<String>(decompositionX509);
+        decomposeEncryptionAlgorithm(decompositionTLS, encryptionAlgorithm);
+        decomposeHashAlgorithm(decompositionTLS, hashAlgorithm);
+        decomposeMACAlgorithm(decompositionTLS, encryptionAlgorithmType, macAlgorithm);
+
+        return new CipherSuiteInfo(cipherSuite, name, Collections.unmodifiableSet(decompositionTLS),
+            Collections.unmodifiableSet(decompositionX509));
     }
 
     private final int cipherSuite;
     private final String name;
-    private final Set<String> decomposition;
+    private final Set<String> decompositionTLS, decompositionX509;
 
-    private CipherSuiteInfo(int cipherSuite, String name, Set<String> decomposition)
+    private CipherSuiteInfo(int cipherSuite, String name, Set<String> decompositionTLS, Set<String> decompositionX509)
     {
         this.cipherSuite = cipherSuite;
         this.name = name;
-        this.decomposition = decomposition;
+        this.decompositionTLS = decompositionTLS;
+        this.decompositionX509 = decompositionX509;
     }
 
     public int getCipherSuite()
@@ -52,9 +56,14 @@ class CipherSuiteInfo
         return cipherSuite;
     }
 
-    public Set<String> getDecomposition()
+    public Set<String> getDecompositionTLS()
     {
-        return decomposition;
+        return decompositionTLS;
+    }
+
+    public Set<String> getDecompositionX509()
+    {
+        return decompositionX509;
     }
 
     public String getName()
@@ -73,7 +82,7 @@ class CipherSuiteInfo
     private static void decomposeEncryptionAlgorithm(Set<String> decomposition, int encryptionAlgorithm)
     {
         String transformation = getTransformation(encryptionAlgorithm);
-        decomposition.addAll(JcaAlgorithmDecomposer.INSTANCE.decompose(transformation));
+        decomposition.addAll(JcaAlgorithmDecomposer.INSTANCE_JCA.decompose(transformation));
 
         switch (encryptionAlgorithm)
         {
