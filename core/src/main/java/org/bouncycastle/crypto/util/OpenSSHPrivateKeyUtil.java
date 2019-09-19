@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -38,7 +39,7 @@ public class OpenSSHPrivateKeyUtil
     }
 
     /**
-     * Magic value for propriety OpenSSH private key.
+     * Magic value for proprietary OpenSSH private key.
      **/
     static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
 
@@ -71,20 +72,20 @@ public class OpenSSHPrivateKeyUtil
         }
         else if (params instanceof DSAPrivateKeyParameters)
         {
+            DSAPrivateKeyParameters dsaPrivKey = (DSAPrivateKeyParameters)params;
+            DSAParameters dsaParams = dsaPrivKey.getParameters();
+
             ASN1EncodableVector vec = new ASN1EncodableVector();
             vec.add(new ASN1Integer(0));
-            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getP()));
-            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getQ()));
-            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getG()));
+            vec.add(new ASN1Integer(dsaParams.getP()));
+            vec.add(new ASN1Integer(dsaParams.getQ()));
+            vec.add(new ASN1Integer(dsaParams.getG()));
 
             // public key = g.modPow(x, p);
-
-            BigInteger pubKey = ((DSAPrivateKeyParameters)params).getParameters().getG().modPow(
-                ((DSAPrivateKeyParameters)params).getX(),
-                ((DSAPrivateKeyParameters)params).getParameters().getP());
+            BigInteger pubKey = dsaParams.getG().modPow(dsaPrivKey.getX(), dsaParams.getP());
             vec.add(new ASN1Integer(pubKey));
 
-            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getX()));
+            vec.add(new ASN1Integer(dsaPrivKey.getX()));
             try
             {
                 return new DERSequence(vec).getEncoded();
@@ -96,35 +97,41 @@ public class OpenSSHPrivateKeyUtil
         }
         else if (params instanceof Ed25519PrivateKeyParameters)
         {
-            SSHBuilder builder = new SSHBuilder();
-
-            builder.write(AUTH_MAGIC);
-            builder.writeString("none");
-            builder.writeString("none");
-            builder.u32(0); // Zero length of the KDF
-
-            builder.u32(1);
-
             Ed25519PublicKeyParameters publicKeyParameters = ((Ed25519PrivateKeyParameters)params).generatePublicKey();
 
-            byte[] pkEncoded = OpenSSHPublicKeyUtil.encodePublicKey(publicKeyParameters);
-            builder.rawArray(pkEncoded);
+            SSHBuilder builder = new SSHBuilder();
+            builder.writeBytes(AUTH_MAGIC);
+            builder.writeString("none");    // cipher name
+            builder.writeString("none");    // KDF name
+            builder.writeString("");        // KDF options
 
-            SSHBuilder pkBuild = new SSHBuilder();
+            builder.u32(1); // Number of keys
 
-            pkBuild.u32(0x00ff00ff);
-            pkBuild.u32(0x00ff00ff);
+            {
+                byte[] pkEncoded = OpenSSHPublicKeyUtil.encodePublicKey(publicKeyParameters);
+                builder.writeBlock(pkEncoded);
+            }
 
-            pkBuild.writeString("ssh-ed25519");
+            {
+                SSHBuilder pkBuild = new SSHBuilder();
 
-            byte[] pubKeyEncoded = ((Ed25519PrivateKeyParameters)params).generatePublicKey().getEncoded();
+                int checkint = CryptoServicesRegistrar.getSecureRandom().nextInt();
+                pkBuild.u32(checkint);
+                pkBuild.u32(checkint);
 
-            pkBuild.rawArray(pubKeyEncoded); // Public key written as length defined item.
+                pkBuild.writeString("ssh-ed25519");
 
-            // The private key in SSH is 64 bytes long and is the concatenation of the private and the public keys
-            pkBuild.rawArray(Arrays.concatenate(((Ed25519PrivateKeyParameters)params).getEncoded(), pubKeyEncoded));
-            pkBuild.u32(0); // No comment.
-            builder.rawArray(pkBuild.getBytes());
+                // Public key (as part of private key pair)
+                byte[] pubKeyEncoded = publicKeyParameters.getEncoded();
+                pkBuild.writeBlock(pubKeyEncoded);
+
+                // The private key in SSH is 64 bytes long and is the concatenation of the private and the public keys
+                pkBuild.writeBlock(Arrays.concatenate(((Ed25519PrivateKeyParameters)params).getEncoded(), pubKeyEncoded));
+
+                pkBuild.writeString("");    // Comment for this private key (empty)
+
+                builder.writeBlock(pkBuild.getPaddedBytes());
+            }
 
             return builder.getBytes();
         }
@@ -208,29 +215,36 @@ public class OpenSSHPrivateKeyUtil
         else
         {
             SSHBuffer kIn = new SSHBuffer(AUTH_MAGIC, blob);
-            // Cipher name.
-            String cipherName = Strings.fromByteArray(kIn.readString());
 
+            String cipherName = kIn.readString();
             if (!"none".equals(cipherName))
             {
                 throw new IllegalStateException("encrypted keys not supported");
             }
 
             // KDF name
-            kIn.readString();
+            kIn.skipBlock();
 
             // KDF options
-            kIn.readString();
+            kIn.skipBlock();
 
-            long publicKeyCount = kIn.readU32();
-
-            for (int l = 0; l != publicKeyCount; l++)
+            int publicKeyCount = kIn.readU32();
+            if (publicKeyCount != 1)
             {
-                // Burn off public keys.
-                OpenSSHPublicKeyUtil.parsePublicKey(kIn.readString());
+                throw new IllegalStateException("multiple keys not supported");
             }
 
-            SSHBuffer pkIn = new SSHBuffer(kIn.readPaddedString());
+            // Burn off public key.
+            OpenSSHPublicKeyUtil.parsePublicKey(kIn.readBlock());
+
+            byte[] privateKeyBlock = kIn.readPaddedBlock();
+
+            if (kIn.hasRemaining())
+            {
+                throw new IllegalArgumentException("decoded key has trailing data");
+            }
+
+            SSHBuffer pkIn = new SSHBuffer(privateKeyBlock);
             int check1 = pkIn.readU32();
             int check2 = pkIn.readU32();
 
@@ -239,21 +253,29 @@ public class OpenSSHPrivateKeyUtil
                 throw new IllegalStateException("private key check values are not the same");
             }
 
-            String keyType = Strings.fromByteArray(pkIn.readString());
-
-            if ("ssh-ed25519".equals(keyType))
-            {
-                //
-                // Skip public key
-                //
-                pkIn.readString();
-                byte[] edPrivateKey = pkIn.readString();
-
-                result = new Ed25519PrivateKeyParameters(edPrivateKey, 0);
-            }
-            else
+            String keyType = pkIn.readString();
+            if (!"ssh-ed25519".equals(keyType))
             {
                 throw new IllegalStateException("can not parse private key of type " + keyType);
+            }
+
+            // Skip public key
+            pkIn.skipBlock();
+
+            byte[] edPrivateKey = pkIn.readBlock();
+            if (edPrivateKey.length != Ed25519PrivateKeyParameters.KEY_SIZE + Ed25519PublicKeyParameters.KEY_SIZE)
+            {
+                throw new IllegalStateException("private key value of wrong length");
+            }
+
+            result = new Ed25519PrivateKeyParameters(edPrivateKey, 0);
+
+            // Comment for private key
+            pkIn.skipBlock();
+
+            if (pkIn.hasRemaining())
+            {
+                throw new IllegalArgumentException("private key block has trailing data");
             }
         }
 
@@ -275,7 +297,6 @@ public class OpenSSHPrivateKeyUtil
             if (!(sequence.getObjectAt(t) instanceof ASN1Integer))
             {
                 return false;
-
             }
         }
         return true;
