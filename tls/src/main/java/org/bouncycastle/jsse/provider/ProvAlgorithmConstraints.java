@@ -10,30 +10,38 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 class ProvAlgorithmConstraints
     extends AbstractAlgorithmConstraints
 {
-    private static final String PROPERTY_DISABLED_ALGORITHMS = "jdk.tls.disabledAlgorithms";
+    private static final String PROPERTY_CERTPATH_DISABLED_ALGORITHMS = "jdk.certpath.disabledAlgorithms";
+    private static final String PROPERTY_TLS_DISABLED_ALGORITHMS = "jdk.tls.disabledAlgorithms";
 
     private static final DisabledAlgorithmConstraints provTlsDisabledAlgorithms =
-        DisabledAlgorithmConstraints.create(ProvAlgorithmDecomposer.INSTANCE, PROPERTY_DISABLED_ALGORITHMS);
+        DisabledAlgorithmConstraints.create(ProvAlgorithmDecomposer.INSTANCE_TLS, PROPERTY_TLS_DISABLED_ALGORITHMS);
+    private static final DisabledAlgorithmConstraints provX509DisabledAlgorithms =
+        DisabledAlgorithmConstraints.create(ProvAlgorithmDecomposer.INSTANCE_X509, PROPERTY_CERTPATH_DISABLED_ALGORITHMS);
 
-    static final ProvAlgorithmConstraints DEFAULT = new ProvAlgorithmConstraints(null, null);
+    static final ProvAlgorithmConstraints DEFAULT = new ProvAlgorithmConstraints(null, true);
+    static final ProvAlgorithmConstraints DEFAULT_TLS_ONLY = new ProvAlgorithmConstraints(null, false);
 
     private final BCAlgorithmConstraints configAlgorithmConstraints;
     private final Set<String> supportedSignatureAlgorithms;
+    private final boolean enableX509Constraints;
 
-    public ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints)
+    public ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints, boolean enableX509Constraints)
     {
         super(null);
 
         this.configAlgorithmConstraints = configAlgorithmConstraints;
         this.supportedSignatureAlgorithms = null;
+        this.enableX509Constraints = enableX509Constraints;
     }
 
-    public ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints, String[] supportedSignatureAlgorithms)
+    public ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints,
+        String[] supportedSignatureAlgorithms, boolean enableX509Constraints)
     {
         super(null);
 
         this.configAlgorithmConstraints = configAlgorithmConstraints;
         this.supportedSignatureAlgorithms = asUnmodifiableSet(supportedSignatureAlgorithms);
+        this.enableX509Constraints = enableX509Constraints;
     }
 
     public boolean permits(Set<BCCryptoPrimitive> primitives, String algorithm, AlgorithmParameters parameters)
@@ -56,6 +64,12 @@ class ProvAlgorithmConstraints
             return false;
         }
 
+        if (enableX509Constraints && null != provX509DisabledAlgorithms
+            && !provX509DisabledAlgorithms.permits(primitives, algorithm, parameters))
+        {
+            return false;
+        }
+
         return true;
     }
 
@@ -70,6 +84,12 @@ class ProvAlgorithmConstraints
         }
 
         if (null != provTlsDisabledAlgorithms && !provTlsDisabledAlgorithms.permits(primitives, key))
+        {
+            return false;
+        }
+
+        if (enableX509Constraints && null != provX509DisabledAlgorithms
+            && !provX509DisabledAlgorithms.permits(primitives, key))
         {
             return false;
         }
@@ -94,6 +114,12 @@ class ProvAlgorithmConstraints
         }
 
         if (null != provTlsDisabledAlgorithms && !provTlsDisabledAlgorithms.permits(primitives, algorithm, key, parameters))
+        {
+            return false;
+        }
+
+        if (enableX509Constraints && null != provX509DisabledAlgorithms
+            && !provX509DisabledAlgorithms.permits(primitives, algorithm, key, parameters))
         {
             return false;
         }

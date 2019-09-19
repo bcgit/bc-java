@@ -9,7 +9,7 @@ class JcaAlgorithmDecomposer
 {
     private static final Pattern PATTERN = Pattern.compile("with|and|(?<!padd)in", Pattern.CASE_INSENSITIVE);
 
-    static final JcaAlgorithmDecomposer INSTANCE = new JcaAlgorithmDecomposer();
+    static final JcaAlgorithmDecomposer INSTANCE_JCA = new JcaAlgorithmDecomposer();
 
     public Set<String> decompose(String algorithm)
     {
