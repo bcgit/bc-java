@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,8 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
@@ -215,7 +218,7 @@ class ProvSSLContextSpi
         return Collections.unmodifiableMap(ps);
     }
 
-    private static String[] getDefaultProtocols(String[] specifiedProtocols, String propertyName)
+    private static String[] getCandidateDefaultProtocols(String[] specifiedProtocols, String propertyName)
     {
         if (specifiedProtocols != null)
         {
@@ -229,6 +232,27 @@ class ProvSSLContextSpi
         }
 
         return DEFAULT_PROTOCOLS;
+    }
+
+    private static String[] getDefaultProtocols(String[] specifiedProtocols, String propertyName)
+    {
+        String[] candidates = getCandidateDefaultProtocols(specifiedProtocols, propertyName);
+        String[] result = new String[candidates.length];
+
+        int count = 0;
+        for (int i = 0; i < candidates.length; ++i)
+        {
+            String candidate = candidates[i];
+            if (isProtocolPermitted(ProvAlgorithmConstraints.DEFAULT_TLS_ONLY, candidate))
+            {
+                result[count++] = candidate;
+            }
+        }
+        if (count < result.length)
+        {
+            result = JsseUtils.copyOf(result, count);
+        }
+        return result;
     }
 
     private static String[] getDefaultProtocolsClient(String[] specifiedProtocols)
@@ -282,6 +306,11 @@ class ProvSSLContextSpi
     private static String[] getKeysArray(Map<String, ?> m)
     {
         return getArray(m.keySet());
+    }
+
+    private static boolean isProtocolPermitted(BCAlgorithmConstraints algorithmConstraints, String protocol)
+    {
+        return algorithmConstraints.permits(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT), protocol, null);
     }
 
     static CipherSuiteInfo getCipherSuiteInfo(String cipherSuite)
@@ -410,12 +439,11 @@ class ProvSSLContextSpi
         return null;
     }
 
-    ProtocolVersion[] getSupportedVersions(String[] protocols)
+    ProtocolVersion[] getActiveProtocolVersions(ProvSSLParameters sslParameters)
     {
-        if (protocols == null)
-        {
-            return null;
-        }
+//        String[] cipherSuites = sslParameters.getCipherSuitesArray();
+        String[] protocols = sslParameters.getProtocolsArray();
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
         SortedSet<ProtocolVersion> versions = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>(){
             public int compare(ProtocolVersion o1, ProtocolVersion o2)
@@ -426,14 +454,22 @@ class ProvSSLContextSpi
 
         for (String protocol : protocols)
         {
-            if (protocol != null)
+            ProtocolVersion version = SUPPORTED_PROTOCOLS.get(protocol);
+            if (null == version)
             {
-                ProtocolVersion version = SUPPORTED_PROTOCOLS.get(protocol);
-                if (version != null)
-                {
-                    versions.add(version);
-                }
+                continue;
             }
+            if (!isProtocolPermitted(algorithmConstraints, protocol))
+            {
+                continue;
+            }
+
+            /*
+             * TODO[jsse] SunJSSE also checks that there is at least one "activatable" cipher suite
+             * that could be used for this protocol version.
+             */
+
+            versions.add(version);
         }
 
         return versions.toArray(new ProtocolVersion[versions.size()]);
