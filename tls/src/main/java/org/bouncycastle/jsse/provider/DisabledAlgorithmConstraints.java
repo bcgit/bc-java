@@ -11,7 +11,7 @@ class DisabledAlgorithmConstraints
 {
     static DisabledAlgorithmConstraints create(AlgorithmDecomposer decomposer, String propertyName)
     {
-        String[] algorithms = PropertyUtils.getStringArraySystemProperty(propertyName);
+        String[] algorithms = PropertyUtils.getStringArraySecurityProperty(propertyName);
         if (null == algorithms)
         {
             return null;
