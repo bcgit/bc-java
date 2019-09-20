@@ -1,13 +1,16 @@
-package org.bouncycastle.jce.spec;
+package org.bouncycastle.jcajce.spec;
+
+import java.security.spec.EncodedKeySpec;
 
 /**
  * OpenSSHPrivateKeySpec holds and encoded OpenSSH private key.
  * The format of the key can be either ASN.1 or OpenSSH.
- * @deprecated use org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec
  */
 public class OpenSSHPrivateKeySpec
-    extends org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec
+    extends EncodedKeySpec
 {
+    private final String format;
+
     /**
      * Accept an encoded key and determine the format.
      * <p>
@@ -28,5 +31,28 @@ public class OpenSSHPrivateKeySpec
     public OpenSSHPrivateKeySpec(byte[] encodedKey)
     {
         super(encodedKey);
+
+        if  (encodedKey[0] == 0x30)   // DER SEQUENCE
+        {
+            format = "ASN.1";
+        }
+        else if (encodedKey[0] == 'o')
+        {
+            format = "OpenSSH";
+        }
+        else
+        {
+            throw new IllegalArgumentException("unknown byte encoding");
+        }
+    }
+
+    /**
+     * Return the format, either OpenSSH for the OpenSSH propriety format or ASN.1.
+     *
+     * @return the format OpenSSH or ASN.1
+     */
+    public String getFormat()
+    {
+        return format;
     }
 }
