@@ -13,7 +13,7 @@ abstract class SupportedGroups
 {
     private static final Logger LOG = Logger.getLogger(SupportedGroups.class.getName());
 
-    private static final String PROPERTY_NAMEDGROUPS = "jdk.tls.namedGroups";
+    private static final String PROPERTY_NAMED_GROUPS = "jdk.tls.namedGroups";
 
     private static final boolean provDisableChar2 = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false)
         || PropertyUtils.getBooleanSystemProperty("org.bouncycastle.ec.disable_f2m", false);
@@ -52,29 +52,24 @@ abstract class SupportedGroups
 
     private static int[] getJdkTlsNamedGroups(boolean provDisableChar2)
     {
-        String prop = PropertyUtils.getStringSystemProperty(PROPERTY_NAMEDGROUPS);
-        if (prop == null)
+        String[] names = PropertyUtils.getStringArraySystemProperty(PROPERTY_NAMED_GROUPS);
+        if (null == names)
         {
             return null;
         }
 
-        String[] entries = Strings.toLowerCase(JsseUtils.stripDoubleQuotes(prop.trim())).split(",");
-        int[] result = new int[entries.length];
+        int[] result = new int[names.length];
         int count = 0;
-        for (String entry : entries)
+        for (String name : names)
         {
-            String name = entry.trim();
-            if (name.length() < 1)
-                continue;
-
-            int namedGroup = NamedGroup.getByName(name);
+            int namedGroup = NamedGroup.getByName(Strings.toLowerCase(name));
             if (namedGroup < 0)
             {
-                LOG.warning("'" + PROPERTY_NAMEDGROUPS + "' contains unrecognised NamedGroup: " + name);
+                LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains unrecognised NamedGroup: " + name);
             }
             else if (provDisableChar2 && NamedGroup.isChar2Curve(namedGroup))
             {
-                LOG.warning("'" + PROPERTY_NAMEDGROUPS + "' contains disabled characteristic-2 curve: " + name);
+                LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains disabled characteristic-2 curve: " + name);
             }
             else
             {
@@ -87,7 +82,7 @@ abstract class SupportedGroups
         }
         if (result.length < 1)
         {
-            LOG.severe("'" + PROPERTY_NAMEDGROUPS + "' contained no usable NamedGroup values");
+            LOG.severe("'" + PROPERTY_NAMED_GROUPS + "' contained no usable NamedGroup values");
         }
         return result;
     }

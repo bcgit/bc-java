@@ -15,6 +15,8 @@ import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 final class ProvSSLParameters
 {
+    private static final BCAlgorithmConstraints DEFAULT_ALGORITHM_CONSTRAINTS = ProvAlgorithmConstraints.DEFAULT;
+
     private static <T> List<T> copyList(Collection<T> list)
     {
         if (list == null)
@@ -34,7 +36,7 @@ final class ProvSSLParameters
     private String[] protocols;
     private boolean needClientAuth = false;
     private boolean wantClientAuth = false;
-    private BCAlgorithmConstraints algorithmConstraints;
+    private BCAlgorithmConstraints algorithmConstraints = DEFAULT_ALGORITHM_CONSTRAINTS;
     private String endpointIdentificationAlgorithm;
     private boolean useCipherSuitesOrder = true;
     private List<BCSNIMatcher> sniMatchers;
@@ -67,9 +69,26 @@ final class ProvSSLParameters
         return p;
     }
 
+    ProvSSLParameters copyForConnection()
+    {
+        ProvSSLParameters p = copy();
+
+        if (DEFAULT_ALGORITHM_CONSTRAINTS != p.algorithmConstraints)
+        {
+            p.algorithmConstraints = new ProvAlgorithmConstraints(p.algorithmConstraints, true);
+        }
+
+        return p;
+    }
+
     public String[] getCipherSuites()
     {
         return cipherSuites.clone();
+    }
+
+    String[] getCipherSuitesArray()
+    {
+        return cipherSuites;
     }
 
     public void setCipherSuites(String[] cipherSuites)

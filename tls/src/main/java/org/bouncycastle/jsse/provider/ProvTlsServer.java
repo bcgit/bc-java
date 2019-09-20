@@ -66,7 +66,7 @@ class ProvTlsServer
         super(manager.getContextData().getCrypto());
 
         this.manager = manager;
-        this.sslParameters = sslParameters;
+        this.sslParameters = sslParameters.copyForConnection();
 
         if (!manager.getEnableSessionCreation())
         {
@@ -98,7 +98,7 @@ class ProvTlsServer
     @Override
     public ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContext().getSupportedVersions(sslParameters.getProtocols());
+        return manager.getContext().getActiveProtocolVersions(sslParameters);
     }
 
     @Override
@@ -111,7 +111,7 @@ class ProvTlsServer
     protected int[] getSupportedCipherSuites()
     {
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
-            manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
+            manager.getContext().convertCipherSuites(sslParameters.getCipherSuitesArray()));
     }
 
     @Override

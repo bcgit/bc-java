@@ -93,6 +93,17 @@ class PropertyUtils
         return defaultValue;
     }
 
+    static String getStringSecurityProperty(String propertyName)
+    {
+        String propertyValue = getSecurityProperty(propertyName);
+        if (null != propertyValue)
+        {
+            LOG.log(Level. INFO, "Found string security property [" + propertyName + "]: " + propertyValue);
+            return propertyValue;
+        }
+        return null;
+    }
+
     static String getStringSystemProperty(String propertyName)
     {
         String propertyValue = getSystemProperty(propertyName);
@@ -102,6 +113,20 @@ class PropertyUtils
             return propertyValue;
         }
         return null;
+    }
+
+    static String[] getStringArraySecurityProperty(String propertyName)
+    {
+        String propertyValue = getStringSecurityProperty(propertyName);
+
+        return parseStringArray(propertyValue);
+    }
+
+    static String[] getStringArraySystemProperty(String propertyName)
+    {
+        String propertyValue = getStringSystemProperty(propertyName);
+
+        return parseStringArray(propertyValue);
     }
 
     private static String getRangeString(int minimumValue, int maximumValue)
@@ -119,5 +144,32 @@ class PropertyUtils
             sb.append(maximumValue);
         }
         return sb.toString();
+    }
+
+    private static String[] parseStringArray(String propertyValue)
+    {
+        if (null == propertyValue)
+        {
+            return null;
+        }
+
+        String[] entries = JsseUtils.stripDoubleQuotes(propertyValue.trim()).split(",");
+        String[] result = new String[entries.length];
+        int count = 0;
+        for (String entry : entries)
+        {
+            entry = entry.trim();
+            if (entry.length() < 1)
+            {
+                continue;
+            }
+
+            result[count++] = entry;
+        }
+        if (count < result.length)
+        {
+            result = JsseUtils.copyOf(result, count);
+        }
+        return result;
     }
 }

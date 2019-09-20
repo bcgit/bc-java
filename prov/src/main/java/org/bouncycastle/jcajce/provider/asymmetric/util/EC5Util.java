@@ -295,59 +295,14 @@ public class EC5Util
         }
     }
 
-    /**
-     * @deprecated per-point compression property will be removed, use
-     *             {@link #convertSpec(ECParameterSpec)} instead.
-     */
-    public static org.bouncycastle.jce.spec.ECParameterSpec convertSpec(
-        ECParameterSpec ecSpec,
-        boolean withCompression)
-    {
-        ECCurve curve = convertCurve(ecSpec.getCurve());
-
-        org.bouncycastle.math.ec.ECPoint g = convertPoint(curve, ecSpec.getGenerator(), withCompression);
-        BigInteger n = ecSpec.getOrder();
-        BigInteger h = BigInteger.valueOf(ecSpec.getCofactor());
-        byte[] seed = ecSpec.getCurve().getSeed();
-
-        if (ecSpec instanceof ECNamedCurveSpec)
-        {
-            return new org.bouncycastle.jce.spec.ECNamedCurveParameterSpec(((ECNamedCurveSpec)ecSpec).getName(), curve,
-                g, n, h, seed);
-        }
-        else
-        {
-            return new org.bouncycastle.jce.spec.ECParameterSpec(curve, g, n, h, seed);
-        }
-    }
-
     public static org.bouncycastle.math.ec.ECPoint convertPoint(ECParameterSpec ecSpec, ECPoint point)
     {
         return convertPoint(convertCurve(ecSpec.getCurve()), point);
     }
 
-    /**
-     * @deprecated per-point compression property will be removed, use
-     *             {@link #convertPoint(ECParameterSpec, ECPoint)} instead.
-     */
-    public static org.bouncycastle.math.ec.ECPoint convertPoint(ECParameterSpec ecSpec, ECPoint point,
-        boolean withCompression)
-    {
-        return convertPoint(convertCurve(ecSpec.getCurve()), point, withCompression);
-    }
-
     public static org.bouncycastle.math.ec.ECPoint convertPoint(ECCurve curve, ECPoint point)
     {
         return curve.createPoint(point.getAffineX(), point.getAffineY());
-    }
-
-    /**
-     * @deprecated per-point compression property will be removed, use
-     *             {@link #convertPoint(ECCurve, ECPoint) instead.
-     */
-    public static org.bouncycastle.math.ec.ECPoint convertPoint(ECCurve curve, ECPoint point, boolean withCompression)
-    {
-        return curve.createPoint(point.getAffineX(), point.getAffineY(), withCompression);
     }
 
     public static ECPoint convertPoint(org.bouncycastle.math.ec.ECPoint point)

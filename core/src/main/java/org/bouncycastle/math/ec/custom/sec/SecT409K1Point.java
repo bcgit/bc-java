@@ -8,34 +8,14 @@ import org.bouncycastle.math.ec.ECPoint.AbstractF2m;
 
 public class SecT409K1Point extends AbstractF2m
 {
-    /**
-     * @deprecated Use ECCurve.createPoint to construct points
-     */
-    public SecT409K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y)
-    {
-        this(curve, x, y, false);
-    }
-
-    /**
-     * @deprecated per-point compression property will be removed, refer {@link #getEncoded(boolean)}
-     */
-    public SecT409K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, boolean withCompression)
+    SecT409K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y)
     {
         super(curve, x, y);
-
-        if ((x == null) != (y == null))
-        {
-            throw new IllegalArgumentException("Exactly one of the field elements is null");
-        }
-
-        this.withCompression = withCompression;
     }
 
-    SecT409K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+    SecT409K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
     {
         super(curve, x, y, zs);
-
-        this.withCompression = withCompression;
     }
 
     protected ECPoint detach()
@@ -150,7 +130,7 @@ public class SecT409K1Point extends AbstractF2m
             X3 = L.square().add(L).add(X1);
             if (X3.isZero())
             {
-                return new SecT409K1Point(curve, X3, curve.getB(), this.withCompression);
+                return new SecT409K1Point(curve, X3, curve.getB());
             }
 
             ECFieldElement Y3 = L.multiply(X1.add(X3)).add(X3).add(Y1);
@@ -167,7 +147,7 @@ public class SecT409K1Point extends AbstractF2m
             X3 = AU1.multiply(AU2);
             if (X3.isZero())
             {
-                return new SecT409K1Point(curve, X3, curve.getB(), this.withCompression);
+                return new SecT409K1Point(curve, X3, curve.getB());
             }
 
             ECFieldElement ABZ2 = A.multiply(B);
@@ -185,7 +165,7 @@ public class SecT409K1Point extends AbstractF2m
             }
         }
 
-        return new SecT409K1Point(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
+        return new SecT409K1Point(curve, X3, L3, new ECFieldElement[]{ Z3 });
     }
 
     public ECPoint twice()
@@ -221,7 +201,7 @@ public class SecT409K1Point extends AbstractF2m
 
         if (T.isZero())
         {
-            return new SecT409K1Point(curve, T, curve.getB(), withCompression);
+            return new SecT409K1Point(curve, T, curve.getB());
         }
 
         ECFieldElement X3 = T.square();
@@ -231,7 +211,7 @@ public class SecT409K1Point extends AbstractF2m
         ECFieldElement t2 = Z1IsOne ? Z1 : Z1Sq.square();
         ECFieldElement L3 = t1.add(T).add(Z1Sq).multiply(t1).add(t2).add(X3).add(Z3);
 
-        return new SecT409K1Point(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
+        return new SecT409K1Point(curve, X3, L3, new ECFieldElement[]{ Z3 });
     }
 
     public ECPoint twicePlus(ECPoint b)
@@ -287,14 +267,14 @@ public class SecT409K1Point extends AbstractF2m
 
         if (A.isZero())
         {
-            return new SecT409K1Point(curve, A, curve.getB(), withCompression);
+            return new SecT409K1Point(curve, A, curve.getB());
         }
 
         ECFieldElement X3 = A.square().multiply(X2Z1Sq);
         ECFieldElement Z3 = A.multiply(B).multiply(Z1Sq);
         ECFieldElement L3 = A.add(B).square().multiplyPlusProduct(T, L2plus1, Z3);
 
-        return new SecT409K1Point(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
+        return new SecT409K1Point(curve, X3, L3, new ECFieldElement[]{ Z3 });
     }
 
     public ECPoint negate()
@@ -312,6 +292,6 @@ public class SecT409K1Point extends AbstractF2m
 
         // L is actually Lambda (X + Y/X) here
         ECFieldElement L = this.y, Z = this.zs[0];
-        return new SecT409K1Point(curve, X, L.add(Z), new ECFieldElement[]{ Z }, this.withCompression);
+        return new SecT409K1Point(curve, X, L.add(Z), new ECFieldElement[]{ Z });
     }
 }

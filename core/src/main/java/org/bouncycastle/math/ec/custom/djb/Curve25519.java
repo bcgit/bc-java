@@ -69,14 +69,14 @@ public class Curve25519 extends ECCurve.AbstractFp
         return new Curve25519FieldElement(x);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
     {
-        return new Curve25519Point(this, x, y, withCompression);
+        return new Curve25519Point(this, x, y);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
     {
-        return new Curve25519Point(this, x, y, zs, withCompression);
+        return new Curve25519Point(this, x, y, zs);
     }
 
     public ECPoint getInfinity()
@@ -143,7 +143,7 @@ public class Curve25519 extends ECCurve.AbstractFp
 
             private ECPoint createPoint(int[] x, int[] y)
             {
-                return createRawPoint(new Curve25519FieldElement(x), new Curve25519FieldElement(y), CURVE25519_AFFINE_ZS, false);
+                return createRawPoint(new Curve25519FieldElement(x), new Curve25519FieldElement(y), CURVE25519_AFFINE_ZS);
             }
         };
     }

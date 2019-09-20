@@ -14,7 +14,6 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
-import org.bouncycastle.util.Strings;
 
 
 /**
@@ -56,9 +55,6 @@ public class OpenSSHPublicKeyUtil
     public static byte[] encodePublicKey(AsymmetricKeyParameter cipherParameters)
         throws IOException
     {
-        BigInteger e;
-        BigInteger n;
-
         if (cipherParameters == null)
         {
             throw new IllegalArgumentException("cipherParameters was null.");
@@ -71,13 +67,12 @@ public class OpenSSHPublicKeyUtil
                 throw new IllegalArgumentException("RSAKeyParamaters was for encryption");
             }
 
-            e = ((RSAKeyParameters)cipherParameters).getExponent();
-            n = ((RSAKeyParameters)cipherParameters).getModulus();
+            RSAKeyParameters rsaPubKey = (RSAKeyParameters)cipherParameters;
 
             SSHBuilder builder = new SSHBuilder();
             builder.writeString(RSA);
-            builder.rawArray(e.toByteArray());
-            builder.rawArray(n.toByteArray());
+            builder.writeBigNum(rsaPubKey.getExponent());
+            builder.writeBigNum(rsaPubKey.getModulus());
 
             return builder.getBytes();
 
@@ -98,24 +93,27 @@ public class OpenSSHPublicKeyUtil
 
             builder.writeString(ECDSA + "-sha2-" + name); // Magic
             builder.writeString(name);
-            builder.rawArray(((ECPublicKeyParameters)cipherParameters).getQ().getEncoded(false)); //Uncompressed
+            builder.writeBlock(((ECPublicKeyParameters)cipherParameters).getQ().getEncoded(false)); //Uncompressed
             return builder.getBytes();
         }
         else if (cipherParameters instanceof DSAPublicKeyParameters)
         {
+            DSAPublicKeyParameters dsaPubKey = (DSAPublicKeyParameters)cipherParameters;
+            DSAParameters dsaParams = dsaPubKey.getParameters();
+
             SSHBuilder builder = new SSHBuilder();
             builder.writeString(DSS);
-            builder.rawArray(((DSAPublicKeyParameters)cipherParameters).getParameters().getP().toByteArray());
-            builder.rawArray(((DSAPublicKeyParameters)cipherParameters).getParameters().getQ().toByteArray());
-            builder.rawArray(((DSAPublicKeyParameters)cipherParameters).getParameters().getG().toByteArray());
-            builder.rawArray(((DSAPublicKeyParameters)cipherParameters).getY().toByteArray());
+            builder.writeBigNum(dsaParams.getP());
+            builder.writeBigNum(dsaParams.getQ());
+            builder.writeBigNum(dsaParams.getG());
+            builder.writeBigNum(dsaPubKey.getY());
             return builder.getBytes();
         }
         else if (cipherParameters instanceof Ed25519PublicKeyParameters)
         {
             SSHBuilder builder = new SSHBuilder();
             builder.writeString(ED_25519);
-            builder.rawArray(((Ed25519PublicKeyParameters)cipherParameters).getEncoded());
+            builder.writeBlock(((Ed25519PublicKeyParameters)cipherParameters).getEncoded());
             return builder.getBytes();
         }
 
@@ -132,25 +130,25 @@ public class OpenSSHPublicKeyUtil
     {
         AsymmetricKeyParameter result = null;
 
-        String magic = Strings.fromByteArray(buffer.readString());
+        String magic = buffer.readString();
         if (RSA.equals(magic))
         {
-            BigInteger e = buffer.positiveBigNum();
-            BigInteger n = buffer.positiveBigNum();
+            BigInteger e = buffer.readBigNumPositive();
+            BigInteger n = buffer.readBigNumPositive();
             result = new RSAKeyParameters(false, n, e);
         }
         else if (DSS.equals(magic))
         {
-            BigInteger p = buffer.positiveBigNum();
-            BigInteger q = buffer.positiveBigNum();
-            BigInteger g = buffer.positiveBigNum();
-            BigInteger pubKey = buffer.positiveBigNum();
+            BigInteger p = buffer.readBigNumPositive();
+            BigInteger q = buffer.readBigNumPositive();
+            BigInteger g = buffer.readBigNumPositive();
+            BigInteger pubKey = buffer.readBigNumPositive();
 
             result = new DSAPublicKeyParameters(pubKey, new DSAParameters(p, q, g));
         }
         else if (magic.startsWith(ECDSA))
         {
-            String curveName = Strings.fromByteArray(buffer.readString());
+            String curveName = buffer.readString();
             String nameToFind = curveName;
 
             if (curveName.startsWith("nist"))
@@ -177,13 +175,19 @@ public class OpenSSHPublicKeyUtil
 
             ECCurve curve = x9ECParameters.getCurve();
 
-            byte[] pointRaw = buffer.readString();
+            byte[] pointRaw = buffer.readBlock();
 
             result = new ECPublicKeyParameters(curve.decodePoint(pointRaw), new ECDomainParameters(curve, x9ECParameters.getG(), x9ECParameters.getN(), x9ECParameters.getH(), x9ECParameters.getSeed()));
         }
-        else if (magic.startsWith(ED_25519))
+        else if (ED_25519.equals(magic))
         {
-            result = new Ed25519PublicKeyParameters(buffer.readString(), 0);
+            byte[] pubKeyBytes = buffer.readBlock();
+            if (pubKeyBytes.length != Ed25519PublicKeyParameters.KEY_SIZE)
+            {
+                throw new IllegalStateException("public key value of wrong length");
+            }
+
+            result = new Ed25519PublicKeyParameters(pubKeyBytes, 0);
         }
 
         if (result == null)
@@ -193,7 +197,7 @@ public class OpenSSHPublicKeyUtil
 
         if (buffer.hasRemaining())
         {
-            throw new IllegalArgumentException("uncoded key has trailing data");
+            throw new IllegalArgumentException("decoded key has trailing data");
         }
 
         return result;

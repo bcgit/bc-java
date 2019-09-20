@@ -1777,45 +1777,9 @@ public class TlsUtils
 
     public static int getCipherType(int cipherSuite)
     {
-        switch (getEncryptionAlgorithm(cipherSuite))
-        {
-        case EncryptionAlgorithm.AES_128_CCM:
-        case EncryptionAlgorithm.AES_128_CCM_8:
-        case EncryptionAlgorithm.AES_128_GCM:
-        case EncryptionAlgorithm.AES_128_OCB_TAGLEN96:
-        case EncryptionAlgorithm.AES_256_CCM:
-        case EncryptionAlgorithm.AES_256_CCM_8:
-        case EncryptionAlgorithm.AES_256_GCM:
-        case EncryptionAlgorithm.ARIA_128_GCM:
-        case EncryptionAlgorithm.ARIA_256_GCM:
-        case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
-        case EncryptionAlgorithm.CAMELLIA_128_GCM:
-        case EncryptionAlgorithm.CAMELLIA_256_GCM:
-        case EncryptionAlgorithm.CHACHA20_POLY1305:
-            return CipherType.aead;
+        int encryptionAlgorithm = getEncryptionAlgorithm(cipherSuite);
 
-        case EncryptionAlgorithm.RC2_CBC_40:
-        case EncryptionAlgorithm.IDEA_CBC:
-        case EncryptionAlgorithm.DES40_CBC:
-        case EncryptionAlgorithm.DES_CBC:
-        case EncryptionAlgorithm._3DES_EDE_CBC:
-        case EncryptionAlgorithm.AES_128_CBC:
-        case EncryptionAlgorithm.AES_256_CBC:
-        case EncryptionAlgorithm.ARIA_128_CBC:
-        case EncryptionAlgorithm.ARIA_256_CBC:
-        case EncryptionAlgorithm.CAMELLIA_128_CBC:
-        case EncryptionAlgorithm.CAMELLIA_256_CBC:
-        case EncryptionAlgorithm.SEED_CBC:
-            return CipherType.block;
-
-        case EncryptionAlgorithm.NULL:
-        case EncryptionAlgorithm.RC4_40:
-        case EncryptionAlgorithm.RC4_128:
-            return CipherType.stream;
-
-        default:
-            return -1;
-        }
+        return getEncryptionAlgorithmType(encryptionAlgorithm);
     }
 
     public static int getEncryptionAlgorithm(int cipherSuite)
@@ -2170,6 +2134,49 @@ public class TlsUtils
         case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
             return EncryptionAlgorithm.SEED_CBC;
+
+        default:
+            return -1;
+        }
+    }
+
+    public static int getEncryptionAlgorithmType(int encryptionAlgorithm)
+    {
+        switch (encryptionAlgorithm)
+        {
+        case EncryptionAlgorithm.AES_128_CCM:
+        case EncryptionAlgorithm.AES_128_CCM_8:
+        case EncryptionAlgorithm.AES_128_GCM:
+        case EncryptionAlgorithm.AES_128_OCB_TAGLEN96:
+        case EncryptionAlgorithm.AES_256_CCM:
+        case EncryptionAlgorithm.AES_256_CCM_8:
+        case EncryptionAlgorithm.AES_256_GCM:
+        case EncryptionAlgorithm.ARIA_128_GCM:
+        case EncryptionAlgorithm.ARIA_256_GCM:
+        case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
+        case EncryptionAlgorithm.CAMELLIA_128_GCM:
+        case EncryptionAlgorithm.CAMELLIA_256_GCM:
+        case EncryptionAlgorithm.CHACHA20_POLY1305:
+            return CipherType.aead;
+
+        case EncryptionAlgorithm.RC2_CBC_40:
+        case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.DES40_CBC:
+        case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm._3DES_EDE_CBC:
+        case EncryptionAlgorithm.AES_128_CBC:
+        case EncryptionAlgorithm.AES_256_CBC:
+        case EncryptionAlgorithm.ARIA_128_CBC:
+        case EncryptionAlgorithm.ARIA_256_CBC:
+        case EncryptionAlgorithm.CAMELLIA_128_CBC:
+        case EncryptionAlgorithm.CAMELLIA_256_CBC:
+        case EncryptionAlgorithm.SEED_CBC:
+            return CipherType.block;
+
+        case EncryptionAlgorithm.NULL:
+        case EncryptionAlgorithm.RC4_40:
+        case EncryptionAlgorithm.RC4_128:
+            return CipherType.stream;
 
         default:
             return -1;
