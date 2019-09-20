@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,8 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
@@ -50,10 +53,10 @@ class ProvSSLContextSpi
      * and a Set of supported cipher suite values, so we can cover TLS_NULL_WITH_NULL_NULL and
      * the SCSV values.
      */
-    private static final Map<String, Integer> SUPPORTED_CIPHERSUITE_MAP = createSupportedCipherSuiteMap();
-    private static final Map<String, Integer> SUPPORTED_CIPHERSUITE_MAP_FIPS = createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP);
+    private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP = createSupportedCipherSuiteMap();
+    private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP_FIPS = createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP);
 
-    private static final Map<String, ProtocolVersion> supportedProtocols = createSupportedProtocols();
+    private static final Map<String, ProtocolVersion> SUPPORTED_PROTOCOLS = createSupportedProtocols();
 
     private static final List<String> DEFAULT_CIPHERSUITE_LIST = createDefaultCipherSuiteList(SUPPORTED_CIPHERSUITE_MAP.keySet());
     private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS = createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST);
@@ -61,6 +64,16 @@ class ProvSSLContextSpi
     // TODO[tls13]
 //    private static final String[] DEFAULT_PROTOCOLS = new String[]{ "TLSv1.2", "TLSv1.3" };
     private static final String[] DEFAULT_PROTOCOLS = new String[]{ "TLSv1.2" };
+
+    private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
+    {
+        CipherSuiteInfo cipherSuiteInfo = CipherSuiteInfo.forCipherSuite(cipherSuite, name);
+
+        if (null != cs.put(name, cipherSuiteInfo))
+        {
+            throw new IllegalStateException("Duplicate names in supported-cipher-suites");
+        }
+    }
 
     private static List<String> createDefaultCipherSuiteList(Set<String> supportedCipherSuiteSet)
     {
@@ -111,95 +124,85 @@ class ProvSSLContextSpi
         return Collections.unmodifiableList(cs);
     }
 
-    private static Map<String, Integer> createSupportedCipherSuiteMap()
+    private static Map<String, CipherSuiteInfo> createSupportedCipherSuiteMap()
     {
-        @SuppressWarnings("serial")
-        final Map<String, Integer> cs = new HashMap<String, Integer>()
-        {
-            public Integer put(String key, Integer value)
-            {
-                if (null != super.put(key, value))
-                {
-                    throw new IllegalStateException("Duplicate names in supported-cipher-suites");
-                }
-                return null;
-            }
-        };
+        Map<String, CipherSuiteInfo> cs = new HashMap<String, CipherSuiteInfo>();
 
-        cs.put("TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA);
-        cs.put("TLS_DHE_DSS_WITH_AES_128_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA);
-        cs.put("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256);
-        cs.put("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_DHE_DSS_WITH_AES_128_GCM_SHA256);
-        cs.put("TLS_DHE_DSS_WITH_AES_256_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA);
-        cs.put("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256", CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256);
-        cs.put("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA);
+        addCipherSuite(cs, "TLS_DHE_DSS_WITH_AES_128_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA);
+        addCipherSuite(cs, "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256);
+        addCipherSuite(cs, "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_DHE_DSS_WITH_AES_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_DHE_DSS_WITH_AES_256_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA);
+        addCipherSuite(cs, "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256", CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256);
+        addCipherSuite(cs, "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_128_CCM", CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_128_CCM_8", CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256", CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_256_CCM", CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_256_CCM_8", CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256);
 
-        cs.put("TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA);
-        cs.put("TLS_DHE_RSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA);
-        cs.put("TLS_DHE_RSA_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256);
-        cs.put("TLS_DHE_RSA_WITH_AES_128_CCM", CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM);
-        cs.put("TLS_DHE_RSA_WITH_AES_128_CCM_8", CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8);
-        cs.put("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256);
-        cs.put("TLS_DHE_RSA_WITH_AES_256_CBC_SHA", CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA);
-        cs.put("TLS_DHE_RSA_WITH_AES_256_CBC_SHA256", CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256);
-        cs.put("TLS_DHE_RSA_WITH_AES_256_CCM", CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM);
-        cs.put("TLS_DHE_RSA_WITH_AES_256_CCM_8", CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8);
-        cs.put("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_128_CCM", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_256_CCM", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256);
+        addCipherSuite(cs, "TLS_ECDHE_ECDSA_WITH_NULL_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA);
 
-        cs.put("TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_128_CCM", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_256_CCM", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8);
-        cs.put("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384);
-        cs.put("TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256);
-        cs.put("TLS_ECDHE_ECDSA_WITH_NULL_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384", CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256);
+        addCipherSuite(cs, "TLS_ECDHE_RSA_WITH_NULL_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA);
 
-        cs.put("TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA);
-        cs.put("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA);
-        cs.put("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256);
-        cs.put("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256);
-        cs.put("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA);
-        cs.put("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384", CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384);
-        cs.put("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384);
-        cs.put("TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256);
-        cs.put("TLS_ECDHE_RSA_WITH_NULL_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA);
-
-        cs.put("TLS_RSA_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
-        cs.put("TLS_RSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
-        cs.put("TLS_RSA_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256);
-        cs.put("TLS_RSA_WITH_AES_128_CCM", CipherSuite.TLS_RSA_WITH_AES_128_CCM);
-        cs.put("TLS_RSA_WITH_AES_128_CCM_8", CipherSuite.TLS_RSA_WITH_AES_128_CCM_8);
-        cs.put("TLS_RSA_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256);
-        cs.put("TLS_RSA_WITH_AES_256_CBC_SHA", CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA);
-        cs.put("TLS_RSA_WITH_AES_256_CBC_SHA256", CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256);
-        cs.put("TLS_RSA_WITH_AES_256_CCM", CipherSuite.TLS_RSA_WITH_AES_256_CCM);
-        cs.put("TLS_RSA_WITH_AES_256_CCM_8", CipherSuite.TLS_RSA_WITH_AES_256_CCM_8);
-        cs.put("TLS_RSA_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384);
-        cs.put("TLS_RSA_WITH_NULL_SHA", CipherSuite.TLS_RSA_WITH_NULL_SHA);
-        cs.put("TLS_RSA_WITH_NULL_SHA256", CipherSuite.TLS_RSA_WITH_NULL_SHA256);
+        addCipherSuite(cs, "TLS_RSA_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_128_CCM", CipherSuite.TLS_RSA_WITH_AES_128_CCM);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_128_CCM_8", CipherSuite.TLS_RSA_WITH_AES_128_CCM_8);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_256_CBC_SHA", CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_256_CBC_SHA256", CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_256_CCM", CipherSuite.TLS_RSA_WITH_AES_256_CCM);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_256_CCM_8", CipherSuite.TLS_RSA_WITH_AES_256_CCM_8);
+        addCipherSuite(cs, "TLS_RSA_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA", CipherSuite.TLS_RSA_WITH_NULL_SHA);
+        addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA256", CipherSuite.TLS_RSA_WITH_NULL_SHA256);
 
         // TODO[tls13]
 //        /*
 //         * TLS 1.3
 //         */
-//        cs.put("TLS_AES_128_GCM_SHA256", CipherSuite.TLS_AES_128_GCM_SHA256);
-//        cs.put("TLS_AES_256_GCM_SHA384", CipherSuite.TLS_AES_256_GCM_SHA384);
-//        cs.put("TLS_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
-//        cs.put("TLS_AES_128_CCM_SHA256", CipherSuite.TLS_AES_128_CCM_SHA256);
-//        cs.put("TLS_AES_128_CCM_8_SHA256", CipherSuite.TLS_AES_128_CCM_8_SHA256);
+//        addCipherSuite(cs, "TLS_AES_128_GCM_SHA256", CipherSuite.TLS_AES_128_GCM_SHA256);
+//        addCipherSuite(cs, "TLS_AES_256_GCM_SHA384", CipherSuite.TLS_AES_256_GCM_SHA384);
+//        addCipherSuite(cs, "TLS_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+//        addCipherSuite(cs, "TLS_AES_128_CCM_SHA256", CipherSuite.TLS_AES_128_CCM_SHA256);
+//        addCipherSuite(cs, "TLS_AES_128_CCM_8_SHA256", CipherSuite.TLS_AES_128_CCM_8_SHA256);
 
         return Collections.unmodifiableMap(cs);
     }
 
-    private static Map<String, Integer> createSupportedCipherSuiteMapFips(Map<String, Integer> supportedCipherSuites)
+    private static Map<String, CipherSuiteInfo> createSupportedCipherSuiteMapFips(
+        Map<String, CipherSuiteInfo> supportedCipherSuites)
     {
-        final Map<String, Integer> cs = new HashMap<String, Integer>(supportedCipherSuites);
+        final Map<String, CipherSuiteInfo> cs = new HashMap<String, CipherSuiteInfo>(supportedCipherSuites);
         FipsUtils.removeNonFipsCipherSuites(cs.keySet());
         return Collections.unmodifiableMap(cs);
     }
@@ -215,7 +218,7 @@ class ProvSSLContextSpi
         return Collections.unmodifiableMap(ps);
     }
 
-    private static String[] getDefaultProtocols(String[] specifiedProtocols, String propertyName)
+    private static String[] getCandidateDefaultProtocols(String[] specifiedProtocols, String propertyName)
     {
         if (specifiedProtocols != null)
         {
@@ -231,6 +234,27 @@ class ProvSSLContextSpi
         return DEFAULT_PROTOCOLS;
     }
 
+    private static String[] getDefaultProtocols(String[] specifiedProtocols, String propertyName)
+    {
+        String[] candidates = getCandidateDefaultProtocols(specifiedProtocols, propertyName);
+        String[] result = new String[candidates.length];
+
+        int count = 0;
+        for (int i = 0; i < candidates.length; ++i)
+        {
+            String candidate = candidates[i];
+            if (isProtocolPermitted(ProvAlgorithmConstraints.DEFAULT_TLS_ONLY, candidate))
+            {
+                result[count++] = candidate;
+            }
+        }
+        if (count < result.length)
+        {
+            result = JsseUtils.copyOf(result, count);
+        }
+        return result;
+    }
+
     private static String[] getDefaultProtocolsClient(String[] specifiedProtocols)
     {
         return getDefaultProtocols(specifiedProtocols, PROPERTY_CLIENT_PROTOCOLS);
@@ -243,22 +267,17 @@ class ProvSSLContextSpi
 
     private static String[] getJdkTlsProtocols(String propertyName)
     {
-        String prop = PropertyUtils.getStringSystemProperty(propertyName);
-        if (prop == null)
+        String[] protocols = PropertyUtils.getStringArraySystemProperty(propertyName);
+        if (null == protocols)
         {
             return null;
         }
 
-        String[] entries = JsseUtils.stripDoubleQuotes(prop.trim()).split(",");
-        String[] result = new String[entries.length];
+        String[] result = new String[protocols.length];
         int count = 0;
-        for (String entry : entries)
+        for (String protocol : protocols)
         {
-            String protocol = entry.trim();
-            if (protocol.length() < 1)
-                continue;
-
-            if (!supportedProtocols.containsKey(protocol))
+            if (!SUPPORTED_PROTOCOLS.containsKey(protocol))
             {
                 LOG.warning("'" + propertyName + "' contains unsupported protocol: " + protocol);
             }
@@ -289,6 +308,16 @@ class ProvSSLContextSpi
         return getArray(m.keySet());
     }
 
+    private static boolean isProtocolPermitted(BCAlgorithmConstraints algorithmConstraints, String protocol)
+    {
+        return algorithmConstraints.permits(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT), protocol, null);
+    }
+
+    static CipherSuiteInfo getCipherSuiteInfo(String cipherSuite)
+    {
+        return SUPPORTED_CIPHERSUITE_MAP.get(cipherSuite);
+    }
+
     static KeyManager[] getDefaultKeyManagers() throws Exception
     {
         KeyStoreConfig keyStoreConfig = ProvKeyManagerFactorySpi.getDefaultKeyStore();
@@ -310,7 +339,7 @@ class ProvSSLContextSpi
     protected final String[] defaultProtocolsClient;
     protected final String[] defaultProtocolsServer;
 
-    protected final Map<String, Integer> supportedCipherSuites;
+    protected final Map<String, CipherSuiteInfo> supportedCipherSuites;
     protected final String[] defaultCipherSuites;
 
     protected boolean initialized = false;
@@ -339,7 +368,7 @@ class ProvSSLContextSpi
         int[] result = new int[suites.length];
         for (int i = 0; i < suites.length; ++i)
         {
-            result[i] = supportedCipherSuites.get(suites[i]);
+            result[i] = supportedCipherSuites.get(suites[i]).getCipherSuite();
         }
         return result;
     }
@@ -359,9 +388,9 @@ class ProvSSLContextSpi
 
         if (TlsUtils.isValidUint16(suite))
         {
-            for (Map.Entry<String, Integer> entry : supportedCipherSuites.entrySet())
+            for (Map.Entry<String, CipherSuiteInfo> entry : supportedCipherSuites.entrySet())
             {
-                if (entry.getValue().intValue() == suite)
+                if (entry.getValue().getCipherSuite() == suite)
                 {
                     return entry.getKey();
                 }
@@ -399,7 +428,7 @@ class ProvSSLContextSpi
     {
         if (v != null)
         {
-            for (Map.Entry<String, ProtocolVersion> entry : supportedProtocols.entrySet())
+            for (Map.Entry<String, ProtocolVersion> entry : SUPPORTED_PROTOCOLS.entrySet())
             {
                 if (v.equals(entry.getValue()))
                 {
@@ -410,12 +439,11 @@ class ProvSSLContextSpi
         return null;
     }
 
-    ProtocolVersion[] getSupportedVersions(String[] protocols)
+    ProtocolVersion[] getActiveProtocolVersions(ProvSSLParameters sslParameters)
     {
-        if (protocols == null)
-        {
-            return null;
-        }
+//        String[] cipherSuites = sslParameters.getCipherSuitesArray();
+        String[] protocols = sslParameters.getProtocolsArray();
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
         SortedSet<ProtocolVersion> versions = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>(){
             public int compare(ProtocolVersion o1, ProtocolVersion o2)
@@ -426,14 +454,22 @@ class ProvSSLContextSpi
 
         for (String protocol : protocols)
         {
-            if (protocol != null)
+            ProtocolVersion version = SUPPORTED_PROTOCOLS.get(protocol);
+            if (null == version)
             {
-                ProtocolVersion version = supportedProtocols.get(protocol);
-                if (version != null)
-                {
-                    versions.add(version);
-                }
+                continue;
             }
+            if (!isProtocolPermitted(algorithmConstraints, protocol))
+            {
+                continue;
+            }
+
+            /*
+             * TODO[jsse] SunJSSE also checks that there is at least one "activatable" cipher suite
+             * that could be used for this protocol version.
+             */
+
+            versions.add(version);
         }
 
         return versions.toArray(new ProtocolVersion[versions.size()]);
@@ -452,7 +488,7 @@ class ProvSSLContextSpi
 
     String[] getSupportedProtocols()
     {
-        return getKeysArray(supportedProtocols);
+        return getKeysArray(SUPPORTED_PROTOCOLS);
     }
 
     String[] getSupportedCipherSuites(String[] cipherSuites)
@@ -491,7 +527,7 @@ class ProvSSLContextSpi
         }
         for (String protocol : protocols)
         {
-            if (protocol == null || !supportedProtocols.containsKey(protocol))
+            if (protocol == null || !SUPPORTED_PROTOCOLS.containsKey(protocol))
             {
                 return false;
             }

@@ -725,7 +725,9 @@ public abstract class ECFieldElement
          * @throws IllegalArgumentException if <code>a</code> and <code>b</code>
          * are not elements of the same field
          * <code>F<sub>2<sup>m</sup></sub></code> (having the same
-         * representation). 
+         * representation).
+         * 
+         * @deprecated Will be removed
          */
         public static void checkFieldElements(
             ECFieldElement a,

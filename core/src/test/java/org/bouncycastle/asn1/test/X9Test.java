@@ -74,7 +74,7 @@ public class X9Test
 
         X9ECPoint               x9P = new X9ECPoint(ecP.getCurve(), p);
 
-        if (!Arrays.areEqual(p.getOctets(), x9P.getPoint().getEncoded()))
+        if (!Arrays.areEqual(p.getOctets(), x9P.getPointEncoding()))
         {
             fail("point encoding not preserved");
         }

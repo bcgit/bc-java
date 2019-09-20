@@ -416,7 +416,7 @@ class ProvSSLSocketDirect
                 clientProtocol.setResumableHandshake(resumable);
                 this.protocol = clientProtocol;
 
-                ProvTlsClient client = new ProvTlsClient(this, sslParameters.copy());
+                ProvTlsClient client = new ProvTlsClient(this, sslParameters);
                 this.protocolPeer = client;
 
                 clientProtocol.connect(client);
@@ -427,7 +427,7 @@ class ProvSSLSocketDirect
                 serverProtocol.setResumableHandshake(resumable);
                 this.protocol = serverProtocol;
 
-                ProvTlsServer server = new ProvTlsServer(this, sslParameters.copy());
+                ProvTlsServer server = new ProvTlsServer(this, sslParameters);
                 this.protocolPeer = server;
 
                 serverProtocol.accept(server);
