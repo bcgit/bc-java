@@ -189,7 +189,7 @@ public class JCEECPrivateKey
     private void populateFromPrivKeyInfo(PrivateKeyInfo info)
         throws IOException
     {
-        X962Parameters params = new X962Parameters((ASN1Primitive)info.getPrivateKeyAlgorithm().getParameters());
+        X962Parameters params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
 
         if (params.isNamedCurve())
         {

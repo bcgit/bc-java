@@ -14,7 +14,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -38,8 +37,6 @@ import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Point;
 import org.bouncycastle.util.Strings;
 
 public class JCEECPublicKey
@@ -180,7 +177,9 @@ public class JCEECPublicKey
 
     private void populateFromPubKeyInfo(SubjectPublicKeyInfo info)
     {
-        if (info.getAlgorithmId().getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3410_2001))
+        AlgorithmIdentifier algID = info.getAlgorithm();
+
+        if (algID.getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3410_2001))
         {
             DERBitString bits = info.getPublicKeyData();
             ASN1OctetString key;
@@ -205,7 +204,7 @@ public class JCEECPublicKey
                 x9Encoding[i + 32] = keyEnc[64 - i];
             }
 
-            gostParams = new GOST3410PublicKeyAlgParameters((ASN1Sequence)info.getAlgorithmId().getParameters());
+            gostParams = GOST3410PublicKeyAlgParameters.getInstance(algID.getParameters());
 
             ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
 
@@ -223,7 +222,7 @@ public class JCEECPublicKey
         }
         else
         {
-            X962Parameters params = new X962Parameters((ASN1Primitive)info.getAlgorithmId().getParameters());
+            X962Parameters params = X962Parameters.getInstance(algID.getParameters());
             ECCurve                 curve;
             EllipticCurve           ellipticCurve;
 
