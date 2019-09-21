@@ -24,6 +24,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 public class DRBG
@@ -460,9 +461,57 @@ public class DRBG
                     this.numBytes = numBytes;
                 }
 
+                private void sleep(long ms)
+                {
+                    try
+                    {
+                        Thread.sleep(ms);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
                 public void run()
                 {
-                    entropy.set(baseRandom.generateSeed(numBytes));
+                    long ms;
+                    String pause = Properties.getPropertyValue("org.bouncycastle.drbg.gather_pause_secs");
+
+                    if (pause != null)
+                    {
+                        try
+                        {
+                            ms = Long.parseLong(pause) * 1000;
+                        }
+                        catch (Exception e)
+                        {
+                            ms = 5000;
+                        }
+                    }
+                    else
+                    {
+                        ms = 5000;
+                    }
+
+                    byte[] seed = new byte[numBytes];
+                    for (int i = 0; i < byteLength / 8; i++)
+                    {
+                        // we need to be mindful that we may not be the only thread/process looking for entropy
+                        sleep(ms);
+                        byte[] rn = baseRandom.generateSeed(8);
+                        System.arraycopy(rn, 0, seed, i * 8, rn.length);
+                    }
+
+                    int extra = byteLength - ((byteLength / 8) * 8);
+                    if (extra != 0)
+                    {
+                        sleep(ms);
+                        byte[] rn = baseRandom.generateSeed(extra);
+                        System.arraycopy(rn, 0, seed, seed.length - rn.length, rn.length);
+                    }
+
+                    entropy.set(seed);
                     seedAvailable.set(true);
                 }
             }
