@@ -528,7 +528,9 @@ public class TlsServerProtocol
          * master secret [..]. (and see 5.2, 5.3)
          */
         securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
-        if (!securityParameters.isExtendedMasterSecret() && tlsServer.requiresExtendedMasterSecret())
+
+        if (!securityParameters.isExtendedMasterSecret()
+            && (resumedSession || tlsServer.requiresExtendedMasterSecret()))
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
