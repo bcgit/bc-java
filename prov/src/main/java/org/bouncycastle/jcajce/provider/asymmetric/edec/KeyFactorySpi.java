@@ -99,6 +99,38 @@ public class KeyFactorySpi
                 throw new InvalidKeySpecException(ex.getMessage(), ex.getCause());
             }
         }
+        if (spec.isAssignableFrom(org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec.class) && key instanceof BCEdDSAPrivateKey)
+        {
+            try
+            {
+                //
+                // The DEROctetString at element 2 is an encoded DEROctetString with the private key value
+                // within it.
+                //
+
+                ASN1Sequence seq = ASN1Sequence.getInstance(key.getEncoded());
+                DEROctetString val = (DEROctetString)seq.getObjectAt(2);
+                ASN1InputStream in = new ASN1InputStream(val.getOctets());
+
+                return new org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new Ed25519PrivateKeyParameters(((DEROctetString)in.readObject()).getOctets(), 0)));
+            }
+            catch (IOException ex)
+            {
+                throw new InvalidKeySpecException(ex.getMessage(), ex.getCause());
+            }
+
+        }
+        else if (spec.isAssignableFrom(org.bouncycastle.jce.spec.OpenSSHPublicKeySpec.class) && key instanceof BCEdDSAPublicKey)
+        {
+            try
+            {
+                return new org.bouncycastle.jce.spec.OpenSSHPublicKeySpec(OpenSSHPublicKeyUtil.encodePublicKey(new Ed25519PublicKeyParameters(key.getEncoded(), Ed25519Prefix.length)));
+            }
+            catch (IOException ex)
+            {
+                throw new InvalidKeySpecException(ex.getMessage(), ex.getCause());
+            }
+        }
 
         return super.engineGetKeySpec(key, spec);
     }
