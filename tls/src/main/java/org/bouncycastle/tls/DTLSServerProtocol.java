@@ -639,7 +639,9 @@ public class DTLSServerProtocol
          * master secret [..]. (and see 5.2, 5.3)
          */
         securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
-        if (!securityParameters.isExtendedMasterSecret() && state.server.requiresExtendedMasterSecret())
+
+        if (!securityParameters.isExtendedMasterSecret()
+            && (state.resumedSession || state.server.requiresExtendedMasterSecret()))
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
