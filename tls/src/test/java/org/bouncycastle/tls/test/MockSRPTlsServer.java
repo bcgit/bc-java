@@ -77,11 +77,6 @@ class MockSRPTlsServer
         }
     }
 
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        return ProtocolVersion.TLSv12.only();
-    }
-
     public ProtocolVersion getServerVersion() throws IOException
     {
         ProtocolVersion serverVersion = super.getServerVersion();
@@ -102,6 +97,11 @@ class MockSRPTlsServer
     {
         Vector clientSigAlgs = context.getSecurityParametersHandshake().getClientSigAlgs();
         return TlsTestUtils.loadSignerCredentialsServer(context, clientSigAlgs, SignatureAlgorithm.rsa);
+    }
+
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.TLSv12.only();
     }
 
     static class MyIdentityManager

@@ -383,7 +383,7 @@ public class DTLSClientProtocol
         TlsClientContextImpl context = state.clientContext;
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-        context.setClientSupportedVersions(state.client.getSupportedVersions());
+        context.setClientSupportedVersions(state.client.getProtocolVersions());
 
         ProtocolVersion client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
         if (null == client_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))

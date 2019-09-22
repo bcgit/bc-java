@@ -19,6 +19,13 @@ public abstract class AbstractTlsPeer
         this.crypto = crypto;
     }
 
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+    }
+
+    protected abstract int[] getSupportedCipherSuites();
+
     public void cancel() throws IOException
     {
         TlsCloseable closeHandle = this.closeHandle;
@@ -38,18 +45,13 @@ public abstract class AbstractTlsPeer
         this.closeHandle = closeHandle;
     }
 
-    public int getHandshakeTimeoutMillis()
-    {
-        return 0;
-    }
-
     public void notifyHandshakeBeginning() throws IOException
     {
     }
 
-    public ProtocolVersion[] getSupportedVersions()
+    public int getHandshakeTimeoutMillis()
     {
-        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+        return 0;
     }
 
     public boolean requiresExtendedMasterSecret()
@@ -90,7 +92,7 @@ public abstract class AbstractTlsPeer
         }
     }
 
-   public TlsKeyExchangeFactory getKeyExchangeFactory() throws IOException
+    public TlsKeyExchangeFactory getKeyExchangeFactory() throws IOException
     {
         return new DefaultTlsKeyExchangeFactory();
     }

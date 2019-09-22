@@ -41,6 +41,6 @@ public abstract class DefaultTlsClient
 
     protected int[] getSupportedCipherSuites()
     {
-        return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
+        return TlsUtils.getSupportedCipherSuites(getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 }

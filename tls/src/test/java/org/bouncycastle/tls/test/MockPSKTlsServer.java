@@ -55,11 +55,6 @@ class MockPSKTlsServer
         }
     }
 
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        return ProtocolVersion.TLSv12.only();
-    }
-
     public ProtocolVersion getServerVersion() throws IOException
     {
         ProtocolVersion serverVersion = super.getServerVersion();
@@ -73,6 +68,11 @@ class MockPSKTlsServer
     {
         return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server-rsa-enc.pem", "x509-ca-rsa.pem" },
             "x509-server-key-rsa-enc.pem");
+    }
+
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.TLSv12.only();
     }
 
     static class MyIdentityManager

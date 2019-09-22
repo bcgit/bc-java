@@ -158,6 +158,11 @@ public final class ProtocolVersion
         return version & 0xFF;
     }
 
+    public String getName()
+    {
+        return name;
+    }
+
     public boolean isDTLS()
     {
         return getMajorVersion() == 0xFE;

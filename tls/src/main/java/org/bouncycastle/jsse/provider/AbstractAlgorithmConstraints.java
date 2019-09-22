@@ -43,6 +43,11 @@ abstract class AbstractAlgorithmConstraints implements BCAlgorithmConstraints
 
     protected boolean containsAnyPartIgnoreCase(Set<String> elements, String algorithm)
     {
+        if (elements.isEmpty())
+        {
+            return false;
+        }
+
         if (containsIgnoreCase(elements, algorithm))
         {
             return true;

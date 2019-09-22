@@ -83,11 +83,6 @@ class MockSRPTlsClient
         }
     }
 
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        return ProtocolVersion.TLSv12.only();
-    }
-
     public Hashtable getClientExtensions() throws IOException
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
@@ -120,5 +115,10 @@ class MockSRPTlsClient
                 }
             }
         };
+    }
+
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.TLSv12.only();
     }
 }

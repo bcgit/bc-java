@@ -86,11 +86,6 @@ public class MockDTLSServer
         }
     }
 
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        return ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
-    }
-
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials()
         throws IOException
     {
@@ -102,5 +97,10 @@ public class MockDTLSServer
     {
         Vector clientSigAlgs = context.getSecurityParametersHandshake().getClientSigAlgs();
         return TlsTestUtils.loadSignerCredentialsServer(context, clientSigAlgs, SignatureAlgorithm.rsa);
+    }
+
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
     }
 }

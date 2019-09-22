@@ -16,6 +16,7 @@ public abstract class AbstractTlsServer
     implements TlsServer
 {
     protected TlsServerContext context;
+    protected ProtocolVersion[] protocolVersions;
     protected int[] cipherSuites;
 
     protected int[] offeredCipherSuites;
@@ -55,11 +56,6 @@ public abstract class AbstractTlsServer
     protected Hashtable checkServerExtensions()
     {
         return this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.serverExtensions);
-    }
-
-    protected int[] getCipherSuites()
-    {
-        return cipherSuites;
     }
 
     protected int getMaximumNegotiableCurveBits()
@@ -103,8 +99,6 @@ public abstract class AbstractTlsServer
     {
         return null;
     }
-
-    protected abstract int[] getSupportedCipherSuites();
 
     protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits, Vector sigAlgs)
     {
@@ -224,7 +218,18 @@ public abstract class AbstractTlsServer
     {
         this.context = context;
 
+        this.protocolVersions = getSupportedVersions();
         this.cipherSuites = getSupportedCipherSuites();
+    }
+
+    public ProtocolVersion[] getProtocolVersions()
+    {
+        return protocolVersions;
+    }
+
+    public int[] getCipherSuites()
+    {
+        return cipherSuites;
     }
 
     public void notifyHandshakeBeginning() throws IOException
@@ -263,7 +268,7 @@ public abstract class AbstractTlsServer
          */
         if (isFallback)
         {
-            ProtocolVersion[] serverVersions = getSupportedVersions();
+            ProtocolVersion[] serverVersions = getProtocolVersions();
             ProtocolVersion clientVersion = context.getClientVersion();
 
             ProtocolVersion latestServerVersion;
@@ -330,7 +335,7 @@ public abstract class AbstractTlsServer
     public ProtocolVersion getServerVersion()
         throws IOException
     {
-        ProtocolVersion[] serverVersions = getSupportedVersions();
+        ProtocolVersion[] serverVersions = getProtocolVersions();
         ProtocolVersion[] clientVersions = context.getClientSupportedVersions();
 
         for (int i = 0; i < clientVersions.length; ++i)

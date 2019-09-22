@@ -905,7 +905,7 @@ public class TlsClientProtocol
             // TODO[tls13] Subsequent ClientHello messages (of a TLSv13 handshake) should use TLSv12
             this.recordStream.setWriteVersion(ProtocolVersion.TLSv10);
 
-            tlsClientContext.setClientSupportedVersions(tlsClient.getSupportedVersions());
+            tlsClientContext.setClientSupportedVersions(tlsClient.getProtocolVersions());
 
             client_version = ProtocolVersion.getLatestTLS(tlsClientContext.getClientSupportedVersions());
             if (null == client_version
