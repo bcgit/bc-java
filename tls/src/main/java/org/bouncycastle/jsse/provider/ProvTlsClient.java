@@ -127,7 +127,7 @@ class ProvTlsClient
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
+        return TlsUtils.getSupportedCipherSuites(getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuitesArray()));
     }
 
@@ -256,7 +256,7 @@ class ProvTlsClient
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
 
-                X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), serverCertificate.getCertificate());
+                X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), serverCertificate.getCertificate());
                 int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
                 String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
