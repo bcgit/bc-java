@@ -110,7 +110,7 @@ class ProvTlsServer
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
+        return TlsUtils.getSupportedCipherSuites(getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuitesArray()));
     }
 
@@ -408,7 +408,7 @@ class ProvTlsServer
         }
         else
         {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), clientCertificate);
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), clientCertificate);
             short signatureAlgorithm = clientCertificate.getCertificateAt(0).getLegacySignatureAlgorithm();
             String authType = JsseUtils.getAuthStringClient(signatureAlgorithm);
 
