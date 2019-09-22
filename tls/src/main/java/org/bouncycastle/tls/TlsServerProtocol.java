@@ -738,7 +738,7 @@ public class TlsServerProtocol
         }
 
         securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
-        if (!server_version.equals(ProtocolVersion.getLatestTLS(tlsServer.getSupportedVersions())))
+        if (!server_version.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
         {
             TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
         }

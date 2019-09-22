@@ -127,14 +127,19 @@ class ProvTlsClient
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return TlsUtils.getSupportedCipherSuites(getCrypto(),
-            manager.getContext().convertCipherSuites(sslParameters.getCipherSuitesArray()));
+        return manager.getContext().getActiveCipherSuites(getCrypto(), sslParameters, getProtocolVersions());
     }
 
     @Override
     protected Vector getSupportedSignatureAlgorithms()
     {
         return JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
+    }
+
+    @Override
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return manager.getContext().getActiveProtocolVersions(sslParameters);
     }
 
     public synchronized boolean isHandshakeComplete()
@@ -263,12 +268,6 @@ class ProvTlsClient
                 manager.checkServerTrusted(chain, authType);
             }
         };
-    }
-
-    @Override
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        return manager.getContext().getActiveProtocolVersions(sslParameters);
     }
 
     @Override

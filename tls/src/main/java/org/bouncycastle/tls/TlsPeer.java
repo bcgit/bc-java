@@ -15,6 +15,15 @@ public interface TlsPeer
 
     void cancel() throws IOException;
 
+    ProtocolVersion[] getProtocolVersions();
+
+    int[] getCipherSuites();
+
+    /**
+     * Notifies the peer that a new handshake is about to begin.
+     */
+    void notifyHandshakeBeginning() throws IOException;
+
     /**
      * <p>
      * NOTE: Currently only respected by DTLS protocols.
@@ -28,13 +37,6 @@ public interface TlsPeer
      * @return the handshake timeout, in milliseconds.
      */
     int getHandshakeTimeoutMillis();
-
-    /**
-     * Notifies the peer that a new handshake is about to begin.
-     */
-    void notifyHandshakeBeginning() throws IOException;
-
-    ProtocolVersion[] getSupportedVersions();
 
     /**
      * This implementation supports RFC 7627 and will always negotiate the extended_master_secret

@@ -69,16 +69,6 @@ class TlsTestServerImpl
         }
     }
 
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        if (config.serverSupportedVersions != null)
-        {
-            return config.serverSupportedVersions;
-        }
-
-        return super.getSupportedVersions();
-    }
-
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         if (alertLevel == AlertLevel.fatal && firstFatalAlertConnectionEnd == -1)
@@ -254,6 +244,16 @@ class TlsTestServerImpl
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
         return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa);
+    }
+
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        if (config.serverSupportedVersions != null)
+        {
+            return config.serverSupportedVersions;
+        }
+
+        return super.getSupportedVersions();
     }
 
     protected String hex(byte[] data)

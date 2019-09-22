@@ -131,6 +131,15 @@ public class CipherSuitesTestSuite
         {
             String cipherSuite = cipherSuites[t];
 
+            if (cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_"))
+            {
+                /*
+                 * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit these. Perhaps
+                 * we could modify that security property when running this test suite.
+                 */
+                continue;
+            }
+
             /*
              * TODO[jsse] Note that there may be failures for cipher suites that are listed as supported
              * even though the TlsCrypto instance doesn't implement them (JcaTlsCrypto is dependent on the

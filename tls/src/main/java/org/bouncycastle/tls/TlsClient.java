@@ -24,8 +24,6 @@ public interface TlsClient
 
     boolean isFallback();
 
-    int[] getCipherSuites();
-
     // Hashtable is (Integer -> byte[])
     Hashtable getClientExtensions()
         throws IOException;
