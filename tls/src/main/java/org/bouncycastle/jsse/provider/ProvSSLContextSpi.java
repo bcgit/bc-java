@@ -48,6 +48,9 @@ class ProvSSLContextSpi
     private static final String PROPERTY_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
     private static final String PROPERTY_SERVER_PROTOCOLS = "jdk.tls.server.protocols";
 
+    private static final Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES =
+        Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
+
     /*
      * TODO[jsse] Should separate this into "understood" cipher suite int<->String maps
      * and a Set of supported cipher suite values, so we can cover TLS_NULL_WITH_NULL_NULL and
@@ -218,7 +221,51 @@ class ProvSSLContextSpi
         return Collections.unmodifiableMap(ps);
     }
 
-    private static String[] getCandidateDefaultProtocols(String[] specifiedProtocols, String propertyName)
+    private static String[] getDefaultCipherSuites(boolean isInFipsMode)
+    {
+        /*
+         * TODO[jsse] SunJSSE also filters this initial list based on the default protocol versions.
+         */
+
+        List<String> candidates = isInFipsMode ? DEFAULT_CIPHERSUITE_LIST_FIPS : DEFAULT_CIPHERSUITE_LIST;
+        String[] result = new String[candidates.size()];
+
+        int count = 0;
+        for (String candidate : candidates)
+        {
+            if (ProvAlgorithmConstraints.DEFAULT.permits(TLS_CRYPTO_PRIMITIVES, candidate, null))
+            {
+                result[count++] = candidate;
+            }
+        }
+        if (count < result.length)
+        {
+            result = JsseUtils.copyOf(result, count);
+        }
+        return result;
+    }
+
+    private static String[] getDefaultProtocols(String[] specifiedProtocols, String propertyName)
+    {
+        String[] candidates = getDefaultProtocolsCandidates(specifiedProtocols, propertyName);
+        String[] result = new String[candidates.length];
+
+        int count = 0;
+        for (String candidate : candidates)
+        {
+            if (ProvAlgorithmConstraints.DEFAULT_TLS_ONLY.permits(TLS_CRYPTO_PRIMITIVES, candidate, null))
+            {
+                result[count++] = candidate;
+            }
+        }
+        if (count < result.length)
+        {
+            result = JsseUtils.copyOf(result, count);
+        }
+        return result;
+    }
+
+    private static String[] getDefaultProtocolsCandidates(String[] specifiedProtocols, String propertyName)
     {
         if (specifiedProtocols != null)
         {
@@ -232,27 +279,6 @@ class ProvSSLContextSpi
         }
 
         return DEFAULT_PROTOCOLS;
-    }
-
-    private static String[] getDefaultProtocols(String[] specifiedProtocols, String propertyName)
-    {
-        String[] candidates = getCandidateDefaultProtocols(specifiedProtocols, propertyName);
-        String[] result = new String[candidates.length];
-
-        int count = 0;
-        for (int i = 0; i < candidates.length; ++i)
-        {
-            String candidate = candidates[i];
-            if (isProtocolPermitted(ProvAlgorithmConstraints.DEFAULT_TLS_ONLY, candidate))
-            {
-                result[count++] = candidate;
-            }
-        }
-        if (count < result.length)
-        {
-            result = JsseUtils.copyOf(result, count);
-        }
-        return result;
     }
 
     private static String[] getDefaultProtocolsClient(String[] specifiedProtocols)
@@ -308,11 +334,6 @@ class ProvSSLContextSpi
         return getArray(m.keySet());
     }
 
-    private static boolean isProtocolPermitted(BCAlgorithmConstraints algorithmConstraints, String protocol)
-    {
-        return algorithmConstraints.permits(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT), protocol, null);
-    }
-
     static CipherSuiteInfo getCipherSuiteInfo(String cipherSuite)
     {
         return SUPPORTED_CIPHERSUITE_MAP.get(cipherSuite);
@@ -358,19 +379,7 @@ class ProvSSLContextSpi
         this.defaultProtocolsServer = getDefaultProtocolsServer(specifiedProtocols);
 
         this.supportedCipherSuites = isInFipsMode ? SUPPORTED_CIPHERSUITE_MAP_FIPS : SUPPORTED_CIPHERSUITE_MAP;
-
-        List<String> defaultCipherSuiteList = isInFipsMode ? DEFAULT_CIPHERSUITE_LIST_FIPS : DEFAULT_CIPHERSUITE_LIST;
-        this.defaultCipherSuites = getArray(defaultCipherSuiteList);
-    }
-
-    int[] convertCipherSuites(String[] suites)
-    {
-        int[] result = new int[suites.length];
-        for (int i = 0; i < suites.length; ++i)
-        {
-            result[i] = supportedCipherSuites.get(suites[i]).getCipherSuite();
-        }
-        return result;
+        this.defaultCipherSuites = getDefaultCipherSuites(isInFipsMode);
     }
 
     ProvSSLSessionContext createSSLSessionContext()
@@ -439,27 +448,66 @@ class ProvSSLContextSpi
         return null;
     }
 
-    ProtocolVersion[] getActiveProtocolVersions(ProvSSLParameters sslParameters)
+    int[] getActiveCipherSuites(TlsCrypto crypto, ProvSSLParameters sslParameters,
+        ProtocolVersion[] activeProtocolVersions)
     {
-//        String[] cipherSuites = sslParameters.getCipherSuitesArray();
-        String[] protocols = sslParameters.getProtocolsArray();
+        String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
-        SortedSet<ProtocolVersion> versions = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>(){
+        // NOTE: Use a local object, since user code might be able to meddle with this.
+        Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES = Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
+
+        int[] result = new int[enabledCipherSuites.length];
+
+        int count = 0;
+        for (String enabledCipherSuite : enabledCipherSuites)
+        {
+            CipherSuiteInfo candidate = supportedCipherSuites.get(enabledCipherSuite);
+            if (null == candidate)
+            {
+                continue;
+            }
+            if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES, enabledCipherSuite, null))
+            {
+                continue;
+            }
+
+            /*
+             * TODO[jsse] SunJSSE also checks that the cipher suite is usable for at least one of
+             * the active protocol versions. Also, if the cipher suite involves a key exchange,
+             * there must be at least one suitable NamedGroup available.
+             */
+
+            result[count++] = candidate.getCipherSuite();
+        }
+
+        return TlsUtils.getSupportedCipherSuites(crypto, result, count);
+    }
+
+    ProtocolVersion[] getActiveProtocolVersions(ProvSSLParameters sslParameters)
+    {
+//        String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
+        String[] enabledProtocols = sslParameters.getProtocolsArray();
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+
+        // NOTE: Use a local object, since user code might be able to meddle with this.
+        Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES = Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
+
+        SortedSet<ProtocolVersion> result = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>(){
             public int compare(ProtocolVersion o1, ProtocolVersion o2)
             {
                 return o1.isLaterVersionOf(o2) ? -1 : o2.isLaterVersionOf(o1) ? 1 : 0;
             }
         });
 
-        for (String protocol : protocols)
+        for (String enabledProtocol : enabledProtocols)
         {
-            ProtocolVersion version = SUPPORTED_PROTOCOLS.get(protocol);
-            if (null == version)
+            ProtocolVersion candidate = SUPPORTED_PROTOCOLS.get(enabledProtocol);
+            if (null == candidate)
             {
                 continue;
             }
-            if (!isProtocolPermitted(algorithmConstraints, protocol))
+            if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES, enabledProtocol, null))
             {
                 continue;
             }
@@ -469,10 +517,10 @@ class ProvSSLContextSpi
              * that could be used for this protocol version.
              */
 
-            versions.add(version);
+            result.add(candidate);
         }
 
-        return versions.toArray(new ProtocolVersion[versions.size()]);
+        return result.toArray(new ProtocolVersion[result.size()]);
     }
 
     boolean isDefaultProtocols(String[] protocols)
@@ -484,11 +532,6 @@ class ProvSSLContextSpi
     String[] getSupportedCipherSuites()
     {
         return getKeysArray(supportedCipherSuites);
-    }
-
-    String[] getSupportedProtocols()
-    {
-        return getKeysArray(SUPPORTED_PROTOCOLS);
     }
 
     String[] getSupportedCipherSuites(String[] cipherSuites)
@@ -512,6 +555,11 @@ class ProvSSLContextSpi
             }
         }
         return getArray(result);
+    }
+
+    String[] getSupportedProtocols()
+    {
+        return getKeysArray(SUPPORTED_PROTOCOLS);
     }
 
     boolean isFips()

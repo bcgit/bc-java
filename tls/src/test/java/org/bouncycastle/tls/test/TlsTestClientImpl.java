@@ -78,16 +78,6 @@ class TlsTestClientImpl
         }
     }
 
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        if (null != config.clientSupportedVersions)
-        {
-            return config.clientSupportedVersions;
-        }
-
-        return super.getSupportedVersions();
-    }
-
     public Hashtable getClientExtensions() throws IOException
     {
         Hashtable clientExtensions = super.getClientExtensions();
@@ -315,6 +305,16 @@ class TlsTestClientImpl
         bs[bit >>> 3] ^= (1 << (bit & 7));
 
         return bs;
+    }
+
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        if (null != config.clientSupportedVersions)
+        {
+            return config.clientSupportedVersions;
+        }
+
+        return super.getSupportedVersions();
     }
 
     protected String hex(byte[] data)

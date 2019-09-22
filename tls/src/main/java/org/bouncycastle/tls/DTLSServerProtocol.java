@@ -383,7 +383,7 @@ public class DTLSServerProtocol
         }
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), context);
-        if (!server_version.equals(ProtocolVersion.getLatestDTLS(state.server.getSupportedVersions())))
+        if (!server_version.equals(ProtocolVersion.getLatestDTLS(state.server.getProtocolVersions())))
         {
             TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
         }

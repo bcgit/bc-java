@@ -63,11 +63,6 @@ public class MockDTLSClient
             + ", " + AlertDescription.getText(alertDescription));
     }
 
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        return ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
-    }
-
     public Hashtable getClientExtensions() throws IOException
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
@@ -144,5 +139,10 @@ public class MockDTLSClient
 
             this.session = newSession;
         }
+    }
+
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
     }
 }

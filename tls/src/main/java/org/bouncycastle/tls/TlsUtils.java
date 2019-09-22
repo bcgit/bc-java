@@ -3375,10 +3375,15 @@ public class TlsUtils
 
     public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites)
     {
-        int[] supported = new int[suites.length];
+        return getSupportedCipherSuites(crypto, suites, suites.length);
+    }
+
+    public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites, int suitesCount)
+    {
+        int[] supported = new int[suitesCount];
         int count = 0;
 
-        for (int i = 0; i < suites.length; ++i)
+        for (int i = 0; i < suitesCount; ++i)
         {
             int suite = suites[i];
             if (isSupportedCipherSuite(crypto, suite))
@@ -3387,7 +3392,7 @@ public class TlsUtils
             }
         }
 
-        if (count < supported.length)
+        if (count < suitesCount)
         {
             supported = Arrays.copyOf(supported, count);
         }

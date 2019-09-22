@@ -96,12 +96,6 @@ class ProvTlsServer
     }
 
     @Override
-    public ProtocolVersion[] getSupportedVersions()
-    {
-        return manager.getContext().getActiveProtocolVersions(sslParameters);
-    }
-
-    @Override
     protected Vector getProtocolNames()
     {
         return JsseUtils.getProtocolNames(sslParameters.getApplicationProtocols());
@@ -110,8 +104,13 @@ class ProvTlsServer
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return TlsUtils.getSupportedCipherSuites(getCrypto(),
-            manager.getContext().convertCipherSuites(sslParameters.getCipherSuitesArray()));
+        return manager.getContext().getActiveCipherSuites(getCrypto(), sslParameters, getProtocolVersions());
+    }
+
+    @Override
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return manager.getContext().getActiveProtocolVersions(sslParameters);
     }
 
     @Override
