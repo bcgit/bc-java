@@ -4,6 +4,8 @@ import java.security.AlgorithmConstraints;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,6 +15,9 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 abstract class JsseUtils_7
     extends JsseUtils
 {
+    static final Set<CryptoPrimitive> TLS_CRYPTO_PRIMITIVES =
+        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
+
     static class ExportAlgorithmConstraints implements AlgorithmConstraints
     {
         private final BCAlgorithmConstraints constraints;
@@ -124,6 +129,11 @@ abstract class JsseUtils_7
 
     static Set<CryptoPrimitive> exportCryptoPrimitives(Set<BCCryptoPrimitive> primitives)
     {
+        if (TLS_CRYPTO_PRIMITIVES_BC == primitives)
+        {
+            return TLS_CRYPTO_PRIMITIVES;
+        }
+
         HashSet<CryptoPrimitive> result = new HashSet<CryptoPrimitive>();
         for (BCCryptoPrimitive primitive : primitives)
         {
@@ -183,6 +193,11 @@ abstract class JsseUtils_7
 
     static Set<BCCryptoPrimitive> importCryptoPrimitives(Set<CryptoPrimitive> primitives)
     {
+        if (TLS_CRYPTO_PRIMITIVES == primitives)
+        {
+            return TLS_CRYPTO_PRIMITIVES_BC;
+        }
+
         HashSet<BCCryptoPrimitive> result = new HashSet<BCCryptoPrimitive>();
         for (CryptoPrimitive primitive : primitives)
         {
