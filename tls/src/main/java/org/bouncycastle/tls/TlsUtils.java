@@ -1378,6 +1378,12 @@ public class TlsUtils
         return false;
     }
 
+    public static TlsSecret PRF(SecurityParameters securityParameters, TlsSecret secret, String asciiLabel, byte[] seed,
+        int length)
+    {
+        return secret.deriveUsingPRF(securityParameters.getPrfAlgorithm(), asciiLabel, seed, length);
+    }
+
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
         int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
@@ -1426,6 +1432,25 @@ public class TlsUtils
             }
         }
         return EMPTY_BYTES;
+    }
+
+    public static byte[] calculateExporterSeed(SecurityParameters securityParameters, byte[] context_value)
+    {
+        byte[] cr = securityParameters.getClientRandom(), sr = securityParameters.getServerRandom();
+        if (null == context_value)
+        {
+            return Arrays.concatenate(cr, sr);
+        }
+
+        if (!TlsUtils.isValidUint16(context_value.length))
+        {
+            throw new IllegalArgumentException("'context_value' must have length less than 2^16 (or be null)");
+        }
+
+        byte[] context_value_length = new byte[2];
+        TlsUtils.writeUint16(context_value.length, context_value_length, 0);
+
+        return Arrays.concatenate(cr, sr, context_value_length, context_value);
     }
 
     static TlsSecret calculateMasterSecret(TlsContext context, TlsSecret preMasterSecret)

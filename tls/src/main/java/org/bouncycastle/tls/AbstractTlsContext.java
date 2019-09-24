@@ -203,19 +203,6 @@ abstract class AbstractTlsContext
 
     public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
     {
-        if (context_value != null && !TlsUtils.isValidUint16(context_value.length))
-        {
-            throw new IllegalArgumentException("'context_value' must have length less than 2^16 (or be null)");
-        }
-
-        if (TlsUtils.isTLSv13(this))
-        {
-            // TODO[tls13]
-            TlsSecret exporter_secret = null; // exporter_master_secret
-
-            return exportKeyingMaterial13(exporter_secret, asciiLabel, context_value, length);
-        }
-
         SecurityParameters sp = getSecurityParametersConnection();
         if (null == sp)
         {
@@ -232,35 +219,17 @@ abstract class AbstractTlsContext
             throw new IllegalStateException("cannot export keying material without extended_master_secret");
         }
 
-        byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();
-
-        int seedLength = cr.length + sr.length;
-        if (context_value != null)
+        if (TlsUtils.isTLSv13(sp.getNegotiatedVersion()))
         {
-            seedLength += (2 + context_value.length);
+            // TODO[tls13]
+            TlsSecret exporter_secret = null; // exporter_master_secret
+
+            return exportKeyingMaterial13(exporter_secret, asciiLabel, context_value, length);
         }
 
-        byte[] seed = new byte[seedLength];
-        int seedPos = 0;
+        byte[] seed = TlsUtils.calculateExporterSeed(sp, context_value);
 
-        System.arraycopy(cr, 0, seed, seedPos, cr.length);
-        seedPos += cr.length;
-        System.arraycopy(sr, 0, seed, seedPos, sr.length);
-        seedPos += sr.length;
-        if (context_value != null)
-        {
-            TlsUtils.writeUint16(context_value.length, seed, seedPos);
-            seedPos += 2;
-            System.arraycopy(context_value, 0, seed, seedPos, context_value.length);
-            seedPos += context_value.length;
-        }
-
-        if (seedPos != seedLength)
-        {
-            throw new IllegalStateException("error in calculation of seed for export");
-        }
-
-        return TlsUtils.PRF(this, sp.getMasterSecret(), asciiLabel, seed, length).extract();
+        return TlsUtils.PRF(sp, sp.getMasterSecret(), asciiLabel, seed, length).extract();
     }
 
     protected byte[] exportKeyingMaterial13(TlsSecret exporter_secret, String asciiLabel, byte[] context_value, int length)
