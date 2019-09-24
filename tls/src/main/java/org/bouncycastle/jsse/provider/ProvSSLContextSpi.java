@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +32,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
-import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
@@ -47,9 +45,6 @@ class ProvSSLContextSpi
 
     private static final String PROPERTY_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
     private static final String PROPERTY_SERVER_PROTOCOLS = "jdk.tls.server.protocols";
-
-    private static final Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES =
-        Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
 
     /*
      * TODO[jsse] Should separate this into "understood" cipher suite int<->String maps
@@ -233,7 +228,7 @@ class ProvSSLContextSpi
         int count = 0;
         for (String candidate : candidates)
         {
-            if (ProvAlgorithmConstraints.DEFAULT.permits(TLS_CRYPTO_PRIMITIVES, candidate, null))
+            if (ProvAlgorithmConstraints.DEFAULT.permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, candidate, null))
             {
                 result[count++] = candidate;
             }
@@ -253,7 +248,7 @@ class ProvSSLContextSpi
         int count = 0;
         for (String candidate : candidates)
         {
-            if (ProvAlgorithmConstraints.DEFAULT_TLS_ONLY.permits(TLS_CRYPTO_PRIMITIVES, candidate, null))
+            if (ProvAlgorithmConstraints.DEFAULT_TLS_ONLY.permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, candidate, null))
             {
                 result[count++] = candidate;
             }
@@ -454,9 +449,6 @@ class ProvSSLContextSpi
         String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
-        // NOTE: Use a local object, since user code might be able to meddle with this.
-        Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES = Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
-
         int[] result = new int[enabledCipherSuites.length];
 
         int count = 0;
@@ -467,7 +459,7 @@ class ProvSSLContextSpi
             {
                 continue;
             }
-            if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES, enabledCipherSuite, null))
+            if (!algorithmConstraints.permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, enabledCipherSuite, null))
             {
                 continue;
             }
@@ -490,9 +482,6 @@ class ProvSSLContextSpi
         String[] enabledProtocols = sslParameters.getProtocolsArray();
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
-        // NOTE: Use a local object, since user code might be able to meddle with this.
-        Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES = Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
-
         SortedSet<ProtocolVersion> result = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>(){
             public int compare(ProtocolVersion o1, ProtocolVersion o2)
             {
@@ -507,7 +496,7 @@ class ProvSSLContextSpi
             {
                 continue;
             }
-            if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES, enabledProtocol, null))
+            if (!algorithmConstraints.permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, enabledProtocol, null))
             {
                 continue;
             }

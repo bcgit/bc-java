@@ -11,6 +11,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCStandardConstants;
+import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -46,6 +48,9 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 abstract class JsseUtils
 {
+    static final Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES_BC =
+        Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
+
     protected static X509Certificate[] EMPTY_CHAIN = new X509Certificate[0];
 
     static class BCUnknownServerName extends BCSNIServerName
