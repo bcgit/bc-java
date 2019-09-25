@@ -124,8 +124,8 @@ class ProvTlsServer
     {
         if (!selectCredentials(cipherSuite))
         {
-            LOG.finer("Server found no credentials for cipher suite: "
-                + manager.getContext().getCipherSuiteString(cipherSuite));
+            String cipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(cipherSuite);
+            LOG.finer("Server found no credentials for cipher suite: " + cipherSuiteName);
             return false;
         }
 
@@ -289,8 +289,9 @@ class ProvTlsServer
         keyManagerMissCache = new HashSet<String>();
 
         int selectedCipherSuite = super.getSelectedCipherSuite();
+        String selectedCipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(selectedCipherSuite);
 
-        LOG.fine("Server selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+        LOG.fine("Server selected cipher suite: " + selectedCipherSuiteName);
 
         keyManagerMissCache = null;
 
@@ -377,10 +378,9 @@ class ProvTlsServer
     public ProtocolVersion getServerVersion() throws IOException
     {
         ProtocolVersion serverVersion = super.getServerVersion();
+        String serverVersionName = ProvSSLContextSpi.getProtocolVersionName(serverVersion);
 
-        String protocolString = manager.getContext().getProtocolString(serverVersion);
-
-        LOG.fine("Server selected protocol version: " + protocolString);
+        LOG.fine("Server selected protocol version: " + serverVersionName);
 
         return serverVersion;
     }
