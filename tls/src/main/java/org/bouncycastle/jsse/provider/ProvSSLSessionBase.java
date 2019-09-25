@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLPermission;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
@@ -203,6 +204,12 @@ abstract class ProvSSLSessionBase
 
     public SSLSessionContext getSessionContext()
     {
+        SecurityManager sm = System.getSecurityManager();
+        if (null != sm)
+        {
+            sm.checkPermission(new SSLPermission("getSSLSessionContext"));
+        }
+
         return sslSessionContext;
     }
 
