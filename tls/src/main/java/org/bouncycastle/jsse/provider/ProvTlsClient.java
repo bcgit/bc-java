@@ -360,7 +360,8 @@ class ProvTlsClient
     {
         if (!secureRenegotiation)
         {
-            boolean allowLegacyHelloMessages = PropertyUtils.getBooleanSystemProperty("sun.security.ssl.allowLegacyHelloMessages", true);
+            boolean allowLegacyHelloMessages = PropertyUtils.getBooleanSystemProperty(
+                "sun.security.ssl.allowLegacyHelloMessages", true);
             if (!allowLegacyHelloMessages)
             {
                 /*
@@ -377,7 +378,9 @@ class ProvTlsClient
     {
         manager.getContext().validateNegotiatedCipherSuite(selectedCipherSuite);
 
-        LOG.fine("Client notified of selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+        String selectedCipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(selectedCipherSuite);
+
+        LOG.fine("Client notified of selected cipher suite: " + selectedCipherSuiteName);
 
         super.notifySelectedCipherSuite(selectedCipherSuite);
     }
@@ -385,9 +388,9 @@ class ProvTlsClient
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        String protocolString = manager.getContext().getProtocolString(serverVersion);
+        String serverVersionName = ProvSSLContextSpi.getProtocolVersionName(serverVersion);
 
-        LOG.fine("Client notified of selected protocol version: " + protocolString);
+        LOG.fine("Client notified of selected protocol version: " + serverVersionName);
 
         super.notifyServerVersion(serverVersion);
     }

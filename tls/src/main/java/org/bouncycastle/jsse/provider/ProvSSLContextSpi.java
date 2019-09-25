@@ -329,9 +329,30 @@ class ProvSSLContextSpi
         return getArray(m.keySet());
     }
 
-    static CipherSuiteInfo getCipherSuiteInfo(String cipherSuite)
+    static CipherSuiteInfo getCipherSuiteInfo(String cipherSuiteName)
     {
-        return SUPPORTED_CIPHERSUITE_MAP.get(cipherSuite);
+        return SUPPORTED_CIPHERSUITE_MAP.get(cipherSuiteName);
+    }
+
+    static String getCipherSuiteName(int cipherSuite)
+    {
+        // TODO[jsse] Place into "understood" cipher suite map
+        if (CipherSuite.TLS_NULL_WITH_NULL_NULL == cipherSuite)
+        {
+            return "TLS_NULL_WITH_NULL_NULL";
+        }
+        if (TlsUtils.isValidUint16(cipherSuite))
+        {
+            // TODO[jsse] Add CipherSuiteInfo index by 'int'
+            for (CipherSuiteInfo cipherSuiteInfo : SUPPORTED_CIPHERSUITE_MAP.values())
+            {
+                if (cipherSuiteInfo.getCipherSuite() == cipherSuite)
+                {
+                    return cipherSuiteInfo.getName();
+                }
+            }
+        }
+        return null;
     }
 
     static KeyManager[] getDefaultKeyManagers() throws Exception
@@ -348,6 +369,21 @@ class ProvSSLContextSpi
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(trustStore);
         return tmf.getTrustManagers();
+    }
+
+    static String getProtocolVersionName(ProtocolVersion protocolVersion)
+    {
+        if (null != protocolVersion)
+        {
+            for (Map.Entry<String, ProtocolVersion> entry : SUPPORTED_PROTOCOLS.entrySet())
+            {
+                if (entry.getValue().equals(protocolVersion))
+                {
+                    return entry.getKey();
+                }
+            }
+        }
+        return "NONE";
     }
 
     protected final boolean isInFipsMode;
@@ -382,27 +418,6 @@ class ProvSSLContextSpi
         return new ProvSSLSessionContext(this, crypto);
     }
 
-    String getCipherSuiteString(int suite)
-    {
-        // TODO[jsse] Place into "understood" cipher suite map
-        if (CipherSuite.TLS_NULL_WITH_NULL_NULL == suite)
-        {
-            return "TLS_NULL_WITH_NULL_NULL";
-        }
-
-        if (TlsUtils.isValidUint16(suite))
-        {
-            for (Map.Entry<String, CipherSuiteInfo> entry : supportedCipherSuites.entrySet())
-            {
-                if (entry.getValue().getCipherSuite() == suite)
-                {
-                    return entry.getKey();
-                }
-            }
-        }
-        return null;
-    }
-
     String[] getDefaultCipherSuites()
     {
         return defaultCipherSuites.clone();
@@ -426,21 +441,6 @@ class ProvSSLContextSpi
     String[] getDefaultProtocolsServer()
     {
         return defaultProtocolsServer;
-    }
-
-    String getProtocolString(ProtocolVersion v)
-    {
-        if (v != null)
-        {
-            for (Map.Entry<String, ProtocolVersion> entry : SUPPORTED_PROTOCOLS.entrySet())
-            {
-                if (v.equals(entry.getValue()))
-                {
-                    return entry.getKey();
-                }
-            }
-        }
-        return null;
     }
 
     int[] getActiveCipherSuites(TlsCrypto crypto, ProvSSLParameters sslParameters,
@@ -583,8 +583,8 @@ class ProvSSLContextSpi
     void validateNegotiatedCipherSuite(int cipherSuite)
     {
         // NOTE: The redundancy among these various checks is intentional
-        String cs = getCipherSuiteString(cipherSuite);
-        if (cs == null
+        String cs = getCipherSuiteName(cipherSuite);
+        if (null == cs
             || !supportedCipherSuites.containsKey(cs)
             || (isInFipsMode && !FipsUtils.isFipsCipherSuite(cs)))
         {
