@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Parsing and encoding of a <i>Certificate</i> struct from RFC 4346.
@@ -22,18 +23,38 @@ import org.bouncycastle.tls.crypto.TlsCertificate;
  */
 public class Certificate
 {
-    public static final Certificate EMPTY_CHAIN = new Certificate(new TlsCertificate[0]);
+    private static final TlsCertificate[] EMPTY_CERTS = new TlsCertificate[0];
 
-    protected TlsCertificate[] certificateList;
+    // TODO[tls13] Review references, this won't work for TLS 1.3
+    public static final Certificate EMPTY_CHAIN = new Certificate(EMPTY_CERTS);
+
+    protected final byte[] certificateRequestContext;
+    protected final TlsCertificate[] certificateList;
 
     public Certificate(TlsCertificate[] certificateList)
     {
-        if (certificateList == null)
+        this(null, certificateList);
+    }
+
+    // TODO[tls13] Make public once this has been changed to take CertificateEntry array 
+    Certificate(byte[] certificateRequestContext, TlsCertificate[] certificateList)
+    {
+        if (null != certificateRequestContext && !TlsUtils.isValidUint8(certificateRequestContext.length))
         {
-            throw new IllegalArgumentException("'certificateList' cannot be null");
+            throw new IllegalArgumentException("'certificateRequestContext' cannot be longer than 255");
+        }
+        if (null == certificateList)
+        {
+            throw new NullPointerException("'certificateList' cannot be null");
         }
 
+        this.certificateRequestContext = certificateRequestContext;
         this.certificateList = certificateList;
+    }
+
+    public byte[] getCertificateRequestContext()
+    {
+        return Arrays.clone(certificateRequestContext);
     }
 
     /**
@@ -88,6 +109,19 @@ public class Certificate
     public void encode(TlsContext context, OutputStream messageOutput, OutputStream endPointHashOutput)
         throws IOException
     {
+        final boolean isTLSv13 = TlsUtils.isTLSv13(context);
+
+        if ((null != certificateRequestContext) != isTLSv13)
+        {
+            throw new IllegalStateException();
+        }
+
+        if (isTLSv13)
+        {
+            // TODO[tls13] Check here that this is empty for server certificate?
+            TlsUtils.writeOpaque8(certificateRequestContext, messageOutput);
+        }
+
         Vector derEncodings = new Vector(this.certificateList.length);
 
         int totalLength = 0;
@@ -103,6 +137,12 @@ public class Certificate
 
             derEncodings.addElement(derEncoding);
             totalLength += derEncoding.length + 3;
+
+            if (isTLSv13)
+            {
+                // TODO[tls13] Each CertificateEntry has extensions
+                // totalLength += ...
+            }
         }
 
         TlsUtils.checkUint24(totalLength);
@@ -146,28 +186,43 @@ public class Certificate
     public static Certificate parse(TlsContext context, InputStream messageInput, OutputStream endPointHashOutput)
         throws IOException
     {
+        final boolean isTLSv13 = TlsUtils.isTLSv13(context);
+
+        byte[] certificateRequestContext = null;
+        if (isTLSv13)
+        {
+            // TODO[tls13] Check here that this is empty for server certificate?
+            certificateRequestContext = TlsUtils.readOpaque8(messageInput);
+        }
+
         int totalLength = TlsUtils.readUint24(messageInput);
         if (totalLength == 0)
         {
-            return EMPTY_CHAIN;
+            return isTLSv13 ? new Certificate(certificateRequestContext, EMPTY_CERTS) : EMPTY_CHAIN;
         }
 
         byte[] certListData = TlsUtils.readFully(totalLength, messageInput);
 
         ByteArrayInputStream buf = new ByteArrayInputStream(certListData);
 
+        // TODO[tls13] Build a list of CertificateEntry
         Vector certificate_list = new Vector();
         while (buf.available() > 0)
         {
             byte[] derEncoding = TlsUtils.readOpaque24(buf, 1);
             TlsCertificate cert = context.getCrypto().createCertificate(derEncoding);
-            
+
             if (certificate_list.isEmpty() && endPointHashOutput != null)
             {
                 calculateEndPointHash(context, cert, derEncoding, endPointHashOutput);
             }
 
             certificate_list.addElement(cert);
+
+            if (isTLSv13)
+            {
+                // TODO[tls13] Each CertificateEntry has extensions
+            }
         }
 
         TlsCertificate[] certificateList = new TlsCertificate[certificate_list.size()];
@@ -175,7 +230,8 @@ public class Certificate
         {
             certificateList[i] = (TlsCertificate)certificate_list.elementAt(i);
         }
-        return new Certificate(certificateList);
+
+        return new Certificate(certificateRequestContext, certificateList);
     }
 
     protected static void calculateEndPointHash(TlsContext context, TlsCertificate cert, byte[] encoding, OutputStream output)
