@@ -126,7 +126,7 @@ class ProvSSLSocketDirect
     {
         try
         {
-            contextData.getX509TrustManager().checkClientTrusted(chain, authType, this);
+            contextData.getX509TrustManager().checkClientTrusted(chain.clone(), authType, this);
         }
         catch (CertificateException e)
         {
@@ -138,7 +138,7 @@ class ProvSSLSocketDirect
     {
         try
         {
-            contextData.getX509TrustManager().checkServerTrusted(chain, authType, this);
+            contextData.getX509TrustManager().checkServerTrusted(chain.clone(), authType, this);
         }
         catch (CertificateException e)
         {

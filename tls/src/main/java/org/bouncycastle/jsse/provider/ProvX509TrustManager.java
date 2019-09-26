@@ -159,10 +159,11 @@ class ProvX509TrustManager
         checkExtendedTrust(trustedChain, authType, engine, checkServerTrusted);
     }
 
-    private CertStoreParameters getCertStoreParameters(X509Certificate[] chain)
+    // NOTE: We avoid re-reading eeCert from chain[0]
+    private CertStoreParameters getCertStoreParameters(X509Certificate eeCert, X509Certificate[] chain)
     {
         ArrayList<X509Certificate> certs = new ArrayList<X509Certificate>(chain.length);
-        certs.add(chain[0]);
+        certs.add(eeCert);
         for (int i = 1; i < chain.length; ++i)
         {
             if (!trustedCerts.contains(chain[i]))
@@ -210,7 +211,8 @@ class ProvX509TrustManager
             CertificateFactory certificateFactory = helper.createCertificateFactory("X.509");
             Provider pkixProvider = certificateFactory.getProvider();
 
-            CertStore certStore = CertStore.getInstance("Collection", getCertStoreParameters(chain), pkixProvider);
+            CertStoreParameters certStoreParameters = getCertStoreParameters(eeCert, chain);
+            CertStore certStore = CertStore.getInstance("Collection", certStoreParameters, pkixProvider);
 
             X509CertSelector certSelector = new X509CertSelector();
             certSelector.setCertificate(eeCert);
