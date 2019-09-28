@@ -170,7 +170,9 @@ public class RegressionTest
             new OpenSSHKeyParsingTests(),
             new EthereumIESTest(),
             new BigIntegersTest(),
-            new ZucTest()
+            new ZucTest(),
+            new Haraka256DigestTest(),
+            new Haraka512DigestTest()
         };
 
     public static void main(String[] args)
