@@ -221,24 +221,6 @@ public class XMSSMTTest
         {
             assertEquals("no usages of private key remaining", e.getMessage());
         }
-
-        KeyFactory kFact = KeyFactory.getInstance("XMSSMT", "BCPQC");
-
-        PrivateKey privKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(nKey.getEncoded()));
-
-        xmssSig.initSign(privKey);
-
-        xmssSig.update(msg, 0, msg.length);
-
-        try
-        {
-            s = xmssSig.sign();
-            //fail("no exception");     TODO:
-        }
-        catch (SignatureException e)
-        {
-            assertEquals("key already used", e.getMessage());
-        }
     }
 
     public void testXMSSMTSha256SignatureMultiple()
