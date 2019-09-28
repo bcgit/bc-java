@@ -180,6 +180,17 @@ public class ASN1Integer
         return intValue(bytes, start, SIGN_EXT_SIGNED); 
     }
 
+    public long longValueExact()
+    {
+        int count = bytes.length - start;
+        if (count > 8)
+        {
+            throw new ArithmeticException("ASN.1 Integer out of long range");
+        }
+
+        return longValue(bytes, start, SIGN_EXT_SIGNED);
+    }
+
     boolean isConstructed()
     {
         return false;
@@ -223,6 +234,19 @@ public class ASN1Integer
         int pos = Math.max(start, length - 4);
 
         int val = bytes[pos] & signExt;
+        while (++pos < length)
+        {
+            val = (val << 8) | (bytes[pos] & SIGN_EXT_UNSIGNED);
+        }
+        return val;
+    }
+
+    static long longValue(byte[] bytes, int start, int signExt)
+    {
+        int length = bytes.length;
+        int pos = Math.max(start, length - 8);
+
+        long val = bytes[pos] & signExt;
         while (++pos < length)
         {
             val = (val << 8) | (bytes[pos] & SIGN_EXT_UNSIGNED);
