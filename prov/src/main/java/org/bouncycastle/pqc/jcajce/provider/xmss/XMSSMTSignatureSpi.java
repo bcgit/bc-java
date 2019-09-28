@@ -115,7 +115,7 @@ public class XMSSMTSignatureSpi
         {
             if (e instanceof IllegalStateException)
             {
-                throw new SignatureException(e.getMessage());
+                throw new SignatureException(e.getMessage(), e);
             }
             throw new SignatureException(e.toString());
         }

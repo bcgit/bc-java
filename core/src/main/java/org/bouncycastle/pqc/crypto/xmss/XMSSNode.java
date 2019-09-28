@@ -8,7 +8,6 @@ import java.io.Serializable;
 public final class XMSSNode
     implements Serializable
 {
-
     private static final long serialVersionUID = 1L;
 
     private final int height;
@@ -29,10 +28,5 @@ public final class XMSSNode
     public byte[] getValue()
     {
         return XMSSUtil.cloneArray(value);
-    }
-
-    protected XMSSNode clone()
-    {
-        return new XMSSNode(getHeight(), getValue());
     }
 }

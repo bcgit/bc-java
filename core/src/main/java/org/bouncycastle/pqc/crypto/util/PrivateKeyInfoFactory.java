@@ -16,6 +16,8 @@ import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.xmss.BDS;
+import org.bouncycastle.pqc.crypto.xmss.BDSStateMap;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
@@ -110,10 +112,11 @@ public class PrivateKeyInfoFactory
     }
 
     private static XMSSPrivateKey xmssCreateKeyStructure(XMSSPrivateKeyParameters keyParams)
+        throws IOException
     {
-        byte[] keyData = keyParams.toByteArray();
+        byte[] keyData = keyParams.getEncoded();
 
-        int n = keyParams.getParameters().getDigestSize();
+        int n = keyParams.getParameters().getTreeDigestSize();
         int totalHeight = keyParams.getParameters().getHeight();
         int indexSize = 4;
         int secretKeySize = n;
@@ -138,15 +141,32 @@ public class PrivateKeyInfoFactory
         position += rootSize;
                /* import BDS state */
         byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(keyData, position, keyData.length - position);
+        BDS bds = null;
+        try
+        {
+            bds = (BDS)XMSSUtil.deserialize(bdsStateBinary, BDS.class);
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new IOException("cannot parse BDS: " + e.getMessage());
+        }
 
-        return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
+        if ((bds.getMaxIndex() != (1 << totalHeight) - 1))
+        {
+            return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, bds.getMaxIndex());
+        }
+        else
+        {
+            return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
+        }
     }
 
     private static XMSSMTPrivateKey xmssmtCreateKeyStructure(XMSSMTPrivateKeyParameters keyParams)
+        throws IOException
     {
-        byte[] keyData = keyParams.toByteArray();
+        byte[] keyData = keyParams.getEncoded();
 
-        int n = keyParams.getParameters().getDigestSize();
+        int n = keyParams.getParameters().getTreeDigestSize();
         int totalHeight = keyParams.getParameters().getHeight();
         int indexSize = (totalHeight + 7) / 8;
         int secretKeySize = n;
@@ -171,7 +191,23 @@ public class PrivateKeyInfoFactory
         position += rootSize;
                /* import BDS state */
         byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(keyData, position, keyData.length - position);
+        BDSStateMap bds = null;
+        try
+        {
+            bds = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class);
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new IOException("cannot parse BDSStateMap: " + e.getMessage());
+        }
 
-        return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
+        if ((bds.getMaxIndex() != (1L << totalHeight) - 1))
+        {
+            return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, bds.getMaxIndex());
+        }
+        else
+        {
+            return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
+        }
     }
 }

@@ -28,22 +28,22 @@ public class XMSSPrivateKeyTest
     }
 
     private void parsingTest(Digest digest)
-            throws ClassNotFoundException, IOException
-        {
-            XMSSParameters params = new XMSSParameters(10, digest);
-            byte[] root = generateRoot(digest);
-            XMSSPrivateKeyParameters privateKey = new XMSSPrivateKeyParameters.Builder(params).withRoot(root).build();
+        throws ClassNotFoundException, IOException
+    {
+        XMSSParameters params = new XMSSParameters(10, digest);
+        byte[] root = generateRoot(digest);
+        XMSSPrivateKeyParameters privateKey = new XMSSPrivateKeyParameters.Builder(params).withRoot(root).build();
 
-            byte[] export = privateKey.toByteArray();
+        byte[] export = privateKey.toByteArray();
 
-            XMSSPrivateKeyParameters privateKey2 = new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(export, params).build();
+        XMSSPrivateKeyParameters privateKey2 = new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(export).build();
 
-            assertEquals(privateKey.getIndex(), privateKey2.getIndex());
-            assertEquals(true, Arrays.areEqual(privateKey.getSecretKeySeed(), privateKey2.getSecretKeySeed()));
-            assertEquals(true, Arrays.areEqual(privateKey.getSecretKeyPRF(), privateKey2.getSecretKeyPRF()));
-            assertEquals(true, Arrays.areEqual(privateKey.getPublicSeed(), privateKey2.getPublicSeed()));
-            assertEquals(true, Arrays.areEqual(privateKey.getRoot(), privateKey2.getRoot()));
-        }
+        assertEquals(privateKey.getIndex(), privateKey2.getIndex());
+        assertEquals(true, Arrays.areEqual(privateKey.getSecretKeySeed(), privateKey2.getSecretKeySeed()));
+        assertEquals(true, Arrays.areEqual(privateKey.getSecretKeyPRF(), privateKey2.getSecretKeyPRF()));
+        assertEquals(true, Arrays.areEqual(privateKey.getPublicSeed(), privateKey2.getPublicSeed()));
+        assertEquals(true, Arrays.areEqual(privateKey.getRoot(), privateKey2.getRoot()));
+    }
 
     private byte[] generateRoot(Digest digest)
     {
@@ -54,7 +54,7 @@ public class XMSSPrivateKeyTest
         {
             rv[i] = (byte)i;
         }
-        
+
         return rv;
     }
 

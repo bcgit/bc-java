@@ -45,7 +45,7 @@ public final class XMSSMTKeyPairGenerator
         privateKey = generatePrivateKey(new XMSSMTPrivateKeyParameters.Builder(params).build().getBDSState());
 
             /* import to xmss */
-        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], privateKey.getPublicSeed());
+        xmssParams.getWOTSPlus().importKeys(new byte[params.getTreeDigestSize()], privateKey.getPublicSeed());
 
             /* get root */
         int rootLayerIndex = params.getLayers() - 1;
@@ -69,7 +69,7 @@ public final class XMSSMTKeyPairGenerator
 
     private XMSSMTPrivateKeyParameters generatePrivateKey(BDSStateMap bdsState)
     {
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         byte[] secretKeySeed = new byte[n];
         prng.nextBytes(secretKeySeed);
         byte[] secretKeyPRF = new byte[n];

@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.Digest;
 
 /**
@@ -12,10 +13,7 @@ final class WOTSPlusParameters
      * OID.
      */
     private final XMSSOid oid;
-    /**
-     * Digest used in WOTS+.
-     */
-    private final Digest digest;
+
     /**
      * The message digest size.
      */
@@ -37,25 +35,26 @@ final class WOTSPlusParameters
      * len2.
      */
     private final int len2;
+    private final ASN1ObjectIdentifier treeDigest;
 
     /**
      * Constructor...
      *
-     * @param digest The digest used for WOTS+.
+     * @param treeDigest The digest used for WOTS+.
      */
-    protected WOTSPlusParameters(Digest digest)
+    protected WOTSPlusParameters(ASN1ObjectIdentifier treeDigest)
     {
         super();
-        if (digest == null)
+        if (treeDigest == null)
         {
-            throw new NullPointerException("digest == null");
+            throw new NullPointerException("treeDigest == null");
         }
-        this.digest = digest;
+        this.treeDigest = treeDigest;
+        Digest digest = DigestUtil.getDigest(treeDigest);
         digestSize = XMSSUtil.getDigestSize(digest);
         winternitzParameter = 16;
         len1 = (int)Math.ceil((double)(8 * digestSize) / XMSSUtil.log2(winternitzParameter));
-        len2 = (int)Math.floor(XMSSUtil.log2(len1 * (winternitzParameter - 1)) / XMSSUtil.log2(winternitzParameter))
-            + 1;
+        len2 = (int)Math.floor(XMSSUtil.log2(len1 * (winternitzParameter - 1)) / XMSSUtil.log2(winternitzParameter)) + 1;
         len = len1 + len2;
         oid = WOTSPlusOid.lookup(digest.getAlgorithmName(), digestSize, winternitzParameter, len);
         if (oid == null)
@@ -73,23 +72,13 @@ final class WOTSPlusParameters
     {
         return oid;
     }
-
-    /**
-     * Getter digest.
-     *
-     * @return digest.
-     */
-    protected Digest getDigest()
-    {
-        return digest;
-    }
-
+    
     /**
      * Getter digestSize.
      *
      * @return digestSize.
      */
-    protected int getDigestSize()
+    protected int getTreeDigestSize()
     {
         return digestSize;
     }
@@ -132,5 +121,10 @@ final class WOTSPlusParameters
     protected int getLen2()
     {
         return len2;
+    }
+
+    public ASN1ObjectIdentifier getTreeDigest()
+    {
+        return treeDigest;
     }
 }

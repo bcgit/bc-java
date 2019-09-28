@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSS;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMT;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
@@ -33,7 +34,8 @@ public class XMSSMTPrivateKeyTest
 
         try
         {
-            new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(output, params).build();
+            new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(output).build();
+            fail("no exception");
         }
         catch (IllegalArgumentException e)
         {
@@ -46,15 +48,13 @@ public class XMSSMTPrivateKeyTest
 
         xmss2.generateKeys();
 
-        byte[] publicKey = xmss2.exportPublicKey();
-
         try
         {
-            xmss2.importState(output, publicKey);
+            PrivateKeyFactory.createKey(output);
         }
-        catch (IllegalArgumentException e)
+        catch (IOException e)
         {
-            assertTrue(e.getCause() instanceof IOException);
+            assertTrue(e instanceof IOException);
         }
     }
 

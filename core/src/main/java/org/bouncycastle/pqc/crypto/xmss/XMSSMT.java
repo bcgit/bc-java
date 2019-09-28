@@ -58,7 +58,7 @@ public final class XMSSMT
     private void importState(XMSSMTPrivateKeyParameters privateKey, XMSSMTPublicKeyParameters publicKey)
     {
 		/* import to xmss */
-        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], this.privateKey.getPublicSeed());
+        xmssParams.getWOTSPlus().importKeys(new byte[params.getTreeDigestSize()], this.privateKey.getPublicSeed());
 
         this.privateKey = privateKey;
         this.publicKey = publicKey;
@@ -81,7 +81,7 @@ public final class XMSSMT
             throw new NullPointerException("publicKey == null");
         }
         XMSSMTPrivateKeyParameters xmssMTPrivateKey = new XMSSMTPrivateKeyParameters.Builder(params)
-            .withPrivateKey(privateKey, xmssParams).build();
+            .withPrivateKey(privateKey).build();
         XMSSMTPublicKeyParameters xmssMTPublicKey = new XMSSMTPublicKeyParameters.Builder(params)
             .withPublicKey(publicKey).build();
         if (!Arrays.areEqual(xmssMTPrivateKey.getRoot(), xmssMTPublicKey.getRoot()))
@@ -94,7 +94,7 @@ public final class XMSSMT
         }
         
 		/* import to xmss */
-        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], xmssMTPrivateKey.getPublicSeed());
+        xmssParams.getWOTSPlus().importKeys(new byte[params.getTreeDigestSize()], xmssMTPrivateKey.getPublicSeed());
 
         this.privateKey = xmssMTPrivateKey;
         this.publicKey = xmssMTPublicKey;

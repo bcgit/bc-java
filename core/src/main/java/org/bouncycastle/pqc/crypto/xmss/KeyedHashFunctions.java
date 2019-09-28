@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Xof;
 
@@ -8,18 +9,17 @@ import org.bouncycastle.crypto.Xof;
  */
 final class KeyedHashFunctions
 {
-
     private final Digest digest;
     private final int digestSize;
 
-    protected KeyedHashFunctions(Digest digest, int digestSize)
+    protected KeyedHashFunctions(ASN1ObjectIdentifier treeDigest, int digestSize)
     {
         super();
-        if (digest == null)
+        if (treeDigest == null)
         {
             throw new NullPointerException("digest == null");
         }
-        this.digest = digest;
+        this.digest = DigestUtil.getDigest(treeDigest);
         this.digestSize = digestSize;
     }
 

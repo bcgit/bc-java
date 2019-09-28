@@ -1,5 +1,8 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,32 +18,39 @@ public class BDSStateMap
     
     private final Map<Integer, BDS> bdsState = new TreeMap<Integer, BDS>();
 
-    BDSStateMap()
-    {
+    private transient long maxIndex;
 
+    BDSStateMap(long maxIndex)
+    {
+        this.maxIndex = maxIndex;
     }
 
-    BDSStateMap(XMSSMTParameters params, long globalIndex, byte[] publicSeed, byte[] secretKeySeed)
-    {
-         for (long index = 0; index < globalIndex; index++)
-         {
-             updateState(params, index, publicSeed, secretKeySeed);
-         }
-    }
-
-    BDSStateMap(BDSStateMap stateMap, XMSSMTParameters params, long globalIndex, byte[] publicSeed, byte[] secretKeySeed)
+    BDSStateMap(BDSStateMap stateMap, long maxIndex)
     {
         for (Iterator it = stateMap.bdsState.keySet().iterator(); it.hasNext();)
         {
             Integer key = (Integer)it.next();
 
-            bdsState.put(key, stateMap.bdsState.get(key));
+            bdsState.put(key, new BDS(stateMap.bdsState.get(key)));
         }
-
-        updateState(params, globalIndex, publicSeed, secretKeySeed);
+        this.maxIndex = maxIndex;
     }
 
-    private void updateState(XMSSMTParameters params, long globalIndex, byte[] publicSeed, byte[] secretKeySeed)
+    BDSStateMap(XMSSMTParameters params, long globalIndex, byte[] publicSeed, byte[] secretKeySeed)
+    {
+        this.maxIndex = (1L << params.getHeight()) - 1;
+        for (long index = 0; index < globalIndex; index++)
+        {
+            updateState(params, index, publicSeed, secretKeySeed);
+        }
+    }
+
+    public long getMaxIndex()
+    {
+        return maxIndex;
+    }
+
+    void updateState(XMSSMTParameters params, long globalIndex, byte[] publicSeed, byte[] secretKeySeed)
     {
         XMSSParameters xmssParams = params.getXMSSParameters();
         int xmssHeight = xmssParams.getHeight();
@@ -76,14 +86,14 @@ public class BDSStateMap
                 .withTreeAddress(indexTree).withOTSAddress(indexLeaf).build();
 
                 /* prepare authentication path for next leaf */
+            if (bdsState.get(layer) == null || XMSSUtil.isNewBDSInitNeeded(globalIndex, xmssHeight, layer))
+            {
+                bdsState.put(layer, new BDS(xmssParams, publicSeed, secretKeySeed, otsHashAddress));
+            }
+
             if (indexLeaf < ((1 << xmssHeight) - 1)
                 && XMSSUtil.isNewAuthenticationPathNeeded(globalIndex, xmssHeight, layer))
             {
-                if (this.get(layer) == null)
-                {
-                    this.put(layer, new BDS(params.getXMSSParameters(), publicSeed, secretKeySeed, otsHashAddress));
-                }
-
                 this.update(layer, publicSeed, secretKeySeed, otsHashAddress);
             }
         }
@@ -111,7 +121,7 @@ public class BDSStateMap
 
     public BDSStateMap withWOTSDigest(ASN1ObjectIdentifier digestName)
     {
-        BDSStateMap newStateMap = new BDSStateMap();
+        BDSStateMap newStateMap = new BDSStateMap(this.maxIndex);
 
         for (Iterator<Integer> keys = bdsState.keySet().iterator(); keys.hasNext();)
         {
@@ -119,7 +129,32 @@ public class BDSStateMap
 
             newStateMap.bdsState.put(key, bdsState.get(key).withWOTSDigest(digestName));
         }
-
+        
         return newStateMap;
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        if (in.available() != 0)
+        {
+            this.maxIndex = in.readLong();
+        }
+        else
+        {
+            this.maxIndex = 0;
+        }
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeLong(this.maxIndex);
     }
 }
