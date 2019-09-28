@@ -131,7 +131,6 @@ public class XMSSSignatureSpi
 
     protected void engineSetParameter(AlgorithmParameterSpec params)
     {
-        // TODO
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
