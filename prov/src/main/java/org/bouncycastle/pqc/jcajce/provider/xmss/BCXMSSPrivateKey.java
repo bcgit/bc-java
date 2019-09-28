@@ -53,6 +53,11 @@ public class BCXMSSPrivateKey
         return keyParams.getUsagesRemaining();
     }
 
+    public XMSSPrivateKey extractKeyShard(int usageCount)
+    {
+        return new BCXMSSPrivateKey(this.treeDigest, keyParams.extractKeyShard(usageCount));
+    }
+
     public String getAlgorithm()
     {
         return "XMSS";

@@ -29,7 +29,7 @@ final class WOTSPlusPrivateKeyParameters
         }
         for (int i = 0; i < privateKey.length; i++)
         {
-            if (privateKey[i].length != params.getDigestSize())
+            if (privateKey[i].length != params.getTreeDigestSize())
             {
                 throw new IllegalArgumentException("wrong privateKey format");
             }

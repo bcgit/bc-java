@@ -51,12 +51,13 @@ public class XMSSTest
     }
 
     public void testGenKeyPairSHA256()
+        throws Exception
     {
         XMSSParameters xmssParams = new XMSSParameters(10, new SHA256Digest());
         XMSS xmss = new XMSS(xmssParams, new NullPRNG());
         xmss.generateKeys();
-        byte[] privateKey = xmss.exportPrivateKey();
-        byte[] publicKey = xmss.exportPublicKey();
+        byte[] privateKey = xmss.exportPrivateKey().getEncoded();
+        byte[] publicKey = xmss.exportPublicKey().getEncoded();
         String expectedPrivateKey = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000073c3fc6de1195aa5d69f9dafc9db8504aa8059115e8319ca15cf58a1c83c0de3";
         String expectedPublicKey = "0000000173c3fc6de1195aa5d69f9dafc9db8504aa8059115e8319ca15cf58a1c83c0de30000000000000000000000000000000000000000000000000000000000000000";
         byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
@@ -66,12 +67,13 @@ public class XMSSTest
     }
 
     public void testGenKeyPairSHA512()
+        throws Exception
     {
         XMSSParameters xmssParams = new XMSSParameters(10, new SHA512Digest());
         XMSS xmss = new XMSS(xmssParams, new NullPRNG());
         xmss.generateKeys();
-        byte[] privateKey = xmss.exportPrivateKey();
-        byte[] publicKey = xmss.exportPublicKey();
+        byte[] privateKey = xmss.exportPrivateKey().getEncoded();
+        byte[] publicKey = xmss.exportPublicKey().getEncoded();
         String expectedPrivateKey = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f48df90f8e217076d8af6327691321bdcf63668c4bd28d021d49f2334eca845fa3073991049286c0eef5dc7f23ec0b31f5c1bd1e5b8edb2403ae02f292f6f30e";
         String expectedPublicKey = "00000004f48df90f8e217076d8af6327691321bdcf63668c4bd28d021d49f2334eca845fa3073991049286c0eef5dc7f23ec0b31f5c1bd1e5b8edb2403ae02f292f6f30e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
         byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
@@ -218,6 +220,7 @@ public class XMSSTest
     }
 
     public void testVerifySignatureSHA256()
+        throws Exception
     {
         XMSSParameters params = new XMSSParameters(4, new SHA256Digest());
         XMSS xmss = new XMSS(params, new NullPRNG());
@@ -226,7 +229,7 @@ public class XMSSTest
 
         for (int i = 0; i < 3; i++)
         {
-            byte[] publicKey = xmss.exportPublicKey();
+            byte[] publicKey = xmss.exportPublicKey().getEncoded();
             xmss.sign(msg1);
             byte[] signature = xmss.sign(msg1);
             try
@@ -253,6 +256,7 @@ public class XMSSTest
     }
 
     public void testVerifySignatureSHA512()
+        throws Exception
     {
         XMSSParameters params = new XMSSParameters(4, new SHA512Digest());
         XMSS xmss = new XMSS(params, new NullPRNG());
@@ -261,7 +265,7 @@ public class XMSSTest
 
         for (int i = 0; i < 3; i++)
         {
-            byte[] publicKey = xmss.exportPublicKey();
+            byte[] publicKey = xmss.exportPublicKey().getEncoded();
             xmss.sign(msg1);
             byte[] signature = xmss.sign(msg1);
             try
@@ -301,13 +305,13 @@ public class XMSSTest
         Arrays.fill(msg3, (byte)0xcc);
         byte[] signature1 = xmss1.sign(msg1);
         byte[] signature2 = xmss1.sign(msg2);
-        byte[] exportedPrivateKey = xmss1.exportPrivateKey();
-        byte[] exportedPublicKey = xmss1.exportPublicKey();
+        byte[] exportedPrivateKey = xmss1.exportPrivateKey().getEncoded();
+        byte[] exportedPublicKey = xmss1.exportPublicKey().getEncoded();
         byte[] signature3 = xmss1.sign(msg3);
 
         XMSS xmss2 = new XMSS(params, new NullPRNG());
 
-            xmss2.importState(exportedPrivateKey, exportedPublicKey);
+        xmss2.importState(exportedPrivateKey, exportedPublicKey);
 
         byte[] signature4 = xmss2.sign(msg3);
         assertEquals(true, Arrays.areEqual(signature3, signature4));
@@ -341,8 +345,8 @@ public class XMSSTest
         Arrays.fill(msg3, (byte)0xcc);
         byte[] signature1 = xmss1.sign(msg1);
         byte[] signature2 = xmss1.sign(msg2);
-        byte[] exportedPrivateKey = xmss1.exportPrivateKey();
-        byte[] exportedPublicKey = xmss1.exportPublicKey();
+        byte[] exportedPrivateKey = xmss1.exportPrivateKey().getEncoded();
+        byte[] exportedPublicKey = xmss1.exportPublicKey().getEncoded();
         byte[] signature3 = xmss1.sign(msg3);
 
         XMSS xmss2 = new XMSS(params, new NullPRNG());
@@ -373,7 +377,7 @@ public class XMSSTest
         XMSSParameters params = new XMSSParameters(4, new SHA512Digest());
         XMSS xmss1 = new XMSS(params, new SecureRandom());
         xmss1.generateKeys();
-        byte[] publicKey = xmss1.exportPublicKey();
+        byte[] publicKey = xmss1.exportPublicKey().getEncoded();
         byte[] message = new byte[1024];
 
         for (int i = 0; i < 5; i++)
@@ -381,7 +385,7 @@ public class XMSSTest
             xmss1.sign(message);
         }
         byte[] signature = xmss1.sign(message);
-        assertTrue(Arrays.areEqual(publicKey, xmss1.exportPublicKey()));
+        assertTrue(Arrays.areEqual(publicKey, xmss1.exportPublicKey().getEncoded()));
         try
         {
             xmss1.verifySignature(message, signature, publicKey);
@@ -391,9 +395,9 @@ public class XMSSTest
             e.printStackTrace();
             fail();
         }
-        assertTrue(Arrays.areEqual(publicKey, xmss1.exportPublicKey()));
+        assertTrue(Arrays.areEqual(publicKey, xmss1.exportPublicKey().getEncoded()));
         xmss1.sign(message);
-        byte[] privateKey7 = xmss1.exportPrivateKey();
+        byte[] privateKey7 = xmss1.exportPrivateKey().getEncoded();
         try
         {
             xmss1.verifySignature(message, signature, publicKey);
@@ -403,7 +407,7 @@ public class XMSSTest
             e.printStackTrace();
             fail();
         }
-        assertTrue(Arrays.areEqual(privateKey7, xmss1.exportPrivateKey()));
+        assertTrue(Arrays.areEqual(privateKey7, xmss1.exportPrivateKey().getEncoded()));
         byte[] signature7 = xmss1.sign(message);
 
         xmss1.importState(privateKey7, publicKey);
@@ -440,8 +444,8 @@ public class XMSSTest
         XMSSParameters params = new XMSSParameters(4, new SHA256Digest());
         XMSS xmss = new XMSS(params, new SecureRandom());
         xmss.generateKeys();
-        byte[] exportedPrivateKey = xmss.exportPrivateKey();
-        byte[] exportedPublicKey = xmss.exportPublicKey();
+        byte[] exportedPrivateKey = xmss.exportPrivateKey().getEncoded();
+        byte[] exportedPublicKey = xmss.exportPublicKey().getEncoded();
 
         xmss.importState(exportedPrivateKey, exportedPublicKey);
 

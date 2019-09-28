@@ -7,7 +7,6 @@ import org.bouncycastle.crypto.Digest;
  */
 public final class XMSSMTParameters
 {
-
     private final XMSSOid oid;
     private final XMSSParameters xmssParams;
     private final int height;
@@ -26,7 +25,7 @@ public final class XMSSMTParameters
         this.height = height;
         this.layers = layers;
         this.xmssParams = new XMSSParameters(xmssTreeHeight(height, layers), digest);
-        oid = DefaultXMSSMTOid.lookup(getDigest().getAlgorithmName(), getDigestSize(), getWinternitzParameter(),
+        oid = DefaultXMSSMTOid.lookup(getTreeDigest(), getTreeDigestSize(), getWinternitzParameter(),
             getLen(), getHeight(), layers);
         /*
 		 * if (oid == null) { throw new InvalidParameterException(); }
@@ -81,9 +80,9 @@ public final class XMSSMTParameters
         return xmssParams.getWOTSPlus();
     }
 
-    protected Digest getDigest()
+    protected String getTreeDigest()
     {
-        return xmssParams.getDigest();
+        return xmssParams.getTreeDigest();
     }
 
     /**
@@ -91,9 +90,9 @@ public final class XMSSMTParameters
      *
      * @return Digest size.
      */
-    public int getDigestSize()
+    public int getTreeDigestSize()
     {
-        return xmssParams.getDigestSize();
+        return xmssParams.getTreeDigestSize();
     }
 
     /**
@@ -101,14 +100,14 @@ public final class XMSSMTParameters
      *
      * @return Winternitz parameter.
      */
-    public int getWinternitzParameter()
+    int getWinternitzParameter()
     {
         return xmssParams.getWinternitzParameter();
     }
 
     protected int getLen()
     {
-        return xmssParams.getWOTSPlus().getParams().getLen();
+        return xmssParams.getLen();
     }
 
     protected XMSSOid getOid()

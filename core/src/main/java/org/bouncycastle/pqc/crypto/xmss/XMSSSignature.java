@@ -1,5 +1,8 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import java.io.IOException;
+
+import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -7,7 +10,7 @@ import org.bouncycastle.util.Pack;
  */
 public final class XMSSSignature
     extends XMSSReducedSignature
-    implements XMSSStoreableObjectInterface
+    implements XMSSStoreableObjectInterface, Encodable
 {
 
     private final int index;
@@ -17,7 +20,7 @@ public final class XMSSSignature
     {
         super(builder);
         index = builder.index;
-        int n = getParams().getDigestSize();
+        int n = getParams().getTreeDigestSize();
         byte[] tmpRandom = builder.random;
         if (tmpRandom != null)
         {
@@ -31,6 +34,12 @@ public final class XMSSSignature
         {
             random = new byte[n];
         }
+    }
+
+    public byte[] getEncoded()
+        throws IOException
+    {
+        return toByteArray();
     }
 
     public static class Builder
@@ -66,7 +75,7 @@ public final class XMSSSignature
             {
                 throw new NullPointerException("signature == null");
             }
-            int n = params.getDigestSize();
+            int n = params.getTreeDigestSize();
             int len = params.getWOTSPlus().getParams().getLen();
             int height = params.getHeight();
             int indexSize = 4;
@@ -90,10 +99,14 @@ public final class XMSSSignature
         }
     }
 
+    /**
+     * @deprecated use getEncoded() this method will become private.
+     * @return
+     */
     public byte[] toByteArray()
     {
 		/* index || random || signature || authentication path */
-        int n = getParams().getDigestSize();
+        int n = getParams().getTreeDigestSize();
         int indexSize = 4;
         int randomSize = n;
         int signatureSize = getParams().getWOTSPlus().getParams().getLen() * n;

@@ -29,7 +29,7 @@ final class WOTSPlusPublicKeyParameters
         }
         for (int i = 0; i < publicKey.length; i++)
         {
-            if (publicKey[i].length != params.getDigestSize())
+            if (publicKey[i].length != params.getTreeDigestSize())
             {
                 throw new IllegalArgumentException("wrong publicKey format");
             }

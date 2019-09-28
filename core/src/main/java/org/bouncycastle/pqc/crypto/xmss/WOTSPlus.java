@@ -42,8 +42,8 @@ final class WOTSPlus
             throw new NullPointerException("params == null");
         }
         this.params = params;
-        int n = params.getDigestSize();
-        khf = new KeyedHashFunctions(params.getDigest(), n);
+        int n = params.getTreeDigestSize();
+        khf = new KeyedHashFunctions(params.getTreeDigest(), n);
         secretKeySeed = new byte[n];
         publicSeed = new byte[n];
     }
@@ -60,7 +60,7 @@ final class WOTSPlus
         {
             throw new NullPointerException("secretKeySeed == null");
         }
-        if (secretKeySeed.length != params.getDigestSize())
+        if (secretKeySeed.length != params.getTreeDigestSize())
         {
             throw new IllegalArgumentException("size of secretKeySeed needs to be equal to size of digest");
         }
@@ -68,7 +68,7 @@ final class WOTSPlus
         {
             throw new NullPointerException("publicSeed == null");
         }
-        if (publicSeed.length != params.getDigestSize())
+        if (publicSeed.length != params.getTreeDigestSize())
         {
             throw new IllegalArgumentException("size of publicSeed needs to be equal to size of digest");
         }
@@ -89,7 +89,7 @@ final class WOTSPlus
         {
             throw new NullPointerException("messageDigest == null");
         }
-        if (messageDigest.length != params.getDigestSize())
+        if (messageDigest.length != params.getTreeDigestSize())
         {
             throw new IllegalArgumentException("size of messageDigest needs to be equal to size of digest");
         }
@@ -142,7 +142,7 @@ final class WOTSPlus
         {
             throw new NullPointerException("messageDigest == null");
         }
-        if (messageDigest.length != params.getDigestSize())
+        if (messageDigest.length != params.getTreeDigestSize())
         {
             throw new IllegalArgumentException("size of messageDigest needs to be equal to size of digest");
         }
@@ -174,7 +174,7 @@ final class WOTSPlus
         {
             throw new NullPointerException("messageDigest == null");
         }
-        if (messageDigest.length != params.getDigestSize())
+        if (messageDigest.length != params.getTreeDigestSize())
         {
             throw new IllegalArgumentException("size of messageDigest needs to be equal to size of digest");
         }
@@ -228,7 +228,7 @@ final class WOTSPlus
      */
     private byte[] chain(byte[] startHash, int startIndex, int steps, OTSHashAddress otsHashAddress)
     {
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         if (startHash == null)
         {
             throw new NullPointerException("startHash == null");

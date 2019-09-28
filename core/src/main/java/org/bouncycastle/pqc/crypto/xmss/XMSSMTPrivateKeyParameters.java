@@ -3,32 +3,35 @@ package org.bouncycastle.pqc.crypto.xmss;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Encodable;
 
 /**
  * XMSS^MT Private Key.
  */
 public final class XMSSMTPrivateKeyParameters
     extends XMSSMTKeyParameters
-    implements XMSSStoreableObjectInterface
+    implements XMSSStoreableObjectInterface, Encodable
 {
-
     private final XMSSMTParameters params;
-    private final long index;
     private final byte[] secretKeySeed;
     private final byte[] secretKeyPRF;
     private final byte[] publicSeed;
     private final byte[] root;
-    private final BDSStateMap bdsState;
+
+    private volatile long index;
+    private volatile BDSStateMap bdsState;
+    private volatile boolean used;
 
     private XMSSMTPrivateKeyParameters(Builder builder)
     {
-        super(true, builder.params.getDigest().getAlgorithmName());
+        super(true, builder.params.getTreeDigest());
         params = builder.params;
+
         if (params == null)
         {
             throw new NullPointerException("params == null");
         }
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         byte[] privateKey = builder.privateKey;
         if (privateKey != null)
         {
@@ -71,7 +74,7 @@ public final class XMSSMTPrivateKeyParameters
             {
                 BDSStateMap bdsImport = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class);
 
-                bdsState = bdsImport.withWOTSDigest(DigestUtil.getDigestOID(builder.xmss.getDigest().getAlgorithmName()));
+                bdsState = bdsImport.withWOTSDigest(builder.xmss.getTreeDigestOID());
             }
             catch (IOException e)
             {
@@ -84,7 +87,7 @@ public final class XMSSMTPrivateKeyParameters
         }
         else
         {
-			/* set */
+            /* set */
             index = builder.index;
             byte[] tmpSecretKeySeed = builder.secretKeySeed;
             if (tmpSecretKeySeed != null)
@@ -154,19 +157,32 @@ public final class XMSSMTPrivateKeyParameters
                 }
                 else
                 {
-                    bdsState = new BDSStateMap();
+                    bdsState = new BDSStateMap(builder.maxIndex + 1);
                 }
             }
+            if (builder.maxIndex >= 0 && builder.maxIndex != bdsState.getMaxIndex())
+            {
+                throw new IllegalArgumentException("maxIndex set but not reflected in state");
+            }
+        }
+    }
+
+    public byte[] getEncoded()
+        throws IOException
+    {
+        synchronized (this)
+        {
+            return toByteArray();
         }
     }
 
     public static class Builder
     {
-
         /* mandatory */
         private final XMSSMTParameters params;
         /* optional */
         private long index = 0L;
+        private long maxIndex = -1L;
         private byte[] secretKeySeed = null;
         private byte[] secretKeyPRF = null;
         private byte[] publicSeed = null;
@@ -184,6 +200,12 @@ public final class XMSSMTPrivateKeyParameters
         public Builder withIndex(long val)
         {
             index = val;
+            return this;
+        }
+
+        public Builder withMaxIndex(long val)
+        {
+            maxIndex = val;
             return this;
         }
 
@@ -213,14 +235,21 @@ public final class XMSSMTPrivateKeyParameters
 
         public Builder withBDSState(BDSStateMap val)
         {
-            bdsState = val;
+            if (val.getMaxIndex() == 0)   // check for legacy state maps
+            {
+                bdsState = new BDSStateMap(val, (1L << params.getHeight()) - 1);
+            }
+            else
+            {
+                bdsState = val;
+            }
             return this;
         }
 
-        public Builder withPrivateKey(byte[] privateKeyVal, XMSSParameters xmssVal)
+        public Builder withPrivateKey(byte[] privateKeyVal)
         {
             privateKey = XMSSUtil.cloneArray(privateKeyVal);
-            xmss = xmssVal;
+            xmss = params.getXMSSParameters();
             return this;
         }
 
@@ -230,41 +259,47 @@ public final class XMSSMTPrivateKeyParameters
         }
     }
 
+    /**
+     * @deprecated use getEncoded() - this method will become private.
+     */
     public byte[] toByteArray()
     {
-		/* index || secretKeySeed || secretKeyPRF || publicSeed || root */
-        int n = params.getDigestSize();
-        int indexSize = (params.getHeight() + 7) / 8;
-        int secretKeySize = n;
-        int secretKeyPRFSize = n;
-        int publicSeedSize = n;
-        int rootSize = n;
-        int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
-        byte[] out = new byte[totalSize];
-        int position = 0;
-		/* copy index */
-        byte[] indexBytes = XMSSUtil.toBytesBigEndian(index, indexSize);
-        XMSSUtil.copyBytesAtOffset(out, indexBytes, position);
-        position += indexSize;
-		/* copy secretKeySeed */
-        XMSSUtil.copyBytesAtOffset(out, secretKeySeed, position);
-        position += secretKeySize;
-		/* copy secretKeyPRF */
-        XMSSUtil.copyBytesAtOffset(out, secretKeyPRF, position);
-        position += secretKeyPRFSize;
-		/* copy publicSeed */
-        XMSSUtil.copyBytesAtOffset(out, publicSeed, position);
-        position += publicSeedSize;
-		/* copy root */
-        XMSSUtil.copyBytesAtOffset(out, root, position);
-		/* concatenate bdsState */
-        try
+        synchronized (this)
         {
-            return Arrays.concatenate(out, XMSSUtil.serialize(bdsState));
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("error serializing bds state: " + e.getMessage(), e);
+            /* index || secretKeySeed || secretKeyPRF || publicSeed || root */
+            int n = params.getTreeDigestSize();
+            int indexSize = (params.getHeight() + 7) / 8;
+            int secretKeySize = n;
+            int secretKeyPRFSize = n;
+            int publicSeedSize = n;
+            int rootSize = n;
+            int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
+            byte[] out = new byte[totalSize];
+            int position = 0;
+            /* copy index */
+            byte[] indexBytes = XMSSUtil.toBytesBigEndian(index, indexSize);
+            XMSSUtil.copyBytesAtOffset(out, indexBytes, position);
+            position += indexSize;
+            /* copy secretKeySeed */
+            XMSSUtil.copyBytesAtOffset(out, secretKeySeed, position);
+            position += secretKeySize;
+            /* copy secretKeyPRF */
+            XMSSUtil.copyBytesAtOffset(out, secretKeyPRF, position);
+            position += secretKeyPRFSize;
+            /* copy publicSeed */
+            XMSSUtil.copyBytesAtOffset(out, publicSeed, position);
+            position += publicSeedSize;
+            /* copy root */
+            XMSSUtil.copyBytesAtOffset(out, root, position);
+            /* concatenate bdsState */
+            try
+            {
+                return Arrays.concatenate(out, XMSSUtil.serialize(bdsState));
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("error serializing bds state: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -275,7 +310,10 @@ public final class XMSSMTPrivateKeyParameters
 
     public long getUsagesRemaining()
     {
-        return (1L << this.getParameters().getHeight()) - this.getIndex();
+        synchronized (this)
+        {
+            return this.bdsState.getMaxIndex() - this.getIndex() + 1;
+        }
     }
 
     public byte[] getSecretKeySeed()
@@ -310,11 +348,65 @@ public final class XMSSMTPrivateKeyParameters
 
     public XMSSMTPrivateKeyParameters getNextKey()
     {
-        BDSStateMap newState = new BDSStateMap(bdsState, params, this.getIndex(), publicSeed, secretKeySeed);
+        synchronized (this)
+        {
+            return this.extractKeyShard(1);
+        }
+    }
 
-        return new XMSSMTPrivateKeyParameters.Builder(params).withIndex(index + 1)
-            .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
-            .withPublicSeed(publicSeed).withRoot(root)
-            .withBDSState(newState).build();
+    XMSSMTPrivateKeyParameters rollKey()
+    {
+        synchronized (this)
+        {
+            if (this.getIndex() < bdsState.getMaxIndex())
+            {
+                bdsState.updateState(params, index, publicSeed, secretKeySeed);
+                index = index + 1;
+                used = false;
+            }
+            else
+            {
+                index = bdsState.getMaxIndex() + 1;
+                bdsState = new BDSStateMap(bdsState.getMaxIndex());
+                used = false;
+            }
+
+            return this;
+        }
+    }
+
+    /**
+     * Return a key that can be used usageCount times.
+     * <p>
+     * Note: this will use the range [index...index + usageCount) for the current key.
+     * </p>
+     * @param usageCount the number of usages the key should have.
+     * @return a key based on the current key that can be used usageCount times.
+     */
+    public XMSSMTPrivateKeyParameters extractKeyShard(int usageCount)
+    {
+        synchronized (this)
+        {
+            /* prepare authentication path for next leaf */
+            if (usageCount <= this.getUsagesRemaining())
+            {
+                XMSSMTPrivateKeyParameters keyParams = new XMSSMTPrivateKeyParameters.Builder(params)
+                                    .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
+                                    .withPublicSeed(publicSeed).withRoot(root)
+                                    .withIndex(getIndex())
+                                    .withBDSState(new BDSStateMap(this.bdsState, getIndex() + usageCount - 1)).build();
+
+                for (int i = 0; i != usageCount; i++)
+                {
+                    this.rollKey();
+                }
+
+                return keyParams;
+            }
+            else
+            {
+                throw new IllegalArgumentException("usageCount exceeds usages remaining");
+            }
+        }
     }
 }

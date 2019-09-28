@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.Digest;
 
 /**
@@ -7,36 +8,42 @@ import org.bouncycastle.crypto.Digest;
  */
 public final class XMSSParameters
 {
-
     private final XMSSOid oid;
-    private final WOTSPlus wotsPlus;
-    //private final SecureRandom prng;
     private final int height;
     private final int k;
+    private final ASN1ObjectIdentifier treeDigestOID;
+    private final int winternitzParameter;
+    private final String treeDigest;
+    private final int treeDigestSize;
+    private final WOTSPlusParameters wotsPlusParams;
 
     /**
      * XMSS Constructor...
      *
      * @param height Height of tree.
-     * @param digest Digest to use.
+     * @param treeDigest Digest to use.
      */
-    public XMSSParameters(int height, Digest digest)
+    public XMSSParameters(int height, Digest treeDigest)
     {
         super();
         if (height < 2)
         {
             throw new IllegalArgumentException("height must be >= 2");
         }
-        if (digest == null)
+        if (treeDigest == null)
         {
             throw new NullPointerException("digest == null");
         }
 
-        wotsPlus = new WOTSPlus(new WOTSPlusParameters(digest));
         this.height = height;
         this.k = determineMinK();
-        this.oid = DefaultXMSSOid.lookup(getDigest().getAlgorithmName(), getDigestSize(), getWinternitzParameter(),
-            wotsPlus.getParams().getLen(), height);
+        this.treeDigest = treeDigest.getAlgorithmName();
+        this.treeDigestOID = DigestUtil.getDigestOID(treeDigest.getAlgorithmName());
+
+        this.wotsPlusParams = new WOTSPlusParameters(treeDigestOID);
+        this.treeDigestSize = wotsPlusParams.getTreeDigestSize();
+        this.winternitzParameter = wotsPlusParams.getWinternitzParameter();
+        this.oid = DefaultXMSSOid.lookup(this.treeDigest, this.treeDigestSize, this.winternitzParameter, wotsPlusParams.getLen(), height);
         /*
 		 * if (oid == null) { throw new InvalidParameterException(); }
 		 */
@@ -54,19 +61,39 @@ public final class XMSSParameters
         throw new IllegalStateException("should never happen...");
     }
 
-    protected Digest getDigest()
-    {
-        return wotsPlus.getParams().getDigest();
-    }
-
     /**
      * Getter digest size.
      *
      * @return Digest size.
      */
-    public int getDigestSize()
+    public int getTreeDigestSize()
     {
-        return wotsPlus.getParams().getDigestSize();
+        return treeDigestSize;
+    }
+
+    /**
+     * Getter height.
+     *
+     * @return XMSS tree height.
+     */
+    public int getHeight()
+    {
+        return height;
+    }
+
+    String getTreeDigest()
+    {
+        return treeDigest;
+    }
+
+    ASN1ObjectIdentifier getTreeDigestOID()
+    {
+        return treeDigestOID;
+    }
+
+    int getLen()
+    {
+        return wotsPlusParams.getLen();
     }
 
     /**
@@ -74,24 +101,14 @@ public final class XMSSParameters
      *
      * @return Winternitz parameter.
      */
-    public int getWinternitzParameter()
+    int getWinternitzParameter()
     {
-        return wotsPlus.getParams().getWinternitzParameter();
-    }
-
-    /**
-     * Getter height.
-     *
-     * @return XMSS height.
-     */
-    public int getHeight()
-    {
-        return height;
+        return winternitzParameter;
     }
 
     WOTSPlus getWOTSPlus()
     {
-        return wotsPlus;
+        return new WOTSPlus(wotsPlusParams);
     }
 
     XMSSOid getOid()
