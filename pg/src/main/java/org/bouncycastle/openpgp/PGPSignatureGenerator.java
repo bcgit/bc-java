@@ -175,7 +175,7 @@ public class PGPSignatureGenerator
     /**
      * Return the one pass header associated with the current signature.
      * 
-     * @param isNested
+     * @param isNested true if the signature is nested, false otherwise.
      * @return PGPOnePassSignature
      * @throws PGPException
      */
