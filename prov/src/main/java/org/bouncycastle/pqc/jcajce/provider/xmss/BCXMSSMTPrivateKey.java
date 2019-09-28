@@ -53,6 +53,11 @@ public class BCXMSSMTPrivateKey
         return keyParams.getUsagesRemaining();
     }
 
+    public XMSSMTPrivateKey extractKeyShard(int usageCount)
+    {
+        return new BCXMSSMTPrivateKey(this.treeDigest, keyParams.extractKeyShard(usageCount));
+    }
+
     public String getAlgorithm()
     {
         return "XMSSMT";

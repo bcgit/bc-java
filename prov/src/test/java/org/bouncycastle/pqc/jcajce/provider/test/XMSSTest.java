@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -84,12 +85,29 @@ public class XMSSTest
             "6TkILd1jH6e5vP9Iwp+hANEWJdbxYX4gyyQQpudfOQ6+7xLJNaBEAmGsvLXJAJXu5NTICpC5LpKrWWxrz6tKRiLP10EBbxtLwM3wCW" +
             "6+d4CehmSP7B0ffx6AzJtD6l6T+lxyO0EMXG");
 
+    private static byte[] priv160Pkcs8 = Base64.decode("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");
+    private static byte[] priv160Ser = Base64.decode("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");
+
     public void setUp()
     {
         if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastlePQCProvider());
         }
+    }
+
+    public void test160PrivateKeyRecovery()
+        throws Exception
+    {
+        KeyFactory kFact = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        XMSSKey privKey = (XMSSKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(priv160Pkcs8));
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(priv160Ser));
+
+        XMSSKey privKey2 = (XMSSKey)oIn.readObject();
+
+        assertEquals(privKey, privKey2);
     }
 
     public void testPrivateKeyRecovery()
@@ -442,7 +460,7 @@ public class XMSSTest
 
         PrivateKey nKey = xmssSig.getUpdatedPrivateKey();
 
-        assertFalse(kp.getPrivate().equals(nKey));
+        assertTrue(kp.getPrivate().equals(nKey));
         assertFalse(xmssSig.isSigningCapable());
 
         xmssSig.update(msg, 0, msg.length);
@@ -590,6 +608,80 @@ public class XMSSTest
         assertEquals(0, privKey.getUsagesRemaining());
     }
 
+    public void testShardedKeyExhaustion()
+        throws Exception
+    {
+        StateAwareSignature s1 = (StateAwareSignature)Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
+        Signature s2 = Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
+
+        byte[] message = Strings.toByteArray("hello, world!");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(4, "SHA256"), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        XMSSPrivateKey privKey = (XMSSPrivateKey)kp.getPrivate();
+
+        assertEquals(16, privKey.getUsagesRemaining());
+
+        XMSSPrivateKey extPrivKey = privKey.extractKeyShard(4);
+
+        assertEquals(12, privKey.getUsagesRemaining());
+        assertEquals(4, extPrivKey.getUsagesRemaining());
+
+        exhaustKey(s1, s2, message, kp, extPrivKey, 4);
+
+        assertEquals(12, privKey.getUsagesRemaining());
+
+        extPrivKey = privKey.extractKeyShard(4);
+
+        assertEquals(8, privKey.getUsagesRemaining());
+        assertEquals(4, extPrivKey.getUsagesRemaining());
+
+        exhaustKey(s1, s2, message, kp, extPrivKey, 4);
+
+        assertEquals(8, privKey.getUsagesRemaining());
+
+        exhaustKey(s1, s2, message, kp, privKey, 8);
+    }
+
+    private void exhaustKey(
+        StateAwareSignature s1, Signature s2, byte[] message, KeyPair kp, XMSSPrivateKey extPrivKey, int usages)
+        throws GeneralSecurityException
+    {
+        // serialisation check
+        assertEquals(extPrivKey.getUsagesRemaining(), usages);
+        KeyFactory keyFact = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        XMSSPrivateKey pKey = (XMSSPrivateKey)keyFact.generatePrivate(new PKCS8EncodedKeySpec(extPrivKey.getEncoded()));
+
+        assertEquals(usages, pKey.getUsagesRemaining());
+
+        // usage check
+        int count = 0;
+        do
+        {
+            s1.initSign(extPrivKey);
+
+            s1.update(message, 0, message.length);
+
+            byte[] sig = s1.sign();
+
+            s2.initVerify(kp.getPublic());
+
+            s2.update(message, 0, message.length);
+
+            assertTrue(s2.verify(sig));
+            count++;
+        }
+        while (extPrivKey.getUsagesRemaining() != 0);
+
+        assertEquals(usages, count);
+        assertEquals(0, extPrivKey.getUsagesRemaining());
+    }
+
     private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
         throws Exception
     {
@@ -674,5 +766,17 @@ public class XMSSTest
             verifier.update(payload);
             assertTrue(verifier.verify(signature));
         }
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(privateKey);
+        oOut.writeObject(privateKey);
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        oIn.readObject();
+        oIn.readObject();
     }
 }

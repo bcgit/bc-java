@@ -134,7 +134,7 @@ class XMSSNodeUtil
         }
 
         byte[] bitmask1 = wotsPlus.getKhf().PRF(publicSeed, address.toByteArray());
-        int n = wotsPlus.getParams().getDigestSize();
+        int n = wotsPlus.getParams().getTreeDigestSize();
         byte[] tmpMask = new byte[2 * n];
         for (int i = 0; i < n; i++)
         {

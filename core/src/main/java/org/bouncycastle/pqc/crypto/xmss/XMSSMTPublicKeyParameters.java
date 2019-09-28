@@ -19,13 +19,13 @@ public final class XMSSMTPublicKeyParameters
 
     private XMSSMTPublicKeyParameters(Builder builder)
     {
-        super(false, builder.params.getDigest().getAlgorithmName());
+        super(false, builder.params.getTreeDigest());
         params = builder.params;
         if (params == null)
         {
             throw new NullPointerException("params == null");
         }
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         byte[] publicKey = builder.publicKey;
         if (publicKey != null)
         {
@@ -141,10 +141,13 @@ public final class XMSSMTPublicKeyParameters
         }
     }
 
+    /**
+     * @deprecated use getEncoded() - this method will become private.
+     */
     public byte[] toByteArray()
     {
 		/* oid || root || seed */
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         int oidSize = 4;
         int rootSize = n;
         int publicSeedSize = n;

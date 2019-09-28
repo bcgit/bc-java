@@ -22,7 +22,7 @@ public class XMSSReducedSignature
         {
             throw new NullPointerException("params == null");
         }
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         int len = params.getWOTSPlus().getParams().getLen();
         int height = params.getHeight();
         byte[] reducedSignature = builder.reducedSignature;
@@ -124,7 +124,7 @@ public class XMSSReducedSignature
     public byte[] toByteArray()
     {
 		/* signature || authentication path */
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         int signatureSize = params.getWOTSPlus().getParams().getLen() * n;
         int authPathSize = params.getHeight() * n;
         int totalSize = signatureSize + authPathSize;

@@ -15,6 +15,7 @@ import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
+import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
@@ -102,6 +103,11 @@ public class PrivateKeyFactory
                     .withPublicSeed(xmssPrivateKey.getPublicSeed())
                     .withRoot(xmssPrivateKey.getRoot());
 
+                if (xmssPrivateKey.getVersion() != 0)
+                {
+                    keyBuilder.withMaxIndex(xmssPrivateKey.getMaxIndex());
+                }
+
                 if (xmssPrivateKey.getBdsState() != null)
                 {
                     BDS bds = (BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class);
@@ -122,7 +128,7 @@ public class PrivateKeyFactory
 
             try
             {
-                XMSSPrivateKey xmssMtPrivateKey = XMSSPrivateKey.getInstance(keyInfo.parsePrivateKey());
+                XMSSMTPrivateKey xmssMtPrivateKey = XMSSMTPrivateKey.getInstance(keyInfo.parsePrivateKey());
 
                 XMSSMTPrivateKeyParameters.Builder keyBuilder = new XMSSMTPrivateKeyParameters
                     .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), Utils.getDigest(treeDigest)))
@@ -131,6 +137,11 @@ public class PrivateKeyFactory
                     .withSecretKeyPRF(xmssMtPrivateKey.getSecretKeyPRF())
                     .withPublicSeed(xmssMtPrivateKey.getPublicSeed())
                     .withRoot(xmssMtPrivateKey.getRoot());
+
+                if (xmssMtPrivateKey.getVersion() != 0)
+                {
+                    keyBuilder.withMaxIndex(xmssMtPrivateKey.getMaxIndex());
+                }
 
                 if (xmssMtPrivateKey.getBdsState() != null)
                 {

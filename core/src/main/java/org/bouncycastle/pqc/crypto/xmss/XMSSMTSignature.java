@@ -1,15 +1,17 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Encodable;
 
 /**
  * XMSS^MT Signature.
  */
 public final class XMSSMTSignature
-    implements XMSSStoreableObjectInterface
+    implements XMSSStoreableObjectInterface, Encodable
 {
 
     private final XMSSMTParameters params;
@@ -25,7 +27,7 @@ public final class XMSSMTSignature
         {
             throw new NullPointerException("params == null");
         }
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         byte[] signature = builder.signature;
         if (signature != null)
         {
@@ -42,6 +44,7 @@ public final class XMSSMTSignature
             }
             int position = 0;
             index = XMSSUtil.bytesToXBigEndian(signature, position, indexSize);
+
             if (!XMSSUtil.isIndexValid(params.getHeight(), index))
             {
                 throw new IllegalArgumentException("index out of bounds");
@@ -86,6 +89,12 @@ public final class XMSSMTSignature
                 reducedSignatures = new ArrayList<XMSSReducedSignature>();
             }
         }
+    }
+
+    public byte[] getEncoded()
+        throws IOException
+    {
+        return toByteArray();
     }
 
     public static class Builder
@@ -138,7 +147,7 @@ public final class XMSSMTSignature
     public byte[] toByteArray()
     {
 		/* index || random || reduced signatures */
-        int n = params.getDigestSize();
+        int n = params.getTreeDigestSize();
         int len = params.getWOTSPlus().getParams().getLen();
         int indexSize = (int)Math.ceil(params.getHeight() / (double)8);
         int randomSize = n;
