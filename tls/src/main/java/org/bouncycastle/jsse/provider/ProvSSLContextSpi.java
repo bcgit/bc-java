@@ -339,7 +339,7 @@ class ProvSSLContextSpi
         // TODO[jsse] Place into "understood" cipher suite map
         if (CipherSuite.TLS_NULL_WITH_NULL_NULL == cipherSuite)
         {
-            return "TLS_NULL_WITH_NULL_NULL";
+            return "SSL_NULL_WITH_NULL_NULL";
         }
         if (TlsUtils.isValidUint16(cipherSuite))
         {

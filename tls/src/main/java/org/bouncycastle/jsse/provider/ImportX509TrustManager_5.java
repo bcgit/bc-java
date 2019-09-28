@@ -28,45 +28,60 @@ class ImportX509TrustManager_5
     public void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException
     {
-        x509TrustManager.checkClientTrusted(chain, authType);
+        x509TrustManager.checkClientTrusted(checkChain(chain), authType);
     }
 
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
-        x509TrustManager.checkClientTrusted(chain, authType);
+        x509TrustManager.checkClientTrusted(copyChain(chain), authType);
         ProvX509TrustManager.checkExtendedTrust(chain, authType, socket, false);
     }
 
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
-        x509TrustManager.checkClientTrusted(chain, authType);
+        x509TrustManager.checkClientTrusted(copyChain(chain), authType);
         ProvX509TrustManager.checkExtendedTrust(chain, authType, engine, false);
     }
 
     public void checkServerTrusted(X509Certificate[] chain, String authType)
         throws CertificateException
     {
-        x509TrustManager.checkServerTrusted(chain, authType);
+        x509TrustManager.checkServerTrusted(checkChain(chain), authType);
     }
 
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
-        x509TrustManager.checkServerTrusted(chain, authType);
+        x509TrustManager.checkServerTrusted(copyChain(chain), authType);
         ProvX509TrustManager.checkExtendedTrust(chain, authType, socket, true);
     }
 
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
-        x509TrustManager.checkServerTrusted(chain, authType);
+        x509TrustManager.checkServerTrusted(copyChain(chain), authType);
         ProvX509TrustManager.checkExtendedTrust(chain, authType, engine, true);
     }
 
     public X509Certificate[] getAcceptedIssuers()
     {
         return x509TrustManager.getAcceptedIssuers();
+    }
+
+    private static X509Certificate[] checkChain(X509Certificate[] chain)
+    {
+        if (null == chain || chain.length < 1)
+        {
+            throw new IllegalArgumentException("'chain' must be a chain of at least one certificate");
+        }
+
+        return chain;
+    }
+
+    private static X509Certificate[] copyChain(X509Certificate[] chain)
+    {
+        return checkChain(chain).clone();
     }
 }
