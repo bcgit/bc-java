@@ -254,9 +254,9 @@ public class ParserTest
         doDudPasswordTest("b6cd8", 3, "DEF length 81 object truncated by 56");
         doDudPasswordTest("28ce09", 4, "DEF length 110 object truncated by 28");
         doDudPasswordTest("2ac3b9", 5, "DER length more than 4 bytes: 11");
-        doDudPasswordTest("2cba96", 6, "DEF length 100 object truncated by 35");
-        doDudPasswordTest("2e3354", 7, "DEF length 42 object truncated by 9");
-        doDudPasswordTest("2f4142", 8, "DER length more than 4 bytes: 14");
+        doDudPasswordTest("2cba96", 6, "corrupted stream - out of bounds length found: 100 >= 67");
+        doDudPasswordTest("2e3354", 7, "corrupted stream - out of bounds length found: 42 >= 35");
+        doDudPasswordTest("2f4142", 8, "corrupted stream - out of bounds length found: 127 >= 39");
         doDudPasswordTest("2fe9bb", 9, "DER length more than 4 bytes: 65");
         doDudPasswordTest("3ee7a8", 10, "DER length more than 4 bytes: 57");
         doDudPasswordTest("41af75", 11, "unknown tag 16 encountered");
@@ -505,7 +505,7 @@ public class ParserTest
         catch (IOException e)
         {
             if (e.getCause() != null && !e.getCause().getMessage().endsWith(message))
-            {
+            {              System.err.println(e.getCause().getMessage());
                fail("issue " + index + " exception thrown, but wrong message");
             }
             else if (e.getCause() == null && !e.getMessage().equals(message))

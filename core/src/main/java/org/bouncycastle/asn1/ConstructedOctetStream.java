@@ -26,12 +26,18 @@ class ConstructedOctetStream
                 return -1;
             }
 
-            ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
-
-            if (s == null)
+            ASN1Encodable asn1Obj = _parser.readObject();
+            if (asn1Obj == null)
             {
                 return -1;
             }
+
+            if (!(asn1Obj instanceof ASN1OctetStringParser))
+            {
+                throw new IOException("unknown object encountered: " + asn1Obj.getClass());
+            }
+
+            ASN1OctetStringParser s = (ASN1OctetStringParser)asn1Obj;
 
             _first = false;
             _currentStream = s.getOctetStream();
