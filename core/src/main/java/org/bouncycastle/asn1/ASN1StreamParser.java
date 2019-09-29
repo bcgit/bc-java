@@ -169,11 +169,7 @@ public class ASN1StreamParser
         }
         else
         {
-            if (length >= _limit)   // after all we must have read at least 1 byte
-            {
-                throw new IOException("corrupted stream - out of bounds length found: " + length + " >= " + _limit);
-            }
-            DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length);
+            DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length, _limit);
 
             if ((tag & BERTags.APPLICATION) != 0)
             {
