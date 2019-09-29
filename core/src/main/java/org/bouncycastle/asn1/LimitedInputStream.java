@@ -10,19 +10,27 @@ abstract class LimitedInputStream
 {
     protected final InputStream _in;
     private int _limit;
+    private int _length;
 
     LimitedInputStream(
         InputStream in,
-        int         limit)
+        int         limit,
+        int         length)
     {
         this._in = in;
         this._limit = limit;
+        this._length = length;
+    }
+
+    int getLimit()
+    {
+        return _limit;
     }
 
     int getRemaining()
     {
         // TODO: maybe one day this can become more accurate
-        return _limit;
+        return _length;
     }
     
     protected void setParentEofDetect(boolean on)

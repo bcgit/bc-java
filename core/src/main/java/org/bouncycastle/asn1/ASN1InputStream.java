@@ -139,7 +139,7 @@ public class ASN1InputStream
     {
         boolean isConstructed = (tag & CONSTRUCTED) != 0;
 
-        DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length);
+        DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, limit);
 
         if ((tag & APPLICATION) != 0)
         {
