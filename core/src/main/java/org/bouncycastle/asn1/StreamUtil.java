@@ -11,7 +11,7 @@ class StreamUtil
     private static final long  MAX_MEMORY = Runtime.getRuntime().maxMemory();
 
     /**
-     * Find out possible longest length...
+     * Find out possible longest length, capped by available memory.
      *
      * @param in input stream of interest
      * @return length calculation or MAX_VALUE.
@@ -20,7 +20,7 @@ class StreamUtil
     {
         if (in instanceof LimitedInputStream)
         {
-            return ((LimitedInputStream)in).getRemaining();
+            return ((LimitedInputStream)in).getLimit();
         }
         else if (in instanceof ASN1InputStream)
         {

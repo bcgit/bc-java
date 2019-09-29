@@ -17,9 +17,9 @@ public class InputStreamTest
 
     private static final byte[] classCast1 = Base64.decode("p1AkHmYAvfOEIrL4ESfrNg==");
 
-    private static final byte[] memoryError1 = Base64.decode("JICNbaBUTTq7uxj5mg==");
-    private static final byte[] memoryError2 = Base64.decode("vm66gOiEe+FV/NvujMwSkUp5Lffw5caQlaRU5sdMPC70IGWmyK2/");
-    private static final byte[] memoryError3 = Base64.decode("vm4ogOSEfVGsS3w+KTzb2A0ALYR8VBOQqQeuRwnsPC4AAGWEDLjd");
+    private static final byte[] classCast2 = Base64.decode("JICNbaBUTTq7uxj5mg==");
+    private static final byte[] memoryError1 = Base64.decode("vm66gOiEe+FV/NvujMwSkUp5Lffw5caQlaRU5sdMPC70IGWmyK2/");
+    private static final byte[] memoryError2 = Base64.decode("vm4ogOSEfVGsS3w+KTzb2A0ALYR8VBOQqQeuRwnsPC4AAGWEDLjd");
 
     public String getName()
     {
@@ -75,10 +75,10 @@ public class InputStreamTest
         }
 
         testWithByteArray(classCast1, "unknown object encountered: class org.bouncycastle.asn1.DLApplicationSpecific");
-
-        testWithByteArray(memoryError1, "corrupted stream - out of bounds length found: 109 >= 13");
-        testWithByteArray(memoryError2, "corrupted stream - out of bounds length found: 2078365180 >= 110");
-        testWithByteArray(memoryError3, "corrupted stream - out of bounds length found: 2102504523 >= 110");
+        testWithByteArray(classCast2, "unknown object encountered: class org.bouncycastle.asn1.BERTaggedObjectParser");
+        
+        testWithByteArray(memoryError1, "corrupted stream - out of bounds length found: 2078365180 >= 110");
+        testWithByteArray(memoryError2, "corrupted stream - out of bounds length found: 2102504523 >= 110");
     }
 
     private void testWithByteArray(byte[] data, String message)
