@@ -235,6 +235,10 @@ public final class XMSSPrivateKeyParameters
     {
         synchronized (this)
         {
+            if (usageCount == 0)
+            {
+                throw new IllegalArgumentException("cannot ask for a shard with 0 keys");
+            }
             /* prepare authentication path for next leaf */
             if (usageCount <= this.getUsagesRemaining())
             {
@@ -247,7 +251,7 @@ public final class XMSSPrivateKeyParameters
 
                 if (usageCount == this.getUsagesRemaining())
                 {
-                    this.bdsState = new BDS(params, bdsState.getMaxIndex(), getIndex() + usageCount + 1);   // we're finished.
+                    this.bdsState = new BDS(params, bdsState.getMaxIndex(), getIndex() + usageCount);   // we're finished.
                 }
                 else
                 {

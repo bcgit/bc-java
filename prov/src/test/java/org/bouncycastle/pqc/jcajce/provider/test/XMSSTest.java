@@ -16,6 +16,8 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
+import java.util.Set;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -611,7 +613,7 @@ public class XMSSTest
     public void testShardedKeyExhaustion()
         throws Exception
     {
-        StateAwareSignature s1 = (StateAwareSignature)Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
+        Signature s1 = Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
         Signature s2 = Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
 
         byte[] message = Strings.toByteArray("hello, world!");
@@ -648,7 +650,7 @@ public class XMSSTest
     }
 
     private void exhaustKey(
-        StateAwareSignature s1, Signature s2, byte[] message, KeyPair kp, XMSSPrivateKey extPrivKey, int usages)
+        Signature s1, Signature s2, byte[] message, KeyPair kp, XMSSPrivateKey extPrivKey, int usages)
         throws GeneralSecurityException
     {
         // serialisation check
@@ -680,6 +682,79 @@ public class XMSSTest
 
         assertEquals(usages, count);
         assertEquals(0, extPrivKey.getUsagesRemaining());
+    }
+
+    public void testNoRepeats()
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("hello, world!");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(4, "SHA256"), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        XMSSPrivateKey privKey = (XMSSPrivateKey)kp.getPrivate();
+
+        Signature sigGen = Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
+        Signature sigVer = Signature.getInstance(BCObjectIdentifiers.xmss_SHA256.getId(), "BCPQC");
+
+        Set sigs = new HashSet();
+        XMSSPrivateKey sigKey;
+        while (privKey.getUsagesRemaining() != 0)
+        {
+            sigKey = privKey.extractKeyShard(privKey.getUsagesRemaining() > 4 ? 4 : (int)privKey.getUsagesRemaining());
+            do
+            {
+                sigGen.initSign(sigKey);
+
+                sigGen.update(message);
+
+                byte[] sig = sigGen.sign();
+
+                sigVer.initVerify(kp.getPublic());
+
+                sigVer.update(message);
+
+                PQCSigUtils.SigWrapper sw = new PQCSigUtils.SigWrapper(sig);
+
+                if (sigs.contains(sw))
+                {
+                    fail("same sig generated twice");
+                }
+                sigs.add(sw);
+            }
+            while (sigKey.getUsagesRemaining() != 0);
+        }
+
+        kp = kpg.generateKeyPair();
+
+        privKey = (XMSSPrivateKey)kp.getPrivate();
+
+        sigs = new HashSet();
+
+        sigGen.initSign(privKey);
+
+        while (privKey.getUsagesRemaining() != 0)
+        {
+
+            sigGen.update(message);
+
+            byte[] sig = sigGen.sign();
+
+            sigVer.initVerify(kp.getPublic());
+
+            sigVer.update(message);
+
+            PQCSigUtils.SigWrapper sw = new PQCSigUtils.SigWrapper(sig);
+
+            if (sigs.contains(sw))
+            {
+                fail("same sig generated twice");
+            }
+            sigs.add(sw);
+        }
     }
 
     private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
