@@ -16,6 +16,8 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
+import java.util.Set;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -568,6 +570,79 @@ public class XMSSMTTest
         while (s1.isSigningCapable());
 
         assertEquals(0, privKey.getUsagesRemaining());
+    }
+
+    public void testNoRepeats()
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("hello, world!");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+
+        kpg.initialize(new XMSSMTParameterSpec(4, 2, "SHA256"), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        XMSSMTPrivateKey privKey = (XMSSMTPrivateKey)kp.getPrivate();
+
+        Signature sigGen = Signature.getInstance(BCObjectIdentifiers.xmss_mt_SHA256.getId(), "BCPQC");
+        Signature sigVer = Signature.getInstance(BCObjectIdentifiers.xmss_mt_SHA256.getId(), "BCPQC");
+
+        Set sigs = new HashSet();
+        XMSSMTPrivateKey sigKey;
+        while (privKey.getUsagesRemaining() != 0)
+        {
+            sigKey = privKey.extractKeyShard(privKey.getUsagesRemaining() > 4 ? 4 : (int)privKey.getUsagesRemaining());
+            do
+            {
+                sigGen.initSign(sigKey);
+
+                sigGen.update(message);
+
+                byte[] sig = sigGen.sign();
+
+                sigVer.initVerify(kp.getPublic());
+
+                sigVer.update(message);
+
+                PQCSigUtils.SigWrapper sw = new PQCSigUtils.SigWrapper(sig);
+
+                if (sigs.contains(sw))
+                {
+                    fail("same sig generated twice");
+                }
+                sigs.add(sw);
+            }
+            while (sigKey.getUsagesRemaining() != 0);
+        }
+
+        kp = kpg.generateKeyPair();
+
+        privKey = (XMSSMTPrivateKey)kp.getPrivate();
+
+        sigs = new HashSet();
+
+        sigGen.initSign(privKey);
+
+        while (privKey.getUsagesRemaining() != 0)
+        {
+
+            sigGen.update(message);
+
+            byte[] sig = sigGen.sign();
+
+            sigVer.initVerify(kp.getPublic());
+
+            sigVer.update(message);
+
+            PQCSigUtils.SigWrapper sw = new PQCSigUtils.SigWrapper(sig);
+
+            if (sigs.contains(sw))
+            {
+                fail("same sig generated twice");
+            }
+            sigs.add(sw);
+        }
     }
 
     private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
