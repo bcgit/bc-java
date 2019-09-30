@@ -65,17 +65,17 @@ public class XMSSMTSigner
 
         synchronized (privateKey)
         {
+            if (privateKey.getUsagesRemaining() <= 0)
+            {
+                throw new IllegalStateException("no usages of private key remaining");
+            }
+            if (privateKey.getBDSState().isEmpty())
+            {
+                throw new IllegalStateException("not initialized");
+            }
+
             try
             {
-                if (privateKey.getUsagesRemaining() <= 0)
-                {
-                    throw new IllegalStateException("no usages of private key remaining");
-                }
-
-                if (privateKey.getBDSState().isEmpty())
-                {
-                    throw new IllegalStateException("not initialized");
-                }
 
                 BDSStateMap bdsState = privateKey.getBDSState();
 

@@ -385,6 +385,10 @@ public final class XMSSMTPrivateKeyParameters
      */
     public XMSSMTPrivateKeyParameters extractKeyShard(int usageCount)
     {
+        if (usageCount < 1)
+        {
+            throw new IllegalArgumentException("cannot ask for a shard with 0 keys");
+        }
         synchronized (this)
         {
             /* prepare authentication path for next leaf */

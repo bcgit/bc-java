@@ -510,17 +510,43 @@ public class PKIXNameConstraintValidator
 
     private Set intersectOtherName(Set permitted, Set otherNames)
     {
-        Set intersect = new HashSet(permitted);
+        Set intersect = new HashSet();
+        for (Iterator it = otherNames.iterator(); it.hasNext();)
+        {
+            Object otName = it.next();
 
-        intersect.retainAll(otherNames);
+            if (permitted == null)
+            {
+                if (otName != null)
+                {
+                    intersect.add(otName);
+                }
+            }
+            else
+            {
+                Iterator it2 = permitted.iterator();
+                while (it2.hasNext())
+                {
+                    String _permitted = (String)it2.next();
 
+                    intersectOtherName(otName, _permitted, intersect);
+                }
+            }
+        }
         return intersect;
     }
 
+    private void intersectOtherName(Object otName1, Object otName2, Set intersect)
+    {
+        if (otName1.equals(otName2))
+        {
+            intersect.add(otName1);
+        }
+    }
 
     private Set unionOtherName(Set permitted, OtherName otherName)
     {
-        Set union = new HashSet(permitted);
+        Set union = permitted != null ? new HashSet(permitted) : new HashSet();
 
         union.add(otherName);
 

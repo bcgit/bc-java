@@ -206,7 +206,7 @@ public final class XMSSPrivateKeyParameters
             }
             else
             {
-                bdsState = new BDS(params, bdsState.getMaxIndex(), getIndex() + 1);  // no more nodes left.
+                bdsState = new BDS(params, bdsState.getMaxIndex(), bdsState.getMaxIndex() + 1); // no more nodes left.
             }
 
             return this;
@@ -233,12 +233,12 @@ public final class XMSSPrivateKeyParameters
      */
     public XMSSPrivateKeyParameters extractKeyShard(int usageCount)
     {
+        if (usageCount < 1)
+        {
+            throw new IllegalArgumentException("cannot ask for a shard with 0 keys");
+        }
         synchronized (this)
         {
-            if (usageCount == 0)
-            {
-                throw new IllegalArgumentException("cannot ask for a shard with 0 keys");
-            }
             /* prepare authentication path for next leaf */
             if (usageCount <= this.getUsagesRemaining())
             {
