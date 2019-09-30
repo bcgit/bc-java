@@ -219,6 +219,15 @@ public class GeneralizedTimeTest
         ASN1GeneralizedTime time = new ASN1GeneralizedTime("20190704031318GMT+00:00");
 
         isTrue("20190704031318GMT+00:00".equals(time.getTime()));
+
+        try
+        {
+            new DERGeneralizedTime(new byte[0]);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue(e.getMessage().equals("GeneralizedTime string too short"));
+        }
     }
 
     private String calculateGMTOffset(Date date)
