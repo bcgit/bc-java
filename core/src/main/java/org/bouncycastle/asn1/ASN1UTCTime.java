@@ -151,7 +151,15 @@ public class ASN1UTCTime
     ASN1UTCTime(
         byte[] time)
     {
+        if (time.length < 2)
+        {
+            throw new IllegalArgumentException("UTCTime string too short");
+        }
         this.time = time;
+        if (!(isDigit(0) && isDigit(1)))
+        {
+            throw new IllegalArgumentException("illegal characters in UTCTime string");
+        }
     }
 
     /**
@@ -261,6 +269,11 @@ public class ASN1UTCTime
         {
             return "19" + d;
         }
+    }
+
+    private boolean isDigit(int pos)
+    {
+        return time.length > pos && time[pos] >= '0' && time[pos] <= '9';
     }
 
     boolean isConstructed()

@@ -161,7 +161,16 @@ public class ASN1GeneralizedTime
     ASN1GeneralizedTime(
         byte[] bytes)
     {
+        if (bytes.length < 4)
+        {
+            throw new IllegalArgumentException("GeneralizedTime string too short");
+        }
         this.time = bytes;
+
+        if (!(isDigit(0) && isDigit(1) && isDigit(2) && isDigit(4)))
+        {
+            throw new IllegalArgumentException("illegal characters in GeneralizedTime string");
+        }
     }
 
     /**
