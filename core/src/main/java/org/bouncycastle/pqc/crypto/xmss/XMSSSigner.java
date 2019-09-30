@@ -58,16 +58,17 @@ public class XMSSSigner
 
         synchronized (privateKey)
         {
+            if (privateKey.getUsagesRemaining() <= 0)
+            {
+                throw new IllegalStateException("no usages of private key remaining");
+            }
+            if (privateKey.getBDSState().getAuthenticationPath().isEmpty())
+            {
+                throw new IllegalStateException("not initialized");
+            }
+
             try
             {
-                if (privateKey.getUsagesRemaining() <= 0)
-                {
-                    throw new IllegalStateException("no usages of private key remaining");
-                }
-                if (privateKey.getBDSState().getAuthenticationPath().isEmpty())
-                {
-                    throw new IllegalStateException("not initialized");
-                }
                 int index = privateKey.getIndex();
 
                 hasGenerated = true;
