@@ -10,6 +10,10 @@ buildscript {
    }
 }
 
+plugins {
+	id 'ru.vyarus.animalsniffer' version '1.4.3'
+}
+
 if (JavaVersion.current().isJava8Compatible()) {
     allprojects {
         tasks.withType(Javadoc) {
@@ -46,6 +50,7 @@ task printProperties << {
 
 subprojects {
     apply plugin: 'eclipse'
+    apply plugin: 'ru.vyarus.animalsniffer'
 
     sourceCompatibility = 1.5
     targetCompatibility = 1.5
@@ -57,6 +62,14 @@ subprojects {
         filter {
             includeTestsMatching "*AllTests"
         }
+    }
+
+    dependencies {
+        signature "net.sf.androidscents.signature:android-api-level-8:2.2_r3@signature"
+    }
+
+    animalsniffer {
+        sourceSets = [sourceSets.main]
     }
 }
 
