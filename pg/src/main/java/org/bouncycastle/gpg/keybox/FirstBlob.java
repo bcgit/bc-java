@@ -36,8 +36,8 @@ public class FirstBlob
     {
 
         int headerFlags = buffer.u16();
-        byte[] magic = new byte[4];
-        buffer.bN(magic);
+        byte[] magic = buffer.bN(4);
+
 
         if (!Arrays.areEqual(magic, magicBytes))
         {

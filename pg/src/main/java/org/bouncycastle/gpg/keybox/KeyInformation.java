@@ -36,8 +36,7 @@ public class KeyInformation
 
         int start = buffer.position();
 
-        byte[] fingerPrint = new byte[20];
-        buffer.bN(fingerPrint); // The keys fingerprint
+        byte[] fingerPrint =  buffer.bN(20);// The keys fingerprint
 
         long offsetToKeyID = buffer.u32();  // offset to the n-th key's keyID (a keyID is always 8 byte)
         // or 0 if not known which is the case only for X509.
@@ -52,8 +51,8 @@ public class KeyInformation
         int keyFlags = buffer.u16(); // key flags,  bit 0 = qualified signature (not yet implemented}
         buffer.u16();  // RFU = Reserved for Future Use
 
-        byte[] filler = new byte[expectedSize - (buffer.position() - start)];
-        buffer.bN(filler);
+        byte[] filler = buffer.bN(expectedSize - (buffer.position() - start));
+
 
         return new KeyInformation(fingerPrint, offsetToKeyID, keyFlags, filler, keyID);
 
