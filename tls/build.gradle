@@ -15,11 +15,11 @@ sourceSets {
 }
 
 
-//cobertura {
-//   coverageDirs = [
-//       "${rootProject.projectDir}/core/build/classes/main",
-//       "${rootProject.projectDir}/prov/build/classes/main",
-//       "${rootProject.projectDir}/tls/build/classes/main"
-//  ]
-//}
-//
+cobertura {
+   coverageDirs = [
+       "${rootProject.projectDir}/core/build/classes/main",
+       "${rootProject.projectDir}/prov/build/classes/main",
+       "${rootProject.projectDir}/tls/build/classes/main"
+  ]
+}
+
