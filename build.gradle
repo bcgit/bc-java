@@ -66,33 +66,33 @@ subprojects {
 
 test.dependsOn([':core:test', ':prov:test', ':tls:test', ':pkix:test', ':mail:test', 'pg:test'])
 
-//cobertura {
-//   coverageDirs = [
-//        "${rootProject.projectDir}/core/build/classes/main",
-//        "${rootProject.projectDir}/mail/build/classes/main",
-//        "${rootProject.projectDir}/pg/build/classes/main",
-//        "${rootProject.projectDir}/pkix/build/classes/main",
-//        "${rootProject.projectDir}/prov/build/classes/main",
-//        "${rootProject.projectDir}/tls/build/classes/main",
-//   ]
-//   coverageSourceDirs = [
-//        "${rootProject.projectDir}/core/src/main/java",
-//        "${rootProject.projectDir}/mail/src/main/java",
-//        "${rootProject.projectDir}/pg/src/main/java",
-//        "${rootProject.projectDir}/pkix/src/main/java",
-//        "${rootProject.projectDir}/prov/src/main/java",
-//        "${rootProject.projectDir}/tls/src/main/java",
-//   ]
-//   coverageMergeDatafiles = [
-//          file("${rootProject.projectDir}/core/build/cobertura/cobertura.ser"),
-//          file("${rootProject.projectDir}/mail/build/cobertura/cobertura.ser"),
-//          file("${rootProject.projectDir}/pg/build/cobertura/cobertura.ser"),
-//          file("${rootProject.projectDir}/pkix/build/cobertura/cobertura.ser"),
-//          file("${rootProject.projectDir}/prov/build/cobertura/cobertura.ser"),
-//          file("${rootProject.projectDir}/tls/build/cobertura/cobertura.ser"),
-//   ]
-//   auxiliaryClasspath += files("${rootProject.projectDir}/core/build/classes/main")
-//   coverageFormats = ['html', 'xml']
-//   coverageReportDir = new File("${rootProject.projectDir}/build/reports/cobertura")
-//}
+cobertura {
+   coverageDirs = [
+        "${rootProject.projectDir}/core/build/classes/main",
+        "${rootProject.projectDir}/mail/build/classes/main",
+        "${rootProject.projectDir}/pg/build/classes/main",
+        "${rootProject.projectDir}/pkix/build/classes/main",
+        "${rootProject.projectDir}/prov/build/classes/main",
+        "${rootProject.projectDir}/tls/build/classes/main",
+   ]
+   coverageSourceDirs = [
+        "${rootProject.projectDir}/core/src/main/java",
+        "${rootProject.projectDir}/mail/src/main/java",
+        "${rootProject.projectDir}/pg/src/main/java",
+        "${rootProject.projectDir}/pkix/src/main/java",
+        "${rootProject.projectDir}/prov/src/main/java",
+        "${rootProject.projectDir}/tls/src/main/java",
+   ]
+   coverageMergeDatafiles = [
+          file("${rootProject.projectDir}/core/build/cobertura/cobertura.ser"),
+          file("${rootProject.projectDir}/mail/build/cobertura/cobertura.ser"),
+          file("${rootProject.projectDir}/pg/build/cobertura/cobertura.ser"),
+          file("${rootProject.projectDir}/pkix/build/cobertura/cobertura.ser"),
+          file("${rootProject.projectDir}/prov/build/cobertura/cobertura.ser"),
+          file("${rootProject.projectDir}/tls/build/cobertura/cobertura.ser"),
+   ]
+   auxiliaryClasspath += files("${rootProject.projectDir}/core/build/classes/main")
+   coverageFormats = ['html', 'xml']
+   coverageReportDir = new File("${rootProject.projectDir}/build/reports/cobertura")
+}
 
