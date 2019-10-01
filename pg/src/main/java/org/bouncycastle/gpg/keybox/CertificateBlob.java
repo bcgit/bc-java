@@ -79,8 +79,8 @@ public class CertificateBlob
 
         int sizeOfSerialNumber = buffer.u16(); // size of serialnumber(may be zero)
 
-        byte[] serialNumber = new byte[sizeOfSerialNumber];
-        buffer.bN(serialNumber); // n  u16 (see above) bytes of serial number
+        byte[] serialNumber = buffer.bN(sizeOfSerialNumber);
+        // buffer.bN(serialNumber); // n  u16 (see above) bytes of serial number
 
         int numberOfUserIDs = buffer.u16(); //  u16  number of user IDs
         buffer.u16(); // size of additional user ID information
@@ -116,8 +116,8 @@ public class CertificateBlob
 
 
         // Arbitrary reserved space, that may hold X509 V3 certificate IDs.!
-        byte[] reserveData = new byte[(int)sizeOfReservedSpace]; // Reserved space of size NRES for future use.
-        buffer.bN(reserveData);
+        byte[] reserveData = buffer.bN((int)sizeOfReservedSpace); // Reserved space of size NRES for future use.
+//        buffer.bN(reserveData);
 
 
         //
@@ -133,12 +133,11 @@ public class CertificateBlob
         // Reserve space.
         //
         int dataSize = (int)(length - (buffer.position() - base) - 20);
-        byte[] data = new byte[dataSize];
-        buffer.bN(data);
+        byte[] data = buffer.bN(dataSize);
 
 
         byte[] sha1Checksum = buffer.rangeOf((int)(base + length - 20), (int)(base + length));
-        buffer.bN(sha1Checksum);
+        buffer.consume(sha1Checksum.length);
 
         return new CertificateBlob(base, length,
             type,

@@ -85,9 +85,7 @@ public class PublicKeyRingBlob
         }
 
         int sizeOfSerialNumber = buffer.u16(); // size of serialnumber(may be zero)
-
-        byte[] serialNumber = new byte[sizeOfSerialNumber];
-        buffer.bN(serialNumber); // n  u16 (see above) bytes of serial number
+        byte[] serialNumber = buffer.bN(sizeOfSerialNumber); // n  u16 (see above) bytes of serial number
 
         int numberOfUserIDs = buffer.u16(); //  u16  number of user IDs
         buffer.u16(); // size of user ID information
@@ -121,11 +119,13 @@ public class PublicKeyRingBlob
 
         long sizeOfReservedSpace = buffer.u32();
 
+        if (sizeOfReservedSpace > buffer.remaining())
+        {
+            throw new IllegalStateException("sizeOfReservedSpace exceeds content remaining in buffer");
+        }
 
         // Arbitrary reserved space, that may hold X509 V3 certificate IDs.!
-        byte[] reserveData = new byte[(int)sizeOfReservedSpace]; // Reserved space of size NRES for future use.
-        buffer.bN(reserveData);
-
+        byte[] reserveData = buffer.bN((int)sizeOfReservedSpace); // Reserved space of size NRES for future use.
 
         //
         // Key block
@@ -140,12 +140,12 @@ public class PublicKeyRingBlob
         // Reserved space not covered by checksum.
         //
         int dataSize = (int)(length - (buffer.position() - base) - 20);
-        byte[] data = new byte[dataSize];
-        buffer.bN(data);
+        //byte[] data = new byte[dataSize];
+        byte[] data = buffer.bN(dataSize);
 
 
         byte[] checksum = buffer.rangeOf((int)(base + length - 20), (int)(base + length));
-        buffer.bN(checksum);
+        buffer.consume(checksum.length);
 
         return new PublicKeyRingBlob(base, length,
             type,

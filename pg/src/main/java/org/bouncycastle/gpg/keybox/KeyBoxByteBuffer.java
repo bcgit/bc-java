@@ -70,6 +70,16 @@ class KeyBoxByteBuffer
 
     public byte[] rangeOf(int start, int end)
     {
+        if (end - start < 0 || start < 0)
+        {
+            throw new IllegalArgumentException("invalid range " + start + ":" + end);
+        }
+
+        if (end > buffer.limit())
+        {
+            throw new IllegalArgumentException("range exceeds buffer remaining");
+        }
+
         int p = buffer.position();
         buffer.position(start);
         byte[] data = new byte[end - start];
@@ -81,6 +91,11 @@ class KeyBoxByteBuffer
     public boolean hasRemaining()
     {
         return buffer.hasRemaining();
+    }
+
+    public int remaining()
+    {
+        return buffer.remaining();
     }
 
     public int position()
@@ -108,9 +123,35 @@ class KeyBoxByteBuffer
         return ((int)buffer.get() & 0xFF);
     }
 
-    public void bN(byte[] array)
+
+    public void consume(int size)
     {
-        buffer.get(array);
+        if (size > remaining())
+        {
+            throw new IllegalArgumentException("size exceeds buffer remaining");
+        }
+
+        while (--size >= 0)
+        {
+            buffer.get();
+        }
+    }
+
+    public byte[] bN(int size)
+    {
+        if (size < 0)
+        {
+            throw new IllegalArgumentException("size less than 0");
+        }
+
+        if (size > remaining())
+        {
+            throw new IllegalArgumentException("size exceeds buffer remaining");
+        }
+
+        byte[] b = new byte[size];
+        buffer.get(b);
+        return b;
     }
 
     public ByteBuffer getBuffer()
