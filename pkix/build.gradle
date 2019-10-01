@@ -5,10 +5,10 @@ dependencies {
 
 jar.baseName = "bcpkix-jdk15on"
 
-cobertura {
-  coverageDirs = [
-          "${rootProject.projectDir}/core/build/classes/main",
-          "${rootProject.projectDir}/prov/build/classes/main",
-          "${rootProject.projectDir}/pkix/build/classes/main"
-  ]
-}
+//cobertura {
+//  coverageDirs = [
+//          "${rootProject.projectDir}/core/build/classes/main",
+//          "${rootProject.projectDir}/prov/build/classes/main",
+//          "${rootProject.projectDir}/pkix/build/classes/main"
+//  ]
+//}
