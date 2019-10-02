@@ -16,8 +16,8 @@ public class InputStreamTest
     private static final byte[] outsideLimitLength = new byte[]{(byte)0x30, (byte)0x83, (byte)0x0f, (byte)0xff, (byte)0xff};
 
     private static final byte[] classCast1 = Base64.decode("p1AkHmYAvfOEIrL4ESfrNg==");
-
     private static final byte[] classCast2 = Base64.decode("JICNbaBUTTq7uxj5mg==");
+    private static final byte[] classCast3 = Base64.decode("JAKzADNCxhrrBSVS");
     private static final byte[] memoryError1 = Base64.decode("vm66gOiEe+FV/NvujMwSkUp5Lffw5caQlaRU5sdMPC70IGWmyK2/");
     private static final byte[] memoryError2 = Base64.decode("vm4ogOSEfVGsS3w+KTzb2A0ALYR8VBOQqQeuRwnsPC4AAGWEDLjd");
 
@@ -76,7 +76,8 @@ public class InputStreamTest
 
         testWithByteArray(classCast1, "unknown object encountered: class org.bouncycastle.asn1.DLApplicationSpecific");
         testWithByteArray(classCast2, "unknown object encountered: class org.bouncycastle.asn1.BERTaggedObjectParser");
-        
+        testWithByteArray(classCast3, "unknown object encountered in constructed OCTET STRING: class org.bouncycastle.asn1.DLTaggedObject");
+
         testWithByteArray(memoryError1, "corrupted stream - out of bounds length found: 2078365180 >= 39");
         testWithByteArray(memoryError2, "corrupted stream - out of bounds length found: 2102504523 >= 39");
     }

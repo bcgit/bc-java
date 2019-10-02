@@ -165,7 +165,15 @@ public class ASN1InputStream
 
                     for (int i = 0; i != strings.length; i++)
                     {
-                        strings[i] = (ASN1OctetString)v.get(i);
+                        ASN1Encodable asn1Obj = v.get(i);
+                        if (asn1Obj instanceof ASN1OctetString)
+                        {
+                            strings[i] = (ASN1OctetString)asn1Obj;
+                        }
+                        else
+                        {
+                            throw new ASN1Exception("unknown object encountered in constructed OCTET STRING: " + asn1Obj.getClass());
+                        }
                     }
 
                     return new BEROctetString(strings);
