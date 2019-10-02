@@ -167,7 +167,7 @@ public class ASN1GeneralizedTime
         }
         this.time = bytes;
 
-        if (!(isDigit(0) && isDigit(1) && isDigit(2) && isDigit(4)))
+        if (!(isDigit(0) && isDigit(1) && isDigit(2) && isDigit(3)))
         {
             throw new IllegalArgumentException("illegal characters in GeneralizedTime string");
         }
