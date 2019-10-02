@@ -123,7 +123,7 @@ public class KeyAgreeRecipientInformation
         throws CMSException, IOException
     {
         KeyAgreeRecipient agreeRecipient = (KeyAgreeRecipient)recipient;
-                AlgorithmIdentifier    recKeyAlgId = agreeRecipient.getPrivateKeyAlgorithmIdentifier();
+        AlgorithmIdentifier    recKeyAlgId = agreeRecipient.getPrivateKeyAlgorithmIdentifier();
 
         return ((KeyAgreeRecipient)recipient).getRecipientOperator(keyEncAlg, messageAlgorithm, getSenderPublicKeyInfo(recKeyAlgId,
                         info.getOriginator()), info.getUserKeyingMaterial(), encryptedKey.getOctets());
