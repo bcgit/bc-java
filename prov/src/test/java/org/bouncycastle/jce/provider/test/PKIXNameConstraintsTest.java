@@ -1,10 +1,13 @@
 package org.bouncycastle.jce.provider.test;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralSubtree;
+import org.bouncycastle.asn1.x509.OtherName;
 import org.bouncycastle.jce.provider.PKIXNameConstraintValidator;
 import org.bouncycastle.jce.provider.PKIXNameConstraintValidatorException;
 import org.bouncycastle.util.test.SimpleTest;
@@ -225,6 +228,12 @@ public class PKIXNameConstraintsTest
         constraintValidator.intersectPermittedSubtree(new GeneralSubtree(
             new GeneralName(GeneralName.directoryName, new X500Name(RFC4519Style.INSTANCE, "ou=permittedSubtree1, o=Test Certificates 2011, c=US"))));
         constraintValidator.checkPermitted(new GeneralName(GeneralName.directoryName, new X500Name(RFC4519Style.INSTANCE, "cn=Valid DN nameConstraints EE Certificate Test1, ou=permittedSubtree1, o=Test Certificates 2011, c=US")));
+
+        GeneralName name = new GeneralName(GeneralName.otherName, new OtherName(new ASN1ObjectIdentifier("1.1"), DERNull.INSTANCE));
+        GeneralSubtree subtree = new GeneralSubtree(name);
+
+        PKIXNameConstraintValidator validator = new PKIXNameConstraintValidator();
+        validator.intersectPermittedSubtree(subtree);
     }
 
     /**

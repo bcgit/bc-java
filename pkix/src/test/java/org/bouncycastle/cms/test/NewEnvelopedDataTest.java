@@ -2491,8 +2491,8 @@ public class NewEnvelopedDataTest
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
     }
-
-    /*
+     /*
+     TODO: Something odd is going on with this one
     public void testGost3410_2012_512_KeyAgree()
         throws Exception
     {
@@ -2534,7 +2534,7 @@ public class NewEnvelopedDataTest
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
     }
-       */
+    */
     
     public void testGost3410_2001_KeyAgree_Creation()
         throws Exception
