@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
@@ -362,8 +363,15 @@ public class PGPPublicKeyRing
     static PGPPublicKey readSubkey(BCPGInputStream in, KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException, PGPException
     {
-        PublicKeyPacket pk = (PublicKeyPacket)in.readPacket();
-        TrustPacket     kTrust = readOptionalTrustPacket(in);
+        Packet packet = in.readPacket();
+
+        if (!(packet instanceof PublicKeyPacket))
+        {
+            throw new IOException("unexpected packet in stream: " + packet);
+        }
+
+        PublicKeyPacket pk = (PublicKeyPacket)packet;
+        TrustPacket kTrust = readOptionalTrustPacket(in);
 
         // PGP 8 actually leaves out the signature.
         List sigList = readSignaturesAndTrust(in);

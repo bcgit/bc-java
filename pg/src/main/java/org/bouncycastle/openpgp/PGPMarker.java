@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.MarkerPacket;
+import org.bouncycastle.bcpg.Packet;
 
 /**
  * a PGP marker packet - in general these should be ignored other than where
@@ -29,6 +30,11 @@ public class PGPMarker
         BCPGInputStream in) 
         throws IOException
     {
-        p = (MarkerPacket)in.readPacket();
+        Packet packet = in.readPacket();
+        if (!(packet instanceof MarkerPacket))
+        {
+            throw new IOException("unexpected packet in stream: " + packet);
+        }
+        p = (MarkerPacket)packet;
     }
 }
