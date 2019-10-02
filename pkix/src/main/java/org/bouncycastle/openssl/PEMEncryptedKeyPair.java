@@ -19,6 +19,16 @@ public class PEMEncryptedKeyPair
         this.parser = parser;
     }
 
+    /**
+     * Return the key encryption algorithm name that was in the original DEK-Info field.
+     *
+     * @return the key encryption algorithm name.
+     */
+    public String getDekAlgName()
+    {
+        return dekAlgName;
+    }
+
     public PEMKeyPair decryptKeyPair(PEMDecryptorProvider keyDecryptorProvider)
         throws IOException
     {
