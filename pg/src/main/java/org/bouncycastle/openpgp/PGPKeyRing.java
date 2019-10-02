@@ -39,7 +39,7 @@ public abstract class PGPKeyRing
         throws IOException
     {
         return (pIn.nextPacketTag() == PacketTags.TRUST)
-            ?   (TrustPacket) pIn.readPacket()
+            ?   (TrustPacket)pIn.readPacket()
             :   null;
     }
 

@@ -10,6 +10,7 @@ import org.bouncycastle.apache.bzip2.CBZip2InputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.CompressedDataPacket;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
+import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 
 /**
@@ -31,7 +32,13 @@ public class PGPCompressedData
         BCPGInputStream    pIn)
         throws IOException
     {
-        data = (CompressedDataPacket)pIn.readPacket();
+
+        Packet packet = pIn.readPacket();
+        if (!(packet instanceof CompressedDataPacket))
+        {
+            throw new IOException("unexpected packet in stream: " + packet);
+        }
+        data = (CompressedDataPacket)packet;
     }
 
     /**

@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.OnePassSignaturePacket;
+import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
@@ -23,11 +24,21 @@ public class PGPOnePassSignature
     private byte               lastb;
     private OutputStream       sigOut;
 
+    private static OnePassSignaturePacket cast(Packet packet)
+        throws IOException
+    {
+        if (!(packet instanceof OnePassSignaturePacket))
+        {
+            throw new IOException("unexpected packet in stream: " + packet);
+        }
+        return (OnePassSignaturePacket)packet;
+    }
+
     PGPOnePassSignature(
         BCPGInputStream    pIn)
         throws IOException, PGPException
     {
-        this((OnePassSignaturePacket)pIn.readPacket());
+        this(cast(pIn.readPacket()));
     }
     
     PGPOnePassSignature(
