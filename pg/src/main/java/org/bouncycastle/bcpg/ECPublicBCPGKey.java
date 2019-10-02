@@ -104,9 +104,13 @@ public abstract class ECPublicBCPGKey
         throws IOException
     {
         int length = in.read();
+        if (length < 0)
+        {
+            throw new IOException("unexpected end-of-stream");
+        }
         if (length == 0 || length == 0xFF)
         {
-            throw new IOException("future extensions not yet implemented.");
+            throw new IOException("future extensions not yet implemented");
         }
 
         byte[] buffer = new byte[length + 2];

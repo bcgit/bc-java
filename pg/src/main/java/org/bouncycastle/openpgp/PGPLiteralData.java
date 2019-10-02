@@ -6,6 +6,7 @@ import java.util.Date;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.LiteralDataPacket;
+import org.bouncycastle.bcpg.Packet;
 
 /**
  * A single literal data packet in a PGP object stream.
@@ -36,7 +37,12 @@ public class PGPLiteralData
         BCPGInputStream    pIn)
         throws IOException
     {
-        data  = (LiteralDataPacket)pIn.readPacket();
+        Packet packet = pIn.readPacket();
+        if (!(packet instanceof LiteralDataPacket))
+        {
+            throw new IOException("unexpected packet in stream: " + packet);
+        }
+        data  = (LiteralDataPacket)packet;
     }
 
     /**
