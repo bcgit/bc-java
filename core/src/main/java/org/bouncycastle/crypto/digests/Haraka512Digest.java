@@ -54,6 +54,20 @@ public class Haraka512Digest
         {(byte)0x75, (byte)0x6a, (byte)0xcc, (byte)0x03, (byte)0x02, (byte)0x28, (byte)0x82, (byte)0x88, (byte)0x4a, (byte)0xd6, (byte)0xbd, (byte)0xfd, (byte)0xe9, (byte)0xc5, (byte)0x9d, (byte)0xa1}
     };
 
+    private final byte[] buffer;
+    private int off;
+
+    public Haraka512Digest()
+    {
+        this.buffer = new byte[64];
+    }
+
+    public Haraka512Digest(Haraka512Digest digest)
+    {
+        this.buffer = Arrays.clone(digest.buffer);
+        this.off = digest.off;
+    }
+
     private void mix512(byte[][] s1, byte[][] s2)
     {
         System.arraycopy(s1[0], 12, s2[0], 0, 4);
@@ -151,9 +165,6 @@ public class Haraka512Digest
 
         return DIGEST_SIZE;
     }
-
-    private final byte[] buffer = new byte[64];
-    private int off;
 
     public String getAlgorithmName()
     {
