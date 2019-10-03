@@ -94,8 +94,19 @@ public class Haraka256Digest
         return DIGEST_SIZE;
     }
 
-    private final byte[] buffer = new byte[32];
+    private final byte[] buffer;
     private int off;
+
+    public Haraka256Digest()
+    {
+        this.buffer = new byte[32];
+    }
+
+    public Haraka256Digest(Haraka256Digest digest)
+    {
+        this.buffer = Arrays.clone(digest.buffer);
+        this.off = digest.off;
+    }
 
     public String getAlgorithmName()
     {
