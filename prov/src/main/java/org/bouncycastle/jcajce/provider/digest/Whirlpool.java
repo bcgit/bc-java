@@ -35,7 +35,7 @@ public class Whirlpool
     }
 
     /**
-     * Tiger HMac
+     * Whirlpool HMac
      */
     public static class HashMac
         extends BaseMac
