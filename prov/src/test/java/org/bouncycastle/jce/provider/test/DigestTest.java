@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.ua.UAObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -88,11 +89,9 @@ public class DigestTest
         return "Digest";
     }
 
-    void test(String algorithm)
+    void test(String algorithm, byte[] message)
         throws Exception
     {
-        byte[] message = "hello world".getBytes();
-
         MessageDigest digest = MessageDigest.getInstance(algorithm, provider);
 
         byte[] result = digest.digest(message);
@@ -157,6 +156,11 @@ public class DigestTest
             fail("Result object 5 not equal");
         }
 
+        // Harak has a fixed length input
+        if (algorithm.startsWith("Haraka"))
+        {
+            return;
+        }
         // test six, check reset() method with longer message
         digest.update(message);
         digest.update(message);
@@ -189,7 +193,7 @@ public class DigestTest
         byte[] result = digest.digest(abc);
         
         if (!MessageDigest.isEqual(result, Hex.decode(hash)))
-        {                  System.err.println(Hex.toHexString(result));
+        {
             fail("abc result not equal for " + algorithm);
         }
     }
@@ -199,10 +203,14 @@ public class DigestTest
     {
         for (int i = 0; i != abcVectors.length; i++)
         {
-            test(abcVectors[i][0]);
+            test(abcVectors[i][0], Strings.toByteArray("hello world"));
          
             abcTest(abcVectors[i][0], abcVectors[i][1]);
         }
+
+        test("Haraka-256", Hex.decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+        test("Haraka-512", Hex.decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+                                    + "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"));
     }
 
     public static void main(String[] args)
