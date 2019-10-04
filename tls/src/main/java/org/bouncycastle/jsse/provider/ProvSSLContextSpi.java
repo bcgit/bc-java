@@ -233,11 +233,7 @@ class ProvSSLContextSpi
                 result[count++] = candidate;
             }
         }
-        if (count < result.length)
-        {
-            result = JsseUtils.copyOf(result, count);
-        }
-        return result;
+        return JsseUtils.resize(result, count);
     }
 
     private static String[] getDefaultProtocols(String[] specifiedProtocols, String propertyName)
@@ -253,11 +249,7 @@ class ProvSSLContextSpi
                 result[count++] = candidate;
             }
         }
-        if (count < result.length)
-        {
-            result = JsseUtils.copyOf(result, count);
-        }
-        return result;
+        return JsseUtils.resize(result, count);
     }
 
     private static String[] getDefaultProtocolsCandidates(String[] specifiedProtocols, String propertyName)
@@ -312,11 +304,7 @@ class ProvSSLContextSpi
             LOG.severe("'" + propertyName + "' contained no usable protocol values (ignoring)");
             return null;
         }
-        if (count < result.length)
-        {
-            result = JsseUtils.copyOf(result, count);
-        }
-        return result;
+        return JsseUtils.resize(result, count);
     }
 
     private static String[] getArray(Collection<String> c)
