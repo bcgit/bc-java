@@ -54,7 +54,8 @@ class ProvSSLContextSpi
     private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP = createSupportedCipherSuiteMap();
     private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP_FIPS = createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP);
 
-    private static final Map<String, ProtocolVersion> SUPPORTED_PROTOCOLS = createSupportedProtocols();
+    private static final Map<String, ProtocolVersion> SUPPORTED_PROTOCOL_MAP = createSupportedProtocolMap();
+    private static final Map<String, ProtocolVersion> SUPPORTED_PROTOCOL_MAP_FIPS = createSupportedProtocolMapFips(SUPPORTED_PROTOCOL_MAP);
 
     private static final List<String> DEFAULT_CIPHERSUITE_LIST = createDefaultCipherSuiteList(SUPPORTED_CIPHERSUITE_MAP.keySet());
     private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS = createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST);
@@ -198,14 +199,14 @@ class ProvSSLContextSpi
     }
 
     private static Map<String, CipherSuiteInfo> createSupportedCipherSuiteMapFips(
-        Map<String, CipherSuiteInfo> supportedCipherSuites)
+        Map<String, CipherSuiteInfo> supportedCipherSuiteMap)
     {
-        final Map<String, CipherSuiteInfo> cs = new HashMap<String, CipherSuiteInfo>(supportedCipherSuites);
+        final Map<String, CipherSuiteInfo> cs = new HashMap<String, CipherSuiteInfo>(supportedCipherSuiteMap);
         FipsUtils.removeNonFipsCipherSuites(cs.keySet());
         return Collections.unmodifiableMap(cs);
     }
 
-    private static Map<String, ProtocolVersion> createSupportedProtocols()
+    private static Map<String, ProtocolVersion> createSupportedProtocolMap()
     {
         Map<String, ProtocolVersion> ps = new HashMap<String, ProtocolVersion>();
         ps.put("TLSv1", ProtocolVersion.TLSv10);
@@ -213,6 +214,14 @@ class ProvSSLContextSpi
         ps.put("TLSv1.2", ProtocolVersion.TLSv12);
         // TODO[tls13]
 //        ps.put("TLSv1.3", ProtocolVersion.TLSv13);
+        return Collections.unmodifiableMap(ps);
+    }
+
+    private static Map<String, ProtocolVersion> createSupportedProtocolMapFips(
+        Map<String, ProtocolVersion> supportedProtocolMap)
+    {
+        final Map<String, ProtocolVersion> ps = new HashMap<String, ProtocolVersion>(supportedProtocolMap);
+        FipsUtils.removeNonFipsCipherSuites(ps.keySet());
         return Collections.unmodifiableMap(ps);
     }
 
@@ -290,7 +299,7 @@ class ProvSSLContextSpi
         int count = 0;
         for (String protocol : protocols)
         {
-            if (!SUPPORTED_PROTOCOLS.containsKey(protocol))
+            if (!SUPPORTED_PROTOCOL_MAP.containsKey(protocol))
             {
                 LOG.warning("'" + propertyName + "' contains unsupported protocol: " + protocol);
             }
@@ -301,7 +310,7 @@ class ProvSSLContextSpi
         }
         if (count < 1)
         {
-            LOG.severe("'" + propertyName + "' contained no usable protocol values (ignoring)");
+            LOG.severe("'" + propertyName + "' contained no supported protocol values (ignoring)");
             return null;
         }
         return JsseUtils.resize(result, count);
@@ -363,7 +372,7 @@ class ProvSSLContextSpi
     {
         if (null != protocolVersion)
         {
-            for (Map.Entry<String, ProtocolVersion> entry : SUPPORTED_PROTOCOLS.entrySet())
+            for (Map.Entry<String, ProtocolVersion> entry : SUPPORTED_PROTOCOL_MAP.entrySet())
             {
                 if (entry.getValue().equals(protocolVersion))
                 {
@@ -380,6 +389,7 @@ class ProvSSLContextSpi
     protected final String[] defaultProtocolsServer;
 
     protected final Map<String, CipherSuiteInfo> supportedCipherSuites;
+    protected final Map<String, ProtocolVersion> supportedProtocols;
     protected final String[] defaultCipherSuites;
 
     protected boolean initialized = false;
@@ -398,6 +408,7 @@ class ProvSSLContextSpi
         this.defaultProtocolsServer = getDefaultProtocolsServer(specifiedProtocols);
 
         this.supportedCipherSuites = isInFipsMode ? SUPPORTED_CIPHERSUITE_MAP_FIPS : SUPPORTED_CIPHERSUITE_MAP;
+        this.supportedProtocols = isInFipsMode ? SUPPORTED_PROTOCOL_MAP_FIPS : SUPPORTED_PROTOCOL_MAP;
         this.defaultCipherSuites = getDefaultCipherSuites(isInFipsMode);
     }
 
@@ -479,7 +490,7 @@ class ProvSSLContextSpi
 
         for (String enabledProtocol : enabledProtocols)
         {
-            ProtocolVersion candidate = SUPPORTED_PROTOCOLS.get(enabledProtocol);
+            ProtocolVersion candidate = supportedProtocols.get(enabledProtocol);
             if (null == candidate)
             {
                 continue;
@@ -536,7 +547,7 @@ class ProvSSLContextSpi
 
     String[] getSupportedProtocols()
     {
-        return getKeysArray(SUPPORTED_PROTOCOLS);
+        return getKeysArray(supportedProtocols);
     }
 
     boolean isFips()
@@ -552,7 +563,7 @@ class ProvSSLContextSpi
         }
         for (String protocol : protocols)
         {
-            if (protocol == null || !SUPPORTED_PROTOCOLS.containsKey(protocol))
+            if (protocol == null || !supportedProtocols.containsKey(protocol))
             {
                 return false;
             }
@@ -571,12 +582,24 @@ class ProvSSLContextSpi
     void validateNegotiatedCipherSuite(int cipherSuite)
     {
         // NOTE: The redundancy among these various checks is intentional
-        String cs = getCipherSuiteName(cipherSuite);
-        if (null == cs
-            || !supportedCipherSuites.containsKey(cs)
-            || (isInFipsMode && !FipsUtils.isFipsCipherSuite(cs)))
+        String name = getCipherSuiteName(cipherSuite);
+        if (null == name
+            || !supportedCipherSuites.containsKey(name)
+            || (isInFipsMode && !FipsUtils.isFipsCipherSuite(name)))
         {
             throw new IllegalStateException("SSL connection negotiated unsupported ciphersuite: " + cipherSuite);
+        }
+    }
+
+    void validateNegotiatedProtocol(ProtocolVersion protocol)
+    {
+        // NOTE: The redundancy among these various checks is intentional
+        String name = getProtocolVersionName(protocol);
+        if (null == name
+            || !supportedProtocols.containsKey(name)
+            || (isInFipsMode && !FipsUtils.isFipsProtocol(name)))
+        {
+            throw new IllegalStateException("SSL connection negotiated unsupported protocol: " + protocol);
         }
     }
 

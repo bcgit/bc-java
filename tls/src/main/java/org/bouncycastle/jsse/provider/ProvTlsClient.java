@@ -388,6 +388,8 @@ class ProvTlsClient
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
+        manager.getContext().validateNegotiatedProtocol(serverVersion);
+
         String serverVersionName = ProvSSLContextSpi.getProtocolVersionName(serverVersion);
 
         LOG.fine("Client notified of selected protocol version: " + serverVersionName);

@@ -378,6 +378,9 @@ class ProvTlsServer
     public ProtocolVersion getServerVersion() throws IOException
     {
         ProtocolVersion serverVersion = super.getServerVersion();
+
+        manager.getContext().validateNegotiatedProtocol(serverVersion);
+
         String serverVersionName = ProvSSLContextSpi.getProtocolVersionName(serverVersion);
 
         LOG.fine("Server selected protocol version: " + serverVersionName);
