@@ -27,10 +27,15 @@ Release: 1.64<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, December
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>OpenSSH: Fixed padding in generated Ed25519 private keys.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>PKCS12 key stores key stores containing only certificates can now be created without the need to provide passwords.</li>
+<li>BCJSSE: Initial support for AlgorithmConstraints; protocol versions and cipher suites.</li>
+<li>BCJSSE: Initial support for 'jdk.tls.disabledAlgorithms'; protocol versions and cipher suites.</li>
+<li>BCJSSE: Add SecurityManager check to access session context.</li>
+<li>BCJSSE: Improved SunJSSE compatibility of the NULL_SESSION.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
