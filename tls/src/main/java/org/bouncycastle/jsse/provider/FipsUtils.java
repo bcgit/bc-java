@@ -10,6 +10,7 @@ import org.bouncycastle.tls.NamedGroup;
 abstract class FipsUtils
 {
     private static final boolean provAllowRSAKeyExchange = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", true);
+    private static final boolean canSupportGCM = true;
 
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
 
@@ -42,25 +43,40 @@ abstract class FipsUtils
 
         // "should support" (TLS 1.2)
         cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256");
-//        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
-//        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");
+        if (canSupportGCM)
+        {
+            cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
+            cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");
+        }
         cs.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256");
-//        cs.add("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+        if (canSupportGCM)
+        {
+            cs.add("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+        }
 
         // "may support" (TLS 1.2);
         cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
         cs.add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256");
         cs.add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256");
-//        cs.add("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256");
-//        cs.add("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384");
+        if (canSupportGCM)
+        {
+            cs.add("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256");
+            cs.add("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384");
+        }
         cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA256");
         cs.add("TLS_DH_DSS_WITH_AES_256_CBC_SHA256");
-//        cs.add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256");
-//        cs.add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384");
+        if (canSupportGCM)
+        {
+            cs.add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256");
+            cs.add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384");
+        }
         cs.add("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256");
         cs.add("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384");
-//        cs.add("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256");
-//        cs.add("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384");
+        if (canSupportGCM)
+        {
+            cs.add("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256");
+            cs.add("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384");
+        }
 
         if (provAllowRSAKeyExchange)
         {
@@ -69,7 +85,10 @@ abstract class FipsUtils
             cs.add("TLS_RSA_WITH_AES_128_CBC_SHA");
 
             // "shall support" (TLS 1.2)
-//            cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
+            if (canSupportGCM)
+            {
+                cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
+            }
 
             // "should support"
             cs.add("TLS_RSA_WITH_AES_256_CBC_SHA");
@@ -77,7 +96,10 @@ abstract class FipsUtils
             // "may support"
 
             // "should support" (TLS 1.2)
-//            cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
+            if (canSupportGCM)
+            {
+                cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
+            }
 
             // "may support" (TLS 1.2);
             cs.add("TLS_RSA_WITH_AES_128_CBC_SHA256");
