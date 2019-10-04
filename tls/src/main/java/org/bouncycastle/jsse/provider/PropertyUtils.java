@@ -93,15 +93,16 @@ class PropertyUtils
         return defaultValue;
     }
 
-    static String getStringSecurityProperty(String propertyName)
+    static String getStringSecurityProperty(String propertyName, String defaultValue)
     {
         String propertyValue = getSecurityProperty(propertyName);
         if (null != propertyValue)
         {
-            LOG.log(Level. INFO, "Found string security property [" + propertyName + "]: " + propertyValue);
+            LOG.log(Level.INFO, "Found string security property [" + propertyName + "]: " + propertyValue);
             return propertyValue;
         }
-        return null;
+        LOG.log(Level.WARNING, "String security property [" + propertyName + "] defaulted to: " + defaultValue);
+        return defaultValue;
     }
 
     static String getStringSystemProperty(String propertyName)
@@ -109,15 +110,15 @@ class PropertyUtils
         String propertyValue = getSystemProperty(propertyName);
         if (null != propertyValue)
         {
-            LOG.log(Level. INFO, "Found string system property [" + propertyName + "]: " + propertyValue);
+            LOG.log(Level.INFO, "Found string system property [" + propertyName + "]: " + propertyValue);
             return propertyValue;
         }
         return null;
     }
 
-    static String[] getStringArraySecurityProperty(String propertyName)
+    static String[] getStringArraySecurityProperty(String propertyName, String defaultValue)
     {
-        String propertyValue = getStringSecurityProperty(propertyName);
+        String propertyValue = getStringSecurityProperty(propertyName, defaultValue);
 
         return parseStringArray(propertyValue);
     }
