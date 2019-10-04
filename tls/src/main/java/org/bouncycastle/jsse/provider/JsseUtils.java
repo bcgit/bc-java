@@ -73,11 +73,20 @@ abstract class JsseUtils
         return false;
     }
 
-    public static String[] copyOf(String[] data, int newLength)
+    static String[] copyOf(String[] data, int newLength)
     {
         String[] tmp = new String[newLength];
         System.arraycopy(data, 0, tmp, 0, Math.min(data.length, newLength));
         return tmp;
+    }
+
+    static String[] resize(String[] data, int count)
+    {
+        if (count < data.length)
+        {
+            data = copyOf(data, count);
+        }
+        return data;
     }
 
     static String getApplicationProtocol(SecurityParameters securityParameters)

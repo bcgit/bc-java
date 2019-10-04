@@ -166,10 +166,6 @@ class PropertyUtils
 
             result[count++] = entry;
         }
-        if (count < result.length)
-        {
-            result = JsseUtils.copyOf(result, count);
-        }
-        return result;
+        return JsseUtils.resize(result, count);
     }
 }
