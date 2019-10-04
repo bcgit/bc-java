@@ -13,6 +13,7 @@ abstract class FipsUtils
     private static final boolean canSupportGCM = true;
 
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
+    private static final Set<String> FIPS_SUPPORTED_PROTOCOLS = createFipsSupportedProtocols();
 
     private static Set<String> createFipsSupportedCipherSuites()
     {
@@ -111,6 +112,17 @@ abstract class FipsUtils
         return Collections.unmodifiableSet(cs);
     }
 
+    private static Set<String> createFipsSupportedProtocols()
+    {
+        final Set<String> ps = new HashSet<String>();
+
+        ps.add("TLSv1");
+        ps.add("TLSv1.1");
+        ps.add("TLSv1.2");
+
+        return Collections.unmodifiableSet(ps);
+    }
+
     static int getFipsDefaultDH(int minimumFiniteFieldBits)
     {
         return minimumFiniteFieldBits <= 2048 ? NamedGroup.ffdhe2048
@@ -143,6 +155,11 @@ abstract class FipsUtils
         return cipherSuite != null && FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
     }
 
+    static boolean isFipsProtocol(String protocol)
+    {
+        return protocol != null && FIPS_SUPPORTED_PROTOCOLS.contains(protocol);
+    }
+
     static boolean isFipsNamedGroup(int namedGroup)
     {
         switch (namedGroup)
@@ -164,5 +181,10 @@ abstract class FipsUtils
     static void removeNonFipsCipherSuites(Collection<String> cipherSuites)
     {
         cipherSuites.retainAll(FIPS_SUPPORTED_CIPHERSUITES);
+    }
+
+    static void removeNonFipsProtocols(Collection<String> protocols)
+    {
+        protocols.retainAll(FIPS_SUPPORTED_PROTOCOLS);
     }
 }
