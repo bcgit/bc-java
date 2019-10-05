@@ -1391,6 +1391,14 @@ public class TlsUtils
         return secret.deriveUsingPRF(prfAlgorithm, asciiLabel, seed, length);
     }
 
+    public static byte[] copyOfRangeExact(byte[] original, int from, int to)
+    {
+        int newLength = to - from;
+        byte[] copy = new byte[newLength];
+        System.arraycopy(original, from, copy, 0, newLength);
+        return copy;
+    }
+
     static byte[] concat(byte[] a, byte[] b)
     {
         byte[] c = new byte[a.length + b.length];
