@@ -98,7 +98,8 @@ public class SignatureSubpacketInputStream
             throw new EOFException("unexpected EOF reading signature sub packet");
         }
 
-        if (bodyLen < 0 || bodyLen > limit)
+        // see below about miscoding... we'll try not to panic about anything under 2K.
+        if (bodyLen <= 0 || (bodyLen > limit && bodyLen > 2048))
         {
             throw new EOFException("out of range data found in signature sub packet");
         }
