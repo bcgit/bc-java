@@ -588,11 +588,13 @@ class ProvSSLContextSpi
         }
     }
 
-    void validateNegotiatedCipherSuite(int cipherSuite)
+    void validateNegotiatedCipherSuite(ProvSSLParameters sslParameters, int cipherSuite)
     {
         // NOTE: The redundancy among these various checks is intentional
         String name = getCipherSuiteName(cipherSuite);
         if (null == name
+            || !JsseUtils.contains(sslParameters.getCipherSuitesArray(), name)
+            || !sslParameters.getAlgorithmConstraints().permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, name, null)
             || !supportedCipherSuites.containsKey(name)
             || (isInFipsMode && !FipsUtils.isFipsCipherSuite(name)))
         {
@@ -600,11 +602,13 @@ class ProvSSLContextSpi
         }
     }
 
-    void validateNegotiatedProtocol(ProtocolVersion protocol)
+    void validateNegotiatedProtocol(ProvSSLParameters sslParameters, ProtocolVersion protocol)
     {
         // NOTE: The redundancy among these various checks is intentional
         String name = getProtocolVersionName(protocol);
         if (null == name
+            || !JsseUtils.contains(sslParameters.getProtocolsArray(), name)
+            || !sslParameters.getAlgorithmConstraints().permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, name, null)
             || !supportedProtocols.containsKey(name)
             || (isInFipsMode && !FipsUtils.isFipsProtocol(name)))
         {
