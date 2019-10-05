@@ -7,8 +7,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
-import org.bouncycastle.util.Arrays;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed block cipher functionality for TLS where the
@@ -46,7 +46,7 @@ public class JceBlockCipherWithCBCImplicitIVImpl
             throw new IllegalStateException("unexpected reinitialization of an implicit-IV cipher");
         }
 
-        nextIV = Arrays.copyOfRange(iv, ivOff, ivOff + ivLen);
+        nextIV = TlsUtils.copyOfRangeExact(iv, ivOff, ivOff + ivLen);
     }
 
     public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
@@ -59,7 +59,7 @@ public class JceBlockCipherWithCBCImplicitIVImpl
 
             if (!isEncrypting)
             {
-                nextIV = Arrays.copyOfRange(input, inputOffset + inputLength - cipher.getBlockSize(), inputOffset + inputLength);
+                nextIV = TlsUtils.copyOfRangeExact(input, inputOffset + inputLength - cipher.getBlockSize(), inputOffset + inputLength);
             }
 
             // to avoid performance issue in FIPS jar  1.0.0-1.0.2
@@ -77,7 +77,7 @@ public class JceBlockCipherWithCBCImplicitIVImpl
 
             if (isEncrypting)
             {
-                nextIV = Arrays.copyOfRange(output, outputOffset + totLen - cipher.getBlockSize(), outputOffset + totLen);
+                nextIV = TlsUtils.copyOfRangeExact(output, outputOffset + totLen - cipher.getBlockSize(), outputOffset + totLen);
             }
 
             return totLen;

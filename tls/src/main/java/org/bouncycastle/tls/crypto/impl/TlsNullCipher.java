@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
@@ -81,7 +82,7 @@ public class TlsNullCipher
 
         int macInputLen = len - macSize;
 
-        byte[] receivedMac = Arrays.copyOfRange(ciphertext, offset + macInputLen, offset + len);
+        byte[] receivedMac = TlsUtils.copyOfRangeExact(ciphertext, offset + macInputLen, offset + len);
         byte[] computedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, macInputLen);
 
         if (!Arrays.constantTimeAreEqual(receivedMac, computedMac))
@@ -89,6 +90,6 @@ public class TlsNullCipher
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 
-        return Arrays.copyOfRange(ciphertext, offset, offset + macInputLen);
+        return TlsUtils.copyOfRangeExact(ciphertext, offset, offset + macInputLen);
     }
 }
