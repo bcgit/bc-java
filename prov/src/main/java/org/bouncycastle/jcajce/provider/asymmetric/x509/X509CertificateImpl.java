@@ -548,15 +548,15 @@ abstract class X509CertificateImpl
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeCertType))
                         {
-                            buf.append(new NetscapeCertType((DERBitString)dIn.readObject())).append(nl);
+                            buf.append(new NetscapeCertType(DERBitString.getInstance(dIn.readObject()))).append(nl);
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeRevocationURL))
                         {
-                            buf.append(new NetscapeRevocationURL((DERIA5String)dIn.readObject())).append(nl);
+                            buf.append(new NetscapeRevocationURL(DERIA5String.getInstance(dIn.readObject()))).append(nl);
                         }
                         else if (oid.equals(MiscObjectIdentifiers.verisignCzagExtension))
                         {
-                            buf.append(new VerisignCzagExtension((DERIA5String)dIn.readObject())).append(nl);
+                            buf.append(new VerisignCzagExtension(DERIA5String.getInstance(dIn.readObject()))).append(nl);
                         }
                         else 
                         {
