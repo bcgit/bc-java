@@ -417,11 +417,15 @@ public class PGPSecretKey
 
                     for (int i = 0; i != 4; i++)
                     {
-                        int encLen = (((encData[pos] << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
+                        int encLen = (((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff) + 7) / 8;
 
                         data[pos] = encData[pos];
                         data[pos + 1] = encData[pos + 1];
 
+                        if (encLen > (encData.length - (pos + 2)))
+                        {
+                            throw new PGPException("out of range encLen found in encData");
+                        }
                         byte[] tmp = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, iv, encData, pos + 2, encLen);
                         System.arraycopy(tmp, 0, data, pos + 2, tmp.length);
                         pos += 2 + encLen;
@@ -713,10 +717,15 @@ public class PGPSecretKey
                 int pos = 0;
                 for (int i = 0; i != 4; i++)
                 {
-                    int encLen = (((rawKeyData[pos] << 8) | (rawKeyData[pos + 1] & 0xff)) + 7) / 8;
+                    int encLen = ((((rawKeyData[pos] & 0xff) << 8) | (rawKeyData[pos + 1] & 0xff)) + 7) / 8;
 
                     keyData[pos] = rawKeyData[pos];
                     keyData[pos + 1] = rawKeyData[pos + 1];
+
+                    if (encLen > (rawKeyData.length - (pos + 2)))
+                    {
+                        throw new PGPException("out of range encLen found in rawKeyData");
+                    }
 
                     byte[] tmp;
                     if (i == 0)
