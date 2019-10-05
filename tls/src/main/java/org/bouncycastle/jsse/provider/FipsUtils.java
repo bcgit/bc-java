@@ -10,7 +10,9 @@ import org.bouncycastle.tls.NamedGroup;
 abstract class FipsUtils
 {
     private static final boolean provAllowRSAKeyExchange = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", true);
-    private static final boolean canSupportGCM = true;
+    // This can only be set to true if the underlying provider is able to assert it is compliant with FIPS IG A.5
+    // and a mechanism has been integrated into this API accordingly to ensure that is the case.
+    private static final boolean canSupportGCM = false;
 
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
     private static final Set<String> FIPS_SUPPORTED_PROTOCOLS = createFipsSupportedProtocols();
