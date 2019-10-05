@@ -42,10 +42,11 @@ public class PemReader
         {
             line = line.substring(BEGIN.length());
             int index = line.indexOf('-');
-            String type = line.substring(0, index);
 
-            if (index > 0)
+            if (index > 0 && line.endsWith("-----") && (line.length() - index) == 5)
             {
+                String type = line.substring(0, index);
+
                 return loadObject(type);
             }
         }
