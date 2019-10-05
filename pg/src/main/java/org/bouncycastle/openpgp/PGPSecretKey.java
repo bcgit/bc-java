@@ -417,7 +417,7 @@ public class PGPSecretKey
 
                     for (int i = 0; i != 4; i++)
                     {
-                        int encLen = (((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff) + 7) / 8;
+                        int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
 
                         data[pos] = encData[pos];
                         data[pos + 1] = encData[pos + 1];
