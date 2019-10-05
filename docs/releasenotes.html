@@ -24,10 +24,13 @@ to conform the algorithms to the JCE framework.
 
 <h3>2.1.1 Version</h3>
 Release: 1.64<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, December
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, October 7th.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>OpenSSH: Fixed padding in generated Ed25519 private keys.</li>
+<li>Validation of headers in PemReader now looks for tailing dashes in header.</li>
+<li>PKIXNameConstraintValidator was throwing a NullPointerException on OtherName. This has been fixed.</li>
+<li>Some compatibility issues around the signature encryption algorithm field in CMS SignedData and the GOST algorithms have been addressed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -36,7 +39,15 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, December
 <li>BCJSSE: Initial support for 'jdk.tls.disabledAlgorithms'; protocol versions and cipher suites.</li>
 <li>BCJSSE: Add SecurityManager check to access session context.</li>
 <li>BCJSSE: Improved SunJSSE compatibility of the NULL_SESSION.</li>
+<li>The digest functions Haraka-256 and Haraka-512 have been added to the provider and the light-weight API</li>
+<li>XMSS/XMSS^MT key management now allows for allocating subsets of the private key space using the extraKeyShard() method. Use of StateAwareSignature is now deprecated.</li>
 </ul>
+
+<h3>2.1.4 Security Advisory</h3>
+<ul>
+<li>A change to the ASN.1 parser in 1.63 introduced a regression that can cause an OutOfMemoryError to occur on parsing ASN.1 data. We recommend upgrading to 1.64, particularly where an application might be parsing untrusted ASN.1 data from third parties.</li>
+</ul>
+
 
 <h3>2.2.1 Version</h3>
 Release: 1.63<br/>
