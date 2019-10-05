@@ -129,7 +129,7 @@ class ProvTlsServer
             return false;
         }
 
-        manager.getContext().validateNegotiatedCipherSuite(cipherSuite);
+        manager.getContext().validateNegotiatedCipherSuite(sslParameters, cipherSuite);
 
         return super.selectCipherSuite(cipherSuite);
     }
@@ -379,7 +379,7 @@ class ProvTlsServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        manager.getContext().validateNegotiatedProtocol(serverVersion);
+        manager.getContext().validateNegotiatedProtocol(sslParameters, serverVersion);
 
         String serverVersionName = ProvSSLContextSpi.getProtocolVersionName(serverVersion);
 
