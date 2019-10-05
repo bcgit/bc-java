@@ -335,10 +335,9 @@ class CertPathValidatorUtilities
         try
         {
             ASN1InputStream aIn = new ASN1InputStream(ext);
-            ASN1OctetString octs = (ASN1OctetString)aIn.readObject();
+            ASN1OctetString octs = ASN1OctetString.getInstance(aIn.readObject());
 
-            aIn = new ASN1InputStream(octs.getOctets());
-            return aIn.readObject();
+            return ASN1Primitive.fromByteArray(octs.getOctets());
         }
         catch (Exception e)
         {

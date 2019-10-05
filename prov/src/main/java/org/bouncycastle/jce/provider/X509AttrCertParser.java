@@ -33,7 +33,7 @@ public class X509AttrCertParser
         throws IOException
     {
         ASN1InputStream dIn = new ASN1InputStream(in);
-        ASN1Sequence seq = (ASN1Sequence)dIn.readObject();
+        ASN1Sequence seq = ASN1Sequence.getInstance(dIn.readObject());
 
         if (seq.size() > 1
                 && seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)

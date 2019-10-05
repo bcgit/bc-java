@@ -88,7 +88,7 @@ public class PKCS12BagAttributeCarrierImpl
             Enumeration e = this.getBagAttributeKeys();
             while (e.hasMoreElements())
             {
-                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
+                ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(e.nextElement());
 
                 aOut.writeObject(oid);
                 aOut.writeObject((ASN1Encodable)pkcs12Attributes.get(oid));

@@ -400,7 +400,7 @@ public class PKCS12KeyStoreSpi
                     {
                         ASN1InputStream aIn = new ASN1InputStream(bytes);
 
-                        byte[] authBytes = ((ASN1OctetString)aIn.readObject()).getOctets();
+                        byte[] authBytes = ASN1OctetString.getInstance(aIn.readObject()).getOctets();
                         aIn = new ASN1InputStream(authBytes);
 
                         AuthorityKeyIdentifier id = AuthorityKeyIdentifier.getInstance(aIn.readObject());
@@ -871,8 +871,8 @@ public class PKCS12KeyStoreSpi
             {
                 if (c[i].getContentType().equals(data))
                 {
-                    ASN1InputStream dIn = new ASN1InputStream(((ASN1OctetString)c[i].getContent()).getOctets());
-                    ASN1Sequence seq = (ASN1Sequence)dIn.readObject();
+                    ASN1InputStream dIn = new ASN1InputStream(ASN1OctetString.getInstance(c[i].getContent()).getOctets());
+                    ASN1Sequence seq = ASN1Sequence.getInstance(dIn.readObject());
 
                     for (int j = 0; j != seq.size(); j++)
                     {
