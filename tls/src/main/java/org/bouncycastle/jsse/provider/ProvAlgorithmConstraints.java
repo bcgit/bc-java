@@ -10,13 +10,24 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 class ProvAlgorithmConstraints
     extends AbstractAlgorithmConstraints
 {
+    /*
+     * NOTE: In case these security properties are absent, we supply defaults drawn from recent
+     * JDKs. This is an incompatibility with SunJSSE (which treats these absent properties as simply
+     * an empty list), justified by the fact that we may be running on old or non-standard JVMs.
+     */
     private static final String PROPERTY_CERTPATH_DISABLED_ALGORITHMS = "jdk.certpath.disabledAlgorithms";
     private static final String PROPERTY_TLS_DISABLED_ALGORITHMS = "jdk.tls.disabledAlgorithms";
 
-    private static final DisabledAlgorithmConstraints provTlsDisabledAlgorithms =
-        DisabledAlgorithmConstraints.create(ProvAlgorithmDecomposer.INSTANCE_TLS, PROPERTY_TLS_DISABLED_ALGORITHMS);
-    private static final DisabledAlgorithmConstraints provX509DisabledAlgorithms =
-        DisabledAlgorithmConstraints.create(ProvAlgorithmDecomposer.INSTANCE_X509, PROPERTY_CERTPATH_DISABLED_ALGORITHMS);
+    private static final String DEFAULT_CERTPATH_DISABLED_ALGORITHMS =
+        "MD2, MD5, SHA1 jdkCA & usage TLSServer, RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224";
+    private static final String DEFAULT_TLS_DISABLED_ALGORITHMS =
+        "SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL";
+
+    private static final DisabledAlgorithmConstraints provTlsDisabledAlgorithms = DisabledAlgorithmConstraints.create(
+        ProvAlgorithmDecomposer.INSTANCE_TLS, PROPERTY_TLS_DISABLED_ALGORITHMS, DEFAULT_TLS_DISABLED_ALGORITHMS);
+    private static final DisabledAlgorithmConstraints provX509DisabledAlgorithms = DisabledAlgorithmConstraints.create(
+        ProvAlgorithmDecomposer.INSTANCE_X509, PROPERTY_CERTPATH_DISABLED_ALGORITHMS,
+        DEFAULT_CERTPATH_DISABLED_ALGORITHMS);
 
     static final ProvAlgorithmConstraints DEFAULT = new ProvAlgorithmConstraints(null, true);
     static final ProvAlgorithmConstraints DEFAULT_TLS_ONLY = new ProvAlgorithmConstraints(null, false);

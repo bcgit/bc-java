@@ -9,9 +9,9 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 class DisabledAlgorithmConstraints
     extends AbstractAlgorithmConstraints
 {
-    static DisabledAlgorithmConstraints create(AlgorithmDecomposer decomposer, String propertyName)
+    static DisabledAlgorithmConstraints create(AlgorithmDecomposer decomposer, String propertyName, String defaultValue)
     {
-        String[] algorithms = PropertyUtils.getStringArraySecurityProperty(propertyName);
+        String[] algorithms = PropertyUtils.getStringArraySecurityProperty(propertyName, defaultValue);
         if (null == algorithms)
         {
             return null;

@@ -1,17 +1,13 @@
 package org.bouncycastle.jsse.provider.test;
 
-import java.security.AccessController;
 import java.security.KeyPair;
 import java.security.KeyStore;
-import java.security.PrivilegedAction;
 import java.security.Provider;
-import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -22,45 +18,6 @@ import junit.framework.TestSuite;
 public class CipherSuitesTestSuite
     extends TestSuite
 {
-    static final boolean hasSslParameters;
-
-    static
-    {
-        Class<?> clazz;
-        try
-        {
-            clazz = loadClass("javax.net.ssl.SSLParameters");
-        }
-        catch (Exception e)
-        {
-            clazz = null;
-        }
-
-        hasSslParameters = (clazz != null);
-    }
-
-    private static Class<?> loadClass(final String className)
-    {
-        return AccessController.doPrivileged(new PrivilegedAction<Class<?>>()
-        {
-            public Class<?> run()
-            {
-                try
-                {
-                    ClassLoader classLoader = CipherSuitesTestSuite.class.getClassLoader();
-                    return (null == classLoader)
-                        ?   Class.forName(className)
-                        :   classLoader.loadClass(className);
-                }
-                catch (Exception e)
-                {
-                }
-
-                return null;
-            }
-        });
-    }
-
     public CipherSuitesTestSuite()
     {
         super("CipherSuites");
@@ -106,23 +63,9 @@ public class CipherSuitesTestSuite
         ts.setCertificateEntry("caEC", caCertEC);
         ts.setCertificateEntry("caRSA", caCertRSA);
 
-        SSLContext sslContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-        String[] cipherSuites;
-        if (hasSslParameters)
-        {
-            cipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
-        }
-        else
-        {
-            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                BouncyCastleJsseProvider.PROVIDER_NAME);
+        SSLContext defaultSSLContext = SSLContext.getInstance("Default", BouncyCastleJsseProvider.PROVIDER_NAME);
 
-            trustMgrFact.init(ts);
-
-            sslContext.init(null, trustMgrFact.getTrustManagers(),
-                SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
-            cipherSuites = sslContext.getSocketFactory().getSupportedCipherSuites();
-        }
+        String[] cipherSuites = defaultSSLContext.getSocketFactory().getSupportedCipherSuites();
 
         Arrays.sort(cipherSuites);
 
