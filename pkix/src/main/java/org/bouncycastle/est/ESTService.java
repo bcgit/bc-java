@@ -525,7 +525,7 @@ public class ESTService
                     if (resp.getContentLength() != null && resp.getContentLength() > 0)
                     {
                         ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-                        ASN1Sequence seq = (ASN1Sequence)ain.readObject();
+                        ASN1Sequence seq = ASN1Sequence.getInstance(ain.readObject());
                         response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
                     }
                 }
