@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.params;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.util.Properties;
 
 public class DHParameters
     implements CipherParameters
@@ -94,7 +95,7 @@ public class DHParameters
             }
         }
 
-        if (m > p.bitLength())
+        if (m > p.bitLength() && !Properties.isOverrideSet("org.bouncycastle.dh.allow_unsafe_p_value"))
         {
             throw new IllegalArgumentException("unsafe p value so small specific l required");
         }
