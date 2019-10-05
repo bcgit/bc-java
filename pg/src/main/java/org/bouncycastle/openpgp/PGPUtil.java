@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -13,8 +14,10 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.MPInteger;
+import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.util.Arrays;
@@ -181,14 +184,18 @@ public class PGPUtil
 
         try
         {
-            ASN1Sequence s = (ASN1Sequence)aIn.readObject();
+            ASN1Sequence s = ASN1Sequence.getInstance(aIn.readObject());
 
-            i1 = (ASN1Integer)s.getObjectAt(0);
-            i2 = (ASN1Integer)s.getObjectAt(1);
+            i1 = ASN1Integer.getInstance(s.getObjectAt(0));
+            i2 = ASN1Integer.getInstance(s.getObjectAt(1));
         }
         catch (IOException e)
         {
-            throw new PGPException("exception encoding signature", e);
+            throw new PGPException("exception decoding signature", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new PGPException("exception decoding signature", e);
         }
 
         MPInteger[] values = new MPInteger[2];
@@ -197,6 +204,44 @@ public class PGPUtil
         values[1] = new MPInteger(i2.getValue());
 
         return values;
+    }
+
+    /**
+     * Return true if the byte[] blob probably represents key ring data.
+     * @return true if data likely represents a key ring stream.
+     */
+    public static boolean isKeyRing(byte[] blob)
+        throws IOException
+    {
+        BCPGInputStream bIn = new BCPGInputStream(new ByteArrayInputStream(blob));
+
+        int tag = bIn.nextPacketTag();
+
+        return tag == PacketTags.PUBLIC_KEY || tag == PacketTags.PUBLIC_SUBKEY
+            || tag == PacketTags.SECRET_KEY || tag == PacketTags.SECRET_KEY;
+    }
+
+    /**
+     * Return true if the byte[] blob probably represents key box data.
+     * @return true if data likely represents a key box stream.
+     */
+    public static boolean isKeyBox(byte[] data)
+        throws IOException
+    {
+        if (data.length < 12)
+        {
+            return false;
+        }
+
+        InputStream bIn = new ByteArrayInputStream(data);
+
+        // skip size and headers
+        for (int i = 0; i != 8; i++)
+        {
+            bIn.read();
+        }
+
+        return bIn.read() == 'K' && bIn.read() == 'B' && bIn.read() == 'X' && bIn.read() == 'f';
     }
 
     /**
