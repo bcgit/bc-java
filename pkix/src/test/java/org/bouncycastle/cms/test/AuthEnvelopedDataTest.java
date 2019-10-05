@@ -37,7 +37,6 @@ import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.encoders.Hex;
 
 public class AuthEnvelopedDataTest
     extends TestCase
@@ -183,8 +182,6 @@ public class AuthEnvelopedDataTest
         authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
         
         CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
-
-        System.err.println(Hex.toHexString(authData.getMac()));
 
         RecipientInformationStore recipients = authData.getRecipientInfos();
 
