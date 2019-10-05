@@ -3,6 +3,7 @@ package org.bouncycastle.gpg.keybox;
 import java.io.IOException;
 
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.util.Strings;
 
 /**
  * GnuPG keybox blob.
@@ -13,7 +14,7 @@ import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 
 public class Blob
 {
-    protected static final byte[] magicBytes = "KBXf".getBytes();
+    protected static final byte[] magicBytes = Strings.toByteArray("KBXf");
 
     protected final int base; // position from start of keybox file.
     protected final long length;

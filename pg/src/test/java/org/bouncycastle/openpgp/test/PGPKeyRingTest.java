@@ -38,6 +38,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRing;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.jcajce.JcaPGPSecretKeyRingCollection;
@@ -57,6 +58,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class PGPKeyRingTest
@@ -3293,6 +3295,19 @@ public class PGPKeyRingTest
         }
     }
 
+    private void testApacheRings()
+        throws Exception
+    {
+        byte[] data = Streams.readAll(this.getClass().getResourceAsStream("dsa-pubring.gpg"));
+        
+        isTrue(PGPUtil.isKeyBox(data));
+        isTrue(!PGPUtil.isKeyRing(data));
+
+        data = Streams.readAll(this.getClass().getResourceAsStream("rsa-pubring.gpg"));
+        isTrue(!PGPUtil.isKeyBox(data));
+        isTrue(PGPUtil.isKeyRing(data));
+    }
+
     public void performTest()
         throws Exception
     {
@@ -3326,6 +3341,7 @@ public class PGPKeyRingTest
             testEdDsaRing();
             testCurve25519Ring();
             testShouldProduceSubkeys();
+            testApacheRings();
         }
         catch (PGPException e)
         {
