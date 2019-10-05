@@ -12,7 +12,7 @@ import java.security.cert.Certificate;
  * This interface is implemented by Signature classes returned by the PQC provider where the signature
  * algorithm is one where the private key is updated for each signature generated. Examples of these
  * are algorithms such as GMSS, XMSS, and XMSS^MT.
- * @deprecated it's better to avoid this and use nextKey/extractKeyShard methods where possible.
+ * @deprecated it's better to avoid this and use extractKeyShard methods where possible.
  */
 public interface StateAwareSignature
 {
