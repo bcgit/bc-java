@@ -135,7 +135,7 @@ public class HeartbeatMessage
 
         byte[] getPadding(int payloadLength)
         {
-            return Arrays.copyOfRange(buf, payloadLength, count);
+            return TlsUtils.copyOfRangeExact(buf, payloadLength, count);
         }
     }
 }
