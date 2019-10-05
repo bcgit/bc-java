@@ -457,10 +457,9 @@ public class SignedMailValidator
         throws IOException
     {
         ASN1InputStream aIn = new ASN1InputStream(ext);
-        ASN1OctetString octs = (ASN1OctetString)aIn.readObject();
+        ASN1OctetString octs = ASN1OctetString.getInstance(aIn.readObject());
 
-        aIn = new ASN1InputStream(octs.getOctets());
-        return aIn.readObject();
+        return ASN1Primitive.fromByteArray(octs.getOctets());
     }
 
     protected void checkSignerCert(X509Certificate cert, List errors,
