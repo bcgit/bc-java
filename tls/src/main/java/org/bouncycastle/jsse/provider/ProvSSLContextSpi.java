@@ -20,7 +20,6 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContextSpi;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -649,17 +648,6 @@ class ProvSSLContextSpi
     {
         checkInitialized();
         return new ProvSSLSocketFactory(this);
-    }
-
-    @Override
-    protected SSLParameters engineGetSupportedSSLParameters()
-    {
-        // TODO[jsse] Review initial values
-        // TODO[jsse] Compare to 'getDefaultSocket' approach from SunJSSE
-        SSLParameters r = new SSLParameters();
-        r.setCipherSuites(getSupportedCipherSuites());
-        r.setProtocols(getSupportedProtocols());
-        return r;
     }
 
     @Override
