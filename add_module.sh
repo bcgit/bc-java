@@ -1,4 +1,5 @@
 export JAVA_HOME=/usr/lib/jvm/java-9-oracle
+#export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
 export PATH=$JAVA_HOME/bin:$PATH
 
 if [ $# -ne 1 ]
@@ -25,15 +26,15 @@ rm -rf module.tmp
     pkixJar=`echo build/artifacts/jdk1.5/jars/bcpkix-jdk15on*.jar`
     if [ $1 = "prov" ]
     then
-	javac -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java:core/src/main/java
+	javac -target 1.9 -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java:core/src/main/java
     elif [ $1 = "prov-ext" ]
     then
-	javac -classpath module.tmp/v5 -d module.tmp/v9 `find prov/src/main/ext-jdk1.9 -name "*.java"` -sourcepath prov/src/main/ext-jdk1.9:prov/src/main/java:core/src/main/java
+	javac -target 1.9 -classpath module.tmp/v5 -d module.tmp/v9 `find prov/src/main/ext-jdk1.9 -name "*.java"` -sourcepath prov/src/main/ext-jdk1.9:prov/src/main/java:core/src/main/java
     elif [ $1 = "mail" ]
     then
-	javac --module-path ${provJar}:$pkixJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
+	javac  -target 1.9 --module-path ${provJar}:$pkixJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
     else
-	javac --module-path $provJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
+	javac  -target 1.9 --module-path $provJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
     fi
 )
 # Java 11 Step
