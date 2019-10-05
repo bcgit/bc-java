@@ -171,7 +171,7 @@ public class BCECGOST3410PublicKey
                 y[i] = keyEnc[64 - 1 - i];
             }
 
-            gostParams = new GOST3410PublicKeyAlgParameters((ASN1Sequence)info.getAlgorithmId().getParameters());
+            gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithmId().getParameters());
 
             ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
 

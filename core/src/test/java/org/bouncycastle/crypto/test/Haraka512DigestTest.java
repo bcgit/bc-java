@@ -42,7 +42,7 @@ public class Haraka512DigestTest
         }
         catch (IllegalStateException ilarex)
         {
-            isTrue("message", ilarex.getMessage().contains("input must be exactly 64 bytes"));
+            isTrue("message", contains(ilarex.getMessage(), "input must be exactly 64 bytes"));
         }
     }
 
@@ -58,7 +58,7 @@ public class Haraka512DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("message", ilarex.getMessage().contains("total input cannot be more than 64 bytes"));
+            isTrue("message", contains(ilarex.getMessage(), "total input cannot be more than 64 bytes"));
         }
     }
 
@@ -78,7 +78,7 @@ public class Haraka512DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("message", ilarex.getMessage().contains("output too short to receive digest"));
+            isTrue("message", contains(ilarex.getMessage(), "output too short to receive digest"));
         }
 
         //
@@ -95,7 +95,7 @@ public class Haraka512DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("message", ilarex.getMessage().contains("output too short to receive digest"));
+            isTrue("message", contains(ilarex.getMessage(), "output too short to receive digest"));
         }
 
         //
@@ -119,7 +119,7 @@ public class Haraka512DigestTest
     void testMonty()
     {
         int c = 0;
-        for (String[] vector : new String[][]{
+        String[][] vectors = new String[][]{
             {
                 "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F",
                 "ABE210FE673F3B28E70E5100C476D82F61A7E2BDB3D8423FB0A15E5DE3D3A4DE"
@@ -128,12 +128,15 @@ public class Haraka512DigestTest
                 "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
                 "5F5ECB52C61F5036C96BE555D2E18C520AB3ED093954700C283A322D14DBFE02"
             }
-        })
+        };
+
+        for (int i = 0; i != vectors.length; i++)
         {
             //
             // 1000 rounds of digest application, where alternative outputs are copied over alternate halves of the input.
             //
-
+            String[] vector = vectors[i];
+            
             byte[] expected = Hex.decode(vector[1]);
 
             // Load initial message.
@@ -164,6 +167,11 @@ public class Haraka512DigestTest
             isTrue("Monte Carlo test: " + c, !this.areEqual(expected, result));
             c++;
         }
+    }
+
+    private boolean contains(String message, String sub)
+    {
+        return message.indexOf(sub) >= 0;
     }
 
     public void performTest()

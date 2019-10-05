@@ -43,7 +43,7 @@ public class Haraka256DigestTest
         }
         catch (IllegalStateException ilarex)
         {
-            isTrue("message", ilarex.getMessage().contains("input must be exactly 32 bytes"));
+            isTrue("message", contains(ilarex.getMessage(), "input must be exactly 32 bytes"));
         }
     }
 
@@ -59,7 +59,7 @@ public class Haraka256DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("long message", ilarex.getMessage().contains("total input cannot be more than 32 bytes"));
+            isTrue("long message", contains(ilarex.getMessage(), "total input cannot be more than 32 bytes"));
         }
     }
 
@@ -80,7 +80,7 @@ public class Haraka256DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("message 1", ilarex.getMessage().contains("output too short to receive digest"));
+            isTrue("message 1", contains(ilarex.getMessage(), "output too short to receive digest"));
         }
 
         //
@@ -97,7 +97,7 @@ public class Haraka256DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("message 2", ilarex.getMessage().contains("output too short to receive digest"));
+            isTrue("message 2", contains(ilarex.getMessage(), "output too short to receive digest"));
         }
 
 
@@ -122,7 +122,7 @@ public class Haraka256DigestTest
     void testMonty()
     {
         int c = 0;
-        for (String[] vector : new String[][]{
+        String[][] vectors = new String[][]{
             {
                 "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F",
                 "e78599d7163ab58f1c90f0171c6fc4e852eb4b8cc29a4af63194fd9977c1de84"
@@ -131,11 +131,14 @@ public class Haraka256DigestTest
                 "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
                 "c4cebda63c00c4cd312f36ea92afd4b0f6048507c5b367326ef9d8fdd2d5c09a"
             }
-        })
+        };
+
+        for (int i = 0; i != vectors.length; i++)
         {
             //
             // 1000 rounds of digest application, where alternative outputs are copied over alternate halves of the input.
             //
+            String[] vector = vectors[i];
 
             byte[] expected = Hex.decode(vector[1]);
 
@@ -158,6 +161,11 @@ public class Haraka256DigestTest
             isTrue("Monte Carlo test: " + c, !this.areEqual(expected, result));
             c++;
         }
+    }
+
+    private boolean contains(String message, String sub)
+    {
+        return message.indexOf(sub) >= 0;
     }
 
     public void performTest()

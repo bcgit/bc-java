@@ -312,6 +312,7 @@
                  <exclude name="PKITS/**" />
                  <exclude name="cmp/**" />
                  <exclude name="rfc4134/**" />
+                 <exclude name="pgpdata/**" />
                  <exclude name="org/bouncycastle/**/AllTests.java" />
                  <exclude name="org/bouncycastle/**/test/**" />
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
