@@ -7,7 +7,6 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
-import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS 1.2 AEAD cipher.
@@ -93,9 +92,9 @@ public class TlsAEADCipher
         serverCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
 
-        byte[] client_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
+        byte[] client_write_IV = TlsUtils.copyOfRangeExact(key_block, offset, offset + fixed_iv_length);
         offset += fixed_iv_length;
-        byte[] server_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
+        byte[] server_write_IV = TlsUtils.copyOfRangeExact(key_block, offset, offset + fixed_iv_length);
         offset += fixed_iv_length;
 
         if (offset != key_block_size)

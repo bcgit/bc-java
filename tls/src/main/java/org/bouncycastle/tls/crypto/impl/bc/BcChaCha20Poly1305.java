@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -63,7 +64,7 @@ public class BcChaCha20Poly1305 implements TlsAEADCipherImpl
             mac.update(calculatedMAC, 0, 16);
             mac.doFinal(calculatedMAC, 0);
 
-            byte[] receivedMAC = Arrays.copyOfRange(input, inputOffset + ciphertextLength, inputOffset + inputLength);
+            byte[] receivedMAC = TlsUtils.copyOfRangeExact(input, inputOffset + ciphertextLength, inputOffset + inputLength);
 
             if (!Arrays.constantTimeAreEqual(calculatedMAC, receivedMAC))
             {

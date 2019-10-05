@@ -57,7 +57,7 @@ class DTLSRecordLayer
         }
 
         // NOTE: We ignore/drop any data after the first record 
-        return Arrays.copyOfRange(data, dataOff + RECORD_HEADER_LENGTH, dataOff + RECORD_HEADER_LENGTH + length);
+        return TlsUtils.copyOfRangeExact(data, dataOff + RECORD_HEADER_LENGTH, dataOff + RECORD_HEADER_LENGTH + length);
     }
 
     static void sendHelloVerifyRequestRecord(DatagramSender sender, long recordSeq, byte[] message) throws IOException

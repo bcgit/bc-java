@@ -528,7 +528,7 @@ public class TlsUtils
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
-        return Arrays.copyOfRange(buf, 1, buf.length);
+        return copyOfRangeExact(buf, 1, buf.length);
     }
 
     public static byte[] decodeOpaque16(byte[] buf)
@@ -553,7 +553,7 @@ public class TlsUtils
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
-        return Arrays.copyOfRange(buf, 2, buf.length);
+        return copyOfRangeExact(buf, 2, buf.length);
     }
 
     public static short decodeUint8(byte[] buf) throws IOException
@@ -4012,7 +4012,7 @@ public class TlsUtils
 
     private static void checkDowngradeMarker(byte[] randomBlock, byte[] downgradeMarker) throws IOException
     {
-        byte[] bytes = Arrays.copyOfRange(randomBlock, randomBlock.length - downgradeMarker.length, randomBlock.length);
+        byte[] bytes = copyOfRangeExact(randomBlock, randomBlock.length - downgradeMarker.length, randomBlock.length);
         if (Arrays.constantTimeAreEqual(bytes, downgradeMarker))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
