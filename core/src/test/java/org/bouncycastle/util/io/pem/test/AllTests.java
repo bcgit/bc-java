@@ -3,6 +3,7 @@ package org.bouncycastle.util.io.pem.test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
 import junit.framework.TestCase;
 import org.bouncycastle.util.io.pem.PemHeader;
 import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 
 public class AllTests
@@ -39,6 +41,14 @@ public class AllTests
         headers.add(new PemHeader("DEK-Info", "DES3,0001020304050607"));
 
         lengthTest("RSA PRIVATE KEY", headers, new byte[103]);
+    }
+
+    public void testMalformed()
+        throws IOException
+    {
+        PemReader rd = new PemReader(new StringReader("-----BEGIN \n"));
+        
+        assertNull(rd.readPemObject());
     }
 
     private void lengthTest(String type, List headers, byte[] data)
