@@ -588,7 +588,7 @@ class ProvSSLContextSpi
         }
     }
 
-    void validateNegotiatedCipherSuite(ProvSSLParameters sslParameters, int cipherSuite)
+    String validateNegotiatedCipherSuite(ProvSSLParameters sslParameters, int cipherSuite)
     {
         // NOTE: The redundancy among these various checks is intentional
         String name = getCipherSuiteName(cipherSuite);
@@ -600,9 +600,10 @@ class ProvSSLContextSpi
         {
             throw new IllegalStateException("SSL connection negotiated unsupported ciphersuite: " + cipherSuite);
         }
+        return name;
     }
 
-    void validateNegotiatedProtocol(ProvSSLParameters sslParameters, ProtocolVersion protocol)
+    String validateNegotiatedProtocol(ProvSSLParameters sslParameters, ProtocolVersion protocol)
     {
         // NOTE: The redundancy among these various checks is intentional
         String name = getProtocolVersionName(protocol);
@@ -614,6 +615,7 @@ class ProvSSLContextSpi
         {
             throw new IllegalStateException("SSL connection negotiated unsupported protocol: " + protocol);
         }
+        return name;
     }
 
     protected void checkInitialized()
