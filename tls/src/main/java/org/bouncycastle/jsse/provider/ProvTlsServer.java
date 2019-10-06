@@ -129,8 +129,6 @@ class ProvTlsServer
             return false;
         }
 
-        manager.getContext().validateNegotiatedCipherSuite(sslParameters, cipherSuite);
-
         return super.selectCipherSuite(cipherSuite);
     }
 
@@ -289,11 +287,13 @@ class ProvTlsServer
         keyManagerMissCache = new HashSet<String>();
 
         int selectedCipherSuite = super.getSelectedCipherSuite();
-        String selectedCipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(selectedCipherSuite);
-
-        LOG.fine("Server selected cipher suite: " + selectedCipherSuiteName);
 
         keyManagerMissCache = null;
+
+        String selectedCipherSuiteName = manager.getContext().validateNegotiatedCipherSuite(sslParameters,
+            selectedCipherSuite);
+
+        LOG.fine("Server selected cipher suite: " + selectedCipherSuiteName);
 
         return selectedCipherSuite;
     }
@@ -379,9 +379,7 @@ class ProvTlsServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        manager.getContext().validateNegotiatedProtocol(sslParameters, serverVersion);
-
-        String serverVersionName = ProvSSLContextSpi.getProtocolVersionName(serverVersion);
+        String serverVersionName = manager.getContext().validateNegotiatedProtocol(sslParameters, serverVersion);
 
         LOG.fine("Server selected protocol version: " + serverVersionName);
 

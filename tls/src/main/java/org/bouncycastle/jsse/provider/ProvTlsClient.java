@@ -376,9 +376,8 @@ class ProvTlsClient
     @Override
     public void notifySelectedCipherSuite(int selectedCipherSuite)
     {
-        manager.getContext().validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
-
-        String selectedCipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(selectedCipherSuite);
+        String selectedCipherSuiteName = manager.getContext().validateNegotiatedCipherSuite(sslParameters,
+            selectedCipherSuite);
 
         LOG.fine("Client notified of selected cipher suite: " + selectedCipherSuiteName);
 
@@ -388,9 +387,7 @@ class ProvTlsClient
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        manager.getContext().validateNegotiatedProtocol(sslParameters, serverVersion);
-
-        String serverVersionName = ProvSSLContextSpi.getProtocolVersionName(serverVersion);
+        String serverVersionName = manager.getContext().validateNegotiatedProtocol(sslParameters, serverVersion);
 
         LOG.fine("Client notified of selected protocol version: " + serverVersionName);
 
