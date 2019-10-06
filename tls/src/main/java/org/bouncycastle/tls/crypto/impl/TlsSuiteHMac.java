@@ -1,5 +1,6 @@
 package org.bouncycastle.tls.crypto.impl;
 
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
@@ -40,7 +41,19 @@ class TlsSuiteHMac
         this.mac = mac;
         this.macSize = getMacSize(cryptoParams, mac);
         this.digestBlockSize = mac.getInternalBlockSize();
-        this.digestOverhead = digestBlockSize / 8;
+
+        // TODO This should check the actual algorithm, not assume based on the digest size
+        if (TlsImplUtils.isSSL(cryptoParams) && mac.getMacLength() == 20)
+        {
+            /*
+             * NOTE: For the SSL 3.0 MAC with SHA-1, the secret + input pad is not block-aligned.
+             */
+            this.digestOverhead = 4;
+        }
+        else
+        {
+            this.digestOverhead = digestBlockSize / 8;
+        }
     }
 
     /**
@@ -62,10 +75,16 @@ class TlsSuiteHMac
      */
     public byte[] calculateMac(long seqNo, short type, byte[] msg, int msgOff, int msgLen)
     {
-        byte[] macHeader = new byte[13];
+        ProtocolVersion serverVersion = cryptoParams.getServerVersion();
+        boolean isSSL = serverVersion.isSSL();
+
+        byte[] macHeader = new byte[isSSL ? 11 : 13];
         TlsUtils.writeUint64(seqNo, macHeader, 0);
         TlsUtils.writeUint8(type, macHeader, 8);
-        TlsUtils.writeVersion(cryptoParams.getServerVersion(), macHeader, 9);
+        if (!isSSL)
+        {
+            TlsUtils.writeVersion(serverVersion, macHeader, 9);
+        }
         TlsUtils.writeUint16(msgLen, macHeader, macHeader.length - 2);
 
         mac.update(macHeader, 0, macHeader.length);
@@ -86,7 +105,7 @@ class TlsSuiteHMac
          * ...but ensure a constant number of complete digest blocks are processed (as many as would
          * be needed for 'fullLength' bytes of input).
          */
-        int headerLength = 13;
+        int headerLength = TlsImplUtils.isSSL(cryptoParams) ? 11 : 13;
 
         // How many extra full blocks do we need to calculate?
         int extra = getDigestBlockCount(headerLength + fullLength) - getDigestBlockCount(headerLength + msgLen);

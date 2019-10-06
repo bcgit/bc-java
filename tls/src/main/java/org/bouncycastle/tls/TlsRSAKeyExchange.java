@@ -74,7 +74,7 @@ public class TlsRSAKeyExchange
     public void processClientKeyExchange(InputStream input)
         throws IOException
     {
-        byte[] encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
+        byte[] encryptedPreMasterSecret = TlsUtils.readEncryptedPMS(context, input);
 
         this.preMasterSecret = serverCredentials.decrypt(new TlsCryptoParameters(context), encryptedPreMasterSecret);
     }

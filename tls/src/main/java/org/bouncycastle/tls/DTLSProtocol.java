@@ -79,7 +79,7 @@ public abstract class DTLSProtocol
 
     protected static byte[] createVerifyData(TlsContext context, DTLSReliableHandshake handshake, boolean isServer)
     {
-        return TlsUtils.calculateTLSVerifyData(context, handshake.getHandshakeHash(), isServer);
+        return TlsUtils.calculateVerifyData(context, handshake.getHandshakeHash(), isServer);
     }
 
     protected static void sendCertificateMessage(TlsContext context, DTLSReliableHandshake handshake,
