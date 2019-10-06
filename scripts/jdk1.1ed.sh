@@ -415,3 +415,9 @@ w
 q
 %
 
+ed org/bouncycastle/bcpg/SignatureSubpacketInputStream.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
