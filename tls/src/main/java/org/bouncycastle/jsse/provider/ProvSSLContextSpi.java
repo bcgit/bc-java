@@ -214,6 +214,7 @@ class ProvSSLContextSpi
         ps.put("TLSv1.2", ProtocolVersion.TLSv12);
         ps.put("TLSv1.1", ProtocolVersion.TLSv11);
         ps.put("TLSv1", ProtocolVersion.TLSv10);
+        ps.put("SSLv3", ProtocolVersion.SSLv3);
         return Collections.unmodifiableMap(ps);
     }
 

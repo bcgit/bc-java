@@ -389,11 +389,23 @@ public class TlsClientProtocol
                 sendClientKeyExchangeMessage();
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
+                final boolean isSSL = TlsUtils.isSSL(tlsClientContext);
+                if (isSSL)
+                {
+                    // NOTE: For SSLv3 (only), master_secret needed to calculate session hash
+                    establishMasterSecret(tlsClientContext, keyExchange);
+                }
+
                 TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
                 tlsClientContext.getSecurityParametersHandshake().sessionHash = TlsUtils
                     .getCurrentPRFHash(prepareFinishHash);
 
-                establishMasterSecret(getContext(), keyExchange);
+                if (!isSSL)
+                {
+                    // NOTE: For (D)TLS, session hash potentially needed for extended_master_secret
+                    establishMasterSecret(tlsClientContext, keyExchange);
+                }
+
                 recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
 
                 if (credentialedSigner != null)
@@ -615,7 +627,7 @@ public class TlsClientProtocol
         }
         else
         {
-            if (!ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(server_version))
+            if (!ProtocolVersion.SSLv3.isEqualOrEarlierVersionOf(server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -670,13 +682,23 @@ public class TlsClientProtocol
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
          */
-        securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
-
-        if (!securityParameters.isExtendedMasterSecret()
-            && (resumedSession || tlsClient.requiresExtendedMasterSecret()))
+        final boolean acceptedExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
+        if (acceptedExtendedMasterSecret)
         {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            if (server_version.isSSL())
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
         }
+        else
+        {
+            if (resumedSession || tlsClient.requiresExtendedMasterSecret())
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+        }
+
+        securityParameters.extendedMasterSecret = acceptedExtendedMasterSecret;
 
         /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
@@ -902,14 +924,22 @@ public class TlsClientProtocol
         }
         else
         {
-            // TODO[tls13] Subsequent ClientHello messages (of a TLSv13 handshake) should use TLSv12
-            this.recordStream.setWriteVersion(ProtocolVersion.TLSv10);
-
             tlsClientContext.setClientSupportedVersions(tlsClient.getProtocolVersions());
+
+            if (ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), ProtocolVersion.SSLv3))
+            {
+                // TODO[tls13] Prevent offering SSLv3 AND TLSv13?
+                recordStream.setWriteVersion(ProtocolVersion.SSLv3);
+            }
+            else
+            {
+                // TODO[tls13] Subsequent ClientHello messages (of a TLSv13 handshake) should use TLSv12
+                recordStream.setWriteVersion(ProtocolVersion.TLSv10);
+            }
 
             client_version = ProtocolVersion.getLatestTLS(tlsClientContext.getClientSupportedVersions());
             if (null == client_version
-                || client_version.isEarlierVersionOf(ProtocolVersion.TLSv10)
+                || client_version.isEarlierVersionOf(ProtocolVersion.SSLv3)
                 || client_version.isLaterVersionOf(ProtocolVersion.TLSv12))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -973,7 +1003,10 @@ public class TlsClientProtocol
 
         this.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
-        TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
+        if (!client_version.isSSL())
+        {
+            TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
+        }
 
         securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), tlsClientContext);
 

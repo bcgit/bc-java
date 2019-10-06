@@ -236,8 +236,6 @@ public class JcaTlsCrypto
     {
         switch (macAlgorithm)
         {
-        case MACAlgorithm._null:
-            return null;
         case MACAlgorithm.hmac_md5:
             return createHMAC("HmacMD5");
         case MACAlgorithm.hmac_sha1:
@@ -249,7 +247,40 @@ public class JcaTlsCrypto
         case MACAlgorithm.hmac_sha512:
             return createHMAC("HmacSHA512");
         default:
-            throw new IllegalArgumentException("unknown MACAlgorithm: " + MACAlgorithm.getText(macAlgorithm));
+            throw new IllegalArgumentException("specified MACAlgorithm not an HMAC: " + MACAlgorithm.getText(macAlgorithm));
+        }
+    }
+
+    protected TlsHMAC createHMAC_SSL(int macAlgorithm)
+        throws GeneralSecurityException, IOException
+    {
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm.hmac_md5:
+            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.md5)), 16, 64);
+        case MACAlgorithm.hmac_sha1:
+            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.sha1)), 20, 64);
+        case MACAlgorithm.hmac_sha256:
+            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.sha256)), 32, 64);
+        case MACAlgorithm.hmac_sha384:
+            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.sha384)), 48, 128);
+        case MACAlgorithm.hmac_sha512:
+            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.sha512)), 64, 128);
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    protected TlsHMAC createMAC(TlsCryptoParameters cryptoParams, int macAlgorithm)
+        throws GeneralSecurityException, IOException
+    {
+        if (TlsImplUtils.isSSL(cryptoParams))
+        {
+            return createHMAC_SSL(macAlgorithm);
+        }
+        else
+        {
+            return createHMAC(macAlgorithm);
         }
     }
 
@@ -812,7 +843,8 @@ public class JcaTlsCrypto
     protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsNullCipher(cryptoParams, createMAC(macAlgorithm), createMAC(macAlgorithm));
+        return new TlsNullCipher(cryptoParams, createMAC(cryptoParams, macAlgorithm),
+            createMAC(cryptoParams, macAlgorithm));
     }
 
     protected boolean isCurveSupported(String curveName)
@@ -828,36 +860,42 @@ public class JcaTlsCrypto
     private TlsBlockCipher createAESCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "AES", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "AES", false, cipherKeySize),
-            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize);
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "AES", true, cipherKeySize),
+            createCBCBlockOperator(cryptoParams, "AES", false, cipherKeySize), createMAC(cryptoParams, macAlgorithm),
+            createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipher createARIACipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "ARIA", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "ARIA", false, cipherKeySize),
-            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize);
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "ARIA", true, cipherKeySize),
+            createCBCBlockOperator(cryptoParams, "ARIA", false, cipherKeySize), createMAC(cryptoParams, macAlgorithm),
+            createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "Camellia", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "Camellia", false, cipherKeySize),
-            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize);
+        return new TlsBlockCipher(this, cryptoParams,
+            createCBCBlockOperator(cryptoParams, "Camellia", true, cipherKeySize),
+            createCBCBlockOperator(cryptoParams, "Camellia", false, cipherKeySize),
+            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipher createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "DESede", true, 24), createCBCBlockOperator(cryptoParams, "DESede", false, 24),
-            createMAC(macAlgorithm), createMAC(macAlgorithm), 24);
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "DESede", true, 24),
+            createCBCBlockOperator(cryptoParams, "DESede", false, 24), createMAC(cryptoParams, macAlgorithm),
+            createMAC(cryptoParams, macAlgorithm), 24);
     }
 
     private TlsBlockCipher createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "SEED", true, 16), createCBCBlockOperator(cryptoParams, "SEED", false, 16),
-            createMAC(macAlgorithm), createMAC(macAlgorithm), 16);
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "SEED", true, 16),
+            createCBCBlockOperator(cryptoParams, "SEED", false, 16), createMAC(cryptoParams, macAlgorithm),
+            createMAC(cryptoParams, macAlgorithm), 16);
     }
 
     private TlsBlockCipherImpl createCBCBlockOperator(TlsCryptoParameters cryptoParams, String algorithm, boolean forEncryption, int keySize)
@@ -873,11 +911,6 @@ public class JcaTlsCrypto
         {
             return createBlockCipherWithCBCImplicitIV(cipherName, algorithm, keySize, forEncryption);
         }
-    }
-
-    private TlsHMAC createMAC(int macAlgorithm) throws IOException
-    {
-        return createHMAC(macAlgorithm);
     }
 
     private TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)

@@ -259,7 +259,7 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
-            byte[] encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
+            byte[] encryptedPreMasterSecret = TlsUtils.readEncryptedPMS(context, input);
 
             this.preMasterSecret = serverCredentials.decrypt(new TlsCryptoParameters(context), encryptedPreMasterSecret);
         }
