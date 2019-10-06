@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
@@ -110,7 +111,16 @@ public class KeyPairGeneratorSpi
         }
         else
         {
-            throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + paramSpec);
+            String name = ECUtil.getNameFrom(paramSpec);
+
+            if (name != null)
+            {
+                initializeGenerator(name);
+            }
+            else
+            {
+                throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + paramSpec);
+            }
         }
     }
 

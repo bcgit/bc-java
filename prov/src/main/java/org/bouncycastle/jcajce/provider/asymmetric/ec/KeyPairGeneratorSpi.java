@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
@@ -139,7 +140,16 @@ public abstract class KeyPairGeneratorSpi
             }
             else
             {
-                throw new InvalidAlgorithmParameterException("parameter object not a ECParameterSpec");
+                String name = ECUtil.getNameFrom(params);
+
+                if (name != null)
+                {
+                    initializeNamedCurve(name, random);
+                }
+                else
+                {
+                    throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + params);
+                }
             }
 
             engine.init(param);
