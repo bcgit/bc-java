@@ -969,3 +969,9 @@ codesigning.jks
 /out/test/core/META-INF/core.kotlin_module
 /out/test/core/org/bouncycastle/crypto/test/cavp/[original]_KDFCTR_gen.rsp
 /out/test/prov/META-INF/prov.kotlin_module
+/misc/misc.iml
+/mail/mail.iml
+/core/core.iml
+/prov/src/main/core/
+/prov/prov.iml
+/test/test.iml
