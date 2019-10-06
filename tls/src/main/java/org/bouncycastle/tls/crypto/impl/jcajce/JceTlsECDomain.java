@@ -86,11 +86,13 @@ public class JceTlsECDomain
     {
         try
         {
+            ECPoint point = decodePoint(encoding).normalize();
+            BigInteger x = point.getAffineXCoord().toBigInteger();
+            BigInteger y = point.getAffineYCoord().toBigInteger();
+
+            ECPublicKeySpec keySpec = new ECPublicKeySpec(new java.security.spec.ECPoint(x, y), ecParameterSpec);
+
             KeyFactory keyFact = crypto.getHelper().createKeyFactory("EC");
-            ECPoint point = decodePoint(encoding);
-            ECPublicKeySpec keySpec = new ECPublicKeySpec(
-                new java.security.spec.ECPoint(point.getAffineXCoord().toBigInteger(), point.getAffineYCoord().toBigInteger()),
-                ecParameterSpec);
             return (ECPublicKey)keyFact.generatePublic(keySpec);
         }
         catch (Exception e)
