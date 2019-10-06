@@ -1,9 +1,13 @@
 package org.bouncycastle.jcajce.provider.asymmetric.util;
 
+import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.security.AccessController;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
+import java.security.PrivilegedAction;
 import java.security.PublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Enumeration;
 import java.util.Map;
 
@@ -419,5 +423,27 @@ public class ECUtil
         }
 
         return new Fingerprint(publicPoint.getEncoded(false)).toString();
+    }
+
+    public static String getNameFrom(final AlgorithmParameterSpec paramSpec)
+    {
+        return (String)AccessController.doPrivileged(new PrivilegedAction()
+        {
+            public Object run()
+            {
+                try
+                {
+                    Method m = paramSpec.getClass().getMethod("getName");
+
+                    return m.invoke(paramSpec);
+                }
+                catch (Exception e)
+                {
+                    // ignore - maybe log?
+                }
+
+                return null;
+            }
+        });
     }
 }
