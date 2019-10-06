@@ -439,10 +439,15 @@ public class JcaTlsCrypto
             case EncryptionAlgorithm.RC2_CBC_40:
             case EncryptionAlgorithm.RC4_128:
             case EncryptionAlgorithm.RC4_40:
-            default:
             {
                 result = false;
                 break;
+            }
+
+            default:
+            {
+                // Limit the cache to known algorithms
+                return false;
             }
             }
         }
