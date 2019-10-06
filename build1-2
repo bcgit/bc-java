@@ -466,6 +466,7 @@ then
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/bcpg-jdk12-$base; tar xf -)
     ((cd pg/src/main/java && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
     ((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
+    ((cd pg/src/main/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
     ((cd pg/src/test/java && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
     ((cd pg/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
     ((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))

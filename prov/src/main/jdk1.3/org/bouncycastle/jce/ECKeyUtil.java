@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -84,12 +85,24 @@ public class ECKeyUtil
                     ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
 
                     curveParams = ECUtil.getNamedCurveByOid(oid);
-                    // ignore seed value due to JDK bug
-                    curveParams = new X9ECParameters(curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH());
+
+                    if (curveParams.hasSeed())
+                    {
+                        // ignore seed value due to JDK bug
+                        curveParams = new X9ECParameters(
+                            curveParams.getCurve(),
+                            curveParams.getBaseEntry(),
+                            curveParams.getN(),
+                            curveParams.getH());
+                    }
                 }
                 else if (params.isImplicitlyCA())
                 {
-                    curveParams = new X9ECParameters(BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getCurve(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getG(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getN(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getH());
+                    curveParams = new X9ECParameters(
+                        BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getCurve(),
+                        new X9ECPoint(BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getG(), false),
+                        BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getN(),
+                        BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getH());
                 }
                 else
                 {
@@ -174,12 +187,24 @@ public class ECKeyUtil
                     ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
 
                     curveParams = ECUtil.getNamedCurveByOid(oid);
-                    // ignore seed value due to JDK bug
-                    curveParams = new X9ECParameters(curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH());
+
+                    if (curveParams.hasSeed())
+                    {
+                        // ignore seed value due to JDK bug
+                        curveParams = new X9ECParameters(
+                            curveParams.getCurve(),
+                            curveParams.getBaseEntry(),
+                            curveParams.getN(),
+                            curveParams.getH());
+                    }
                 }
                 else if (params.isImplicitlyCA())
                 {
-                    curveParams = new X9ECParameters(BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getCurve(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getG(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getN(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getH());
+                    curveParams = new X9ECParameters(
+                        BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getCurve(),
+                        new X9ECPoint(BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getG(), false),
+                        BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getN(),
+                        BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getH());
                 }
                 else
                 {

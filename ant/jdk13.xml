@@ -244,6 +244,7 @@
             </fileset>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java" />
+            <fileset dir="pg/src/main/jdk1.3" includes="**/*.java" />
             <fileset dir="core/src/test/jdk1.4" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}" overwrite="true">

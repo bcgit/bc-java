@@ -156,8 +156,8 @@ public class DigestTest
             fail("Result object 5 not equal");
         }
 
-        // Harak has a fixed length input
-        if (algorithm.startsWith("Haraka"))
+        // Haraka has a fixed length input
+        if (algorithm.startsWith("HARAKA"))
         {
             return;
         }
@@ -208,8 +208,8 @@ public class DigestTest
             abcTest(abcVectors[i][0], abcVectors[i][1]);
         }
 
-        test("Haraka-256", Hex.decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
-        test("Haraka-512", Hex.decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+        test("HARAKA-256", Hex.decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+        test("HARAKA-512", Hex.decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
                                     + "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"));
     }
 
