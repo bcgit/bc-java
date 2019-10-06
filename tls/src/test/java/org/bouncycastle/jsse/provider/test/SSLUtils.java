@@ -16,7 +16,7 @@ class SSLUtils
     static void enableAll(SSLServerSocket ss)
     {
         ss.setEnabledCipherSuites(ss.getSupportedCipherSuites());
-        ss.setEnabledProtocols(ss.getEnabledProtocols());
+        ss.setEnabledProtocols(ss.getSupportedProtocols());
     }
 
     static void restrictKeyExchange(SSLSocket s, String keyExchange)
