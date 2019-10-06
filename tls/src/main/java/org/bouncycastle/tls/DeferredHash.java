@@ -66,14 +66,20 @@ class DeferredHash
     public TlsHandshakeHash notifyPRFDetermined()
     {
         int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
-        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
+        switch (prfAlgorithm)
+        {
+        case PRFAlgorithm.ssl_prf_legacy:
+        case PRFAlgorithm.tls_prf_legacy:
         {
             checkTrackingHash(Shorts.valueOf(HashAlgorithm.md5));
             checkTrackingHash(Shorts.valueOf(HashAlgorithm.sha1));
+            break;
         }
-        else
+        default:
         {
             checkTrackingHash(Shorts.valueOf(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)));
+            break;
+        }
         }
         return this;
     }
@@ -101,14 +107,20 @@ class DeferredHash
     {
         Hashtable newHashes = new Hashtable();
         int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
-        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
+        switch (prfAlgorithm)
+        {
+        case PRFAlgorithm.ssl_prf_legacy:
+        case PRFAlgorithm.tls_prf_legacy:
         {
             cloneHash(newHashes, HashAlgorithm.md5);
             cloneHash(newHashes, HashAlgorithm.sha1);
+            break;
         }
-        else
+        default:
         {
             cloneHash(newHashes, TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+            break;
+        }
         }
         return new DeferredHash(context, newHashes);
     }
@@ -120,13 +132,19 @@ class DeferredHash
         TlsHash prfHash;
 
         int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
-        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
+        switch (prfAlgorithm)
+        {
+        case PRFAlgorithm.ssl_prf_legacy:
+        case PRFAlgorithm.tls_prf_legacy:
         {
             prfHash = new CombinedHash(context, cloneHash(HashAlgorithm.md5), cloneHash(HashAlgorithm.sha1));
+            break;
         }
-        else
+        default:
         {
             prfHash = cloneHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+            break;
+        }
         }
 
         if (buf != null)

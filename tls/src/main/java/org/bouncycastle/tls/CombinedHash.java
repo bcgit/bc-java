@@ -46,6 +46,11 @@ public class CombinedHash
 
     public byte[] calculateHash()
     {
+        if (null != context && TlsUtils.isSSL(context))
+        {
+            SSL3Utils.completeCombinedHash(context, md5, sha1);
+        }
+
         return Arrays.concatenate(md5.calculateHash(), sha1.calculateHash());
     }
 
