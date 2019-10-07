@@ -8,22 +8,21 @@ package org.bouncycastle.tls;
  */
 public class PRFAlgorithm
 {
-    /*
-     * Placeholder to refer to the legacy TLS algorithm
-     */
-    public static final int tls_prf_legacy = 0;
-
-    public static final int tls_prf_sha256 = 1;
+    public static final int ssl_prf_legacy = 0;
+    public static final int tls_prf_legacy = 1;
+    public static final int tls_prf_sha256 = 2;
 
     /*
      * Implied by RFC 5288
      */
-    public static final int tls_prf_sha384 = 2;
+    public static final int tls_prf_sha384 = 3;
 
     public static String getName(int prfAlgorithm)
     {
         switch (prfAlgorithm)
         {
+        case ssl_prf_legacy:
+            return "ssl_prf_legacy";
         case tls_prf_legacy:
             return "tls_prf_legacy";
         case tls_prf_sha256:

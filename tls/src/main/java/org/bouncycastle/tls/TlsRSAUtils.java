@@ -24,7 +24,7 @@ public abstract class TlsRSAUtils
         TlsSecret preMasterSecret = context.getCrypto().generateRSAPreMasterSecret(context.getClientVersion());
 
         byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(certificate);
-        TlsUtils.writeOpaque16(encryptedPreMasterSecret, output);
+        TlsUtils.writeEncryptedPMS(context, encryptedPreMasterSecret, output);
 
         return preMasterSecret;
     }

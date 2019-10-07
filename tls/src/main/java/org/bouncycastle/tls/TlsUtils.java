@@ -249,6 +249,11 @@ public class TlsUtils
         return true;
     }
 
+    public static boolean isSSL(TlsContext context)
+    {
+        return context.getServerVersion().isSSL();
+    }
+
     public static boolean isTLSv10(ProtocolVersion version)
     {
         return ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
@@ -1386,9 +1391,7 @@ public class TlsUtils
 
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
-        int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
-
-        return secret.deriveUsingPRF(prfAlgorithm, asciiLabel, seed, length);
+        return PRF(context.getSecurityParametersHandshake(), secret, asciiLabel, seed, length);
     }
 
     public static byte[] copyOfRangeExact(byte[] original, int from, int to)
@@ -1478,24 +1481,25 @@ public class TlsUtils
             seed = concat(sp.getClientRandom(), sp.getServerRandom());
         }
 
-        return PRF(context, preMasterSecret, asciiLabel, seed, 48);
+        return PRF(sp, preMasterSecret, asciiLabel, seed, 48);
     }
 
-    static byte[] calculateTLSVerifyData(TlsContext context, TlsHandshakeHash handshakeHash, boolean isServer)
+    static byte[] calculateVerifyData(TlsContext context, TlsHandshakeHash handshakeHash, boolean isServer)
     {
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        if (securityParameters.getNegotiatedVersion().isSSL())
+        {
+            return SSL3Utils.calculateVerifyData(handshakeHash, isServer);
+        }
+
         String asciiLabel = isServer ? ExporterLabel.server_finished : ExporterLabel.client_finished;
         byte[] prfHash = getCurrentPRFHash(handshakeHash);
 
-        return calculateTLSVerifyData(context, asciiLabel, prfHash);
-    }
-
-    static byte[] calculateTLSVerifyData(TlsContext context, String asciiLabel, byte[] prfHash)
-    {
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         TlsSecret master_secret = securityParameters.getMasterSecret();
         int verify_data_length = securityParameters.getVerifyDataLength();
 
-        return PRF(context, master_secret, asciiLabel, prfHash, verify_data_length).extract();
+        return PRF(securityParameters, master_secret, asciiLabel, prfHash, verify_data_length).extract();
     }
 
     public static short getHashAlgorithmForHMACAlgorithm(int macAlgorithm)
@@ -1521,6 +1525,7 @@ public class TlsUtils
     {
         switch (prfAlgorithm)
         {
+        case PRFAlgorithm.ssl_prf_legacy:
         case PRFAlgorithm.tls_prf_legacy:
             throw new IllegalArgumentException("legacy PRF not a valid algorithm");
         case PRFAlgorithm.tls_prf_sha256:
@@ -3835,6 +3840,11 @@ public class TlsUtils
 
         if (clientCertificate.isEmpty())
         {
+            /*
+             * NOTE: We tolerate SSLv3 clients sending an empty chain, although "If no suitable
+             * certificate is available, the client should send a no_certificate alert instead".
+             */
+
             keyExchange.skipClientCredentials();
         }
         else
@@ -4173,5 +4183,27 @@ public class TlsUtils
         TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
 
         return clientAgreements;
+    }
+
+    static byte[] readEncryptedPMS(TlsContext context, InputStream input) throws IOException
+    {
+        if (isSSL(context))
+        {
+            return SSL3Utils.readEncryptedPMS(input);
+        }
+
+        return readOpaque16(input);
+    }
+
+    static void writeEncryptedPMS(TlsContext context, byte[] encryptedPMS, OutputStream output) throws IOException
+    {
+        if (isSSL(context))
+        {
+            SSL3Utils.writeEncryptedPMS(encryptedPMS, output);
+        }
+        else
+        {
+            writeOpaque16(encryptedPMS, output);
+        }
     }
 }

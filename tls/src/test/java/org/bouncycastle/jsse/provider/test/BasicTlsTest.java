@@ -61,14 +61,19 @@ public class BasicTlsTest
             {
                 TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
                     BouncyCastleJsseProvider.PROVIDER_NAME);
-    
                 trustMgrFact.init(trustStore);
-    
+
                 SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-    
                 clientContext.init(null, trustMgrFact.getTrustManagers(),
                     SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
-    
+
+//                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
+//                trustMgrFact.init(trustStore);
+//    
+//                SSLContext clientContext = SSLContext.getInstance("TLS", "SunJSSE");
+//                clientContext.init(null, trustMgrFact.getTrustManagers(), null);
+
+
                 SSLSocketFactory fact = clientContext.getSocketFactory();
 
                 SSLSocket cSock;
@@ -120,26 +125,31 @@ public class BasicTlsTest
             {
                 KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
                     BouncyCastleJsseProvider.PROVIDER_NAME);
-    
                 keyMgrFact.init(serverStore, keyPass);
-    
+
                 SSLContext serverContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-    
                 serverContext.init(keyMgrFact.getKeyManagers(), null,
                     SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
-    
+
+//                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
+//                keyMgrFact.init(serverStore, keyPass);
+//
+//                SSLContext serverContext = SSLContext.getInstance("TLS", "SunJSSE");
+//                serverContext.init(keyMgrFact.getKeyManagers(), null, null);
+
+
                 SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
                 SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
-    
+
                 SSLUtils.enableAll(sSock);
-    
+
                 latch.countDown();
-    
+
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
                 sslSock.setUseClientMode(false);
-    
+
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
-                
+
                 sslSock.close();
                 sSock.close();
             }
@@ -202,17 +212,25 @@ public class BasicTlsTest
     {
         char[] keyPass = "keyPassword".toCharArray();
 
-        KeyPair caKeyPair = TestUtils.generateECKeyPair();
+        KeyPair caKeyPairDSA = TestUtils.generateDSAKeyPair();
+        KeyPair caKeyPairEC = TestUtils.generateECKeyPair();
+        KeyPair caKeyPairRSA = TestUtils.generateRSAKeyPair();
 
-        X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
+        X509Certificate caCertDSA = TestUtils.generateRootCert(caKeyPairDSA);
+        X509Certificate caCertEC = TestUtils.generateRootCert(caKeyPairEC);
+        X509Certificate caCertRSA = TestUtils.generateRootCert(caKeyPairRSA);
 
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
-        ks.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
+        ks.setKeyEntry("serverDSA", caKeyPairDSA.getPrivate(), keyPass, new X509Certificate[]{ caCertDSA });
+        ks.setKeyEntry("serverEC", caKeyPairEC.getPrivate(), keyPass, new X509Certificate[]{ caCertEC });
+        ks.setKeyEntry("serverRSA", caKeyPairRSA.getPrivate(), keyPass, new X509Certificate[]{ caCertRSA });
 
         KeyStore ts = KeyStore.getInstance("JKS");
         ts.load(null, null);
-        ts.setCertificateEntry("ca", caCert);
+        ts.setCertificateEntry("caDSA", caCertDSA);
+        ts.setCertificateEntry("caEC", caCertEC);
+        ts.setCertificateEntry("caRSA", caCertRSA);
 
         TestProtocolUtil.runClientAndServer(new SimpleServer(ks, keyPass), new SimpleClient(layered, ts));
     }

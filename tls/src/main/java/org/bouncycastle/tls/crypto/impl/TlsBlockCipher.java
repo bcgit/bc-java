@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
@@ -24,6 +25,7 @@ public class TlsBlockCipher
     protected final byte[] randomData;
     protected final boolean encryptThenMAC;
     protected final boolean useExplicitIV;
+    protected final boolean acceptExtraPadding;
     protected final boolean useExtraPadding;
 
     protected final TlsBlockCipherImpl decryptCipher, encryptCipher;
@@ -37,9 +39,12 @@ public class TlsBlockCipher
         this.randomData = cryptoParams.getNonceGenerator().generateNonce(256);
 
         SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
         this.encryptThenMAC = securityParameters.isEncryptThenMAC();
-        this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
+        this.useExplicitIV = TlsImplUtils.isTLSv11(negotiatedVersion);
+
+        this.acceptExtraPadding = !negotiatedVersion.isSSL();
 
         /*
          * Don't use variable-length padding with truncated MACs.
@@ -50,7 +55,7 @@ public class TlsBlockCipher
          * TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
          */
         this.useExtraPadding = securityParameters.isExtendedPadding()
-            && !cryptoParams.getServerVersion().isDTLS()
+            && ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(negotiatedVersion)
             && (encryptThenMAC || !securityParameters.isTruncatedHMac());
 
         this.encryptCipher = encryptCipher;
@@ -352,7 +357,9 @@ public class TlsBlockCipher
         int dummyIndex = 0;
         byte padDiff = 0;
 
-        if (macSize + totalPad > len)
+        int totalPadLimit = Math.min(acceptExtraPadding ? 256 : blockSize, len - macSize);
+
+        if (totalPad > totalPadLimit)
         {
             totalPad = 0;
         }
