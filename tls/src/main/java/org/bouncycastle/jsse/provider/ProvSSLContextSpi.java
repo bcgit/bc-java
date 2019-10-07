@@ -222,7 +222,7 @@ class ProvSSLContextSpi
         Map<String, ProtocolVersion> supportedProtocolMap)
     {
         final Map<String, ProtocolVersion> ps = new LinkedHashMap<String, ProtocolVersion>(supportedProtocolMap);
-        FipsUtils.removeNonFipsCipherSuites(ps.keySet());
+        FipsUtils.removeNonFipsProtocols(ps.keySet());
         return Collections.unmodifiableMap(ps);
     }
 
