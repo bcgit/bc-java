@@ -1290,9 +1290,17 @@ public abstract class TlsProtocol
             certificate = Certificate.EMPTY_CHAIN;
         }
 
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate);
-        certificate.encode(context, message, endPointHash);
-        message.writeToRecordStream();
+        if (certificate.isEmpty() && !context.isServer() && securityParameters.getNegotiatedVersion().isSSL())
+        {
+            String message = "SSLv3 client didn't provide credentials";
+            raiseAlertWarning(AlertDescription.no_certificate, message);
+        }
+        else
+        {
+            HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate);
+            certificate.encode(context, message, endPointHash);
+            message.writeToRecordStream();
+        }
 
         securityParameters.localCertificate = certificate;
     }
@@ -1340,7 +1348,7 @@ public abstract class TlsProtocol
 
     protected byte[] createVerifyData(boolean isServer)
     {
-        return TlsUtils.calculateTLSVerifyData(getContext(), recordStream.getHandshakeHash(), isServer);
+        return TlsUtils.calculateVerifyData(getContext(), recordStream.getHandshakeHash(), isServer);
     }
 
     /**
@@ -1389,6 +1397,14 @@ public abstract class TlsProtocol
 
     protected void refuseRenegotiation() throws IOException
     {
+        /*
+         * RFC 5746 4.5 SSLv3 clients [..] SHOULD use a fatal handshake_failure alert.
+         */
+        if (TlsUtils.isSSL(getContext()))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
         raiseAlertWarning(AlertDescription.no_renegotiation, "Renegotiation not supported");
     }
 
@@ -1594,8 +1610,11 @@ public abstract class TlsProtocol
 
     protected static int getPRFAlgorithm(TlsContext context, int cipherSuite) throws IOException
     {
-        boolean isTLSv13 = TlsUtils.isTLSv13(context);
-        boolean isTLSv12 = !isTLSv13 && TlsUtils.isTLSv12(context);
+        ProtocolVersion negotiatedVersion = context.getSecurityParametersHandshake().getNegotiatedVersion();
+
+        final boolean isTLSv13 = TlsUtils.isTLSv13(negotiatedVersion);
+        final boolean isTLSv12 = !isTLSv13 && TlsUtils.isTLSv12(negotiatedVersion);
+        final boolean isSSL = negotiatedVersion.isSSL();
 
         switch (cipherSuite)
         {
@@ -1841,18 +1860,34 @@ public abstract class TlsProtocol
         case CipherSuite.TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384:
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA384:
         {
+            if (isTLSv13)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
             if (isTLSv12)
             {
                 return PRFAlgorithm.tls_prf_sha384;
+            }
+            if (isSSL)
+            {
+                return PRFAlgorithm.ssl_prf_legacy;
             }
             return PRFAlgorithm.tls_prf_legacy;
         }
 
         default:
         {
+            if (isTLSv13)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
             if (isTLSv12)
             {
                 return PRFAlgorithm.tls_prf_sha256;
+            }
+            if (isSSL)
+            {
+                return PRFAlgorithm.ssl_prf_legacy;
             }
             return PRFAlgorithm.tls_prf_legacy;
         }

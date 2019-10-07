@@ -48,6 +48,7 @@ public class TlsTestSuite extends TestSuite
     private static void addAllTests(TestSuite testSuite, int clientCrypto, int serverCrypto)
     {
         addFallbackTests(testSuite, clientCrypto, serverCrypto);
+        addVersionTests(testSuite, ProtocolVersion.SSLv3, clientCrypto, serverCrypto);
         addVersionTests(testSuite, ProtocolVersion.TLSv10, clientCrypto, serverCrypto);
         addVersionTests(testSuite, ProtocolVersion.TLSv11, clientCrypto, serverCrypto);
         addVersionTests(testSuite, ProtocolVersion.TLSv12, clientCrypto, serverCrypto);
@@ -257,10 +258,10 @@ public class TlsTestSuite extends TestSuite
         TlsTestConfig c = new TlsTestConfig();
         c.clientCrypto = clientCrypto;
         // TODO[tls13]
-//        c.clientSupportedVersions = ProtocolVersion.TLSv13.downTo(ProtocolVersion.TLSv10);
-        c.clientSupportedVersions = ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+//        c.clientSupportedVersions = ProtocolVersion.TLSv13.downTo(ProtocolVersion.SSLv3);
+        c.clientSupportedVersions = ProtocolVersion.TLSv12.downTo(ProtocolVersion.SSLv3);
         c.serverCrypto = serverCrypto;
-        c.serverSupportedVersions = serverMaxVersion.downTo(ProtocolVersion.TLSv10);
+        c.serverSupportedVersions = serverMaxVersion.downTo(ProtocolVersion.SSLv3);
         return c;
     }
 
