@@ -67,7 +67,7 @@ class ProvSSLSocketDirect
     {
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this.sslParameters = context.getDefaultParameters(useClientMode);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
@@ -75,7 +75,7 @@ class ProvSSLSocketDirect
     {
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this.sslParameters = context.getDefaultParameters(useClientMode);
 
         implBind(clientAddress, clientPort);
         implConnect(address, port);
@@ -85,7 +85,7 @@ class ProvSSLSocketDirect
     {
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this.sslParameters = context.getDefaultParameters(useClientMode);
 
         implConnect(address, port);
     }
@@ -95,7 +95,7 @@ class ProvSSLSocketDirect
     {
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this.sslParameters = context.getDefaultParameters(useClientMode);
         this.peerHost = host;
 
         implBind(clientAddress, clientPort);
@@ -106,7 +106,7 @@ class ProvSSLSocketDirect
     {
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this.sslParameters = context.getDefaultParameters(useClientMode);
         this.peerHost = host;
 
         implConnect(host, port);
@@ -385,7 +385,7 @@ class ProvSSLSocketDirect
 
         if (this.useClientMode != useClientMode)
         {
-            context.updateDefaultProtocols(sslParameters, !useClientMode);
+            context.updateDefaultProtocols(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }

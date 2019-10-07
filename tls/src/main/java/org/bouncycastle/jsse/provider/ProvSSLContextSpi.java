@@ -432,24 +432,14 @@ class ProvSSLContextSpi
         return defaultCipherSuites.clone();
     }
 
-    ProvSSLParameters getDefaultParameters(boolean isServer)
+    ProvSSLParameters getDefaultParameters(boolean isClient)
     {
-        return new ProvSSLParameters(this, defaultCipherSuites, getDefaultProtocols(isServer));
+        return new ProvSSLParameters(this, defaultCipherSuites, getDefaultProtocols(isClient));
     }
 
-    String[] getDefaultProtocols(boolean isServer)
+    String[] getDefaultProtocols(boolean isClient)
     {
-        return isServer ? getDefaultProtocolsServer() : getDefaultProtocolsClient();
-    }
-
-    String[] getDefaultProtocolsClient()
-    {
-        return defaultProtocolsClient;
-    }
-
-    String[] getDefaultProtocolsServer()
-    {
-        return defaultProtocolsServer;
+        return isClient ? defaultProtocolsClient : defaultProtocolsServer;
     }
 
     int[] getActiveCipherSuites(TlsCrypto crypto, ProvSSLParameters sslParameters,
@@ -521,12 +511,6 @@ class ProvSSLContextSpi
         return result.toArray(new ProtocolVersion[result.size()]);
     }
 
-    boolean isDefaultProtocols(String[] protocols)
-    {
-        return protocols == getDefaultProtocolsClient()
-            || protocols == getDefaultProtocolsServer();
-    }
-
     String[] getSupportedCipherSuites()
     {
         return getKeysArray(supportedCipherSuites);
@@ -581,11 +565,11 @@ class ProvSSLContextSpi
         return true;
     }
 
-    void updateDefaultProtocols(ProvSSLParameters sslParameters, boolean isServer)
+    void updateDefaultProtocols(ProvSSLParameters sslParameters, boolean isClient)
     {
-        if (isDefaultProtocols(sslParameters.getProtocolsArray()))
+        if (sslParameters.getProtocolsArray() == getDefaultProtocols(!isClient))
         {
-            sslParameters.setProtocolsArray(getDefaultProtocols(isServer));
+            sslParameters.setProtocolsArray(getDefaultProtocols(isClient));
         }
     }
 
