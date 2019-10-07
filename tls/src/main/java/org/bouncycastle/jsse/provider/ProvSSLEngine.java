@@ -47,7 +47,8 @@ class ProvSSLEngine
     protected final ProvSSLParameters sslParameters;
 
     protected boolean enableSessionCreation = true;
-    protected boolean useClientMode = false;
+    protected boolean useClientMode = true;
+    protected boolean useClientModeSet = false;
 
     protected boolean closedEarly = false;
     protected boolean initialHandshakeBegun = false;
@@ -61,11 +62,7 @@ class ProvSSLEngine
 
     protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData)
     {
-        super();
-
-        this.context = context;
-        this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this(context, contextData, null, -1);
     }
 
     protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData, String host, int port)
@@ -74,7 +71,7 @@ class ProvSSLEngine
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(!useClientMode);
+        this.sslParameters = context.getDefaultParameters(useClientMode);
     }
 
     public ProvSSLContextSpi getContext()
@@ -91,6 +88,10 @@ class ProvSSLEngine
     public synchronized void beginHandshake()
         throws SSLException
     {
+        if (!useClientModeSet)
+        {
+            throw new IllegalStateException("Client/Server mode must be set before the handshake can begin");
+        }
         if (closedEarly)
         {
             throw new SSLException("Connection is already closed");
@@ -389,15 +390,17 @@ class ProvSSLEngine
     {
         if (initialHandshakeBegun)
         {
-            throw new IllegalArgumentException("Mode cannot be changed after the initial handshake has begun");
+            throw new IllegalArgumentException("Client/Server mode cannot be changed after the handshake has begun");
         }
 
         if (this.useClientMode != useClientMode)
         {
-            context.updateDefaultProtocols(sslParameters, !useClientMode);
+            context.updateDefaultProtocols(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }
+
+        this.useClientModeSet = true;
     }
 
     @Override
