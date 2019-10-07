@@ -168,6 +168,11 @@ public final class ProtocolVersion
         return getMajorVersion() == 0xFE;
     }
 
+    public boolean isSSL()
+    {
+        return this == SSLv3;
+    }
+
     public boolean isTLS()
     {
         return getMajorVersion() == 0x03;

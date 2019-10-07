@@ -18,8 +18,8 @@ public class TlsServerProtocol
     protected TlsKeyExchange keyExchange = null;
     protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
-
     protected TlsHandshakeHash prepareFinishHash = null;
+    protected boolean offeredExtendedMasterSecret;
 
     /**
      * Constructor for non-blocking mode.<br>
@@ -102,6 +102,7 @@ public class TlsServerProtocol
         this.serverCredentials = null;
         this.certificateRequest = null;
         this.prepareFinishHash = null;
+        this.offeredExtendedMasterSecret = false;
     }
 
     protected TlsContext getContext()
@@ -302,26 +303,31 @@ public class TlsServerProtocol
             }
             case CS_CLIENT_SUPPLEMENTAL_DATA:
             {
-                if (this.certificateRequest == null)
+                if (null == certificateRequest)
                 {
                     this.keyExchange.skipClientCredentials();
                 }
+                else if (TlsUtils.isTLSv12(tlsServerContext))
+                {
+                    /*
+                     * RFC 5246 If no suitable certificate is available, the client MUST send a
+                     * certificate message containing no certificates.
+                     * 
+                     * NOTE: In previous RFCs, this was SHOULD instead of MUST.
+                     */
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                }
+                else if (TlsUtils.isSSL(tlsServerContext))
+                {
+                    /*
+                     * SSL 3.0 If the server has sent a certificate request Message, the client must
+                     * send either the certificate message or a no_certificate alert.
+                     */
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                }
                 else
                 {
-                    if (TlsUtils.isTLSv12(getContext()))
-                    {
-                        /*
-                         * RFC 5246 If no suitable certificate is available, the client MUST send a
-                         * certificate message containing no certificates.
-                         * 
-                         * NOTE: In previous RFCs, this was SHOULD instead of MUST.
-                         */
-                        throw new TlsFatalAlert(AlertDescription.unexpected_message);
-                    }
-                    else
-                    {
-                        notifyClientCertificate(Certificate.EMPTY_CHAIN);
-                    }
+                    notifyClientCertificate(Certificate.EMPTY_CHAIN);
                 }
                 // NB: Fall through to next case label
             }
@@ -412,15 +418,32 @@ public class TlsServerProtocol
     protected void handleAlertWarningMessage(short alertDescription)
         throws IOException
     {
-        super.handleAlertWarningMessage(alertDescription);
+        if (TlsUtils.isSSL(tlsServerContext))
+        {
+            /*
+             * SSL 3.0 If the server has sent a certificate request Message, the client must send
+             * either the certificate message or a no_certificate alert.
+             */
+            if (AlertDescription.no_certificate == alertDescription && null != certificateRequest)
+            {
+                switch (this.connection_state)
+                {
+                case CS_SERVER_HELLO_DONE:
+                {
+                    tlsServer.processClientSupplementalData(null);
+                    // NB: Fall through to next case label
+                }
+                case CS_CLIENT_SUPPLEMENTAL_DATA:
+                {
+                    notifyClientCertificate(Certificate.EMPTY_CHAIN);
+                    this.connection_state = CS_CLIENT_CERTIFICATE;
+                    return;
+                }
+                }
+            }
+        }
 
-        switch (alertDescription)
-        {
-        case AlertDescription.no_certificate:
-        {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-        }
+        super.handleAlertWarningMessage(alertDescription);
     }
 
     protected void notifyClientCertificate(Certificate clientCertificate)
@@ -458,9 +481,6 @@ public class TlsServerProtocol
     protected void receiveClientHelloMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        // TODO[tls13] For subsequent ClientHello messages (of a TLSv13 handshake) don't do this!
-        recordStream.setWriteVersion(ProtocolVersion.TLSv10);
-
         ClientHello clientHello = ClientHello.parse(buf, null);
         ProtocolVersion client_version = clientHello.getClientVersion();
         this.offeredCipherSuites = clientHello.getCipherSuites();
@@ -485,14 +505,25 @@ public class TlsServerProtocol
                 client_version = ProtocolVersion.TLSv12;
             }
 
-            tlsServerContext.setClientSupportedVersions(client_version.downTo(ProtocolVersion.TLSv10));
+            tlsServerContext.setClientSupportedVersions(client_version.downTo(ProtocolVersion.SSLv3));
         }
         else
         {
             client_version = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
-        if (null == client_version || !ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
+        if (ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), ProtocolVersion.SSLv3))
+        {
+            // TODO[tls13] Prevent offering SSLv3 AND TLSv13?
+            this.recordStream.setWriteVersion(ProtocolVersion.SSLv3);
+        }
+        else
+        {
+            // TODO[tls13] For subsequent ClientHello messages (of a TLSv13 handshake) don't do this!
+            this.recordStream.setWriteVersion(ProtocolVersion.TLSv10);
+        }
+
+        if (null == client_version || !ProtocolVersion.SSLv3.isEqualOrEarlierVersionOf(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -527,10 +558,9 @@ public class TlsServerProtocol
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
          */
-        securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
+        this.offeredExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
 
-        if (!securityParameters.isExtendedMasterSecret()
-            && (resumedSession || tlsServer.requiresExtendedMasterSecret()))
+        if (!offeredExtendedMasterSecret && (resumedSession || tlsServer.requiresExtendedMasterSecret()))
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
@@ -655,10 +685,22 @@ public class TlsServerProtocol
 
         assertEmpty(buf);
 
+        final boolean isSSL = TlsUtils.isSSL(tlsServerContext);
+        if (isSSL)
+        {
+            // NOTE: For SSLv3 (only), master_secret needed to calculate session hash
+            establishMasterSecret(tlsServerContext, keyExchange);
+        }
+
         this.prepareFinishHash = recordStream.prepareToFinish();
         tlsServerContext.getSecurityParametersHandshake().sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
-        establishMasterSecret(getContext(), keyExchange);
+        if (!isSSL)
+        {
+            // NOTE: For (D)TLS, session hash potentially needed for extended_master_secret
+            establishMasterSecret(tlsServerContext, keyExchange);
+        }
+
         recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
     }
 
@@ -722,7 +764,7 @@ public class TlsServerProtocol
         {
             server_version = tlsServer.getServerVersion();
             if (null == server_version
-                || server_version.isEarlierVersionOf(ProtocolVersion.TLSv10)
+                || server_version.isEarlierVersionOf(ProtocolVersion.SSLv3)
                 || server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
                 || !ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
@@ -810,10 +852,17 @@ public class TlsServerProtocol
             }
         }
 
+        securityParameters.extendedMasterSecret = offeredExtendedMasterSecret && !server_version.isSSL();
+
         if (securityParameters.isExtendedMasterSecret())
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
         }
+        else if (resumedSession || tlsServer.requiresExtendedMasterSecret())
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
 
         /*
          * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
