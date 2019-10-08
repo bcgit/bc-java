@@ -2468,6 +2468,13 @@ public class TlsUtils
         case CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA:
             return KeyExchangeAlgorithm.ECDHE_RSA;
 
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+            return KeyExchangeAlgorithm.NULL;
+
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA256:
@@ -2557,11 +2564,6 @@ public class TlsUtils
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
             return KeyExchangeAlgorithm.SRP_RSA;
 
-        case CipherSuite.TLS_AES_128_CCM_SHA256:
-        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
-        case CipherSuite.TLS_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
         default:
             return -1;
         }

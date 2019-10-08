@@ -83,7 +83,7 @@ class ProvSSLContextSpi
 //         * TLS 1.3
 //         */
 //        cs.add("TLS_CHACHA20_POLY1305_SHA256");
-//        cs.add("TLS_AES_256_GCM_SHA256");
+//        cs.add("TLS_AES_256_GCM_SHA384");
 //        cs.add("TLS_AES_128_GCM_SHA256");
 
         /*
