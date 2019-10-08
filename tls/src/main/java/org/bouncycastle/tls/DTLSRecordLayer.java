@@ -128,7 +128,7 @@ class DTLSRecordLayer
 
         this.inHandshake = true;
 
-        this.currentEpoch = new DTLSEpoch(0, new TlsNullNullCipher());
+        this.currentEpoch = new DTLSEpoch(0, TlsNullNullCipher.INSTANCE);
         this.pendingEpoch = null;
         this.readEpoch = currentEpoch;
         this.writeEpoch = currentEpoch;

@@ -48,7 +48,7 @@ class RecordStream
     void init(TlsContext context)
     {
         this.context = context;
-        this.readCipher = new TlsNullNullCipher();
+        this.readCipher = TlsNullNullCipher.INSTANCE;
         this.writeCipher = this.readCipher;
         this.handshakeHash = new DeferredHash(context);
 
