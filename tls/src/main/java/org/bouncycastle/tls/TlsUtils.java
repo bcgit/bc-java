@@ -3175,10 +3175,6 @@ public class TlsUtils
 
         switch (keyExchangeAlgorithm)
         {
-        case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.ECDH_anon:
-            return true;
-
         case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.SRP_RSA:
@@ -3199,14 +3195,29 @@ public class TlsUtils
                 || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ed25519))
                 || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ed448));
 
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.NULL:
         default:
             return true;
         }
     }
 
-    public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion serverVersion)
+    public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion version)
     {
-        return getMinimumVersion(cipherSuite).isEqualOrEarlierVersionOf(serverVersion.getEquivalentTLSVersion());
+        version = version.getEquivalentTLSVersion();
+
+        ProtocolVersion minimumVersion = getMinimumVersion(cipherSuite);
+        if (minimumVersion == version)
+        {
+            return true;
+        }
+        if (!minimumVersion.isEarlierVersionOf(version))
+        {
+            return false;
+        }
+        return ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(minimumVersion)
+            || ProtocolVersion.TLSv13.isLaterVersionOf(version);
     }
 
     static boolean isValidSignatureAlgorithmForCertificateVerify(short signatureAlgorithm, short[] clientCertificateTypes)
