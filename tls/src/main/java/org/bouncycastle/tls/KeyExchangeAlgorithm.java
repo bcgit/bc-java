@@ -8,7 +8,11 @@ package org.bouncycastle.tls;
  */
 public class KeyExchangeAlgorithm
 {
+    /*
+     * NOTE: We interpret TLS 1.3 cipher suites as having a NULL key exchange
+     */
     public static final int NULL = 0;
+
     public static final int RSA = 1;
     public static final int RSA_EXPORT = 2;
     public static final int DHE_DSS = 3;
