@@ -255,6 +255,10 @@ public class TlsClientProtocol
             {
             case CS_CLIENT_HELLO:
             {
+                /*
+                 * TODO[tls13] Receive ServerHello message that MAY be a HelloRetryRequest.
+                 * (state => CS_HELLO_RETRY_REQUEST, then CS_CLIENT_HELLO_RETRY instead).
+                 */
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
 
@@ -278,6 +282,11 @@ public class TlsClientProtocol
                 }
 
                 break;
+            }
+            case CS_CLIENT_HELLO_RETRY:
+            {
+                // TODO[tls13] Receive ServerHello message that MUST NOT be a HelloRetryRequest
+                throw new TlsFatalAlert(AlertDescription.internal_error);
             }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
