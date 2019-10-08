@@ -160,6 +160,10 @@ public class TlsServerProtocol
                     this.sessionParameters = null;
                 }
 
+                /*
+                 * TODO[tls13] Send ServerHello message that MAY be a HelloRetryRequest.
+                 * (state => CS_HELLO_RETRY_REQUEST instead).
+                 */
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
@@ -247,6 +251,11 @@ public class TlsServerProtocol
                 TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash(), forceBuffering);
 
                 break;
+            }
+            case CS_HELLO_RETRY_REQUEST:
+            {
+                // TODO[tls13] Receive ClientHello message that is a retry in response to our HelloRetryRequest
+                throw new TlsFatalAlert(AlertDescription.internal_error);
             }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
