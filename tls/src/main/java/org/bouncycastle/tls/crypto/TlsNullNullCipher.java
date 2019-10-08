@@ -10,6 +10,8 @@ import org.bouncycastle.tls.TlsUtils;
 public class TlsNullNullCipher
     implements TlsCipher
 {
+    public static final TlsNullNullCipher INSTANCE = new TlsNullNullCipher();
+
     public int getCiphertextLimit(int plaintextLimit)
     {
         return plaintextLimit;
