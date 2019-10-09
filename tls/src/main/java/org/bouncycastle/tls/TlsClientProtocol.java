@@ -600,25 +600,10 @@ public class TlsClientProtocol
     protected void receiveServerHelloMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        ProtocolVersion server_version = TlsUtils.readVersion(buf);
+        ServerHello serverHello = ServerHello.parse(buf);
+        ProtocolVersion server_version = serverHello.getVersion();
 
-        byte[] server_random = TlsUtils.readFully(32, buf);
-
-        byte[] selectedSessionID = TlsUtils.readOpaque8(buf, 0, 32);
-
-        int selectedCipherSuite = TlsUtils.readUint16(buf);
-
-        short selectedCompressionMethod = TlsUtils.readUint8(buf);
-
-        /*
-         * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
-         * hello message when the client has requested extended functionality via the extended
-         * client hello message specified in Section 2.1. ... Note that the extended server hello
-         * message is only sent in response to an extended client hello message. This prevents the
-         * possibility that the extended server hello message could "break" existing TLS 1.0
-         * clients.
-         */
-        this.serverExtensions = readExtensions(buf);
+        this.serverExtensions = serverHello.getExtensions();
 
 
 
@@ -655,22 +640,27 @@ public class TlsClientProtocol
 
         this.tlsClient.notifyServerVersion(server_version);
 
+        securityParameters.serverRandom = serverHello.getRandom();
+
         if (!tlsClientContext.getClientVersion().equals(server_version))
         {
-            TlsUtils.checkDowngradeMarker(server_version, server_random);
+            TlsUtils.checkDowngradeMarker(server_version, securityParameters.getServerRandom());
         }
-        securityParameters.serverRandom = server_random;
 
-        securityParameters.sessionID = selectedSessionID;
-        this.tlsClient.notifySessionID(selectedSessionID);
-        this.resumedSession = selectedSessionID.length > 0 && this.tlsSession != null
-            && Arrays.areEqual(selectedSessionID, this.tlsSession.getSessionID());
+        {
+            byte[] selectedSessionID = serverHello.getSessionID();
+            securityParameters.sessionID = selectedSessionID;
+            this.tlsClient.notifySessionID(selectedSessionID);
+            this.resumedSession = selectedSessionID.length > 0 && this.tlsSession != null
+                && Arrays.areEqual(selectedSessionID, this.tlsSession.getSessionID());
+        }
 
         /*
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
          * ones, and is a valid selection for the negotiated version.
          */
         {
+            int selectedCipherSuite = serverHello.getCipherSuite();
             if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
                 || CipherSuite.isSCSV(selectedCipherSuite)
@@ -680,11 +670,6 @@ public class TlsClientProtocol
             }
             securityParameters.cipherSuite = selectedCipherSuite;
             this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
-        }
-
-        if (CompressionMethod._null != selectedCompressionMethod)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         /*

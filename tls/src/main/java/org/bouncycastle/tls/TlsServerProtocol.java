@@ -491,7 +491,7 @@ public class TlsServerProtocol
         throws IOException
     {
         ClientHello clientHello = ClientHello.parse(buf, null);
-        ProtocolVersion client_version = clientHello.getClientVersion();
+        ProtocolVersion client_version = clientHello.getVersion();
         this.offeredCipherSuites = clientHello.getCipherSuites();
 
         /*
@@ -921,24 +921,11 @@ public class TlsServerProtocol
 
 
 
+        ServerHello serverHello = new ServerHello(legacy_version, securityParameters.getServerRandom(), tlsSession.getSessionID(),
+            securityParameters.getCipherSuite(), serverExtensions);
+
         HandshakeMessage message = new HandshakeMessage(HandshakeType.server_hello);
-
-        TlsUtils.writeVersion(legacy_version, message);
-
-        message.write(securityParameters.getServerRandom());
-
-        /*
-         * The server may return an empty session_id to indicate that the session will not be cached
-         * and therefore cannot be resumed.
-         */
-        TlsUtils.writeOpaque8(tlsSession.getSessionID(), message);
-
-        TlsUtils.writeUint16(securityParameters.getCipherSuite(), message);
-
-        TlsUtils.writeUint8(CompressionMethod._null, message);
-
-        writeExtensions(message, serverExtensions);
-
+        serverHello.encode(tlsServerContext, message);
         message.writeToRecordStream();
     }
 
