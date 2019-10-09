@@ -177,7 +177,7 @@ public abstract class ASN1Sequence
 
     /**
      * Create a SEQUENCE containing one object.
-     * @param obj the object to be put in the SEQUENCE.
+     * @param element the object to be put in the SEQUENCE.
      */
     protected ASN1Sequence(ASN1Encodable element)
     {
@@ -205,7 +205,7 @@ public abstract class ASN1Sequence
 
     /**
      * Create a SEQUENCE containing an array of objects.
-     * @param array the array of objects to be put in the SEQUENCE.
+     * @param elements the array of objects to be put in the SEQUENCE.
      */
     protected ASN1Sequence(ASN1Encodable[] elements)
     {
