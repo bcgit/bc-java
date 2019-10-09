@@ -11,17 +11,17 @@ import org.bouncycastle.util.io.TeeInputStream;
 
 public class ClientHello
 {
-    private final ProtocolVersion clientVersion;
+    private final ProtocolVersion version;
     private final byte[] random;
     private final byte[] sessionID;
     private final byte[] cookie;
     private final int[] cipherSuites;
     private final Hashtable extensions;
 
-    public ClientHello(ProtocolVersion clientVersion, byte[] random, byte[] sessionID, byte[] cookie,
+    public ClientHello(ProtocolVersion version, byte[] random, byte[] sessionID, byte[] cookie,
         int[] cipherSuites, Hashtable extensions)
     {
-        this.clientVersion = clientVersion;
+        this.version = version;
         this.random = random;
         this.sessionID = sessionID;
         this.cookie = cookie;
@@ -34,9 +34,12 @@ public class ClientHello
         return cipherSuites;
     }
 
+    /**
+     * @deprecated Use {@link #getVersion()} instead.
+     */
     public ProtocolVersion getClientVersion()
     {
-        return clientVersion;
+        return version;
     }
     
     public byte[] getCookie()
@@ -59,6 +62,11 @@ public class ClientHello
         return sessionID;
     }
 
+    public ProtocolVersion getVersion()
+    {
+        return version;
+    }
+
     /**
      * Encode this {@link ClientHello} to an {@link OutputStream}.
      * 
@@ -68,7 +76,7 @@ public class ClientHello
      */
     public void encode(TlsContext context, OutputStream output) throws IOException
     {
-        TlsUtils.writeVersion(clientVersion, output);
+        TlsUtils.writeVersion(version, output);
 
         output.write(random);
 
@@ -94,8 +102,8 @@ public class ClientHello
      * @param dtlsOutput
      *            for DTLS this should be non-null; the input is copied to this
      *            {@link OutputStream}, minus the cookie field.
-     * @return a {@link Certificate} object.
-     * @throws IOException
+     * @return a {@link ClientHello} object.
+     * @throws TlsFatalAlert
      */
     public static ClientHello parse(ByteArrayInputStream messageInput, OutputStream dtlsOutput)
         throws TlsFatalAlert
@@ -166,6 +174,10 @@ public class ClientHello
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
+        /*
+         * NOTE: Can't use TlsProtocol.readExtensions directly because TeeInputStream a) won't have
+         * 'available()' method in the FIPS provider, b) isn't a ByteArrayInputStream.
+         */
         Hashtable extensions = null;
         if (messageInput.available() > 0)
         {
