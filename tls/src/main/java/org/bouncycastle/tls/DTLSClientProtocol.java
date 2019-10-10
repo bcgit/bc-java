@@ -393,16 +393,7 @@ public class DTLSClientProtocol
 
         context.setClientVersion(client_version);
 
-        // Session ID
-        byte[] session_id = TlsUtils.EMPTY_BYTES;
-        if (state.tlsSession != null)
-        {
-            session_id = state.tlsSession.getSessionID();
-            if (session_id == null || session_id.length > 32)
-            {
-                session_id = TlsUtils.EMPTY_BYTES;
-            }
-        }
+        byte[] session_id = TlsUtils.getSessionID(state.tlsSession);
 
         boolean fallback = state.client.isFallback();
 
