@@ -4219,4 +4219,19 @@ public class TlsUtils
             writeOpaque16(encryptedPMS, output);
         }
     }
+
+    static byte[] getSessionID(TlsSession tlsSession)
+    {
+        if (null != tlsSession)
+        {
+            byte[] sessionID = tlsSession.getSessionID();
+            if (null != sessionID
+                && sessionID.length > 0
+                && sessionID.length <= 32)
+            {
+                return sessionID;
+            }
+        }
+        return EMPTY_BYTES;
+    }
 }
