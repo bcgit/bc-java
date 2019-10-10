@@ -601,7 +601,7 @@ public class TlsClientProtocol
         throws IOException
     {
         ServerHello serverHello = ServerHello.parse(buf);
-        ProtocolVersion server_version = serverHello.getVersion();
+        ProtocolVersion legacy_version = serverHello.getVersion();
 
         this.serverExtensions = serverHello.getExtensions();
 
@@ -609,7 +609,17 @@ public class TlsClientProtocol
 
         SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
 
-        // TODO[tls13] Check supported_version extension for negotiated version
+        ProtocolVersion server_version = legacy_version;
+        ProtocolVersion supported_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(serverExtensions);
+        if (null != supported_version)
+        {
+            if (!ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(supported_version))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            server_version = supported_version;
+        }
 
         if (!ProtocolVersion.isSupportedTLSVersion(server_version))
         {
@@ -650,6 +660,17 @@ public class TlsClientProtocol
 
         {
             byte[] selectedSessionID = serverHello.getSessionID();
+            if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(server_version))
+            {
+                byte[] expectedSessionID = TlsUtils.getSessionID(tlsSession);
+                if (!Arrays.areEqual(expectedSessionID, selectedSessionID))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                selectedSessionID = TlsUtils.EMPTY_BYTES;
+            }
+
             securityParameters.sessionID = selectedSessionID;
             this.tlsClient.notifySessionID(selectedSessionID);
             this.resumedSession = selectedSessionID.length > 0 && this.tlsSession != null
@@ -946,15 +967,7 @@ public class TlsClientProtocol
          * TODO RFC 5077 3.4. When presenting a ticket, the client MAY generate and include a
          * Session ID in the TLS ClientHello.
          */
-        byte[] session_id = TlsUtils.EMPTY_BYTES;
-        if (this.tlsSession != null)
-        {
-            session_id = this.tlsSession.getSessionID();
-            if (session_id == null || session_id.length > 32)
-            {
-                session_id = TlsUtils.EMPTY_BYTES;
-            }
-        }
+        byte[] session_id = TlsUtils.getSessionID(tlsSession);
 
         boolean fallback = this.tlsClient.isFallback();
 
