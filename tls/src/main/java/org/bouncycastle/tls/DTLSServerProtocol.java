@@ -367,7 +367,7 @@ public class DTLSServerProtocol
 
         ProtocolVersion server_version = state.server.getServerVersion();
         {
-            if (null == server_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(server_version)
+            if (!ProtocolVersion.isSupportedDTLSVersion(server_version)
                 || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -602,7 +602,7 @@ public class DTLSServerProtocol
             client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
         }
 
-        if (null == client_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
+        if (!ProtocolVersion.isSupportedDTLSVersion(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

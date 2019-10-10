@@ -386,7 +386,7 @@ public class DTLSClientProtocol
         context.setClientSupportedVersions(state.client.getProtocolVersions());
 
         ProtocolVersion client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
-        if (null == client_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
+        if (!ProtocolVersion.isSupportedDTLSVersion(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -886,13 +886,10 @@ public class DTLSClientProtocol
         ProtocolVersion currentServerVersion = context.getServerVersion();
         if (null == currentServerVersion)
         {
-            if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(server_version))
+            if (!ProtocolVersion.isSupportedDTLSVersion(server_version)
+                || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-            if (!ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
-            {
-                throw new TlsFatalAlert(AlertDescription.protocol_version);
             }
 
             context.getSecurityParametersHandshake().negotiatedVersion = server_version;
