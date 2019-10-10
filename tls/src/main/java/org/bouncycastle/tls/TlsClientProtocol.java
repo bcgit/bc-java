@@ -611,6 +611,11 @@ public class TlsClientProtocol
 
         // TODO[tls13] Check supported_version extension for negotiated version
 
+        if (!ProtocolVersion.isSupportedTLSVersion(server_version))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         if (securityParameters.isRenegotiating())
         {
             // Check that this matches the negotiated version from the initial handshake
@@ -621,13 +626,9 @@ public class TlsClientProtocol
         }
         else
         {
-            if (!ProtocolVersion.SSLv3.isEqualOrEarlierVersionOf(server_version))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
             if (!ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), server_version))
             {
-                throw new TlsFatalAlert(AlertDescription.protocol_version);
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
             ProtocolVersion legacy_record_version = server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
@@ -932,9 +933,8 @@ public class TlsClientProtocol
             }
 
             client_version = ProtocolVersion.getLatestTLS(tlsClientContext.getClientSupportedVersions());
-            if (null == client_version
-                || client_version.isEarlierVersionOf(ProtocolVersion.SSLv3)
-                || client_version.isLaterVersionOf(ProtocolVersion.TLSv12))
+
+            if (!ProtocolVersion.isSupportedTLSVersion(client_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
