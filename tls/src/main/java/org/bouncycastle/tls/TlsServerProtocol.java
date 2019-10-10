@@ -521,6 +521,11 @@ public class TlsServerProtocol
             client_version = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
+        if (!ProtocolVersion.isSupportedTLSVersion(client_version))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         if (ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), ProtocolVersion.SSLv3))
         {
             // TODO[tls13] Prevent offering SSLv3 AND TLSv13?
@@ -530,11 +535,6 @@ public class TlsServerProtocol
         {
             // TODO[tls13] For subsequent ClientHello messages (of a TLSv13 handshake) don't do this!
             this.recordStream.setWriteVersion(ProtocolVersion.TLSv10);
-        }
-
-        if (null == client_version || !ProtocolVersion.SSLv3.isEqualOrEarlierVersionOf(client_version))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         if (securityParameters.isRenegotiating())
@@ -772,9 +772,8 @@ public class TlsServerProtocol
         else
         {
             server_version = tlsServer.getServerVersion();
-            if (null == server_version
-                || server_version.isEarlierVersionOf(ProtocolVersion.SSLv3)
-                || server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
+
+            if (!ProtocolVersion.isSupportedTLSVersion(server_version)
                 || !ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
