@@ -4134,21 +4134,30 @@ public class TlsUtils
             return null;
         }
 
-        int[] offeredGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
-        if (null == offeredGroups || offeredGroups.length < 1)
-        {
-            return null;
-        }
+        Hashtable clientAgreements = new Hashtable();
+        Vector clientShares = new Vector();
 
+        collectEarlyKeyShares(context.getCrypto(), client, clientExtensions, clientAgreements, clientShares);
+
+        TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
+
+        return clientAgreements;
+    }
+
+    private static void collectEarlyKeyShares(TlsCrypto crypto, TlsClient client, Hashtable clientExtensions,
+        Hashtable clientAgreements, Vector clientShares) throws IOException
+    {
         Vector earlyGroups = client.getEarlyKeyShareGroups();
         if (null == earlyGroups || earlyGroups.isEmpty())
         {
-            return null;
+            return;
         }
 
-        TlsCrypto crypto = context.getCrypto();
-        Vector clientShares = new Vector();
-        Hashtable clientAgreements = new Hashtable();
+        int[] offeredGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
+        if (null == offeredGroups || offeredGroups.length < 1)
+        {
+            return;
+        }
 
         for (int i = 0; i < offeredGroups.length; ++i)
         {
@@ -4187,15 +4196,6 @@ public class TlsUtils
                 clientAgreements.put(offeredGroupElement, agreement);
             }
         }
-
-        if (clientAgreements.isEmpty())
-        {
-            return null;
-        }
-
-        TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
-
-        return clientAgreements;
     }
 
     static byte[] readEncryptedPMS(TlsContext context, InputStream input) throws IOException
