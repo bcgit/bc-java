@@ -255,38 +255,64 @@ public class TlsClientProtocol
             {
             case CS_CLIENT_HELLO:
             {
-                /*
-                 * TODO[tls13] Receive ServerHello message that MAY be a HelloRetryRequest.
-                 * (state => CS_HELLO_RETRY_REQUEST, then CS_CLIENT_HELLO_RETRY instead).
-                 */
-                receiveServerHelloMessage(buf);
-                this.connection_state = CS_SERVER_HELLO;
+                ServerHello serverHello = ServerHello.parse(buf);
 
-                this.recordStream.notifyPRFDetermined();
-
-                applyMaxFragmentLengthExtension();
-
-                SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
-                if (this.resumedSession)
+                if (TlsUtils.isTLSv13(tlsClientContext.getClientVersion())
+                    && serverHello.isHelloRetryRequest())
                 {
-                    securityParameters.masterSecret = tlsClientContext.getCrypto()
-                        .adoptSecret(sessionParameters.getMasterSecret());
-                    this.recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
+                    receiveHelloRetryRequest(serverHello);
+                    this.recordStream.notifyPRFDetermined();
+                    this.connection_state = CS_HELLO_RETRY_REQUEST;
+
+                    sendClientHelloRetryMessage();
+                    this.connection_state = CS_CLIENT_HELLO_RETRY;
                 }
                 else
                 {
-                    invalidateSession();
+                    receiveServerHelloMessage(serverHello);
+                    this.recordStream.notifyPRFDetermined();
+                    this.connection_state = CS_SERVER_HELLO;
 
-                    this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
-                    this.sessionParameters = null;
+                    applyMaxFragmentLengthExtension();
+
+                    SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
+                    if (this.resumedSession)
+                    {
+                        securityParameters.masterSecret = tlsClientContext.getCrypto()
+                            .adoptSecret(sessionParameters.getMasterSecret());
+                        this.recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
+                    }
+                    else
+                    {
+                        invalidateSession();
+
+                        this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
+                        this.sessionParameters = null;
+                    }
                 }
 
                 break;
             }
             case CS_CLIENT_HELLO_RETRY:
             {
-                // TODO[tls13] Receive ServerHello message that MUST NOT be a HelloRetryRequest
-                throw new TlsFatalAlert(AlertDescription.internal_error);
+                if (!TlsUtils.isTLSv13(tlsClientContext))
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                ServerHello serverHello = ServerHello.parse(buf);
+                if (serverHello.isHelloRetryRequest())
+                {
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                }
+
+                // TODO[tls13] Must account for existing negotiated parameters
+                receiveServerHelloMessage(serverHello);
+                this.connection_state = CS_SERVER_HELLO;
+
+                // TODO[tls13] Check CS_CLIENT_HELLO block above for post-CS_SERVER_HELLO behaviour
+
+                break;
             }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -587,6 +613,12 @@ public class TlsClientProtocol
         this.keyExchange = TlsUtils.initKeyExchangeClient(tlsClientContext, tlsClient);
     }
 
+    protected void receiveHelloRetryRequest(ServerHello serverHello)
+        throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
     protected void receiveNewSessionTicketMessage(ByteArrayInputStream buf)
         throws IOException
     {
@@ -597,10 +629,9 @@ public class TlsClientProtocol
         tlsClient.notifyNewSessionTicket(newSessionTicket);
     }
 
-    protected void receiveServerHelloMessage(ByteArrayInputStream buf)
+    protected void receiveServerHelloMessage(ServerHello serverHello)
         throws IOException
     {
-        ServerHello serverHello = ServerHello.parse(buf);
         ProtocolVersion legacy_version = serverHello.getVersion();
 
         this.serverExtensions = serverHello.getExtensions();
@@ -1078,6 +1109,12 @@ public class TlsClientProtocol
         HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
         clientHello.encode(tlsClientContext, message);
         message.writeToRecordStream();
+    }
+
+    protected void sendClientHelloRetryMessage()
+        throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected void sendClientKeyExchangeMessage()
