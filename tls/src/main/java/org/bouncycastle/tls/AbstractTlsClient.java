@@ -272,18 +272,19 @@ public abstract class AbstractTlsClient
 
     public Vector getEarlyKeyShareGroups()
     {
-        if (null != supportedGroups)
+        if (null == supportedGroups || supportedGroups.isEmpty())
         {
-            if (supportedGroups.contains(Integers.valueOf(NamedGroup.x25519)))
-            {
-                return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.x25519));
-            }
-            if (supportedGroups.contains(Integers.valueOf(NamedGroup.secp256r1)))
-            {
-                return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.secp256r1));
-            }
+            return null;
         }
-        return null;
+        if (supportedGroups.contains(Integers.valueOf(NamedGroup.x25519)))
+        {
+            return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.x25519));
+        }
+        if (supportedGroups.contains(Integers.valueOf(NamedGroup.secp256r1)))
+        {
+            return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.secp256r1));
+        }
+        return TlsUtils.vectorOfOne(supportedGroups.elementAt(0));
     }
 
     public void notifyServerVersion(ProtocolVersion serverVersion)
