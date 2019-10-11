@@ -262,7 +262,7 @@ public class TlsClientProtocol
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
 
-                this.recordStream.notifyHelloComplete();
+                this.recordStream.notifyPRFDetermined();
 
                 applyMaxFragmentLengthExtension();
 

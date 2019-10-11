@@ -301,7 +301,7 @@ class RecordStream
         output.flush();
     }
 
-    void notifyHelloComplete()
+    void notifyPRFDetermined()
     {
         this.handshakeHash = handshakeHash.notifyPRFDetermined();
     }
