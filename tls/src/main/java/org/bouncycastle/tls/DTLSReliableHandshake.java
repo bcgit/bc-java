@@ -144,7 +144,7 @@ class DTLSReliableHandshake
         recordLayer.resetAfterHelloVerifyRequestClient();
     }
 
-    void notifyHelloComplete()
+    void notifyPRFDetermined()
     {
         this.handshakeHash = handshakeHash.notifyPRFDetermined();
     }

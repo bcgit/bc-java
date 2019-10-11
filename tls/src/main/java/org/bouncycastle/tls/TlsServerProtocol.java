@@ -167,7 +167,7 @@ public class TlsServerProtocol
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
-                recordStream.notifyHelloComplete();
+                recordStream.notifyPRFDetermined();
 
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
