@@ -14,10 +14,10 @@ public final class ProtocolVersion
     public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF, "DTLS 1.0");
     public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD, "DTLS 1.2");
 
-    public static final ProtocolVersion EARLIEST_SUPPORTED_DTLS = DTLSv10;
-    public static final ProtocolVersion EARLIEST_SUPPORTED_TLS = SSLv3;
-    public static final ProtocolVersion LATEST_SUPPORTED_DTLS = DTLSv12;
-    public static final ProtocolVersion LATEST_SUPPORTED_TLS = TLSv12;
+    static final ProtocolVersion EARLIEST_SUPPORTED_DTLS = DTLSv10;
+    static final ProtocolVersion EARLIEST_SUPPORTED_TLS = SSLv3;
+    static final ProtocolVersion LATEST_SUPPORTED_DTLS = DTLSv12;
+    static final ProtocolVersion LATEST_SUPPORTED_TLS = TLSv12;
 
     public static boolean contains(ProtocolVersion[] versions, ProtocolVersion version)
     {
@@ -114,14 +114,14 @@ public final class ProtocolVersion
         return latest;
     }
 
-    public static boolean isSupportedDTLSVersion(ProtocolVersion version)
+    static boolean isSupportedDTLSVersion(ProtocolVersion version)
     {
         return null != version
             && version.isEqualOrLaterVersionOf(EARLIEST_SUPPORTED_DTLS)
             && version.isEqualOrEarlierVersionOf(LATEST_SUPPORTED_DTLS);
     }
 
-    public static boolean isSupportedTLSVersion(ProtocolVersion version)
+    static boolean isSupportedTLSVersion(ProtocolVersion version)
     {
         if (null == version)
         {
