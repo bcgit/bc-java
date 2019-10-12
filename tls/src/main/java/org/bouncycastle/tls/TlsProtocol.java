@@ -26,23 +26,89 @@ public abstract class TlsProtocol
      */
     protected static final short CS_START = 0;
     protected static final short CS_CLIENT_HELLO = 1;
-    protected static final short CS_HELLO_RETRY_REQUEST = 2;
+    protected static final short CS_SERVER_HELLO_RETRY_REQUEST = 2;
     protected static final short CS_CLIENT_HELLO_RETRY = 3;
     protected static final short CS_SERVER_HELLO = 4;
-    protected static final short CS_SERVER_SUPPLEMENTAL_DATA = 5;
-    protected static final short CS_SERVER_CERTIFICATE = 6;
-    protected static final short CS_CERTIFICATE_STATUS = 7;
-    protected static final short CS_SERVER_KEY_EXCHANGE = 8;
-    protected static final short CS_CERTIFICATE_REQUEST = 9;
-    protected static final short CS_SERVER_HELLO_DONE = 10;
-    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 11;
-    protected static final short CS_CLIENT_CERTIFICATE = 12;
-    protected static final short CS_CLIENT_KEY_EXCHANGE = 13;
-    protected static final short CS_CERTIFICATE_VERIFY = 14;
-    protected static final short CS_CLIENT_FINISHED = 15;
-    protected static final short CS_SERVER_SESSION_TICKET = 16;
-    protected static final short CS_SERVER_FINISHED = 17;
-    protected static final short CS_END = 18;
+    protected static final short CS_SERVER_ENCRYPTED_EXTENSIONS = 5;
+    protected static final short CS_SERVER_SUPPLEMENTAL_DATA = 6;
+    protected static final short CS_SERVER_CERTIFICATE = 7;
+    protected static final short CS_SERVER_CERTIFICATE_STATUS = 8;
+    protected static final short CS_SERVER_CERTIFICATE_VERIFY = 9;
+    protected static final short CS_SERVER_KEY_EXCHANGE = 10;
+    protected static final short CS_SERVER_CERTIFICATE_REQUEST = 11;
+    protected static final short CS_SERVER_HELLO_DONE = 12;
+    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 13;
+    protected static final short CS_CLIENT_CERTIFICATE = 14;
+    protected static final short CS_CLIENT_KEY_EXCHANGE = 15;
+    protected static final short CS_CLIENT_CERTIFICATE_VERIFY = 16;
+    protected static final short CS_CLIENT_FINISHED = 17;
+    protected static final short CS_SERVER_SESSION_TICKET = 18;
+    protected static final short CS_SERVER_FINISHED = 19;
+    protected static final short CS_END = 20;
+
+    protected boolean isLegacyConnectionState()
+    {
+        switch (connection_state)
+        {
+        case CS_START:
+        case CS_CLIENT_HELLO:
+        case CS_SERVER_HELLO:
+        case CS_SERVER_SUPPLEMENTAL_DATA:
+        case CS_SERVER_CERTIFICATE:
+        case CS_SERVER_CERTIFICATE_STATUS:
+        case CS_SERVER_KEY_EXCHANGE:
+        case CS_SERVER_CERTIFICATE_REQUEST:
+        case CS_SERVER_HELLO_DONE:
+        case CS_CLIENT_SUPPLEMENTAL_DATA:
+        case CS_CLIENT_CERTIFICATE:
+        case CS_CLIENT_KEY_EXCHANGE:
+        case CS_CLIENT_CERTIFICATE_VERIFY:
+        case CS_CLIENT_FINISHED:
+        case CS_SERVER_SESSION_TICKET:
+        case CS_SERVER_FINISHED:
+        case CS_END:
+            return true;
+
+        case CS_SERVER_HELLO_RETRY_REQUEST:
+        case CS_CLIENT_HELLO_RETRY:
+        case CS_SERVER_ENCRYPTED_EXTENSIONS:
+        case CS_SERVER_CERTIFICATE_VERIFY:
+        default:
+            return false;
+        }
+    }
+
+    protected boolean isTLSv13ConnectionState()
+    {
+        switch (connection_state)
+        {
+        case CS_START:
+        case CS_CLIENT_HELLO:
+        case CS_SERVER_HELLO_RETRY_REQUEST:
+        case CS_CLIENT_HELLO_RETRY:
+        case CS_SERVER_HELLO:
+        case CS_SERVER_ENCRYPTED_EXTENSIONS:
+        case CS_SERVER_CERTIFICATE_REQUEST:
+        case CS_SERVER_CERTIFICATE:
+        case CS_SERVER_CERTIFICATE_VERIFY:
+        case CS_SERVER_FINISHED:
+        case CS_CLIENT_CERTIFICATE:
+        case CS_CLIENT_CERTIFICATE_VERIFY:
+        case CS_CLIENT_FINISHED:
+        case CS_END:
+            return true;
+
+        case CS_SERVER_SUPPLEMENTAL_DATA:
+        case CS_SERVER_CERTIFICATE_STATUS:
+        case CS_SERVER_KEY_EXCHANGE:
+        case CS_SERVER_HELLO_DONE:
+        case CS_CLIENT_SUPPLEMENTAL_DATA:
+        case CS_CLIENT_KEY_EXCHANGE:
+        case CS_SERVER_SESSION_TICKET:
+        default:
+            return false;
+        }
+    }
 
     /*
      * Different modes to handle the known IV weakness
