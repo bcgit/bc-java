@@ -1693,8 +1693,7 @@ public abstract class TlsProtocol
         {
             if (isTLSv13)
             {
-                // TODO[tls13] Do we need separate PRF entries for TLS 1.3?
-                return PRFAlgorithm.tls_prf_sha256;
+                return PRFAlgorithm.tls13_hkdf_sha256;
             }
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -1703,8 +1702,7 @@ public abstract class TlsProtocol
         {
             if (isTLSv13)
             {
-                // TODO[tls13] Do we need separate PRF entries for TLS 1.3?
-                return PRFAlgorithm.tls_prf_sha384;
+                return PRFAlgorithm.tls13_hkdf_sha384;
             }
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
