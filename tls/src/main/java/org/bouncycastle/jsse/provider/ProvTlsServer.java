@@ -122,6 +122,7 @@ class ProvTlsServer
     @Override
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
     {
+        // TODO[tls13] Credentials selection has to happen elsewhere
         if (!selectCredentials(cipherSuite))
         {
             String cipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(cipherSuite);
@@ -509,6 +510,7 @@ class ProvTlsServer
         {
         case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.NULL:
             return true;
 
         case KeyExchangeAlgorithm.DHE_DSS:

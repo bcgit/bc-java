@@ -2468,6 +2468,13 @@ public class TlsUtils
         case CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA:
             return KeyExchangeAlgorithm.ECDHE_RSA;
 
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+            return KeyExchangeAlgorithm.NULL;
+
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA256:
@@ -2557,11 +2564,6 @@ public class TlsUtils
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
             return KeyExchangeAlgorithm.SRP_RSA;
 
-        case CipherSuite.TLS_AES_128_CCM_SHA256:
-        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
-        case CipherSuite.TLS_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
         default:
             return -1;
         }
@@ -3173,10 +3175,6 @@ public class TlsUtils
 
         switch (keyExchangeAlgorithm)
         {
-        case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.ECDH_anon:
-            return true;
-
         case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.SRP_RSA:
@@ -3197,14 +3195,29 @@ public class TlsUtils
                 || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ed25519))
                 || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ed448));
 
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.NULL:
         default:
             return true;
         }
     }
 
-    public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion serverVersion)
+    public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion version)
     {
-        return getMinimumVersion(cipherSuite).isEqualOrEarlierVersionOf(serverVersion.getEquivalentTLSVersion());
+        version = version.getEquivalentTLSVersion();
+
+        ProtocolVersion minimumVersion = getMinimumVersion(cipherSuite);
+        if (minimumVersion == version)
+        {
+            return true;
+        }
+        if (!minimumVersion.isEarlierVersionOf(version))
+        {
+            return false;
+        }
+        return ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(minimumVersion)
+            || ProtocolVersion.TLSv13.isLaterVersionOf(version);
     }
 
     static boolean isValidSignatureAlgorithmForCertificateVerify(short signatureAlgorithm, short[] clientCertificateTypes)
@@ -4121,21 +4134,30 @@ public class TlsUtils
             return null;
         }
 
-        int[] offeredGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
-        if (null == offeredGroups || offeredGroups.length < 1)
-        {
-            return null;
-        }
+        Hashtable clientAgreements = new Hashtable();
+        Vector clientShares = new Vector();
 
+        collectEarlyKeyShares(context.getCrypto(), client, clientExtensions, clientAgreements, clientShares);
+
+        TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
+
+        return clientAgreements;
+    }
+
+    private static void collectEarlyKeyShares(TlsCrypto crypto, TlsClient client, Hashtable clientExtensions,
+        Hashtable clientAgreements, Vector clientShares) throws IOException
+    {
         Vector earlyGroups = client.getEarlyKeyShareGroups();
         if (null == earlyGroups || earlyGroups.isEmpty())
         {
-            return null;
+            return;
         }
 
-        TlsCrypto crypto = context.getCrypto();
-        Vector clientShares = new Vector();
-        Hashtable clientAgreements = new Hashtable();
+        int[] offeredGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
+        if (null == offeredGroups || offeredGroups.length < 1)
+        {
+            return;
+        }
 
         for (int i = 0; i < offeredGroups.length; ++i)
         {
@@ -4174,15 +4196,6 @@ public class TlsUtils
                 clientAgreements.put(offeredGroupElement, agreement);
             }
         }
-
-        if (clientAgreements.isEmpty())
-        {
-            return null;
-        }
-
-        TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
-
-        return clientAgreements;
     }
 
     static byte[] readEncryptedPMS(TlsContext context, InputStream input) throws IOException
@@ -4205,5 +4218,20 @@ public class TlsUtils
         {
             writeOpaque16(encryptedPMS, output);
         }
+    }
+
+    static byte[] getSessionID(TlsSession tlsSession)
+    {
+        if (null != tlsSession)
+        {
+            byte[] sessionID = tlsSession.getSessionID();
+            if (null != sessionID
+                && sessionID.length > 0
+                && sessionID.length <= 32)
+            {
+                return sessionID;
+            }
+        }
+        return EMPTY_BYTES;
     }
 }
