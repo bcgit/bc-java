@@ -1529,8 +1529,10 @@ public class TlsUtils
         case PRFAlgorithm.tls_prf_legacy:
             throw new IllegalArgumentException("legacy PRF not a valid algorithm");
         case PRFAlgorithm.tls_prf_sha256:
+        case PRFAlgorithm.tls13_hkdf_sha256:
             return HashAlgorithm.sha256;
         case PRFAlgorithm.tls_prf_sha384:
+        case PRFAlgorithm.tls13_hkdf_sha384:
             return HashAlgorithm.sha384;
         default:
             throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
