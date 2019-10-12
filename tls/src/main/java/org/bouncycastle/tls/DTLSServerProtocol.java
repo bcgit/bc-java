@@ -147,7 +147,7 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
 
-        handshake.notifyHelloComplete();
+        handshake.notifyPRFDetermined();
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -367,7 +367,7 @@ public class DTLSServerProtocol
 
         ProtocolVersion server_version = state.server.getServerVersion();
         {
-            if (null == server_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(server_version)
+            if (!ProtocolVersion.isSupportedDTLSVersion(server_version)
                 || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -499,24 +499,11 @@ public class DTLSServerProtocol
 
 
 
+        ServerHello serverHello = new ServerHello(legacy_version, securityParameters.getServerRandom(),
+            state.tlsSession.getSessionID(), securityParameters.getCipherSuite(), state.serverExtensions);
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-
-        TlsUtils.writeVersion(legacy_version, buf);
-
-        buf.write(securityParameters.getServerRandom());
-
-        /*
-         * The server may return an empty session_id to indicate that the session will not be cached
-         * and therefore cannot be resumed.
-         */
-        TlsUtils.writeOpaque8(state.tlsSession.getSessionID(), buf);
-
-        TlsUtils.writeUint16(securityParameters.getCipherSuite(), buf);
-
-        TlsUtils.writeUint8(CompressionMethod._null, buf);
-
-        TlsProtocol.writeExtensions(buf, state.serverExtensions);
-
+        serverHello.encode(state.serverContext, buf);
         return buf.toByteArray();
     }
 
@@ -584,7 +571,7 @@ public class DTLSServerProtocol
         throws IOException
     {
         // TODO Read RFCs for guidance on the expected record layer version number
-        ProtocolVersion client_version = clientHello.getClientVersion();
+        ProtocolVersion client_version = clientHello.getVersion();
         state.offeredCipherSuites = clientHello.getCipherSuites();
 
         /*
@@ -615,7 +602,7 @@ public class DTLSServerProtocol
             client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
         }
 
-        if (null == client_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
+        if (!ProtocolVersion.isSupportedDTLSVersion(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

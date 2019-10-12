@@ -160,10 +160,14 @@ public class TlsServerProtocol
                     this.sessionParameters = null;
                 }
 
+                /*
+                 * TODO[tls13] Send ServerHello message that MAY be a HelloRetryRequest.
+                 * (state => CS_HELLO_RETRY_REQUEST instead).
+                 */
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
-                recordStream.notifyHelloComplete();
+                recordStream.notifyPRFDetermined();
 
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
@@ -247,6 +251,11 @@ public class TlsServerProtocol
                 TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash(), forceBuffering);
 
                 break;
+            }
+            case CS_HELLO_RETRY_REQUEST:
+            {
+                // TODO[tls13] Receive ClientHello message that is a retry in response to our HelloRetryRequest
+                throw new TlsFatalAlert(AlertDescription.internal_error);
             }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -482,7 +491,7 @@ public class TlsServerProtocol
         throws IOException
     {
         ClientHello clientHello = ClientHello.parse(buf, null);
-        ProtocolVersion client_version = clientHello.getClientVersion();
+        ProtocolVersion client_version = clientHello.getVersion();
         this.offeredCipherSuites = clientHello.getCipherSuites();
 
         /*
@@ -512,6 +521,11 @@ public class TlsServerProtocol
             client_version = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
+        if (!ProtocolVersion.isSupportedTLSVersion(client_version))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         if (ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), ProtocolVersion.SSLv3))
         {
             // TODO[tls13] Prevent offering SSLv3 AND TLSv13?
@@ -521,11 +535,6 @@ public class TlsServerProtocol
         {
             // TODO[tls13] For subsequent ClientHello messages (of a TLSv13 handshake) don't do this!
             this.recordStream.setWriteVersion(ProtocolVersion.TLSv10);
-        }
-
-        if (null == client_version || !ProtocolVersion.SSLv3.isEqualOrEarlierVersionOf(client_version))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         if (securityParameters.isRenegotiating())
@@ -763,9 +772,8 @@ public class TlsServerProtocol
         else
         {
             server_version = tlsServer.getServerVersion();
-            if (null == server_version
-                || server_version.isEarlierVersionOf(ProtocolVersion.SSLv3)
-                || server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
+
+            if (!ProtocolVersion.isSupportedTLSVersion(server_version)
                 || !ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -912,24 +920,11 @@ public class TlsServerProtocol
 
 
 
+        ServerHello serverHello = new ServerHello(legacy_version, securityParameters.getServerRandom(), tlsSession.getSessionID(),
+            securityParameters.getCipherSuite(), serverExtensions);
+
         HandshakeMessage message = new HandshakeMessage(HandshakeType.server_hello);
-
-        TlsUtils.writeVersion(legacy_version, message);
-
-        message.write(securityParameters.getServerRandom());
-
-        /*
-         * The server may return an empty session_id to indicate that the session will not be cached
-         * and therefore cannot be resumed.
-         */
-        TlsUtils.writeOpaque8(tlsSession.getSessionID(), message);
-
-        TlsUtils.writeUint16(securityParameters.getCipherSuite(), message);
-
-        TlsUtils.writeUint8(CompressionMethod._null, message);
-
-        writeExtensions(message, serverExtensions);
-
+        serverHello.encode(tlsServerContext, message);
         message.writeToRecordStream();
     }
 
