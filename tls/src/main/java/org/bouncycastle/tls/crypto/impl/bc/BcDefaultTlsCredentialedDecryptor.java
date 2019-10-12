@@ -13,6 +13,7 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -86,7 +87,7 @@ public class BcDefaultTlsCredentialedDecryptor
         /*
          * RFC 5246 7.4.7.1.
          */
-        ProtocolVersion clientVersion = cryptoParams.getClientVersion();
+        ProtocolVersion expectedVersion = cryptoParams.getRSAPreMasterSecretVersion();
 
         // TODO Provide as configuration option?
         boolean versionNumberCheckDisabled = false;
@@ -123,7 +124,7 @@ public class BcDefaultTlsCredentialedDecryptor
          * If ClientHello.client_version is TLS 1.1 or higher, server implementations MUST
          * check the version number [..].
          */
-        if (versionNumberCheckDisabled && clientVersion.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv10))
+        if (versionNumberCheckDisabled && !TlsImplUtils.isTLSv11(expectedVersion))
         {
             /*
              * If the version number is TLS 1.0 or earlier, server
@@ -140,8 +141,8 @@ public class BcDefaultTlsCredentialedDecryptor
              * clientVersion received during the handshake. If they don't match, we replace the
              * decrypted Pre-Master-Secret with a random one.
              */
-            int correct = (clientVersion.getMajorVersion() ^ (M[0] & 0xff))
-                | (clientVersion.getMinorVersion() ^ (M[1] & 0xff));
+            int correct = (expectedVersion.getMajorVersion() ^ (M[0] & 0xff))
+                        | (expectedVersion.getMinorVersion() ^ (M[1] & 0xff));
             correct |= correct >> 1;
             correct |= correct >> 2;
             correct |= correct >> 4;
