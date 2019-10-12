@@ -125,6 +125,12 @@ abstract class AbstractTlsContext
         return clientVersion;
     }
 
+    public ProtocolVersion getRSAPreMasterSecretVersion()
+    {
+        // TODO[tls13] Presumably this needs to be explicitly ClientHello.legacy_version instead
+        return clientVersion;
+    }
+
     void setClientVersion(ProtocolVersion clientVersion)
     {
         this.clientVersion = clientVersion;
