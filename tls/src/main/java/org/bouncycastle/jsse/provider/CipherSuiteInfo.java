@@ -160,6 +160,9 @@ class CipherSuiteInfo
         case KeyExchangeAlgorithm.ECDHE_RSA:
             addAll(decomposition, "ECDHE", "RSA", "ECDHE_RSA");
             break;
+        case KeyExchangeAlgorithm.NULL:
+            // NOTE: TLS 1.3 cipher suites
+            break;
         case KeyExchangeAlgorithm.RSA:
             addAll(decomposition, "RSA");
             break;
@@ -226,6 +229,10 @@ class CipherSuiteInfo
              */
             return HashAlgorithm.sha256;
 
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256:
@@ -257,6 +264,7 @@ class CipherSuiteInfo
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
             return HashAlgorithm.sha256;
 
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:

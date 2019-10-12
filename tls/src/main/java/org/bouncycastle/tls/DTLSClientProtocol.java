@@ -140,7 +140,7 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        handshake.notifyHelloComplete();
+        handshake.notifyPRFDetermined();
 
         applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 
@@ -386,23 +386,14 @@ public class DTLSClientProtocol
         context.setClientSupportedVersions(state.client.getProtocolVersions());
 
         ProtocolVersion client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
-        if (null == client_version || !ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
+        if (!ProtocolVersion.isSupportedDTLSVersion(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         context.setClientVersion(client_version);
 
-        // Session ID
-        byte[] session_id = TlsUtils.EMPTY_BYTES;
-        if (state.tlsSession != null)
-        {
-            session_id = state.tlsSession.getSessionID();
-            if (session_id == null || session_id.length > 32)
-            {
-                session_id = TlsUtils.EMPTY_BYTES;
-            }
-        }
+        byte[] session_id = TlsUtils.getSessionID(state.tlsSession);
 
         boolean fallback = state.client.isFallback();
 
@@ -618,17 +609,10 @@ public class DTLSClientProtocol
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        ProtocolVersion server_version = TlsUtils.readVersion(buf);
+        ServerHello serverHello = ServerHello.parse(buf);
+        ProtocolVersion server_version = serverHello.getVersion();
 
-        byte[] server_random = TlsUtils.readFully(32, buf);
-
-        byte[] selectedSessionID = TlsUtils.readOpaque8(buf, 0, 32);
-
-        int selectedCipherSuite = TlsUtils.readUint16(buf);
-
-        short selectedCompressionMethod = TlsUtils.readUint8(buf);
-
-        state.serverExtensions = TlsProtocol.readExtensions(buf);
+        state.serverExtensions = serverHello.getExtensions();
 
 
 
@@ -638,22 +622,27 @@ public class DTLSClientProtocol
 
         reportServerVersion(state, server_version);
 
+        securityParameters.serverRandom = serverHello.getRandom();
+
         if (!state.clientContext.getClientVersion().equals(server_version))
         {
-            TlsUtils.checkDowngradeMarker(server_version, server_random);
+            TlsUtils.checkDowngradeMarker(server_version, securityParameters.getServerRandom());
         }
-        securityParameters.serverRandom = server_random;
 
-        securityParameters.sessionID = selectedSessionID;
-        state.client.notifySessionID(selectedSessionID);
-        state.resumedSession = selectedSessionID.length > 0 && state.tlsSession != null
-            && Arrays.areEqual(selectedSessionID, state.tlsSession.getSessionID());
+        {
+            byte[] selectedSessionID = serverHello.getSessionID();
+            securityParameters.sessionID = selectedSessionID;
+            state.client.notifySessionID(selectedSessionID);
+            state.resumedSession = selectedSessionID.length > 0 && state.tlsSession != null
+                && Arrays.areEqual(selectedSessionID, state.tlsSession.getSessionID());
+        }
 
         /*
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
          * ones, and is a valid selection for the negotiated version.
          */
         {
+            int selectedCipherSuite = serverHello.getCipherSuite();
             if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
                 || CipherSuite.isSCSV(selectedCipherSuite)
@@ -664,11 +653,6 @@ public class DTLSClientProtocol
             securityParameters.cipherSuite = validateSelectedCipherSuite(selectedCipherSuite,
                 AlertDescription.illegal_parameter);
             state.client.notifySelectedCipherSuite(selectedCipherSuite);
-        }
-
-        if (CompressionMethod._null != selectedCompressionMethod)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         /*
@@ -893,13 +877,10 @@ public class DTLSClientProtocol
         ProtocolVersion currentServerVersion = context.getServerVersion();
         if (null == currentServerVersion)
         {
-            if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(server_version))
+            if (!ProtocolVersion.isSupportedDTLSVersion(server_version)
+                || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-            if (!ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
-            {
-                throw new TlsFatalAlert(AlertDescription.protocol_version);
             }
 
             context.getSecurityParametersHandshake().negotiatedVersion = server_version;
