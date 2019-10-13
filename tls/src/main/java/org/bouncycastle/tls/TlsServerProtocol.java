@@ -105,6 +105,13 @@ public class TlsServerProtocol
         this.offeredExtendedMasterSecret = false;
     }
 
+    protected boolean expectCertificateVerifyMessage()
+    {
+        Certificate clientCertificate = tlsServerContext.getSecurityParametersHandshake().getPeerCertificate();
+
+        return null != clientCertificate && !clientCertificate.isEmpty() && keyExchange.requiresCertificateVerify();
+    }
+
     protected TlsContext getContext()
     {
         return tlsServerContext;
@@ -120,6 +127,145 @@ public class TlsServerProtocol
         return tlsServer;
     }
 
+    protected void handle13HandshakeMessage(short type, ByteArrayInputStream buf)
+        throws IOException
+    {
+        if (!isTLSv13ConnectionState())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (this.resumedSession)
+        {
+            /*
+             * TODO[tls13] Abbreviated handshakes (PSK resumption)
+             * 
+             * NOTE: No CertificateRequest, Certificate, CertificateVerify messages, but client
+             * might now send EndOfEarlyData after receiving server Finished message.
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        switch (type)
+        {
+        case HandshakeType.certificate:
+        {
+            switch (this.connection_state)
+            {
+            case CS_SERVER_FINISHED:
+            {
+                receive13ClientCertificate(buf);
+                this.connection_state = CS_CLIENT_CERTIFICATE;
+                break;
+            }
+            default:
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+            break;
+        }
+        case HandshakeType.certificate_verify:
+        {
+            switch (this.connection_state)
+            {
+            case CS_CLIENT_CERTIFICATE:
+            {
+                receive13ClientCertificateVerify(buf);
+                this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
+                break;
+            }
+            default:
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+            break;
+        }
+        case HandshakeType.client_hello:
+        {
+            switch (this.connection_state)
+            {
+            case CS_START:
+            {
+                // NOTE: Legacy handler should be dispatching initial ClientHello.
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+            case CS_SERVER_HELLO_RETRY_REQUEST:
+            {
+                receive13ClientHelloRetry(buf);
+                this.connection_state = CS_CLIENT_HELLO_RETRY;
+
+                /*
+                 *  TODO[tls13] Send server flight:
+                 *      EncryptedExtensions, CertificateRequest*, Certificate*, CertificateVerify*, Finished
+                 */
+
+                this.connection_state = CS_SERVER_FINISHED; 
+                break;
+            }
+            default:
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+            break;
+        }
+        case HandshakeType.finished:
+        {
+            switch (this.connection_state)
+            {
+            case CS_SERVER_FINISHED:
+            {
+                skip13ClientCertificate();
+                // Fall through
+            }
+            case CS_CLIENT_CERTIFICATE:
+            {
+                skip13ClientCertificateVerify();
+                // Fall through
+            }
+            case CS_CLIENT_CERTIFICATE_VERIFY:
+            {
+                receive13ClientFinished(buf);
+                this.connection_state = CS_CLIENT_FINISHED;
+
+                completeHandshake();
+                break;
+            }
+            default:
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+            break;
+        }
+        case HandshakeType.key_update:
+        {
+            switch (this.connection_state)
+            {
+            case CS_END:
+            {
+                receive13ClientKeyUpdate(buf);
+                break;
+            }
+            default:
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+            break;
+        }
+
+        case HandshakeType.certificate_request:
+        case HandshakeType.certificate_status:
+        case HandshakeType.certificate_url:
+        case HandshakeType.client_key_exchange:
+        case HandshakeType.encrypted_extensions:
+        case HandshakeType.end_of_early_data:
+        case HandshakeType.hello_request:
+        case HandshakeType.hello_verify_request:
+        case HandshakeType.message_hash:
+        case HandshakeType.new_session_ticket:
+        case HandshakeType.server_hello:
+        case HandshakeType.server_hello_done:
+        case HandshakeType.server_key_exchange:
+        case HandshakeType.supplemental_data:
+        default:
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+    }
+
     protected void handleHandshakeMessage(short type, ByteArrayInputStream buf)
         throws IOException
     {
@@ -128,7 +274,7 @@ public class TlsServerProtocol
         if (connection_state > CS_CLIENT_HELLO
             && TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
         {
-            handleHandshakeMessage13(type, buf);
+            handle13HandshakeMessage(type, buf);
             return;
         }
 
@@ -180,7 +326,7 @@ public class TlsServerProtocol
 
                 /*
                  * TODO[tls13] Send ServerHello message that MAY be a HelloRetryRequest.
-                 * (state => CS_HELLO_RETRY_REQUEST instead).
+                 * (state => CS_SERVER_HELLO_RETRY_REQUEST instead and no further messages).
                  */
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
@@ -444,68 +590,6 @@ public class TlsServerProtocol
         }
     }
 
-    protected void handleHandshakeMessage13(short type, ByteArrayInputStream buf)
-        throws IOException
-    {
-        if (!isTLSv13ConnectionState())
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        if (this.resumedSession)
-        {
-            // TODO[tls13] Abbreviated handshakes (PSK resumption)
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        switch (type)
-        {
-        case HandshakeType.client_hello:
-        {
-            switch (this.connection_state)
-            {
-            case CS_START:
-            {
-                // NOTE: handleHandshakeMessage should be dealing with initial response
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-            case CS_SERVER_HELLO_RETRY_REQUEST:
-            {
-                // TODO[tls13] Receive ClientHello message that is a retry in response to our HelloRetryRequest
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-            default:
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
-//            break;
-        }
-
-        case HandshakeType.certificate:
-        case HandshakeType.certificate_verify:
-        case HandshakeType.end_of_early_data:
-        case HandshakeType.finished:
-        case HandshakeType.key_update:
-            // TODO[tls] All these types need to be implemented
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-
-        case HandshakeType.certificate_request:
-        case HandshakeType.certificate_status:
-        case HandshakeType.certificate_url:
-        case HandshakeType.client_key_exchange:
-        case HandshakeType.encrypted_extensions:
-        case HandshakeType.hello_request:
-        case HandshakeType.hello_verify_request:
-        case HandshakeType.message_hash:
-        case HandshakeType.new_session_ticket:
-        case HandshakeType.server_hello:
-        case HandshakeType.server_hello_done:
-        case HandshakeType.server_key_exchange:
-        case HandshakeType.supplemental_data:
-        default:
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-    }
-
     protected void handleAlertWarningMessage(short alertDescription)
         throws IOException
     {
@@ -542,6 +626,41 @@ public class TlsServerProtocol
     {
         TlsUtils.processClientCertificate(tlsServerContext, clientCertificate, certificateRequest, keyExchange,
             tlsServer);
+    }
+
+    protected void receive13ClientCertificate(ByteArrayInputStream buf)
+        throws IOException
+    {
+        // TODO[tls13]
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected void receive13ClientCertificateVerify(ByteArrayInputStream buf)
+        throws IOException
+    {
+        // TODO[tls13]
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected void receive13ClientFinished(ByteArrayInputStream buf)
+        throws IOException
+    {
+        // TODO[tls13]
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected void receive13ClientHelloRetry(ByteArrayInputStream buf)
+        throws IOException
+    {
+        // TODO[tls13]
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected void receive13ClientKeyUpdate(ByteArrayInputStream buf)
+        throws IOException
+    {
+        // TODO[tls13]
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
@@ -1030,10 +1149,17 @@ public class TlsServerProtocol
         message.writeToRecordStream();
     }
 
-    protected boolean expectCertificateVerifyMessage()
+    protected void skip13ClientCertificate()
+        throws IOException
     {
-        Certificate clientCertificate = tlsServerContext.getSecurityParametersHandshake().getPeerCertificate();
+        // TODO[tls13]
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
 
-        return null != clientCertificate && !clientCertificate.isEmpty() && keyExchange.requiresCertificateVerify();
+    protected void skip13ClientCertificateVerify()
+        throws IOException
+    {
+        // TODO[tls13]
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 }

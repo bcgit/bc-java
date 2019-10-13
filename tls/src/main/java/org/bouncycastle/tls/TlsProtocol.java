@@ -22,7 +22,10 @@ public abstract class TlsProtocol
     protected static final Integer EXT_SessionTicket = Integers.valueOf(ExtensionType.session_ticket);
 
     /*
-     * Our Connection states
+     * Connection States.
+     * 
+     * NOTE: Redirection of handshake messages to TLS 1.3 handlers assumes CS_START, CS_CLIENT_HELLO
+     * are lower than any of the other values.
      */
     protected static final short CS_START = 0;
     protected static final short CS_CLIENT_HELLO = 1;
@@ -37,14 +40,15 @@ public abstract class TlsProtocol
     protected static final short CS_SERVER_KEY_EXCHANGE = 10;
     protected static final short CS_SERVER_CERTIFICATE_REQUEST = 11;
     protected static final short CS_SERVER_HELLO_DONE = 12;
-    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 13;
-    protected static final short CS_CLIENT_CERTIFICATE = 14;
-    protected static final short CS_CLIENT_KEY_EXCHANGE = 15;
-    protected static final short CS_CLIENT_CERTIFICATE_VERIFY = 16;
-    protected static final short CS_CLIENT_FINISHED = 17;
-    protected static final short CS_SERVER_SESSION_TICKET = 18;
-    protected static final short CS_SERVER_FINISHED = 19;
-    protected static final short CS_END = 20;
+    protected static final short CS_CLIENT_END_OF_EARLY_DATA = 13;
+    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 14;
+    protected static final short CS_CLIENT_CERTIFICATE = 15;
+    protected static final short CS_CLIENT_KEY_EXCHANGE = 16;
+    protected static final short CS_CLIENT_CERTIFICATE_VERIFY = 17;
+    protected static final short CS_CLIENT_FINISHED = 18;
+    protected static final short CS_SERVER_SESSION_TICKET = 19;
+    protected static final short CS_SERVER_FINISHED = 20;
+    protected static final short CS_END = 21;
 
     protected boolean isLegacyConnectionState()
     {
@@ -73,6 +77,7 @@ public abstract class TlsProtocol
         case CS_CLIENT_HELLO_RETRY:
         case CS_SERVER_ENCRYPTED_EXTENSIONS:
         case CS_SERVER_CERTIFICATE_VERIFY:
+        case CS_CLIENT_END_OF_EARLY_DATA:
         default:
             return false;
         }
@@ -92,6 +97,7 @@ public abstract class TlsProtocol
         case CS_SERVER_CERTIFICATE:
         case CS_SERVER_CERTIFICATE_VERIFY:
         case CS_SERVER_FINISHED:
+        case CS_CLIENT_END_OF_EARLY_DATA:
         case CS_CLIENT_CERTIFICATE:
         case CS_CLIENT_CERTIFICATE_VERIFY:
         case CS_CLIENT_FINISHED:
@@ -582,7 +588,14 @@ public abstract class TlsProtocol
              * starting at client hello up to, but not including, this finished message.
              * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
              */
-            if (HandshakeType.hello_request != type)
+            switch (type)
+            {
+            case HandshakeType.hello_request:
+            case HandshakeType.key_update:
+            case HandshakeType.new_session_ticket:
+                break;
+
+            default:
             {
                 if (HandshakeType.finished == type)
                 {
@@ -602,6 +615,8 @@ public abstract class TlsProtocol
                 }
 
                 queue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
+                break;
+            }
             }
 
             queue.removeData(4);
@@ -947,9 +962,18 @@ public abstract class TlsProtocol
         }
 
         short type = TlsUtils.readUint8(buf, off);
-        if (type != HandshakeType.hello_request)
+        switch (type)
+        {
+        case HandshakeType.hello_request:
+        case HandshakeType.key_update:
+        case HandshakeType.new_session_ticket:
+            break;
+
+        default:
         {
             recordStream.getHandshakeHashUpdater().write(buf, off, len);
+            break;
+        }
         }
 
         int total = 0;
