@@ -33,6 +33,16 @@ class DigestUtil
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);
     }
 
+    static ASN1ObjectIdentifier getDigestOID(String digest)
+    {
+        if (digest.equals("SHA-256"))
+        {
+            return NISTObjectIdentifiers.id_sha256;
+        }
+
+        throw new IllegalArgumentException("unrecognized digest: " + digest);
+    }
+
     public static byte[] getDigestResult(Digest digest)
     {
         byte[] hash = new byte[DigestUtil.getDigestSize(digest)];

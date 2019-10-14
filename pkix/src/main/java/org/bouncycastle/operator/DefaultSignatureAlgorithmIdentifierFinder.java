@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -160,7 +161,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHAKE128WITHXMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128ph);
         algorithms.put("SHAKE256WITHXMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256ph);
 
-        algorithms.put("XMSS-SHA256", BCObjectIdentifiers.xmss_SHA256);
+        algorithms.put("XMSS-SHA256", IsaraObjectIdentifiers.id_alg_xmss);
+//        algorithms.put("XMSS-SHA256", BCObjectIdentifiers.xmss_SHA256);
         algorithms.put("XMSS-SHA512", BCObjectIdentifiers.xmss_SHA512);
         algorithms.put("XMSS-SHAKE128", BCObjectIdentifiers.xmss_SHAKE128);
         algorithms.put("XMSS-SHAKE256", BCObjectIdentifiers.xmss_SHAKE256);
@@ -231,6 +233,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE128);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE256);
 
+        noParams.add(IsaraObjectIdentifiers.id_alg_xmss);
+        
         //
         // qTESLA
         //
