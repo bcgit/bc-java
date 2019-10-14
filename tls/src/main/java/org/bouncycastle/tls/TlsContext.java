@@ -29,6 +29,8 @@ public interface TlsContext
 
     ProtocolVersion getClientVersion();
 
+    ProtocolVersion getRSAPreMasterSecretVersion();
+
     ProtocolVersion getServerVersion();
 
     /**

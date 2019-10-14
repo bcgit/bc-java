@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsSecret;
@@ -50,7 +51,22 @@ public class BcTlsSecret
     {
         checkAlive();
 
-        return crypto.adoptLocalSecret(prf(prfAlgorithm, label, seed, length));
+        try
+        {
+            switch (prfAlgorithm)
+            {
+            case PRFAlgorithm.tls13_hkdf_sha256:
+                return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sha256, label, seed, length);
+            case PRFAlgorithm.tls13_hkdf_sha384:
+                return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sha384, label, seed, length);
+            default:
+                return crypto.adoptLocalSecret(prf(prfAlgorithm, label, seed, length));
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     protected TlsSecret adoptLocalSecret(byte[] data)
