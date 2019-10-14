@@ -18,7 +18,6 @@ public class TlsServerProtocol
     protected TlsKeyExchange keyExchange = null;
     protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
-    protected TlsHandshakeHash certificateVerifyHash = null;
     protected boolean offeredExtendedMasterSecret;
 
     /**
@@ -101,7 +100,6 @@ public class TlsServerProtocol
         this.keyExchange = null;
         this.serverCredentials = null;
         this.certificateRequest = null;
-        this.certificateVerifyHash = null;
         this.offeredExtendedMasterSecret = false;
     }
 
@@ -170,6 +168,7 @@ public class TlsServerProtocol
             case CS_CLIENT_CERTIFICATE:
             {
                 receive13ClientCertificateVerify(buf);
+                buf.updateHash(handshakeHash);
                 this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
                 break;
             }
@@ -529,6 +528,7 @@ public class TlsServerProtocol
                 }
 
                 receiveCertificateVerifyMessage(buf);
+                buf.updateHash(handshakeHash);
                 this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
                 break;
             }
@@ -682,10 +682,9 @@ public class TlsServerProtocol
 
         assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerify(tlsServerContext, certificateRequest, clientCertificateVerify,
-            certificateVerifyHash);
+        TlsUtils.verifyCertificateVerify(tlsServerContext, certificateRequest, clientCertificateVerify, handshakeHash);
 
-        this.certificateVerifyHash = null;
+        this.handshakeHash = handshakeHash.stopTracking();
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf)
@@ -912,12 +911,10 @@ public class TlsServerProtocol
 
         recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsServerContext));
 
-        if (expectCertificateVerifyMessage())
+        if (!expectCertificateVerifyMessage())
         {
-            this.certificateVerifyHash = handshakeHash;
+            this.handshakeHash = handshakeHash.stopTracking();
         }
-
-        this.handshakeHash = handshakeHash.stopTracking();
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
