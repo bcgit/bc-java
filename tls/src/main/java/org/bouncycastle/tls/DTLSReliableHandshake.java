@@ -431,7 +431,14 @@ class DTLSReliableHandshake
     private Message updateHandshakeMessagesDigest(Message message)
         throws IOException
     {
-        if (message.getType() != HandshakeType.hello_request)
+        switch (message.getType())
+        {
+        case HandshakeType.hello_request:
+        case HandshakeType.key_update:
+        case HandshakeType.new_session_ticket:
+            break;
+
+        default:
         {
             byte[] body = message.getBody();
             byte[] buf = new byte[MESSAGE_HEADER_LENGTH];
@@ -443,6 +450,8 @@ class DTLSReliableHandshake
             handshakeHash.update(buf, 0, buf.length);
             handshakeHash.update(body, 0, body.length);
         }
+        }
+
         return message;
     }
 

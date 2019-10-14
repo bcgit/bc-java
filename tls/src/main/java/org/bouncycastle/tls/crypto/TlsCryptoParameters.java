@@ -31,6 +31,11 @@ public class TlsCryptoParameters
         return context.getClientVersion();
     }
 
+    public ProtocolVersion getRSAPreMasterSecretVersion()
+    {
+        return context.getRSAPreMasterSecretVersion();
+    }
+
     public ProtocolVersion getServerVersion()
     {
         return context.getServerVersion();

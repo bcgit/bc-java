@@ -68,6 +68,11 @@ public class TlsUtilsTest
                 return null;
             }
 
+            public ProtocolVersion getRSAPreMasterSecretVersion()
+            {
+                return null;
+            }
+
             public ProtocolVersion getServerVersion()
             {
                 return ProtocolVersion.TLSv12;

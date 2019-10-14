@@ -22,27 +22,99 @@ public abstract class TlsProtocol
     protected static final Integer EXT_SessionTicket = Integers.valueOf(ExtensionType.session_ticket);
 
     /*
-     * Our Connection states
+     * Connection States.
+     * 
+     * NOTE: Redirection of handshake messages to TLS 1.3 handlers assumes CS_START, CS_CLIENT_HELLO
+     * are lower than any of the other values.
      */
     protected static final short CS_START = 0;
     protected static final short CS_CLIENT_HELLO = 1;
-    protected static final short CS_HELLO_RETRY_REQUEST = 2;
+    protected static final short CS_SERVER_HELLO_RETRY_REQUEST = 2;
     protected static final short CS_CLIENT_HELLO_RETRY = 3;
     protected static final short CS_SERVER_HELLO = 4;
-    protected static final short CS_SERVER_SUPPLEMENTAL_DATA = 5;
-    protected static final short CS_SERVER_CERTIFICATE = 6;
-    protected static final short CS_CERTIFICATE_STATUS = 7;
-    protected static final short CS_SERVER_KEY_EXCHANGE = 8;
-    protected static final short CS_CERTIFICATE_REQUEST = 9;
-    protected static final short CS_SERVER_HELLO_DONE = 10;
-    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 11;
-    protected static final short CS_CLIENT_CERTIFICATE = 12;
-    protected static final short CS_CLIENT_KEY_EXCHANGE = 13;
-    protected static final short CS_CERTIFICATE_VERIFY = 14;
-    protected static final short CS_CLIENT_FINISHED = 15;
-    protected static final short CS_SERVER_SESSION_TICKET = 16;
-    protected static final short CS_SERVER_FINISHED = 17;
-    protected static final short CS_END = 18;
+    protected static final short CS_SERVER_ENCRYPTED_EXTENSIONS = 5;
+    protected static final short CS_SERVER_SUPPLEMENTAL_DATA = 6;
+    protected static final short CS_SERVER_CERTIFICATE = 7;
+    protected static final short CS_SERVER_CERTIFICATE_STATUS = 8;
+    protected static final short CS_SERVER_CERTIFICATE_VERIFY = 9;
+    protected static final short CS_SERVER_KEY_EXCHANGE = 10;
+    protected static final short CS_SERVER_CERTIFICATE_REQUEST = 11;
+    protected static final short CS_SERVER_HELLO_DONE = 12;
+    protected static final short CS_CLIENT_END_OF_EARLY_DATA = 13;
+    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 14;
+    protected static final short CS_CLIENT_CERTIFICATE = 15;
+    protected static final short CS_CLIENT_KEY_EXCHANGE = 16;
+    protected static final short CS_CLIENT_CERTIFICATE_VERIFY = 17;
+    protected static final short CS_CLIENT_FINISHED = 18;
+    protected static final short CS_SERVER_SESSION_TICKET = 19;
+    protected static final short CS_SERVER_FINISHED = 20;
+    protected static final short CS_END = 21;
+
+    protected boolean isLegacyConnectionState()
+    {
+        switch (connection_state)
+        {
+        case CS_START:
+        case CS_CLIENT_HELLO:
+        case CS_SERVER_HELLO:
+        case CS_SERVER_SUPPLEMENTAL_DATA:
+        case CS_SERVER_CERTIFICATE:
+        case CS_SERVER_CERTIFICATE_STATUS:
+        case CS_SERVER_KEY_EXCHANGE:
+        case CS_SERVER_CERTIFICATE_REQUEST:
+        case CS_SERVER_HELLO_DONE:
+        case CS_CLIENT_SUPPLEMENTAL_DATA:
+        case CS_CLIENT_CERTIFICATE:
+        case CS_CLIENT_KEY_EXCHANGE:
+        case CS_CLIENT_CERTIFICATE_VERIFY:
+        case CS_CLIENT_FINISHED:
+        case CS_SERVER_SESSION_TICKET:
+        case CS_SERVER_FINISHED:
+        case CS_END:
+            return true;
+
+        case CS_SERVER_HELLO_RETRY_REQUEST:
+        case CS_CLIENT_HELLO_RETRY:
+        case CS_SERVER_ENCRYPTED_EXTENSIONS:
+        case CS_SERVER_CERTIFICATE_VERIFY:
+        case CS_CLIENT_END_OF_EARLY_DATA:
+        default:
+            return false;
+        }
+    }
+
+    protected boolean isTLSv13ConnectionState()
+    {
+        switch (connection_state)
+        {
+        case CS_START:
+        case CS_CLIENT_HELLO:
+        case CS_SERVER_HELLO_RETRY_REQUEST:
+        case CS_CLIENT_HELLO_RETRY:
+        case CS_SERVER_HELLO:
+        case CS_SERVER_ENCRYPTED_EXTENSIONS:
+        case CS_SERVER_CERTIFICATE_REQUEST:
+        case CS_SERVER_CERTIFICATE:
+        case CS_SERVER_CERTIFICATE_VERIFY:
+        case CS_SERVER_FINISHED:
+        case CS_CLIENT_END_OF_EARLY_DATA:
+        case CS_CLIENT_CERTIFICATE:
+        case CS_CLIENT_CERTIFICATE_VERIFY:
+        case CS_CLIENT_FINISHED:
+        case CS_END:
+            return true;
+
+        case CS_SERVER_SUPPLEMENTAL_DATA:
+        case CS_SERVER_CERTIFICATE_STATUS:
+        case CS_SERVER_KEY_EXCHANGE:
+        case CS_SERVER_HELLO_DONE:
+        case CS_CLIENT_SUPPLEMENTAL_DATA:
+        case CS_CLIENT_KEY_EXCHANGE:
+        case CS_SERVER_SESSION_TICKET:
+        default:
+            return false;
+        }
+    }
 
     /*
      * Different modes to handle the known IV weakness
@@ -516,7 +588,14 @@ public abstract class TlsProtocol
              * starting at client hello up to, but not including, this finished message.
              * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
              */
-            if (HandshakeType.hello_request != type)
+            switch (type)
+            {
+            case HandshakeType.hello_request:
+            case HandshakeType.key_update:
+            case HandshakeType.new_session_ticket:
+                break;
+
+            default:
             {
                 if (HandshakeType.finished == type)
                 {
@@ -536,6 +615,8 @@ public abstract class TlsProtocol
                 }
 
                 queue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
+                break;
+            }
             }
 
             queue.removeData(4);
@@ -881,9 +962,18 @@ public abstract class TlsProtocol
         }
 
         short type = TlsUtils.readUint8(buf, off);
-        if (type != HandshakeType.hello_request)
+        switch (type)
+        {
+        case HandshakeType.hello_request:
+        case HandshakeType.key_update:
+        case HandshakeType.new_session_ticket:
+            break;
+
+        default:
         {
             recordStream.getHandshakeHashUpdater().write(buf, off, len);
+            break;
+        }
         }
 
         int total = 0;
@@ -1627,8 +1717,7 @@ public abstract class TlsProtocol
         {
             if (isTLSv13)
             {
-                // TODO[tls13] Do we need separate PRF entries for TLS 1.3?
-                return PRFAlgorithm.tls_prf_sha256;
+                return PRFAlgorithm.tls13_hkdf_sha256;
             }
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -1637,8 +1726,7 @@ public abstract class TlsProtocol
         {
             if (isTLSv13)
             {
-                // TODO[tls13] Do we need separate PRF entries for TLS 1.3?
-                return PRFAlgorithm.tls_prf_sha384;
+                return PRFAlgorithm.tls13_hkdf_sha384;
             }
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

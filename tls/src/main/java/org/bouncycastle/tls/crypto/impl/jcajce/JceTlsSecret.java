@@ -6,8 +6,10 @@ import java.security.MessageDigest;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsSecret;
@@ -54,9 +56,17 @@ public class JceTlsSecret
 
         try
         {
-            return crypto.adoptLocalSecret(prf(prfAlgorithm, label, seed, length));
+            switch (prfAlgorithm)
+            {
+            case PRFAlgorithm.tls13_hkdf_sha256:
+                return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sha256, label, seed, length);
+            case PRFAlgorithm.tls13_hkdf_sha384:
+                return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sha384, label, seed, length);
+            default:
+                return crypto.adoptLocalSecret(prf(prfAlgorithm, label, seed, length));
+            }
         }
-        catch (GeneralSecurityException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
