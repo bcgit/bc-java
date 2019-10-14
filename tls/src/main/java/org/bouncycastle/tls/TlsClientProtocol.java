@@ -1150,7 +1150,7 @@ public class TlsClientProtocol
          * verify_data_length has a verify_data_length equal to 12. This includes all
          * existing cipher suites.
          */
-        securityParameters.verifyDataLength = 12;
+        securityParameters.verifyDataLength = securityParameters.getNegotiatedVersion().isSSL() ? 36 : 12;
     }
 
     protected void receive13CertificateRequest(ByteArrayInputStream buf)
