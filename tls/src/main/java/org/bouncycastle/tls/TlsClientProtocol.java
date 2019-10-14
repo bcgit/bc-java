@@ -1220,11 +1220,9 @@ public class TlsClientProtocol
     protected void sendCertificateVerifyMessage(DigitallySigned certificateVerify)
         throws IOException
     {
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.certificate_verify);
-
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate_verify);
         certificateVerify.encode(message);
-
-        message.writeToRecordStream();
+        message.send(this);
     }
 
     protected void sendClientHelloMessage()
@@ -1374,19 +1372,17 @@ public class TlsClientProtocol
         ClientHello clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(), session_id,
             null, offeredCipherSuites, clientExtensions);
 
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.client_hello);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.client_hello);
         clientHello.encode(tlsClientContext, message);
-        message.writeToRecordStream();
+        message.send(this);
     }
 
     protected void sendClientKeyExchangeMessage()
         throws IOException
     {
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.client_key_exchange);
-
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.client_key_exchange);
         this.keyExchange.generateClientKeyExchange(message);
-
-        message.writeToRecordStream();
+        message.send(this);
     }
 
     protected void skip13CertificateRequest()
