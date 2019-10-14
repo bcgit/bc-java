@@ -1399,7 +1399,7 @@ public abstract class TlsProtocol
         }
         else
         {
-            HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate);
+            HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.certificate);
             certificate.encode(context, message, endPointHash);
             message.writeToRecordStream();
         }
@@ -1431,7 +1431,7 @@ public abstract class TlsProtocol
             }
         }
 
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.finished, verify_data.length);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.finished, verify_data.length);
 
         message.write(verify_data);
 
@@ -1441,7 +1441,7 @@ public abstract class TlsProtocol
     protected void sendSupplementalDataMessage(Vector supplementalData)
         throws IOException
     {
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.supplemental_data);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.supplemental_data);
 
         writeSupplementalData(message, supplementalData);
 
@@ -1991,32 +1991,6 @@ public abstract class TlsProtocol
             }
             return PRFAlgorithm.tls_prf_legacy;
         }
-        }
-    }
-
-    class HandshakeMessage extends ByteArrayOutputStream
-    {
-        HandshakeMessage(short handshakeType) throws IOException
-        {
-            this(handshakeType, 60);
-        }
-
-        HandshakeMessage(short handshakeType, int length) throws IOException
-        {
-            super(length + 4);
-            TlsUtils.writeUint8(handshakeType, this);
-            // Reserve space for length
-            count += 3;
-        }
-
-        void writeToRecordStream() throws IOException
-        {
-            // Patch actual length back in
-            int length = count - 4;
-            TlsUtils.checkUint24(length);
-            TlsUtils.writeUint24(length, buf, 1);
-            writeHandshakeMessage(buf, 0, count);
-            buf = null;
         }
     }
 }
