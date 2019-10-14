@@ -21,18 +21,9 @@ class RecordStream
     private TlsProtocol handler;
     private InputStream input;
     private OutputStream output;
-    private TlsContext context = null;
+//    private TlsContext context = null;
     private TlsCipher pendingCipher = null, readCipher = null, writeCipher = null;
     private SequenceNumber readSeqNo = new SequenceNumber(), writeSeqNo = new SequenceNumber();
-
-    private TlsHandshakeHash handshakeHash = null;
-    private SimpleOutputStream handshakeHashUpdater = new SimpleOutputStream()
-    {
-        public void write(byte[] buf, int off, int len) throws IOException
-        {
-            handshakeHash.update(buf, off, len);
-        }
-    };
 
     private ProtocolVersion writeVersion = null;
 
@@ -47,10 +38,9 @@ class RecordStream
 
     void init(TlsContext context)
     {
-        this.context = context;
+//        this.context = context;
         this.readCipher = TlsNullNullCipher.INSTANCE;
         this.writeCipher = this.readCipher;
-        this.handshakeHash = new DeferredHash(context);
 
         setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }
@@ -106,7 +96,6 @@ class RecordStream
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
         this.pendingCipher = null;
-        this.handshakeHash = new DeferredHash(context);
     }
 
     RecordPreview previewRecordHeader(byte[] recordHeader, boolean appDataReady) throws IOException
@@ -299,28 +288,6 @@ class RecordStream
         }
 
         output.flush();
-    }
-
-    void notifyPRFDetermined()
-    {
-        this.handshakeHash = handshakeHash.notifyPRFDetermined();
-    }
-
-    TlsHandshakeHash getHandshakeHash()
-    {
-        return handshakeHash;
-    }
-
-    OutputStream getHandshakeHashUpdater()
-    {
-        return handshakeHashUpdater;
-    }
-
-    TlsHandshakeHash prepareToFinish()
-    {
-        TlsHandshakeHash result = handshakeHash;
-        this.handshakeHash = handshakeHash.stopTracking();
-        return result;
     }
 
     void close() throws IOException

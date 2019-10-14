@@ -131,10 +131,8 @@ public abstract class TlsProtocol
     private ByteQueue handshakeQueue = new ByteQueue(0);
 //    private ByteQueue heartbeatQueue = new ByteQueue();
 
-    /*
-     * The Record Stream we use
-     */
     RecordStream recordStream;
+    TlsHandshakeHash handshakeHash;
 
     private TlsInputStream tlsInputStream = null;
     private TlsOutputStream tlsOutputStream = null;
@@ -403,10 +401,11 @@ public abstract class TlsProtocol
     protected void beginHandshake(boolean renegotiation)
         throws IOException
     {
-        this.connection_state = CS_START;
-
         AbstractTlsContext context = getContextAdmin(); 
         TlsPeer peer = getPeer();
+
+        this.handshakeHash = new DeferredHash(context);
+        this.connection_state = CS_START;
 
         context.handshakeBeginning(peer);
 
@@ -445,14 +444,18 @@ public abstract class TlsProtocol
     {
         try
         {
+            this.recordStream.finaliseHandshake();
             this.connection_state = CS_END;
+
+            AbstractTlsContext context = getContextAdmin();
+
+            // TODO Prefer to set to null, but would need guards elsewhere
+            this.handshakeHash = new DeferredHash(context);
 
             this.alertQueue.shrink();
             this.handshakeQueue.shrink();
 
-            this.recordStream.finaliseHandshake();
-
-            this.appDataSplitEnabled = !TlsUtils.isTLSv11(getContext());
+            this.appDataSplitEnabled = !TlsUtils.isTLSv11(context);
 
             /*
              * If this was an initial handshake, we are now ready to send and receive application data.
@@ -470,13 +473,13 @@ public abstract class TlsProtocol
 
             if (this.sessionParameters == null)
             {
-                SecurityParameters securityParameters = getContext().getSecurityParametersHandshake();
+                SecurityParameters securityParameters = context.getSecurityParametersHandshake();
                 this.sessionParameters = new SessionParameters.Builder()
                     .setCipherSuite(securityParameters.getCipherSuite())
                     .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
                     .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
                     .setLocalCertificate(securityParameters.getLocalCertificate())
-                    .setMasterSecret(getContext().getCrypto().adoptSecret(securityParameters.getMasterSecret()))
+                    .setMasterSecret(context.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
                     .setNegotiatedVersion(securityParameters.getNegotiatedVersion())
                     .setPeerCertificate(securityParameters.getPeerCertificate())
                     .setPSKIdentity(securityParameters.getPSKIdentity())
@@ -488,12 +491,19 @@ public abstract class TlsProtocol
                 this.tlsSession = TlsUtils.importSession(this.tlsSession.getSessionID(), this.sessionParameters);
             }
 
-            getContextAdmin().handshakeComplete(getPeer(), this.tlsSession);
+            context.handshakeComplete(getPeer(), this.tlsSession);
         }
         finally
         {
             cleanupHandshake();
         }
+    }
+
+    TlsHandshakeHash prepareToFinish()
+    {
+        TlsHandshakeHash result = handshakeHash;
+        this.handshakeHash = result.stopTracking();
+        return result;
     }
 
     protected void processRecord(short protocol, byte[] buf, int off, int len)
@@ -614,7 +624,7 @@ public abstract class TlsProtocol
                     checkReceivedChangeCipherSpec(false);
                 }
 
-                queue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
+                queue.updateHash(handshakeHash, totalLength);
                 break;
             }
             }
@@ -971,7 +981,7 @@ public abstract class TlsProtocol
 
         default:
         {
-            recordStream.getHandshakeHashUpdater().write(buf, off, len);
+            handshakeHash.update(buf, off, len);
             break;
         }
         }
@@ -1440,7 +1450,7 @@ public abstract class TlsProtocol
 
     protected byte[] createVerifyData(boolean isServer)
     {
-        return TlsUtils.calculateVerifyData(getContext(), recordStream.getHandshakeHash(), isServer);
+        return TlsUtils.calculateVerifyData(getContext(), handshakeHash, isServer);
     }
 
     /**

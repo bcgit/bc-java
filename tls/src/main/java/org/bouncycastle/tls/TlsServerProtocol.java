@@ -326,12 +326,14 @@ public class TlsServerProtocol
 
                 /*
                  * TODO[tls13] Send ServerHello message that MAY be a HelloRetryRequest.
-                 * (state => CS_SERVER_HELLO_RETRY_REQUEST instead and no further messages).
+                 * 
+                 * For HelloRetryRequest, state => CS_SERVER_HELLO_RETRY_REQUEST instead (and no
+                 * further messages), and reset Transcript-Hash to begin with synthetic
+                 * 'message_hash' message having Hash(ClientHello) as the message body.
                  */
                 sendServerHelloMessage();
+                this.handshakeHash.notifyPRFDetermined();
                 this.connection_state = CS_SERVER_HELLO;
-
-                recordStream.notifyPRFDetermined();
 
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
@@ -402,7 +404,7 @@ public class TlsServerProtocol
 
                         sendCertificateRequestMessage(certificateRequest);
 
-                        TlsUtils.trackHashAlgorithms(this.recordStream.getHandshakeHash(),
+                        TlsUtils.trackHashAlgorithms(handshakeHash,
                             this.certificateRequest.getSupportedSignatureAlgorithms());
                     }
                 }
@@ -412,7 +414,7 @@ public class TlsServerProtocol
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
                 boolean forceBuffering = false;
-                TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash(), forceBuffering);
+                TlsUtils.sealHandshakeHash(tlsServerContext, handshakeHash, forceBuffering);
 
                 break;
             }
@@ -902,7 +904,7 @@ public class TlsServerProtocol
             establishMasterSecret(tlsServerContext, keyExchange);
         }
 
-        this.prepareFinishHash = recordStream.prepareToFinish();
+        this.prepareFinishHash = prepareToFinish();
         tlsServerContext.getSecurityParametersHandshake().sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
         if (!isSSL)
