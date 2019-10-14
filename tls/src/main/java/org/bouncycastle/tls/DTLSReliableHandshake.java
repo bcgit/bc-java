@@ -146,7 +146,7 @@ class DTLSReliableHandshake
 
     void notifyPRFDetermined()
     {
-        this.handshakeHash = handshakeHash.notifyPRFDetermined();
+        this.handshakeHash.notifyPRFDetermined();
     }
 
     TlsHandshakeHash getHandshakeHash()

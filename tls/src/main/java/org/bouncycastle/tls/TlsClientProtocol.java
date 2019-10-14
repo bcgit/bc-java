@@ -475,7 +475,11 @@ public class TlsClientProtocol
                     && serverHello.isHelloRetryRequest())
                 {
                     process13HelloRetryRequest(serverHello);
-                    this.recordStream.notifyPRFDetermined();
+                    this.handshakeHash.notifyPRFDetermined();
+                    /*
+                     * TODO[tls13] Reset Transcript-Hash to begin with synthetic 'message_hash'
+                     * message having Hash(ClientHello) as the message body.
+                     */
                     this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
 
                     send13ClientHelloRetryMessage();
@@ -484,7 +488,7 @@ public class TlsClientProtocol
                 else
                 {
                     processServerHelloMessage(serverHello);
-                    this.recordStream.notifyPRFDetermined();
+                    this.handshakeHash.notifyPRFDetermined();
                     this.connection_state = CS_SERVER_HELLO;
 
                     applyMaxFragmentLengthExtension();
@@ -607,7 +611,7 @@ public class TlsClientProtocol
                 this.connection_state = CS_CLIENT_CERTIFICATE;
 
                 boolean forceBuffering = streamSigner != null;
-                TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash(), forceBuffering);
+                TlsUtils.sealHandshakeHash(tlsClientContext, handshakeHash, forceBuffering);
 
                 /*
                  * Send the client key exchange message, depending on the key exchange we are using
@@ -623,7 +627,7 @@ public class TlsClientProtocol
                     establishMasterSecret(tlsClientContext, keyExchange);
                 }
 
-                TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
+                TlsHandshakeHash prepareFinishHash = prepareToFinish();
                 tlsClientContext.getSecurityParametersHandshake().sessionHash = TlsUtils
                     .getCurrentPRFHash(prepareFinishHash);
 
@@ -721,8 +725,7 @@ public class TlsClientProtocol
                  * TODO Give the client a chance to immediately select the CertificateVerify hash
                  * algorithm here to avoid tracking the other hash algorithms unnecessarily?
                  */
-                TlsUtils.trackHashAlgorithms(this.recordStream.getHandshakeHash(),
-                    this.certificateRequest.getSupportedSignatureAlgorithms());
+                TlsUtils.trackHashAlgorithms(handshakeHash, this.certificateRequest.getSupportedSignatureAlgorithms());
 
                 break;
             }

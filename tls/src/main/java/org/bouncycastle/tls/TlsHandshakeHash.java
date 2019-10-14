@@ -15,7 +15,7 @@ public interface TlsHandshakeHash
 
     void forceBuffering();
 
-    TlsHandshakeHash notifyPRFDetermined();
+    void notifyPRFDetermined();
 
     void trackHashAlgorithm(short hashAlgorithm);
 
