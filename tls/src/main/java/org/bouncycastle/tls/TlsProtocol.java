@@ -593,39 +593,48 @@ public abstract class TlsProtocol
                 break;
             }
 
-            HandshakeMessageInput buf = queue.readHandshakeMessage(totalLength);
-
             /*
-             * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
-             * starting at client hello up to, but not including, this finished message.
-             * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
+             * Check ChangeCipherSpec status
              */
             switch (type)
             {
+            case HandshakeType.hello_request:
+                break;
+
+            default:
+            {
+                /*
+                 * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
+                 * RFC 8446 for "change_cipher_spec" for details.
+                 */
+                checkReceivedChangeCipherSpec(HandshakeType.finished == type);
+                break;
+            }
+            }
+
+            HandshakeMessageInput buf = queue.readHandshakeMessage(totalLength);
+
+            switch (type)
+            {
+            /*
+             * These message types aren't included in the transcript.
+             */
             case HandshakeType.hello_request:
             case HandshakeType.key_update:
             case HandshakeType.new_session_ticket:
                 break;
 
+            /*
+             * These message types are deferred to the handler to explicitly update the transcript.
+             */
+            case HandshakeType.finished:
+                break;
+
+            /*
+             * For all others we automatically update the transcript immediately. 
+             */
             default:
             {
-                if (HandshakeType.finished == type)
-                {
-                    checkReceivedChangeCipherSpec(true);
-
-                    TlsContext ctx = getContext();
-                    SecurityParameters securityParameters = ctx.getSecurityParametersHandshake();
-
-                    if (securityParameters.getMasterSecret() != null)
-                    {
-                        securityParameters.peerVerifyData = createVerifyData(!ctx.isServer());
-                    }
-                }
-                else
-                {
-                    checkReceivedChangeCipherSpec(false);
-                }
-
                 buf.updateHash(handshakeHash);
                 break;
             }
@@ -633,9 +642,6 @@ public abstract class TlsProtocol
 
             buf.skip(4);
 
-            /*
-             * Now, parse the message.
-             */
             handleHandshakeMessage(type, buf);
         }
     }
@@ -1317,23 +1323,16 @@ public abstract class TlsProtocol
     protected void processFinishedMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        TlsContext ctx = getContext();
-        SecurityParameters securityParameters = ctx.getSecurityParametersHandshake();
+        TlsContext context = getContext();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        boolean isServerContext = context.isServer();
 
-        byte[] expected_verify_data = securityParameters.getPeerVerifyData();
-        if (expected_verify_data == null)
+        if (null == securityParameters.getMasterSecret())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (ctx.isServer() ^ resumedSession)
-        {
-            if (!resumedSession || securityParameters.isExtendedMasterSecret())
-            {
-                securityParameters.tlsUnique = expected_verify_data;
-            }
-        }
-
+        byte[] expected_verify_data = createVerifyData(!isServerContext);
         byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
 
         assertEmpty(buf);
@@ -1347,6 +1346,16 @@ public abstract class TlsProtocol
              * Wrong checksum in the finished message.
              */
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
+        }
+
+        securityParameters.peerVerifyData = expected_verify_data;
+
+        if (isServerContext ^ resumedSession)
+        {
+            if (!resumedSession || securityParameters.isExtendedMasterSecret())
+            {
+                securityParameters.tlsUnique = expected_verify_data;
+            }
         }
     }
 
@@ -1418,12 +1427,15 @@ public abstract class TlsProtocol
     protected void sendFinishedMessage()
         throws IOException
     {
-        TlsContext ctx = getContext();
-        SecurityParameters securityParameters = ctx.getSecurityParametersHandshake();
+        TlsContext context = getContext();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        boolean isServerContext = context.isServer();
 
-        byte[] verify_data = securityParameters.localVerifyData = createVerifyData(ctx.isServer());
+        byte[] verify_data = createVerifyData(isServerContext);
 
-        if (!ctx.isServer() ^ resumedSession)
+        securityParameters.localVerifyData = verify_data;
+
+        if (!isServerContext ^ resumedSession)
         {
             if (!resumedSession || securityParameters.isExtendedMasterSecret())
             {

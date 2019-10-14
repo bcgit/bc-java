@@ -248,6 +248,7 @@ public class TlsClientProtocol
             case CS_SERVER_CERTIFICATE_VERIFY:
             {
                 receive13ServerFinished(buf);
+                buf.updateHash(handshakeHash);
                 this.connection_state = CS_SERVER_FINISHED;
 
                 /*
@@ -365,6 +366,7 @@ public class TlsClientProtocol
             }
 
             processFinishedMessage(buf);
+            buf.updateHash(handshakeHash);
             this.connection_state = CS_SERVER_FINISHED;
 
             sendChangeCipherSpecMessage();
