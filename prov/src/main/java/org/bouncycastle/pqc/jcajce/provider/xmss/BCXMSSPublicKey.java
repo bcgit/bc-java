@@ -8,7 +8,6 @@ import java.security.PublicKey;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
@@ -40,9 +39,8 @@ public class BCXMSSPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
-        this.treeDigest = keyParams.getTreeDigest().getAlgorithm();
         this.keyParams = (XMSSPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.treeDigest = DigestUtil.getDigestOID(keyParams.getTreeDigest());
     }
 
     /**
@@ -87,7 +85,14 @@ public class BCXMSSPublicKey
         {
             BCXMSSPublicKey otherKey = (BCXMSSPublicKey)o;
 
-            return treeDigest.equals(otherKey.treeDigest) && Arrays.areEqual(keyParams.toByteArray(), otherKey.keyParams.toByteArray());
+            try
+            {
+                return treeDigest.equals(otherKey.treeDigest) && Arrays.areEqual(keyParams.getEncoded(), otherKey.keyParams.getEncoded());
+            }
+            catch (IOException e)
+            {
+                return false;
+            }
         }
 
         return false;
@@ -95,7 +100,15 @@ public class BCXMSSPublicKey
 
     public int hashCode()
     {
-        return treeDigest.hashCode() + 37 * Arrays.hashCode(keyParams.toByteArray());
+        try
+        {
+            return treeDigest.hashCode() + 37 * Arrays.hashCode(keyParams.getEncoded());
+        }
+        catch (IOException e)
+        {
+            // should never happen, but...
+            return treeDigest.hashCode();
+        }
     }
 
     public int getHeight()
