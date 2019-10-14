@@ -8,7 +8,6 @@ import java.security.PublicKey;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
@@ -38,9 +37,8 @@ public class BCXMSSMTPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
-        this.treeDigest = keyParams.getTreeDigest().getAlgorithm();
         this.keyParams = (XMSSMTPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.treeDigest =  DigestUtil.getDigestOID(this.keyParams.getTreeDigest());
     }
 
     public boolean equals(Object o)

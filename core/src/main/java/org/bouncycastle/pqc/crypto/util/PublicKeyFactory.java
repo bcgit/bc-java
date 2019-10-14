@@ -44,6 +44,7 @@ public class PublicKeyFactory
         converters.put(PQCObjectIdentifiers.xmss, new XMSSConverter());
         converters.put(PQCObjectIdentifiers.xmss_mt, new XMSSMTConverter());
         converters.put(IsaraObjectIdentifiers.id_alg_xmss, new XMSSConverter());
+        converters.put(IsaraObjectIdentifiers.id_alg_xmssmt, new XMSSMTConverter());
     }
 
     /**
@@ -88,7 +89,7 @@ public class PublicKeyFactory
     /**
      * Create a public key from the passed in SubjectPublicKeyInfo
      *
-     * @param keyInfo the SubjectPublicKeyInfo containing the key data
+     * @param keyInfo       the SubjectPublicKeyInfo containing the key data
      * @param defaultParams default parameters that might be needed.
      * @return the appropriate key parameter
      * @throws IOException on an error decoding the key
@@ -132,7 +133,7 @@ public class PublicKeyFactory
             throws IOException
         {
             return new SPHINCSPublicKeyParameters(keyInfo.getPublicKeyData().getBytes(),
-                            Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(keyInfo.getAlgorithm().getParameters())));
+                Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(keyInfo.getAlgorithm().getParameters())));
         }
     }
 
@@ -182,14 +183,26 @@ public class PublicKeyFactory
             throws IOException
         {
             XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
-            ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
 
-            XMSSPublicKey xmssMtPublicKey = XMSSPublicKey.getInstance(keyInfo.parsePublicKey());
+            if (keyParams != null)
+            {
+                ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
 
-            return new XMSSMTPublicKeyParameters
-                .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), Utils.getDigest(treeDigest)))
-                .withPublicSeed(xmssMtPublicKey.getPublicSeed())
-                .withRoot(xmssMtPublicKey.getRoot()).build();
+                XMSSPublicKey xmssMtPublicKey = XMSSPublicKey.getInstance(keyInfo.parsePublicKey());
+
+                return new XMSSMTPublicKeyParameters
+                    .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), Utils.getDigest(treeDigest)))
+                    .withPublicSeed(xmssMtPublicKey.getPublicSeed())
+                    .withRoot(xmssMtPublicKey.getRoot()).build();
+            }
+            else
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+                return new XMSSMTPublicKeyParameters
+                    .Builder(XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
+                    .withPublicKey(keyEnc).build();
+            }
         }
     }
 }
