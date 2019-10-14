@@ -48,6 +48,15 @@ public class BCXMSSPrivateKey
         this.keyParams = (XMSSPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
     }
 
+    public long getIndex()
+    {
+        if (getUsagesRemaining() == 0)
+        {
+            throw new IllegalStateException("key exhausted");
+        }
+        return keyParams.getIndex();
+    }
+
     public long getUsagesRemaining()
     {
         return keyParams.getUsagesRemaining();

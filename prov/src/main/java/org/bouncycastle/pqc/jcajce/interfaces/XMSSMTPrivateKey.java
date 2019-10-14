@@ -9,6 +9,13 @@ public interface XMSSMTPrivateKey
     extends XMSSMTKey, PrivateKey
 {
     /**
+     * Return the index of the next signature.
+     *
+     * @return the index number for the next signature.
+     */
+    long getIndex();
+
+    /**
      * Return the number of usages left for the private key.
      *
      * @return the number of times the key can be used before it is exhausted.
