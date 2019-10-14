@@ -18,7 +18,7 @@ public class TlsServerProtocol
     protected TlsKeyExchange keyExchange = null;
     protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
-    protected TlsHandshakeHash prepareFinishHash = null;
+    protected TlsHandshakeHash certificateVerifyHash = null;
     protected boolean offeredExtendedMasterSecret;
 
     /**
@@ -101,7 +101,7 @@ public class TlsServerProtocol
         this.keyExchange = null;
         this.serverCredentials = null;
         this.certificateRequest = null;
-        this.prepareFinishHash = null;
+        this.certificateVerifyHash = null;
         this.offeredExtendedMasterSecret = false;
     }
 
@@ -395,7 +395,7 @@ public class TlsServerProtocol
                     this.certificateRequest = tlsServer.getCertificateRequest();
                     if (this.certificateRequest != null)
                     {
-                        if (TlsUtils.isTLSv12(getContext()) != (certificateRequest.getSupportedSignatureAlgorithms() != null))
+                        if (TlsUtils.isTLSv12(tlsServerContext) != (certificateRequest.getSupportedSignatureAlgorithms() != null))
                         {
                             throw new TlsFatalAlert(AlertDescription.internal_error);
                         }
@@ -530,7 +530,6 @@ public class TlsServerProtocol
 
                 receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
-
                 break;
             }
             default:
@@ -669,7 +668,7 @@ public class TlsServerProtocol
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        Certificate clientCertificate = Certificate.parse(getContext(), buf, null);
+        Certificate clientCertificate = Certificate.parse(tlsServerContext, buf, null);
 
         assertEmpty(buf);
 
@@ -679,16 +678,14 @@ public class TlsServerProtocol
     protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        if (certificateRequest == null)
-        {
-            throw new IllegalStateException();
-        }
-
         DigitallySigned clientCertificateVerify = DigitallySigned.parse(tlsServerContext, buf);
 
         assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerify(tlsServerContext, certificateRequest, clientCertificateVerify, prepareFinishHash);
+        TlsUtils.verifyCertificateVerify(tlsServerContext, certificateRequest, clientCertificateVerify,
+            certificateVerifyHash);
+
+        this.certificateVerifyHash = null;
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf)
@@ -905,8 +902,7 @@ public class TlsServerProtocol
             establishMasterSecret(tlsServerContext, keyExchange);
         }
 
-        this.prepareFinishHash = prepareToFinish();
-        tlsServerContext.getSecurityParametersHandshake().sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
+        tlsServerContext.getSecurityParametersHandshake().sessionHash = TlsUtils.getCurrentPRFHash(handshakeHash);
 
         if (!isSSL)
         {
@@ -914,7 +910,14 @@ public class TlsServerProtocol
             establishMasterSecret(tlsServerContext, keyExchange);
         }
 
-        recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
+        recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsServerContext));
+
+        if (expectCertificateVerifyMessage())
+        {
+            this.certificateVerifyHash = handshakeHash;
+        }
+
+        this.handshakeHash = handshakeHash.stopTracking();
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)

@@ -499,7 +499,7 @@ public class TlsClientProtocol
                     {
                         securityParameters.masterSecret = tlsClientContext.getCrypto()
                             .adoptSecret(sessionParameters.getMasterSecret());
-                        this.recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
+                        this.recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsClientContext));
                     }
                     else
                     {
@@ -629,9 +629,8 @@ public class TlsClientProtocol
                     establishMasterSecret(tlsClientContext, keyExchange);
                 }
 
-                TlsHandshakeHash prepareFinishHash = prepareToFinish();
-                tlsClientContext.getSecurityParametersHandshake().sessionHash = TlsUtils
-                    .getCurrentPRFHash(prepareFinishHash);
+                tlsClientContext.getSecurityParametersHandshake().sessionHash =
+                    TlsUtils.getCurrentPRFHash(handshakeHash);
 
                 if (!isSSL)
                 {
@@ -639,15 +638,17 @@ public class TlsClientProtocol
                     establishMasterSecret(tlsClientContext, keyExchange);
                 }
 
-                recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
+                recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsClientContext));
 
                 if (credentialedSigner != null)
                 {
-                    DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(getContext(),
-                        credentialedSigner, streamSigner, prepareFinishHash);
+                    DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(tlsClientContext,
+                        credentialedSigner, streamSigner, handshakeHash);
                     sendCertificateVerifyMessage(certificateVerify);
                     this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
                 }
+
+                this.handshakeHash = handshakeHash.stopTracking();
 
                 sendChangeCipherSpecMessage();
                 sendFinishedMessage();
@@ -717,7 +718,7 @@ public class TlsClientProtocol
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
 
-                this.certificateRequest = CertificateRequest.parse(getContext(), buf);
+                this.certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
 
                 assertEmpty(buf);
 
