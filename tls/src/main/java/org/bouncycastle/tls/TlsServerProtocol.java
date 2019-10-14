@@ -919,31 +919,23 @@ public class TlsServerProtocol
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
         throws IOException
     {
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.certificate_request);
-
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate_request);
         certificateRequest.encode(message);
-
-        message.writeToRecordStream();
+        message.send(this);
     }
 
     protected void sendCertificateStatusMessage(CertificateStatus certificateStatus)
         throws IOException
     {
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.certificate_status);
-
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate_status);
         certificateStatus.encode(message);
-
-        message.writeToRecordStream();
+        message.send(this);
     }
 
     protected void sendHelloRequestMessage()
         throws IOException
     {
-        byte[] message = new byte[4];
-        TlsUtils.writeUint8(HandshakeType.hello_request, message, 0);
-        TlsUtils.writeUint24(0, message, 1);
-
-        writeHandshakeMessage(message, 0, message.length);
+        HandshakeMessageOutput.send(this, HandshakeType.hello_request, TlsUtils.EMPTY_BYTES);
     }
 
     protected void sendNewSessionTicketMessage(NewSessionTicket newSessionTicket)
@@ -954,11 +946,9 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.new_session_ticket);
-
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.new_session_ticket);
         newSessionTicket.encode(message);
-
-        message.writeToRecordStream();
+        message.send(this);
     }
 
     protected void sendServerHelloMessage()
@@ -1126,30 +1116,21 @@ public class TlsServerProtocol
         ServerHello serverHello = new ServerHello(legacy_version, securityParameters.getServerRandom(), tlsSession.getSessionID(),
             securityParameters.getCipherSuite(), serverExtensions);
 
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.server_hello);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.server_hello);
         serverHello.encode(tlsServerContext, message);
-        message.writeToRecordStream();
+        message.send(this);
     }
 
     protected void sendServerHelloDoneMessage()
         throws IOException
     {
-        byte[] message = new byte[4];
-        TlsUtils.writeUint8(HandshakeType.server_hello_done, message, 0);
-        TlsUtils.writeUint24(0, message, 1);
-
-        writeHandshakeMessage(message, 0, message.length);
+        HandshakeMessageOutput.send(this, HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
     }
 
     protected void sendServerKeyExchangeMessage(byte[] serverKeyExchange)
         throws IOException
     {
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.server_key_exchange,
-            serverKeyExchange.length);
-
-        message.write(serverKeyExchange);
-
-        message.writeToRecordStream();
+        HandshakeMessageOutput.send(this, HandshakeType.server_key_exchange, serverKeyExchange);
     }
 
     protected void skip13ClientCertificate()
