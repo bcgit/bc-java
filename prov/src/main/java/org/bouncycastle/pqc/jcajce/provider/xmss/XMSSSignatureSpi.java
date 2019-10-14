@@ -168,6 +168,15 @@ public class XMSSSignatureSpi
         return rKey;
     }
 
+    static public class generic
+        extends XMSSSignatureSpi
+    {
+        public generic()
+        {
+            super("XMSS", new NullDigest(), new XMSSSigner());
+        }
+    }
+
     static public class withSha256
         extends XMSSSignatureSpi
     {
