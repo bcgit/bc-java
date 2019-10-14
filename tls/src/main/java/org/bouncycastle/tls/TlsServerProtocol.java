@@ -553,6 +553,7 @@ public class TlsServerProtocol
             case CS_CLIENT_CERTIFICATE_VERIFY:
             {
                 processFinishedMessage(buf);
+                buf.updateHash(handshakeHash);
                 this.connection_state = CS_CLIENT_FINISHED;
 
                 if (this.expectSessionTicket)
