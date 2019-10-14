@@ -1399,9 +1399,9 @@ public abstract class TlsProtocol
         }
         else
         {
-            HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.certificate);
+            HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate);
             certificate.encode(context, message, endPointHash);
-            message.writeToRecordStream();
+            message.send(this);
         }
 
         securityParameters.localCertificate = certificate;
@@ -1431,21 +1431,15 @@ public abstract class TlsProtocol
             }
         }
 
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.finished, verify_data.length);
-
-        message.write(verify_data);
-
-        message.writeToRecordStream();
+        HandshakeMessageOutput.send(this, HandshakeType.finished, verify_data);
     }
 
     protected void sendSupplementalDataMessage(Vector supplementalData)
         throws IOException
     {
-        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.supplemental_data);
-
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.supplemental_data);
         writeSupplementalData(message, supplementalData);
-
-        message.writeToRecordStream();
+        message.send(this);
     }
 
     protected byte[] createVerifyData(boolean isServer)
