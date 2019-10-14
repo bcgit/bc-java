@@ -1327,15 +1327,11 @@ public abstract class TlsProtocol
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         boolean isServerContext = context.isServer();
 
-        if (null == securityParameters.getMasterSecret())
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        byte[] expected_verify_data = createVerifyData(!isServerContext);
-        byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
+        byte[] verify_data = TlsUtils.readFully(securityParameters.getVerifyDataLength(), buf);
 
         assertEmpty(buf);
+
+        byte[] expected_verify_data = TlsUtils.calculateVerifyData(context, handshakeHash, !isServerContext);
 
         /*
          * Compare both checksums.
@@ -1431,7 +1427,7 @@ public abstract class TlsProtocol
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         boolean isServerContext = context.isServer();
 
-        byte[] verify_data = createVerifyData(isServerContext);
+        byte[] verify_data = TlsUtils.calculateVerifyData(context, handshakeHash, isServerContext);
 
         securityParameters.localVerifyData = verify_data;
 
@@ -1452,11 +1448,6 @@ public abstract class TlsProtocol
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.supplemental_data);
         writeSupplementalData(message, supplementalData);
         message.send(this);
-    }
-
-    protected byte[] createVerifyData(boolean isServer)
-    {
-        return TlsUtils.calculateVerifyData(getContext(), handshakeHash, isServer);
     }
 
     /**
