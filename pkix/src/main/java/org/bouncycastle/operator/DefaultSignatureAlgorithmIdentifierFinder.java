@@ -235,7 +235,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE256);
 
         noParams.add(IsaraObjectIdentifiers.id_alg_xmss);
-        
+        noParams.add(IsaraObjectIdentifiers.id_alg_xmssmt);
+
         //
         // qTESLA
         //
