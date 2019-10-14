@@ -56,7 +56,7 @@ public class XMSSKeyFactorySpi
                 return generatePublic(SubjectPublicKeyInfo.getInstance(encKey));
             }
             catch (Exception e)
-            {
+            {                       e.printStackTrace();
                 throw new InvalidKeySpecException(e.toString());
             }
         }
