@@ -1,10 +1,7 @@
 package org.bouncycastle.tls;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import org.bouncycastle.tls.crypto.TlsHash;
 
 /**
  * A queue for bytes. This file could be more optimized.
@@ -144,11 +141,13 @@ public class ByteQueue
     }
 
     /**
-     * Return a {@link ByteArrayInputStream} over some bytes at the beginning of the data.
-     * @param length How many bytes will be readable.
-     * @return A {@link ByteArrayInputStream} over the data.
+     * Return a {@link HandshakeMessageInput} over some bytes at the beginning of the data.
+     * 
+     * @param length
+     *            How many bytes will be readable.
+     * @return A {@link HandshakeMessageInput} over the data.
      */
-    public ByteArrayInputStream readFrom(int length)
+    public HandshakeMessageInput readHandshakeMessage(int length)
     {
         if (length > available)
         {
@@ -160,7 +159,16 @@ public class ByteQueue
         available -= length;
         skipped += length;
 
-        return new ByteArrayInputStream(databuf, position, length);
+        return new HandshakeMessageInput(databuf, position, length);
+    }
+
+    public int readInt32()
+    {
+        if (available < 4)
+        {
+            throw new IllegalStateException("Not enough data to read");
+        }
+        return TlsUtils.readInt32(databuf, skipped);
     }
 
     /**
@@ -221,21 +229,5 @@ public class ByteQueue
                 skipped = 0;
             }
         }
-    }
-
-    /**
-     * Update the provided {@link TlsHash} with some bytes from the beginning of the data.
-     *
-     * @param hash The {@link TlsHash} to update.
-     * @param length How many bytes to update the {@link TlsHash} with.
-     */
-    public void updateHash(TlsHash hash, int length) throws IOException
-    {
-        if (length > available)
-        {
-            throw new IllegalStateException("Cannot update " + length + " bytes, only got " + available);
-        }
-
-        hash.update(databuf, skipped, length);
     }
 }
