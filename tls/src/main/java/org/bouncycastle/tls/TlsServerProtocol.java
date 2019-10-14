@@ -127,7 +127,7 @@ public class TlsServerProtocol
         return tlsServer;
     }
 
-    protected void handle13HandshakeMessage(short type, ByteArrayInputStream buf)
+    protected void handle13HandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException
     {
         if (!isTLSv13ConnectionState())
@@ -266,7 +266,7 @@ public class TlsServerProtocol
         }
     }
 
-    protected void handleHandshakeMessage(short type, ByteArrayInputStream buf)
+    protected void handleHandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException
     {
         final SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();

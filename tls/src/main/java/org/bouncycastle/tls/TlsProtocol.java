@@ -334,7 +334,7 @@ public abstract class TlsProtocol
         closeConnection();
     }
 
-    protected abstract void handleHandshakeMessage(short type, ByteArrayInputStream buf)
+    protected abstract void handleHandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException;
 
     protected boolean handleRenegotiation() throws IOException
@@ -579,10 +579,10 @@ public abstract class TlsProtocol
          */
         while (queue.available() >= 4)
         {
-            byte[] beginning = new byte[4];
-            queue.read(beginning, 0, 4, 0);
-            short type = TlsUtils.readUint8(beginning, 0);
-            int length = TlsUtils.readUint24(beginning, 1);
+            int header = queue.readInt32();
+
+            short type = (short)(header >>> 24);
+            int length = header & 0x00FFFFFF;
             int totalLength = 4 + length;
 
             /*
@@ -592,6 +592,8 @@ public abstract class TlsProtocol
             {
                 break;
             }
+
+            HandshakeMessageInput buf = queue.readHandshakeMessage(totalLength);
 
             /*
              * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
@@ -624,14 +626,12 @@ public abstract class TlsProtocol
                     checkReceivedChangeCipherSpec(false);
                 }
 
-                queue.updateHash(handshakeHash, totalLength);
+                buf.updateHash(handshakeHash);
                 break;
             }
             }
 
-            queue.removeData(4);
-
-            ByteArrayInputStream buf = queue.readFrom(length);
+            buf.skip(4);
 
             /*
              * Now, parse the message.

@@ -684,6 +684,15 @@ public class TlsUtils
         };
     }
 
+    public static int readInt32(byte[] buf, int offset)
+    {
+        int n = buf[offset] << 24;
+        n |= (buf[++offset] & 0xff) << 16;
+        n |= (buf[++offset] & 0xff) << 8;
+        n |= (buf[++offset] & 0xff);
+        return n;
+    }
+
     public static short readUint8(InputStream input)
         throws IOException
     {
