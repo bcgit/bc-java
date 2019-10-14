@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.tls.crypto.TlsHash;
+
 /**
  * A queue for bytes. This file could be more optimized.
  */
@@ -219,5 +221,21 @@ public class ByteQueue
                 skipped = 0;
             }
         }
+    }
+
+    /**
+     * Update the provided {@link TlsHash} with some bytes from the beginning of the data.
+     *
+     * @param hash The {@link TlsHash} to update.
+     * @param length How many bytes to update the {@link TlsHash} with.
+     */
+    public void updateHash(TlsHash hash, int length) throws IOException
+    {
+        if (length > available)
+        {
+            throw new IllegalStateException("Cannot update " + length + " bytes, only got " + available);
+        }
+
+        hash.update(databuf, skipped, length);
     }
 }

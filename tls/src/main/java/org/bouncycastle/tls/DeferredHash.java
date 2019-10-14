@@ -63,7 +63,7 @@ class DeferredHash
         this.forceBuffering = true;
     }
 
-    public TlsHandshakeHash notifyPRFDetermined()
+    public void notifyPRFDetermined()
     {
         int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
         switch (prfAlgorithm)
@@ -81,7 +81,6 @@ class DeferredHash
             break;
         }
         }
-        return this;
     }
 
     public void trackHashAlgorithm(short hashAlgorithm)
