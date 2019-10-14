@@ -162,15 +162,14 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHAKE256WITHXMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256ph);
 
         algorithms.put("XMSS-SHA256", IsaraObjectIdentifiers.id_alg_xmss);
-//        algorithms.put("XMSS-SHA256", BCObjectIdentifiers.xmss_SHA256);
-        algorithms.put("XMSS-SHA512", BCObjectIdentifiers.xmss_SHA512);
-        algorithms.put("XMSS-SHAKE128", BCObjectIdentifiers.xmss_SHAKE128);
-        algorithms.put("XMSS-SHAKE256", BCObjectIdentifiers.xmss_SHAKE256);
+        algorithms.put("XMSS-SHA512", IsaraObjectIdentifiers.id_alg_xmss);
+        algorithms.put("XMSS-SHAKE128", IsaraObjectIdentifiers.id_alg_xmss);
+        algorithms.put("XMSS-SHAKE256", IsaraObjectIdentifiers.id_alg_xmss);
 
-        algorithms.put("XMSSMT-SHA256", BCObjectIdentifiers.xmss_mt_SHA256);
-        algorithms.put("XMSSMT-SHA512", BCObjectIdentifiers.xmss_mt_SHA512);
-        algorithms.put("XMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128);
-        algorithms.put("XMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256);
+        algorithms.put("XMSSMT-SHA256", IsaraObjectIdentifiers.id_alg_xmssmt);
+        algorithms.put("XMSSMT-SHA512", IsaraObjectIdentifiers.id_alg_xmssmt);
+        algorithms.put("XMSSMT-SHAKE128", IsaraObjectIdentifiers.id_alg_xmssmt);
+        algorithms.put("XMSSMT-SHAKE256", IsaraObjectIdentifiers.id_alg_xmssmt);
 
         algorithms.put("QTESLA-P-I", BCObjectIdentifiers.qTESLA_p_I);
         algorithms.put("QTESLA-P-III", BCObjectIdentifiers.qTESLA_p_III);
