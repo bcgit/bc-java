@@ -2,6 +2,8 @@ package org.bouncycastle.pqc.crypto.util;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -63,17 +65,42 @@ public class SubjectPublicKeyInfoFactory
         {
             XMSSPublicKeyParameters keyParams = (XMSSPublicKeyParameters)publicKey;
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss,
-                new XMSSKeyParams(keyParams.getParameters().getHeight(), Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSPublicKey(keyParams.getPublicSeed(), keyParams.getRoot()));
+            byte[] publicSeed = keyParams.getPublicSeed();
+            byte[] root = keyParams.getRoot();
+            byte[] keyEnc = keyParams.getEncoded();
+            if (keyEnc.length > publicSeed.length + root.length)
+            {
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IsaraObjectIdentifiers.id_alg_xmss);
+
+                return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(keyEnc));
+            }
+            else
+            {
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss,
+                    new XMSSKeyParams(keyParams.getParameters().getHeight(), Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
+
+                return new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSPublicKey(publicSeed, root));
+            }
         }
         else if (publicKey instanceof XMSSMTPublicKeyParameters)
         {
             XMSSMTPublicKeyParameters keyParams = (XMSSMTPublicKeyParameters)publicKey;
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss_mt, new XMSSMTKeyParams(keyParams.getParameters().getHeight(), keyParams.getParameters().getLayers(),
-                Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSMTPublicKey(keyParams.getPublicSeed(), keyParams.getRoot()));
+            byte[] publicSeed = keyParams.getPublicSeed();
+            byte[] root = keyParams.getRoot();
+            byte[] keyEnc = keyParams.getEncoded();
+            if (keyEnc.length > publicSeed.length + root.length)
+            {
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IsaraObjectIdentifiers.id_alg_xmssmt);
+
+                return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(keyEnc));
+            }
+            else
+            {
+                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss_mt, new XMSSMTKeyParams(keyParams.getParameters().getHeight(), keyParams.getParameters().getLayers(),
+                    Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
+                return new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSMTPublicKey(keyParams.getPublicSeed(), keyParams.getRoot()));
+            }
         }
         else
         {

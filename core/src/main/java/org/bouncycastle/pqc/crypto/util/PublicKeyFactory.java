@@ -7,7 +7,10 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -40,6 +43,7 @@ public class PublicKeyFactory
         converters.put(PQCObjectIdentifiers.newHope, new NHConverter());
         converters.put(PQCObjectIdentifiers.xmss, new XMSSConverter());
         converters.put(PQCObjectIdentifiers.xmss_mt, new XMSSMTConverter());
+        converters.put(IsaraObjectIdentifiers.id_alg_xmss, new XMSSConverter());
     }
 
     /**
@@ -149,13 +153,25 @@ public class PublicKeyFactory
             throws IOException
         {
             XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
-            ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
-            XMSSPublicKey xmssPublicKey = XMSSPublicKey.getInstance(keyInfo.parsePublicKey());
 
-            return new XMSSPublicKeyParameters
-                .Builder(new XMSSParameters(keyParams.getHeight(), Utils.getDigest(treeDigest)))
-                .withPublicSeed(xmssPublicKey.getPublicSeed())
-                .withRoot(xmssPublicKey.getRoot()).build();
+            if (keyParams != null)
+            {
+                ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
+                XMSSPublicKey xmssPublicKey = XMSSPublicKey.getInstance(keyInfo.parsePublicKey());
+
+                return new XMSSPublicKeyParameters
+                    .Builder(new XMSSParameters(keyParams.getHeight(), Utils.getDigest(treeDigest)))
+                    .withPublicSeed(xmssPublicKey.getPublicSeed())
+                    .withRoot(xmssPublicKey.getRoot()).build();
+            }
+            else
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+                return new XMSSPublicKeyParameters
+                    .Builder(new XMSSParameters(10, Utils.getDigest(NISTObjectIdentifiers.id_sha256)))
+                    .withPublicKey(keyEnc).build();
+            }
         }
     }
 

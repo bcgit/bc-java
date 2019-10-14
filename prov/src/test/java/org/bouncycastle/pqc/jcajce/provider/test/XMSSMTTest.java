@@ -643,6 +643,16 @@ public class XMSSMTTest
             }
             sigs.add(sw);
         }
+
+        try
+        {
+            privKey.getIndex();
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("key exhausted", e.getMessage());
+        }
     }
 
     private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
@@ -702,7 +712,7 @@ public class XMSSMTTest
     public void testShardedKeyExhaustion()
         throws Exception
     {
-        StateAwareSignature s1 = (StateAwareSignature)Signature.getInstance(BCObjectIdentifiers.xmss_mt_SHA256.getId(), "BCPQC");
+        Signature s1 = Signature.getInstance(BCObjectIdentifiers.xmss_mt_SHA256.getId(), "BCPQC");
         Signature s2 = Signature.getInstance(BCObjectIdentifiers.xmss_mt_SHA256.getId(), "BCPQC");
 
         byte[] message = Strings.toByteArray("hello, world!");
@@ -739,7 +749,7 @@ public class XMSSMTTest
     }
 
     private void exhaustKey(
-        StateAwareSignature s1, Signature s2, byte[] message, KeyPair kp, XMSSMTPrivateKey extPrivKey, int usages)
+        Signature s1, Signature s2, byte[] message, KeyPair kp, XMSSMTPrivateKey extPrivKey, int usages)
         throws GeneralSecurityException
     {
         // serialisation check
