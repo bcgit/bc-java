@@ -307,21 +307,23 @@ public class DTLSClientProtocol
         byte[] clientKeyExchangeBody = generateClientKeyExchange(state);
         handshake.sendMessage(HandshakeType.client_key_exchange, clientKeyExchangeBody);
 
-        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
-        securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
+        securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(handshake.getHandshakeHash());
 
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
         recordLayer.initPendingEpoch(TlsUtils.initCipher(state.clientContext));
 
-        if (credentialedSigner != null)
         {
-            DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(state.clientContext,
-                credentialedSigner, streamSigner, prepareFinishHash);
-            byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
-            handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
+            if (credentialedSigner != null)
+            {
+                DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(state.clientContext,
+                    credentialedSigner, streamSigner, handshake.getHandshakeHash());
+                byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
+                handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
+            }
+
+            handshake.prepareToFinish();
         }
 
-        // NOTE: Calculated exclusive of the Finished message itself
         securityParameters.localVerifyData = createVerifyData(state.clientContext, handshake, false);
         handshake.sendMessage(HandshakeType.finished, securityParameters.getLocalVerifyData());
 

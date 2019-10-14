@@ -499,13 +499,6 @@ public abstract class TlsProtocol
         }
     }
 
-    TlsHandshakeHash prepareToFinish()
-    {
-        TlsHandshakeHash result = handshakeHash;
-        this.handshakeHash = result.stopTracking();
-        return result;
-    }
-
     protected void processRecord(short protocol, byte[] buf, int off, int len)
         throws IOException
     {

@@ -276,8 +276,7 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
-        securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
+        securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(handshake.getHandshakeHash());
 
         TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
         recordLayer.initPendingEpoch(TlsUtils.initCipher(state.serverContext));
@@ -287,10 +286,14 @@ public class DTLSServerProtocol
          * capability (i.e., all certificates except those containing fixed Diffie-Hellman
          * parameters).
          */
-        if (expectCertificateVerifyMessage(state))
         {
-            byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
-            processCertificateVerify(state, certificateVerifyBody, prepareFinishHash);
+            TlsHandshakeHash certificateVerifyHash = handshake.prepareToFinish();
+
+            if (expectCertificateVerifyMessage(state))
+            {
+                byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
+                processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
+            }
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
