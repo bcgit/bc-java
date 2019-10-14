@@ -919,7 +919,7 @@ public class TlsServerProtocol
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
         throws IOException
     {
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate_request);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.certificate_request);
 
         certificateRequest.encode(message);
 
@@ -929,7 +929,7 @@ public class TlsServerProtocol
     protected void sendCertificateStatusMessage(CertificateStatus certificateStatus)
         throws IOException
     {
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate_status);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.certificate_status);
 
         certificateStatus.encode(message);
 
@@ -954,7 +954,7 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.new_session_ticket);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.new_session_ticket);
 
         newSessionTicket.encode(message);
 
@@ -1126,7 +1126,7 @@ public class TlsServerProtocol
         ServerHello serverHello = new ServerHello(legacy_version, securityParameters.getServerRandom(), tlsSession.getSessionID(),
             securityParameters.getCipherSuite(), serverExtensions);
 
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.server_hello);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.server_hello);
         serverHello.encode(tlsServerContext, message);
         message.writeToRecordStream();
     }
@@ -1144,7 +1144,8 @@ public class TlsServerProtocol
     protected void sendServerKeyExchangeMessage(byte[] serverKeyExchange)
         throws IOException
     {
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.server_key_exchange, serverKeyExchange.length);
+        HandshakeMessageOutput message = new HandshakeMessageOutput(this, HandshakeType.server_key_exchange,
+            serverKeyExchange.length);
 
         message.write(serverKeyExchange);
 
