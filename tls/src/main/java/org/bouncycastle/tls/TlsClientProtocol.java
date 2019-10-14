@@ -208,6 +208,7 @@ public class TlsClientProtocol
             case CS_SERVER_CERTIFICATE:
             {
                 receive13ServerCertificateVerify(buf);
+                buf.updateHash(handshakeHash);
                 this.connection_state = CS_SERVER_CERTIFICATE_VERIFY;
                 break;
             }
