@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 class DigestUtil
 {
     private static Map<String, ASN1ObjectIdentifier> nameToOid = new HashMap<String, ASN1ObjectIdentifier>();
+    private static Map<ASN1ObjectIdentifier, String> oidToName = new HashMap<ASN1ObjectIdentifier, String>();
 
     static
     {
@@ -21,6 +22,11 @@ class DigestUtil
         nameToOid.put("SHA-512", NISTObjectIdentifiers.id_sha512);
         nameToOid.put("SHAKE128", NISTObjectIdentifiers.id_shake128);
         nameToOid.put("SHAKE256", NISTObjectIdentifiers.id_shake256);
+
+        oidToName.put(NISTObjectIdentifiers.id_sha256, "SHA-256");
+        oidToName.put(NISTObjectIdentifiers.id_sha512, "SHA-512");
+        oidToName.put(NISTObjectIdentifiers.id_shake128, "SHAKE128");
+        oidToName.put(NISTObjectIdentifiers.id_shake256, "SHAKE256");
     }
 
     static Digest getDigest(ASN1ObjectIdentifier oid)
@@ -43,6 +49,17 @@ class DigestUtil
         }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);
+    }
+
+    static String getDigestName(ASN1ObjectIdentifier oid)
+    {
+        String name = oidToName.get(oid);
+        if (name != null)
+        {
+            return name;
+        }
+
+        throw new IllegalArgumentException("unrecognized digest oid: " + oid);
     }
 
     static ASN1ObjectIdentifier getDigestOID(String name)

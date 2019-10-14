@@ -39,6 +39,18 @@ class DigestUtil
         {
             return NISTObjectIdentifiers.id_sha256;
         }
+        if (digest.equals("SHA-512"))
+        {
+            return NISTObjectIdentifiers.id_sha512;
+        }
+        if (digest.equals("SHAKE128"))
+        {
+            return NISTObjectIdentifiers.id_shake128;
+        }
+        if (digest.equals("SHAKE256"))
+        {
+            return NISTObjectIdentifiers.id_shake256;
+        }
 
         throw new IllegalArgumentException("unrecognized digest: " + digest);
     }
