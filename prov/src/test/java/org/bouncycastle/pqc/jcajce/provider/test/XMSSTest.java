@@ -755,6 +755,16 @@ public class XMSSTest
             }
             sigs.add(sw);
         }
+        
+        try
+        {
+            privKey.getIndex();
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("key exhausted", e.getMessage());
+        }
     }
 
     private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
@@ -827,14 +837,14 @@ public class XMSSTest
 
         for (int i = 0; i != 10; i++)
         {
-            StateAwareSignature signer = (StateAwareSignature)Signature.getInstance(sigAlg, "BCPQC");
+            Signature signer = Signature.getInstance(sigAlg, "BCPQC");
             signer.initSign(privateKey);
             signer.update(payload);
 
             byte[] signature = signer.sign();
 
             // serialise private key
-            byte[] enc = signer.getUpdatedPrivateKey().getEncoded();
+            byte[] enc = privateKey.getEncoded();
             privateKey = KeyFactory.getInstance("XMSS").generatePrivate(new PKCS8EncodedKeySpec(enc));
             Signature verifier = Signature.getInstance(sigAlg, "BCPQC");
             verifier.initVerify(publicKey);
