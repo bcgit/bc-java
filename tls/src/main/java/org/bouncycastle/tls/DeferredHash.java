@@ -19,7 +19,7 @@ class DeferredHash
     protected TlsContext context;
 
     private DigestInputBuffer buf;
-    private Hashtable<Short, TlsHash> hashes;
+    private Hashtable hashes;
     private boolean forceBuffering;
     private boolean sealed;
 
@@ -161,6 +161,8 @@ class DeferredHash
         {
             throw new IllegalStateException("HashAlgorithm." + HashAlgorithm.getText(hashAlgorithm) + " is not being tracked");
         }
+
+        checkStopBuffering();
 
         d = (TlsHash)d.clone();
         if (buf != null)
