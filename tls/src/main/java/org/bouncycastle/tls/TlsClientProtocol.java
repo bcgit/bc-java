@@ -314,6 +314,7 @@ public class TlsClientProtocol
 
                 // TODO[tls13] Must account for existing negotiated parameters
                 process13ServerHello(serverHello, true);
+                buf.updateHash(handshakeHash);
                 this.connection_state = CS_SERVER_HELLO;
 
                 // TODO[tls13] Check CS_CLIENT_HELLO block of legacy handler for post-CS_SERVER_HELLO behavior
@@ -479,10 +480,8 @@ public class TlsClientProtocol
                 {
                     process13HelloRetryRequest(serverHello);
                     this.handshakeHash.notifyPRFDetermined();
-                    /*
-                     * TODO[tls13] Reset Transcript-Hash to begin with synthetic 'message_hash'
-                     * message having Hash(ClientHello) as the message body.
-                     */
+                    TlsUtils.adjustTranscriptForRetry(handshakeHash);
+                    buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
 
                     send13ClientHelloRetryMessage();
@@ -492,6 +491,7 @@ public class TlsClientProtocol
                 {
                     processServerHelloMessage(serverHello);
                     this.handshakeHash.notifyPRFDetermined();
+                    buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO;
 
                     applyMaxFragmentLengthExtension();
