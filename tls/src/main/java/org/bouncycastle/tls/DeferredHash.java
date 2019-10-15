@@ -189,7 +189,7 @@ class DeferredHash
 
     public byte[] calculateHash()
     {
-        throw new IllegalStateException("Use fork() to get a definite Digest");
+        throw new IllegalStateException("Use fork() to get a definite hash");
     }
 
     public Object clone()
@@ -199,9 +199,6 @@ class DeferredHash
 
     public void reset()
     {
-        this.forceBuffering = false;
-        this.sealed = false;
-
         if (buf != null)
         {
             buf.reset();
