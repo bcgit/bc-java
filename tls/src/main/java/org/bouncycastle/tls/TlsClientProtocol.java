@@ -475,11 +475,10 @@ public class TlsClientProtocol
             {
                 ServerHello serverHello = ServerHello.parse(buf);
 
-                if (TlsUtils.isTLSv13(tlsClientContext.getClientVersion())
-                    && serverHello.isHelloRetryRequest())
+                if (serverHello.isHelloRetryRequest())
                 {
                     process13HelloRetryRequest(serverHello);
-                    this.handshakeHash.notifyPRFDetermined();
+                    handshakeHash.notifyPRFDetermined();
                     TlsUtils.adjustTranscriptForRetry(handshakeHash);
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
@@ -490,25 +489,9 @@ public class TlsClientProtocol
                 else
                 {
                     processServerHelloMessage(serverHello);
-                    this.handshakeHash.notifyPRFDetermined();
+                    handshakeHash.notifyPRFDetermined();
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO;
-
-                    applyMaxFragmentLengthExtension();
-
-                    if (this.resumedSession)
-                    {
-                        securityParameters.masterSecret = tlsClientContext.getCrypto()
-                            .adoptSecret(sessionParameters.getMasterSecret());
-                        this.recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsClientContext));
-                    }
-                    else
-                    {
-                        invalidateSession();
-
-                        this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
-                        this.sessionParameters = null;
-                    }
                 }
 
                 break;
@@ -1153,6 +1136,22 @@ public class TlsClientProtocol
          * existing cipher suites.
          */
         securityParameters.verifyDataLength = securityParameters.getNegotiatedVersion().isSSL() ? 36 : 12;
+
+        applyMaxFragmentLengthExtension();
+
+        if (this.resumedSession)
+        {
+            securityParameters.masterSecret = tlsClientContext.getCrypto()
+                .adoptSecret(sessionParameters.getMasterSecret());
+            this.recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsClientContext));
+        }
+        else
+        {
+            invalidateSession();
+
+            this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
+            this.sessionParameters = null;
+        }
     }
 
     protected void receive13CertificateRequest(ByteArrayInputStream buf)
