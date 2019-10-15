@@ -622,6 +622,7 @@ public abstract class TlsProtocol
              */
             case HandshakeType.certificate_verify:
             case HandshakeType.finished:
+            case HandshakeType.server_hello:
                 break;
 
             /*
