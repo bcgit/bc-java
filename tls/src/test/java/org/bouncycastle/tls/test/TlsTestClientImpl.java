@@ -24,9 +24,9 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
-import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -83,7 +83,7 @@ class TlsTestClientImpl
         Hashtable clientExtensions = super.getClientExtensions();
         if (clientExtensions != null && !config.clientSendSignatureAlgorithms)
         {
-            clientExtensions.remove(TlsUtils.EXT_signature_algorithms);
+            clientExtensions.remove(TlsExtensionsUtils.EXT_signature_algorithms);
             this.supportedSignatureAlgorithms = null;
         }
         return clientExtensions;

@@ -79,15 +79,6 @@ public final class SessionParameters
             return this;
         }
 
-        /**
-         * @deprecated Use {@link #setPSKIdentity(byte[])}
-         */
-        public Builder setPskIdentity(byte[] pskIdentity)
-        {
-            this.pskIdentity = pskIdentity;
-            return this;
-        }
-
         public Builder setPSKIdentity(byte[] pskIdentity)
         {
             this.pskIdentity = pskIdentity;
@@ -194,14 +185,6 @@ public final class SessionParameters
     public Certificate getPeerCertificate()
     {
         return peerCertificate;
-    }
-
-    /**
-     * @deprecated Use {@link #getPSKIdentity()}
-     */
-    public byte[] getPskIdentity()
-    {
-        return pskIdentity;
     }
 
     public byte[] getPSKIdentity()

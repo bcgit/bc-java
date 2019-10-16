@@ -111,11 +111,6 @@ public class TlsUtils
     public static final int[] EMPTY_INTS = new int[0];
     public static final long[] EMPTY_LONGS = new long[0];
 
-    /** @deprecated Use {@link TlsExtensionsUtils#EXT_signature_algorithms} instead. */
-    public static final Integer EXT_signature_algorithms = TlsExtensionsUtils.EXT_signature_algorithms;
-    /** @deprecated Use {@link TlsExtensionsUtils#EXT_signature_algorithms_cert} instead. */
-    public static final Integer EXT_signature_algorithms_cert = TlsExtensionsUtils.EXT_signature_algorithms_cert;
-
     protected static short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
     protected static short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
 
@@ -1160,34 +1155,6 @@ public class TlsUtils
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion version)
     {
         return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
-    }
-
-    /** @deprecated Use {@link TlsExtensionsUtils#addSignatureAlgorithmsExtension(Hashtable, Vector)} instead. */
-    public static void addSignatureAlgorithmsExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
-        throws IOException
-    {
-        TlsExtensionsUtils.addSignatureAlgorithmsExtension(extensions, supportedSignatureAlgorithms);
-    }
-
-    /** @deprecated Use {@link TlsExtensionsUtils#getSignatureAlgorithmsExtension(Hashtable)} instead. */
-    public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
-        throws IOException
-    {
-        return TlsExtensionsUtils.getSignatureAlgorithmsExtension(extensions);
-    }
-
-    /** @deprecated Use {@link TlsExtensionsUtils#createSignatureAlgorithmsExtension(Vector)} instead. */
-    public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms)
-        throws IOException
-    {
-        return TlsExtensionsUtils.createSignatureAlgorithmsExtension(supportedSignatureAlgorithms);
-    }
-
-    /** @deprecated Use {@link TlsExtensionsUtils#readSignatureAlgorithmsExtension(byte[])} instead. */
-    public static Vector readSignatureAlgorithmsExtension(byte[] extensionData)
-        throws IOException
-    {
-        return TlsExtensionsUtils.readSignatureAlgorithmsExtension(extensionData);
     }
 
     public static short getLegacyClientCertType(short signatureAlgorithm)

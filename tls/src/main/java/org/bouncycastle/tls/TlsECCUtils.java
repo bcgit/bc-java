@@ -10,34 +10,6 @@ import org.bouncycastle.util.Arrays;
 
 public class TlsECCUtils
 {
-    /** @deprecated Use {@link TlsExtensionsUtils#EXT_ec_point_formats} instead. */
-    public static final Integer EXT_ec_point_formats = TlsExtensionsUtils.EXT_ec_point_formats;
-
-    /** @deprecated Use {@link TlsExtensionsUtils#addSupportedPointFormatsExtension(Hashtable, short[])} instead. */
-    public static void addSupportedPointFormatsExtension(Hashtable extensions, short[] ecPointFormats)
-        throws IOException
-    {
-        TlsExtensionsUtils.addSupportedPointFormatsExtension(extensions, ecPointFormats);
-    }
-
-    /** @deprecated Use {@link TlsExtensionsUtils#getSupportedPointFormatsExtension(Hashtable) instead. */
-    public static short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException
-    {
-        return TlsExtensionsUtils.getSupportedPointFormatsExtension(extensions);
-    }
-
-    /** @deprecated Use {@link TlsExtensionsUtils#createSupportedPointFormatsExtension(short[]) instead. */
-    public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException
-    {
-        return TlsExtensionsUtils.createSupportedPointFormatsExtension(ecPointFormats);
-    }
-
-    /** @deprecated Use {@link TlsExtensionsUtils#readSupportedPointFormatsExtension(byte[]) instead. */
-    public static short[] readSupportedPointFormatsExtension(byte[] extensionData) throws IOException
-    {
-        return TlsExtensionsUtils.readSupportedPointFormatsExtension(extensionData);
-    }
-
     public static TlsECConfig createNamedECConfig(TlsContext context, int namedGroup)
         throws IOException
     {
