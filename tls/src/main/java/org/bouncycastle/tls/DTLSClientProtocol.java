@@ -140,7 +140,7 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        handshake.notifyPRFDetermined();
+        handshake.getHandshakeHash().notifyPRFDetermined();
 
         applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 

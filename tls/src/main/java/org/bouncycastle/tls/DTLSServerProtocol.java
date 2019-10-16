@@ -147,7 +147,7 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
 
-        handshake.notifyPRFDetermined();
+        handshake.getHandshakeHash().notifyPRFDetermined();
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -544,7 +544,7 @@ public class DTLSServerProtocol
         notifyClientCertificate(state, clientCertificate);
     }
 
-    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, TlsHandshakeHash prepareFinishHash)
+    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, TlsHandshakeHash handshakeHash)
         throws IOException
     {
         if (state.certificateRequest == null)
@@ -559,7 +559,7 @@ public class DTLSServerProtocol
 
         TlsProtocol.assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerify(context, state.certificateRequest, clientCertificateVerify, prepareFinishHash);
+        TlsUtils.verifyCertificateVerify(context, state.certificateRequest, clientCertificateVerify, handshakeHash);
     }
 
     protected void processClientHello(ServerHandshakeState state, byte[] body)
