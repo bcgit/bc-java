@@ -33,14 +33,6 @@ public class HandshakeType
     public static final short supplemental_data = 23;
 
     /*
-     * RFC 5077 
-     */
-    /**
-     * @deprecated Use {@link #new_session_ticket}
-     */
-    public static final short session_ticket = 4;
-
-    /*
      * RFC 8446
      */
     public static final short new_session_ticket = 4;

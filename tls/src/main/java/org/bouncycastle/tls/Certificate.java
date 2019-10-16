@@ -86,19 +86,6 @@ public class Certificate
     }
 
     /**
-     * Encode this {@link Certificate} to an {@link OutputStream}.
-     *
-     * @param output the {@link OutputStream} to encode to.
-     * @throws IOException
-     * @deprecated
-     */
-    public void encode(OutputStream output)
-        throws IOException
-    {
-        encode(null, output, null);
-    }
-
-    /**
      * Encode this {@link Certificate} to an {@link OutputStream}, and optionally calculate the
      * "end point hash" (per RFC 5929's tls-server-end-point binding).
      *
@@ -153,23 +140,6 @@ public class Certificate
             byte[] derEncoding = (byte[])derEncodings.elementAt(i);
             TlsUtils.writeOpaque24(derEncoding, messageOutput);
         }
-    }
-
-    /**
-     * Parse a {@link Certificate} from an {@link InputStream}.
-     *
-     * @param context
-     *            the {@link TlsContext} of the current connection.
-     * @param input
-     *            the {@link InputStream} to parse from.
-     * @return a {@link Certificate} object.
-     * @throws IOException
-     * @deprecated
-     */
-    public static Certificate parse(TlsContext context, InputStream input)
-        throws IOException
-    {
-        return parse(context, input, null);
     }
 
     /**

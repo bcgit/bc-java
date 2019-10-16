@@ -161,14 +161,6 @@ public class SecurityParameters
         return sessionID;
     }
 
-    /**
-     * @deprecated Use {@link SecurityParameters#getPSKIdentity()}
-     */
-    public byte[] getPskIdentity()
-    {
-        return pskIdentity;
-    }
-
     public byte[] getPSKIdentity()
     {
         return pskIdentity;
