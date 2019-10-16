@@ -4245,4 +4245,22 @@ public class TlsUtils
         }
         return EMPTY_BYTES;
     }
+
+    static void adjustTranscriptForRetry(TlsHandshakeHash handshakeHash)
+        throws IOException
+    {
+        byte[] clientHelloHash = getCurrentPRFHash(handshakeHash);
+        handshakeHash.reset();
+
+        int length = clientHelloHash.length;
+        checkUint8(length);
+
+        byte[] synthetic = new byte[4 + length];
+        writeUint8(HandshakeType.message_hash, synthetic, 0);
+        writeUint24(length, synthetic, 1);
+        System.arraycopy(clientHelloHash, 0, synthetic, 4, length);
+
+        handshakeHash.update(synthetic, 0, synthetic.length);
+    }
+
 }
