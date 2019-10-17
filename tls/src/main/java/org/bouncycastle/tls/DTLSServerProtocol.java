@@ -574,7 +574,7 @@ public class DTLSServerProtocol
         throws IOException
     {
         // TODO Read RFCs for guidance on the expected record layer version number
-        ProtocolVersion client_version = clientHello.getVersion();
+        ProtocolVersion legacy_version = clientHello.getVersion();
         state.offeredCipherSuites = clientHello.getCipherSuites();
 
         /*
@@ -589,8 +589,12 @@ public class DTLSServerProtocol
         TlsServerContextImpl context = state.serverContext;
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
+        context.setRSAPreMasterSecretVersion(legacy_version);
+
         context.setClientSupportedVersions(
             TlsExtensionsUtils.getSupportedVersionsExtensionClient(state.clientExtensions));
+
+        ProtocolVersion client_version = legacy_version;
         if (null == context.getClientSupportedVersions())
         {
             if (client_version.isLaterVersionOf(ProtocolVersion.DTLSv12))

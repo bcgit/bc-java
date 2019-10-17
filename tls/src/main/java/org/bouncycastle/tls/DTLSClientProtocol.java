@@ -426,6 +426,8 @@ public class DTLSClientProtocol
                 context.getClientSupportedVersions());
         }
 
+        context.setRSAPreMasterSecretVersion(legacy_version);
+
         securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(state.clientExtensions);
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
