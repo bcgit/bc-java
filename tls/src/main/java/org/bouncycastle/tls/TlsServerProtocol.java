@@ -882,7 +882,7 @@ public class TlsServerProtocol
         throws IOException
     {
         ClientHello clientHello = ClientHello.parse(buf, null);
-        ProtocolVersion client_version = clientHello.getVersion();
+        ProtocolVersion legacy_version = clientHello.getVersion();
         this.offeredCipherSuites = clientHello.getCipherSuites();
 
         /*
@@ -896,8 +896,12 @@ public class TlsServerProtocol
  
         SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
 
+        tlsServerContext.setRSAPreMasterSecretVersion(legacy_version);
+
         tlsServerContext.setClientSupportedVersions(
             TlsExtensionsUtils.getSupportedVersionsExtensionClient(clientExtensions));
+
+        ProtocolVersion client_version = legacy_version;
         if (null == tlsServerContext.getClientSupportedVersions())
         {
             if (client_version.isLaterVersionOf(ProtocolVersion.TLSv12))
