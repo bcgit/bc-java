@@ -589,6 +589,11 @@ public class DTLSServerProtocol
         TlsServerContextImpl context = state.serverContext;
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
+        if (!legacy_version.isDTLS())
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         context.setRSAPreMasterSecretVersion(legacy_version);
 
         context.setClientSupportedVersions(
@@ -609,9 +614,9 @@ public class DTLSServerProtocol
             client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
         }
 
-        if (!ProtocolVersion.isSupportedDTLSVersion(client_version))
+        if (!ProtocolVersion.EARLIEST_SUPPORTED_DTLS.isEqualOrEarlierVersionOf(client_version))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.protocol_version);
         }
 
         context.setClientVersion(client_version);

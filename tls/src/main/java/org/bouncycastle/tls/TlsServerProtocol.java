@@ -896,6 +896,11 @@ public class TlsServerProtocol
  
         SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
 
+        if (!legacy_version.isTLS())
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         tlsServerContext.setRSAPreMasterSecretVersion(legacy_version);
 
         tlsServerContext.setClientSupportedVersions(
@@ -916,9 +921,9 @@ public class TlsServerProtocol
             client_version = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
-        if (!ProtocolVersion.isSupportedTLSVersion(client_version))
+        if (!ProtocolVersion.EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(client_version))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.protocol_version);
         }
 
         if (ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), ProtocolVersion.SSLv3))
