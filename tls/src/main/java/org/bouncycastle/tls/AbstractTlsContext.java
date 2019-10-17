@@ -37,6 +37,7 @@ abstract class AbstractTlsContext
 
     private ProtocolVersion[] clientSupportedVersions = null;
     private ProtocolVersion clientVersion = null;
+    private ProtocolVersion rsaPreMasterSecretVersion = null;
     private TlsSession session = null;
     private Object userObject = null;
 
@@ -125,15 +126,19 @@ abstract class AbstractTlsContext
         return clientVersion;
     }
 
-    public ProtocolVersion getRSAPreMasterSecretVersion()
-    {
-        // TODO[tls13] Presumably this needs to be explicitly ClientHello.legacy_version instead
-        return clientVersion;
-    }
-
     void setClientVersion(ProtocolVersion clientVersion)
     {
         this.clientVersion = clientVersion;
+    }
+
+    public ProtocolVersion getRSAPreMasterSecretVersion()
+    {
+        return rsaPreMasterSecretVersion;
+    }
+
+    public void setRSAPreMasterSecretVersion(ProtocolVersion rsaPreMasterSecretVersion)
+    {
+        this.rsaPreMasterSecretVersion = rsaPreMasterSecretVersion;
     }
 
     public ProtocolVersion getServerVersion()

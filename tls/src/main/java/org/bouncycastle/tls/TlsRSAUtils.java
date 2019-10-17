@@ -21,7 +21,8 @@ public abstract class TlsRSAUtils
     public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsCertificate certificate,
         OutputStream output) throws IOException
     {
-        TlsSecret preMasterSecret = context.getCrypto().generateRSAPreMasterSecret(context.getClientVersion());
+        TlsSecret preMasterSecret = context.getCrypto()
+            .generateRSAPreMasterSecret(context.getRSAPreMasterSecretVersion());
 
         byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(certificate);
         TlsUtils.writeEncryptedPMS(context, encryptedPreMasterSecret, output);

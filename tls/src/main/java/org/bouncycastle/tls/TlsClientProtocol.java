@@ -1298,6 +1298,8 @@ public class TlsClientProtocol
                 tlsClientContext.getClientSupportedVersions());
         }
 
+        tlsClientContext.setRSAPreMasterSecretVersion(legacy_version);
+
         securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(clientExtensions);
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
