@@ -24,6 +24,6 @@ class HandshakeMessageInput
 
     void updateHash(TlsHash hash)
     {
-        hash.update(buf, mark, count);
+        hash.update(buf, mark, count - mark);
     }
 }
