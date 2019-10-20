@@ -266,7 +266,7 @@ public class XMSSTest
         assertTrue(xmssSig.verify(s));
     }
 
-    public void testXMSSSha256SignatureMultiple()
+    public void testXMSSSha256SignatureMultiplePreHash()
         throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
@@ -319,7 +319,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(XMSSParameterSpec.SHA2_10_256, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -336,7 +336,7 @@ public class XMSSTest
         assertEquals(10, privKey.getHeight());
         assertEquals(XMSSParameterSpec.SHA256, privKey.getTreeDigest());
 
-        testSig("SHA256withXMSS", pubKey, (PrivateKey)privKey);
+        testSig("XMSS", pubKey, (PrivateKey)privKey);
     }
 
     public void testXMSSSha512KeyFactory()
