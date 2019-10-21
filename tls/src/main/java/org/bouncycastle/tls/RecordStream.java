@@ -7,6 +7,7 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsNullNullCipher;
 
 /**
@@ -169,8 +170,11 @@ class RecordStream
 
         checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
 
-        byte[] plaintext = decodeAndVerify(type, input, inputOff + RecordFormat.FRAGMENT_OFFSET, length);
-        handler.processRecord(type, plaintext, 0, plaintext.length);
+        TlsDecodeResult decoded = decodeAndVerify(type, input, inputOff + RecordFormat.FRAGMENT_OFFSET, length);
+
+        // TODO[tls13] Check decoded.contentType here (or modify processRecord to deal with it)
+
+        handler.processRecord(decoded.contentType, decoded.buf, decoded.off, decoded.len);
         return true;
     }
 
@@ -200,33 +204,34 @@ class RecordStream
 
         inputRecord.readFragment(input, length);
 
-        byte[] plaintext;
+        TlsDecodeResult decoded;
         try
         {
-            plaintext = decodeAndVerify(type, inputRecord.buf, RecordFormat.FRAGMENT_OFFSET, length);
+            decoded = decodeAndVerify(type, inputRecord.buf, RecordFormat.FRAGMENT_OFFSET, length);
         }
         finally
         {
             inputRecord.reset();
         }
 
-        handler.processRecord(type, plaintext, 0, plaintext.length);
+        // TODO[tls13] Check decoded.contentType here (or modify processRecord to deal with it)
+
+        handler.processRecord(decoded.contentType, decoded.buf, decoded.off, decoded.len);
         return true;
     }
 
-    byte[] decodeAndVerify(short type, byte[] ciphertext, int off, int len)
-        throws IOException
+    TlsDecodeResult decodeAndVerify(short type, byte[] ciphertext, int off, int len) throws IOException
     {
         long seqNo = readSeqNo.nextValue(AlertDescription.unexpected_message);
-        byte[] decoded = readCipher.decodeCiphertext(seqNo, type, ciphertext, off, len);
+        TlsDecodeResult decoded = readCipher.decodeCiphertext(seqNo, type, ciphertext, off, len);
 
-        checkLength(decoded.length, plaintextLimit, AlertDescription.record_overflow);
+        checkLength(decoded.len, plaintextLimit, AlertDescription.record_overflow);
 
         /*
          * RFC 5246 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
          * or ChangeCipherSpec content types.
          */
-        if (decoded.length < 1 && type != ContentType.application_data)
+        if (decoded.len < 1 && type != ContentType.application_data)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

@@ -7,6 +7,7 @@ import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
 
 import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsNullNullCipher;
 import org.bouncycastle.util.Arrays;
 
@@ -561,12 +562,15 @@ class DTLSRecordLayer
         }
 
         long macSeqNo = getMacSequenceNumber(recordEpoch.getEpoch(), seq);
-        byte[] plaintext = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, record,
-            RECORD_HEADER_LENGTH, length);
+
+        TlsDecodeResult decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, record, RECORD_HEADER_LENGTH,
+            length);
+
+        // TODO[tls13] Check decoded.contentType here (or add default clause below to deal with it)
 
         recordEpoch.getReplayWindow().reportAuthenticated(seq);
 
-        if (plaintext.length > this.plaintextLimit)
+        if (decoded.len > this.plaintextLimit)
         {
             return -1;
         }
@@ -576,14 +580,14 @@ class DTLSRecordLayer
             readVersion = version;
         }
 
-        switch (type)
+        switch (decoded.contentType)
         {
         case ContentType.alert:
         {
-            if (plaintext.length == 2)
+            if (decoded.len == 2)
             {
-                short alertLevel = plaintext[0];
-                short alertDescription = plaintext[1];
+                short alertLevel = TlsUtils.readUint8(decoded.buf, decoded.off);
+                short alertDescription = TlsUtils.readUint8(decoded.buf, decoded.off + 1);
 
                 peer.notifyAlertReceived(alertLevel, alertDescription);
 
@@ -616,9 +620,9 @@ class DTLSRecordLayer
         {
             // Implicitly receive change_cipher_spec and change to pending cipher state
 
-            for (int i = 0; i < plaintext.length; ++i)
+            for (int i = 0; i < decoded.len; ++i)
             {
-                short message = TlsUtils.readUint8(plaintext, i);
+                short message = TlsUtils.readUint8(decoded.buf, decoded.off + i);
                 if (message != ChangeCipherSpec.change_cipher_spec)
                 {
                     continue;
@@ -638,7 +642,7 @@ class DTLSRecordLayer
             {
                 if (null != retransmit)
                 {
-                    retransmit.receivedHandshakeRecord(epoch, plaintext, 0, plaintext.length);
+                    retransmit.receivedHandshakeRecord(epoch, decoded.buf, decoded.off, decoded.len);
                 }
 
                 // TODO Consider support for HelloRequest
@@ -652,7 +656,7 @@ class DTLSRecordLayer
             {
                 try
                 {
-                    ByteArrayInputStream input = new ByteArrayInputStream(plaintext);
+                    ByteArrayInputStream input = new ByteArrayInputStream(decoded.buf, decoded.off, decoded.len);
                     HeartbeatMessage heartbeatMessage = HeartbeatMessage.parse(input);
 
                     if (null != heartbeatMessage)
@@ -705,8 +709,8 @@ class DTLSRecordLayer
             this.retransmitTimeout = null;
         }
 
-        System.arraycopy(plaintext, 0, buf, off, plaintext.length);
-        return plaintext.length;
+        System.arraycopy(decoded.buf, decoded.off, buf, off, decoded.len);
+        return decoded.len;
     }
 
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis)
