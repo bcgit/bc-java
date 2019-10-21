@@ -795,17 +795,17 @@ class DTLSRecordLayer
             int recordEpoch = writeEpoch.getEpoch();
             long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
             long macSequenceNumber = getMacSequenceNumber(recordEpoch, recordSequenceNumber);
-            byte[] ciphertext = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType, buf, off, len);
+            byte[] record = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType, RECORD_HEADER_LENGTH,
+                buf, off, len);
 
             // TODO Check the ciphertext length?
+            int cipherTextLength = record.length - RECORD_HEADER_LENGTH;
 
-            byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
             TlsUtils.writeUint8(contentType, record, 0);
             TlsUtils.writeVersion(writeVersion, record, 1);
             TlsUtils.writeUint16(recordEpoch, record, 3);
             TlsUtils.writeUint48(recordSequenceNumber, record, 5);
-            TlsUtils.writeUint16(ciphertext.length, record, 11);
-            System.arraycopy(ciphertext, 0, record, RECORD_HEADER_LENGTH, ciphertext.length);
+            TlsUtils.writeUint16(cipherTextLength, record, 11);
 
             sendDatagram(transport, record);
         }

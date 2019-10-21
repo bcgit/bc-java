@@ -265,18 +265,18 @@ class RecordStream
 
         long seqNo = writeSeqNo.nextValue(AlertDescription.internal_error);
 
-        byte[] ciphertext = writeCipher.encodePlaintext(seqNo, type, plaintext, plaintextOffset, plaintextLength);
+        byte[] record = writeCipher.encodePlaintext(seqNo, type, RecordFormat.FRAGMENT_OFFSET, plaintext,
+            plaintextOffset, plaintextLength);
 
         /*
          * RFC 5246 6.2.3. The length may not exceed 2^14 + 2048.
          */
-        checkLength(ciphertext.length, ciphertextLimit, AlertDescription.internal_error);
+        int ciphertextLength = record.length - RecordFormat.FRAGMENT_OFFSET;
+        checkLength(ciphertextLength, ciphertextLimit, AlertDescription.internal_error);
 
-        byte[] record = new byte[RecordFormat.FRAGMENT_OFFSET + ciphertext.length];
         TlsUtils.writeUint8(type, record, RecordFormat.TYPE_OFFSET);
         TlsUtils.writeVersion(writeVersion, record, RecordFormat.VERSION_OFFSET);
-        TlsUtils.writeUint16(ciphertext.length, record, RecordFormat.LENGTH_OFFSET);
-        System.arraycopy(ciphertext, 0, record, RecordFormat.FRAGMENT_OFFSET, ciphertext.length);
+        TlsUtils.writeUint16(ciphertextLength, record, RecordFormat.LENGTH_OFFSET);
 
         try
         {
