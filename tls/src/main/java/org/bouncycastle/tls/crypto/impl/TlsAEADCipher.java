@@ -7,6 +7,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsDecodeResult;
 
 /**
  * A generic TLS 1.2 AEAD cipher.
@@ -128,8 +129,8 @@ public class TlsAEADCipher
         return ciphertextLimit - macSize - record_iv_length;
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, int headerAllocation, byte[] plaintext, int offset, int len)
-        throws IOException
+    public byte[] encodePlaintext(long seqNo, short contentType, int headerAllocation, byte[] plaintext, int offset,
+        int len) throws IOException
     {
         byte[] nonce = new byte[encryptImplicitNonce.length + record_iv_length];
 
@@ -164,7 +165,7 @@ public class TlsAEADCipher
             outputPos += record_iv_length;
         }
 
-        byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
+        byte[] additionalData = getAdditionalData(seqNo, contentType, plaintextLength);
 
         try
         {
@@ -178,14 +179,14 @@ public class TlsAEADCipher
 
         if (outputPos != output.length)
         {
-            // NOTE: Existing AEAD cipher implementations all give exact output lengths
+            // NOTE: The additional data mechanism for AEAD ciphers requires exact output size prediction.
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         return output;
     }
 
-    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
+    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, byte[] ciphertext, int offset, int len)
         throws IOException
     {
         if (getPlaintextLimit(len) < 0)
@@ -215,29 +216,27 @@ public class TlsAEADCipher
         int ciphertextOffset = offset + record_iv_length;
         int ciphertextLength = len - record_iv_length;
         int plaintextLength = decryptCipher.getOutputSize(ciphertextLength);
+        byte[] additionalData = getAdditionalData(seqNo, contentType, plaintextLength);
 
-        byte[] output = new byte[plaintextLength];
-        int outputPos = 0;
-
-        byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
-
+        int outputPos;
         try
         {
             decryptCipher.init(nonce, macSize, additionalData);
-            outputPos += decryptCipher.doFinal(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
+            outputPos = decryptCipher.doFinal(ciphertext, ciphertextOffset, ciphertextLength, ciphertext, ciphertextOffset);
         }
         catch (Exception e)
         {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac, e);
         }
 
-        if (outputPos != output.length)
+        if (outputPos != plaintextLength)
         {
-            // NOTE: Existing AEAD cipher implementations all give exact output lengths
+            // NOTE: The additional data mechanism for AEAD ciphers requires exact output size prediction.
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return output;
+        // TODO[tls13] Strip padding and read true content type
+        return new TlsDecodeResult(ciphertext, ciphertextOffset, plaintextLength, contentType);
     }
 
     protected byte[] getAdditionalData(long seqNo, short type, int len)
