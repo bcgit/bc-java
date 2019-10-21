@@ -1370,6 +1370,16 @@ public class TlsUtils
         return PRF(context.getSecurityParametersHandshake(), secret, asciiLabel, seed, length);
     }
 
+    public static boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
+    {
+        int d = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= (a[aOff + i] ^ b[bOff + i]);
+        }
+        return 0 == d;
+    }
+
     public static byte[] copyOfRangeExact(byte[] original, int from, int to)
     {
         int newLength = to - from;
@@ -3959,8 +3969,8 @@ public class TlsUtils
 
     private static void checkDowngradeMarker(byte[] randomBlock, byte[] downgradeMarker) throws IOException
     {
-        byte[] bytes = copyOfRangeExact(randomBlock, randomBlock.length - downgradeMarker.length, randomBlock.length);
-        if (Arrays.constantTimeAreEqual(bytes, downgradeMarker))
+        int len = downgradeMarker.length;
+        if (constantTimeAreEqual(len, downgradeMarker, 0, randomBlock, randomBlock.length - len))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
