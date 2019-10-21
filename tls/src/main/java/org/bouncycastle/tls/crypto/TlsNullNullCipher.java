@@ -22,10 +22,12 @@ public class TlsNullNullCipher
         return ciphertextLimit;
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
+    public byte[] encodePlaintext(long seqNo, short type, int headerAllocation, byte[] plaintext, int offset, int len)
         throws IOException
     {
-        return TlsUtils.copyOfRangeExact(plaintext, offset, offset + len);
+        byte[] result = new byte[headerAllocation + len];
+        System.arraycopy(plaintext, offset, result, headerAllocation, len);
+        return result;
     }
 
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)

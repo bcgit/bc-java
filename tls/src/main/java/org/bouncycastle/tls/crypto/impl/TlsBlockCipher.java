@@ -182,7 +182,7 @@ public class TlsBlockCipher
         return plaintextLimit;
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
+    public byte[] encodePlaintext(long seqNo, short type, int headerAllocation, byte[] plaintext, int offset, int len)
         throws IOException
     {
         int blockSize = encryptCipher.getBlockSize();
@@ -209,8 +209,8 @@ public class TlsBlockCipher
             totalSize += blockSize;
         }
 
-        byte[] outBuf = new byte[totalSize];
-        int outOff = 0;
+        byte[] outBuf = new byte[headerAllocation + totalSize];
+        int outOff = headerAllocation;
 
         if (useExplicitIV)
         {
@@ -244,12 +244,16 @@ public class TlsBlockCipher
 
         if (encryptThenMAC)
         {
-            byte[] mac = writeMac.calculateMac(seqNo, type, outBuf, 0, outOff);
+            byte[] mac = writeMac.calculateMac(seqNo, type, outBuf, headerAllocation, outOff - headerAllocation);
             System.arraycopy(mac, 0, outBuf, outOff, mac.length);
             outOff += mac.length;
         }
 
-//        assert outBuf.length == outOff;
+        if (outOff != outBuf.length)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         return outBuf;
     }
 
