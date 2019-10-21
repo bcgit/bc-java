@@ -35,7 +35,6 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -129,9 +128,6 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.AES_128_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(cryptoParams, 16, 16);
-        case EncryptionAlgorithm.AES_128_OCB_TAGLEN96:
-            // NOTE: Ignores macAlgorithm
-            return createCipher_AES_OCB(cryptoParams, 16, 12);
         case EncryptionAlgorithm.AES_256_CBC:
             return createAESCipher(cryptoParams, 32, macAlgorithm);
         case EncryptionAlgorithm.AES_256_CCM:
@@ -143,9 +139,6 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.AES_256_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(cryptoParams, 32, 16);
-        case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
-            // NOTE: Ignores macAlgorithm
-            return createCipher_AES_OCB(cryptoParams, 32, 12);
         case EncryptionAlgorithm.ARIA_128_CBC:
             return createARIACipher(cryptoParams, 16, macAlgorithm);
         case EncryptionAlgorithm.ARIA_128_GCM:
@@ -488,13 +481,6 @@ public class BcTlsCrypto
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipher createCipher_AES_OCB(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
-        throws IOException
-    {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_OCB(), true), new AeadOperator(createAEADBlockCipher_AES_OCB(), false),
-            cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
-    }
-
     protected TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
@@ -566,11 +552,6 @@ public class BcTlsCrypto
     {
         // TODO Consider allowing custom configuration of multiplier
         return new GCMBlockCipher(createAESEngine());
-    }
-
-    protected AEADBlockCipher createAEADBlockCipher_AES_OCB()
-    {
-        return new OCBBlockCipher(createAESEngine(), createAESEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_ARIA_GCM()
