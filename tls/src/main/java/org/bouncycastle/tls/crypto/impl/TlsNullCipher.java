@@ -4,9 +4,9 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 
 /**
@@ -60,17 +60,17 @@ public class TlsNullCipher
         return ciphertextLimit - writeMac.getSize();
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, int headerAllocation, byte[] plaintext, int offset, int len)
-        throws IOException
+    public byte[] encodePlaintext(long seqNo, short contentType, int headerAllocation, byte[] plaintext, int offset,
+        int len) throws IOException
     {
-        byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
+        byte[] mac = writeMac.calculateMac(seqNo, contentType, plaintext, offset, len);
         byte[] ciphertext = new byte[headerAllocation + len + mac.length];
         System.arraycopy(plaintext, offset, ciphertext, headerAllocation, len);
         System.arraycopy(mac, 0, ciphertext, headerAllocation + len, mac.length);
         return ciphertext;
     }
 
-    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
+    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, byte[] ciphertext, int offset, int len)
         throws IOException
     {
         int macSize = readMac.getSize();
@@ -81,7 +81,7 @@ public class TlsNullCipher
 
         int macInputLen = len - macSize;
 
-        byte[] expectedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, macInputLen);
+        byte[] expectedMac = readMac.calculateMac(seqNo, contentType, ciphertext, offset, macInputLen);
 
         boolean badMac = !TlsImplUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + macInputLen);
         if (badMac)
@@ -89,6 +89,6 @@ public class TlsNullCipher
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 
-        return TlsUtils.copyOfRangeExact(ciphertext, offset, offset + macInputLen);
+        return new TlsDecodeResult(ciphertext, offset, macInputLen, contentType);
     }
 }
