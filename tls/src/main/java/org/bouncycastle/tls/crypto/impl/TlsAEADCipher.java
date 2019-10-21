@@ -128,7 +128,7 @@ public class TlsAEADCipher
         return ciphertextLimit - macSize - record_iv_length;
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
+    public byte[] encodePlaintext(long seqNo, short type, int headerAllocation, byte[] plaintext, int offset, int len)
         throws IOException
     {
         byte[] nonce = new byte[encryptImplicitNonce.length + record_iv_length];
@@ -155,12 +155,14 @@ public class TlsAEADCipher
         int plaintextLength = len;
         int ciphertextLength = encryptCipher.getOutputSize(plaintextLength);
 
-        byte[] output = new byte[record_iv_length + ciphertextLength];
+        byte[] output = new byte[headerAllocation + record_iv_length + ciphertextLength];
+        int outputPos = headerAllocation;
+
         if (record_iv_length != 0)
         {
-            System.arraycopy(nonce, nonce.length - record_iv_length, output, 0, record_iv_length);
+            System.arraycopy(nonce, nonce.length - record_iv_length, output, outputPos, record_iv_length);
+            outputPos += record_iv_length;
         }
-        int outputPos = record_iv_length;
 
         byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
 

@@ -61,13 +61,13 @@ public class TlsNullCipher
         return ciphertextLimit - writeMac.getSize();
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
+    public byte[] encodePlaintext(long seqNo, short type, int headerAllocation, byte[] plaintext, int offset, int len)
         throws IOException
     {
         byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
-        byte[] ciphertext = new byte[len + mac.length];
-        System.arraycopy(plaintext, offset, ciphertext, 0, len);
-        System.arraycopy(mac, 0, ciphertext, len, mac.length);
+        byte[] ciphertext = new byte[headerAllocation + len + mac.length];
+        System.arraycopy(plaintext, offset, ciphertext, headerAllocation, len);
+        System.arraycopy(mac, 0, ciphertext, headerAllocation + len, mac.length);
         return ciphertext;
     }
 
