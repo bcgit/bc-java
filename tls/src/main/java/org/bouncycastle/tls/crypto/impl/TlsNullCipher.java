@@ -8,7 +8,6 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
-import org.bouncycastle.util.Arrays;
 
 /**
  * The NULL cipher.
@@ -82,10 +81,10 @@ public class TlsNullCipher
 
         int macInputLen = len - macSize;
 
-        byte[] receivedMac = TlsUtils.copyOfRangeExact(ciphertext, offset + macInputLen, offset + len);
-        byte[] computedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, macInputLen);
+        byte[] expectedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, macInputLen);
 
-        if (!Arrays.constantTimeAreEqual(receivedMac, computedMac))
+        boolean badMac = !TlsImplUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + macInputLen);
+        if (badMac)
         {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
