@@ -14,8 +14,6 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 public class TlsAEADCipher
     implements TlsCipher
 {
-    // TODO[draft-zauner-tls-aes-ocb-04] Apply data volume limit described in section 8.4
-
     public static final int NONCE_RFC5288 = 1;
     public static final int NONCE_RFC7905 = 2;
 

@@ -66,10 +66,4 @@ public class EncryptionAlgorithm
      * RFC 7905
      */
     public static final int CHACHA20_POLY1305 = 21;
-
-    /*
-     * draft-zauner-tls-aes-ocb-04
-     */
-    public static final int AES_128_OCB_TAGLEN96 = 103;
-    public static final int AES_256_OCB_TAGLEN96 = 104;
 }

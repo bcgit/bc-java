@@ -164,9 +164,6 @@ public class JcaTlsCrypto
             case EncryptionAlgorithm.AES_128_GCM:
                 // NOTE: Ignores macAlgorithm
                 return createCipher_AES_GCM(cryptoParams, 16, 16);
-            case EncryptionAlgorithm.AES_128_OCB_TAGLEN96:
-                // NOTE: Ignores macAlgorithm
-                return createCipher_AES_OCB(cryptoParams, 16, 12);
             case EncryptionAlgorithm.AES_256_CBC:
                 return createAESCipher(cryptoParams, 32, macAlgorithm);
             case EncryptionAlgorithm.AES_256_CCM:
@@ -178,9 +175,6 @@ public class JcaTlsCrypto
             case EncryptionAlgorithm.AES_256_GCM:
                 // NOTE: Ignores macAlgorithm
                 return createCipher_AES_GCM(cryptoParams, 32, 16);
-            case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
-                // NOTE: Ignores macAlgorithm
-                return createCipher_AES_OCB(cryptoParams, 32, 12);
             case EncryptionAlgorithm.ARIA_128_CBC:
                 return createARIACipher(cryptoParams, 16, macAlgorithm);
             case EncryptionAlgorithm.ARIA_128_GCM:
@@ -422,12 +416,6 @@ public class JcaTlsCrypto
             case EncryptionAlgorithm.AES_256_GCM:
             {
                 helper.createCipher("AES/GCM/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.AES_128_OCB_TAGLEN96:
-            case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
-            {
-                helper.createCipher("AES/OCB/NoPadding");
                 break;
             }
             case EncryptionAlgorithm.ARIA_128_CBC:
@@ -932,13 +920,6 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false),
             cipherKeySize, macSize);
-    }
-
-    private TlsAEADCipher createCipher_AES_OCB(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
-        throws IOException, GeneralSecurityException
-    {
-        return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, false),
-            cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
     }
 
     private TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
