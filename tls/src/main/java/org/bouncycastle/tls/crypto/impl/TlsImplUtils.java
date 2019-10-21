@@ -76,14 +76,4 @@ public class TlsImplUtils
     {
         return PRF(cryptoParams.getSecurityParametersHandshake(), secret, asciiLabel, seed, length);
     }
-
-    static boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
-    {
-        int d = 0;
-        for (int i = 0; i < len; ++i)
-        {
-            d |= (a[aOff + i] ^ b[bOff + i]);
-        }
-        return 0 == d;
-    }
 }

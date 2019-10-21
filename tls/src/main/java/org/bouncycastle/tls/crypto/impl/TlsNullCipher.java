@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
@@ -88,7 +89,7 @@ public class TlsNullCipher
 
         byte[] expectedMac = readMac.calculateMac(seqNo, contentType, ciphertext, offset, macInputLen);
 
-        boolean badMac = !TlsImplUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + macInputLen);
+        boolean badMac = !TlsUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + macInputLen);
         if (badMac)
         {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
