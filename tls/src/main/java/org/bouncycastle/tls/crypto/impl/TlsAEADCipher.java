@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
@@ -27,6 +28,7 @@ public class TlsAEADCipher
 
     protected final byte[] encryptImplicitNonce, decryptImplicitNonce;
 
+    protected final boolean isTLSv13;
     protected final int nonceMode;
 
     public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
@@ -38,11 +40,14 @@ public class TlsAEADCipher
     public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
         int cipherKeySize, int macSize, int nonceMode) throws IOException
     {
-        if (!TlsImplUtils.isTLSv12(cryptoParams))
+        final ProtocolVersion serverVersion = cryptoParams.getServerVersion();
+
+        if (!TlsImplUtils.isTLSv12(serverVersion))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        this.isTLSv13 = TlsImplUtils.isTLSv13(serverVersion);
         this.nonceMode = nonceMode;
 
         // TODO SecurityParameters.fixed_iv_length

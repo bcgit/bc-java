@@ -33,6 +33,11 @@ public class TlsBlockCipher
     public TlsBlockCipher(TlsCrypto crypto, TlsCryptoParameters cryptoParams, TlsBlockCipherImpl encryptCipher,
         TlsBlockCipherImpl decryptCipher, TlsHMAC clientMac, TlsHMAC serverMac, int cipherKeySize) throws IOException
     {
+        if (TlsImplUtils.isTLSv13(cryptoParams))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         this.cryptoParams = cryptoParams;
         this.crypto = crypto;
         this.randomData = cryptoParams.getNonceGenerator().generateNonce(256);
