@@ -7,6 +7,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -302,7 +303,7 @@ public class TlsBlockCipher
         {
             byte[] expectedMac = readMac.calculateMac(seqNo, contentType, ciphertext, offset, len - macSize);
 
-            boolean badMac = !TlsImplUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext,
+            boolean badMac = !TlsUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext,
                 offset + len - macSize);
             if (badMac)
             {
@@ -341,8 +342,7 @@ public class TlsBlockCipher
             byte[] expectedMac = readMac.calculateMacConstantTime(seqNo, contentType, ciphertext, offset, dec_output_length,
                 blocks_length - macSize, randomData);
 
-            badMac |= !TlsImplUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext,
-                offset + dec_output_length);
+            badMac |= !TlsUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + dec_output_length);
         }
 
         if (badMac)
