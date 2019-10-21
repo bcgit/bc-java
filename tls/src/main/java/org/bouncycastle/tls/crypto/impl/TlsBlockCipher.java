@@ -12,7 +12,6 @@ import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
-import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS 1.0-1.2 block cipher. This can be used for AES or 3DES for example.
@@ -296,11 +295,9 @@ public class TlsBlockCipher
 
         if (encryptThenMAC)
         {
-            int end = offset + len;
-            byte[] receivedMac = TlsUtils.copyOfRangeExact(ciphertext, end - macSize, end);
-            byte[] calculatedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, len - macSize);
+            byte[] expectedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, len - macSize);
 
-            boolean badMac = !Arrays.constantTimeAreEqual(calculatedMac, receivedMac);
+            boolean badMac = !constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + len - macSize);
             if (badMac)
             {
                 /*
@@ -334,13 +331,11 @@ public class TlsBlockCipher
         if (!encryptThenMAC)
         {
             dec_output_length -= macSize;
-            int macInputLen = dec_output_length;
-            int macOff = offset + macInputLen;
-            byte[] receivedMac = TlsUtils.copyOfRangeExact(ciphertext, macOff, macOff + macSize);
-            byte[] calculatedMac = readMac.calculateMacConstantTime(seqNo, type, ciphertext, offset, macInputLen,
+
+            byte[] expectedMac = readMac.calculateMacConstantTime(seqNo, type, ciphertext, offset, dec_output_length,
                 blocks_length - macSize, randomData);
 
-            badMac |= !Arrays.constantTimeAreEqual(calculatedMac, receivedMac);
+            badMac |= !constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + dec_output_length);
         }
 
         if (badMac)
@@ -405,6 +400,16 @@ public class TlsBlockCipher
         int x = r.nextInt();
         int n = lowestBitSet(x);
         return Math.min(n, max);
+    }
+
+    protected boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
+    {
+        int d = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= (a[aOff + i] ^ b[bOff + i]);
+        }
+        return 0 == d;
     }
 
     protected int lowestBitSet(int x)
