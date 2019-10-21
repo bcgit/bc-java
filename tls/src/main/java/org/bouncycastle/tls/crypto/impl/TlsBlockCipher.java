@@ -297,7 +297,8 @@ public class TlsBlockCipher
         {
             byte[] expectedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, len - macSize);
 
-            boolean badMac = !constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + len - macSize);
+            boolean badMac = !TlsImplUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext,
+                offset + len - macSize);
             if (badMac)
             {
                 /*
@@ -335,7 +336,8 @@ public class TlsBlockCipher
             byte[] expectedMac = readMac.calculateMacConstantTime(seqNo, type, ciphertext, offset, dec_output_length,
                 blocks_length - macSize, randomData);
 
-            badMac |= !constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + dec_output_length);
+            badMac |= !TlsImplUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext,
+                offset + dec_output_length);
         }
 
         if (badMac)
@@ -400,16 +402,6 @@ public class TlsBlockCipher
         int x = r.nextInt();
         int n = lowestBitSet(x);
         return Math.min(n, max);
-    }
-
-    protected boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
-    {
-        int d = 0;
-        for (int i = 0; i < len; ++i)
-        {
-            d |= (a[aOff + i] ^ b[bOff + i]);
-        }
-        return 0 == d;
     }
 
     protected int lowestBitSet(int x)
