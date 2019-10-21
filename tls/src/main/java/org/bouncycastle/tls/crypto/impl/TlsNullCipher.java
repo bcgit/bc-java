@@ -15,16 +15,21 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 public class TlsNullCipher
     implements TlsCipher
 {
-    protected final TlsCryptoParameters cryptoParameters;
+    protected final TlsCryptoParameters cryptoParams;
     protected final TlsSuiteHMac readMac, writeMac;
 
-    public TlsNullCipher(TlsCryptoParameters cryptoParameters, TlsHMAC clientMac, TlsHMAC serverMac)
+    public TlsNullCipher(TlsCryptoParameters cryptoParams, TlsHMAC clientMac, TlsHMAC serverMac)
         throws IOException
     {
-        this.cryptoParameters = cryptoParameters;
+        if (TlsImplUtils.isTLSv13(cryptoParams))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        this.cryptoParams = cryptoParams;
 
         int key_block_size = clientMac.getMacLength() + serverMac.getMacLength();
-        byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParameters, key_block_size);
+        byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParams, key_block_size);
 
         int offset = 0;
 
@@ -38,15 +43,15 @@ public class TlsNullCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (cryptoParameters.isServer())
+        if (cryptoParams.isServer())
         {
-            writeMac = new TlsSuiteHMac(cryptoParameters, serverMac);
-            readMac = new TlsSuiteHMac(cryptoParameters, clientMac);
+            writeMac = new TlsSuiteHMac(cryptoParams, serverMac);
+            readMac = new TlsSuiteHMac(cryptoParams, clientMac);
         }
         else
         {
-            writeMac = new TlsSuiteHMac(cryptoParameters, clientMac);
-            readMac = new TlsSuiteHMac(cryptoParameters, serverMac);
+            writeMac = new TlsSuiteHMac(cryptoParams, clientMac);
+            readMac = new TlsSuiteHMac(cryptoParams, serverMac);
         }
     }
 
