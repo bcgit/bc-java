@@ -9,106 +9,124 @@ import org.bouncycastle.tls.NamedGroup;
 
 abstract class FipsUtils
 {
-    private static final boolean provAllowRSAKeyExchange = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", true);
     // This can only be set to true if the underlying provider is able to assert it is compliant with FIPS IG A.5
     // and a mechanism has been integrated into this API accordingly to ensure that is the case.
-    private static final boolean canSupportGCM = false;
+    private static final boolean provAllowGCMCiphers = false;
+
+    private static final boolean provAllowRSAKeyExchange = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", true);
 
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
     private static final Set<String> FIPS_SUPPORTED_PROTOCOLS = createFipsSupportedProtocols();
 
     private static Set<String> createFipsSupportedCipherSuites()
     {
+        /*
+         * Cipher suite list current as of NIST SP 800-52 Revision 2.
+         * 
+         * Static (EC)DH cipher suites commented out since not supported by BCJSSE.
+         * 
+         * PSK cipher suites from Appendix C left out completely since the BCJSSE provider does not
+         * currently support _any_ PSK key exchange methods.
+         */
         final Set<String> cs = new HashSet<String>();
 
-        // "shall support"
+        cs.add("TLS_AES_128_CCM_8_SHA256");
+        cs.add("TLS_AES_128_CCM_SHA256");
 
-        // "shall support" (TLS 1.2)
+//        cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA");
+//        cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA256");
+//        cs.add("TLS_DH_DSS_WITH_AES_256_CBC_SHA");
+//        cs.add("TLS_DH_DSS_WITH_AES_256_CBC_SHA256");
 
-        // "should support"
-        cs.add("TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA");
-        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA");
-        cs.add("TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA");
-        cs.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
+//        cs.add("TLS_DH_RSA_WITH_AES_128_CBC_SHA");
+//        cs.add("TLS_DH_RSA_WITH_AES_128_CBC_SHA256");
+//        cs.add("TLS_DH_RSA_WITH_AES_256_CBC_SHA");
+//        cs.add("TLS_DH_RSA_WITH_AES_256_CBC_SHA256");
 
-        // "may support"
-        cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA");
-        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA");
-        cs.add("TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA");
         cs.add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA");
-        cs.add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA");
-        cs.add("TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA");
-        cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA");
-        cs.add("TLS_DH_DSS_WITH_AES_256_CBC_SHA");
-        cs.add("TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA");
-        cs.add("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA");
-        cs.add("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA");
-
-        // "should support" (TLS 1.2)
-        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256");
-        if (canSupportGCM)
-        {
-            cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
-            cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");
-        }
-        cs.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256");
-        if (canSupportGCM)
-        {
-            cs.add("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
-        }
-
-        // "may support" (TLS 1.2);
-        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
         cs.add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256");
+        cs.add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA");
         cs.add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256");
-        if (canSupportGCM)
+
+        cs.add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA");
+        cs.add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA256");
+        cs.add("TLS_DHE_RSA_WITH_AES_128_CCM");
+        cs.add("TLS_DHE_RSA_WITH_AES_128_CCM_8");
+        cs.add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
+        cs.add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA256");
+        cs.add("TLS_DHE_RSA_WITH_AES_256_CCM");
+        cs.add("TLS_DHE_RSA_WITH_AES_256_CCM_8");
+
+//        cs.add("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA");
+//        cs.add("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256");
+//        cs.add("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA");
+//        cs.add("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384");
+
+//        cs.add("TLS_ECDH_RSA_WITH_AES_128_CBC_SHA");
+//        cs.add("TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256");
+//        cs.add("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA");
+//        cs.add("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384");
+
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA");
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256");
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CCM");
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8");
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA");
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CCM");
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8");
+
+        cs.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
+        cs.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256");
+        cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA");
+        cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384");
+
+        if (provAllowGCMCiphers)
         {
+            cs.add("TLS_AES_128_GCM_SHA256");
+            cs.add("TLS_AES_256_GCM_SHA384");
+
+//            cs.add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256");
+//            cs.add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384");
+
+//            cs.add("TLS_DH_RSA_WITH_AES_128_GCM_SHA256");
+//            cs.add("TLS_DH_RSA_WITH_AES_256_GCM_SHA384");
+
             cs.add("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256");
             cs.add("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384");
-        }
-        cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA256");
-        cs.add("TLS_DH_DSS_WITH_AES_256_CBC_SHA256");
-        if (canSupportGCM)
-        {
-            cs.add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256");
-            cs.add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384");
-        }
-        cs.add("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256");
-        cs.add("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384");
-        if (canSupportGCM)
-        {
-            cs.add("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256");
-            cs.add("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384");
+
+            cs.add("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256");
+            cs.add("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384");
+
+//            cs.add("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256");
+//            cs.add("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384");
+
+//            cs.add("TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256");
+//            cs.add("TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384");
+
+            cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
+            cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");
+
+            cs.add("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+            cs.add("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
         }
 
         if (provAllowRSAKeyExchange)
         {
-            // "shall support"
-            cs.add("TLS_RSA_WITH_3DES_EDE_CBC_SHA");
             cs.add("TLS_RSA_WITH_AES_128_CBC_SHA");
+            cs.add("TLS_RSA_WITH_AES_128_CBC_SHA256");
+            cs.add("TLS_RSA_WITH_AES_128_CCM");
+            cs.add("TLS_RSA_WITH_AES_128_CCM_8");
+            cs.add("TLS_RSA_WITH_AES_256_CBC_SHA");
+            cs.add("TLS_RSA_WITH_AES_256_CBC_SHA256");
+            cs.add("TLS_RSA_WITH_AES_256_CCM");
+            cs.add("TLS_RSA_WITH_AES_256_CCM_8");
 
-            // "shall support" (TLS 1.2)
-            if (canSupportGCM)
+            if (provAllowGCMCiphers)
             {
                 cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
-            }
-
-            // "should support"
-            cs.add("TLS_RSA_WITH_AES_256_CBC_SHA");
-
-            // "may support"
-
-            // "should support" (TLS 1.2)
-            if (canSupportGCM)
-            {
                 cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
             }
-
-            // "may support" (TLS 1.2);
-            cs.add("TLS_RSA_WITH_AES_128_CBC_SHA256");
-            cs.add("TLS_RSA_WITH_AES_256_CBC_SHA256");
-            cs.add("TLS_RSA_WITH_AES_128_CCM");
-            cs.add("TLS_RSA_WITH_AES_256_CCM");
         }
 
         return Collections.unmodifiableSet(cs);
@@ -121,6 +139,7 @@ abstract class FipsUtils
         ps.add("TLSv1");
         ps.add("TLSv1.1");
         ps.add("TLSv1.2");
+        ps.add("TLSv1.3");
 
         return Collections.unmodifiableSet(ps);
     }
@@ -139,12 +158,13 @@ abstract class FipsUtils
     {
         return minimumCurveBits <= 256 ? NamedGroup.secp256r1
             :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
+            :  minimumCurveBits <= 521 ? NamedGroup.secp521r1
             :  -1;
     }
 
     static int getFipsMaximumCurveBits()
     {
-        return 384;
+        return 521;
     }
 
     static int getFipsMaximumFiniteFieldBits()
@@ -164,10 +184,15 @@ abstract class FipsUtils
 
     static boolean isFipsNamedGroup(int namedGroup)
     {
+        /*
+         * NOTE: NIST SP 800-56A Revision 3 Appendix D lists several more SEC curves, however they
+         * are all obsolete as of TLS 1.3.
+         */
         switch (namedGroup)
         {
         case NamedGroup.secp256r1:
         case NamedGroup.secp384r1:
+        case NamedGroup.secp521r1:
         case NamedGroup.ffdhe2048:
         case NamedGroup.ffdhe3072:
         case NamedGroup.ffdhe4096:

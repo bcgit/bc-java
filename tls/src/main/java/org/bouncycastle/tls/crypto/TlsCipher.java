@@ -25,27 +25,28 @@ public interface TlsCipher
      * Encrypt and MAC the passed in plain text using the current cipher suite.
      *
      * @param seqNo sequence number of the message represented by plaintext.
-     * @param type content type of the message represented by plaintext.
+     * @param contentType content type of the message represented by plaintext.
+     * @param headerAllocation extra bytes to allocate at start of returned byte array.
      * @param plaintext array holding input plain text to the cipher.
      * @param offset offset into input array the plain text starts at.
      * @param len length of the plaintext in the array.
-     * @return the resulting cipher text.
+     * @return the resulting cipher text (after 'headerAllocation' unused bytes).
      * @throws IOException
      */
-    byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
+    byte[] encodePlaintext(long seqNo, short contentType, int headerAllocation, byte[] plaintext, int offset, int len)
         throws IOException;
 
     /**
      * Validate and decrypt the passed in cipher text using the current cipher suite.
      *
      * @param seqNo sequence number of the message represented by ciphertext.
-     * @param type content type of the message represented by ciphertext.
+     * @param contentType content type of the message represented by ciphertext.
      * @param ciphertext  array holding input cipher text to the cipher.
      * @param offset offset into input array the cipher text starts at.
      * @param len length of the cipher text in the array.
-     * @return the resulting plaintext.
+     * @return A {@link TlsDecodeResult} containing the result of decoding.
      * @throws IOException
      */
-    byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
+    TlsDecodeResult decodeCiphertext(long seqNo, short contentType, byte[] ciphertext, int offset, int len)
         throws IOException;
 }
