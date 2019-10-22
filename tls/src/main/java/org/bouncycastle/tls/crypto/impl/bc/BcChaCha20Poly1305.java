@@ -58,15 +58,14 @@ public class BcChaCha20Poly1305 implements TlsAEADCipherImpl
 
             updateMAC(input, inputOffset, ciphertextLength);
 
-            byte[] calculatedMAC = new byte[16];
-            Pack.longToLittleEndian(additionalDataLength & 0xFFFFFFFFL, calculatedMAC, 0);
-            Pack.longToLittleEndian(ciphertextLength & 0xFFFFFFFFL, calculatedMAC, 8);
-            mac.update(calculatedMAC, 0, 16);
-            mac.doFinal(calculatedMAC, 0);
+            byte[] expectedMac = new byte[16];
+            Pack.longToLittleEndian(additionalDataLength & 0xFFFFFFFFL, expectedMac, 0);
+            Pack.longToLittleEndian(ciphertextLength & 0xFFFFFFFFL, expectedMac, 8);
+            mac.update(expectedMac, 0, 16);
+            mac.doFinal(expectedMac, 0);
 
-            byte[] receivedMAC = TlsUtils.copyOfRangeExact(input, inputOffset + ciphertextLength, inputOffset + inputLength);
-
-            if (!Arrays.constantTimeAreEqual(calculatedMAC, receivedMAC))
+            boolean badMac = !TlsUtils.constantTimeAreEqual(16, expectedMac, 0, input, inputOffset + ciphertextLength);
+            if (badMac)
             {
                 throw new TlsFatalAlert(AlertDescription.bad_record_mac);
             }

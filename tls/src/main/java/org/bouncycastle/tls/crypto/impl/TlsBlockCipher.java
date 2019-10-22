@@ -11,8 +11,8 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsHMAC;
-import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS 1.0-1.2 block cipher. This can be used for AES or 3DES for example.
@@ -34,6 +34,11 @@ public class TlsBlockCipher
     public TlsBlockCipher(TlsCrypto crypto, TlsCryptoParameters cryptoParams, TlsBlockCipherImpl encryptCipher,
         TlsBlockCipherImpl decryptCipher, TlsHMAC clientMac, TlsHMAC serverMac, int cipherKeySize) throws IOException
     {
+        if (TlsImplUtils.isTLSv13(cryptoParams))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         this.cryptoParams = cryptoParams;
         this.crypto = crypto;
         this.randomData = cryptoParams.getNonceGenerator().generateNonce(256);
@@ -182,8 +187,8 @@ public class TlsBlockCipher
         return plaintextLimit;
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
-        throws IOException
+    public byte[] encodePlaintext(long seqNo, short contentType, int headerAllocation, byte[] plaintext, int offset,
+        int len) throws IOException
     {
         int blockSize = encryptCipher.getBlockSize();
         int macSize = writeMac.getSize();
@@ -209,8 +214,8 @@ public class TlsBlockCipher
             totalSize += blockSize;
         }
 
-        byte[] outBuf = new byte[totalSize];
-        int outOff = 0;
+        byte[] outBuf = new byte[headerAllocation + totalSize];
+        int outOff = headerAllocation;
 
         if (useExplicitIV)
         {
@@ -229,7 +234,7 @@ public class TlsBlockCipher
 
         if (!encryptThenMAC)
         {
-            byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
+            byte[] mac = writeMac.calculateMac(seqNo, contentType, plaintext, offset, len);
             System.arraycopy(mac, 0, outBuf, outOff, mac.length);
             outOff += mac.length;
         }
@@ -244,16 +249,20 @@ public class TlsBlockCipher
 
         if (encryptThenMAC)
         {
-            byte[] mac = writeMac.calculateMac(seqNo, type, outBuf, 0, outOff);
+            byte[] mac = writeMac.calculateMac(seqNo, contentType, outBuf, headerAllocation, outOff - headerAllocation);
             System.arraycopy(mac, 0, outBuf, outOff, mac.length);
             outOff += mac.length;
         }
 
-//        assert outBuf.length == outOff;
+        if (outOff != outBuf.length)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         return outBuf;
     }
 
-    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
+    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, byte[] ciphertext, int offset, int len)
         throws IOException
     {
         int blockSize = decryptCipher.getBlockSize();
@@ -292,11 +301,10 @@ public class TlsBlockCipher
 
         if (encryptThenMAC)
         {
-            int end = offset + len;
-            byte[] receivedMac = TlsUtils.copyOfRangeExact(ciphertext, end - macSize, end);
-            byte[] calculatedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, len - macSize);
+            byte[] expectedMac = readMac.calculateMac(seqNo, contentType, ciphertext, offset, len - macSize);
 
-            boolean badMac = !Arrays.constantTimeAreEqual(calculatedMac, receivedMac);
+            boolean badMac = !TlsUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext,
+                offset + len - macSize);
             if (badMac)
             {
                 /*
@@ -330,13 +338,11 @@ public class TlsBlockCipher
         if (!encryptThenMAC)
         {
             dec_output_length -= macSize;
-            int macInputLen = dec_output_length;
-            int macOff = offset + macInputLen;
-            byte[] receivedMac = TlsUtils.copyOfRangeExact(ciphertext, macOff, macOff + macSize);
-            byte[] calculatedMac = readMac.calculateMacConstantTime(seqNo, type, ciphertext, offset, macInputLen,
+
+            byte[] expectedMac = readMac.calculateMacConstantTime(seqNo, contentType, ciphertext, offset, dec_output_length,
                 blocks_length - macSize, randomData);
 
-            badMac |= !Arrays.constantTimeAreEqual(calculatedMac, receivedMac);
+            badMac |= !TlsUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + dec_output_length);
         }
 
         if (badMac)
@@ -344,7 +350,7 @@ public class TlsBlockCipher
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 
-        return TlsUtils.copyOfRangeExact(ciphertext, offset, offset + dec_output_length);
+        return new TlsDecodeResult(ciphertext, offset, dec_output_length, contentType);
     }
 
     protected int checkPaddingConstantTime(byte[] buf, int off, int len, int blockSize, int macSize)
