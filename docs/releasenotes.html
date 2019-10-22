@@ -46,11 +46,15 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, October 7th.
 <li>Support for Java 11's NamedParameterSpec class has been added (using reflection) to the EC and EdEC KeyPairGenerator implementations.</li>
 </ul>
 
-<h3>2.1.4 Security Advisory</h3>
+<h3>2.1.4 Removed Features and Functionality</h3>
+<ul>
+<li>Deprecated ECPoint 'withCompression' tracking has been removed.</li>
+</ul>
+
+<h3>2.1.5 Security Advisory</h3>
 <ul>
 <li>A change to the ASN.1 parser in 1.63 introduced a regression that can cause an OutOfMemoryError to occur on parsing ASN.1 data. We recommend upgrading to 1.64, particularly where an application might be parsing untrusted ASN.1 data from third parties.</li>
 </ul>
-
 
 <h3>2.2.1 Version</h3>
 Release: 1.63<br/>
