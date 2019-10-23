@@ -43,7 +43,8 @@ public class CertificatePolicies
      */
     public static CertificatePolicies fromExtensions(Extensions extensions)
     {
-        return CertificatePolicies.getInstance(extensions.getExtensionParsedValue(Extension.certificatePolicies));
+        return CertificatePolicies.getInstance(
+            Extensions.getExtensionParsedValue(extensions, Extension.certificatePolicies));
     }
 
     /**
