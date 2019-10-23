@@ -68,7 +68,7 @@ public class ExtendedKeyUsage
      */
     public static ExtendedKeyUsage fromExtensions(Extensions extensions)
     {
-        return ExtendedKeyUsage.getInstance(extensions.getExtensionParsedValue(Extension.extendedKeyUsage));
+        return ExtendedKeyUsage.getInstance(Extensions.getExtensionParsedValue(extensions, Extension.extendedKeyUsage));
     }
 
     /**

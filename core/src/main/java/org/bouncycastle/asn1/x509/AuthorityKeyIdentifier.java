@@ -62,7 +62,8 @@ public class AuthorityKeyIdentifier
 
     public static AuthorityKeyIdentifier fromExtensions(Extensions extensions)
     {
-         return AuthorityKeyIdentifier.getInstance(extensions.getExtensionParsedValue(Extension.authorityKeyIdentifier));
+         return AuthorityKeyIdentifier.getInstance(
+             Extensions.getExtensionParsedValue(extensions, Extension.authorityKeyIdentifier));
     }
 
     protected AuthorityKeyIdentifier(
