@@ -905,35 +905,40 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsAEADCipher(cryptoParams, new JceChaCha20Poly1305(helper, true),
-            new JceChaCha20Poly1305(helper, false), 32, 16, TlsAEADCipher.NONCE_RFC7905);
+            new JceChaCha20Poly1305(helper, false), 32, 16, TlsAEADCipher.AEAD_CHACHA20_POLY1305);
     }
 
     private TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, false),
-            cipherKeySize, macSize);
+        return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, true),
+            createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, false), cipherKeySize, macSize,
+            TlsAEADCipher.AEAD_CCM);
     }
 
     private TlsAEADCipher createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false),
-            cipherKeySize, macSize);
+        return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true),
+            createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false), cipherKeySize, macSize,
+            TlsAEADCipher.AEAD_GCM);
     }
 
     private TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(cryptoParams, createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, true), createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, false),
-            cipherKeySize, macSize);
+        return new TlsAEADCipher(cryptoParams, createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, true),
+            createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, false), cipherKeySize, macSize,
+            TlsAEADCipher.AEAD_GCM);
     }
 
     private TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(cryptoParams, createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, true), createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, false),
-            cipherKeySize, macSize);
+        return new TlsAEADCipher(cryptoParams,
+            createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, true),
+            createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, false), cipherKeySize, macSize,
+            TlsAEADCipher.AEAD_GCM);
     }
 
     String getDigestName(short hashAlgorithm)
