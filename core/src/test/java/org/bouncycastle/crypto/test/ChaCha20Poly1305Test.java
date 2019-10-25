@@ -189,7 +189,7 @@ public class ChaCha20Poly1305Test
         SecureRandom random = new SecureRandom();
         random.setSeed(Times.nanoTime());
 
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < 100; ++i)
         {
             randomTest(random);
         }
@@ -201,8 +201,10 @@ public class ChaCha20Poly1305Test
         byte[] K = new byte[kLength];
         random.nextBytes(K);
 
+        int pHead = random.nextInt() >>> 24;
         int pLength = random.nextInt() >>> 16;
-        byte[] P = new byte[pLength];
+        int pTail = random.nextInt() >>> 24;
+        byte[] P = new byte[pHead + pLength + pTail];
         random.nextBytes(P);
 
         int aLength = random.nextInt() >>> 24;
@@ -219,28 +221,31 @@ public class ChaCha20Poly1305Test
 
         AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, nonce, A);
         ChaCha20Poly1305 cipher = initCipher(true, parameters);
-        byte[] C = new byte[cipher.getOutputSize(P.length)];
-        int predicted = cipher.getUpdateOutputSize(P.length);
 
-        int split = nextInt(random, SA.length + 1);
-        cipher.processAADBytes(SA, 0, split);
-        cipher.processAADBytes(SA, split, SA.length - split);
+        int ctLength = cipher.getOutputSize(pLength);
+        byte[] C = new byte[saLength + ctLength];
+        System.arraycopy(SA, 0, C, 0, saLength);
 
-        int len = cipher.processBytes(P, 0, P.length, C, 0);
+        int split = nextInt(random, saLength + 1);
+        cipher.processAADBytes(C, 0, split);
+        cipher.processAADBytes(C, split, saLength - split);
+
+        int predicted = cipher.getUpdateOutputSize(pLength);
+        int len = cipher.processBytes(P, pHead, pLength, C, saLength);
         if (predicted != len)
         {
             fail("encryption reported incorrect update length in randomised test");
         }
 
-        len += cipher.doFinal(C, len);
-        if (C.length != len)
+        len += cipher.doFinal(C, saLength + len);
+        if (ctLength != len)
         {
             fail("encryption reported incorrect length in randomised test");
         }
 
         byte[] encT = cipher.getMac();
-        byte[] tail = new byte[C.length - P.length];
-        System.arraycopy(C, P.length, tail, 0, tail.length);
+        byte[] tail = new byte[ctLength - pLength];
+        System.arraycopy(C, saLength + pLength, tail, 0, tail.length);
 
         if (!areEqual(encT, tail))
         {
@@ -248,22 +253,26 @@ public class ChaCha20Poly1305Test
         }
 
         cipher.init(false, parameters);
-        byte[] decP = new byte[cipher.getOutputSize(C.length)];
-        predicted = cipher.getUpdateOutputSize(C.length);
 
-        split = nextInt(random, SA.length + 1);
-        cipher.processAADBytes(SA, 0, split);
-        cipher.processAADBytes(SA, split, SA.length - split);
+        int decPHead = random.nextInt() >>> 24;
+        int decPLength = cipher.getOutputSize(ctLength);
+        int decPTail = random.nextInt() >>> 24;
+        byte[] decP = new byte[decPHead + decPLength + decPTail];
 
-        len = cipher.processBytes(C, 0, C.length, decP, 0);
+        split = nextInt(random, saLength + 1);
+        cipher.processAADBytes(C, 0, split);
+        cipher.processAADBytes(C, split, saLength - split);
+
+        predicted = cipher.getUpdateOutputSize(ctLength);
+        len = cipher.processBytes(C, saLength, ctLength, decP, decPHead);
         if (predicted != len)
         {
             fail("decryption reported incorrect update length in randomised test");
         }
 
-        len += cipher.doFinal(decP, len);
+        len += cipher.doFinal(decP, decPHead + len);
 
-        if (!areEqual(P, decP))
+        if (!areEqual(P, pHead, pHead + pLength, decP, decPHead, decPHead + decPLength))
         {
             fail("incorrect decrypt in randomised test");
         }
@@ -278,16 +287,20 @@ public class ChaCha20Poly1305Test
         // key reuse test
         //
         cipher.init(false, AEADTestUtil.reuseKey(parameters));
-        decP = new byte[cipher.getOutputSize(C.length)];
 
-        split = nextInt(random, SA.length + 1);
-        cipher.processAADBytes(SA, 0, split);
-        cipher.processAADBytes(SA, split, SA.length - split);
+        decPHead = random.nextInt() >>> 24;
+        decPLength = cipher.getOutputSize(ctLength);
+        decPTail = random.nextInt() >>> 24;
+        decP = new byte[decPHead + decPLength + decPTail];
 
-        len = cipher.processBytes(C, 0, C.length, decP, 0);
-        len += cipher.doFinal(decP, len);
+        split = nextInt(random, saLength + 1);
+        cipher.processAADBytes(C, 0, split);
+        cipher.processAADBytes(C, split, saLength - split);
 
-        if (!areEqual(P, decP))
+        len = cipher.processBytes(C, saLength, ctLength, decP, decPHead);
+        len += cipher.doFinal(decP, decPHead + len);
+
+        if (!areEqual(P, pHead, pHead + pLength, decP, decPHead, decPHead + decPLength))
         {
             fail("incorrect decrypt in randomised test");
         }

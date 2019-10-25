@@ -21,7 +21,8 @@ public class CRLDistPoint
 
     public static CRLDistPoint fromExtensions(Extensions extensions)
     {
-        return CRLDistPoint.getInstance(extensions.getExtensionParsedValue(Extension.cRLDistributionPoints));
+        return CRLDistPoint.getInstance(
+            Extensions.getExtensionParsedValue(extensions, Extension.cRLDistributionPoints));
     }
 
     public static CRLDistPoint getInstance(

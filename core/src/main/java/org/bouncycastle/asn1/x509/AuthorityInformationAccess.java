@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.x509;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -46,7 +45,8 @@ public class AuthorityInformationAccess
 
     public static AuthorityInformationAccess fromExtensions(Extensions extensions)
     {
-         return AuthorityInformationAccess.getInstance(extensions.getExtensionParsedValue(Extension.authorityInfoAccess));
+        return AuthorityInformationAccess.getInstance(
+            Extensions.getExtensionParsedValue(extensions, Extension.authorityInfoAccess));
     }
 
     private AuthorityInformationAccess(
