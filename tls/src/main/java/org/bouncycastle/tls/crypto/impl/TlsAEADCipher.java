@@ -16,8 +16,12 @@ import org.bouncycastle.tls.crypto.TlsDecodeResult;
 public class TlsAEADCipher
     implements TlsCipher
 {
-    public static final int NONCE_RFC5288 = 1;
-    public static final int NONCE_RFC7905 = 2;
+    public static final int AEAD_CCM = 1;
+    public static final int AEAD_CHACHA20_POLY1305 = 2;
+    public static final int AEAD_GCM = 3;
+
+    private static final int NONCE_RFC5288 = 1;
+    private static final int NONCE_RFC7905 = 2;
 
     protected final TlsCryptoParameters cryptoParams;
     protected final int macSize;
@@ -32,13 +36,7 @@ public class TlsAEADCipher
     protected final int nonceMode;
 
     public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
-        int cipherKeySize, int macSize) throws IOException
-    {
-        this(cryptoParams, encryptCipher, decryptCipher, cipherKeySize, macSize, NONCE_RFC5288);
-    }
-
-    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
-        int cipherKeySize, int macSize, int nonceMode) throws IOException
+        int cipherKeySize, int macSize, int aeadType) throws IOException
     {
         final ProtocolVersion serverVersion = cryptoParams.getServerVersion();
 
@@ -48,7 +46,7 @@ public class TlsAEADCipher
         }
 
         this.isTLSv13 = TlsImplUtils.isTLSv13(serverVersion);
-        this.nonceMode = nonceMode;
+        this.nonceMode = getNonceMode(isTLSv13, aeadType);
 
         // TODO SecurityParameters.fixed_iv_length
         int fixed_iv_length;
@@ -117,7 +115,11 @@ public class TlsAEADCipher
             this.decryptImplicitNonce = server_write_IV;
         }
 
-        byte[] dummyNonce = new byte[fixed_iv_length + record_iv_length];
+        int nonceLength = fixed_iv_length + record_iv_length;
+
+        // NOTE: Ensure dummy nonce is not part of the generated sequence
+        byte[] dummyNonce = new byte[nonceLength];
+        dummyNonce[0] = (byte)~encryptImplicitNonce[0];
 
         this.encryptCipher.init(dummyNonce, macSize, null);
         this.decryptCipher.init(dummyNonce, macSize, null);
@@ -259,5 +261,21 @@ public class TlsAEADCipher
         TlsUtils.writeUint16(len, additional_data, 11);
 
         return additional_data;
+    }
+
+    private static int getNonceMode(boolean isTLSv13, int aeadType) throws IOException
+    {
+        switch (aeadType)
+        {
+        case AEAD_CCM:
+        case AEAD_GCM:
+            return isTLSv13 ? NONCE_RFC7905 : NONCE_RFC5288;
+
+        case AEAD_CHACHA20_POLY1305:
+            return NONCE_RFC7905;
+
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 }

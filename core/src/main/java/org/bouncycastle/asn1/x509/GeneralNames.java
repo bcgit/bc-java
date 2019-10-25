@@ -38,7 +38,7 @@ public class GeneralNames
 
     public static GeneralNames fromExtensions(Extensions extensions, ASN1ObjectIdentifier extOID)
     {
-        return GeneralNames.getInstance(extensions.getExtensionParsedValue(extOID));
+        return GeneralNames.getInstance(Extensions.getExtensionParsedValue(extensions, extOID));
     }
 
     /**
