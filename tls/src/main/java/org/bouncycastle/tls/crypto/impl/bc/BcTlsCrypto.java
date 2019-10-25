@@ -461,38 +461,39 @@ public class BcTlsCrypto
             createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
-        throws IOException
+    protected TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams) throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new BcChaCha20Poly1305(true), new BcChaCha20Poly1305(false), 32, 16, TlsAEADCipher.NONCE_RFC7905);
+        return new TlsAEADCipher(cryptoParams, new BcChaCha20Poly1305(true), new BcChaCha20Poly1305(false), 32, 16,
+            TlsAEADCipher.AEAD_CHACHA20_POLY1305);
     }
 
     protected TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_CCM(), true), new AeadOperator(createAEADBlockCipher_AES_CCM(), false),
-            cipherKeySize, macSize);
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_CCM(), true),
+            new AeadOperator(createAEADBlockCipher_AES_CCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_CCM);
     }
 
     protected TlsAEADCipher createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_GCM(), true), new AeadOperator(createAEADBlockCipher_AES_GCM(), false),
-            cipherKeySize, macSize);
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_GCM(), true),
+            new AeadOperator(createAEADBlockCipher_AES_GCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
     }
 
     protected TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_ARIA_GCM(), true), new AeadOperator(createAEADBlockCipher_ARIA_GCM(), false),
-            cipherKeySize, macSize);
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_ARIA_GCM(), true),
+            new AeadOperator(createAEADBlockCipher_ARIA_GCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
     }
 
     protected TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_Camellia_GCM(), true), new AeadOperator(createAEADBlockCipher_Camellia_GCM(), false),
-            cipherKeySize, macSize);
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_Camellia_GCM(), true),
+            new AeadOperator(createAEADBlockCipher_Camellia_GCM(), false), cipherKeySize, macSize,
+            TlsAEADCipher.AEAD_GCM);
     }
 
     protected TlsBlockCipher createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)

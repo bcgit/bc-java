@@ -45,7 +45,7 @@ public class BasicConstraints
 
     public static BasicConstraints fromExtensions(Extensions extensions)
     {
-        return BasicConstraints.getInstance(extensions.getExtensionParsedValue(Extension.basicConstraints));
+        return BasicConstraints.getInstance(Extensions.getExtensionParsedValue(extensions, Extension.basicConstraints));
     }
 
     private BasicConstraints(

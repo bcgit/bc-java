@@ -29,6 +29,16 @@ public class Extensions
     private Hashtable extensions = new Hashtable();
     private Vector ordering = new Vector();
 
+    public static Extension getExtension(Extensions extensions, ASN1ObjectIdentifier oid)
+    {
+        return null == extensions ? null : extensions.getExtension(oid);
+    }
+
+    public static ASN1Encodable getExtensionParsedValue(Extensions extensions, ASN1ObjectIdentifier oid)
+    {
+        return null == extensions ? null : extensions.getExtensionParsedValue(oid);
+    }
+
     public static Extensions getInstance(
         ASN1TaggedObject obj,
         boolean explicit)
