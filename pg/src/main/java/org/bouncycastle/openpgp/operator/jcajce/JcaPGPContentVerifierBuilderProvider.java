@@ -3,8 +3,10 @@ package org.bouncycastle.openpgp.operator.jcajce;
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.RSAPublicKey;
 
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -65,10 +67,11 @@ public class JcaPGPContentVerifierBuilderProvider
             throws PGPException
         {
             final Signature signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
+            final PublicKey jcaKey = keyConverter.getPublicKey(publicKey);
 
             try
             {
-                signature.initVerify(keyConverter.getPublicKey(publicKey));
+                signature.initVerify(jcaKey);
             }
             catch (InvalidKeyException e)
             {
@@ -96,6 +99,20 @@ public class JcaPGPContentVerifierBuilderProvider
                 {
                     try
                     {
+                        // an RSA PGP signature is stored as an MPI, this can occasionally result in a short
+                        // signature if there is a leading zero.
+                        if (jcaKey instanceof RSAPublicKey)
+                        {
+                            int modLength = (((RSAPublicKey)jcaKey).getModulus().bitLength() + 7) / 8;
+                            if (expected.length < modLength)
+                            {
+                                byte[] tmp = new byte[modLength];
+
+                                System.arraycopy(expected, 0, tmp, tmp.length - expected.length, expected.length);
+           
+                                return signature.verify(tmp);
+                            }
+                        }
                         return signature.verify(expected);
                     }
                     catch (SignatureException e)
