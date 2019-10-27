@@ -177,7 +177,8 @@ public class TlsAEADCipher
         try
         {
             encryptCipher.init(nonce, macSize, additionalData);
-            outputPos += encryptCipher.doFinal(plaintext, plaintextOffset, plaintextLength, output, outputPos);
+            outputPos += encryptCipher.doFinal(plaintext, plaintextOffset, plaintextLength, TlsUtils.EMPTY_BYTES,
+                output, outputPos);
         }
         catch (Exception e)
         {
@@ -229,7 +230,8 @@ public class TlsAEADCipher
         try
         {
             decryptCipher.init(nonce, macSize, additionalData);
-            outputPos = decryptCipher.doFinal(ciphertext, ciphertextOffset, ciphertextLength, ciphertext, ciphertextOffset);
+            outputPos = decryptCipher.doFinal(ciphertext, ciphertextOffset, ciphertextLength, TlsUtils.EMPTY_BYTES,
+                ciphertext, ciphertextOffset);
         }
         catch (Exception e)
         {
