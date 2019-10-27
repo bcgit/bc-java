@@ -38,7 +38,7 @@ public class BcChaCha20Poly1305 implements TlsAEADCipherImpl
         {
             int ciphertextLength = inputLength + extraInputLength;
 
-            int outputLength = cipher.processBytes(input, inputOffset, ciphertextLength, output, outputOffset);
+            int outputLength = cipher.processBytes(input, inputOffset, inputLength, output, outputOffset);
             if (extraInputLength > 0)
             {
                 outputLength += cipher.processBytes(extraInput, 0, extraInputLength, output,
