@@ -34,7 +34,10 @@ public class TlsBlockCipher
     public TlsBlockCipher(TlsCrypto crypto, TlsCryptoParameters cryptoParams, TlsBlockCipherImpl encryptCipher,
         TlsBlockCipherImpl decryptCipher, TlsHMAC clientMac, TlsHMAC serverMac, int cipherKeySize) throws IOException
     {
-        if (TlsImplUtils.isTLSv13(cryptoParams))
+        SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
+        if (TlsImplUtils.isTLSv13(negotiatedVersion))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -42,9 +45,6 @@ public class TlsBlockCipher
         this.cryptoParams = cryptoParams;
         this.crypto = crypto;
         this.randomData = cryptoParams.getNonceGenerator().generateNonce(256);
-
-        SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
-        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
         this.encryptThenMAC = securityParameters.isEncryptThenMAC();
         this.useExplicitIV = TlsImplUtils.isTLSv11(negotiatedVersion);
@@ -187,8 +187,8 @@ public class TlsBlockCipher
         return plaintextLimit;
     }
 
-    public byte[] encodePlaintext(long seqNo, short contentType, int headerAllocation, byte[] plaintext, int offset,
-        int len) throws IOException
+    public byte[] encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
+        byte[] plaintext, int offset, int len) throws IOException
     {
         int blockSize = encryptCipher.getBlockSize();
         int macSize = writeMac.getSize();
@@ -262,8 +262,8 @@ public class TlsBlockCipher
         return outBuf;
     }
 
-    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, byte[] ciphertext, int offset, int len)
-        throws IOException
+    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, ProtocolVersion recordVersion,
+        byte[] ciphertext, int offset, int len) throws IOException
     {
         int blockSize = decryptCipher.getBlockSize();
         int macSize = readMac.getSize();
