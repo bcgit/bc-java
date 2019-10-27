@@ -164,13 +164,12 @@ class RecordStream
          */
         checkType(type, AlertDescription.unexpected_message);
 
-        /*
-         * legacy_record_version (2 octets at RecordFormat.VERSION_OFFSET) is ignored.
-         */
+        ProtocolVersion recordVersion = TlsUtils.readVersion(input, inputOff + RecordFormat.VERSION_OFFSET);
 
         checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
 
-        TlsDecodeResult decoded = decodeAndVerify(type, input, inputOff + RecordFormat.FRAGMENT_OFFSET, length);
+        TlsDecodeResult decoded = decodeAndVerify(type, recordVersion, input, inputOff + RecordFormat.FRAGMENT_OFFSET,
+            length);
 
         // TODO[tls13] Check decoded.contentType here (or modify processRecord to deal with it)
 
@@ -194,9 +193,7 @@ class RecordStream
          */
         checkType(type, AlertDescription.unexpected_message);
 
-        /*
-         * legacy_record_version (2 octets at RecordFormat.VERSION_OFFSET) is ignored.
-         */
+        ProtocolVersion recordVersion = TlsUtils.readVersion(inputRecord.buf, RecordFormat.VERSION_OFFSET);
 
         int length = TlsUtils.readUint16(inputRecord.buf, RecordFormat.LENGTH_OFFSET);
 
@@ -207,7 +204,7 @@ class RecordStream
         TlsDecodeResult decoded;
         try
         {
-            decoded = decodeAndVerify(type, inputRecord.buf, RecordFormat.FRAGMENT_OFFSET, length);
+            decoded = decodeAndVerify(type, recordVersion, inputRecord.buf, RecordFormat.FRAGMENT_OFFSET, length);
         }
         finally
         {
@@ -220,10 +217,11 @@ class RecordStream
         return true;
     }
 
-    TlsDecodeResult decodeAndVerify(short type, byte[] ciphertext, int off, int len) throws IOException
+    TlsDecodeResult decodeAndVerify(short type, ProtocolVersion recordVersion, byte[] ciphertext, int off, int len)
+        throws IOException
     {
         long seqNo = readSeqNo.nextValue(AlertDescription.unexpected_message);
-        TlsDecodeResult decoded = readCipher.decodeCiphertext(seqNo, type, ciphertext, off, len);
+        TlsDecodeResult decoded = readCipher.decodeCiphertext(seqNo, type, recordVersion, ciphertext, off, len);
 
         checkLength(decoded.len, plaintextLimit, AlertDescription.record_overflow);
 
@@ -269,8 +267,9 @@ class RecordStream
         }
 
         long seqNo = writeSeqNo.nextValue(AlertDescription.internal_error);
+        ProtocolVersion recordVersion = writeVersion;
 
-        byte[] record = writeCipher.encodePlaintext(seqNo, type, RecordFormat.FRAGMENT_OFFSET, plaintext,
+        byte[] record = writeCipher.encodePlaintext(seqNo, type, recordVersion, RecordFormat.FRAGMENT_OFFSET, plaintext,
             plaintextOffset, plaintextLength);
 
         /*
@@ -280,7 +279,7 @@ class RecordStream
         checkLength(ciphertextLength, ciphertextLimit, AlertDescription.internal_error);
 
         TlsUtils.writeUint8(type, record, RecordFormat.TYPE_OFFSET);
-        TlsUtils.writeVersion(writeVersion, record, RecordFormat.VERSION_OFFSET);
+        TlsUtils.writeVersion(recordVersion, record, RecordFormat.VERSION_OFFSET);
         TlsUtils.writeUint16(ciphertextLength, record, RecordFormat.LENGTH_OFFSET);
 
         try

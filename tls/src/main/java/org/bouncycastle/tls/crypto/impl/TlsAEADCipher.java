@@ -136,8 +136,8 @@ public class TlsAEADCipher
         return ciphertextLimit - macSize - record_iv_length;
     }
 
-    public byte[] encodePlaintext(long seqNo, short contentType, int headerAllocation, byte[] plaintext, int offset,
-        int len) throws IOException
+    public byte[] encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
+        byte[] plaintext, int offset, int len) throws IOException
     {
         byte[] nonce = new byte[encryptImplicitNonce.length + record_iv_length];
 
@@ -172,7 +172,7 @@ public class TlsAEADCipher
             outputPos += record_iv_length;
         }
 
-        byte[] additionalData = getAdditionalData(seqNo, contentType, plaintextLength);
+        byte[] additionalData = getAdditionalData(seqNo, contentType, recordVersion, plaintextLength);
 
         try
         {
@@ -193,8 +193,8 @@ public class TlsAEADCipher
         return output;
     }
 
-    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, byte[] ciphertext, int offset, int len)
-        throws IOException
+    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, ProtocolVersion recordVersion,
+        byte[] ciphertext, int offset, int len) throws IOException
     {
         if (getPlaintextLimit(len) < 0)
         {
@@ -223,7 +223,7 @@ public class TlsAEADCipher
         int ciphertextOffset = offset + record_iv_length;
         int ciphertextLength = len - record_iv_length;
         int plaintextLength = decryptCipher.getOutputSize(ciphertextLength);
-        byte[] additionalData = getAdditionalData(seqNo, contentType, plaintextLength);
+        byte[] additionalData = getAdditionalData(seqNo, contentType, recordVersion, plaintextLength);
 
         int outputPos;
         try
@@ -246,8 +246,8 @@ public class TlsAEADCipher
         return new TlsDecodeResult(ciphertext, ciphertextOffset, plaintextLength, contentType);
     }
 
-    protected byte[] getAdditionalData(long seqNo, short type, int len)
-        throws IOException
+    protected byte[] getAdditionalData(long seqNo, short contentType, ProtocolVersion recordVersion,
+        int ciphertextLength) throws IOException
     {
         /*
          * additional_data = seq_num + TLSCompressed.type + TLSCompressed.version +
@@ -256,9 +256,9 @@ public class TlsAEADCipher
 
         byte[] additional_data = new byte[13];
         TlsUtils.writeUint64(seqNo, additional_data, 0);
-        TlsUtils.writeUint8(type, additional_data, 8);
-        TlsUtils.writeVersion(cryptoParams.getServerVersion(), additional_data, 9);
-        TlsUtils.writeUint16(len, additional_data, 11);
+        TlsUtils.writeUint8(contentType, additional_data, 8);
+        TlsUtils.writeVersion(recordVersion, additional_data, 9);
+        TlsUtils.writeUint16(ciphertextLength, additional_data, 11);
 
         return additional_data;
     }
