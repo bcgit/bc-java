@@ -43,7 +43,7 @@ public interface TlsCipher
      * Validate and decrypt the passed in cipher text using the current cipher suite.
      *
      * @param seqNo sequence number of the message represented by ciphertext.
-     * @param contentType content type of the message represented by ciphertext.
+     * @param recordType content type used in the record for this message.
      * @param recordVersion {@link ProtocolVersion} used for the record.
      * @param ciphertext  array holding input cipher text to the cipher.
      * @param offset offset into input array the cipher text starts at.
@@ -51,6 +51,6 @@ public interface TlsCipher
      * @return A {@link TlsDecodeResult} containing the result of decoding.
      * @throws IOException
      */
-    TlsDecodeResult decodeCiphertext(long seqNo, short contentType, ProtocolVersion recordVersion, byte[] ciphertext,
+    TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion, byte[] ciphertext,
         int offset, int len) throws IOException;
 }
