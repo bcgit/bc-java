@@ -194,7 +194,7 @@ public class TlsAEADCipher
         return output;
     }
 
-    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, ProtocolVersion recordVersion,
+    public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,
         byte[] ciphertext, int offset, int len) throws IOException
     {
         if (getPlaintextLimit(len) < 0)
@@ -224,7 +224,7 @@ public class TlsAEADCipher
         int ciphertextOffset = offset + record_iv_length;
         int ciphertextLength = len - record_iv_length;
         int plaintextLength = decryptCipher.getOutputSize(ciphertextLength);
-        byte[] additionalData = getAdditionalData(seqNo, contentType, recordVersion, plaintextLength);
+        byte[] additionalData = getAdditionalData(seqNo, recordType, recordVersion, plaintextLength);
 
         int outputPos;
         try
@@ -245,7 +245,7 @@ public class TlsAEADCipher
         }
 
         // TODO[tls13] Strip padding and read true content type
-        return new TlsDecodeResult(ciphertext, ciphertextOffset, plaintextLength, contentType);
+        return new TlsDecodeResult(ciphertext, ciphertextOffset, plaintextLength, recordType);
     }
 
     protected byte[] getAdditionalData(long seqNo, short contentType, ProtocolVersion recordVersion,

@@ -77,7 +77,7 @@ public class TlsNullCipher
         return ciphertext;
     }
 
-    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, ProtocolVersion recordVersion,
+    public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,
         byte[] ciphertext, int offset, int len) throws IOException
     {
         int macSize = readMac.getSize();
@@ -88,7 +88,7 @@ public class TlsNullCipher
 
         int macInputLen = len - macSize;
 
-        byte[] expectedMac = readMac.calculateMac(seqNo, contentType, ciphertext, offset, macInputLen);
+        byte[] expectedMac = readMac.calculateMac(seqNo, recordType, ciphertext, offset, macInputLen);
 
         boolean badMac = !TlsUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + macInputLen);
         if (badMac)
@@ -96,6 +96,6 @@ public class TlsNullCipher
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 
-        return new TlsDecodeResult(ciphertext, offset, macInputLen, contentType);
+        return new TlsDecodeResult(ciphertext, offset, macInputLen, recordType);
     }
 }
