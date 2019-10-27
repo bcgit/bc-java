@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
@@ -66,8 +67,8 @@ public class TlsNullCipher
         return ciphertextLimit - writeMac.getSize();
     }
 
-    public byte[] encodePlaintext(long seqNo, short contentType, int headerAllocation, byte[] plaintext, int offset,
-        int len) throws IOException
+    public byte[] encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
+        byte[] plaintext, int offset, int len) throws IOException
     {
         byte[] mac = writeMac.calculateMac(seqNo, contentType, plaintext, offset, len);
         byte[] ciphertext = new byte[headerAllocation + len + mac.length];
@@ -76,8 +77,8 @@ public class TlsNullCipher
         return ciphertext;
     }
 
-    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, byte[] ciphertext, int offset, int len)
-        throws IOException
+    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, ProtocolVersion recordVersion,
+        byte[] ciphertext, int offset, int len) throws IOException
     {
         int macSize = readMac.getSize();
         if (len < macSize)

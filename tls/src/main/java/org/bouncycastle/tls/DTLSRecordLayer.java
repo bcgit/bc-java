@@ -536,13 +536,13 @@ class DTLSRecordLayer
             return -1;
         }
 
-        ProtocolVersion version = TlsUtils.readVersion(record, 1);
-        if (!version.isDTLS())
+        ProtocolVersion recordVersion = TlsUtils.readVersion(record, 1);
+        if (!recordVersion.isDTLS())
         {
             return -1;
         }
 
-        if (null != readVersion && !readVersion.equals(version))
+        if (null != readVersion && !readVersion.equals(recordVersion))
         {
             /*
              * Special-case handling for retransmitted ClientHello records.
@@ -563,8 +563,8 @@ class DTLSRecordLayer
 
         long macSeqNo = getMacSequenceNumber(recordEpoch.getEpoch(), seq);
 
-        TlsDecodeResult decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, record, RECORD_HEADER_LENGTH,
-            length);
+        TlsDecodeResult decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, recordVersion, record,
+            RECORD_HEADER_LENGTH, length);
 
         // TODO[tls13] Check decoded.contentType here (or add default clause below to deal with it)
 
@@ -577,7 +577,7 @@ class DTLSRecordLayer
 
         if (null == readVersion)
         {
-            readVersion = version;
+            readVersion = recordVersion;
         }
 
         switch (decoded.contentType)
@@ -799,14 +799,16 @@ class DTLSRecordLayer
             int recordEpoch = writeEpoch.getEpoch();
             long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
             long macSequenceNumber = getMacSequenceNumber(recordEpoch, recordSequenceNumber);
-            byte[] record = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType, RECORD_HEADER_LENGTH,
-                buf, off, len);
+            ProtocolVersion recordVersion = writeVersion;
+
+            byte[] record = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType, recordVersion,
+                RECORD_HEADER_LENGTH, buf, off, len);
 
             // TODO Check the ciphertext length?
             int cipherTextLength = record.length - RECORD_HEADER_LENGTH;
 
             TlsUtils.writeUint8(contentType, record, 0);
-            TlsUtils.writeVersion(writeVersion, record, 1);
+            TlsUtils.writeVersion(recordVersion, record, 1);
             TlsUtils.writeUint16(recordEpoch, record, 3);
             TlsUtils.writeUint48(recordSequenceNumber, record, 5);
             TlsUtils.writeUint16(cipherTextLength, record, 11);
