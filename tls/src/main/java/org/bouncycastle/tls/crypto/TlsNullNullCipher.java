@@ -30,9 +30,9 @@ public class TlsNullNullCipher
         return result;
     }
 
-    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, ProtocolVersion recordVersion,
+    public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,
         byte[] ciphertext, int offset, int len) throws IOException
     {
-        return new TlsDecodeResult(ciphertext, offset, len, contentType);
+        return new TlsDecodeResult(ciphertext, offset, len, recordType);
     }
 }

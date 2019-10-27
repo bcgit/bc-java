@@ -262,7 +262,7 @@ public class TlsBlockCipher
         return outBuf;
     }
 
-    public TlsDecodeResult decodeCiphertext(long seqNo, short contentType, ProtocolVersion recordVersion,
+    public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,
         byte[] ciphertext, int offset, int len) throws IOException
     {
         int blockSize = decryptCipher.getBlockSize();
@@ -301,7 +301,7 @@ public class TlsBlockCipher
 
         if (encryptThenMAC)
         {
-            byte[] expectedMac = readMac.calculateMac(seqNo, contentType, ciphertext, offset, len - macSize);
+            byte[] expectedMac = readMac.calculateMac(seqNo, recordType, ciphertext, offset, len - macSize);
 
             boolean badMac = !TlsUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext,
                 offset + len - macSize);
@@ -339,8 +339,8 @@ public class TlsBlockCipher
         {
             dec_output_length -= macSize;
 
-            byte[] expectedMac = readMac.calculateMacConstantTime(seqNo, contentType, ciphertext, offset, dec_output_length,
-                blocks_length - macSize, randomData);
+            byte[] expectedMac = readMac.calculateMacConstantTime(seqNo, recordType, ciphertext, offset,
+                dec_output_length, blocks_length - macSize, randomData);
 
             badMac |= !TlsUtils.constantTimeAreEqual(macSize, expectedMac, 0, ciphertext, offset + dec_output_length);
         }
@@ -350,7 +350,7 @@ public class TlsBlockCipher
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 
-        return new TlsDecodeResult(ciphertext, offset, dec_output_length, contentType);
+        return new TlsDecodeResult(ciphertext, offset, dec_output_length, recordType);
     }
 
     protected int checkPaddingConstantTime(byte[] buf, int off, int len, int blockSize, int macSize)
