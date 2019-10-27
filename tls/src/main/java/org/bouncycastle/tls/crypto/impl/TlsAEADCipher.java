@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.ContentType;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
@@ -127,17 +128,17 @@ public class TlsAEADCipher
 
     public int getCiphertextLimit(int plaintextLimit)
     {
-        return plaintextLimit + macSize + record_iv_length;
+        // TODO[tls13] If we support adding padding to TLSInnerPlaintext, this will need review
+        return plaintextLimit + macSize + record_iv_length + (isTLSv13 ? 1 : 0);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
     {
-        // TODO We ought to be able to ask the decryptCipher (independently of it's current state!)
-        return ciphertextLimit - macSize - record_iv_length;
+        return ciphertextLimit - macSize - record_iv_length - (isTLSv13 ? 1 : 0);
     }
 
     public byte[] encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
-        byte[] plaintext, int offset, int len) throws IOException
+        byte[] plaintext, int plaintextOffset, int plaintextLength) throws IOException
     {
         byte[] nonce = new byte[encryptImplicitNonce.length + record_iv_length];
 
@@ -159,11 +160,11 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        int plaintextOffset = offset;
-        int plaintextLength = len;
-        int ciphertextLength = encryptCipher.getOutputSize(plaintextLength);
+        // TODO[tls13] If we support adding padding to TLSInnerPlaintext, this will need review
+        int encryptionLength = encryptCipher.getOutputSize(plaintextLength + (isTLSv13 ? 1 : 0));
+        int ciphertextLength = record_iv_length + encryptionLength;
 
-        byte[] output = new byte[headerAllocation + record_iv_length + ciphertextLength];
+        byte[] output = new byte[headerAllocation + ciphertextLength];
         int outputPos = headerAllocation;
 
         if (record_iv_length != 0)
@@ -172,13 +173,19 @@ public class TlsAEADCipher
             outputPos += record_iv_length;
         }
 
-        byte[] additionalData = getAdditionalData(seqNo, contentType, recordVersion, plaintextLength);
+        // TODO[tls13] Here we are relying on RecordStream to write 'application_data' as opaque_type.
+        short recordType = isTLSv13 ? ContentType.application_data : contentType;
+
+        byte[] additionalData = getAdditionalData(seqNo, recordType, recordVersion, ciphertextLength, plaintextLength);
 
         try
         {
             encryptCipher.init(nonce, macSize, additionalData);
-            outputPos += encryptCipher.doFinal(plaintext, plaintextOffset, plaintextLength, TlsUtils.EMPTY_BYTES,
-                output, outputPos);
+
+            byte[] extraInput = isTLSv13 ? new byte[] { (byte)contentType } : TlsUtils.EMPTY_BYTES;
+
+            outputPos += encryptCipher.doFinal(plaintext, plaintextOffset, plaintextLength, extraInput, output,
+                outputPos);
         }
         catch (Exception e)
         {
@@ -195,9 +202,9 @@ public class TlsAEADCipher
     }
 
     public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,
-        byte[] ciphertext, int offset, int len) throws IOException
+        byte[] ciphertext, int ciphertextOffset, int ciphertextLength) throws IOException
     {
-        if (getPlaintextLimit(len) < 0)
+        if (getPlaintextLimit(ciphertextLength) < 0)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
@@ -208,7 +215,7 @@ public class TlsAEADCipher
         {
         case NONCE_RFC5288:
             System.arraycopy(decryptImplicitNonce, 0, nonce, 0, decryptImplicitNonce.length);
-            System.arraycopy(ciphertext, offset, nonce, nonce.length - record_iv_length, record_iv_length);
+            System.arraycopy(ciphertext, ciphertextOffset, nonce, nonce.length - record_iv_length, record_iv_length);
             break;
         case NONCE_RFC7905:
             TlsUtils.writeUint64(seqNo, nonce, nonce.length - 8);
@@ -221,17 +228,18 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        int ciphertextOffset = offset + record_iv_length;
-        int ciphertextLength = len - record_iv_length;
-        int plaintextLength = decryptCipher.getOutputSize(ciphertextLength);
-        byte[] additionalData = getAdditionalData(seqNo, recordType, recordVersion, plaintextLength);
+        int encryptionOffset = ciphertextOffset + record_iv_length;
+        int encryptionLength = ciphertextLength - record_iv_length;
+        int plaintextLength = decryptCipher.getOutputSize(encryptionLength);
+
+        byte[] additionalData = getAdditionalData(seqNo, recordType, recordVersion, ciphertextLength, plaintextLength);
 
         int outputPos;
         try
         {
             decryptCipher.init(nonce, macSize, additionalData);
-            outputPos = decryptCipher.doFinal(ciphertext, ciphertextOffset, ciphertextLength, TlsUtils.EMPTY_BYTES,
-                ciphertext, ciphertextOffset);
+            outputPos = decryptCipher.doFinal(ciphertext, encryptionOffset, encryptionLength, TlsUtils.EMPTY_BYTES,
+                ciphertext, encryptionOffset);
         }
         catch (Exception e)
         {
@@ -244,25 +252,57 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        // TODO[tls13] Strip padding and read true content type
-        return new TlsDecodeResult(ciphertext, ciphertextOffset, plaintextLength, recordType);
+        short contentType = recordType;
+        if (isTLSv13)
+        {
+            // Strip padding and read true content type from TLSInnerPlaintext
+            int pos = plaintextLength;
+            for (;;)
+            {
+                if (--pos < 0)
+                {
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                }
+
+                byte octet = ciphertext[encryptionOffset + pos];
+                if (0 != octet)
+                {
+                    contentType = (short)(octet & 0xFF);
+                    plaintextLength = pos;
+                    break;
+                }
+            }
+        }
+
+        return new TlsDecodeResult(ciphertext, encryptionOffset, plaintextLength, contentType);
     }
 
-    protected byte[] getAdditionalData(long seqNo, short contentType, ProtocolVersion recordVersion,
-        int ciphertextLength) throws IOException
+    protected byte[] getAdditionalData(long seqNo, short recordType, ProtocolVersion recordVersion,
+        int ciphertextLength, int plaintextLength) throws IOException
     {
-        /*
-         * additional_data = seq_num + TLSCompressed.type + TLSCompressed.version +
-         * TLSCompressed.length
-         */
-
-        byte[] additional_data = new byte[13];
-        TlsUtils.writeUint64(seqNo, additional_data, 0);
-        TlsUtils.writeUint8(contentType, additional_data, 8);
-        TlsUtils.writeVersion(recordVersion, additional_data, 9);
-        TlsUtils.writeUint16(ciphertextLength, additional_data, 11);
-
-        return additional_data;
+        if (isTLSv13)
+        {
+            /*
+             * TLSCiphertext.opaque_type || TLSCiphertext.legacy_record_version || TLSCiphertext.length
+             */
+            byte[] additional_data = new byte[5];
+            TlsUtils.writeUint8(recordType, additional_data, 0);
+            TlsUtils.writeVersion(recordVersion, additional_data, 1);
+            TlsUtils.writeUint16(ciphertextLength, additional_data, 3);
+            return additional_data;
+        }
+        else
+        {
+            /*
+             * seq_num + TLSCompressed.type + TLSCompressed.version + TLSCompressed.length
+             */
+            byte[] additional_data = new byte[13];
+            TlsUtils.writeUint64(seqNo, additional_data, 0);
+            TlsUtils.writeUint8(recordType, additional_data, 8);
+            TlsUtils.writeVersion(recordVersion, additional_data, 9);
+            TlsUtils.writeUint16(plaintextLength, additional_data, 11);
+            return additional_data;
+        }
     }
 
     private static int getNonceMode(boolean isTLSv13, int aeadType) throws IOException
