@@ -54,7 +54,7 @@ class RecordStream
     void setPlaintextLimit(int plaintextLimit)
     {
         this.plaintextLimit = plaintextLimit;
-        this.ciphertextLimit = this.plaintextLimit + 1024;
+        this.ciphertextLimit = readCipher.getCiphertextDecodeLimit(plaintextLimit);
     }
 
     void setWriteVersion(ProtocolVersion writeVersion)
@@ -86,6 +86,7 @@ class RecordStream
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
         this.readCipher = this.pendingCipher;
+        this.ciphertextLimit = readCipher.getCiphertextDecodeLimit(plaintextLimit);
         this.readSeqNo = new SequenceNumber();
     }
 
@@ -127,7 +128,7 @@ class RecordStream
 
         if (type == ContentType.application_data)
         {
-            applicationDataLimit = Math.min(getPlaintextLimit(), readCipher.getPlaintextLimit(length));
+            applicationDataLimit = Math.min(plaintextLimit, readCipher.getPlaintextLimit(length));
         }
 
         return new RecordPreview(recordSize, applicationDataLimit);
@@ -135,9 +136,9 @@ class RecordStream
 
     RecordPreview previewOutputRecord(int applicationDataSize)
     {
-        int applicationDataLimit = Math.max(0, Math.min(getPlaintextLimit(), applicationDataSize));
+        int applicationDataLimit = Math.max(0, Math.min(plaintextLimit, applicationDataSize));
 
-        int recordSize = writeCipher.getCiphertextLimit(applicationDataLimit) + RecordFormat.FRAGMENT_OFFSET;
+        int recordSize = writeCipher.getCiphertextEncodeLimit(applicationDataLimit) + RecordFormat.FRAGMENT_OFFSET;
 
         return new RecordPreview(recordSize, applicationDataLimit);
     }
@@ -272,11 +273,8 @@ class RecordStream
         byte[] record = writeCipher.encodePlaintext(seqNo, type, recordVersion, RecordFormat.FRAGMENT_OFFSET, plaintext,
             plaintextOffset, plaintextLength);
 
-        /*
-         * RFC 5246 6.2.3. The length may not exceed 2^14 + 2048.
-         */
         int ciphertextLength = record.length - RecordFormat.FRAGMENT_OFFSET;
-        checkLength(ciphertextLength, ciphertextLimit, AlertDescription.internal_error);
+        TlsUtils.checkUint16(ciphertextLength);
 
         TlsUtils.writeUint8(type, record, RecordFormat.TYPE_OFFSET);
         TlsUtils.writeVersion(recordVersion, record, RecordFormat.VERSION_OFFSET);

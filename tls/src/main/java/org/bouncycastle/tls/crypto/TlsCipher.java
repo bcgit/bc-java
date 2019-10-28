@@ -10,11 +10,24 @@ import org.bouncycastle.tls.ProtocolVersion;
 public interface TlsCipher
 {
     /**
-     * Return the maximum size for the ciphertext given plaintextlimit bytes of plaintext.
-     * @param plaintextLimit the maximum number of bytes of plaintext.
-     * @return the maximum size of the ciphertext for plaintextlimit bytes of input.
+     * Return the maximum input size for a ciphertext given a maximum output size for the plaintext
+     * of plaintextLimit bytes.
+     * 
+     * @param plaintextLimit
+     *            the maximum output size for the plaintext.
+     * @return the maximum input size of the ciphertext for plaintextlimit bytes of output.
      */
-    int getCiphertextLimit(int plaintextLimit);
+    int getCiphertextDecodeLimit(int plaintextLimit);
+
+    /**
+     * Return the maximum output size for a ciphertext given a maximum input size for the plaintext
+     * of plaintextLimit bytes.
+     * 
+     * @param plaintextLimit
+     *            the maximum input size for the plaintext.
+     * @return the maximum output size of the ciphertext for plaintextlimit bytes of input.
+     */
+    int getCiphertextEncodeLimit(int plaintextLimit);
 
     /**
      * Return the maximum size for the plaintext given ciphertextlimit bytes of ciphertext.

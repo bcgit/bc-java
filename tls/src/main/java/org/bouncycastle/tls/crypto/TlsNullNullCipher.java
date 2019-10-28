@@ -12,7 +12,12 @@ public class TlsNullNullCipher
 {
     public static final TlsNullNullCipher INSTANCE = new TlsNullNullCipher();
 
-    public int getCiphertextLimit(int plaintextLimit)
+    public int getCiphertextDecodeLimit(int plaintextLimit)
+    {
+        return plaintextLimit;
+    }
+
+    public int getCiphertextEncodeLimit(int plaintextLimit)
     {
         return plaintextLimit;
     }
