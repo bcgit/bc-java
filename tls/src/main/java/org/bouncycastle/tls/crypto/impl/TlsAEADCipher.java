@@ -126,7 +126,12 @@ public class TlsAEADCipher
         this.decryptCipher.init(dummyNonce, macSize, null);
     }
 
-    public int getCiphertextLimit(int plaintextLimit)
+    public int getCiphertextDecodeLimit(int plaintextLimit)
+    {
+        return plaintextLimit + macSize + record_iv_length + (isTLSv13 ? 256 : 0);
+    }
+
+    public int getCiphertextEncodeLimit(int plaintextLimit)
     {
         // TODO[tls13] If we support adding padding to TLSInnerPlaintext, this will need review
         return plaintextLimit + macSize + record_iv_length + (isTLSv13 ? 1 : 0);

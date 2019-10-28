@@ -125,35 +125,22 @@ public class TlsBlockCipher
         }
     }
 
-    public int getCiphertextLimit(int plaintextLimit)
+    public int getCiphertextDecodeLimit(int plaintextLimit)
+    {
+        int blockSize = decryptCipher.getBlockSize();
+        int macSize = readMac.getSize();
+        int maxPadding = 256;
+
+        return getCiphertextLength(blockSize, macSize, maxPadding, plaintextLimit);
+    }
+
+    public int getCiphertextEncodeLimit(int plaintextLimit)
     {
         int blockSize = encryptCipher.getBlockSize();
         int macSize = writeMac.getSize();
+        int maxPadding = useExtraPadding ? 256 : blockSize;
 
-        int ciphertextLimit = plaintextLimit;
-
-        // An explicit IV consumes 1 block
-        if (useExplicitIV)
-        {
-            ciphertextLimit += blockSize;
-        }
-
-        // Leave room for the MAC and (block-aligning) padding
-
-        ciphertextLimit += useExtraPadding ? 256 : blockSize;
-
-        if (encryptThenMAC)
-        {
-            ciphertextLimit -= (ciphertextLimit % blockSize);
-            ciphertextLimit += macSize;
-        }
-        else
-        {
-            ciphertextLimit += macSize;
-            ciphertextLimit -= (ciphertextLimit % blockSize);
-        }
-
-        return ciphertextLimit;
+        return getCiphertextLength(blockSize, macSize, maxPadding, plaintextLimit);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
@@ -407,6 +394,34 @@ public class TlsBlockCipher
         int x = r.nextInt();
         int n = lowestBitSet(x);
         return Math.min(n, max);
+    }
+
+    protected int getCiphertextLength(int blockSize, int macSize, int maxPadding, int plaintextLength)
+    {
+        int ciphertextLength = plaintextLength;
+
+        // An explicit IV consumes 1 block
+        if (useExplicitIV)
+        {
+            ciphertextLength += blockSize;
+        }
+
+        // Leave room for the MAC and (block-aligning) padding
+
+        ciphertextLength += maxPadding;
+
+        if (encryptThenMAC)
+        {
+            ciphertextLength -= (ciphertextLength % blockSize);
+            ciphertextLength += macSize;
+        }
+        else
+        {
+            ciphertextLength += macSize;
+            ciphertextLength -= (ciphertextLength % blockSize);
+        }
+
+        return ciphertextLength;
     }
 
     protected int lowestBitSet(int x)
