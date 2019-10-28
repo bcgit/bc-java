@@ -57,7 +57,12 @@ public class TlsNullCipher
         }
     }
 
-    public int getCiphertextLimit(int plaintextLimit)
+    public int getCiphertextDecodeLimit(int plaintextLimit)
+    {
+        return plaintextLimit + writeMac.getSize();
+    }
+
+    public int getCiphertextEncodeLimit(int plaintextLimit)
     {
         return plaintextLimit + writeMac.getSize();
     }
