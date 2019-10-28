@@ -48,10 +48,10 @@ public interface TlsCipher
      * @param plaintext array holding input plain text to the cipher.
      * @param offset offset into input array the plain text starts at.
      * @param len length of the plaintext in the array.
-     * @return the resulting cipher text (after 'headerAllocation' unused bytes).
+     * @return A {@link TlsEncodeResult} containing the result of encoding (after 'headerAllocation' unused bytes).
      * @throws IOException
      */
-    byte[] encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
+    TlsEncodeResult encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
         byte[] plaintext, int offset, int len) throws IOException;
 
     /**

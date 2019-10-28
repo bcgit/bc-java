@@ -27,12 +27,12 @@ public class TlsNullNullCipher
         return ciphertextLimit;
     }
 
-    public byte[] encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
+    public TlsEncodeResult encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
         byte[] plaintext, int offset, int len) throws IOException
     {
         byte[] result = new byte[headerAllocation + len];
         System.arraycopy(plaintext, offset, result, headerAllocation, len);
-        return result;
+        return new TlsEncodeResult(result, 0, result.length, contentType);
     }
 
     public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,

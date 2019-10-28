@@ -8,6 +8,7 @@ import java.net.SocketTimeoutException;
 
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
+import org.bouncycastle.tls.crypto.TlsEncodeResult;
 import org.bouncycastle.tls.crypto.TlsNullNullCipher;
 import org.bouncycastle.util.Arrays;
 
@@ -74,15 +75,15 @@ class DTLSRecordLayer
 
         System.arraycopy(message, 0, record, RECORD_HEADER_LENGTH, message.length);
 
-        sendDatagram(sender, record);
+        sendDatagram(sender, record, 0, record.length);
     }
 
-    private static void sendDatagram(DatagramSender sender, byte[] record)
+    private static void sendDatagram(DatagramSender sender, byte[] buf, int off, int len)
         throws IOException
     {
         try
         {
-            sender.send(record, 0, record.length);
+            sender.send(buf, off, len);
         }
         catch (InterruptedIOException e)
         {
@@ -801,19 +802,19 @@ class DTLSRecordLayer
             long macSequenceNumber = getMacSequenceNumber(recordEpoch, recordSequenceNumber);
             ProtocolVersion recordVersion = writeVersion;
 
-            byte[] record = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType, recordVersion,
-                RECORD_HEADER_LENGTH, buf, off, len);
+            TlsEncodeResult encoded = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType,
+                recordVersion, RECORD_HEADER_LENGTH, buf, off, len);
 
-            // TODO Check the ciphertext length?
-            int cipherTextLength = record.length - RECORD_HEADER_LENGTH;
+            int ciphertextLength = encoded.len - RECORD_HEADER_LENGTH;
+            TlsUtils.checkUint16(ciphertextLength);
 
-            TlsUtils.writeUint8(contentType, record, 0);
-            TlsUtils.writeVersion(recordVersion, record, 1);
-            TlsUtils.writeUint16(recordEpoch, record, 3);
-            TlsUtils.writeUint48(recordSequenceNumber, record, 5);
-            TlsUtils.writeUint16(cipherTextLength, record, 11);
+            TlsUtils.writeUint8(encoded.recordType, encoded.buf, encoded.off + 0);
+            TlsUtils.writeVersion(recordVersion, encoded.buf, encoded.off + 1);
+            TlsUtils.writeUint16(recordEpoch, encoded.buf, encoded.off + 3);
+            TlsUtils.writeUint48(recordSequenceNumber, encoded.buf, encoded.off + 5);
+            TlsUtils.writeUint16(ciphertextLength, encoded.buf, encoded.off + 11);
 
-            sendDatagram(transport, record);
+            sendDatagram(transport, encoded.buf, encoded.off, encoded.len);
         }
     }
 

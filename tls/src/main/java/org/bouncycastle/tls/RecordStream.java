@@ -8,6 +8,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
+import org.bouncycastle.tls.crypto.TlsEncodeResult;
 import org.bouncycastle.tls.crypto.TlsNullNullCipher;
 
 /**
@@ -267,19 +268,19 @@ class RecordStream
         long seqNo = writeSeqNo.nextValue(AlertDescription.internal_error);
         ProtocolVersion recordVersion = writeVersion;
 
-        byte[] record = writeCipher.encodePlaintext(seqNo, type, recordVersion, RecordFormat.FRAGMENT_OFFSET, plaintext,
-            plaintextOffset, plaintextLength);
+        TlsEncodeResult encoded = writeCipher.encodePlaintext(seqNo, type, recordVersion, RecordFormat.FRAGMENT_OFFSET,
+            plaintext, plaintextOffset, plaintextLength);
 
-        int ciphertextLength = record.length - RecordFormat.FRAGMENT_OFFSET;
+        int ciphertextLength = encoded.len - RecordFormat.FRAGMENT_OFFSET;
         TlsUtils.checkUint16(ciphertextLength);
 
-        TlsUtils.writeUint8(type, record, RecordFormat.TYPE_OFFSET);
-        TlsUtils.writeVersion(recordVersion, record, RecordFormat.VERSION_OFFSET);
-        TlsUtils.writeUint16(ciphertextLength, record, RecordFormat.LENGTH_OFFSET);
+        TlsUtils.writeUint8(encoded.recordType, encoded.buf, encoded.off + RecordFormat.TYPE_OFFSET);
+        TlsUtils.writeVersion(recordVersion, encoded.buf, encoded.off + RecordFormat.VERSION_OFFSET);
+        TlsUtils.writeUint16(ciphertextLength, encoded.buf, encoded.off + RecordFormat.LENGTH_OFFSET);
 
         try
         {
-            output.write(record);
+            output.write(encoded.buf, encoded.off, encoded.len);
         }
         catch (InterruptedIOException e)
         {

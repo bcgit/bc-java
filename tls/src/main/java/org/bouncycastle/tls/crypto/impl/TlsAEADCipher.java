@@ -10,6 +10,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
+import org.bouncycastle.tls.crypto.TlsEncodeResult;
 
 /**
  * A generic TLS 1.2 AEAD cipher.
@@ -150,8 +151,8 @@ public class TlsAEADCipher
         return ciphertextLimit - macSize - record_iv_length - (isTLSv13 ? 1 : 0);
     }
 
-    public byte[] encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
-        byte[] plaintext, int plaintextOffset, int plaintextLength) throws IOException
+    public TlsEncodeResult encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion,
+        int headerAllocation, byte[] plaintext, int plaintextOffset, int plaintextLength) throws IOException
     {
         byte[] nonce = new byte[encryptImplicitNonce.length + record_iv_length];
 
@@ -186,7 +187,6 @@ public class TlsAEADCipher
             outputPos += record_iv_length;
         }
 
-        // TODO[tls13] Here we are relying on RecordStream to write 'application_data' as opaque_type.
         short recordType = isTLSv13 ? ContentType.application_data : contentType;
 
         byte[] additionalData = getAdditionalData(seqNo, recordType, recordVersion, ciphertextLength, plaintextLength);
@@ -211,7 +211,7 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return output;
+        return new TlsEncodeResult(output, 0, output.length, recordType);
     }
 
     public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,
