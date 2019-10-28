@@ -104,7 +104,7 @@ class RecordStream
     {
         short type = TlsUtils.readUint8(recordHeader, RecordFormat.TYPE_OFFSET);
 
-        if (!appDataReady && type == ContentType.application_data)
+        if (!appDataReady && ContentType.application_data == type)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
@@ -126,9 +126,9 @@ class RecordStream
         int recordSize = RecordFormat.FRAGMENT_OFFSET + length;
         int applicationDataLimit = 0;
 
-        if (type == ContentType.application_data)
+        if (appDataReady && ContentType.application_data == type)
         {
-            applicationDataLimit = Math.min(plaintextLimit, readCipher.getPlaintextLimit(length));
+            applicationDataLimit = Math.max(0, Math.min(plaintextLimit, readCipher.getPlaintextLimit(length)));
         }
 
         return new RecordPreview(recordSize, applicationDataLimit);
@@ -138,7 +138,8 @@ class RecordStream
     {
         int applicationDataLimit = Math.max(0, Math.min(plaintextLimit, applicationDataSize));
 
-        int recordSize = writeCipher.getCiphertextEncodeLimit(applicationDataLimit) + RecordFormat.FRAGMENT_OFFSET;
+        int recordSize = RecordFormat.FRAGMENT_OFFSET
+            + writeCipher.getCiphertextEncodeLimit(applicationDataLimit, plaintextLimit);
 
         return new RecordPreview(recordSize, applicationDataLimit);
     }

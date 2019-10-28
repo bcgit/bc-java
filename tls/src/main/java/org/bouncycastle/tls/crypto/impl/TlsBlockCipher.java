@@ -134,13 +134,13 @@ public class TlsBlockCipher
         return getCiphertextLength(blockSize, macSize, maxPadding, plaintextLimit);
     }
 
-    public int getCiphertextEncodeLimit(int plaintextLimit)
+    public int getCiphertextEncodeLimit(int plaintextLength, int plaintextLimit)
     {
         int blockSize = encryptCipher.getBlockSize();
         int macSize = writeMac.getSize();
         int maxPadding = useExtraPadding ? 256 : blockSize;
 
-        return getCiphertextLength(blockSize, macSize, maxPadding, plaintextLimit);
+        return getCiphertextLength(blockSize, macSize, maxPadding, plaintextLength);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)

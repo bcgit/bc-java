@@ -17,9 +17,9 @@ public class TlsNullNullCipher
         return plaintextLimit;
     }
 
-    public int getCiphertextEncodeLimit(int plaintextLimit)
+    public int getCiphertextEncodeLimit(int plaintextLength, int plaintextLimit)
     {
-        return plaintextLimit;
+        return plaintextLength;
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
