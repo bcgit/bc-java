@@ -9,6 +9,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
+import org.bouncycastle.tls.crypto.TlsEncodeResult;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 
 /**
@@ -72,14 +73,14 @@ public class TlsNullCipher
         return ciphertextLimit - writeMac.getSize();
     }
 
-    public byte[] encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
+    public TlsEncodeResult encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
         byte[] plaintext, int offset, int len) throws IOException
     {
         byte[] mac = writeMac.calculateMac(seqNo, contentType, plaintext, offset, len);
         byte[] ciphertext = new byte[headerAllocation + len + mac.length];
         System.arraycopy(plaintext, offset, ciphertext, headerAllocation, len);
         System.arraycopy(mac, 0, ciphertext, headerAllocation + len, mac.length);
-        return ciphertext;
+        return new TlsEncodeResult(ciphertext, 0, ciphertext.length, contentType);
     }
 
     public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,
