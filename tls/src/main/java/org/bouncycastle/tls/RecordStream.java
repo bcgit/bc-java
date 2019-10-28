@@ -173,8 +173,6 @@ class RecordStream
         TlsDecodeResult decoded = decodeAndVerify(type, recordVersion, input, inputOff + RecordFormat.FRAGMENT_OFFSET,
             length);
 
-        // TODO[tls13] Check decoded.contentType here (or modify processRecord to deal with it)
-
         handler.processRecord(decoded.contentType, decoded.buf, decoded.off, decoded.len);
         return true;
     }
@@ -212,8 +210,6 @@ class RecordStream
         {
             inputRecord.reset();
         }
-
-        // TODO[tls13] Check decoded.contentType here (or modify processRecord to deal with it)
 
         handler.processRecord(decoded.contentType, decoded.buf, decoded.off, decoded.len);
         return true;

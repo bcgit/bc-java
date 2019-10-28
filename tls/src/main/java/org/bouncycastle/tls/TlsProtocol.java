@@ -559,8 +559,7 @@ public abstract class TlsProtocol
 //            break;
 //        }
         default:
-            // Record type should already have been checked
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
     }
 
