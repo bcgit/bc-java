@@ -128,13 +128,21 @@ public class TlsAEADCipher
 
     public int getCiphertextDecodeLimit(int plaintextLimit)
     {
-        return plaintextLimit + macSize + record_iv_length + (isTLSv13 ? 256 : 0);
+        return plaintextLimit + macSize + record_iv_length + (isTLSv13 ? 1 : 0);
     }
 
-    public int getCiphertextEncodeLimit(int plaintextLimit)
+    public int getCiphertextEncodeLimit(int plaintextLength, int plaintextLimit)
     {
-        // TODO[tls13] If we support adding padding to TLSInnerPlaintext, this will need review
-        return plaintextLimit + macSize + record_iv_length + (isTLSv13 ? 1 : 0);
+        int innerPlaintextLimit = plaintextLength;
+        if (isTLSv13)
+        {
+            // TODO[tls13] Add support for padding
+            int maxPadding = 0;
+
+            innerPlaintextLimit = 1 + Math.min(plaintextLimit, plaintextLength + maxPadding);
+        }
+
+        return innerPlaintextLimit + macSize + record_iv_length;
     }
 
     public int getPlaintextLimit(int ciphertextLimit)

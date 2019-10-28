@@ -20,14 +20,16 @@ public interface TlsCipher
     int getCiphertextDecodeLimit(int plaintextLimit);
 
     /**
-     * Return the maximum output size for a ciphertext given a maximum input size for the plaintext
-     * of plaintextLimit bytes.
+     * Return the maximum output size for a ciphertext given an actual input plaintext size of
+     * plaintextLength bytes and a maximum input plaintext size of plaintextLimit bytes.
      * 
+     * @param plaintextLength
+     *            the actual input size for the plaintext.
      * @param plaintextLimit
      *            the maximum input size for the plaintext.
      * @return the maximum output size of the ciphertext for plaintextlimit bytes of input.
      */
-    int getCiphertextEncodeLimit(int plaintextLimit);
+    int getCiphertextEncodeLimit(int plaintextLength, int plaintextLimit);
 
     /**
      * Return the maximum size for the plaintext given ciphertextlimit bytes of ciphertext.
