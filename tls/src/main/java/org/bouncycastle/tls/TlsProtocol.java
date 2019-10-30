@@ -753,7 +753,7 @@ public abstract class TlsProtocol
     {
         try
         {
-            return recordStream.previewRecordHeader(recordHeader, appDataReady);
+            return recordStream.previewRecordHeader(recordHeader);
         }
         catch (TlsFatalAlert e)
         {
@@ -1459,6 +1459,11 @@ public abstract class TlsProtocol
         throws IOException
     {
         recordStream.flush();
+    }
+
+    boolean isApplicationDataReady()
+    {
+        return appDataReady;
     }
 
     public boolean isClosed()
