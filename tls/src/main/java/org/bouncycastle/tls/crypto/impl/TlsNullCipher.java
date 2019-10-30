@@ -104,4 +104,9 @@ public class TlsNullCipher
 
         return new TlsDecodeResult(ciphertext, offset, macInputLen, recordType);
     }
+    
+    public boolean usesOpaqueRecordType()
+    {
+        return false;
+    }
 }

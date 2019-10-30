@@ -40,4 +40,9 @@ public class TlsNullNullCipher
     {
         return new TlsDecodeResult(ciphertext, offset, len, recordType);
     }
+
+    public boolean usesOpaqueRecordType()
+    {
+        return false;
+    }
 }

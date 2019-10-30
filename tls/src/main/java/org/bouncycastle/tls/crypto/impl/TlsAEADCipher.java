@@ -290,6 +290,11 @@ public class TlsAEADCipher
         return new TlsDecodeResult(ciphertext, encryptionOffset, plaintextLength, contentType);
     }
 
+    public boolean usesOpaqueRecordType()
+    {
+        return isTLSv13;
+    }
+
     protected byte[] getAdditionalData(long seqNo, short recordType, ProtocolVersion recordVersion,
         int ciphertextLength, int plaintextLength) throws IOException
     {
