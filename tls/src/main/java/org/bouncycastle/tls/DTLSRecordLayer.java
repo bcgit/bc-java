@@ -499,9 +499,10 @@ class DTLSRecordLayer
             return -1;
         }
 
-        short type = TlsUtils.readUint8(record, 0);
+        // TODO[dtls13] Deal with opaque record type for 1.3 AEAD ciphers
+        short recordType = TlsUtils.readUint8(record, 0);
 
-        switch (type)
+        switch (recordType)
         {
         case ContentType.alert:
         case ContentType.application_data:
@@ -520,7 +521,7 @@ class DTLSRecordLayer
         {
             recordEpoch = readEpoch;
         }
-        else if (type == ContentType.handshake && null != retransmitEpoch
+        else if (recordType == ContentType.handshake && null != retransmitEpoch
             && epoch == retransmitEpoch.getEpoch())
         {
             recordEpoch = retransmitEpoch;
@@ -553,7 +554,7 @@ class DTLSRecordLayer
             boolean isClientHelloFragment =
                     getReadEpoch() == 0
                 &&  length > 0
-                &&  ContentType.handshake == type
+                &&  ContentType.handshake == recordType
                 &&  HandshakeType.client_hello == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
 
             if (!isClientHelloFragment)
@@ -564,14 +565,16 @@ class DTLSRecordLayer
 
         long macSeqNo = getMacSequenceNumber(recordEpoch.getEpoch(), seq);
 
-        TlsDecodeResult decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, recordVersion, record,
+        TlsDecodeResult decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, recordType, recordVersion, record,
             RECORD_HEADER_LENGTH, length);
-
-        // TODO[tls13] Check decoded.contentType here (or add default clause below to deal with it)
 
         recordEpoch.getReplayWindow().reportAuthenticated(seq);
 
         if (decoded.len > this.plaintextLimit)
+        {
+            return -1;
+        }
+        if (decoded.len < 1 && decoded.contentType != ContentType.application_data)
         {
             return -1;
         }
@@ -697,6 +700,8 @@ class DTLSRecordLayer
 
             return -1;
         }
+        default:
+            return -1;
         }
 
         /*
