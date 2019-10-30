@@ -68,4 +68,6 @@ public interface TlsCipher
      */
     TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion, byte[] ciphertext,
         int offset, int len) throws IOException;
+
+    boolean usesOpaqueRecordType();
 }
