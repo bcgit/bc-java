@@ -341,6 +341,11 @@ public class TlsBlockCipher
         return new TlsDecodeResult(ciphertext, offset, dec_output_length, recordType);
     }
 
+    public boolean usesOpaqueRecordType()
+    {
+        return false;
+    }
+
     protected int checkPaddingConstantTime(byte[] buf, int off, int len, int blockSize, int macSize)
     {
         int end = off + len;
