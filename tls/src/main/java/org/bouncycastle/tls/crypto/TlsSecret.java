@@ -61,18 +61,25 @@ public interface TlsSecret
     /**
      * RFC 5869 HKDF-Expand function, with this secret's data as the pseudo-random key ('prk').
      * 
-     * @param hashAlgorithm the hash algorithm to instantiate HMAC with. See {@link HashAlgorithm} for values.
-     * @param info optional context and application specific information (can be zero-length).
-     * @param length length of output keying material in octets.
+     * @param hashAlgorithm
+     *            the hash algorithm to instantiate HMAC with. See {@link HashAlgorithm} for values.
+     * @param info
+     *            optional context and application specific information (can be zero-length).
+     * @param length
+     *            length of output keying material in octets.
      * @return output keying material (of 'length' octets).
      */
     TlsSecret hkdfExpand(short hashAlgorithm, byte[] info, int length);
 
     /**
-     * RFC 5869 HKDF-Extract function, with this secret's data as the 'salt'.
+     * RFC 5869 HKDF-Extract function, with this secret's data as the 'salt'. The {@link TlsSecret}
+     * does not keep a copy of the data. After this call, any attempt to use the {@link TlsSecret}
+     * will result in an {@link IllegalStateException} being thrown.
      * 
-     * @param hashAlgorithm the hash algorithm to instantiate HMAC with. See {@link HashAlgorithm} for values.
-     * @param ikm input keying material.
+     * @param hashAlgorithm
+     *            the hash algorithm to instantiate HMAC with. See {@link HashAlgorithm} for values.
+     * @param ikm
+     *            input keying material.
      * @return a pseudo-random key (of HashLen octets).
      */
     TlsSecret hkdfExtract(short hashAlgorithm, byte[] ikm);

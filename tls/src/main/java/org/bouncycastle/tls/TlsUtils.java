@@ -30,6 +30,7 @@ import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsHash;
@@ -1471,6 +1472,45 @@ public class TlsUtils
         int verify_data_length = securityParameters.getVerifyDataLength();
 
         return PRF(securityParameters, master_secret, asciiLabel, prfHash, verify_data_length).extract();
+    }
+
+    static void establish13Secrets(TlsContext context) throws IOException
+    {
+        TlsCrypto crypto = context.getCrypto();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        short hash = getHashAlgorithmForPRFAlgorithm(securityParameters.getPrfAlgorithm());
+        int hashLen = HashAlgorithm.getOutputSize(hash);
+        byte[] zeroes = new byte[hashLen];
+
+        byte[] psk = securityParameters.getPSK();
+        if (null == psk)
+        {
+            psk = zeroes;
+        }
+
+        byte[] ecdhe = zeroes;
+        TlsSecret sharedSecret = securityParameters.getSharedSecret();
+        if (null != sharedSecret)
+        {
+            securityParameters.sharedSecret = null;
+            ecdhe = sharedSecret.extract();
+        }
+
+        byte[] transcriptHash = crypto.createHash(hash).calculateHash();
+
+        TlsSecret earlySecret = crypto
+            .hkdfInit(hash)
+            .hkdfExtract(hash, psk);
+        TlsSecret handshakeSecret = TlsCryptoUtils
+            .hkdfExpandLabel(earlySecret, hash, "derived", transcriptHash, hashLen)
+            .hkdfExtract(hash, ecdhe);
+        TlsSecret masterSecret = TlsCryptoUtils
+            .hkdfExpandLabel(handshakeSecret, hash, "derived", transcriptHash, hashLen)
+            .hkdfExtract(hash, zeroes);
+
+        securityParameters.earlySecret = earlySecret;
+        securityParameters.handshakeSecret = handshakeSecret;
+        securityParameters.masterSecret = masterSecret;
     }
 
     public static short getHashAlgorithmForHMACAlgorithm(int macAlgorithm)
