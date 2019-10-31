@@ -17,11 +17,15 @@ public class SecurityParameters
     short maxFragmentLength = -1;
     int prfAlgorithm = -1;
     int verifyDataLength = -1;
+    TlsSecret earlySecret = null;
+    TlsSecret handshakeSecret = null;
     TlsSecret masterSecret = null;
+    TlsSecret sharedSecret = null;
     byte[] clientRandom = null;
     byte[] serverRandom = null;
     byte[] sessionHash = null;
     byte[] sessionID = null;
+    byte[] psk = null;
     byte[] pskIdentity = null;
     byte[] srpIdentity = null;
     byte[] tlsServerEndPoint = null;
@@ -54,10 +58,28 @@ public class SecurityParameters
         clientSigAlgsCert = null;
         clientSupportedGroups = null;
 
+        if (this.earlySecret != null)
+        {
+            this.earlySecret.destroy();
+            this.earlySecret = null;
+        }
+
+        if (this.handshakeSecret != null)
+        {
+            this.handshakeSecret.destroy();
+            this.handshakeSecret = null;
+        }
+
         if (this.masterSecret != null)
         {
             this.masterSecret.destroy();
             this.masterSecret = null;
+        }
+
+        if (this.sharedSecret != null)
+        {
+            this.sharedSecret.destroy();
+            this.sharedSecret = null;
         }
     }
 
@@ -136,9 +158,24 @@ public class SecurityParameters
         return verifyDataLength;
     }
 
+    public TlsSecret getEarlySecret()
+    {
+        return earlySecret;
+    }
+
+    public TlsSecret getHandshakeSecret()
+    {
+        return handshakeSecret;
+    }
+
     public TlsSecret getMasterSecret()
     {
         return masterSecret;
+    }
+
+    public TlsSecret getSharedSecret()
+    {
+        return sharedSecret;
     }
 
     public byte[] getClientRandom()
@@ -159,6 +196,11 @@ public class SecurityParameters
     public byte[] getSessionID()
     {
         return sessionID;
+    }
+
+    public byte[] getPSK()
+    {
+        return psk;
     }
 
     public byte[] getPSKIdentity()

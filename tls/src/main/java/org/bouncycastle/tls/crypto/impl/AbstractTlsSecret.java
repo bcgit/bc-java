@@ -114,6 +114,7 @@ public abstract class AbstractTlsSecret
         checkAlive();
 
         byte[] salt = data;
+        this.data = null;
 
         TlsCrypto crypto = getCrypto();
         TlsHMAC hmac = crypto.createHMAC(hashAlgorithm);
