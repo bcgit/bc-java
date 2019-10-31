@@ -119,9 +119,10 @@ public class TlsAEADCipher
 
         int nonceLength = fixed_iv_length + record_iv_length;
 
-        // NOTE: Ensure dummy nonce is not part of the generated sequence
+        // NOTE: Ensure dummy nonce is not part of the generated sequence(s)
         byte[] dummyNonce = new byte[nonceLength];
         dummyNonce[0] = (byte)~encryptImplicitNonce[0];
+        dummyNonce[1] = (byte)~decryptImplicitNonce[1];
 
         this.encryptCipher.init(dummyNonce, macSize, null);
         this.decryptCipher.init(dummyNonce, macSize, null);
