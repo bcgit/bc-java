@@ -341,6 +341,16 @@ public class TlsBlockCipher
         return new TlsDecodeResult(ciphertext, offset, dec_output_length, recordType);
     }
 
+    public void rekeyDecoder() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+    
+    public void rekeyEncoder() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
     public boolean usesOpaqueRecordType()
     {
         return false;
