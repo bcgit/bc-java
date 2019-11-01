@@ -21,6 +21,8 @@ public class SecurityParameters
     TlsSecret handshakeSecret = null;
     TlsSecret masterSecret = null;
     TlsSecret sharedSecret = null;
+    TlsSecret trafficSecretClient = null;
+    TlsSecret trafficSecretServer = null;
     byte[] clientRandom = null;
     byte[] serverRandom = null;
     byte[] sessionHash = null;
@@ -51,36 +53,19 @@ public class SecurityParameters
 
     void clear()
     {
-        sessionHash = null;
-        sessionID = null;
-        clientServerNames = null;
-        clientSigAlgs = null;
-        clientSigAlgsCert = null;
-        clientSupportedGroups = null;
+        this.sessionHash = null;
+        this.sessionID = null;
+        this.clientServerNames = null;
+        this.clientSigAlgs = null;
+        this.clientSigAlgsCert = null;
+        this.clientSupportedGroups = null;
 
-        if (this.earlySecret != null)
-        {
-            this.earlySecret.destroy();
-            this.earlySecret = null;
-        }
-
-        if (this.handshakeSecret != null)
-        {
-            this.handshakeSecret.destroy();
-            this.handshakeSecret = null;
-        }
-
-        if (this.masterSecret != null)
-        {
-            this.masterSecret.destroy();
-            this.masterSecret = null;
-        }
-
-        if (this.sharedSecret != null)
-        {
-            this.sharedSecret.destroy();
-            this.sharedSecret = null;
-        }
+        this.earlySecret = clearSecret(earlySecret);
+        this.handshakeSecret = clearSecret(handshakeSecret);
+        this.masterSecret = clearSecret(masterSecret);
+        this.sharedSecret = clearSecret(sharedSecret);
+        this.trafficSecretClient = clearSecret(trafficSecretClient);
+        this.trafficSecretServer = clearSecret(trafficSecretServer);
     }
 
     /**
@@ -176,6 +161,16 @@ public class SecurityParameters
     public TlsSecret getSharedSecret()
     {
         return sharedSecret;
+    }
+
+    public TlsSecret getTrafficSecretClient()
+    {
+        return trafficSecretClient;
+    }
+
+    public TlsSecret getTrafficSecretServer()
+    {
+        return trafficSecretServer;
     }
 
     public byte[] getClientRandom()
@@ -281,5 +276,14 @@ public class SecurityParameters
     public ProtocolVersion getNegotiatedVersion()
     {
         return negotiatedVersion;
+    }
+
+    private static TlsSecret clearSecret(TlsSecret secret)
+    {
+        if (null != secret)
+        {
+            secret.destroy();
+        }
+        return null;
     }
 }
