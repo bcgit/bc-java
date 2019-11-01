@@ -2,7 +2,9 @@ package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.TlsFatalAlert;
 
 /**
  * The cipher for TLS_NULL_WITH_NULL_NULL.
@@ -39,6 +41,16 @@ public class TlsNullNullCipher
         byte[] ciphertext, int offset, int len) throws IOException
     {
         return new TlsDecodeResult(ciphertext, offset, len, recordType);
+    }
+
+    public void rekeyDecoder() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+    
+    public void rekeyEncoder() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public boolean usesOpaqueRecordType()

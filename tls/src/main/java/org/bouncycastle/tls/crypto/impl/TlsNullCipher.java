@@ -104,7 +104,17 @@ public class TlsNullCipher
 
         return new TlsDecodeResult(ciphertext, offset, macInputLen, recordType);
     }
-    
+
+    public void rekeyDecoder() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    public void rekeyEncoder() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
     public boolean usesOpaqueRecordType()
     {
         return false;
