@@ -6,7 +6,7 @@ buildscript {
   }
 
   dependencies {
-    classpath "net.saliman:gradle-cobertura-plugin:2.2.8"
+    classpath "net.saliman:gradle-cobertura-plugin:2.6.1"
 
   }
 }
@@ -23,7 +23,7 @@ if (JavaVersion.current().isJava8Compatible())
 allprojects {
   apply plugin: 'java'
   apply plugin: 'idea'
-  //apply plugin: 'net.saliman.cobertura'
+  apply plugin: 'net.saliman.cobertura'
 
   repositories {
     mavenCentral()
@@ -53,7 +53,7 @@ subprojects {
 
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
-  version = '1.59'
+  version = '1.64'
 
   test {
     systemProperty 'bc.test.data.home', bcTestDataHome
