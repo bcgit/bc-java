@@ -8,6 +8,7 @@ import java.net.SocketTimeoutException;
 
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
+import org.bouncycastle.tls.crypto.TlsEncodeResult;
 import org.bouncycastle.tls.crypto.TlsNullNullCipher;
 import org.bouncycastle.util.Arrays;
 
@@ -74,15 +75,15 @@ class DTLSRecordLayer
 
         System.arraycopy(message, 0, record, RECORD_HEADER_LENGTH, message.length);
 
-        sendDatagram(sender, record);
+        sendDatagram(sender, record, 0, record.length);
     }
 
-    private static void sendDatagram(DatagramSender sender, byte[] record)
+    private static void sendDatagram(DatagramSender sender, byte[] buf, int off, int len)
         throws IOException
     {
         try
         {
-            sender.send(record, 0, record.length);
+            sender.send(buf, off, len);
         }
         catch (InterruptedIOException e)
         {
@@ -498,9 +499,10 @@ class DTLSRecordLayer
             return -1;
         }
 
-        short type = TlsUtils.readUint8(record, 0);
+        // TODO[dtls13] Deal with opaque record type for 1.3 AEAD ciphers
+        short recordType = TlsUtils.readUint8(record, 0);
 
-        switch (type)
+        switch (recordType)
         {
         case ContentType.alert:
         case ContentType.application_data:
@@ -519,7 +521,7 @@ class DTLSRecordLayer
         {
             recordEpoch = readEpoch;
         }
-        else if (type == ContentType.handshake && null != retransmitEpoch
+        else if (recordType == ContentType.handshake && null != retransmitEpoch
             && epoch == retransmitEpoch.getEpoch())
         {
             recordEpoch = retransmitEpoch;
@@ -536,13 +538,13 @@ class DTLSRecordLayer
             return -1;
         }
 
-        ProtocolVersion version = TlsUtils.readVersion(record, 1);
-        if (!version.isDTLS())
+        ProtocolVersion recordVersion = TlsUtils.readVersion(record, 1);
+        if (!recordVersion.isDTLS())
         {
             return -1;
         }
 
-        if (null != readVersion && !readVersion.equals(version))
+        if (null != readVersion && !readVersion.equals(recordVersion))
         {
             /*
              * Special-case handling for retransmitted ClientHello records.
@@ -552,7 +554,7 @@ class DTLSRecordLayer
             boolean isClientHelloFragment =
                     getReadEpoch() == 0
                 &&  length > 0
-                &&  ContentType.handshake == type
+                &&  ContentType.handshake == recordType
                 &&  HandshakeType.client_hello == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
 
             if (!isClientHelloFragment)
@@ -563,10 +565,8 @@ class DTLSRecordLayer
 
         long macSeqNo = getMacSequenceNumber(recordEpoch.getEpoch(), seq);
 
-        TlsDecodeResult decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, type, record, RECORD_HEADER_LENGTH,
-            length);
-
-        // TODO[tls13] Check decoded.contentType here (or add default clause below to deal with it)
+        TlsDecodeResult decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, recordType, recordVersion, record,
+            RECORD_HEADER_LENGTH, length);
 
         recordEpoch.getReplayWindow().reportAuthenticated(seq);
 
@@ -574,10 +574,14 @@ class DTLSRecordLayer
         {
             return -1;
         }
+        if (decoded.len < 1 && decoded.contentType != ContentType.application_data)
+        {
+            return -1;
+        }
 
         if (null == readVersion)
         {
-            readVersion = version;
+            readVersion = recordVersion;
         }
 
         switch (decoded.contentType)
@@ -696,6 +700,8 @@ class DTLSRecordLayer
 
             return -1;
         }
+        default:
+            return -1;
         }
 
         /*
@@ -799,19 +805,21 @@ class DTLSRecordLayer
             int recordEpoch = writeEpoch.getEpoch();
             long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
             long macSequenceNumber = getMacSequenceNumber(recordEpoch, recordSequenceNumber);
-            byte[] record = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType, RECORD_HEADER_LENGTH,
-                buf, off, len);
+            ProtocolVersion recordVersion = writeVersion;
 
-            // TODO Check the ciphertext length?
-            int cipherTextLength = record.length - RECORD_HEADER_LENGTH;
+            TlsEncodeResult encoded = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType,
+                recordVersion, RECORD_HEADER_LENGTH, buf, off, len);
 
-            TlsUtils.writeUint8(contentType, record, 0);
-            TlsUtils.writeVersion(writeVersion, record, 1);
-            TlsUtils.writeUint16(recordEpoch, record, 3);
-            TlsUtils.writeUint48(recordSequenceNumber, record, 5);
-            TlsUtils.writeUint16(cipherTextLength, record, 11);
+            int ciphertextLength = encoded.len - RECORD_HEADER_LENGTH;
+            TlsUtils.checkUint16(ciphertextLength);
 
-            sendDatagram(transport, record);
+            TlsUtils.writeUint8(encoded.recordType, encoded.buf, encoded.off + 0);
+            TlsUtils.writeVersion(recordVersion, encoded.buf, encoded.off + 1);
+            TlsUtils.writeUint16(recordEpoch, encoded.buf, encoded.off + 3);
+            TlsUtils.writeUint48(recordSequenceNumber, encoded.buf, encoded.off + 5);
+            TlsUtils.writeUint16(ciphertextLength, encoded.buf, encoded.off + 11);
+
+            sendDatagram(transport, encoded.buf, encoded.off, encoded.len);
         }
     }
 

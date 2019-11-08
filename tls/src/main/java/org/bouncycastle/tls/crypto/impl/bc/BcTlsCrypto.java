@@ -781,19 +781,33 @@ public class BcTlsCrypto
             return cipher.getOutputSize(inputLength);
         }
 
-        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] extraInput, byte[] output, int outputOffset)
+            throws IOException
         {
             int len = cipher.processBytes(input, inputOffset, inputLength, output, outputOffset);
 
+            int extraInputLength = extraInput.length;
+            if (extraInputLength > 0)
+            {
+                if (!isEncrypting)
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                len += cipher.processBytes(extraInput, 0, extraInputLength, output, outputOffset + len);
+            }
+
             try
             {
-                return len + cipher.doFinal(output, outputOffset + len);
+                len += cipher.doFinal(output, outputOffset + len);
             }
             catch (InvalidCipherTextException e)
             {
                 // TODO:
                 throw new RuntimeCryptoException(e.toString());
             }
+
+            return len;
         }
     }
 
