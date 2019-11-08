@@ -559,8 +559,7 @@ public abstract class TlsProtocol
 //            break;
 //        }
         default:
-            // Record type should already have been checked
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
     }
 
@@ -754,7 +753,7 @@ public abstract class TlsProtocol
     {
         try
         {
-            return recordStream.previewRecordHeader(recordHeader, appDataReady);
+            return recordStream.previewRecordHeader(recordHeader);
         }
         catch (TlsFatalAlert e)
         {
@@ -1460,6 +1459,11 @@ public abstract class TlsProtocol
         throws IOException
     {
         recordStream.flush();
+    }
+
+    boolean isApplicationDataReady()
+    {
+        return appDataReady;
     }
 
     public boolean isClosed()
