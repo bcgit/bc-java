@@ -534,4 +534,19 @@ class TestUtils
             return value++;
         }
     }
+
+    // needed for FIPS.
+    static boolean hasClass(String name)
+    {
+        try
+        {
+            Class clazz = TestUtils.class.getClassLoader().loadClass(name);
+
+            return clazz != null;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
 }
