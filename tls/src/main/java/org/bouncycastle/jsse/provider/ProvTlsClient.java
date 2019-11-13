@@ -402,17 +402,17 @@ class ProvTlsClient
 
         if (isResumed)
         {
-            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+            LOG.finer("Server resumed session: " + Hex.toHexString(sessionID));
         }
         else
         {
             if (sessionID == null || sessionID.length < 1)
             {
-                LOG.fine("Server did not specify a session ID");
+                LOG.finer("Server did not specify a session ID");
             }
             else
             {
-                LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+                LOG.finer("Server specified new session: " + Hex.toHexString(sessionID));
             }
 
             if (!manager.getEnableSessionCreation())
