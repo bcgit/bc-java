@@ -4211,4 +4211,30 @@ public class TlsUtils
         handshakeHash.update(synthetic, 0, synthetic.length);
     }
 
+    static TlsCredentials establishClientCredentials(TlsAuthentication clientAuthentication,
+        CertificateRequest certificateRequest) throws IOException
+    {
+        return validateCredentials(clientAuthentication.getClientCredentials(certificateRequest));
+    }
+
+    static TlsCredentials establishServerCredentials(TlsServer server) throws IOException
+    {
+        return validateCredentials(server.getCredentials());
+    }
+
+    static TlsCredentials validateCredentials(TlsCredentials credentials) throws IOException
+    {
+        if (null != credentials)
+        {
+            int count = 0;
+            count += (credentials instanceof TlsCredentialedAgreement) ? 1 : 0;
+            count += (credentials instanceof TlsCredentialedDecryptor) ? 1 : 0;
+            count += (credentials instanceof TlsCredentialedSigner) ? 1 : 0;
+            if (count != 1)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
+        return credentials;
+    }
 }

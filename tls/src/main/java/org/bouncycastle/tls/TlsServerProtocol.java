@@ -533,8 +533,7 @@ public class TlsServerProtocol
                 this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
                 this.keyExchange = TlsUtils.initKeyExchangeServer(tlsServerContext, tlsServer);
-
-                this.serverCredentials = validateCredentials(tlsServer.getCredentials());
+                this.serverCredentials = TlsUtils.establishServerCredentials(tlsServer);
 
                 // Server certificate
                 {
