@@ -45,7 +45,7 @@ public class DTLSVerifier
                 byte[] expectedCookie = cookieMAC.calculateMAC();
                 resetCookieMAC = false;
 
-                if (Arrays.areEqual(expectedCookie, request.getClientHello().getCookie()))
+                if (Arrays.constantTimeAreEqual(expectedCookie, request.getClientHello().getCookie()))
                 {
                     return request;
                 }
