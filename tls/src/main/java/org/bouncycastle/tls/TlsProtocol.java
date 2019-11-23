@@ -1628,23 +1628,6 @@ public abstract class TlsProtocol
         return supplementalData;
     }
 
-    protected static TlsCredentials validateCredentials(TlsCredentials credentials)
-        throws IOException
-    {
-        if (credentials != null)
-        {
-            int count = 0;
-            count += (credentials instanceof TlsCredentialedAgreement) ? 1 : 0;
-            count += (credentials instanceof TlsCredentialedDecryptor) ? 1 : 0;
-            count += (credentials instanceof TlsCredentialedSigner) ? 1 : 0;
-            if (count != 1)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-        }
-        return credentials;
-    }
-
     protected static void writeExtensions(OutputStream output, Hashtable extensions)
         throws IOException
     {

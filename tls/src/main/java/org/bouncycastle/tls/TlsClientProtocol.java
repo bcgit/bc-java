@@ -566,7 +566,7 @@ public class TlsClientProtocol
                 {
                     Certificate clientCertificate = null;
 
-                    clientCredentials = validateCredentials(this.authentication.getClientCredentials(certificateRequest));
+                    clientCredentials = TlsUtils.establishClientCredentials(authentication, certificateRequest);
                     if (null == clientCredentials)
                     {
                         this.keyExchange.skipClientCredentials();
