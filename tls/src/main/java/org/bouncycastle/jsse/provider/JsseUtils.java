@@ -34,6 +34,7 @@ import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -446,6 +447,13 @@ abstract class JsseUtils
         TlsUtils.addIfSupported(result, crypto, new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
 
         return result;
+    }
+
+    static boolean isTLSv12(String protocol)
+    {
+        ProtocolVersion protocolVersion = ProvSSLContextSpi.getProtocolVersion(protocol);
+
+        return null != protocolVersion && TlsUtils.isTLSv12(protocolVersion); 
     }
 
     public static boolean isUsableKeyForServer(int keyExchangeAlgorithm, PrivateKey privateKey) throws IOException
