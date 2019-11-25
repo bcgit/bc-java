@@ -264,7 +264,7 @@ public class DTLSClientProtocol
 
         if (null != state.certificateRequest)
         {
-            state.clientCredentials = TlsUtils.establishClientCredentials(state.authentication,
+            state.clientCredentials = TlsUtils.establishClientCredentials(securityParameters, state.authentication,
                 state.certificateRequest);
 
             /*
