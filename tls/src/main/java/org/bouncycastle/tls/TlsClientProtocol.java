@@ -554,7 +554,6 @@ public class TlsClientProtocol
                 }
                 this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
 
-                TlsCredentials clientCredentials = null;
                 TlsCredentialedSigner credentialedSigner = null;
                 TlsStreamSigner streamSigner = null;
 
@@ -566,7 +565,8 @@ public class TlsClientProtocol
                 {
                     Certificate clientCertificate = null;
 
-                    clientCredentials = TlsUtils.establishClientCredentials(authentication, certificateRequest);
+                    TlsCredentials clientCredentials = TlsUtils.establishClientCredentials(securityParameters,
+                        authentication, certificateRequest);
                     if (null == clientCredentials)
                     {
                         this.keyExchange.skipClientCredentials();
