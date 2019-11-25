@@ -4211,9 +4211,11 @@ public class TlsUtils
         handshakeHash.update(synthetic, 0, synthetic.length);
     }
 
-    static TlsCredentials establishClientCredentials(TlsAuthentication clientAuthentication,
-        CertificateRequest certificateRequest) throws IOException
+    static TlsCredentials establishClientCredentials(SecurityParameters securityParameters,
+        TlsAuthentication clientAuthentication, CertificateRequest certificateRequest) throws IOException
     {
+        securityParameters.serverSigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
+
         return validateCredentials(clientAuthentication.getClientCredentials(certificateRequest));
     }
 
