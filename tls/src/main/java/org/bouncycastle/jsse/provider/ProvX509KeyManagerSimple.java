@@ -207,32 +207,9 @@ class ProvX509KeyManagerSimple
         return false;
     }
 
-    static boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)
+    private static boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)
     {
-        try
-        {
-            boolean[] keyUsage = c.getKeyUsage();
-            if (null == keyUsage)
-            {
-                return true;
-            }
-
-            int bits = 0, count = Math.min(32, keyUsage.length);
-            for (int i = 0; i < count; ++i)
-            {
-                if (keyUsage[i])
-                {
-                    int u = i & 7, v = i - u;
-                    bits |= (0x80 >>> u) << v;
-                }
-            }
-
-            return (bits & keyUsageBits) == keyUsageBits;
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
+        return ProvX509KeyManager.isSuitableKeyUsage(keyUsageBits, c);
     }
 
     private static class Credential

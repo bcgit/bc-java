@@ -381,6 +381,11 @@ class ProvSSLContextSpi
         return tmf.getTrustManagers();
     }
 
+    static ProtocolVersion getProtocolVersion(String protocolVersionName)
+    {
+        return SUPPORTED_PROTOCOL_MAP.get(protocolVersionName);
+    }
+
     static String getProtocolVersionName(ProtocolVersion protocolVersion)
     {
         if (null != protocolVersion)
