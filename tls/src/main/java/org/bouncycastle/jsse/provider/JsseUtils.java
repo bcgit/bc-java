@@ -276,7 +276,7 @@ abstract class JsseUtils
         }
     }
 
-    public static String getSignatureSchemeName(SignatureAndHashAlgorithm sigAndHashAlg)
+    static String getSignatureSchemeName(SignatureAndHashAlgorithm sigAndHashAlg)
     {
         short hashAlgorithm = sigAndHashAlg.getHash(), signatureAlgorithm = sigAndHashAlg.getSignature();
 
@@ -328,7 +328,7 @@ abstract class JsseUtils
         return null;
     }
 
-    public static String[] getSignatureSchemeNames(Vector sigAndHashAlgs)
+    static String[] getSignatureSchemeNames(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
     {
         if (null == sigAndHashAlgs)
         {
@@ -339,7 +339,7 @@ abstract class JsseUtils
         ArrayList<String> result = new ArrayList<String>(count);
         for (int i = 0; i < count; ++i)
         {
-            String name = getSignatureSchemeName((SignatureAndHashAlgorithm)sigAndHashAlgs.elementAt(i));
+            String name = getSignatureSchemeName(sigAndHashAlgs.elementAt(i));
             if (null != name)
             {
                 result.add(name);

@@ -56,7 +56,8 @@ class ProvSSLSession
     @Override
     public String[] getLocalSupportedSignatureAlgorithms()
     {
-        throw new UnsupportedOperationException();
+        // TODO Should we store these in SessionParameters?
+        return null;
     }
 
     @Override
@@ -68,7 +69,8 @@ class ProvSSLSession
     @Override
     public String[] getPeerSupportedSignatureAlgorithms()
     {
-        throw new UnsupportedOperationException();
+        // TODO Should we store these in SessionParameters?
+        return null;
     }
 
     @Override
