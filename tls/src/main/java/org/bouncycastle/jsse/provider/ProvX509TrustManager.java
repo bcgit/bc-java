@@ -36,6 +36,7 @@ import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 class ProvX509TrustManager
     extends BCX509ExtendedTrustManager
@@ -319,6 +320,24 @@ class ProvX509TrustManager
         {
             throw new CertificateException("Unknown endpoint ID algorithm: " + endpointIDAlg);
         }
+    }
+
+    private static BCAlgorithmConstraints getAlgorithmConstraints(BCExtendedSSLSession sslSession, BCSSLParameters sslParameters)
+    {
+        BCAlgorithmConstraints configAlgorithmConstraints = null;
+        if (null != sslParameters)
+        {
+            configAlgorithmConstraints = sslParameters.getAlgorithmConstraints();
+        }
+
+        if (null != sslSession && JsseUtils.isTLSv12(sslSession.getProtocol()))
+        {
+            String[] localSigAlgs = sslSession.getLocalSupportedSignatureAlgorithms();
+
+            return new ProvAlgorithmConstraints(configAlgorithmConstraints, localSigAlgs, false);
+        }
+
+        return new ProvAlgorithmConstraints(configAlgorithmConstraints, false);
     }
 
     private static BCSNIHostName getSNIHostName(BCExtendedSSLSession sslSession)
