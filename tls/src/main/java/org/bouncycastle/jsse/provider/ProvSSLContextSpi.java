@@ -456,7 +456,7 @@ class ProvSSLContextSpi
         String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
-        int[] result = new int[enabledCipherSuites.length];
+        int[] candidates = new int[enabledCipherSuites.length];
 
         int count = 0;
         for (String enabledCipherSuite : enabledCipherSuites)
@@ -477,10 +477,18 @@ class ProvSSLContextSpi
              * there must be at least one suitable NamedGroup available.
              */
 
-            result[count++] = candidate.getCipherSuite();
+            candidates[count++] = candidate.getCipherSuite();
         }
 
-        return TlsUtils.getSupportedCipherSuites(crypto, result, count);
+        int[] result = TlsUtils.getSupportedCipherSuites(crypto, candidates, count);
+
+        if (result.length < 1)
+        {
+            // TODO[jsse] Refactor so that this can be an SSLHandshakeException?
+            throw new IllegalStateException("No usable cipher suites enabled");
+        }
+
+        return result;
     }
 
     ProtocolVersion[] getActiveProtocolVersions(ProvSSLParameters sslParameters)
@@ -514,6 +522,12 @@ class ProvSSLContextSpi
              */
 
             result.add(candidate);
+        }
+
+        if (result.isEmpty())
+        {
+            // TODO[jsse] Refactor so that this can be an SSLHandshakeException?
+            throw new IllegalStateException("No usable protocols enabled");
         }
 
         return result.toArray(new ProtocolVersion[result.size()]);
