@@ -42,6 +42,7 @@ public class PSSSignatureSpi
     private byte trailer;
     private boolean isRaw;
     private RSAKeyParameters key;
+    private SecureRandom random;
 
     private org.bouncycastle.crypto.signers.PSSSigner pss;
     private boolean isInitState = true;
@@ -123,15 +124,8 @@ public class PSSSignatureSpi
         SecureRandom random)
         throws InvalidKeyException
     {
-        if (!(privateKey instanceof RSAPrivateKey))
-        {
-            throw new InvalidKeyException("Supplied key is not a RSAPrivateKey instance");
-        }
-
-        key = RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey);
-        pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength, trailer);
-        pss.init(true, new ParametersWithRandom(key, random));
-        isInitState = true;
+        this.random = random;
+        engineInitSign(privateKey);
     }
 
     protected void engineInitSign(
@@ -145,7 +139,16 @@ public class PSSSignatureSpi
 
         key = RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey);
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength, trailer);
-        pss.init(true, key);
+
+        if (random != null)
+        {
+            pss.init(true, new ParametersWithRandom(key, random));
+        }
+        else
+        {
+            pss.init(true, key);
+        }
+
         isInitState = true;
     }
 
