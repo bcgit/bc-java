@@ -384,6 +384,17 @@ public class CMSSignedData
     }
 
     /**
+     * return the ASN.1 encoded representation of this object using the specified encoding.
+     *
+     * @param encoding the ASN.1 encoding format to use ("BER", "DL", or "DER").
+     */
+    public byte[] getEncoded(String encoding)
+        throws IOException
+    {
+        return contentInfo.getEncoded(encoding);
+    }
+
+    /**
      * Verify all the SignerInformation objects and their associated counter signatures attached
      * to this CMS SignedData object.
      *

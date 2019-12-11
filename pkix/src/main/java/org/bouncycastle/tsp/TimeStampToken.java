@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
@@ -315,7 +316,18 @@ public class TimeStampToken
     public byte[] getEncoded() 
         throws IOException
     {
-        return tsToken.getEncoded();
+        return tsToken.getEncoded(ASN1Encoding.DL);
+    }
+
+    /**
+     * return the ASN.1 encoded representation of this object using the specified encoding.
+     *
+     * @param encoding the ASN.1 encoding format to use ("BER", "DL", or "DER").
+     */
+    public byte[] getEncoded(String encoding)
+        throws IOException
+    {
+        return tsToken.getEncoded(encoding);
     }
 
     // perhaps this should be done using an interface on the ASN.1 classes...
