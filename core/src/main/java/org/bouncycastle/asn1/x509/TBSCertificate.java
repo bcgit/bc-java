@@ -230,6 +230,10 @@ public class TBSCertificate
                 return seq;
             }
         }
+        else
+        {
+            return seq;
+        }
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
