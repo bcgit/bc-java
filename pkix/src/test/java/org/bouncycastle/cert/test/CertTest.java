@@ -19,6 +19,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.CRL;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -4221,8 +4222,28 @@ public class CertTest
         checkSelfSignedCertificateAndKey(20, gost_2012_cert, "ECGOST3410-2012-256", gost_2012_privateKey);
         checkCRL(1, crl1);
 
-        checkCertificate(21, x25519Cert,
+        System.setProperty("org.bouncycastle.x509.allow_non-der_tbscert", "true");
+
+        checkCertificate(9, x25519Cert,
             KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
+
+        System.setProperty("org.bouncycastle.x509.allow_non-der_tbscert", "false");
+
+        try
+        {
+            CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
+
+            Certificate cert = fact.generateCertificate(new ByteArrayInputStream(x25519Cert));
+
+            cert.verify(KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
+
+            fail("no exception");
+        }
+        catch (SignatureException e)
+        {
+            isEquals("certificate does not verify with supplied key", e.getMessage());
+        }
+
         checkSelfSignedCertificate(22, CertificateFactory.getInstance("X.509", BC).generateCertificate(this.getClass().getResourceAsStream("xmss3.pem")).getEncoded());
 
         checkCreation1();
