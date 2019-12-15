@@ -27,7 +27,9 @@ import java.util.Set;
 
 import javax.crypto.KeyAgreement;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
@@ -91,11 +93,13 @@ public class EdECTest
 
         Signature sig = Signature.getInstance("EDDSA", "BC");
 
-        Certificate x25519Cert = Certificate.getInstance(EdECTest.x25519Cert);
+        ASN1Sequence x25519Seq = ASN1Sequence.getInstance(EdECTest.x25519Cert);
+        Certificate x25519Cert = Certificate.getInstance(x25519Seq);
 
         sig.initVerify(pub);
 
-        sig.update(x25519Cert.getTBSCertificate().getEncoded());
+        // yes, the demo certificate is invalid...
+        sig.update(x25519Seq.getObjectAt(0).toASN1Primitive().getEncoded(ASN1Encoding.DL));
 
         isTrue(sig.verify(x25519Cert.getSignature().getBytes()));
 
