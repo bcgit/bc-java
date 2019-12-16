@@ -237,6 +237,11 @@ class ProvSSLEngine
         return handshakeSession;
     }
 
+    public BCExtendedSSLSession getBCSession()
+    {
+        return getSessionImpl();
+    }
+
     public synchronized BCSSLConnection getConnection()
     {
         return connection;
@@ -296,11 +301,9 @@ class ProvSSLEngine
     }
 
     @Override
-    public synchronized SSLSession getSession()
+    public SSLSession getSession()
     {
-        ProvSSLSession sslSession = (null == connection) ? ProvSSLSession.NULL_SESSION : connection.getSession();
-
-        return sslSession.getExportSSLSession();
+        return getSessionImpl().getExportSSLSession();
     }
 
     @Override
@@ -705,6 +708,11 @@ class ProvSSLEngine
     public synchronized String selectApplicationProtocol(List<String> protocols)
     {
         return sslParameters.getEngineAPSelector().select(this, protocols);
+    }
+
+    ProvSSLSession getSessionImpl()
+    {
+        return null == connection ? ProvSSLSession.NULL_SESSION : connection.getSession();
     }
 
     private RecordPreview getRecordPreview(ByteBuffer src)

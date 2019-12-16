@@ -216,6 +216,11 @@ class ProvSSLSocketWrap
         return handshakeSession;
     }
 
+    public BCExtendedSSLSession getBCSession()
+    {
+        return getSessionImpl();
+    }
+
     @Override
     public SocketChannel getChannel()
     {
@@ -345,13 +350,9 @@ class ProvSSLSocketWrap
     }
 
     @Override
-    public synchronized SSLSession getSession()
+    public SSLSession getSession()
     {
-        getConnection();
-
-        ProvSSLSession sslSession = (null == connection) ? ProvSSLSession.NULL_SESSION : connection.getSession();
-
-        return sslSession.getExportSSLSession();
+        return getSessionImpl().getExportSSLSession();
     }
 
     @Override
@@ -658,6 +659,13 @@ class ProvSSLSocketWrap
     public synchronized String selectApplicationProtocol(List<String> protocols)
     {
         return sslParameters.getSocketAPSelector().select(this, protocols);
+    }
+
+    synchronized ProvSSLSession getSessionImpl()
+    {
+        getConnection();
+
+        return null == connection ? ProvSSLSession.NULL_SESSION : connection.getSession();
     }
 
     synchronized void handshakeIfNecessary(boolean resumable) throws IOException

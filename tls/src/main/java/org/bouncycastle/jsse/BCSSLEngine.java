@@ -16,6 +16,8 @@ public interface BCSSLEngine
 
     BCExtendedSSLSession getBCHandshakeSession();
 
+    BCExtendedSSLSession getBCSession();
+
     /**
      * Returns an accessor for extended SSL connection data. Unlike
      * {@link BCSSLSocket#getConnection} this method does not block until handshaking is complete.
