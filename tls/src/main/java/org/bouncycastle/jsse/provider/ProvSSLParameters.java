@@ -44,6 +44,7 @@ final class ProvSSLParameters
     private String[] applicationProtocols = new String[0];
     private BCApplicationProtocolSelector<SSLEngine> engineAPSelector;
     private BCApplicationProtocolSelector<SSLSocket> socketAPSelector;
+    private ProvSSLSession sessionToResume;
 
     ProvSSLParameters(ProvSSLContextSpi context, String[] cipherSuites, String[] protocols)
     {
@@ -66,6 +67,7 @@ final class ProvSSLParameters
         p.applicationProtocols = applicationProtocols;
         p.engineAPSelector = engineAPSelector;
         p.socketAPSelector = socketAPSelector;
+        p.sessionToResume = sessionToResume;
         return p;
     }
 
@@ -223,5 +225,15 @@ final class ProvSSLParameters
     public void setSocketAPSelector(BCApplicationProtocolSelector<SSLSocket> socketAPSelector)
     {
         this.socketAPSelector = socketAPSelector;
+    }
+
+    public ProvSSLSession getSessionToResume()
+    {
+        return sessionToResume;
+    }
+
+    public void setSessionToResume(ProvSSLSession sessionToResume)
+    {
+        this.sessionToResume = sessionToResume;
     }
 }
