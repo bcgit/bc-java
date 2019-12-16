@@ -335,6 +335,24 @@ class ProvSSLSocketDirect
         sslParameters.setSocketAPSelector(selector);
     }
 
+    public synchronized void setBCSessionToResume(BCExtendedSSLSession session)
+    {
+        if (null == session)
+        {
+            throw new NullPointerException("'session' cannot be null");
+        }
+        if (!(session instanceof ProvSSLSession))
+        {
+            throw new IllegalArgumentException("Session-to-resume must be a session returned from 'getBCSession'");
+        }
+        if (null != protocol)
+        {
+            throw new IllegalArgumentException("Session-to-resume cannot be set after the handshake has begun");
+        }
+
+        sslParameters.setSessionToResume((ProvSSLSession)session);
+    }
+
     @Override
     public synchronized void setEnabledCipherSuites(String[] suites)
     {
