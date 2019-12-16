@@ -273,8 +273,12 @@ class ProvTlsClient
     @Override
     public TlsSession getSessionToResume()
     {
-        ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
-        ProvSSLSession availableSSLSession = sslSessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
+        ProvSSLSession availableSSLSession = sslParameters.getSessionToResume();
+        if (null == availableSSLSession)
+        {
+            ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
+            availableSSLSession = sslSessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
+        }
 
         if (null != availableSSLSession)
         {

@@ -14,6 +14,8 @@ public interface BCSSLEngine
 
     void setBCHandshakeApplicationProtocolSelector(BCApplicationProtocolSelector<SSLEngine> selector);
 
+    void setBCSessionToResume(BCExtendedSSLSession session);
+
     BCExtendedSSLSession getBCHandshakeSession();
 
     BCExtendedSSLSession getBCSession();
