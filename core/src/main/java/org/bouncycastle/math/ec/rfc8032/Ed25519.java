@@ -333,7 +333,7 @@ public abstract class Ed25519
         return (x[w] >>> b) & 15;
     }
 
-    private static byte[] getWNAF(int[] n, int width)
+    private static byte[] getWnafVar(int[] n, int width)
     {
 //        assert n[SCALAR_INTS - 1] >>> 28 == 0;
 
@@ -1095,8 +1095,6 @@ public abstract class Ed25519
 
     private static void scalarMult(byte[] k, PointAffine p, PointAccum r)
     {
-        precompute();
-
         int[] n = new int[SCALAR_INTS];
         decodeScalar(k, 0, n);
 
@@ -1233,8 +1231,8 @@ public abstract class Ed25519
 
         final int width = 5;
 
-        byte[] ws_b = getWNAF(nb, WNAF_WIDTH_BASE);
-        byte[] ws_p = getWNAF(np, width);
+        byte[] ws_b = getWnafVar(nb, WNAF_WIDTH_BASE);
+        byte[] ws_p = getWnafVar(np, width);
 
         PointExt[] tp = pointPrecompVar(pointCopy(p), 1 << (width - 2));
 
