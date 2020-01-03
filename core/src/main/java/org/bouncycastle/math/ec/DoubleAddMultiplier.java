@@ -2,6 +2,9 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+/**
+ * @deprecated Will be removed
+ */
 public class DoubleAddMultiplier extends AbstractECMultiplier
 {
     /**

@@ -4,6 +4,8 @@ import java.math.BigInteger;
 
 /**
  * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm (right-to-left).
+ *
+ * @deprecated Will be removed
  */
 public class NafR2LMultiplier extends AbstractECMultiplier
 {

@@ -177,8 +177,9 @@ public class ECAlgorithms
     }
 
     /**
-     * Simple shift-and-add multiplication. Serves as reference implementation
-     * to verify (possibly faster) implementations, and for very small scalars.
+     * Simple shift-and-add multiplication. Serves as reference implementation to verify (possibly
+     * faster) implementations, and for very small scalars. CAUTION: This implementation is NOT
+     * constant-time in any way. It is only intended to be used for diagnostics.
      * 
      * @param p
      *            The point to multiply.

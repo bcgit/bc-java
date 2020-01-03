@@ -5,6 +5,8 @@ import java.math.BigInteger;
 /**
  * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm (right-to-left) using
  * mixed coordinates.
+ *
+ * @deprecated Will be removed
  */
 public class MixedNafR2LMultiplier extends AbstractECMultiplier
 {
