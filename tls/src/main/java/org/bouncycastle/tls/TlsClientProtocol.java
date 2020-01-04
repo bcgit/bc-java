@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 
@@ -106,8 +107,16 @@ public class TlsClientProtocol
             SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
             if (sessionParameters != null && sessionParameters.isExtendedMasterSecret())
             {
-                this.tlsSession = sessionToResume;
-                this.sessionParameters = sessionParameters;
+                TlsSecret masterSecret = sessionParameters.getMasterSecret();
+                synchronized (masterSecret)
+                {
+                    if (masterSecret.isAlive())
+                    {
+                        this.tlsSession = sessionToResume;
+                        this.sessionParameters = sessionParameters;
+                        this.sessionMasterSecret =  tlsClientContext.getCrypto().adoptSecret(masterSecret);
+                    }
+                }
             }
         }
 
@@ -1141,8 +1150,7 @@ public class TlsClientProtocol
 
         if (this.resumedSession)
         {
-            securityParameters.masterSecret = tlsClientContext.getCrypto()
-                .adoptSecret(sessionParameters.getMasterSecret());
+            securityParameters.masterSecret = sessionMasterSecret;
             this.recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsClientContext));
         }
         else
@@ -1151,6 +1159,7 @@ public class TlsClientProtocol
 
             this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
             this.sessionParameters = null;
+            this.sessionMasterSecret = null;
         }
     }
 

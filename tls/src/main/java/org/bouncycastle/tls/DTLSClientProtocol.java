@@ -7,6 +7,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 
@@ -46,8 +47,16 @@ public class DTLSClientProtocol
             SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
             if (sessionParameters != null && sessionParameters.isExtendedMasterSecret())
             {
-                state.tlsSession = sessionToResume;
-                state.sessionParameters = sessionParameters;
+                TlsSecret masterSecret = sessionParameters.getMasterSecret();
+                synchronized (masterSecret)
+                {
+                    if (masterSecret.isAlive())
+                    {
+                        state.tlsSession = sessionToResume;
+                        state.sessionParameters = sessionParameters;
+                        state.sessionMasterSecret = state.clientContext.getCrypto().adoptSecret(masterSecret);
+                    }
+                }
             }
         }
 
@@ -146,7 +155,7 @@ public class DTLSClientProtocol
 
         if (state.resumedSession)
         {
-            securityParameters.masterSecret = state.clientContext.getCrypto().adoptSecret(state.sessionParameters.getMasterSecret());
+            securityParameters.masterSecret = state.sessionMasterSecret;
             recordLayer.initPendingEpoch(TlsUtils.initCipher(state.clientContext));
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
@@ -175,6 +184,7 @@ public class DTLSClientProtocol
 
         state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
         state.sessionParameters = null;
+        state.sessionMasterSecret = null;
 
         serverMessage = handshake.receiveMessage();
 
@@ -346,12 +356,14 @@ public class DTLSClientProtocol
 
         handshake.finish();
 
+        state.sessionMasterSecret = securityParameters.getMasterSecret();
+
         state.sessionParameters = new SessionParameters.Builder()
             .setCipherSuite(securityParameters.getCipherSuite())
             .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
             .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
             .setLocalCertificate(securityParameters.getLocalCertificate())
-            .setMasterSecret(state.clientContext.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
+            .setMasterSecret(state.clientContext.getCrypto().adoptSecret(state.sessionMasterSecret))
             .setNegotiatedVersion(securityParameters.getNegotiatedVersion())
             .setPeerCertificate(securityParameters.getPeerCertificate())
             .setPSKIdentity(securityParameters.getPSKIdentity())
@@ -503,6 +515,12 @@ public class DTLSClientProtocol
 
     protected void invalidateSession(ClientHandshakeState state)
     {
+        if (state.sessionMasterSecret != null)
+        {
+            state.sessionMasterSecret.destroy();
+            state.sessionMasterSecret = null;
+        }
+
         if (state.sessionParameters != null)
         {
             state.sessionParameters.clear();
@@ -922,6 +940,7 @@ public class DTLSClientProtocol
         TlsClientContextImpl clientContext = null;
         TlsSession tlsSession = null;
         SessionParameters sessionParameters = null;
+        TlsSecret sessionMasterSecret = null;
         SessionParameters.Builder sessionParametersBuilder = null;
         int[] offeredCipherSuites = null;
         Hashtable clientExtensions = null;
