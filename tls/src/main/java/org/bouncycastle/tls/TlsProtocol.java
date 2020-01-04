@@ -146,6 +146,7 @@ public abstract class TlsProtocol
 
     protected TlsSession tlsSession = null;
     protected SessionParameters sessionParameters = null;
+    protected TlsSecret sessionMasterSecret = null;
 
     protected int[] offeredCipherSuites = null;
     protected Hashtable clientExtensions = null;
@@ -428,6 +429,7 @@ public abstract class TlsProtocol
 
         this.tlsSession = null;
         this.sessionParameters = null;
+        this.sessionMasterSecret = null;
 
         this.offeredCipherSuites = null;
         this.clientExtensions = null;
@@ -474,12 +476,15 @@ public abstract class TlsProtocol
             if (this.sessionParameters == null)
             {
                 SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+                this.sessionMasterSecret = securityParameters.getMasterSecret();
+
                 this.sessionParameters = new SessionParameters.Builder()
                     .setCipherSuite(securityParameters.getCipherSuite())
                     .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
                     .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
                     .setLocalCertificate(securityParameters.getLocalCertificate())
-                    .setMasterSecret(context.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
+                    .setMasterSecret(context.getCrypto().adoptSecret(this.sessionMasterSecret))
                     .setNegotiatedVersion(securityParameters.getNegotiatedVersion())
                     .setPeerCertificate(securityParameters.getPeerCertificate())
                     .setPSKIdentity(securityParameters.getPSKIdentity())
@@ -1301,6 +1306,12 @@ public abstract class TlsProtocol
 
     protected void invalidateSession()
     {
+        if (this.sessionMasterSecret != null)
+        {
+            this.sessionMasterSecret.destroy();
+            this.sessionMasterSecret = null;
+        }
+
         if (this.sessionParameters != null)
         {
             this.sessionParameters.clear();
