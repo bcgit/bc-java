@@ -135,6 +135,7 @@ public class TlsServerProtocol
 
             this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
             this.sessionParameters = null;
+            this.sessionMasterSecret = null;
         }
 
         // TODO[tls13] Negotiate cipher suite first?

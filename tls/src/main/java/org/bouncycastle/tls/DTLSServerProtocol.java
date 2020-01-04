@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 public class DTLSServerProtocol
@@ -132,6 +133,7 @@ public class DTLSServerProtocol
 
             state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
             state.sessionParameters = null;
+            state.sessionMasterSecret = null;
         }
 
         {
@@ -312,12 +314,14 @@ public class DTLSServerProtocol
 
         handshake.finish();
 
+        state.sessionMasterSecret = securityParameters.getMasterSecret();
+
         state.sessionParameters = new SessionParameters.Builder()
             .setCipherSuite(securityParameters.getCipherSuite())
             .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
             .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
             .setLocalCertificate(securityParameters.getLocalCertificate())
-            .setMasterSecret(state.serverContext.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
+            .setMasterSecret(state.serverContext.getCrypto().adoptSecret(state.sessionMasterSecret))
             .setNegotiatedVersion(securityParameters.getNegotiatedVersion())
             .setPeerCertificate(securityParameters.getPeerCertificate())
             .setPSKIdentity(securityParameters.getPSKIdentity())
@@ -511,6 +515,12 @@ public class DTLSServerProtocol
 
     protected void invalidateSession(ServerHandshakeState state)
     {
+        if (state.sessionMasterSecret != null)
+        {
+            state.sessionMasterSecret.destroy();
+            state.sessionMasterSecret = null;
+        }
+
         if (state.sessionParameters != null)
         {
             state.sessionParameters.clear();
@@ -755,6 +765,7 @@ public class DTLSServerProtocol
         TlsServerContextImpl serverContext = null;
         TlsSession tlsSession = null;
         SessionParameters sessionParameters = null;
+        TlsSecret sessionMasterSecret = null;
         SessionParameters.Builder sessionParametersBuilder = null;
         int[] offeredCipherSuites = null;
         Hashtable clientExtensions = null;

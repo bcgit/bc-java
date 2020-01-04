@@ -83,4 +83,6 @@ public interface TlsSecret
      * @return a pseudo-random key (of HashLen octets).
      */
     TlsSecret hkdfExtract(short hashAlgorithm, byte[] ikm);
+    
+    boolean isAlive();
 }
