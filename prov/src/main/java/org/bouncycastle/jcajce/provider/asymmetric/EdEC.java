@@ -72,8 +72,8 @@ public class EdEC
             provider.addAlgorithm("KeyPairGenerator.XDH", PREFIX + "KeyPairGeneratorSpi$XDH");
             provider.addAlgorithm("KeyPairGenerator.X448", PREFIX + "KeyPairGeneratorSpi$X448");
             provider.addAlgorithm("KeyPairGenerator.X25519", PREFIX + "KeyPairGeneratorSpi$X25519");
-            provider.addAlgorithm("KeyPairGenerator", EdECObjectIdentifiers.id_X448, PREFIX + "KeyPairGeneratorSpiSpi$X448");
-            provider.addAlgorithm("KeyPairGenerator", EdECObjectIdentifiers.id_X25519, PREFIX + "KeyPairGeneratorSpiSpi$X25519");
+            provider.addAlgorithm("KeyPairGenerator", EdECObjectIdentifiers.id_X448, PREFIX + "KeyPairGeneratorSpi$X448");
+            provider.addAlgorithm("KeyPairGenerator", EdECObjectIdentifiers.id_X25519, PREFIX + "KeyPairGeneratorSpi$X25519");
 
             registerOid(provider, EdECObjectIdentifiers.id_X448, "XDH", new KeyFactorySpi.X448());
             registerOid(provider, EdECObjectIdentifiers.id_X25519, "XDH", new KeyFactorySpi.X25519());
