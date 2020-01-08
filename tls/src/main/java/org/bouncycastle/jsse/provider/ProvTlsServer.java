@@ -205,6 +205,12 @@ class ProvTlsServer
         return null == sslParameters.getEngineAPSelector() && null == sslParameters.getSocketAPSelector();
     }
 
+    @Override
+    public boolean allowLegacyResumption()
+    {
+        return JsseUtils.allowLegacyResumption();
+    }
+
     public synchronized boolean isHandshakeComplete()
     {
         return handshakeComplete;

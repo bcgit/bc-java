@@ -21,9 +21,7 @@ class TlsSessionImpl implements TlsSession
 
         this.sessionID = Arrays.clone(sessionID);
         this.sessionParameters = sessionParameters;
-        this.resumable = sessionID.length > 0
-            && null != sessionParameters
-            && sessionParameters.isExtendedMasterSecret();
+        this.resumable = sessionID.length > 0 && null != sessionParameters;
     }
 
     public synchronized SessionParameters exportSessionParameters()

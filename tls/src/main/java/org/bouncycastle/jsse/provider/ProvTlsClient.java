@@ -142,6 +142,12 @@ class ProvTlsClient
         return manager.getContext().getActiveProtocolVersions(sslParameters);
     }
 
+    @Override
+    public boolean allowLegacyResumption()
+    {
+        return JsseUtils.allowLegacyResumption();
+    }
+
     public synchronized boolean isHandshakeComplete()
     {
         return handshakeComplete;

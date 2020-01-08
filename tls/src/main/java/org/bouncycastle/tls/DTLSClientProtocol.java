@@ -45,7 +45,13 @@ public class DTLSClientProtocol
         if (sessionToResume != null && sessionToResume.isResumable())
         {
             SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
-            if (sessionParameters != null && sessionParameters.isExtendedMasterSecret())
+
+            /*
+             * NOTE: If we ever enable session resumption without extended_master_secret, then
+             * renegotiation MUST be disabled (see RFC 7627 5.4).
+             */
+            if (sessionParameters != null
+                && (sessionParameters.isExtendedMasterSecret() || state.client.allowLegacyResumption()))
             {
                 TlsSecret masterSecret = sessionParameters.getMasterSecret();
                 synchronized (masterSecret)
@@ -415,12 +421,7 @@ public class DTLSClientProtocol
 
         if (session_id.length > 0 && state.sessionParameters != null)
         {
-            /*
-             * NOTE: If we ever enable session resumption without extended_master_secret, then
-             * renegotiation MUST be disabled (see RFC 7627 5.4).
-             */
-            if (!state.sessionParameters.isExtendedMasterSecret()
-                || !Arrays.contains(state.offeredCipherSuites, state.sessionParameters.getCipherSuite())
+            if (!Arrays.contains(state.offeredCipherSuites, state.sessionParameters.getCipherSuite())
                 || CompressionMethod._null != state.sessionParameters.getCompressionAlgorithm())
             {
                 session_id = TlsUtils.EMPTY_BYTES;
