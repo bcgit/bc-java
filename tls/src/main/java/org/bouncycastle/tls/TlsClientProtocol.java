@@ -105,7 +105,13 @@ public class TlsClientProtocol
         if (sessionToResume != null && sessionToResume.isResumable())
         {
             SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
-            if (sessionParameters != null && sessionParameters.isExtendedMasterSecret())
+
+            /*
+             * NOTE: If we ever enable session resumption without extended_master_secret, then
+             * renegotiation MUST be disabled (see RFC 7627 5.4).
+             */
+            if (sessionParameters != null
+                && (sessionParameters.isExtendedMasterSecret() || tlsClient.allowLegacyResumption()))
             {
                 TlsSecret masterSecret = sessionParameters.getMasterSecret();
                 synchronized (masterSecret)
@@ -1284,12 +1290,7 @@ public class TlsClientProtocol
 
         if (session_id.length > 0 && this.sessionParameters != null)
         {
-            /*
-             * NOTE: If we ever enable session resumption without extended_master_secret, then
-             * renegotiation MUST be disabled (see RFC 7627 5.4).
-             */
-            if (!sessionParameters.isExtendedMasterSecret()
-                || !Arrays.contains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
+            if (!Arrays.contains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
                 || CompressionMethod._null != sessionParameters.getCompressionAlgorithm())
             {
                 session_id = TlsUtils.EMPTY_BYTES;

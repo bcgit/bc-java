@@ -49,6 +49,9 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 abstract class JsseUtils
 {
+    private static final boolean provTlsAllowLegacyResumption =
+        PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
+
     static final Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES_BC =
         Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
 
@@ -60,6 +63,11 @@ abstract class JsseUtils
         {
             super(nameType, encoded);
         }
+    }
+
+    static boolean allowLegacyResumption()
+    {
+        return provTlsAllowLegacyResumption;
     }
 
     static boolean contains(String[] values, String value)

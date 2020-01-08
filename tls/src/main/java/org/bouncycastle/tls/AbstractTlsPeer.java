@@ -54,6 +54,11 @@ public abstract class AbstractTlsPeer
         return 0;
     }
 
+    public boolean allowLegacyResumption()
+    {
+        return false;
+    }
+
     public boolean requiresExtendedMasterSecret()
     {
         return false;
