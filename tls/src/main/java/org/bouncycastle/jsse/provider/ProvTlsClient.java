@@ -452,6 +452,12 @@ class ProvTlsClient
         }
     }
 
+    @Override
+    public boolean requiresExtendedMasterSecret()
+    {
+        return !JsseUtils.allowLegacyMasterSecret();
+    }
+
     protected boolean isResumable(ProvSSLSession availableSSLSession)
     {
         // TODO[jsse] We could check EMS here, although the protocol classes reject non-EMS sessions anyway

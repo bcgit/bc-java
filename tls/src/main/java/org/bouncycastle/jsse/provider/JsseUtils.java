@@ -49,6 +49,8 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 abstract class JsseUtils
 {
+    private static final boolean provTlsAllowLegacyMasterSecret =
+        PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyMasterSecret", true);
     private static final boolean provTlsAllowLegacyResumption =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
 
@@ -63,6 +65,11 @@ abstract class JsseUtils
         {
             super(nameType, encoded);
         }
+    }
+
+    static boolean allowLegacyMasterSecret()
+    {
+        return provTlsAllowLegacyMasterSecret;
     }
 
     static boolean allowLegacyResumption()
