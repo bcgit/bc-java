@@ -111,7 +111,8 @@ public class TlsClientProtocol
              * renegotiation MUST be disabled (see RFC 7627 5.4).
              */
             if (sessionParameters != null
-                && (sessionParameters.isExtendedMasterSecret() || tlsClient.allowLegacyResumption()))
+                && (sessionParameters.isExtendedMasterSecret()
+                    || (!tlsClient.requiresExtendedMasterSecret() && tlsClient.allowLegacyResumption())))
             {
                 TlsSecret masterSecret = sessionParameters.getMasterSecret();
                 synchronized (masterSecret)
@@ -943,7 +944,7 @@ public class TlsClientProtocol
         }
         else
         {
-            if (resumedSession || tlsClient.requiresExtendedMasterSecret())
+            if ((resumedSession && !tlsClient.allowLegacyResumption()) || tlsClient.requiresExtendedMasterSecret())
             {
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }

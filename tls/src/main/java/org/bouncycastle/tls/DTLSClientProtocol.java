@@ -51,7 +51,8 @@ public class DTLSClientProtocol
              * renegotiation MUST be disabled (see RFC 7627 5.4).
              */
             if (sessionParameters != null
-                && (sessionParameters.isExtendedMasterSecret() || state.client.allowLegacyResumption()))
+                && (sessionParameters.isExtendedMasterSecret()
+                    || (!state.client.requiresExtendedMasterSecret() && state.client.allowLegacyResumption())))
             {
                 TlsSecret masterSecret = sessionParameters.getMasterSecret();
                 synchronized (masterSecret)
@@ -700,7 +701,8 @@ public class DTLSClientProtocol
         securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.serverExtensions);
 
         if (!securityParameters.isExtendedMasterSecret()
-            && (state.resumedSession || state.client.requiresExtendedMasterSecret()))
+            && ((state.resumedSession && !state.client.allowLegacyResumption())
+                || state.client.requiresExtendedMasterSecret()))
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
