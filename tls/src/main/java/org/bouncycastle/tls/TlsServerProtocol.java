@@ -258,7 +258,7 @@ public class TlsServerProtocol
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
         }
-        else if (resumedSession || tlsServer.requiresExtendedMasterSecret())
+        else if ((resumedSession && !tlsServer.allowLegacyResumption()) || tlsServer.requiresExtendedMasterSecret())
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
@@ -967,7 +967,8 @@ public class TlsServerProtocol
          */
         this.offeredExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
 
-        if (!offeredExtendedMasterSecret && (resumedSession || tlsServer.requiresExtendedMasterSecret()))
+        if (!offeredExtendedMasterSecret
+            && ((resumedSession && !tlsServer.allowLegacyResumption()) || tlsServer.requiresExtendedMasterSecret()))
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
