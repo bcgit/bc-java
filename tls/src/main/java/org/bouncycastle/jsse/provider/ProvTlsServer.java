@@ -495,6 +495,12 @@ class ProvTlsServer
         }
     }
 
+    @Override
+    public boolean requiresExtendedMasterSecret()
+    {
+        return !JsseUtils.allowLegacyMasterSecret();
+    }
+
     protected boolean isResumable(ProvSSLSession availableSSLSession)
     {
         /*
