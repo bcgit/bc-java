@@ -3,7 +3,6 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -14,11 +13,12 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.jcajce.interfaces.XDHKey;
+import org.bouncycastle.jcajce.interfaces.XDHPrivateKey;
+import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.util.Arrays;
 
 public class BCXDHPrivateKey
-    implements XDHKey, PrivateKey
+    implements XDHPrivateKey
 {
     static final long serialVersionUID = 1L;
 
@@ -86,6 +86,18 @@ public class BCXDHPrivateKey
         catch (IOException e)
         {
             return null;
+        }
+    }
+
+    public XDHPublicKey getPublicKey()
+    {
+        if (xdhPrivateKey instanceof X448PrivateKeyParameters)
+        {
+            return new BCXDHPublicKey(((X448PrivateKeyParameters)xdhPrivateKey).generatePublicKey());
+        }
+        else
+        {
+            return new BCXDHPublicKey(((X25519PrivateKeyParameters)xdhPrivateKey).generatePublicKey());
         }
     }
 
