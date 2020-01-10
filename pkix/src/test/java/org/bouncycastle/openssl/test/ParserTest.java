@@ -31,6 +31,8 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
+import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.CertificateTrustBlock;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
@@ -45,6 +47,7 @@ import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -326,7 +329,32 @@ public class ParserTest
 
         checkTrustedCert(trusted);
 
+        //
+        // EdDSAKey
+        //
+        byte[] msg = Strings.toByteArray("Hello, world!");
 
+        pemRd = openPEMResource("eddsapriv.pem");
+
+        PrivateKeyInfo edPrivInfo = (PrivateKeyInfo)pemRd.readObject();
+
+        EdDSAPrivateKey edPrivKey = (EdDSAPrivateKey)new JcaPEMKeyConverter().setProvider("BC").getPrivateKey(edPrivInfo);
+
+        EdDSAPublicKey edPubKey = edPrivKey.getPublicKey();
+
+        Signature edSig = Signature.getInstance(edPrivKey.getAlgorithm(), "BC");
+
+        edSig.initSign(edPrivKey);
+
+        edSig.update(msg);
+
+        byte[] s = edSig.sign();
+
+        edSig.initVerify(edPubKey);
+
+        edSig.update(msg);
+
+        isTrue(edSig.verify(s));
     }
 
     private void checkTrustedCert(X509TrustedCertificateBlock trusted)
