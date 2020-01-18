@@ -8,6 +8,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 
 public class ECGOST
 {
+    private static final String PREFIX_COMMON = "org.bouncycastle.jcajce.provider.asymmetric" + ".ec.";
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".ecgost.";
     private static final String PREFIX_GOST_2012 = "org.bouncycastle.jcajce.provider.asymmetric" + ".ecgost12.";
 
@@ -46,8 +47,9 @@ public class ECGOST
             provider.addAlgorithm("Alg.Alias.KeyAgreement.GOST-3410-2001", "ECGOST3410");
 
             provider.addAlgorithm("Alg.Alias.KeyAgreement." + CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH, "ECGOST3410");
-            
-            provider.addAlgorithm("AlgorithmParameters.ECGOST3410", PREFIX + "AlgorithmParametersSpi");
+
+            provider.addAlgorithm("AlgorithmParameters.ECGOST3410", PREFIX_COMMON + "AlgorithmParametersSpi");
+            provider.addAlgorithm("AlgorithmParameters.ECGOST3410-2012", PREFIX_COMMON + "AlgorithmParametersSpi");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.GOST-3410-2001", "ECGOST3410");
 
             addSignatureAlgorithm(provider, "GOST3411",
