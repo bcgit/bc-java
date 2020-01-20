@@ -3,12 +3,14 @@ package org.bouncycastle.operator;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -147,6 +149,14 @@ public class DefaultDigestAlgorithmIdentifierFinder
         if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
         {
             digAlgId = RSASSAPSSparams.getInstance(sigAlgId.getParameters()).getHashAlgorithm();
+        }
+        else if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed25519))
+        {
+            digAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+        }
+        else if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed448))
+        {
+            digAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512));
         }
         else
         {

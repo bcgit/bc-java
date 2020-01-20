@@ -51,6 +51,10 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_hmacWithSHA3_384 = hashAlgs.branch("15");
     /** 2.16.840.1.101.3.4.2.16 */
     static final ASN1ObjectIdentifier    id_hmacWithSHA3_512 = hashAlgs.branch("16");
+    /** 2.16.840.1.101.3.4.2.17 */
+    static final ASN1ObjectIdentifier    id_shake128_len = hashAlgs.branch("17");
+    /** 2.16.840.1.101.3.4.2.18 */
+    static final ASN1ObjectIdentifier    id_shake256_len = hashAlgs.branch("18");
 
     /** 2.16.840.1.101.3.4.1 */
     static final ASN1ObjectIdentifier    aes                     = nistAlgorithm.branch("1");
