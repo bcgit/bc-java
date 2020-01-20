@@ -370,7 +370,7 @@ public class ParserTest
         {
             fail("key purpose usages wrong size");
         }
-        if (!trustBlock.getUses().contains(KeyPurposeId.id_kp_OCSPSigning))
+        if (!trustBlock.getUses().contains(KeyPurposeId.id_kp_OCSPSigning.toOID()))
         {
             fail("key purpose use not found");
         }
@@ -379,7 +379,7 @@ public class ParserTest
         {
             fail("key purpose prohibitions wrong size");
         }
-        if (!trustBlock.getProhibitions().contains(KeyPurposeId.id_kp_clientAuth))
+        if (!trustBlock.getProhibitions().contains(KeyPurposeId.id_kp_clientAuth.toOID()))
         {
             fail("key purpose prohibition not found");
         }
