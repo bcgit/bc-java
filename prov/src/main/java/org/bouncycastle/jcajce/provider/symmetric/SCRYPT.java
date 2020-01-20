@@ -68,7 +68,7 @@ public class SCRYPT
                         pbeSpec.getCostParameter(), pbeSpec.getBlockSize(), pbeSpec.getParallelizationParameter(),
                         pbeSpec.getKeyLength() / 8));
 
-                return new BCPBEKey(this.algName, pbeSpec, param);
+                return new BCPBEKey(this.algName, param);
             }
 
             throw new InvalidKeySpecException("Invalid KeySpec");
