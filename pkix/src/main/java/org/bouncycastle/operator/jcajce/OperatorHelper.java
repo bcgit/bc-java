@@ -24,6 +24,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
@@ -344,7 +345,14 @@ class OperatorHelper
 
         try
         {
-            dig = helper.createMessageDigest(MessageDigestUtils.getDigestName(digAlgId.getAlgorithm()));
+            if (digAlgId.getAlgorithm().equals(NISTObjectIdentifiers.id_shake256_len))
+            {
+                dig = helper.createMessageDigest("SHAKE256-" + ASN1Integer.getInstance(digAlgId.getParameters()).getValue());
+            }
+            else
+            {
+                dig = helper.createMessageDigest(MessageDigestUtils.getDigestName(digAlgId.getAlgorithm()));
+            }
         }
         catch (NoSuchAlgorithmException e)
         {

@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -194,6 +195,15 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
 
     public String getSignatureName(AlgorithmIdentifier digestAlg, AlgorithmIdentifier encryptionAlg)
     {
+        if (EdECObjectIdentifiers.id_Ed25519.equals(encryptionAlg.getAlgorithm()))
+        {
+            return "Ed25519";
+        }
+        if (EdECObjectIdentifiers.id_Ed448.equals(encryptionAlg.getAlgorithm()))
+        {
+            return "Ed448";
+        }
+
         String digestName = getDigestAlgName(encryptionAlg.getAlgorithm());
 
         if (!digestName.equals(encryptionAlg.getAlgorithm().getId()))
