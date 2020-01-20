@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -122,6 +123,12 @@ public class NewSignedDataTest
 
     private static KeyPair         _signDsaKP;
     private static X509Certificate _signDsaCert;
+
+    private static KeyPair         _signEd25519KP;
+    private static X509Certificate _signEd25519Cert;
+
+    private static KeyPair         _signEd448KP;
+    private static X509Certificate _signEd448Cert;
 
     private static String          _reciDN;
     private static KeyPair         _reciKP;
@@ -590,6 +597,8 @@ public class NewSignedDataTest
         noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_256);
         noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_384);
         noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
+        noParams.add(EdECObjectIdentifiers.id_Ed25519);
+        noParams.add(EdECObjectIdentifiers.id_Ed448);
     }
     
     public NewSignedDataTest(String name)
@@ -655,6 +664,12 @@ public class NewSignedDataTest
 
             _signEcGostKP = CMSTestUtil.makeEcGostKeyPair();
             _signEcGostCert = CMSTestUtil.makeCertificate(_signEcGostKP, _signDN, _origKP, _origDN);
+
+            _signEd25519KP   = CMSTestUtil.makeEd25519KeyPair();
+            _signEd25519Cert = CMSTestUtil.makeCertificate(_signEd25519KP, _signDN, _origKP, _origDN);
+
+            _signEd448KP   = CMSTestUtil.makeEd448KeyPair();
+            _signEd448Cert = CMSTestUtil.makeCertificate(_signEd448KP, _signDN, _origKP, _origDN);
 
             _reciDN   = "CN=Doug, OU=Sales, O=Bouncy Castle, C=AU";
             _reciKP   = CMSTestUtil.makeKeyPair();
@@ -1526,6 +1541,18 @@ public class NewSignedDataTest
         rsaPSSTest("SHA3-384withRSAandMGF1");
     }
 
+    public void testEd25519()
+        throws Exception
+    {
+        encapsulatedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519);
+    }
+
+    public void testEd448()
+        throws Exception
+    {
+        encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448);
+    }
+
     public void testSHA3_224WithDSAEncapsulated()
         throws Exception
     {
@@ -2030,7 +2057,7 @@ public class NewSignedDataTest
         gen.addCertificates(certs);
     
         CMSSignedData s = gen.generate(msg, true);
-    
+
         ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
         ASN1InputStream      aIn = new ASN1InputStream(bIn);
         

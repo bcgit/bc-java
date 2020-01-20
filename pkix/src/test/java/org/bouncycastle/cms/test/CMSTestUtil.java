@@ -58,6 +58,8 @@ public class CMSTestUtil
     public static KeyPairGenerator dhKpg;
     public static KeyPairGenerator ecGostKpg;
     public static KeyPairGenerator ecDsaKpg;
+    public static KeyPairGenerator ed25519Kpg;
+    public static KeyPairGenerator ed448Kpg;
     public static KeyGenerator     aes192kg;
     public static KeyGenerator     desede128kg;
     public static KeyGenerator     desede192kg;
@@ -148,6 +150,9 @@ public class CMSTestUtil
             ecDsaKpg = KeyPairGenerator.getInstance("ECDSA", "BC");
             ecDsaKpg.initialize(239, new SecureRandom());
 
+            ed25519Kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
+            ed448Kpg = KeyPairGenerator.getInstance("Ed448", "BC");
+
             aes192kg = KeyGenerator.getInstance("AES", "BC");
             aes192kg.init(192, rand);
 
@@ -223,7 +228,17 @@ public class CMSTestUtil
     {
         return dsaKpg.generateKeyPair();
     }
-    
+
+    public static KeyPair makeEd25519KeyPair()
+    {
+        return ed25519Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeEd448KeyPair()
+    {
+        return ed448Kpg.generateKeyPair();
+    }
+
     public static KeyPair makeEcDsaKeyPair()
     {
         return ecDsaKpg.generateKeyPair();
