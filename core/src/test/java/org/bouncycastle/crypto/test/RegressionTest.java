@@ -172,7 +172,8 @@ public class RegressionTest
             new BigIntegersTest(),
             new ZucTest(),
             new Haraka256DigestTest(),
-            new Haraka512DigestTest()
+            new Haraka512DigestTest(),
+            new KMACTest()
         };
 
     public static void main(String[] args)
