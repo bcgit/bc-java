@@ -55,6 +55,10 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_shake128_len = hashAlgs.branch("17");
     /** 2.16.840.1.101.3.4.2.18 */
     static final ASN1ObjectIdentifier    id_shake256_len = hashAlgs.branch("18");
+    /** 2.16.840.1.101.3.4.2.19 */
+    static final ASN1ObjectIdentifier    id_KmacWithSHAKE128 = hashAlgs.branch("19");
+    /** 2.16.840.1.101.3.4.2.20 */
+    static final ASN1ObjectIdentifier    id_KmacWithSHAKE256 = hashAlgs.branch("20");
 
     /** 2.16.840.1.101.3.4.1 */
     static final ASN1ObjectIdentifier    aes                     = nistAlgorithm.branch("1");
