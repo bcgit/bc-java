@@ -14,7 +14,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 public class BCPBEKey
-    implements PBEKey
+    implements PBEKey, Destroyable
 {
     private final AtomicBoolean hasBeenDestroyed = new AtomicBoolean(false);
 
