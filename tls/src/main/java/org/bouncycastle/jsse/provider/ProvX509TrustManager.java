@@ -48,7 +48,7 @@ class ProvX509TrustManager
 
     private final JcaJceHelper helper;
     private final Set<X509Certificate> trustedCerts;
-    private final PKIXParameters baseParameters;
+    private final PKIXBuilderParameters baseParameters;
     private final X509TrustManager exportX509TrustManager;
 
     ProvX509TrustManager(JcaJceHelper helper, Set<TrustAnchor> trustAnchors)
@@ -58,6 +58,11 @@ class ProvX509TrustManager
         this.trustedCerts = getTrustedCerts(trustAnchors);
 
         // Setup PKIX parameters
+        if (trustedCerts.isEmpty())
+        {
+            this.baseParameters = null;
+        }
+        else
         {
             this.baseParameters = new PKIXBuilderParameters(trustAnchors, null);
             this.baseParameters.setRevocationEnabled(provCheckRevocation);
@@ -73,26 +78,28 @@ class ProvX509TrustManager
         this.trustedCerts = getTrustedCerts(baseParameters.getTrustAnchors());
 
         // Setup PKIX parameters
+        if (trustedCerts.isEmpty())
         {
-            if (baseParameters instanceof PKIXBuilderParameters)
-            {
-                this.baseParameters = (PKIXBuilderParameters)baseParameters.clone();
-                this.baseParameters.setTargetCertConstraints(null);
-            }
-            else
-            {
-                this.baseParameters = new PKIXBuilderParameters(baseParameters.getTrustAnchors(), null);
-                this.baseParameters.setAnyPolicyInhibited(baseParameters.isAnyPolicyInhibited());
-                this.baseParameters.setCertPathCheckers(baseParameters.getCertPathCheckers());
-                this.baseParameters.setCertStores(baseParameters.getCertStores());
-                this.baseParameters.setDate(baseParameters.getDate());
-                this.baseParameters.setExplicitPolicyRequired(baseParameters.isExplicitPolicyRequired());
-                this.baseParameters.setInitialPolicies(baseParameters.getInitialPolicies());
-                this.baseParameters.setPolicyMappingInhibited(baseParameters.isPolicyMappingInhibited());
-                this.baseParameters.setPolicyQualifiersRejected(baseParameters.getPolicyQualifiersRejected());
-                this.baseParameters.setRevocationEnabled(baseParameters.isRevocationEnabled());
-                this.baseParameters.setSigProvider(baseParameters.getSigProvider());
-            }
+            this.baseParameters = null;
+        }
+        else if (baseParameters instanceof PKIXBuilderParameters)
+        {
+            this.baseParameters = (PKIXBuilderParameters)baseParameters.clone();
+            this.baseParameters.setTargetCertConstraints(null);
+        }
+        else
+        {
+            this.baseParameters = new PKIXBuilderParameters(baseParameters.getTrustAnchors(), null);
+            this.baseParameters.setAnyPolicyInhibited(baseParameters.isAnyPolicyInhibited());
+            this.baseParameters.setCertPathCheckers(baseParameters.getCertPathCheckers());
+            this.baseParameters.setCertStores(baseParameters.getCertStores());
+            this.baseParameters.setDate(baseParameters.getDate());
+            this.baseParameters.setExplicitPolicyRequired(baseParameters.isExplicitPolicyRequired());
+            this.baseParameters.setInitialPolicies(baseParameters.getInitialPolicies());
+            this.baseParameters.setPolicyMappingInhibited(baseParameters.isPolicyMappingInhibited());
+            this.baseParameters.setPolicyQualifiersRejected(baseParameters.getPolicyQualifiersRejected());
+            this.baseParameters.setRevocationEnabled(baseParameters.isRevocationEnabled());
+            this.baseParameters.setSigProvider(baseParameters.getSigProvider());
         }
 
         this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
@@ -199,6 +206,11 @@ class ProvX509TrustManager
         if (trustedCerts.contains(eeCert))
         {
             return new X509Certificate[]{ eeCert };
+        }
+
+        if (null == baseParameters)
+        {
+            throw new CertificateException("unable to process certificates: no PKIXBuilderParameters available");
         }
 
         try
