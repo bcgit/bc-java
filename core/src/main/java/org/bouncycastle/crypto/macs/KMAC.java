@@ -25,6 +25,7 @@ public class KMAC
     private final int outputLength;
 
     private byte[] key;
+    private boolean initialised;
     private boolean firstOutput;
 
     /**
@@ -46,6 +47,7 @@ public class KMAC
         KeyParameter kParam = (KeyParameter)params;
 
         this.key = Arrays.clone(kParam.getKey());
+        this.initialised = true;
 
         reset();
     }
@@ -73,12 +75,22 @@ public class KMAC
     public void update(byte in)
         throws IllegalStateException
     {
+        if (!initialised)
+        {
+            throw new IllegalStateException("KMAC not initialized");
+        }
+
         cshake.update(in);
     }
 
     public void update(byte[] in, int inOff, int len)
         throws DataLengthException, IllegalStateException
     {
+        if (!initialised)
+        {
+            throw new IllegalStateException("KMAC not initialized");
+        }
+
         cshake.update(in, inOff, len);
     }
 
@@ -87,6 +99,11 @@ public class KMAC
     {
         if (firstOutput)
         {
+            if (!initialised)
+            {
+                throw new IllegalStateException("KMAC not initialized");
+            }
+
             byte[] encOut = rightEncode(getMacSize() * 8);
 
             cshake.update(encOut, 0, encOut.length);
@@ -103,6 +120,11 @@ public class KMAC
     {
         if (firstOutput)
         {
+            if (!initialised)
+            {
+                throw new IllegalStateException("KMAC not initialized");
+            }
+
             byte[] encOut = rightEncode(outLen * 8);
 
             cshake.update(encOut, 0, encOut.length);
@@ -119,6 +141,11 @@ public class KMAC
     {
         if (firstOutput)
         {
+            if (!initialised)
+            {
+                throw new IllegalStateException("KMAC not initialized");
+            }
+
             byte[] encOut = rightEncode(0);
 
             cshake.update(encOut, 0, encOut.length);
