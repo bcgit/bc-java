@@ -191,6 +191,8 @@ public class KMACTest
         {
             KMAC kmac = new KMAC(128, Arrays.copyOfRange(data, 0, i));
 
+            kmac.init(new KeyParameter(new byte[0]));
+
             kmac.update(Hex.decode("00010203"), 0, 4);
 
             kmac.doFinal(res, 0);
@@ -198,17 +200,22 @@ public class KMACTest
 
         KMAC kmac = new KMAC(256, new byte[200]);
 
+        kmac.init(new KeyParameter(new byte[0]));
+
         kmac.update(Arrays.copyOfRange(data, 0, 200), 0, 200);
 
         kmac.doFinal(res, 0);
 
-        isTrue(Hex.toHexString(res), Arrays.areEqual(Hex.decode("a31a638ab570d6307b33f4e8f14b3e3e3d1ea30629fb9f593ef27eac9d2576676855aee121ac468086b059d87bd480bee99558ca320c47a70ca5bc6a190aeb5a"), res));
+        isTrue(Hex.toHexString(res), Arrays.areEqual(Hex.decode("f9476d9b3e42bf23307af5ccb5287fd6f033b23c400566a2ebc5829bd119aa545cd9b6bde76ef61cd31c3c0f0aaf0945f44481e863b19e9c26fb46c8b2a8a9bb"), res));
     }
 
     private void checkKMAC(int bitSize, KMAC kmac, byte[] msg)
     {
         KMAC ref = new KMAC(bitSize, null);
 
+        ref.init(new KeyParameter(new byte[0]));
+        kmac.init(new KeyParameter(new byte[0]));
+        
         ref.update(msg, 0, msg.length);
         kmac.update(msg, 0, msg.length);
 
