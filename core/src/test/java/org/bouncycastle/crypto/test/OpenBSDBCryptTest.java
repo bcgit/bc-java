@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class OpenBSDBCryptTest
@@ -104,6 +105,18 @@ public class OpenBSDBCryptTest
     public void performTest()
         throws Exception
     {
+        byte[] salt = new byte[16];
+        for (int i = 0; i < bcryptTest1.length; i++)
+        {
+            String[] testString = bcryptTest1[i];
+            char[] password = testString[1].toCharArray();
+
+            String s1 = OpenBSDBCrypt.generate(password, salt, 4);
+            String s2 = OpenBSDBCrypt.generate(Strings.toByteArray(password), salt, 4);
+
+            isEquals(s1, s2);
+        }
+
         for (int i = 0; i < bcryptTest1.length; i++)
         {
             String[] testString = bcryptTest1[i];
@@ -171,6 +184,17 @@ public class OpenBSDBCryptTest
             encoded = twoBVec[i][1];
 
             if (!OpenBSDBCrypt.checkPassword(encoded, password.toCharArray()))
+            {
+                fail("twoBVec mismatch: " + "[" + i + "] " + password);
+            }
+        }
+
+        for (int i = 0; i < twoBVec.length; i++)
+        {
+            password = twoBVec[i][0];
+            encoded = twoBVec[i][1];
+
+            if (!OpenBSDBCrypt.checkPassword(encoded, Strings.toUTF8ByteArray(password)))
             {
                 fail("twoBVec mismatch: " + "[" + i + "] " + password);
             }
