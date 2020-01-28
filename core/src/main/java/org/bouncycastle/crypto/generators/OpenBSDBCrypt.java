@@ -55,44 +55,9 @@ public class OpenBSDBCrypt
         }
     }
 
-    public OpenBSDBCrypt()
+    private OpenBSDBCrypt()
     {
 
-    }
-
-    /**
-     * Creates a 60 character Bcrypt String, including
-     * version, cost factor, salt and hash, separated by '$'
-     *
-     * @param version  the version, 2y,2b or 2a. (2a is not backwards compatible.)
-     * @param cost     the cost factor, treated as an exponent of 2
-     * @param salt     a 16 byte salt
-     * @param password the password
-     * @return a 60 character Bcrypt String
-     */
-    private static String createBcryptString(String version,
-                                             byte[] password,
-                                             byte[] salt,
-                                             int cost)
-    {
-        if (!allowedVersions.contains(version))
-        {
-            throw new IllegalArgumentException("Version " + version + " is not accepted by this implementation.");
-        }
-
-        StringBuffer sb = new StringBuffer(60);
-        sb.append('$');
-        sb.append(version);
-        sb.append('$');
-        sb.append(cost < 10 ? ("0" + cost) : Integer.toString(cost));
-        sb.append('$');
-        sb.append(encodeData(salt));
-
-        byte[] key = BCrypt.generate(password, salt, cost);
-
-        sb.append(encodeData(key));
-
-        return sb.toString();
     }
 
     /**
@@ -113,6 +78,23 @@ public class OpenBSDBCrypt
         return generate(defaultVersion, password, salt, cost);
     }
 
+    /**
+      * Creates a 60 character Bcrypt String, including
+      * version, cost factor, salt and hash, separated by '$' using version
+      * '2y'.
+      *
+      * @param cost     the cost factor, treated as an exponent of 2
+      * @param salt     a 16 byte salt
+      * @param password the password
+      * @return a 60 character Bcrypt String
+      */
+     public static String generate(
+         byte[] password,
+         byte[] salt,
+         int cost)
+     {
+         return generate(defaultVersion, password, salt, cost);
+     }
 
     /**
      * Creates a 60 character Bcrypt String, including
@@ -130,15 +112,59 @@ public class OpenBSDBCrypt
         byte[] salt,
         int cost)
     {
+        if (password == null)
+        {
+            throw new IllegalArgumentException("Password required.");
+        }
+
+        return doGenerate(version, Strings.toUTF8ByteArray(password), salt, cost);
+    }
+
+    /**
+     * Creates a 60 character Bcrypt String, including
+     * version, cost factor, salt and hash, separated by '$'
+     *
+     * @param version  the version, may be 2b, 2y or 2a. (2a is not backwards compatible.)
+     * @param cost     the cost factor, treated as an exponent of 2
+     * @param salt     a 16 byte salt
+     * @param password the password already encoded as a byte array.
+     * @return a 60 character Bcrypt String
+     */
+    public static String generate(
+        String version,
+        byte[] password,
+        byte[] salt,
+        int cost)
+    {
+        if (password == null)
+        {
+            throw new IllegalArgumentException("Password required.");
+        }
+
+        return doGenerate(version, Arrays.clone(password), salt, cost);
+    }
+
+    /**
+     * Creates a 60 character Bcrypt String, including
+     * version, cost factor, salt and hash, separated by '$'
+     *
+     * @param version  the version, may be 2b, 2y or 2a. (2a is not backwards compatible.)
+     * @param cost     the cost factor, treated as an exponent of 2
+     * @param salt     a 16 byte salt
+     * @param psw the password
+     * @return a 60 character Bcrypt String
+     */
+    private static String doGenerate(
+        String version,
+        byte[] psw,
+        byte[] salt,
+        int cost)
+    {
         if (!allowedVersions.contains(version))
         {
             throw new IllegalArgumentException("Version " + version + " is not accepted by this implementation.");
         }
 
-        if (password == null)
-        {
-            throw new IllegalArgumentException("Password required.");
-        }
         if (salt == null)
         {
             throw new IllegalArgumentException("Salt required.");
@@ -151,8 +177,6 @@ public class OpenBSDBCrypt
         {
             throw new IllegalArgumentException("Invalid cost factor.");
         }
-
-        byte[] psw = Strings.toUTF8ByteArray(password);
 
         // 0 termination:
 
@@ -190,11 +214,61 @@ public class OpenBSDBCrypt
         String bcryptString,
         char[] password)
     {
+        if (password == null)
+        {
+            throw new IllegalArgumentException("Missing password.");
+        }
+
+        return doCheckPassword(bcryptString, Strings.toUTF8ByteArray(password));
+    }
+
+    /**
+     * Checks if a password corresponds to a 60 character Bcrypt String
+     *
+     * @param bcryptString a 60 character Bcrypt String, including
+     *                     version, cost factor, salt and hash,
+     *                     separated by '$'
+     * @param password     the password as an array of bytes
+     * @return true if the password corresponds to the
+     * Bcrypt String, otherwise false
+     */
+    public static boolean checkPassword(
+        String bcryptString,
+        byte[] password)
+    {
+        if (password == null)
+        {
+            throw new IllegalArgumentException("Missing password.");
+        }
+
+        return doCheckPassword(bcryptString, Arrays.clone(password));
+    }
+
+    /**
+     * Checks if a password corresponds to a 60 character Bcrypt String
+     *
+     * @param bcryptString a 60 character Bcrypt String, including
+     *                     version, cost factor, salt and hash,
+     *                     separated by '$'
+     * @param password     the password as an array of chars
+     * @return true if the password corresponds to the
+     * Bcrypt String, otherwise false
+     */
+    private static boolean doCheckPassword(
+        String bcryptString,
+        byte[] password)
+    {
+        if (bcryptString == null)
+        {
+            throw new IllegalArgumentException("Missing bcryptString.");
+        }
+
         // validate bcryptString:
-        if (bcryptString.length() != 60)
+        final int sLength = bcryptString.length();
+        if (sLength != 60)
         {
             throw new DataLengthException("Bcrypt String length: "
-                + bcryptString.length() + ", 60 required.");
+                + sLength + ", 60 required.");
         }
 
         if (bcryptString.charAt(0) != '$'
@@ -226,17 +300,53 @@ public class OpenBSDBCrypt
             throw new IllegalArgumentException("Invalid cost factor: " + cost + ", 4 < cost < 31 expected.");
         }
         // check password:
-        if (password == null)
-        {
-            throw new IllegalArgumentException("Missing password.");
-        }
         byte[] salt = decodeSaltString(
             bcryptString.substring(bcryptString.lastIndexOf('$') + 1,
-                bcryptString.length() - 31));
+                sLength - 31));
 
-        String newBcryptString = generate(version, password, salt, cost);
+        String newBcryptString = doGenerate(version, password, salt, cost);
 
-        return bcryptString.equals(newBcryptString);
+        boolean isEqual = sLength == newBcryptString.length();
+        for (int i = 0; i != sLength; i++)
+        {
+            isEqual &= (bcryptString.indexOf(i) == newBcryptString.indexOf(i));
+        }
+        return isEqual;
+    }
+
+    /**
+     * Creates a 60 character Bcrypt String, including
+     * version, cost factor, salt and hash, separated by '$'
+     *
+     * @param version  the version, 2y,2b or 2a. (2a is not backwards compatible.)
+     * @param cost     the cost factor, treated as an exponent of 2
+     * @param salt     a 16 byte salt
+     * @param password the password
+     * @return a 60 character Bcrypt String
+     */
+    private static String createBcryptString(String version,
+                                             byte[] password,
+                                             byte[] salt,
+                                             int cost)
+    {
+        if (!allowedVersions.contains(version))
+        {
+            throw new IllegalArgumentException("Version " + version + " is not accepted by this implementation.");
+        }
+        
+        StringBuilder sb = new StringBuilder(60);
+        sb.append('$');
+        sb.append(version);
+        sb.append('$');
+        sb.append(cost < 10 ? ("0" + cost) : Integer.toString(cost));
+        sb.append('$');
+        encodeData(sb, salt);
+
+        byte[] key = BCrypt.generate(password, salt, cost);
+
+        encodeData(sb, key);
+
+        return sb.toString();
     }
 
     /*
@@ -245,9 +355,9 @@ public class OpenBSDBCrypt
      * @param 	a byte representation of the salt or the password
      * @return 	the Bcrypt base64 String
      */
-    private static String encodeData(
+    private static void encodeData(
+        StringBuilder sb,
         byte[] data)
-
     {
         if (data.length != 24 && data.length != 16) // 192 bit key or 128 bit salt expected
         {
@@ -266,7 +376,6 @@ public class OpenBSDBCrypt
             data[data.length - 1] = (byte)0;
         }
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
         int len = data.length;
 
         int a1, a2, a3;
@@ -277,23 +386,21 @@ public class OpenBSDBCrypt
             a2 = data[i + 1] & 0xff;
             a3 = data[i + 2] & 0xff;
 
-            out.write(encodingTable[(a1 >>> 2) & 0x3f]);
-            out.write(encodingTable[((a1 << 4) | (a2 >>> 4)) & 0x3f]);
-            out.write(encodingTable[((a2 << 2) | (a3 >>> 6)) & 0x3f]);
-            out.write(encodingTable[a3 & 0x3f]);
+            sb.append((char)encodingTable[(a1 >>> 2) & 0x3f]);
+            sb.append((char)encodingTable[((a1 << 4) | (a2 >>> 4)) & 0x3f]);
+            sb.append((char)encodingTable[((a2 << 2) | (a3 >>> 6)) & 0x3f]);
+            sb.append((char)encodingTable[a3 & 0x3f]);
         }
 
-        String result = Strings.fromByteArray(out.toByteArray());
         if (salt == true)// truncate padding
         {
-            return result.substring(0, 22);
+            sb.setLength(sb.length() - 2);
         }
         else
         {
-            return result.substring(0, result.length() - 1);
+            sb.setLength(sb.length() -1);
         }
     }
-
 
     /*
      * decodes the bcrypt base 64 encoded SaltString
