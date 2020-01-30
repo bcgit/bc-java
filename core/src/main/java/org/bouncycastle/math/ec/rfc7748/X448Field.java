@@ -651,16 +651,22 @@ public abstract class X448Field
         mul(t, x222, z);
     }
 
-    private static void reduce(int[] z, int c)
+    private static void reduce(int[] z, int x)
     {
         int t = z[15], z15 = t & M28;
-        t = (t >> 28) + c;
-        z[8] += t;
-        for (int i = 0; i < 15; ++i)
+        t = (t >>> 28) + x;
+
+        long cc = t;
+        for (int i = 0; i < 8; ++i)
         {
-            t += z[i]; z[i] = t & M28; t >>= 28;
+            cc += z[i] & U32; z[i] = (int)cc & M28; cc >>= 28;
         }
-        z[15] = z15 + t;
+        cc += t;
+        for (int i = 8; i < 15; ++i)
+        {
+            cc += z[i] & U32; z[i] = (int)cc & M28; cc >>= 28;
+        }
+        z[15] = z15 + (int)cc;
     }
 
     public static void sqr(int[] x, int[] z)
