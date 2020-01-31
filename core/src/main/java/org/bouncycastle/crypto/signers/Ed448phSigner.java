@@ -29,10 +29,8 @@ public class Ed448phSigner
 
         if (forSigning)
         {
-            // TODO Allow AsymmetricCipherKeyPair to be a CipherParameters?
-
             this.privateKey = (Ed448PrivateKeyParameters)parameters;
-            this.publicKey = privateKey.generatePublicKey();
+            this.publicKey = null;
         }
         else
         {
@@ -67,7 +65,7 @@ public class Ed448phSigner
         }
 
         byte[] signature = new byte[Ed448PrivateKeyParameters.SIGNATURE_SIZE];
-        privateKey.sign(Ed448.Algorithm.Ed448ph, publicKey, context, msg, 0, Ed448.PREHASH_SIZE, signature, 0);
+        privateKey.sign(Ed448.Algorithm.Ed448ph, context, msg, 0, Ed448.PREHASH_SIZE, signature, 0);
         return signature;
     }
 

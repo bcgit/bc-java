@@ -31,10 +31,8 @@ public class Ed448Signer
 
         if (forSigning)
         {
-            // TODO Allow AsymmetricCipherKeyPair to be a CipherParameters?
-
             this.privateKey = (Ed448PrivateKeyParameters)parameters;
-            this.publicKey = privateKey.generatePublicKey();
+            this.publicKey = null;
         }
         else
         {
@@ -62,7 +60,7 @@ public class Ed448Signer
             throw new IllegalStateException("Ed448Signer not initialised for signature generation.");
         }
 
-        return buffer.generateSignature(privateKey, publicKey, context);
+        return buffer.generateSignature(privateKey, context);
     }
 
     public boolean verifySignature(byte[] signature)
@@ -82,10 +80,10 @@ public class Ed448Signer
 
     private static class Buffer extends ByteArrayOutputStream
     {
-        synchronized byte[] generateSignature(Ed448PrivateKeyParameters privateKey, Ed448PublicKeyParameters publicKey, byte[] ctx)
+        synchronized byte[] generateSignature(Ed448PrivateKeyParameters privateKey, byte[] ctx)
         {
             byte[] signature = new byte[Ed448PrivateKeyParameters.SIGNATURE_SIZE];
-            privateKey.sign(Ed448.Algorithm.Ed448, publicKey, ctx, buf, 0, count, signature, 0);
+            privateKey.sign(Ed448.Algorithm.Ed448, ctx, buf, 0, count, signature, 0);
             reset();
             return signature;
         }
