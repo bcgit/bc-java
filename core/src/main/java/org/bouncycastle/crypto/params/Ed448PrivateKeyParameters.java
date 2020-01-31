@@ -17,6 +17,8 @@ public final class Ed448PrivateKeyParameters
 
     private final byte[] data = new byte[KEY_SIZE];
 
+    private Ed448PublicKeyParameters cachedPublicKey;
+
     public Ed448PrivateKeyParameters(SecureRandom random)
     {
         super(true);
@@ -53,22 +55,33 @@ public final class Ed448PrivateKeyParameters
 
     public Ed448PublicKeyParameters generatePublicKey()
     {
-        byte[] publicKey = new byte[Ed448.PUBLIC_KEY_SIZE];
-        Ed448.generatePublicKey(data, 0, publicKey, 0);
-        return new Ed448PublicKeyParameters(publicKey, 0);
+        synchronized (data)
+        {
+            if (null == cachedPublicKey)
+            {
+                byte[] publicKey = new byte[Ed448.PUBLIC_KEY_SIZE];
+                Ed448.generatePublicKey(data, 0, publicKey, 0);
+                cachedPublicKey = new Ed448PublicKeyParameters(publicKey, 0);
+            }
+
+            return cachedPublicKey;
+        }
     }
 
+    /**
+     * @deprecated use overload that doesn't take a public key
+     */
     public void sign(int algorithm, Ed448PublicKeyParameters publicKey, byte[] ctx, byte[] msg, int msgOff, int msgLen, byte[] sig, int sigOff)
     {
+        sign(algorithm, ctx, msg, msgOff, msgLen, sig, sigOff);
+    }
+
+    public void sign(int algorithm, byte[] ctx, byte[] msg, int msgOff, int msgLen, byte[] sig, int sigOff)
+    {
+        Ed448PublicKeyParameters publicKey = generatePublicKey();
+
         byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
-        if (null == publicKey)
-        {
-            Ed448.generatePublicKey(data, 0, pk, 0);
-        }
-        else
-        {
-            publicKey.encode(pk, 0);
-        }
+        publicKey.encode(pk, 0);
 
         switch (algorithm)
         {

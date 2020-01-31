@@ -29,10 +29,8 @@ public class Ed25519phSigner
 
         if (forSigning)
         {
-            // TODO Allow AsymmetricCipherKeyPair to be a CipherParameters?
-
             this.privateKey = (Ed25519PrivateKeyParameters)parameters;
-            this.publicKey = privateKey.generatePublicKey();
+            this.publicKey = null;
         }
         else
         {
@@ -67,7 +65,7 @@ public class Ed25519phSigner
         }
 
         byte[] signature = new byte[Ed25519PrivateKeyParameters.SIGNATURE_SIZE];
-        privateKey.sign(Ed25519.Algorithm.Ed25519ph, publicKey, context, msg, 0, Ed25519.PREHASH_SIZE, signature, 0);
+        privateKey.sign(Ed25519.Algorithm.Ed25519ph, context, msg, 0, Ed25519.PREHASH_SIZE, signature, 0);
         return signature;
     }
 
