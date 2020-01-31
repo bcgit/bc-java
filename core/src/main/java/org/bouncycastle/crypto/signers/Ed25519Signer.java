@@ -28,10 +28,8 @@ public class Ed25519Signer
 
         if (forSigning)
         {
-            // TODO Allow AsymmetricCipherKeyPair to be a CipherParameters?
-
             this.privateKey = (Ed25519PrivateKeyParameters)parameters;
-            this.publicKey = privateKey.generatePublicKey();
+            this.publicKey = null;
         }
         else
         {
@@ -59,7 +57,7 @@ public class Ed25519Signer
             throw new IllegalStateException("Ed25519Signer not initialised for signature generation.");
         }
 
-        return buffer.generateSignature(privateKey, publicKey);
+        return buffer.generateSignature(privateKey);
     }
 
     public boolean verifySignature(byte[] signature)
@@ -79,10 +77,10 @@ public class Ed25519Signer
 
     private static class Buffer extends ByteArrayOutputStream
     {
-        synchronized byte[] generateSignature(Ed25519PrivateKeyParameters privateKey, Ed25519PublicKeyParameters publicKey)
+        synchronized byte[] generateSignature(Ed25519PrivateKeyParameters privateKey)
         {
             byte[] signature = new byte[Ed25519PrivateKeyParameters.SIGNATURE_SIZE];
-            privateKey.sign(Ed25519.Algorithm.Ed25519, publicKey, null, buf, 0, count, signature, 0);
+            privateKey.sign(Ed25519.Algorithm.Ed25519, null, buf, 0, count, signature, 0);
             reset();
             return signature;
         }
