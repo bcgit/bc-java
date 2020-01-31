@@ -614,28 +614,29 @@ public final class BCrypt
     }
 
     /**
-     * Calculates the <b>bcrypt</b> hash of a password.
+     * Calculates the <b>bcrypt</b> hash of an input - note for processing general passwords you want to
+     * make sure the password is terminated in a manner similar to what is done by passwordToByteArray().
      * <p>
      * This implements the raw <b>bcrypt</b> function as defined in the bcrypt specification, not
      * the crypt encoded version implemented in OpenBSD.
      * </p>
-     * @param password the password bytes (up to 72 bytes) to use for this invocation.
+     * @param pwInput    the password bytes (up to 72 bytes) to use for this invocation.
      * @param salt     the 128 bit salt to use for this invocation.
      * @param cost     the bcrypt cost parameter. The cost of the bcrypt function grows as
      *                 <code>2^cost</code>. Legal values are 4..31 inclusive.
      * @return the output of the raw bcrypt operation: a 192 bit (24 byte) hash.
      */
-    public static byte[] generate(byte[] password, byte[] salt, int cost)
+    public static byte[] generate(byte[] pwInput, byte[] salt, int cost)
     {
-        if (password == null || salt == null)
+        if (pwInput == null || salt == null)
         {
-            throw new IllegalArgumentException("Password and salt are required");
+            throw new IllegalArgumentException("pwInput and salt are required");
         }
         if (salt.length != SALT_SIZE_BYTES)
         {
             throw new IllegalArgumentException("BCrypt salt must be 128 bits");
         }
-        if (password.length > MAX_PASSWORD_BYTES)
+        if (pwInput.length > MAX_PASSWORD_BYTES)
         {
             throw new IllegalArgumentException("BCrypt password must be <= 72 bytes");
         }
@@ -644,6 +645,6 @@ public final class BCrypt
             throw new IllegalArgumentException("BCrypt cost must be from 4..31");
         }
 
-        return new BCrypt().deriveRawKey(cost, salt, password);
+        return new BCrypt().deriveRawKey(cost, salt, pwInput);
     }
 }
