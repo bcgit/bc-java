@@ -439,22 +439,22 @@ public abstract class X25519Field
         mul(t, x, rz);
     }
 
-    private static void reduce(int[] z, int c)
+    private static void reduce(int[] z, int x)
     {
-        int z9 = z[9], t = z9;
-                   z9   = t & M24; t >>= 24;
-        t += c;
-        t *= 19;
-        t += z[0]; z[0] = t & M26; t >>= 26;
-        t += z[1]; z[1] = t & M26; t >>= 26;
-        t += z[2]; z[2] = t & M25; t >>= 25;
-        t += z[3]; z[3] = t & M26; t >>= 26;
-        t += z[4]; z[4] = t & M25; t >>= 25;
-        t += z[5]; z[5] = t & M26; t >>= 26;
-        t += z[6]; z[6] = t & M26; t >>= 26;
-        t += z[7]; z[7] = t & M25; t >>= 25;
-        t += z[8]; z[8] = t & M26; t >>= 26;
-        t += z9;   z[9] = t;
+        int t = z[9], z9 = t & M24;
+        t = (t >> 24) + x;
+
+        long cc = t * 19;
+        cc += z[0]; z[0] = (int)cc & M26; cc >>= 26;
+        cc += z[1]; z[1] = (int)cc & M26; cc >>= 26;
+        cc += z[2]; z[2] = (int)cc & M25; cc >>= 25;
+        cc += z[3]; z[3] = (int)cc & M26; cc >>= 26;
+        cc += z[4]; z[4] = (int)cc & M25; cc >>= 25;
+        cc += z[5]; z[5] = (int)cc & M26; cc >>= 26;
+        cc += z[6]; z[6] = (int)cc & M26; cc >>= 26;
+        cc += z[7]; z[7] = (int)cc & M25; cc >>= 25;
+        cc += z[8]; z[8] = (int)cc & M26; cc >>= 26;
+        z[9] = z9 + (int)cc;
     }
 
     public static void sqr(int[] x, int[] z)
