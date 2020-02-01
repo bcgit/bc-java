@@ -4,16 +4,19 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.pqc.crypto.lms.HSSTests;
+import org.bouncycastle.pqc.crypto.lms.LMSKeyGenTests;
+import org.bouncycastle.pqc.crypto.lms.LMSTests;
 import org.bouncycastle.util.test.SimpleTestResult;
 
 public class AllTests
     extends TestCase
 {
-    public static void main (String[] args)
+    public static void main(String[] args)
     {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite()
     {
         TestSuite suite = new TestSuite("Lightweight PQ Crypto Tests");
@@ -39,12 +42,16 @@ public class AllTests
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSUtilTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
+        suite.addTestSuite(HSSTests.class);
+        suite.addTestSuite(LMSKeyGenTests.class);
+        suite.addTestSuite(LMSTests.class);
+
 
         return new BCTestSetup(suite);
     }
 
     public static class SimpleTestTest
-       extends TestCase
+        extends TestCase
     {
         public void testPQC()
         {
@@ -52,7 +59,7 @@ public class AllTests
 
             for (int i = 0; i != tests.length; i++)
             {
-                SimpleTestResult  result = (SimpleTestResult)tests[i].perform();
+                SimpleTestResult result = (SimpleTestResult)tests[i].perform();
 
                 if (!result.isSuccessful())
                 {
