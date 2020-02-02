@@ -133,10 +133,7 @@ public class HSS
             parameters.getLmOtsParameters()[0],
             0, I, rootSeed);
 
-        if (parameters.isGenerateOTSPK())
-        {
-            keys[0].generateOTSPublicKeys();
-        }
+
 
         // Step 2 -- This step could be deferred until first use.
         for (int i = 1; i < keys.length; i++)
@@ -156,10 +153,6 @@ public class HSS
                 parameters.getLmOtsParameters()[i],
                 0, childI, childRootSeed);
 
-            if (parameters.isGenerateOTSPK())
-            {
-                keys[i].generateOTSPublicKeys();
-            }
             sig[i - 1] = LMS.generateSign(keys[i - 1], keys[i].getPublicKey().getEncoded());
         }
 
