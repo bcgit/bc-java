@@ -27,7 +27,6 @@ public class LmsPrivateKey
     private LmsPublicKey publicKey;
     private byte[] T1;
 
-    private byte[][] T = null;
 
 
     public LmsPrivateKey(LmsParameter lmsParameter, LmOtsParameter lmOtsParameter, int q, byte[] I, int maxQ, byte[] masterSecret)
@@ -88,17 +87,6 @@ public class LmsPrivateKey
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
-    /**
-     * Optional, will generate the K values of each possible OTS key.
-     */
-    public void generateOTSPublicKeys()
-    {
-        T = new byte[maxQ][];
-        for (int t = 0; t < maxQ; t++)
-        {
-            T[t] = LM_OTS.lms_ots_generatePublicKey(lmOtsParameter, I, t, masterSecret);
-        }
-    }
 
     LmOtsPrivateKey getCurrentOTSKey()
         throws LMSException
@@ -199,10 +187,6 @@ public class LmsPrivateKey
 
     }
 
-    public byte[][] getT()
-    {
-        return T;
-    }
 
     public LmOtsParameter getLmOtsParameter()
     {

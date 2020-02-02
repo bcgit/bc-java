@@ -15,7 +15,6 @@ public class HSSKeyGenerationParameters
     private final LmsParameter[] lmsParameters;
     private final LmOtsParameter[] lmOtsParameters;
     private final SecureRandom lmsEntropySource;
-    private final boolean generateOTSPK;
     private final byte[] masterSeed;
 
 
@@ -30,7 +29,6 @@ public class HSSKeyGenerationParameters
         this.lmsParameters = lmsParameters;
         this.lmOtsParameters = lmOtsParameters;
         this.lmsEntropySource = lmsEntropySource;
-        this.generateOTSPK = generateOTSPK;
         this.masterSeed = masterSeed;
     }
 
@@ -59,10 +57,6 @@ public class HSSKeyGenerationParameters
         return lmsEntropySource;
     }
 
-    public boolean isGenerateOTSPK()
-    {
-        return generateOTSPK;
-    }
 
     public byte[] getMasterSeed()
     {
