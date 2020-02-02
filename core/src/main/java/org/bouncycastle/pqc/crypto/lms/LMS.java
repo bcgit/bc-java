@@ -97,12 +97,10 @@ public class LMS
     public static byte[] findT(int r, LmsPrivateKey privateKey, Digest digest)
     {
 
-        byte[][] Tt = privateKey.getT();
 
         int h = privateKey.getParameterSet().getH();
 
         int twoToh = 1 << h;
-        int top = (1 << (h + 1)) - 1;
 
         byte[] T;
 
@@ -115,15 +113,12 @@ public class LMS
             LmsUtils.u32str(r, digest);
             LmsUtils.u16str(D_LEAF, digest);
 
-            byte[] K;
-            if (Tt != null)
-            {
-                K = Tt[(r - twoToh)];
-            }
-            else
-            {
-                K = LM_OTS.lms_ots_generatePublicKey(privateKey.getLmOtsType(), privateKey.getI(), (r - twoToh), privateKey.getMasterSecret());
-            }
+            //
+            // These can be pre generated at the time of key generation and held within the private key.
+            // However it will cost memory to have them stick around.
+            //
+            byte[] K = LM_OTS.lms_ots_generatePublicKey(privateKey.getLmOtsType(), privateKey.getI(), (r - twoToh), privateKey.getMasterSecret());
+
             LmsUtils.byteArray(K, digest);
             T = new byte[digest.getDigestSize()];
             digest.doFinal(T, 0);
