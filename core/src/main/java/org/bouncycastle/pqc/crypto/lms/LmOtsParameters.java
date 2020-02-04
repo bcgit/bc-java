@@ -3,74 +3,83 @@ package org.bouncycastle.pqc.crypto.lms;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+
 public class LmOtsParameters
 {
     public static final int reserved = 0;
-    public static final int sha256_n32_w1 = 1;
-    public static final int sha256_n32_w2 = 2;
-    public static final int sha256_n32_w4 = 3;
-    public static final int sha256_n32_w8 = 4;
+    public static final LmOtsParameters sha256_n32_w1 = new LmOtsParameters(1, 32, 1, 265, 7, 8516, NISTObjectIdentifiers.id_sha256);
+    public static final LmOtsParameters sha256_n32_w2 = new LmOtsParameters(2, 32, 2, 133, 6, 4292, NISTObjectIdentifiers.id_sha256);
+    public static final LmOtsParameters sha256_n32_w4 = new LmOtsParameters(3, 32, 4, 67, 4, 2180, NISTObjectIdentifiers.id_sha256);
+    public static final LmOtsParameters sha256_n32_w8 = new LmOtsParameters(4, 32, 8, 34, 0, 1124, NISTObjectIdentifiers.id_sha256);
 
-    private static final Map<Object, ForClass> suppliers = new HashMap<Object, ForClass>()
+    private static final Map<Object, LmOtsParameters> suppliers = new HashMap<Object, LmOtsParameters>()
     {
         {
-            put(sha256_n32_w1, new ForClass(LmOtsParameter.LMOTS_SHA256_N32_W1.class));
-            put(sha256_n32_w2, new ForClass(LmOtsParameter.LMOTS_SHA256_N32_W2.class));
-            put(sha256_n32_w4, new ForClass(LmOtsParameter.LMOTS_SHA256_N32_W4.class));
-            put(sha256_n32_w8, new ForClass(LmOtsParameter.LMOTS_SHA256_N32_W8.class));
+            put(sha256_n32_w1.type, sha256_n32_w1);
+            put(sha256_n32_w2.type, sha256_n32_w2);
+            put(sha256_n32_w4.type, sha256_n32_w4);
+            put(sha256_n32_w8.type, sha256_n32_w8);
         }
     };
 
+    private final int type;
+    private final int n;
+    private final int w;
+    private final int p;
+    private final int ls;
+    private final int sigLen;
+    private final ASN1ObjectIdentifier digestOID;
 
-    /**
-     * Return Leighton-Micali One Time Signature Parameters for a given key.
-     * The key is usually an integer.
-     *
-     * @param key The key.
-     * @return A LmOtsParameter instance or throws IllegalArgumentException
-     */
-    public static LmOtsParameter getOtsParameter(Object key) throws LMSException
+    protected LmOtsParameters(int type, int n, int w, int p, int ls, int sigLen, ASN1ObjectIdentifier digestOID)
     {
-        if (key instanceof LmOtsParameter) {
-            return (LmOtsParameter)key;
-        }
-
-        ForClass fc = suppliers.get(key);
-        if (fc != null)
-        {
-            return fc.create();
-        }
-        throw new LMSException("no parameters for key " + key);
+        this.type = type;
+        this.n = n;
+        this.w = w;
+        this.p = p;
+        this.ls = ls;
+        this.sigLen = sigLen;
+        this.digestOID = digestOID;
     }
 
-    private interface OtsParamSuppler
+    public int getType()
     {
-        public LmOtsParameter create();
+        return type;
     }
 
-
-    private static class ForClass
-        implements OtsParamSuppler
+    public int getN()
     {
+        return n;
+    }
 
-        Class<? extends LmOtsParameter> aClass;
+    public int getW()
+    {
+        return w;
+    }
 
-        public ForClass(Class<? extends LmOtsParameter> aClass)
-        {
-            this.aClass = aClass;
-        }
+    public int getP()
+    {
+        return p;
+    }
 
-        @Override
-        public LmOtsParameter create()
-        {
-            try
-            {
-                return (LmOtsParameter)aClass.getConstructor(new Class[0]).newInstance();
-            }
-            catch (Exception ex)
-            {
-                throw new RuntimeException(ex.getMessage(), ex);
-            }
-        }
+    public int getLs()
+    {
+        return ls;
+    }
+
+    public int getSigLen()
+    {
+        return sigLen;
+    }
+
+    public ASN1ObjectIdentifier getDigestOID()
+    {
+        return digestOID;
+    }
+
+    public static LmOtsParameters getParametersForType(int type)
+    {
+        return suppliers.get(type);
     }
 }

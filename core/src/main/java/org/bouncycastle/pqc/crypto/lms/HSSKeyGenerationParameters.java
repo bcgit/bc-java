@@ -6,16 +6,16 @@ import java.util.Collection;
 public class HSSKeyGenerationParameters
 {
     private final int depth;
-    private final LmsParameter[] lmsParameters;
-    private final LmOtsParameter[] lmOtsParameters;
+    private final LMSParameters[] lmsParameters;
+    private final LmOtsParameters[] lmOtsParameters;
     private final SecureRandom lmsEntropySource;
     private final byte[] masterSeed;
 
 
     private HSSKeyGenerationParameters(
         int depth,
-        LmsParameter[] lmsParameters,
-        LmOtsParameter[] lmOtsParameters,
+        LMSParameters[] lmsParameters,
+        LmOtsParameters[] lmOtsParameters,
         SecureRandom lmsEntropySource, boolean generateOTSPK,
         byte[] masterSeed)
     {
@@ -36,12 +36,12 @@ public class HSSKeyGenerationParameters
         return depth;
     }
 
-    public LmsParameter[] getLmsParameters()
+    public LMSParameters[] getLmsParameters()
     {
         return lmsParameters;
     }
 
-    public LmOtsParameter[] getLmOtsParameters()
+    public LmOtsParameters[] getLmOtsParameters()
     {
         return lmOtsParameters;
     }
@@ -60,8 +60,8 @@ public class HSSKeyGenerationParameters
     public static class Builder
     {
         private int depth;
-        private LmsParameter[] lmsParameters;
-        private LmOtsParameter[] lmOtsParameters;
+        private LMSParameters[] lmsParameters;
+        private LmOtsParameters[] lmOtsParameters;
         private SecureRandom lmsEntropySource;
         private byte[] masterSeed;
         private boolean generateOTSPK;
@@ -78,15 +78,15 @@ public class HSSKeyGenerationParameters
         }
 
 
-        public Builder setLmsParameters(LmsParameter... lmsParameters)
+        public Builder setLmsParameters(LMSParameters... lmsParameters)
         {
             this.lmsParameters = lmsParameters;
             return this;
         }
 
-        public Builder setLmsParameters(Collection<LmsParameter> lmsParameters)
+        public Builder setLmsParameters(Collection<LMSParameters> lmsParameters)
         {
-            this.lmsParameters = lmsParameters.toArray(new LmsParameter[lmsParameters.size()]);
+            this.lmsParameters = lmsParameters.toArray(new LMSParameters[lmsParameters.size()]);
             return this;
         }
 
@@ -101,7 +101,7 @@ public class HSSKeyGenerationParameters
         public Builder setLmsParameters(int... lmsType)
             throws LMSException
         {
-            lmsParameters = new LmsParameter[lmsType.length];
+            lmsParameters = new LMSParameters[lmsType.length];
             int c = 0;
             for (int t : lmsType)
             {
@@ -115,26 +115,26 @@ public class HSSKeyGenerationParameters
         public Builder setLmOtsParameters(int... lmOtsType)
             throws LMSException
         {
-            lmOtsParameters = new LmOtsParameter[lmOtsType.length];
+            lmOtsParameters = new LmOtsParameters[lmOtsType.length];
             int c = 0;
             for (int t : lmOtsType)
             {
-                lmOtsParameters[c++] = LmOtsParameters.getOtsParameter(t);
+                lmOtsParameters[c++] = LmOtsParameters.getParametersForType(t);
             }
 
             return this;
         }
 
 
-        public Builder setLmOtsParameters(LmOtsParameter... lmOtsParameters)
+        public Builder setLmOtsParameters(LmOtsParameters... lmOtsParameters)
         {
             this.lmOtsParameters = lmOtsParameters;
             return this;
         }
 
-        public Builder setLmOtsParameters(Collection<LmOtsParameter> lmOtsParameters)
+        public Builder setLmOtsParameters(Collection<LmOtsParameters> lmOtsParameters)
         {
-            this.lmOtsParameters = lmOtsParameters.toArray(new LmOtsParameter[lmOtsParameters.size()]);
+            this.lmOtsParameters = lmOtsParameters.toArray(new LmOtsParameters[lmOtsParameters.size()]);
             return this;
         }
 

@@ -6,15 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.bouncycastle.util.Encodable;
-
 public class LMSPrivateKeyParameters
-    implements Encodable
+    extends LMSKeyParameters
 {
 
     private final byte[] I;
-    private final LmsParameter parameterSet;
-    private final LmOtsParameter lmOtsParameter;
+    private final LMSParameters parameterSet;
+    private final LmOtsParameters lmOtsParameter;
     private final int maxQ;
     private final byte[] masterSecret;
     private int q;
@@ -25,10 +23,10 @@ public class LMSPrivateKeyParameters
     private LMSPublicKeyParameters publicKey;
     private byte[] T1;
 
-
-
-    public LMSPrivateKeyParameters(LmsParameter lmsParameter, LmOtsParameter lmOtsParameter, int q, byte[] I, int maxQ, byte[] masterSecret)
+    public LMSPrivateKeyParameters(LMSParameters lmsParameter, LmOtsParameters lmOtsParameter, int q, byte[] I, int maxQ, byte[] masterSecret)
     {
+        super(true);
+
         this.parameterSet = lmsParameter;
         this.lmOtsParameter = lmOtsParameter;
         this.q = q;
@@ -51,8 +49,8 @@ public class LMSPrivateKeyParameters
                 throw new LMSException("expected vetsion 0 lms private key");
             }
 
-            LmsParameter parameter = LMSParameters.getParametersForType(((DataInputStream)src).readInt());
-            LmOtsParameter otsParameter = LmOtsParameters.getOtsParameter(((DataInputStream)src).readInt());
+            LMSParameters parameter = LMSParameters.getParametersForType(((DataInputStream)src).readInt());
+            LmOtsParameters otsParameter = LmOtsParameters.getParametersForType(((DataInputStream)src).readInt());
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
 
@@ -115,12 +113,12 @@ public class LMSPrivateKeyParameters
         }
     }
 
-    public LmsParameter getParameterSet()
+    public LMSParameters getParameterSet()
     {
         return parameterSet;
     }
 
-    public LmOtsParameter getLmOtsType()
+    public LmOtsParameters getLmOtsType()
     {
         return lmOtsParameter;
     }
@@ -152,7 +150,6 @@ public class LMSPrivateKeyParameters
 
 
     public LMSPublicKeyParameters getPublicKey()
-        throws LMSException
     {
         synchronized (this)
         {
@@ -186,7 +183,7 @@ public class LMSPrivateKeyParameters
     }
 
 
-    public LmOtsParameter getLmOtsParameter()
+    public LmOtsParameters getLmOtsParameter()
     {
         return lmOtsParameter;
     }

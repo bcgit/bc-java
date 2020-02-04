@@ -34,7 +34,7 @@ public class LMSKeyGenTests
         int level = 1; // This is the second level, we use this because it signs the message.
 
         // Generate the private key.
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getOtsParameter(4), level, I, seed);
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getParametersForType(4), level, I, seed);
 
         // This derives the public key.
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();

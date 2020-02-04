@@ -30,12 +30,12 @@ public class LM_OTS
         return (S[index] >>> shift) & mask;
     }
 
-    public static int cksm(byte[] S, LmOtsParameter parameters)
+    public static int cksm(byte[] S, LmOtsParameters parameters)
     {
         return cksm(S, S.length, parameters);
     }
 
-    public static int cksm(byte[] S, int sLen, LmOtsParameter parameters)
+    public static int cksm(byte[] S, int sLen, LmOtsParameters parameters)
     {
         int sum = 0;
 
@@ -58,14 +58,14 @@ public class LM_OTS
         return new LMOtsPublicKey(privateKey.getParameter(), privateKey.getI(), privateKey.getQ(), K);
     }
 
-    static byte[] lms_ots_generatePublicKey(LmOtsParameter parameter, byte[] I, int q, byte[] masterSecret)
+    static byte[] lms_ots_generatePublicKey(LmOtsParameters parameter, byte[] I, int q, byte[] masterSecret)
     {
 
 
         //
         // Start hash that computes the final value.
         //
-        Digest publicContext = parameter.getH();
+        Digest publicContext = DigestUtil.getDigest(parameter.getDigestOID());
         byte[] prehashPrefix = Composer.compose()
             .bytes(I)
             .u32str(q)
@@ -74,7 +74,7 @@ public class LM_OTS
             .build();
         publicContext.update(prehashPrefix, 0, prehashPrefix.length);
 
-        Digest ctx = parameter.getH();
+        Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
 
         byte[] buf = Composer.compose()
             .bytes(I)
@@ -83,7 +83,7 @@ public class LM_OTS
             .build();
 
 
-        SeedDerive derive = new SeedDerive(I, masterSecret, parameter.getH());
+        SeedDerive derive = new SeedDerive(I, masterSecret, DigestUtil.getDigest(parameter.getDigestOID()));
         derive.setQ(q);
         derive.setJ(0);
 
@@ -115,7 +115,7 @@ public class LM_OTS
     public static LMOtsSignature lm_ots_generate_signature(LmOtsPrivateKey privateKey, byte[] message, boolean preHashed)
     {
 
-        LmOtsParameter parameter = privateKey.getParameter();
+        LmOtsParameters parameter = privateKey.getParameter();
 
         int n = parameter.getN();
         int p = parameter.getP();
@@ -142,7 +142,7 @@ public class LM_OTS
 
         byte[] Q = new byte[MAX_HASH + 2];
 
-        Digest ctx = parameter.getH();
+        Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
 
         if (!preHashed)
         {
@@ -194,7 +194,7 @@ public class LM_OTS
         return Arrays.areEqual(lm_ots_validate_signature_calculate(publicKey.getParameter(), publicKey.getI(), publicKey.getQ(), signature, message, prehashed), publicKey.getK());
     }
 
-    public static byte[] lm_ots_validate_signature_calculate(LmOtsParameter parameter, byte[] I, int q, LMOtsSignature signature, byte[] message, boolean prehashed)
+    public static byte[] lm_ots_validate_signature_calculate(LmOtsParameters parameter, byte[] I, int q, LMOtsSignature signature, byte[] message, boolean prehashed)
     {
 
         byte[] C = signature.getC();
@@ -207,7 +207,7 @@ public class LM_OTS
         }
         else
         {
-            Digest ctx = parameter.getH();
+            Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
             LmsUtils.byteArray(I, ctx);
             LmsUtils.u32str(q, ctx);
             LmsUtils.u16str(D_MESG, ctx);
@@ -226,7 +226,7 @@ public class LM_OTS
         Q[n + 1] = (byte)cs;
 
 
-        Digest finalContext = parameter.getH();
+        Digest finalContext = DigestUtil.getDigest(parameter.getDigestOID());
         LmsUtils.byteArray(I, finalContext);
         LmsUtils.u32str(q, finalContext);
         LmsUtils.u16str(D_PBLC, finalContext);
@@ -240,7 +240,7 @@ public class LM_OTS
         int max_digit = (1 << w) - 1;
 
 
-        Digest ctx = parameter.getH();
+        Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
         for (int i = 0; i < p; i++)
         {
             Pack.shortToBigEndian((short)i, tmp, ITER_K);

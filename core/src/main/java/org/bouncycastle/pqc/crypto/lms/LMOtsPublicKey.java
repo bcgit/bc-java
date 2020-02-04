@@ -11,13 +11,13 @@ import org.bouncycastle.util.Encodable;
 public class LMOtsPublicKey
     implements Encodable
 {
-    private final LmOtsParameter parameter;
+    private final LmOtsParameters parameter;
     private final byte[] I;
     private final int q;
     private final byte[] K;
 
 
-    public LMOtsPublicKey(LmOtsParameter parameter, byte[] i, int q, byte[] k)
+    public LMOtsPublicKey(LmOtsParameters parameter, byte[] i, int q, byte[] k)
     {
         this.parameter = parameter;
         this.I = i;
@@ -34,7 +34,7 @@ public class LMOtsPublicKey
         }
         else if (src instanceof DataInputStream)
         {
-            LmOtsParameter parameter = LmOtsParameters.getOtsParameter(((DataInputStream)src).readInt());
+            LmOtsParameters parameter = LmOtsParameters.getParametersForType(((DataInputStream)src).readInt());
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
             int q = ((DataInputStream)src).readInt();
@@ -57,7 +57,7 @@ public class LMOtsPublicKey
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
-    public LmOtsParameter getParameter()
+    public LmOtsParameters getParameter()
     {
         return parameter;
     }

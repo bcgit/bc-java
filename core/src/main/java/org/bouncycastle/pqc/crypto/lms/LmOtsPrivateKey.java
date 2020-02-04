@@ -2,12 +2,12 @@ package org.bouncycastle.pqc.crypto.lms;
 
 public class LmOtsPrivateKey
 {
-    private final LmOtsParameter parameter;
+    private final LmOtsParameters parameter;
     private final byte[] I;
     private final int q;
     private final byte[] masterSecret;
 
-    public LmOtsPrivateKey(LmOtsParameter parameter, byte[] i, int q, byte[] masterSecret)
+    public LmOtsPrivateKey(LmOtsParameters parameter, byte[] i, int q, byte[] masterSecret)
     {
         this.parameter = parameter;
         I = i;
@@ -17,12 +17,12 @@ public class LmOtsPrivateKey
 
     SeedDerive getDerivationFunction()
     {
-        SeedDerive derive = new SeedDerive(I, masterSecret, parameter.getH());
+        SeedDerive derive = new SeedDerive(I, masterSecret, DigestUtil.getDigest(parameter.getDigestOID()));
         derive.setQ(q);
         return derive;
     }
 
-    public LmOtsParameter getParameter()
+    public LmOtsParameters getParameter()
     {
         return parameter;
     }

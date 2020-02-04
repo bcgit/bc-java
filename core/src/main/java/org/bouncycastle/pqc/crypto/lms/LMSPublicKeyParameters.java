@@ -6,14 +6,17 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 public class LMSPublicKeyParameters
+    extends LMSKeyParameters
 {
-    private final LmsParameter parameterSet;
-    private final LmOtsParameter lmOtsType;
+    private final LMSParameters parameterSet;
+    private final LmOtsParameters lmOtsType;
     private final byte[] I;
     private final byte[] T1;
 
-    public LMSPublicKeyParameters(LmsParameter parameterSet, LmOtsParameter lmOtsType, byte[] T1, byte[] I)
+    public LMSPublicKeyParameters(LMSParameters parameterSet, LmOtsParameters lmOtsType, byte[] T1, byte[] I)
     {
+        super(false);
+        
         this.parameterSet = parameterSet;
         this.lmOtsType = lmOtsType;
         this.I = I;
@@ -31,8 +34,8 @@ public class LMSPublicKeyParameters
         {
 
             int pubType = ((DataInputStream)src).readInt();
-            LmsParameter lmsParameter = LMSParameters.getParametersForType(pubType);
-            LmOtsParameter ostTypeCode = LmOtsParameters.getOtsParameter(((DataInputStream)src).readInt());
+            LMSParameters lmsParameter = LMSParameters.getParametersForType(pubType);
+            LmOtsParameters ostTypeCode = LmOtsParameters.getParametersForType(((DataInputStream)src).readInt());
 
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
@@ -63,12 +66,12 @@ public class LMSPublicKeyParameters
             .build();
     }
 
-    public LmsParameter getParameterSet()
+    public LMSParameters getParameterSet()
     {
         return parameterSet;
     }
 
-    public LmOtsParameter getLmOtsType()
+    public LmOtsParameters getLmOtsType()
     {
         return lmOtsType;
     }
