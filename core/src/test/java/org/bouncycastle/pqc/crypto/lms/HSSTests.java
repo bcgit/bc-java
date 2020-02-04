@@ -149,7 +149,7 @@ public class HSSTests
 
         byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
         int level = 0;
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(6), LmOtsParameters.getOtsParameter(3), level, Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534"), seed);
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(6), LmOtsParameters.getParametersForType(3), level, Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534"), seed);
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
         assertTrue(Arrays.areEqual(publicKey.getT1(), Hex.decode("32a58885cd9ba0431235466bff9651c6c92124404d45fa53cf161c28f1ad5a8e")));
         assertTrue(Arrays.areEqual(publicKey.getI(), Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534")));
@@ -167,7 +167,7 @@ public class HSSTests
 
         byte[] seed = Hex.decode("a1c4696e2608035a886100d05cd99945eb3370731884a8235e2fb3d4d71f2547");
         int level = 1;
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getOtsParameter(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
         assertTrue(Arrays.areEqual(publicKey.getT1(), Hex.decode("a1cd035833e0e90059603f26e07ad2aad152338e7a5e5984bcd5f7bb4eba40b7")));
         assertTrue(Arrays.areEqual(publicKey.getI(), Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b")));
@@ -321,8 +321,8 @@ public class HSSTests
         String[] lines = new String(Streams.readAll(HSSTests.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/lms/depth_1.txt"))).split("\n");
 
         int d = 0;
-        List<LmsParameter> lmsParameters = new ArrayList<LmsParameter>();
-        List<LmOtsParameter> lmOtsParameters = new ArrayList<LmOtsParameter>();
+        List<LMSParameters> lmsParameters = new ArrayList<LMSParameters>();
+        List<LmOtsParameters> lmOtsParameters = new ArrayList<LmOtsParameters>();
         byte[] message = null;
         byte[] hssPubEnc = null;
         byte[] encodedSigFromVector = null;
@@ -350,7 +350,7 @@ public class HSSTests
             else if (line.startsWith("LMOtsType:"))
             {
                 int typ = Integer.parseInt(line.substring("LMOtsType:".length()).trim());
-                lmOtsParameters.add(LmOtsParameters.getOtsParameter(typ));
+                lmOtsParameters.add(LmOtsParameters.getParametersForType(typ));
             }
             else if (line.startsWith("Rand:"))
             {

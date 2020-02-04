@@ -3,56 +3,63 @@ package org.bouncycastle.pqc.crypto.lms;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+
 public class LMSParameters
 {
-    public static final int lms_sha256_n32_h5 = 5;
-    public static final int lms_sha256_n32_h10 = 6;
-    public static final int lms_sha256_n32_h15 = 7;
-    public static final int lms_sha256_n32_h20 = 8;
-    public static final int lms_sha256_n32_h25 = 9;
+    public static final LMSParameters lms_sha256_n32_h5 = new LMSParameters(5, 32, 5, NISTObjectIdentifiers.id_sha256);
+    public static final LMSParameters lms_sha256_n32_h10 = new LMSParameters(6, 32, 10, NISTObjectIdentifiers.id_sha256);
+    public static final LMSParameters lms_sha256_n32_h15 = new LMSParameters(7, 32, 15, NISTObjectIdentifiers.id_sha256);
+    public static final LMSParameters lms_sha256_n32_h20 = new LMSParameters(8, 32, 20, NISTObjectIdentifiers.id_sha256);
+    public static final LMSParameters lms_sha256_n32_h25 = new LMSParameters(9, 32, 25, NISTObjectIdentifiers.id_sha256);
 
-    private static Map<Object, ForClass> paramBuilders = new HashMap<Object, ForClass>()
+    private static Map<Object, LMSParameters> paramBuilders = new HashMap<Object, LMSParameters>()
     {
         {
-            put(lms_sha256_n32_h5, new ForClass(LmsParameter.LMS_SHA256_M32_H5.class));
-            put(lms_sha256_n32_h10, new ForClass(LmsParameter.LMS_SHA256_M32_H10.class));
-            put(lms_sha256_n32_h15, new ForClass(LmsParameter.LMS_SHA256_M32_H15.class));
-            put(lms_sha256_n32_h20, new ForClass(LmsParameter.LMS_SHA256_M32_H20.class));
-            put(lms_sha256_n32_h25, new ForClass(LmsParameter.LMS_SHA256_M32_H25.class));
-
+            put(lms_sha256_n32_h5.type, lms_sha256_n32_h5);
+            put(lms_sha256_n32_h10.type, lms_sha256_n32_h10);
+            put(lms_sha256_n32_h15.type, lms_sha256_n32_h15);
+            put(lms_sha256_n32_h20.type, lms_sha256_n32_h20);
+            put(lms_sha256_n32_h25.type, lms_sha256_n32_h25);
         }
     };
 
-    public static LmsParameter getParametersForType(Object lmsType)
+    private final int type;
+    private final int m;
+    private final int h;
+    private final ASN1ObjectIdentifier digestOid;
+
+    protected LMSParameters(int type, int m, int h, ASN1ObjectIdentifier digestOid)
     {
-        ForClass fc = paramBuilders.get(lmsType);
-        if (fc != null)
-        {
-            return fc.create();
-        }
-        throw new IllegalArgumentException("could not find parameters for type " + lmsType);
+        this.type = type;
+        this.m = m;
+        this.h = h;
+        this.digestOid = digestOid;
     }
 
-    private static class ForClass
+    public int getType()
     {
-        private final Class<? extends LmsParameter> aClass;
+        return type;
+    }
 
+    public int getH()
+    {
+        return h;
+    }
 
-        private ForClass(Class<? extends LmsParameter> aClass)
-        {
-            this.aClass = aClass;
-        }
+    public int getM()
+    {
+        return m;
+    }
 
-        public LmsParameter create()
-        {
-            try
-            {
-                return this.aClass.getConstructor(new Class[0]).newInstance();
-            }
-            catch (Exception ex)
-            {
-                throw new IllegalArgumentException(ex.getMessage(), ex);
-            }
-        }
+    public ASN1ObjectIdentifier getDigestOID()
+    {
+        return digestOid;
+    }
+
+    static LMSParameters getParametersForType(int type)
+    {
+        return paramBuilders.get(type);
     }
 }

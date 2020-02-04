@@ -2,13 +2,12 @@ package org.bouncycastle.pqc.crypto.lms;
 
 import java.io.ByteArrayOutputStream;
 
-
 import org.bouncycastle.util.Encodable;
 
 /**
  * Type to assist in build LMS messages.
  */
-public class Composer
+class Composer
 {
     private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 

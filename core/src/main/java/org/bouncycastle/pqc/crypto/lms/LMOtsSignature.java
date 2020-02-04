@@ -11,11 +11,11 @@ import org.bouncycastle.util.Encodable;
 public class LMOtsSignature
     implements Encodable
 {
-    private final LmOtsParameter type;
+    private final LmOtsParameters type;
     private final byte[] C;
     private final byte[] y;
 
-    public LMOtsSignature(LmOtsParameter type, byte[] c, byte[] y)
+    public LMOtsSignature(LmOtsParameters type, byte[] c, byte[] y)
     {
         this.type = type;
         C = c;
@@ -33,7 +33,7 @@ public class LMOtsSignature
         {
 
 
-            LmOtsParameter type = LmOtsParameters.getOtsParameter(((DataInputStream)src).readInt());
+            LmOtsParameters type = LmOtsParameters.getParametersForType(((DataInputStream)src).readInt());
             byte[] C = new byte[type.getN()];
 
             ((DataInputStream)src).readFully(C);
@@ -57,7 +57,7 @@ public class LMOtsSignature
     }
 
 
-    public LmOtsParameter getType()
+    public LmOtsParameters getType()
     {
         return type;
     }
