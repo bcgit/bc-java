@@ -13,10 +13,10 @@ public class LMSSignature
 {
     private final int q;
     private final LMOtsSignature otsSignature;
-    private final LmsParameter parameter;
+    private final LMSParameters parameter;
     private final byte[][] y;
 
-    public LMSSignature(int q, LMOtsSignature otsSignature, LmsParameter parameter, byte[][] y)
+    public LMSSignature(int q, LMOtsSignature otsSignature, LMSParameters parameter, byte[][] y)
     {
         this.q = q;
         this.otsSignature = otsSignature;
@@ -36,7 +36,7 @@ public class LMSSignature
 
             int q = ((DataInputStream)src).readInt();
             LMOtsSignature otsSignature = LMOtsSignature.getInstance(src);
-            LmsParameter type = LMSParameters.getParametersForType(((DataInputStream)src).readInt());
+            LMSParameters type = LMSParameters.getParametersForType(((DataInputStream)src).readInt());
 
             byte[][] path = new byte[type.getH()][];
             for (int h = 0; h < path.length; h++)
@@ -121,7 +121,7 @@ public class LMSSignature
         return otsSignature;
     }
 
-    public LmsParameter getParameter()
+    public LMSParameters getParameter()
     {
         return parameter;
     }

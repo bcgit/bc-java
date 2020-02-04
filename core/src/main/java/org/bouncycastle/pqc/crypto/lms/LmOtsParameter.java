@@ -73,35 +73,7 @@ public abstract class LmOtsParameter
 
     public abstract Digest getH();
 
-    public int getType()
-    {
-        return type;
-    }
 
-    public int getN()
-    {
-        return n;
-    }
-
-    public int getW()
-    {
-        return w;
-    }
-
-    public int getP()
-    {
-        return p;
-    }
-
-    public int getLs()
-    {
-        return ls;
-    }
-
-    public int getSigLen()
-    {
-        return sigLen;
-    }
 
     public static class LMOTS_SHA256_N32_W1
         extends LmOtsParameter

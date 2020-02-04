@@ -5,13 +5,13 @@ import java.util.Stack;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 
-public class LMS
+class LMS
 {
     private static final short D_LEAF = (short)0x8282;
     private static final short D_INTR = (short)0x8383;
 
-    public static LMSPrivateKeyParameters generateKeys(LmsParameter parameterSet, LmOtsParameter lmOtsParameters, int level, byte[] I, byte[] rootSeed)
-        throws LMSException
+    public static LMSPrivateKeyParameters generateKeys(LMSParameters parameterSet, LmOtsParameters lmOtsParameters, int level, byte[] I, byte[] rootSeed)
+        throws IllegalArgumentException
     {
         //
         // RFC 8554 recommends that digest used in LMS and LMOTS be of the same strength to protect against
@@ -28,7 +28,7 @@ public class LMS
 
         if (rootSeed == null || rootSeed.length < parameterSet.getM())
         {
-            throw new LMSException("root seed is less than " + parameterSet.getM());
+            throw new IllegalArgumentException("root seed is less than " + parameterSet.getM());
         }
 
 
@@ -50,7 +50,7 @@ public class LMS
         // byte[][] T = new byte[privateKey.getMaxQ()][];
 
         // Step 1.
-        LmsParameter lmsParameter = privateKey.getParameterSet();
+        LMSParameters lmsParameter = privateKey.getParameterSet();
 
         // Step 2
         int h = lmsParameter.getH();
@@ -80,11 +80,12 @@ public class LMS
         int i = 0;
         int r = (1 << h) + q;
         byte[][] path = new byte[h][];
-    
+
+        Digest digest = DigestUtil.getDigest(privateKey.getParameterSet().getDigestOID());
         while (i < h)
         {
             int tmp = (r / (1 << i)) ^ 1;
-            path[i] = findT(tmp, privateKey, privateKey.getParameterSet().getDigest());
+            path[i] = findT(tmp, privateKey, digest);
             i++;
         }
 
@@ -194,7 +195,7 @@ public class LMS
 //        }
 //
 //        // Step 2h
-        LmsParameter lmsParameter = S.getParameter();
+        LMSParameters lmsParameter = S.getParameter();
         int m = lmsParameter.getM();
         int h = lmsParameter.getH();
 //
@@ -218,7 +219,7 @@ public class LMS
 
         // Step 3
         byte[] Kc = LM_OTS.lm_ots_validate_signature_calculate(
-            LmOtsParameters.getOtsParameter(ots_typecode),
+            LmOtsParameters.getParametersForType(ots_typecode),
             I,
             q,
             S.getOtsSignature(),
@@ -230,7 +231,7 @@ public class LMS
         int node_num = (1 << h) + q;
 
         // tmp = H(I || u32str(node_num) || u16str(D_LEAF) || Kc)
-        Digest H = lmsParameter.getDigest();
+        Digest H = DigestUtil.getDigest(lmsParameter.getDigestOID());
         byte[] tmp = new byte[H.getDigestSize()];
 
         H.update(I, 0, I.length);
@@ -270,13 +271,11 @@ public class LMS
 
 
     static byte[] appendixC(LMSPrivateKeyParameters lmsPrivateKey)
-        throws LMSException
     {
-
-        LmOtsParameter otsParameter = LmOtsParameters.getOtsParameter(lmsPrivateKey.getLmOtsType());
+        LmOtsParameters otsParameter = LmOtsParameters.getParametersForType(lmsPrivateKey.getLmOtsType().getType());
 
         int twoToh = 1 << lmsPrivateKey.getParameterSet().getH();
-        Digest H = lmsPrivateKey.getParameterSet().getDigest();
+        Digest H = DigestUtil.getDigest(lmsPrivateKey.getParameterSet().getDigestOID());
         Stack<byte[]> stack = new Stack<byte[]>();
         byte[] I = lmsPrivateKey.getI();
         for (int i = 0; i < twoToh; i++)
