@@ -1,13 +1,7 @@
-package org.bouncycastle.pqc.crypto.lms.parameters;
+package org.bouncycastle.pqc.crypto.lms;
 
 import java.security.SecureRandom;
 import java.util.Collection;
-
-import org.bouncycastle.pqc.crypto.lms.LmOtsParameter;
-import org.bouncycastle.pqc.crypto.lms.LmOtsParameters;
-import org.bouncycastle.pqc.crypto.lms.LmsParameter;
-import org.bouncycastle.pqc.crypto.lms.LmsParameters;
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
 
 public class HSSKeyGenerationParameters
 {
@@ -111,7 +105,7 @@ public class HSSKeyGenerationParameters
             int c = 0;
             for (int t : lmsType)
             {
-                lmsParameters[c++] = LmsParameters.getParametersForType(t);
+                lmsParameters[c++] = LMSParameters.getParametersForType(t);
             }
 
             return this;

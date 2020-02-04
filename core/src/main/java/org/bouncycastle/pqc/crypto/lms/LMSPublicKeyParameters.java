@@ -5,15 +5,14 @@ import java.io.DataInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class LmsPublicKey
+public class LMSPublicKeyParameters
 {
     private final LmsParameter parameterSet;
     private final LmOtsParameter lmOtsType;
     private final byte[] I;
     private final byte[] T1;
 
-
-    public LmsPublicKey(LmsParameter parameterSet, LmOtsParameter lmOtsType, byte[] T1, byte[] I)
+    public LMSPublicKeyParameters(LmsParameter parameterSet, LmOtsParameter lmOtsType, byte[] T1, byte[] I)
     {
         this.parameterSet = parameterSet;
         this.lmOtsType = lmOtsType;
@@ -21,18 +20,18 @@ public class LmsPublicKey
         this.T1 = T1;
     }
 
-    public static LmsPublicKey getInstance(Object src)
+    public static LMSPublicKeyParameters getInstance(Object src)
         throws Exception
     {
-        if (src instanceof LmsPublicKey)
+        if (src instanceof LMSPublicKeyParameters)
         {
-            return (LmsPublicKey)src;
+            return (LMSPublicKeyParameters)src;
         }
         else if (src instanceof DataInputStream)
         {
 
             int pubType = ((DataInputStream)src).readInt();
-            LmsParameter lmsParameter = LmsParameters.getParametersForType(pubType);
+            LmsParameter lmsParameter = LMSParameters.getParametersForType(pubType);
             LmOtsParameter ostTypeCode = LmOtsParameters.getOtsParameter(((DataInputStream)src).readInt());
 
             byte[] I = new byte[16];
@@ -40,7 +39,7 @@ public class LmsPublicKey
 
             byte[] T1 = new byte[lmsParameter.getM()];
             ((DataInputStream)src).readFully(T1);
-            return new LmsPublicKey(lmsParameter, ostTypeCode, T1, I);
+            return new LMSPublicKeyParameters(lmsParameter, ostTypeCode, T1, I);
         }
         else if (src instanceof byte[])
         {
@@ -96,7 +95,7 @@ public class LmsPublicKey
             return false;
         }
 
-        LmsPublicKey publicKey = (LmsPublicKey)o;
+        LMSPublicKeyParameters publicKey = (LMSPublicKeyParameters)o;
 
         if (!parameterSet.equals(publicKey.parameterSet))
         {

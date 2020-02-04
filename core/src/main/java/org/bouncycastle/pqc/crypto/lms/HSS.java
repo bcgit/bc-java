@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.List;
 
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSPrivateKeyExhaustionException;
-import org.bouncycastle.pqc.crypto.lms.parameters.HSSKeyGenerationParameters;
-
 public class HSS
 {
 
@@ -116,7 +112,7 @@ public class HSS
         //
         // LmsPrivateKey can derive and hold the public key so we just use an array of those.
         //
-        LmsPrivateKey[] keys = new LmsPrivateKey[parameters.getDepth()];
+        LMSPrivateKeyParameters[] keys = new LMSPrivateKeyParameters[parameters.getDepth()];
         LMSSignature[] sig = new LMSSignature[parameters.getDepth()-1];
 
 
@@ -179,7 +175,7 @@ public class HSS
         int L = keyPair.getL();
 
         int d = L;
-        List<LmsPrivateKey> prv = keyPair.getKeys();
+        List<LMSPrivateKeyParameters> prv = keyPair.getKeys();
         while (prv.get(d - 1).getQ() == 1 << (prv.get(d - 1).getParameterSet().getH()))
         {
             d = d - 1;
@@ -237,7 +233,7 @@ public class HSS
         }
 
         LMSSignature[] sigList = new LMSSignature[Nspk + 1];
-        LmsPublicKey[] pubList = new LmsPublicKey[Nspk];
+        LMSPublicKeyParameters[] pubList = new LMSPublicKeyParameters[Nspk];
 
         for (int i = 0; i < Nspk; i++)
         {
@@ -246,7 +242,7 @@ public class HSS
         }
         sigList[Nspk] = signature.getSignature();
 
-        LmsPublicKey key = publicKey.getLmsPublicKey();
+        LMSPublicKeyParameters key = publicKey.getLmsPublicKey();
 
         for (int i = 0; i < Nspk; i++)
         {

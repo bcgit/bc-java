@@ -1,10 +1,8 @@
 package org.bouncycastle.pqc.crypto.lms;
 
-import java.util.HashMap;
 import java.util.Stack;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
 import org.bouncycastle.util.Arrays;
 
 public class LMS
@@ -12,7 +10,7 @@ public class LMS
     private static final short D_LEAF = (short)0x8282;
     private static final short D_INTR = (short)0x8383;
 
-    public static LmsPrivateKey generateKeys(LmsParameter parameterSet, LmOtsParameter lmOtsParameters, int level, byte[] I, byte[] rootSeed)
+    public static LMSPrivateKeyParameters generateKeys(LmsParameter parameterSet, LmOtsParameter lmOtsParameters, int level, byte[] I, byte[] rootSeed)
         throws LMSException
     {
         //
@@ -37,11 +35,11 @@ public class LMS
         int twoToH = 1 << parameterSet.getH();
 
 
-        return new LmsPrivateKey(parameterSet, lmOtsParameters, level, I, twoToH, rootSeed);
+        return new LMSPrivateKeyParameters(parameterSet, lmOtsParameters, level, I, twoToH, rootSeed);
     }
 
 
-    public static LMSSignature generateSign(LmsPrivateKey privateKey, byte[] message)
+    public static LMSSignature generateSign(LMSPrivateKeyParameters privateKey, byte[] message)
         throws LMSException
     {
 
@@ -82,7 +80,7 @@ public class LMS
         int i = 0;
         int r = (1 << h) + q;
         byte[][] path = new byte[h][];
-        HashMap<Integer, byte[]> KMap = new HashMap<>();
+    
         while (i < h)
         {
             int tmp = (r / (1 << i)) ^ 1;
@@ -94,7 +92,7 @@ public class LMS
     }
 
 
-    public static byte[] findT(int r, LmsPrivateKey privateKey, Digest digest)
+    public static byte[] findT(int r, LMSPrivateKeyParameters privateKey, Digest digest)
     {
 
 
@@ -141,7 +139,7 @@ public class LMS
     }
 
 
-    public static boolean verifySignature(LMSSignature S, byte[] message, LmsPublicKey publicKey)
+    public static boolean verifySignature(LMSSignature S, byte[] message, LMSPublicKeyParameters publicKey)
         throws LMSException
     {
         byte[] Tc = algorithm6a(S, publicKey.getI(), publicKey.getParameterSet().getType(), publicKey.getLmOtsType().getType(), message);
@@ -271,7 +269,7 @@ public class LMS
     }
 
 
-    static byte[] appendixC(LmsPrivateKey lmsPrivateKey)
+    static byte[] appendixC(LMSPrivateKeyParameters lmsPrivateKey)
         throws LMSException
     {
 

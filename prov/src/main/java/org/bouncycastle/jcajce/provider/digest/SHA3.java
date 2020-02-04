@@ -118,6 +118,15 @@ public class SHA3
         }
     }
 
+    static public class DigestShake128_256
+        extends DigestSHAKE
+    {
+        public DigestShake128_256()
+        {
+            super(128, 256);
+        }
+    }
+
     static public class DigestShake256_512
         extends DigestSHAKE
     {
@@ -219,6 +228,7 @@ public class SHA3
             provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_384, PREFIX + "$Digest384");
             provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_512, PREFIX + "$Digest512");
             provider.addAlgorithm("MessageDigest.SHAKE256-512", PREFIX + "$DigestShake256_512");
+            provider.addAlgorithm("MessageDigest.SHAKE128-256", PREFIX + "$DigestShake128_256");
 
             addHMACAlgorithm(provider, "SHA3-224", PREFIX + "$HashMac224",  PREFIX + "$KeyGenerator224");
             addHMACAlias(provider, "SHA3-224", NISTObjectIdentifiers.id_hmacWithSHA3_224);
