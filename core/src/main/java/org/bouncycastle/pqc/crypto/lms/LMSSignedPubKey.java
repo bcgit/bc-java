@@ -8,9 +8,9 @@ public class LMSSignedPubKey
     implements Encodable
 {
     private final LMSSignature signature;
-    private final LmsPublicKey publicKey;
+    private final LMSPublicKeyParameters publicKey;
 
-    public LMSSignedPubKey(LMSSignature signature, LmsPublicKey publicKey)
+    public LMSSignedPubKey(LMSSignature signature, LMSPublicKeyParameters publicKey)
     {
         this.signature = signature;
         this.publicKey = publicKey;
@@ -28,7 +28,7 @@ public class LMSSignedPubKey
         return signature;
     }
 
-    public LmsPublicKey getPublicKey()
+    public LMSPublicKeyParameters getPublicKey()
     {
         return publicKey;
     }

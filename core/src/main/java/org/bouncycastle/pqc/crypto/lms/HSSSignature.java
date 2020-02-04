@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
 import org.bouncycastle.util.Encodable;
 
 public class HSSSignature
@@ -27,7 +26,7 @@ public class HSSSignature
     public static HSSSignature getInstance(Object src, int maxNspk)
         throws Exception
     {
-        if (src instanceof LmsPublicKey)
+        if (src instanceof LMSPublicKeyParameters)
         {
             return (HSSSignature)src;
         }
@@ -44,7 +43,7 @@ public class HSSSignature
             {
                 for (int t = 0; t < signedPubKeys.length; t++)
                 {
-                    signedPubKeys[t] = new LMSSignedPubKey(LMSSignature.getInstance(src), LmsPublicKey.getInstance(src));
+                    signedPubKeys[t] = new LMSSignedPubKey(LMSSignature.getInstance(src), LMSPublicKeyParameters.getInstance(src));
                 }
             }
             LMSSignature sig = LMSSignature.getInstance(src);

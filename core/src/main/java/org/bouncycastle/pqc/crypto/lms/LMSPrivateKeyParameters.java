@@ -6,11 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSPrivateKeyExhaustionException;
 import org.bouncycastle.util.Encodable;
 
-public class LmsPrivateKey
+public class LMSPrivateKeyParameters
     implements Encodable
 {
 
@@ -24,12 +22,12 @@ public class LmsPrivateKey
     // These are not final because they can be generated.
     // They also do not need to be persisted.
     //
-    private LmsPublicKey publicKey;
+    private LMSPublicKeyParameters publicKey;
     private byte[] T1;
 
 
 
-    public LmsPrivateKey(LmsParameter lmsParameter, LmOtsParameter lmOtsParameter, int q, byte[] I, int maxQ, byte[] masterSecret)
+    public LMSPrivateKeyParameters(LmsParameter lmsParameter, LmOtsParameter lmOtsParameter, int q, byte[] I, int maxQ, byte[] masterSecret)
     {
         this.parameterSet = lmsParameter;
         this.lmOtsParameter = lmOtsParameter;
@@ -39,12 +37,12 @@ public class LmsPrivateKey
         this.masterSecret = masterSecret;
     }
 
-    public static LmsPrivateKey getInstance(Object src, int secretSizeLimit)
+    public static LMSPrivateKeyParameters getInstance(Object src, int secretSizeLimit)
         throws Exception
     {
-        if (src instanceof LmsPublicKey)
+        if (src instanceof LMSPublicKeyParameters)
         {
-            return (LmsPrivateKey)src;
+            return (LMSPrivateKeyParameters)src;
         }
         else if (src instanceof DataInputStream)
         {
@@ -53,7 +51,7 @@ public class LmsPrivateKey
                 throw new LMSException("expected vetsion 0 lms private key");
             }
 
-            LmsParameter parameter = LmsParameters.getParametersForType(((DataInputStream)src).readInt());
+            LmsParameter parameter = LMSParameters.getParametersForType(((DataInputStream)src).readInt());
             LmOtsParameter otsParameter = LmOtsParameters.getOtsParameter(((DataInputStream)src).readInt());
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
@@ -72,7 +70,7 @@ public class LmsPrivateKey
             byte[] masterSecret = new byte[l];
             ((DataInputStream)src).readFully(masterSecret);
 
-            return new LmsPrivateKey(parameter, otsParameter, q, I, maxQ, masterSecret);
+            return new LMSPrivateKeyParameters(parameter, otsParameter, q, I, maxQ, masterSecret);
 
         }
         else if (src instanceof byte[])
@@ -153,7 +151,7 @@ public class LmsPrivateKey
     }
 
 
-    public LmsPublicKey getPublicKey()
+    public LMSPublicKeyParameters getPublicKey()
         throws LMSException
     {
         synchronized (this)
@@ -163,7 +161,7 @@ public class LmsPrivateKey
 
                 T1 = LMS.appendixC(this);
 
-                publicKey = new LmsPublicKey(parameterSet, lmOtsParameter, T1, I);
+                publicKey = new LMSPublicKeyParameters(parameterSet, lmOtsParameter, T1, I);
             }
             return publicKey;
         }
@@ -205,7 +203,7 @@ public class LmsPrivateKey
             return false;
         }
 
-        LmsPrivateKey that = (LmsPrivateKey)o;
+        LMSPrivateKeyParameters that = (LMSPrivateKeyParameters)o;
 
         if (q != that.q)
         {

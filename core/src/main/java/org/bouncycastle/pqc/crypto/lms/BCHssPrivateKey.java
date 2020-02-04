@@ -10,18 +10,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
-
 public class BCHssPrivateKey
     implements HssPrivateKey
 {
-    private final LmsPrivateKey rootKey;
+    private final LMSPrivateKeyParameters rootKey;
     private int l;
-    private List<LmsPrivateKey> keys;
+    private List<LMSPrivateKeyParameters> keys;
     private List<LMSSignature> sig;
 
 
-    public BCHssPrivateKey(int l, LmsPrivateKey[] keys, LMSSignature[] sig)
+    public BCHssPrivateKey(int l, LMSPrivateKeyParameters[] keys, LMSSignature[] sig)
     {
         this.l = l;
         this.keys = Collections.unmodifiableList(Arrays.asList(keys));
@@ -29,7 +27,7 @@ public class BCHssPrivateKey
         this.rootKey = this.keys.get(0);
     }
 
-    private BCHssPrivateKey(int l, List<LmsPrivateKey> keys, List<LMSSignature> sig)
+    private BCHssPrivateKey(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig)
     {
         this.l = l;
         this.keys = Collections.unmodifiableList(keys);
@@ -41,7 +39,7 @@ public class BCHssPrivateKey
         throws Exception
     {
 
-        if (src instanceof LmsPublicKey)
+        if (src instanceof LMSPublicKeyParameters)
         {
             return (BCHssPrivateKey)src;
         }
@@ -57,12 +55,12 @@ public class BCHssPrivateKey
                 throw new LMSException("depth encoded exceeds maxDepth of " + maxDepth);
             }
 
-            ArrayList<LmsPrivateKey> keys = new ArrayList<>();
-            ArrayList<LMSSignature> signatures = new ArrayList<>();
+            ArrayList<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>();
+            ArrayList<LMSSignature> signatures = new ArrayList<LMSSignature>();
 
             for (int t = 0; t < d; t++)
             {
-                keys.add(LmsPrivateKey.getInstance(src, maxSecretSize));
+                keys.add(LMSPrivateKeyParameters.getInstance(src, maxSecretSize));
             }
 
             for (int t = 0; t < d - 1; t++)
@@ -96,7 +94,7 @@ public class BCHssPrivateKey
 
         for (int t = 0; t < keys.size(); t++)
         {
-            LmsPrivateKey key = keys.get(t);
+            LMSPrivateKeyParameters key = keys.get(t);
             int lim = (1 << key.getParameterSet().getH());
             possible *= lim;
 
@@ -123,13 +121,13 @@ public class BCHssPrivateKey
     }
 
     @Override
-    public synchronized List<LmsPrivateKey> getKeys()
+    public synchronized List<LMSPrivateKeyParameters> getKeys()
     {
         return keys;
     }
 
     @Override
-    public synchronized int getL(LmsPrivateKey privateKey)
+    public synchronized int getL(LMSPrivateKeyParameters privateKey)
     {
         return keys.indexOf(privateKey);
     }
@@ -153,7 +151,7 @@ public class BCHssPrivateKey
         throws LMSException
     {
 
-        List<LmsPrivateKey> newKeys = new ArrayList<>(keys);
+        List<LMSPrivateKeyParameters> newKeys = new ArrayList<LMSPrivateKeyParameters>(keys);
 
         byte[] I = new byte[16];
         source.nextBytes(I);
@@ -163,7 +161,7 @@ public class BCHssPrivateKey
 
         newKeys.set(d, LMS.generateKeys(rootKey.getParameterSet(), rootKey.getLmOtsType(), 0, I, rootSecret));
 
-        List<LMSSignature> newSig = new ArrayList<>(sig);
+        List<LMSSignature> newSig = new ArrayList<LMSSignature>(sig);
 
         newSig.set(d - 1, LMS.generateSign(newKeys.get(d - 1), newKeys.get(d).getPublicKey().getEncoded()));
 
@@ -226,7 +224,7 @@ public class BCHssPrivateKey
             .u32str(0) // Version.
             .u32str(l); // Depth
 
-        for (LmsPrivateKey key : keys)
+        for (LMSPrivateKeyParameters key : keys)
         {
             composer.bytes(key);
         }

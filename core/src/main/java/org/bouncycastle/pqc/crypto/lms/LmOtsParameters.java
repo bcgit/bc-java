@@ -3,8 +3,6 @@ package org.bouncycastle.pqc.crypto.lms;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
-
 public class LmOtsParameters
 {
     public static final int reserved = 0;

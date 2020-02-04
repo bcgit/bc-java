@@ -1,21 +1,8 @@
 package org.bouncycastle.pqc.crypto.lms;
 
 import junit.framework.TestCase;
-import org.bouncycastle.pqc.crypto.lms.LMOtsPublicKey;
-import org.bouncycastle.pqc.crypto.lms.LMOtsSignature;
-import org.bouncycastle.pqc.crypto.lms.LMS;
-import org.bouncycastle.pqc.crypto.lms.LMSSignature;
-import org.bouncycastle.pqc.crypto.lms.LM_OTS;
-import org.bouncycastle.pqc.crypto.lms.LmOtsParameter;
-import org.bouncycastle.pqc.crypto.lms.LmOtsParameters;
-import org.bouncycastle.pqc.crypto.lms.LmOtsPrivateKey;
-import org.bouncycastle.pqc.crypto.lms.LmsParameters;
-import org.bouncycastle.pqc.crypto.lms.LmsPrivateKey;
-import org.bouncycastle.pqc.crypto.lms.LmsPublicKey;
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.junit.Assert;
 
 public class LMSTests
     extends TestCase
@@ -98,8 +85,8 @@ public class LMSTests
 
         byte[] seed = Hex.decode("a1c4696e2608035a886100d05cd99945eb3370731884a8235e2fb3d4d71f2547");
         int level = 1;
-        LmsPrivateKey lmsPrivateKey = LMS.generateKeys(LmsParameters.getParametersForType(5), LmOtsParameters.getOtsParameter(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
-        LmsPublicKey publicKey = lmsPrivateKey.getPublicKey();
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getOtsParameter(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
+        LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
 
         lmsPrivateKey.getNextOtsPrivateKey();
         lmsPrivateKey.getNextOtsPrivateKey();
@@ -107,10 +94,10 @@ public class LMSTests
 
 
         LMSSignature signature = LMS.generateSign(lmsPrivateKey, msg);
-        Assert.assertTrue(LMS.verifySignature(signature, msg, publicKey));
+        assertTrue(LMS.verifySignature(signature, msg, publicKey));
 
         // Serialize / Deserialize
-        Assert.assertTrue(LMS.verifySignature(LMSSignature.getInstance(signature.getEncoded()), msg, LmsPublicKey.getInstance(publicKey.getEncoded())));
+        assertTrue(LMS.verifySignature(LMSSignature.getInstance(signature.getEncoded()), msg, LMSPublicKeyParameters.getInstance(publicKey.getEncoded())));
 
 
         //
@@ -120,7 +107,7 @@ public class LMSTests
         {
             byte[] bustedSig = signature.getEncoded().clone();
             bustedSig[100] ^= 1;
-            Assert.assertFalse(LMS.verifySignature(LMSSignature.getInstance(bustedSig), msg, publicKey));
+            assertFalse(LMS.verifySignature(LMSSignature.getInstance(bustedSig), msg, publicKey));
         }
 
         //
@@ -129,7 +116,7 @@ public class LMSTests
         {
             byte[] msg2 = msg.clone();
             msg2[10] ^= 1;
-            Assert.assertFalse(LMS.verifySignature(signature, msg2, publicKey));
+            assertFalse(LMS.verifySignature(signature, msg2, publicKey));
         }
 
     }
