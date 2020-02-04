@@ -10,9 +10,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSPrivateKeyExhaustionException;
-import org.bouncycastle.pqc.crypto.lms.parameters.HSSKeyGenerationParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
@@ -35,7 +32,7 @@ public class HSSTests
 
         HssPrivateKey generatedPrivateKey = HSS.generateHSSKeyPair(
             HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(LmsParameters.lms_sha256_n32_h5, LmsParameters.lms_sha256_n32_h5)
+                .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
                 .setLmOtsParameters(LmOtsParameters.sha256_n32_w4, LmOtsParameters.sha256_n32_w2)
                 .setLmsEntropySource(rand)
                 .build()
@@ -101,7 +98,7 @@ public class HSSTests
         HSSSignature signature = HSSSignature.getInstance(sig, 2);
         assertTrue("Test Case 2 Signature", HSS.verifySignature(signature, publicKey, message));
 
-        LmsPublicKey lmsPub = LmsPublicKey.getInstance(blocks.get(3));
+        LMSPublicKeyParameters lmsPub = LMSPublicKeyParameters.getInstance(blocks.get(3));
         LMSSignature lmsSignature = LMSSignature.getInstance(blocks.get(4));
 
         assertTrue("Test Case 2 Signature 2", LMS.verifySignature(lmsSignature, message, lmsPub));
@@ -115,7 +112,7 @@ public class HSSTests
         InputStream inputStream = HSSTests.class.getResourceAsStream(vector);
         BufferedReader bin = new BufferedReader(new InputStreamReader(inputStream));
         String line;
-        ArrayList<byte[]> blocks = new ArrayList<>();
+        ArrayList<byte[]> blocks = new ArrayList<byte[]>();
         StringBuffer sw = new StringBuffer();
         while ((line = bin.readLine()) != null)
         {
@@ -152,8 +149,8 @@ public class HSSTests
 
         byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
         int level = 0;
-        LmsPrivateKey lmsPrivateKey = LMS.generateKeys(LmsParameters.getParametersForType(6), LmOtsParameters.getOtsParameter(3), level, Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534"), seed);
-        LmsPublicKey publicKey = lmsPrivateKey.getPublicKey();
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(6), LmOtsParameters.getOtsParameter(3), level, Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534"), seed);
+        LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
         assertTrue(Arrays.areEqual(publicKey.getT1(), Hex.decode("32a58885cd9ba0431235466bff9651c6c92124404d45fa53cf161c28f1ad5a8e")));
         assertTrue(Arrays.areEqual(publicKey.getI(), Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534")));
     }
@@ -170,8 +167,8 @@ public class HSSTests
 
         byte[] seed = Hex.decode("a1c4696e2608035a886100d05cd99945eb3370731884a8235e2fb3d4d71f2547");
         int level = 1;
-        LmsPrivateKey lmsPrivateKey = LMS.generateKeys(LmsParameters.getParametersForType(5), LmOtsParameters.getOtsParameter(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
-        LmsPublicKey publicKey = lmsPrivateKey.getPublicKey();
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getOtsParameter(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
+        LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
         assertTrue(Arrays.areEqual(publicKey.getT1(), Hex.decode("a1cd035833e0e90059603f26e07ad2aad152338e7a5e5984bcd5f7bb4eba40b7")));
         assertTrue(Arrays.areEqual(publicKey.getI(), Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b")));
     }
@@ -198,7 +195,7 @@ public class HSSTests
 
         HssPrivateKey keyPair = HSS.generateHSSKeyPair(
             HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(LmsParameters.lms_sha256_n32_h5, LmsParameters.lms_sha256_n32_h5)
+                .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
                 .setLmOtsParameters(LmOtsParameters.sha256_n32_w4, LmOtsParameters.sha256_n32_w2)
                 .setLmsEntropySource(rand)
                 .build()
@@ -229,7 +226,7 @@ public class HSSTests
 
             HssPrivateKey regenKeyPair = HSS.generateHSSKeyPair(
                 HSSKeyGenerationParameters.builder(2)
-                    .setLmsParameters(LmsParameters.lms_sha256_n32_h5, LmsParameters.lms_sha256_n32_h5)
+                    .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
                     .setLmOtsParameters(LmOtsParameters.sha256_n32_w4, LmOtsParameters.sha256_n32_w2)
                     .setLmsEntropySource(rand1)
                     .build()
@@ -251,8 +248,8 @@ public class HSSTests
                 //
                 // Deserialize them and see if they still equal.
                 //
-                LmsPrivateKey pk1O = LmsPrivateKey.getInstance(pk1, 1024);
-                LmsPrivateKey pk2O = LmsPrivateKey.getInstance(pk2, 1024);
+                LMSPrivateKeyParameters pk1O = LMSPrivateKeyParameters.getInstance(pk1, 1024);
+                LMSPrivateKeyParameters pk2O = LMSPrivateKeyParameters.getInstance(pk2, 1024);
 
                 assertTrue("LmsPrivateKey still equal after deserialization", pk1O.equals(pk2O));
 
@@ -271,7 +268,7 @@ public class HSSTests
 
             HssPrivateKey differentKey = HSS.generateHSSKeyPair(
                 HSSKeyGenerationParameters.builder(2)
-                    .setLmsParameters(LmsParameters.lms_sha256_n32_h5, LmsParameters.lms_sha256_n32_h5)
+                    .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
                     .setLmOtsParameters(LmOtsParameters.sha256_n32_w4, LmOtsParameters.sha256_n32_w2)
                     .setLmsEntropySource(rand1)
                     .build()
@@ -293,8 +290,8 @@ public class HSSTests
                 //
                 // Deserialize them and see if they still equal.
                 //
-                LmsPrivateKey pk1O = LmsPrivateKey.getInstance(pk1, 1024);
-                LmsPrivateKey pk2O = LmsPrivateKey.getInstance(pk2, 1024);
+                LMSPrivateKeyParameters pk1O = LMSPrivateKeyParameters.getInstance(pk1, 1024);
+                LMSPrivateKeyParameters pk2O = LMSPrivateKeyParameters.getInstance(pk2, 1024);
 
                 assertFalse("LmsPrivateKey not suddenly equal after deserialization", pk1O.equals(pk2O));
 
@@ -324,8 +321,8 @@ public class HSSTests
         String[] lines = new String(Streams.readAll(HSSTests.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/lms/depth_1.txt"))).split("\n");
 
         int d = 0;
-        List<LmsParameter> lmsParameters = new ArrayList<>();
-        List<LmOtsParameter> lmOtsParameters = new ArrayList<>();
+        List<LmsParameter> lmsParameters = new ArrayList<LmsParameter>();
+        List<LmOtsParameter> lmOtsParameters = new ArrayList<LmOtsParameter>();
         byte[] message = null;
         byte[] hssPubEnc = null;
         byte[] encodedSigFromVector = null;
@@ -348,7 +345,7 @@ public class HSSTests
             else if (line.startsWith("LMType:"))
             {
                 int typ = Integer.parseInt(line.substring("LMType:".length()).trim());
-                lmsParameters.add(LmsParameters.getParametersForType(typ));
+                lmsParameters.add(LMSParameters.getParametersForType(typ));
             }
             else if (line.startsWith("LMOtsType:"))
             {
@@ -503,7 +500,7 @@ public class HSSTests
 
         HssPrivateKey keyPair = HSS.generateHSSKeyPair(
             HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(LmsParameters.lms_sha256_n32_h5, LmsParameters.lms_sha256_n32_h5)
+                .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
                 .setLmOtsParameters(LmOtsParameters.sha256_n32_w2, LmOtsParameters.sha256_n32_w8)
                 .setLmsEntropySource(rand)
                 .build()

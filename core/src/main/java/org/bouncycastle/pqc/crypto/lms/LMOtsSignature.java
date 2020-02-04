@@ -25,7 +25,7 @@ public class LMOtsSignature
     public static LMOtsSignature getInstance(Object src)
         throws Exception
     {
-        if (src instanceof LmsPublicKey)
+        if (src instanceof LMSPublicKeyParameters)
         {
             return (LMOtsSignature)src;
         }

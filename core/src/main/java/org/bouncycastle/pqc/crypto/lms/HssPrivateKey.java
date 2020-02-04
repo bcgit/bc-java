@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.lms;
 import java.security.SecureRandom;
 import java.util.List;
 
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
 import org.bouncycastle.util.Encodable;
 
 public interface HssPrivateKey
@@ -13,9 +12,9 @@ public interface HssPrivateKey
 
     int getL();
 
-    List<LmsPrivateKey> getKeys();
+    List<LMSPrivateKeyParameters> getKeys();
 
-    int getL(LmsPrivateKey privateKey);
+    int getL(LMSPrivateKeyParameters privateKey);
 
     List<LMSSignature> getSig();
 

@@ -9,9 +9,9 @@ public class BCHssPublicKey
     implements HssPublicKey
 {
     private final int l;
-    private final LmsPublicKey lmsPublicKey;
+    private final LMSPublicKeyParameters lmsPublicKey;
 
-    public BCHssPublicKey(int l, LmsPublicKey lmsPublicKey)
+    public BCHssPublicKey(int l, LMSPublicKeyParameters lmsPublicKey)
     {
         this.l = l;
         this.lmsPublicKey = lmsPublicKey;
@@ -21,7 +21,7 @@ public class BCHssPublicKey
         throws Exception
     {
 
-        if (src instanceof LmsPublicKey)
+        if (src instanceof LMSPublicKeyParameters)
         {
             return (BCHssPublicKey)src;
         }
@@ -29,7 +29,7 @@ public class BCHssPublicKey
         {
 
             int L = ((DataInputStream)src).readInt();
-            LmsPublicKey lmsPublicKey = LmsPublicKey.getInstance(src);
+            LMSPublicKeyParameters lmsPublicKey = LMSPublicKeyParameters.getInstance(src);
             return new BCHssPublicKey(L, lmsPublicKey);
         }
         else if (src instanceof byte[])
@@ -51,7 +51,7 @@ public class BCHssPublicKey
     }
 
     @Override
-    public LmsPublicKey getLmsPublicKey()
+    public LMSPublicKeyParameters getLmsPublicKey()
     {
         return lmsPublicKey;
     }

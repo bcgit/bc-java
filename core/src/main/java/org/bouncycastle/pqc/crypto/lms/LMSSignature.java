@@ -11,7 +11,6 @@ import org.bouncycastle.util.Encodable;
 public class LMSSignature
     implements Encodable
 {
-
     private final int q;
     private final LMOtsSignature otsSignature;
     private final LmsParameter parameter;
@@ -28,7 +27,7 @@ public class LMSSignature
     public static LMSSignature getInstance(Object src)
         throws Exception
     {
-        if (src instanceof LmsPublicKey)
+        if (src instanceof LMSPublicKeyParameters)
         {
             return (LMSSignature)src;
         }
@@ -37,7 +36,7 @@ public class LMSSignature
 
             int q = ((DataInputStream)src).readInt();
             LMOtsSignature otsSignature = LMOtsSignature.getInstance(src);
-            LmsParameter type = LmsParameters.getParametersForType(((DataInputStream)src).readInt());
+            LmsParameter type = LMSParameters.getParametersForType(((DataInputStream)src).readInt());
 
             byte[][] path = new byte[type.getH()][];
             for (int h = 0; h < path.length; h++)

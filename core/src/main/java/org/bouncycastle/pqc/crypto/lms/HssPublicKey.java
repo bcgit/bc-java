@@ -8,5 +8,5 @@ public interface HssPublicKey
 
     int getL();
 
-    LmsPublicKey getLmsPublicKey();
+    LMSPublicKeyParameters getLmsPublicKey();
 }

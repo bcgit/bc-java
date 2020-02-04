@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.crypto.lms;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LmsParameters
+public class LMSParameters
 {
     public static final int lms_sha256_n32_h5 = 5;
     public static final int lms_sha256_n32_h10 = 6;

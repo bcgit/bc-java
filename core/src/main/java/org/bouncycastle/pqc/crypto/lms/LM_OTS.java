@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.crypto.lms;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.pqc.crypto.lms.exceptions.LMSException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
