@@ -158,14 +158,6 @@ class HSS
         // Algorithm 8
         //
 
-        //
-        // This will throw LMSPrivateKeyExhaustionException if there are no LMS Private Keys that are not exhausted.
-        // According to https://tools.ietf.org/html/rfc8554#section-6.2 it should generate a new second level key
-        // as long as the root LMS Private key is not exhausted.
-        // This was not implemented here because the generation should be part of a greater management function
-        // that should generate a new HSS key.
-        //
-
         int L = keyPair.getL();
 
         int d = L;
