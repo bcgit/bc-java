@@ -583,7 +583,20 @@ public class TlsServerProtocol
                 if (this.serverCredentials != null)
                 {
                     this.certificateRequest = tlsServer.getCertificateRequest();
-                    if (this.certificateRequest != null)
+
+                    if (null == this.certificateRequest)
+                    {
+                        /*
+                         * For static agreement key exchanges, CertificateRequest is required since
+                         * the client Certificate message is mandatory but can only be sent if the
+                         * server requests it.
+                         */
+                        if (!keyExchange.requiresCertificateVerify())
+                        {
+                            throw new TlsFatalAlert(AlertDescription.internal_error);
+                        }
+                    }
+                    else
                     {
                         if (TlsUtils.isTLSv12(tlsServerContext) != (certificateRequest.getSupportedSignatureAlgorithms() != null))
                         {
