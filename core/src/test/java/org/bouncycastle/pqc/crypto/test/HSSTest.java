@@ -8,13 +8,10 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.pqc.crypto.lms.HSSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSSigner;
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.lms.LMSParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSSigner;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -47,24 +44,58 @@ public class HSSTest
         assertTrue(signer.verifySignature(msg, sig));
     }
 
+    public void testKeyGenAndUsage()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("Hello, world!");
+        AsymmetricCipherKeyPairGenerator kpGen = new HSSKeyPairGenerator();
+
+        kpGen.init(new HSSKeyGenerationParameters(
+            new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)
+            }, new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        HSSPrivateKeyParameters privKey = (HSSPrivateKeyParameters)kp.getPrivate();
+
+        HSSSigner signer = new HSSSigner();
+
+        signer.init(true, privKey);
+
+        assertEquals(1024, privKey.getUsagesRemaining());
+
+        for (int i = 1; i <= 1024; i++)
+        {
+            signer.generateSignature(msg);
+
+            assertEquals(i, privKey.getIndex());
+            assertEquals(1024 - i, privKey.getUsagesRemaining());
+        }
+    }
+
     public void testKeyGenAndSignTwoSigsWithShard()
         throws Exception
     {
         byte[] msg1 = Strings.toByteArray("Hello, world!");
         byte[] msg2 = Strings.toByteArray("Now is the time");
 
-        AsymmetricCipherKeyPairGenerator kpGen = new LMSKeyPairGenerator();
+        AsymmetricCipherKeyPairGenerator kpGen = new HSSKeyPairGenerator();
 
-        kpGen.init(new LMSKeyGenerationParameters(
-            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4), new SecureRandom()));
-
+        kpGen.init(new HSSKeyGenerationParameters(
+            new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)
+            }, new SecureRandom()));
+        
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
-        LMSPrivateKeyParameters privKey = ((LMSPrivateKeyParameters)kp.getPrivate()).extractKeyShard(2);
+        HSSPrivateKeyParameters privKey = ((HSSPrivateKeyParameters)kp.getPrivate()).extractKeyShard(2);
 
-        assertEquals(2, ((LMSPrivateKeyParameters)kp.getPrivate()).getIndex());
+        assertEquals(2, ((HSSPrivateKeyParameters)kp.getPrivate()).getIndex());
 
-        LMSSigner signer = new LMSSigner();
+        HSSSigner signer = new HSSSigner();
 
         assertEquals(0, privKey.getIndex());
 
@@ -91,17 +122,18 @@ public class HSSTest
         try
         {
             sig = signer.generateSignature(msg2);
+            fail("no exception");
         }
         catch (ExhaustedPrivateKeyException e)
         {
-            assertEquals("ots private keys exhausted", e.getMessage());
+            assertEquals("hss private key is exhausted", e.getMessage());
         }
 
-        signer.init(true, ((LMSPrivateKeyParameters)kp.getPrivate()));
+        signer.init(true, ((HSSPrivateKeyParameters)kp.getPrivate()));
 
         sig = signer.generateSignature(msg1);
 
-        assertEquals(3, ((LMSPrivateKeyParameters)kp.getPrivate()).getIndex());
+        assertEquals(3, ((HSSPrivateKeyParameters)kp.getPrivate()).getIndex());
 
         assertFalse(Arrays.areEqual(sig1, sig));
 

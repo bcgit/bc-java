@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 import org.bouncycastle.util.Encodable;
 
-public class LMOtsSignature
+class LMOtsSignature
     implements Encodable
 {
     private final LMOtsParameters type;

@@ -1,9 +1,6 @@
 package org.bouncycastle.pqc.crypto.lms;
 
 import java.security.SecureRandom;
-import java.util.List;
-
-import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 
 class HSS
 {
@@ -153,35 +150,17 @@ class HSS
 
     public static HSSSignature generateSignature(HSSPrivateKeyParameters keyPair, byte[] message, SecureRandom entropySource)
     {
+        int L = keyPair.getL();
 
         //
         // Algorithm 8
         //
-
-        int L = keyPair.getL();
-
-        int d = L;
-        List<LMSPrivateKeyParameters> prv = keyPair.getKeys();
-        while (prv.get(d - 1).getIndex() == 1 << (prv.get(d - 1).getParameters().getH()))
-        {
-            d = d - 1;
-            if (d == 0)
-            {
-                throw new ExhaustedPrivateKeyException("hss key pair is exhausted");
-            }
-        }
-
-
-        while (d < L)
-        {
-            keyPair.addNewKey(d, entropySource);
-            d = d + 1;
-        }
+        // Step 1.
+        LMSPrivateKeyParameters nextKey = keyPair.getNextSigningKey(entropySource);
 
         // Step 2. Stand in for sig[L-1]
 
-
-        LMSSignature signatureResult = LMS.generateSign(keyPair.getKeys().get(L - 1), message);
+        LMSSignature signatureResult = LMS.generateSign(nextKey, message);
 
         int i = 0;
         LMSSignedPubKey[] signed_pub_key = new LMSSignedPubKey[L - 1];
@@ -193,19 +172,15 @@ class HSS
             i = i + 1;
         }
 
-
         if (L == 1)
         {
             return new HSSSignature(L - 1, signed_pub_key, signatureResult);
         }
-
-
+        
         return new HSSSignature(
             L - 1,
             signed_pub_key,   //LMSSignedPubKey.sliceTo(signed_pub_key, signed_pub_key.length),
             signatureResult);
-
-
     }
 
 

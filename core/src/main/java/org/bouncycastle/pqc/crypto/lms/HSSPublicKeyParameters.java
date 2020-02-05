@@ -51,7 +51,7 @@ public class HSSPublicKeyParameters
         return l;
     }
 
-    public LMSPublicKeyParameters getLmsPublicKey()
+    LMSPublicKeyParameters getLmsPublicKey()
     {
         return lmsPublicKey;
     }
