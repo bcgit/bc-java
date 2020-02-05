@@ -62,7 +62,6 @@ class LMSSignedPubKey
         return result;
     }
 
-    @Override
     public byte[] getEncoded()
         throws IOException
     {
@@ -70,6 +69,5 @@ class LMSSignedPubKey
             .bytes(signature.getEncoded())
             .bytes(publicKey.getEncoded())
             .build();
-
     }
 }
