@@ -10,8 +10,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class BCHssPrivateKey
-    implements HssPrivateKey
+public class HSSPrivateKeyParameters
+    extends HSSKeyParameters
 {
     private final LMSPrivateKeyParameters rootKey;
     private int l;
@@ -19,29 +19,33 @@ public class BCHssPrivateKey
     private List<LMSSignature> sig;
 
 
-    public BCHssPrivateKey(int l, LMSPrivateKeyParameters[] keys, LMSSignature[] sig)
+    public HSSPrivateKeyParameters(int l, LMSPrivateKeyParameters[] keys, LMSSignature[] sig)
     {
+        super(true);
+
         this.l = l;
         this.keys = Collections.unmodifiableList(Arrays.asList(keys));
         this.sig = Collections.unmodifiableList(Arrays.asList(sig));
         this.rootKey = this.keys.get(0);
     }
 
-    private BCHssPrivateKey(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig)
+    private HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig)
     {
+        super(true);
+
         this.l = l;
         this.keys = Collections.unmodifiableList(keys);
         this.sig = Collections.unmodifiableList(sig);
         this.rootKey = this.keys.get(0);
     }
 
-    static BCHssPrivateKey getInstance(Object src, int maxDepth, int maxSecretSize)
+    static HSSPrivateKeyParameters getInstance(Object src, int maxDepth, int maxSecretSize)
         throws Exception
     {
 
         if (src instanceof LMSPublicKeyParameters)
         {
-            return (BCHssPrivateKey)src;
+            return (HSSPrivateKeyParameters)src;
         }
         else if (src instanceof DataInputStream)
         {
@@ -68,7 +72,7 @@ public class BCHssPrivateKey
                 signatures.add(LMSSignature.getInstance(src));
             }
 
-            return new BCHssPrivateKey(d, keys, signatures);
+            return new HSSPrivateKeyParameters(d, keys, signatures);
 
         }
         else if (src instanceof byte[])
@@ -83,8 +87,6 @@ public class BCHssPrivateKey
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
-
-    @Override
     public synchronized int getRemaining()
     {
         int used = 0;
@@ -95,18 +97,18 @@ public class BCHssPrivateKey
         for (int t = 0; t < keys.size(); t++)
         {
             LMSPrivateKeyParameters key = keys.get(t);
-            int lim = (1 << key.getParameterSet().getH());
+            int lim = (1 << key.getParameters().getH());
             possible *= lim;
 
             if (t == last)
             {
-                used += key.getQ();
+                used += key.getIndex();
             }
             else
             {
-                if (key.getQ() - 1 > 0)
+                if (key.getIndex() - 1 > 0)
                 {
-                    used += (key.getQ() - 1) * lim;
+                    used += (key.getIndex() - 1) * lim;
                 }
             }
         }
@@ -114,41 +116,32 @@ public class BCHssPrivateKey
         return possible - used;
     }
 
-    @Override
     public synchronized int getL()
     {
         return l;
     }
 
-    @Override
     public synchronized List<LMSPrivateKeyParameters> getKeys()
     {
         return keys;
     }
 
-    @Override
     public synchronized int getL(LMSPrivateKeyParameters privateKey)
     {
         return keys.indexOf(privateKey);
     }
 
-    @Override
     public synchronized List<LMSSignature> getSig()
     {
         return sig;
     }
 
-    @Override
-    public synchronized BCHssPublicKey getPublicKey()
-        throws LMSException
+    public synchronized HSSPublicKeyParameters getPublicKey()
     {
-        return new BCHssPublicKey(l, rootKey.getPublicKey());
+        return new HSSPublicKeyParameters(l, rootKey.getPublicKey());
     }
 
-
-    @Override
-    public synchronized void addNewKey(int d, SecureRandom source)
-        throws LMSException
+    synchronized void addNewKey(int d, SecureRandom source)
     {
 
         List<LMSPrivateKeyParameters> newKeys = new ArrayList<LMSPrivateKeyParameters>(keys);
@@ -159,7 +152,7 @@ public class BCHssPrivateKey
         byte[] rootSecret = new byte[32];
         source.nextBytes(rootSecret);
 
-        newKeys.set(d, LMS.generateKeys(rootKey.getParameterSet(), rootKey.getLmOtsType(), 0, I, rootSecret));
+        newKeys.set(d, LMS.generateKeys(rootKey.getParameters(), rootKey.getLmOtsType(), 0, I, rootSecret));
 
         List<LMSSignature> newSig = new ArrayList<LMSSignature>(sig);
 
@@ -173,7 +166,6 @@ public class BCHssPrivateKey
 
     }
 
-    @Override
     public boolean equals(Object o)
     {
         if (this == o)
@@ -185,7 +177,7 @@ public class BCHssPrivateKey
             return false;
         }
 
-        BCHssPrivateKey that = (BCHssPrivateKey)o;
+        HSSPrivateKeyParameters that = (HSSPrivateKeyParameters)o;
 
         if (l != that.l)
         {

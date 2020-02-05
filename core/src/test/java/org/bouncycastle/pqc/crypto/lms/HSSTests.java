@@ -10,6 +10,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
+import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
@@ -30,10 +31,11 @@ public class HSSTests
 
         SecureRandom rand = new FixedSecureRandom(fixedSource);
 
-        HssPrivateKey generatedPrivateKey = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters generatedPrivateKey = HSS.generateHSSKeyPair(
             HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
-                .setLmOtsParameters(LmOtsParameters.sha256_n32_w4, LmOtsParameters.sha256_n32_w2)
+                .setLmsParameters(
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
                 .setLmsEntropySource(rand)
                 .build()
         );
@@ -42,7 +44,7 @@ public class HSSTests
 
         byte[] keyPairEnc = generatedPrivateKey.getEncoded();
 
-        BCHssPrivateKey reconstructedPrivateKey = BCHssPrivateKey.getInstance(keyPairEnc, 2, 1024);
+        HSSPrivateKeyParameters reconstructedPrivateKey = HSSPrivateKeyParameters.getInstance(keyPairEnc, 2, 1024);
         assertTrue(reconstructedPrivateKey.equals(generatedPrivateKey));
 
 
@@ -58,7 +60,7 @@ public class HSSTests
         //
         // Check the reconstructed key can verify a signature.
         //
-        assertTrue(HSS.verifySignature(sigFromGeneratedPrivateKey, reconstructedPrivateKey.getPublicKey(), Hex.decode("ABCDEF")));
+        assertTrue(HSS.verifySignature(reconstructedPrivateKey.getPublicKey(), sigFromGeneratedPrivateKey, Hex.decode("ABCDEF")));
 
     }
 
@@ -74,10 +76,10 @@ public class HSSTests
     {
         ArrayList<byte[]> blocks = loadVector("/org/bouncycastle/pqc/crypto/test/lms/testcase_1.txt");
 
-        BCHssPublicKey publicKey = BCHssPublicKey.getInstance(blocks.get(0));
+        HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
         HSSSignature signature = HSSSignature.getInstance(blocks.get(2), 2);
-        assertTrue("Test Case 1 ", HSS.verifySignature(signature, publicKey, message));
+        assertTrue("Test Case 1 ", HSS.verifySignature(publicKey, signature, message));
     }
 
     /**
@@ -92,16 +94,16 @@ public class HSSTests
 
         ArrayList<byte[]> blocks = loadVector("/org/bouncycastle/pqc/crypto/test/lms/testcase_2.txt");
 
-        BCHssPublicKey publicKey = BCHssPublicKey.getInstance(blocks.get(0));
+        HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
         byte[] sig = blocks.get(2);
         HSSSignature signature = HSSSignature.getInstance(sig, 2);
-        assertTrue("Test Case 2 Signature", HSS.verifySignature(signature, publicKey, message));
+        assertTrue("Test Case 2 Signature", HSS.verifySignature(publicKey, signature, message));
 
         LMSPublicKeyParameters lmsPub = LMSPublicKeyParameters.getInstance(blocks.get(3));
         LMSSignature lmsSignature = LMSSignature.getInstance(blocks.get(4));
 
-        assertTrue("Test Case 2 Signature 2", LMS.verifySignature(lmsSignature, message, lmsPub));
+        assertTrue("Test Case 2 Signature 2", LMS.verifySignature(lmsPub, lmsSignature, message));
 
     }
 
@@ -149,7 +151,7 @@ public class HSSTests
 
         byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
         int level = 0;
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(6), LmOtsParameters.getParametersForType(3), level, Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534"), seed);
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSigParameters.getParametersForType(6), LMOtsParameters.getParametersForType(3), level, Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534"), seed);
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
         assertTrue(Arrays.areEqual(publicKey.getT1(), Hex.decode("32a58885cd9ba0431235466bff9651c6c92124404d45fa53cf161c28f1ad5a8e")));
         assertTrue(Arrays.areEqual(publicKey.getI(), Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534")));
@@ -167,7 +169,7 @@ public class HSSTests
 
         byte[] seed = Hex.decode("a1c4696e2608035a886100d05cd99945eb3370731884a8235e2fb3d4d71f2547");
         int level = 1;
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSigParameters.getParametersForType(5), LMOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
         assertTrue(Arrays.areEqual(publicKey.getT1(), Hex.decode("a1cd035833e0e90059603f26e07ad2aad152338e7a5e5984bcd5f7bb4eba40b7")));
         assertTrue(Arrays.areEqual(publicKey.getI(), Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b")));
@@ -193,10 +195,11 @@ public class HSSTests
 
         SecureRandom rand = new FixedSecureRandom(fixedSource);
 
-        HssPrivateKey keyPair = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
             HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
-                .setLmOtsParameters(LmOtsParameters.sha256_n32_w4, LmOtsParameters.sha256_n32_w2)
+                .setLmsParameters(
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
                 .setLmsEntropySource(rand)
                 .build()
         );
@@ -214,7 +217,7 @@ public class HSSTests
         // Check that HSS public keys have value equality after deserialization.
         // Use external sourced pk for deserialization.
         //
-        assertTrue("HssPrivateKeys equal are deserialization", keyPair.getPublicKey().equals(BCHssPublicKey.getInstance(Hex.decode(expectedPk))));
+        assertTrue("HSSPrivateKeyParameterss equal are deserialization", keyPair.getPublicKey().equals(HSSPublicKeyParameters.getInstance(Hex.decode(expectedPk))));
 
 
         //
@@ -224,10 +227,11 @@ public class HSSTests
         {
             SecureRandom rand1 = new FixedSecureRandom(fixedSource);
 
-            HssPrivateKey regenKeyPair = HSS.generateHSSKeyPair(
+            HSSPrivateKeyParameters regenKeyPair = HSS.generateHSSKeyPair(
                 HSSKeyGenerationParameters.builder(2)
-                    .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
-                    .setLmOtsParameters(LmOtsParameters.sha256_n32_w4, LmOtsParameters.sha256_n32_w2)
+                    .setLmsParameters(
+                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
                     .setLmsEntropySource(rand1)
                     .build()
             );
@@ -266,10 +270,11 @@ public class HSSTests
             // Use a real secure random this time.
             SecureRandom rand1 = new SecureRandom();
 
-            HssPrivateKey differentKey = HSS.generateHSSKeyPair(
+            HSSPrivateKeyParameters differentKey = HSS.generateHSSKeyPair(
                 HSSKeyGenerationParameters.builder(2)
-                    .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
-                    .setLmOtsParameters(LmOtsParameters.sha256_n32_w4, LmOtsParameters.sha256_n32_w2)
+                    .setLmsParameters(
+                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
                     .setLmsEntropySource(rand1)
                     .build()
             );
@@ -321,8 +326,8 @@ public class HSSTests
         String[] lines = new String(Streams.readAll(HSSTests.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/lms/depth_1.txt"))).split("\n");
 
         int d = 0;
-        List<LMSParameters> lmsParameters = new ArrayList<LMSParameters>();
-        List<LmOtsParameters> lmOtsParameters = new ArrayList<LmOtsParameters>();
+        List<LMSigParameters> lmsParameters = new ArrayList<LMSigParameters>();
+        List<LMOtsParameters> lmOtsParameters = new ArrayList<LMOtsParameters>();
         byte[] message = null;
         byte[] hssPubEnc = null;
         byte[] encodedSigFromVector = null;
@@ -345,12 +350,12 @@ public class HSSTests
             else if (line.startsWith("LMType:"))
             {
                 int typ = Integer.parseInt(line.substring("LMType:".length()).trim());
-                lmsParameters.add(LMSParameters.getParametersForType(typ));
+                lmsParameters.add(LMSigParameters.getParametersForType(typ));
             }
             else if (line.startsWith("LMOtsType:"))
             {
                 int typ = Integer.parseInt(line.substring("LMOtsType:".length()).trim());
-                lmOtsParameters.add(LmOtsParameters.getParametersForType(typ));
+                lmOtsParameters.add(LMOtsParameters.getParametersForType(typ));
             }
             else if (line.startsWith("Rand:"))
             {
@@ -379,15 +384,20 @@ public class HSSTests
                 //
                 // Deserialize pub key from reference impl.
                 //
-                BCHssPublicKey vectorSourcedPubKey = BCHssPublicKey.getInstance(hssPubEnc);
+                HSSPublicKeyParameters vectorSourcedPubKey = HSSPublicKeyParameters.getInstance(hssPubEnc);
+                List<LMSParameters> lmsParams = new ArrayList<LMSParameters>();
 
+                for (int i = 0; i != lmsParameters.size(); i++)
+                {
+                    lmsParams.add(new LMSParameters(lmsParameters.get(i), lmOtsParameters.get(i)));
+                }
+                
                 //
                 // Using our fixed entropy source generate hss keypair
                 //
-                HssPrivateKey keyPair = HSS.generateHSSKeyPair(
+                HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
                     HSSKeyGenerationParameters.builder(d)
-                        .setLmsParameters(lmsParameters)
-                        .setLmOtsParameters(lmOtsParameters)
+                        .setLmsParameters(lmsParams)
                         .setLmsEntropySource(fixRnd)
                         .build()
                 );
@@ -395,7 +405,7 @@ public class HSSTests
                 { // Public Key should match vector.
 
                     // Encoded value equality.
-                    BCHssPublicKey generatedPubKey = keyPair.getPublicKey();
+                    HSSPublicKeyParameters generatedPubKey = keyPair.getPublicKey();
                     assertTrue(Arrays.areEqual(hssPubEnc, generatedPubKey.getEncoded()));
 
                     // Value equality.
@@ -421,13 +431,13 @@ public class HSSTests
                 assertTrue(Arrays.areEqual(sig.getEncoded(), encodedSigFromVector));
 
                 // Check we can verify our generated signature with the vectors sourced public key.
-                assertTrue(HSS.verifySignature(sig, vectorSourcedPubKey, message));
+                assertTrue(HSS.verifySignature(vectorSourcedPubKey, sig, message));
 
                 // Deserialize the signature from the vector.
                 HSSSignature signatureFromVector = HSSSignature.getInstance(encodedSigFromVector, d);
 
                 // Can we verify signature from vector with public key from vector.
-                assertTrue(HSS.verifySignature(signatureFromVector, vectorSourcedPubKey, message));
+                assertTrue(HSS.verifySignature(vectorSourcedPubKey, signatureFromVector, message));
 
                 //
                 // Check our generated signature and the one deserialized from the vector
@@ -498,15 +508,16 @@ public class HSSTests
             }
         };
 
-        HssPrivateKey keyPair = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
             HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(LMSParameters.lms_sha256_n32_h5, LMSParameters.lms_sha256_n32_h5)
-                .setLmOtsParameters(LmOtsParameters.sha256_n32_w2, LmOtsParameters.sha256_n32_w8)
+                .setLmsParameters(
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w8))
                 .setLmsEntropySource(rand)
                 .build()
         );
 
-        BCHssPublicKey pk = keyPair.getPublicKey();
+        HSSPublicKeyParameters pk = keyPair.getPublicKey();
 
 
         int msgCtr = 0;
@@ -524,7 +535,7 @@ public class HSSTests
             {
                 Pack.intToBigEndian(msgCtr, message, 0);
                 HSSSignature sig = HSS.generateSignature(keyPair, message, rand);
-                assertTrue(HSS.verifySignature(sig, pk, message));
+                assertTrue(HSS.verifySignature(pk, sig, message));
 
                 {
                     //
@@ -533,14 +544,14 @@ public class HSSTests
                     byte[] rawSig = sig.getEncoded();
                     rawSig[100] ^= 1;
                     HSSSignature parsedSig = HSSSignature.getInstance(rawSig, 2);
-                    assertFalse(HSS.verifySignature(parsedSig, pk, message));
+                    assertFalse(HSS.verifySignature(pk, parsedSig, message));
 
                     try
                     {
                         HSSSignature.getInstance(rawSig, 0);
                         fail();
                     }
-                    catch (LMSException ex)
+                    catch (IllegalStateException ex)
                     {
                         assertTrue(ex.getMessage().contains("nspk exceeded maxNspk"));
                     }
@@ -554,7 +565,7 @@ public class HSSTests
                     //
                     byte[] newMsg = message.clone();
                     newMsg[1] ^= 1;
-                    assertFalse(HSS.verifySignature(sig, pk, newMsg));
+                    assertFalse(HSS.verifySignature(pk, sig, newMsg));
                 }
 
 
@@ -564,14 +575,14 @@ public class HSSTests
                     //
                     byte[] pkEnc = pk.getEncoded();
                     pkEnc[35] ^= 1;
-                    BCHssPublicKey rebuiltPk = BCHssPublicKey.getInstance(pkEnc);
-                    assertFalse(HSS.verifySignature(sig, rebuiltPk, message));
+                    HSSPublicKeyParameters rebuiltPk = HSSPublicKeyParameters.getInstance(pkEnc);
+                    assertFalse(HSS.verifySignature(rebuiltPk, sig, message));
                 }
                 msgCtr++;
             }
             fail();
         }
-        catch (LMSPrivateKeyExhaustionException ex)
+        catch (ExhaustedPrivateKeyException ex)
         {
             assertTrue(keyPair.getRemaining() == 0);
             assertTrue(msgCtr == 1024);

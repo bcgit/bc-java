@@ -30,12 +30,12 @@ public class LM_OTS
         return (S[index] >>> shift) & mask;
     }
 
-    public static int cksm(byte[] S, LmOtsParameters parameters)
+    public static int cksm(byte[] S, LMOtsParameters parameters)
     {
         return cksm(S, S.length, parameters);
     }
 
-    public static int cksm(byte[] S, int sLen, LmOtsParameters parameters)
+    public static int cksm(byte[] S, int sLen, LMOtsParameters parameters)
     {
         int sum = 0;
 
@@ -52,13 +52,13 @@ public class LM_OTS
     }
 
 
-    public static LMOtsPublicKey lms_ots_generatePublicKey(LmOtsPrivateKey privateKey)
+    public static LMOtsPublicKey lms_ots_generatePublicKey(LMOtsPrivateKey privateKey)
     {
         byte[] K = lms_ots_generatePublicKey(privateKey.getParameter(), privateKey.getI(), privateKey.getQ(), privateKey.getMasterSecret());
         return new LMOtsPublicKey(privateKey.getParameter(), privateKey.getI(), privateKey.getQ(), K);
     }
 
-    static byte[] lms_ots_generatePublicKey(LmOtsParameters parameter, byte[] I, int q, byte[] masterSecret)
+    static byte[] lms_ots_generatePublicKey(LMOtsParameters parameter, byte[] I, int q, byte[] masterSecret)
     {
 
 
@@ -112,10 +112,10 @@ public class LM_OTS
 
     }
 
-    public static LMOtsSignature lm_ots_generate_signature(LmOtsPrivateKey privateKey, byte[] message, boolean preHashed)
+    public static LMOtsSignature lm_ots_generate_signature(LMOtsPrivateKey privateKey, byte[] message, boolean preHashed)
     {
 
-        LmOtsParameters parameter = privateKey.getParameter();
+        LMOtsParameters parameter = privateKey.getParameter();
 
         int n = parameter.getN();
         int p = parameter.getP();
@@ -194,7 +194,7 @@ public class LM_OTS
         return Arrays.areEqual(lm_ots_validate_signature_calculate(publicKey.getParameter(), publicKey.getI(), publicKey.getQ(), signature, message, prehashed), publicKey.getK());
     }
 
-    public static byte[] lm_ots_validate_signature_calculate(LmOtsParameters parameter, byte[] I, int q, LMOtsSignature signature, byte[] message, boolean prehashed)
+    public static byte[] lm_ots_validate_signature_calculate(LMOtsParameters parameter, byte[] I, int q, LMOtsSignature signature, byte[] message, boolean prehashed)
     {
 
         byte[] C = signature.getC();

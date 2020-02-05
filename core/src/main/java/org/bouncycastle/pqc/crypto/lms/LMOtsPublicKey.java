@@ -8,16 +8,16 @@ import java.util.Arrays;
 
 import org.bouncycastle.util.Encodable;
 
-public class LMOtsPublicKey
+class LMOtsPublicKey
     implements Encodable
 {
-    private final LmOtsParameters parameter;
+    private final LMOtsParameters parameter;
     private final byte[] I;
     private final int q;
     private final byte[] K;
 
 
-    public LMOtsPublicKey(LmOtsParameters parameter, byte[] i, int q, byte[] k)
+    public LMOtsPublicKey(LMOtsParameters parameter, byte[] i, int q, byte[] k)
     {
         this.parameter = parameter;
         this.I = i;
@@ -34,7 +34,7 @@ public class LMOtsPublicKey
         }
         else if (src instanceof DataInputStream)
         {
-            LmOtsParameters parameter = LmOtsParameters.getParametersForType(((DataInputStream)src).readInt());
+            LMOtsParameters parameter = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
             int q = ((DataInputStream)src).readInt();
@@ -57,7 +57,7 @@ public class LMOtsPublicKey
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
-    public LmOtsParameters getParameter()
+    public LMOtsParameters getParameter()
     {
         return parameter;
     }
