@@ -586,7 +586,7 @@ public class HSSTests
         {
             assertTrue(keyPair.getUsagesRemaining() == 0);
             assertTrue(msgCtr == 1024);
-            assertTrue(ex.getMessage().contains("hss key pair is exhausted"));
+            assertTrue(ex.getMessage().contains("hss private key is exhausted"));
         }
 
     }
