@@ -54,7 +54,7 @@ public class HSSSigner
     {
         try
         {
-            return HSS.verifySignature(pubKey, HSSSignature.getInstance(signature, 9), message);
+            return HSS.verifySignature(pubKey, HSSSignature.getInstance(signature, pubKey.getL()), message);
         }
         catch (IOException e)
         {

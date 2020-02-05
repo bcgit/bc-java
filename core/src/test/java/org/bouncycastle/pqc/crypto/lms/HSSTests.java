@@ -527,7 +527,7 @@ public class HSSTests
         // There should be a max of 1024 signatures for this key.
         //
 
-        assertTrue(keyPair.getRemaining() == 1024);
+        assertTrue(keyPair.getUsagesRemaining() == 1024);
 
         try
         {
@@ -584,7 +584,7 @@ public class HSSTests
         }
         catch (ExhaustedPrivateKeyException ex)
         {
-            assertTrue(keyPair.getRemaining() == 0);
+            assertTrue(keyPair.getUsagesRemaining() == 0);
             assertTrue(msgCtr == 1024);
             assertTrue(ex.getMessage().contains("hss key pair is exhausted"));
         }

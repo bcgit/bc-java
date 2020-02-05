@@ -4,7 +4,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
-public class LM_OTS
+class LM_OTS
 {
 
     private static final short D_PBLC = (short)0x8080;

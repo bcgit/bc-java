@@ -18,6 +18,7 @@ public class LMSPrivateKeyParameters
     private final byte[] masterSecret;
     
     private int q;
+    
     //
     // These are not final because they can be generated.
     // They also do not need to be persisted.
@@ -114,7 +115,7 @@ public class LMSPrivateKeyParameters
         {
             if (q >= maxQ)
             {
-                throw new ExhaustedPrivateKeyException("ots private keys exhausted");
+                throw new ExhaustedPrivateKeyException("ots private key exhausted");
             }
             LMOtsPrivateKey otsPrivateKey = new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
             q++;
@@ -160,7 +161,7 @@ public class LMSPrivateKeyParameters
         return parameters;
     }
 
-    public LMOtsParameters getLmOtsType()
+    public LMOtsParameters getOtsParameters()
     {
         return otsParameters;
     }
@@ -217,10 +218,6 @@ public class LMSPrivateKeyParameters
 
     }
 
-    public LMOtsParameters getOtsParameters()
-    {
-        return otsParameters;
-    }
 
     @Override
     public boolean equals(Object o)

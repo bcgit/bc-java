@@ -112,7 +112,7 @@ class LMS
             // These can be pre generated at the time of key generation and held within the private key.
             // However it will cost memory to have them stick around.
             //
-            byte[] K = LM_OTS.lms_ots_generatePublicKey(privateKey.getLmOtsType(), privateKey.getI(), (r - twoToh), privateKey.getMasterSecret());
+            byte[] K = LM_OTS.lms_ots_generatePublicKey(privateKey.getOtsParameters(), privateKey.getI(), (r - twoToh), privateKey.getMasterSecret());
 
             LmsUtils.byteArray(K, digest);
             T = new byte[digest.getDigestSize()];
@@ -263,10 +263,9 @@ class LMS
         return tmp;
     }
 
-
     static byte[] appendixC(LMSPrivateKeyParameters lmsPrivateKey)
     {
-        LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(lmsPrivateKey.getLmOtsType().getType());
+        LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(lmsPrivateKey.getOtsParameters().getType());
 
         int twoToh = 1 << lmsPrivateKey.getParameters().getH();
         Digest H = DigestUtil.getDigest(lmsPrivateKey.getParameters().getDigestOID());
