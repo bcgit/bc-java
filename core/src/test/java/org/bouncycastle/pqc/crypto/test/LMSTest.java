@@ -60,6 +60,7 @@ public class LMSTest
 
         LMSSigner signer = new LMSSigner();
 
+        assertEquals(2, privKey.getUsagesRemaining());
         assertEquals(0, privKey.getIndex());
 
         signer.init(true, privKey);
@@ -85,10 +86,11 @@ public class LMSTest
         try
         {
             sig = signer.generateSignature(msg2);
+            fail("no exception");
         }
         catch (ExhaustedPrivateKeyException e)
         {
-            assertEquals("ots private keys exhausted", e.getMessage());
+            assertEquals("ots private key exhausted", e.getMessage());
         }
 
         signer.init(true, ((LMSPrivateKeyParameters)kp.getPrivate()));
