@@ -116,8 +116,6 @@ class LMOtsPublicKey
         return result;
     }
 
-
-    @Override
     public byte[] getEncoded()
         throws IOException
     {
