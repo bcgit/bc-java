@@ -1,13 +1,13 @@
 package org.bouncycastle.pqc.crypto.lms;
 
-public class LmOtsPrivateKey
+class LMOtsPrivateKey
 {
-    private final LmOtsParameters parameter;
+    private final LMOtsParameters parameter;
     private final byte[] I;
     private final int q;
     private final byte[] masterSecret;
 
-    public LmOtsPrivateKey(LmOtsParameters parameter, byte[] i, int q, byte[] masterSecret)
+    public LMOtsPrivateKey(LMOtsParameters parameter, byte[] i, int q, byte[] masterSecret)
     {
         this.parameter = parameter;
         I = i;
@@ -22,7 +22,7 @@ public class LmOtsPrivateKey
         return derive;
     }
 
-    public LmOtsParameters getParameter()
+    public LMOtsParameters getParameter()
     {
         return parameter;
     }

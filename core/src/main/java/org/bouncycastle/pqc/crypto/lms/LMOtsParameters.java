@@ -6,15 +6,15 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 
-public class LmOtsParameters
+public class LMOtsParameters
 {
     public static final int reserved = 0;
-    public static final LmOtsParameters sha256_n32_w1 = new LmOtsParameters(1, 32, 1, 265, 7, 8516, NISTObjectIdentifiers.id_sha256);
-    public static final LmOtsParameters sha256_n32_w2 = new LmOtsParameters(2, 32, 2, 133, 6, 4292, NISTObjectIdentifiers.id_sha256);
-    public static final LmOtsParameters sha256_n32_w4 = new LmOtsParameters(3, 32, 4, 67, 4, 2180, NISTObjectIdentifiers.id_sha256);
-    public static final LmOtsParameters sha256_n32_w8 = new LmOtsParameters(4, 32, 8, 34, 0, 1124, NISTObjectIdentifiers.id_sha256);
+    public static final LMOtsParameters sha256_n32_w1 = new LMOtsParameters(1, 32, 1, 265, 7, 8516, NISTObjectIdentifiers.id_sha256);
+    public static final LMOtsParameters sha256_n32_w2 = new LMOtsParameters(2, 32, 2, 133, 6, 4292, NISTObjectIdentifiers.id_sha256);
+    public static final LMOtsParameters sha256_n32_w4 = new LMOtsParameters(3, 32, 4, 67, 4, 2180, NISTObjectIdentifiers.id_sha256);
+    public static final LMOtsParameters sha256_n32_w8 = new LMOtsParameters(4, 32, 8, 34, 0, 1124, NISTObjectIdentifiers.id_sha256);
 
-    private static final Map<Object, LmOtsParameters> suppliers = new HashMap<Object, LmOtsParameters>()
+    private static final Map<Object, LMOtsParameters> suppliers = new HashMap<Object, LMOtsParameters>()
     {
         {
             put(sha256_n32_w1.type, sha256_n32_w1);
@@ -32,7 +32,7 @@ public class LmOtsParameters
     private final int sigLen;
     private final ASN1ObjectIdentifier digestOID;
 
-    protected LmOtsParameters(int type, int n, int w, int p, int ls, int sigLen, ASN1ObjectIdentifier digestOID)
+    protected LMOtsParameters(int type, int n, int w, int p, int ls, int sigLen, ASN1ObjectIdentifier digestOID)
     {
         this.type = type;
         this.n = n;
@@ -78,7 +78,7 @@ public class LmOtsParameters
         return digestOID;
     }
 
-    public static LmOtsParameters getParametersForType(int type)
+    public static LMOtsParameters getParametersForType(int type)
     {
         return suppliers.get(type);
     }

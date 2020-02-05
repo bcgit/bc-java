@@ -4,17 +4,19 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
+
+import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
+import org.bouncycastle.util.Arrays;
 
 public class LMSPrivateKeyParameters
     extends LMSKeyParameters
 {
-
     private final byte[] I;
-    private final LMSParameters parameterSet;
-    private final LmOtsParameters lmOtsParameter;
+    private final LMSigParameters parameters;
+    private final LMOtsParameters otsParameters;
     private final int maxQ;
     private final byte[] masterSecret;
+    
     private int q;
     //
     // These are not final because they can be generated.
@@ -23,16 +25,16 @@ public class LMSPrivateKeyParameters
     private LMSPublicKeyParameters publicKey;
     private byte[] T1;
 
-    public LMSPrivateKeyParameters(LMSParameters lmsParameter, LmOtsParameters lmOtsParameter, int q, byte[] I, int maxQ, byte[] masterSecret)
+    public LMSPrivateKeyParameters(LMSigParameters lmsParameter, LMOtsParameters otsParameters, int q, byte[] I, int maxQ, byte[] masterSecret)
     {
         super(true);
 
-        this.parameterSet = lmsParameter;
-        this.lmOtsParameter = lmOtsParameter;
+        this.parameters = lmsParameter;
+        this.otsParameters = otsParameters;
         this.q = q;
-        this.I = I;
+        this.I = Arrays.clone(I);
         this.maxQ = maxQ;
-        this.masterSecret = masterSecret;
+        this.masterSecret = Arrays.clone(masterSecret);
     }
 
     public static LMSPrivateKeyParameters getInstance(Object src, int secretSizeLimit)
@@ -46,11 +48,11 @@ public class LMSPrivateKeyParameters
         {
             if (((DataInputStream)src).readInt() != 0)
             {
-                throw new LMSException("expected vetsion 0 lms private key");
+                throw new LMSException("expected version 0 lms private key");
             }
 
-            LMSParameters parameter = LMSParameters.getParametersForType(((DataInputStream)src).readInt());
-            LmOtsParameters otsParameter = LmOtsParameters.getParametersForType(((DataInputStream)src).readInt());
+            LMSigParameters parameter = LMSigParameters.getParametersForType(((DataInputStream)src).readInt());
+            LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
 
@@ -83,54 +85,89 @@ public class LMSPrivateKeyParameters
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
-
-    LmOtsPrivateKey getCurrentOTSKey()
-        throws LMSException
+    LMOtsPrivateKey getCurrentOTSKey()
     {
         synchronized (this)
         {
             if (q >= maxQ)
             {
-                throw new LMSPrivateKeyExhaustionException("ots private keys expired");
+                throw new ExhaustedPrivateKeyException("ots private keys expired");
             }
-            LmOtsPrivateKey otsPrivateKey = new LmOtsPrivateKey(lmOtsParameter, I, q, masterSecret);
+            LMOtsPrivateKey otsPrivateKey = new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
             return otsPrivateKey;
         }
     }
 
-    public LmOtsPrivateKey getNextOtsPrivateKey()
-        throws LMSException
+    /**
+     * Return the key index (the q value).
+     *
+     * @return private key index number.
+     */
+    public synchronized int getIndex()
+    {
+        return q;
+    }
+
+    LMOtsPrivateKey getNextOtsPrivateKey()
     {
         synchronized (this)
         {
             if (q >= maxQ)
             {
-                throw new LMSPrivateKeyExhaustionException("ots private keys expired");
+                throw new ExhaustedPrivateKeyException("ots private keys exhausted");
             }
-            LmOtsPrivateKey otsPrivateKey = new LmOtsPrivateKey(lmOtsParameter, I, q, masterSecret);
+            LMOtsPrivateKey otsPrivateKey = new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
             q++;
             return otsPrivateKey;
         }
     }
 
-    public LMSParameters getParameterSet()
+    public LMSPrivateKeyParameters getNextKey()
     {
-        return parameterSet;
+        synchronized (this)
+        {
+            LMSPrivateKeyParameters keyParameters = this.extractKeyShard(1);
+
+            return keyParameters;
+        }
     }
 
-    public LmOtsParameters getLmOtsType()
+    /**
+     * Return a key that can be used usageCount times.
+     * <p>
+     * Note: this will use the range [index...index + usageCount) for the current key.
+     * </p>
+     * @param usageCount the number of usages the key should have.
+     * @return a key based on the current key that can be used usageCount times.
+     */
+    public LMSPrivateKeyParameters extractKeyShard(int usageCount)
     {
-        return lmOtsParameter;
+        synchronized (this)
+        {
+            if (q + usageCount >= maxQ)
+            {
+                throw new IllegalArgumentException("usageCount exceeds usages remaining");
+            }
+            LMSPrivateKeyParameters keyParameters = new LMSPrivateKeyParameters(parameters, otsParameters, q, I, q + usageCount, masterSecret);
+            q += usageCount;
+
+            return keyParameters;
+        }
     }
 
-    public int getQ()
+    public LMSigParameters getParameters()
     {
-        return q;
+        return parameters;
+    }
+
+    public LMOtsParameters getLmOtsType()
+    {
+        return otsParameters;
     }
 
     public byte[] getI()
     {
-        return I;
+        return Arrays.clone(I);
     }
 
     public int getMaxQ()
@@ -140,14 +177,13 @@ public class LMSPrivateKeyParameters
 
     public byte[] getMasterSecret()
     {
-        return masterSecret;
+        return Arrays.clone(masterSecret);
     }
 
-    public boolean hasRemainingOTSPrivateKeys()
+    public long getUsagesRemaining()
     {
-        return q < maxQ;
+        return maxQ - q;
     }
-
 
     public LMSPublicKeyParameters getPublicKey()
     {
@@ -158,14 +194,13 @@ public class LMSPrivateKeyParameters
 
                 T1 = LMS.appendixC(this);
 
-                publicKey = new LMSPublicKeyParameters(parameterSet, lmOtsParameter, T1, I);
+                publicKey = new LMSPublicKeyParameters(parameters, otsParameters, T1, I);
             }
             return publicKey;
         }
     }
 
     public byte[] getT1()
-        throws LMSException
     {
         synchronized (this)
         {
@@ -182,10 +217,9 @@ public class LMSPrivateKeyParameters
 
     }
 
-
-    public LmOtsParameters getLmOtsParameter()
+    public LMOtsParameters getOtsParameters()
     {
-        return lmOtsParameter;
+        return otsParameters;
     }
 
     @Override
@@ -210,19 +244,19 @@ public class LMSPrivateKeyParameters
         {
             return false;
         }
-        if (!Arrays.equals(I, that.I))
+        if (!Arrays.areEqual(I, that.I))
         {
             return false;
         }
-        if (parameterSet != null ? !parameterSet.equals(that.parameterSet) : that.parameterSet != null)
+        if (parameters != null ? !parameters.equals(that.parameters) : that.parameters != null)
         {
             return false;
         }
-        if (lmOtsParameter != null ? !lmOtsParameter.equals(that.lmOtsParameter) : that.lmOtsParameter != null)
+        if (otsParameters != null ? !otsParameters.equals(that.otsParameters) : that.otsParameters != null)
         {
             return false;
         }
-        if (!Arrays.equals(masterSecret, that.masterSecret))
+        if (!Arrays.areEqual(masterSecret, that.masterSecret))
         {
             return false;
         }
@@ -244,8 +278,8 @@ public class LMSPrivateKeyParameters
     {
         int result = q;
         result = 31 * result + Arrays.hashCode(I);
-        result = 31 * result + (parameterSet != null ? parameterSet.hashCode() : 0);
-        result = 31 * result + (lmOtsParameter != null ? lmOtsParameter.hashCode() : 0);
+        result = 31 * result + (parameters != null ? parameters.hashCode() : 0);
+        result = 31 * result + (otsParameters != null ? otsParameters.hashCode() : 0);
         result = 31 * result + maxQ;
         result = 31 * result + Arrays.hashCode(masterSecret);
         result = 31 * result + (publicKey != null ? publicKey.hashCode() : 0);
@@ -272,8 +306,8 @@ public class LMSPrivateKeyParameters
 
         return Composer.compose()
             .u32str(0) // version
-            .u32str(parameterSet.getType()) // type
-            .u32str(lmOtsParameter.getType()) // ots type
+            .u32str(parameters.getType()) // type
+            .u32str(otsParameters.getType()) // ots type
             .bytes(I) // I at 16 bytes
             .u32str(q) // q
             .u32str(maxQ) // maximum q

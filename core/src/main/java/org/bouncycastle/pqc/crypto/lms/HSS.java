@@ -1,10 +1,11 @@
 package org.bouncycastle.pqc.crypto.lms;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.List;
 
-public class HSS
+import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
+
+class HSS
 {
 
 
@@ -106,8 +107,7 @@ public class HSS
 //    }
 
 
-    public static HssPrivateKey generateHSSKeyPair(HSSKeyGenerationParameters parameters)
-        throws LMSException
+    public static HSSPrivateKeyParameters generateHSSKeyPair(HSSKeyGenerationParameters parameters)
     {
         //
         // LmsPrivateKey can derive and hold the public key so we just use an array of those.
@@ -115,21 +115,17 @@ public class HSS
         LMSPrivateKeyParameters[] keys = new LMSPrivateKeyParameters[parameters.getDepth()];
         LMSSignature[] sig = new LMSSignature[parameters.getDepth()-1];
 
-
         byte[] rootSeed = new byte[32];
-        parameters.getLmsEntropySource().nextBytes(rootSeed);
+        parameters.getRandom().nextBytes(rootSeed);
 
         byte[] I = new byte[16];
-        parameters.getLmsEntropySource().nextBytes(I);
-
+        parameters.getRandom().nextBytes(I);
 
         // Step 1 and first part of Step 2
         keys[0] = LMS.generateKeys(
-            parameters.getLmsParameters()[0],
-            parameters.getLmOtsParameters()[0],
+            parameters.getLmsParameters()[0].getLmsParam(),
+            parameters.getLmsParameters()[0].getLmOTSParam(),
             0, I, rootSeed);
-
-
 
         // Step 2 -- This step could be deferred until first use.
         for (int i = 1; i < keys.length; i++)
@@ -143,21 +139,19 @@ public class HSS
             byte[] childI = new byte[16];
             System.arraycopy(postImage, 0, childI, 0, I.length);
 
-
             keys[i] = LMS.generateKeys(
-                parameters.getLmsParameters()[i],
-                parameters.getLmOtsParameters()[i],
+                parameters.getLmsParameters()[i].getLmsParam(),
+                parameters.getLmsParameters()[i].getLmOTSParam(),
                 0, childI, childRootSeed);
 
             sig[i - 1] = LMS.generateSign(keys[i - 1], keys[i].getPublicKey().getEncoded());
         }
 
-        return new BCHssPrivateKey(parameters.getDepth(), keys, sig);
+        return new HSSPrivateKeyParameters(parameters.getDepth(), keys, sig);
     }
 
 
-    public static HSSSignature generateSignature(HssPrivateKey keyPair, byte[] message, SecureRandom entropySource)
-        throws LMSException, IOException
+    public static HSSSignature generateSignature(HSSPrivateKeyParameters keyPair, byte[] message, SecureRandom entropySource)
     {
 
         //
@@ -176,12 +170,12 @@ public class HSS
 
         int d = L;
         List<LMSPrivateKeyParameters> prv = keyPair.getKeys();
-        while (prv.get(d - 1).getQ() == 1 << (prv.get(d - 1).getParameterSet().getH()))
+        while (prv.get(d - 1).getIndex() == 1 << (prv.get(d - 1).getParameters().getH()))
         {
             d = d - 1;
             if (d == 0)
             {
-                throw new LMSPrivateKeyExhaustionException("hss key pair is exhausted");
+                throw new ExhaustedPrivateKeyException("hss key pair is exhausted");
             }
         }
 
@@ -223,8 +217,7 @@ public class HSS
     }
 
 
-    public static boolean verifySignature(HSSSignature signature, BCHssPublicKey publicKey, byte[] message)
-        throws LMSException
+    public static boolean verifySignature(HSSPublicKeyParameters publicKey, HSSSignature signature, byte[] message)
     {
         int Nspk = signature.getlMinus1();
         if (Nspk + 1 != publicKey.getL())
@@ -248,7 +241,7 @@ public class HSS
         {
             LMSSignature sig = sigList[i];
             byte[] msg = pubList[i].getEncoded();
-            if (!LMS.verifySignature(sig, msg, key))
+            if (!LMS.verifySignature(key, sig, msg))
             {
                 return false;
             }
@@ -258,10 +251,10 @@ public class HSS
             }
             catch (Exception ex)
             {
-                throw new LMSException(ex.getMessage(), ex);
+                throw new IllegalStateException(ex.getMessage(), ex);
             }
         }
-        return LMS.verifySignature(sigList[Nspk], message, key);
+        return LMS.verifySignature(key, sigList[Nspk], message);
 
 
     }

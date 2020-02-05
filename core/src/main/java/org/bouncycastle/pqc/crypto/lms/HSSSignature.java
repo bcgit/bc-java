@@ -24,7 +24,7 @@ public class HSSSignature
 
 
     public static HSSSignature getInstance(Object src, int maxNspk)
-        throws Exception
+        throws IOException
     {
         if (src instanceof LMSPublicKeyParameters)
         {
@@ -36,7 +36,7 @@ public class HSSSignature
             int lminus = ((DataInputStream)src).readInt();
             if (lminus > maxNspk)
             {
-                throw new LMSException("nspk exceeded maxNspk");
+                throw new IllegalStateException("nspk exceeded maxNspk");
             }
             LMSSignedPubKey[] signedPubKeys = new LMSSignedPubKey[lminus];
             if (lminus != 0)

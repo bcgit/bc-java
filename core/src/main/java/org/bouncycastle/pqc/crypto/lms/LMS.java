@@ -10,7 +10,7 @@ class LMS
     private static final short D_LEAF = (short)0x8282;
     private static final short D_INTR = (short)0x8383;
 
-    public static LMSPrivateKeyParameters generateKeys(LMSParameters parameterSet, LmOtsParameters lmOtsParameters, int level, byte[] I, byte[] rootSeed)
+    public static LMSPrivateKeyParameters generateKeys(LMSigParameters parameterSet, LMOtsParameters lmOtsParameters, int level, byte[] I, byte[] rootSeed)
         throws IllegalArgumentException
     {
         //
@@ -31,16 +31,12 @@ class LMS
             throw new IllegalArgumentException("root seed is less than " + parameterSet.getM());
         }
 
-
         int twoToH = 1 << parameterSet.getH();
-
 
         return new LMSPrivateKeyParameters(parameterSet, lmOtsParameters, level, I, twoToH, rootSeed);
     }
 
-
     public static LMSSignature generateSign(LMSPrivateKeyParameters privateKey, byte[] message)
-        throws LMSException
     {
 
         //
@@ -50,13 +46,13 @@ class LMS
         // byte[][] T = new byte[privateKey.getMaxQ()][];
 
         // Step 1.
-        LMSParameters lmsParameter = privateKey.getParameterSet();
+        LMSigParameters lmsParameter = privateKey.getParameters();
 
         // Step 2
         int h = lmsParameter.getH();
 
-        int q = privateKey.getQ();
-        LmOtsPrivateKey otsPk = privateKey.getNextOtsPrivateKey();
+        int q = privateKey.getIndex();
+        LMOtsPrivateKey otsPk = privateKey.getNextOtsPrivateKey();
 
         // LmsPrivateKey.KeyWithQ keyWithQ = privateKey.getNextOtsPrivateKey();
 
@@ -81,7 +77,7 @@ class LMS
         int r = (1 << h) + q;
         byte[][] path = new byte[h][];
 
-        Digest digest = DigestUtil.getDigest(privateKey.getParameterSet().getDigestOID());
+        Digest digest = DigestUtil.getDigest(privateKey.getParameters().getDigestOID());
         while (i < h)
         {
             int tmp = (r / (1 << i)) ^ 1;
@@ -97,7 +93,7 @@ class LMS
     {
 
 
-        int h = privateKey.getParameterSet().getH();
+        int h = privateKey.getParameters().getH();
 
         int twoToh = 1 << h;
 
@@ -140,8 +136,7 @@ class LMS
     }
 
 
-    public static boolean verifySignature(LMSSignature S, byte[] message, LMSPublicKeyParameters publicKey)
-        throws LMSException
+    public static boolean verifySignature(LMSPublicKeyParameters publicKey, LMSSignature S, byte[] message)
     {
         byte[] Tc = algorithm6a(S, publicKey.getI(), publicKey.getParameterSet().getType(), publicKey.getLmOtsType().getType(), message);
         return Arrays.areEqual(publicKey.getT1(), Tc);
@@ -149,7 +144,6 @@ class LMS
 
 
     public static byte[] algorithm6a(LMSSignature S, byte[] I, int lMpubType, int ots_typecode, byte[] message)
-        throws LMSException
     {
         // Step 1.
 //        if (S.length < 8)
@@ -195,7 +189,7 @@ class LMS
 //        }
 //
 //        // Step 2h
-        LMSParameters lmsParameter = S.getParameter();
+        LMSigParameters lmsParameter = S.getParameter();
         int m = lmsParameter.getM();
         int h = lmsParameter.getH();
 //
@@ -219,7 +213,7 @@ class LMS
 
         // Step 3
         byte[] Kc = LM_OTS.lm_ots_validate_signature_calculate(
-            LmOtsParameters.getParametersForType(ots_typecode),
+            LMOtsParameters.getParametersForType(ots_typecode),
             I,
             q,
             S.getOtsSignature(),
@@ -272,10 +266,10 @@ class LMS
 
     static byte[] appendixC(LMSPrivateKeyParameters lmsPrivateKey)
     {
-        LmOtsParameters otsParameter = LmOtsParameters.getParametersForType(lmsPrivateKey.getLmOtsType().getType());
+        LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(lmsPrivateKey.getLmOtsType().getType());
 
-        int twoToh = 1 << lmsPrivateKey.getParameterSet().getH();
-        Digest H = DigestUtil.getDigest(lmsPrivateKey.getParameterSet().getDigestOID());
+        int twoToh = 1 << lmsPrivateKey.getParameters().getH();
+        Digest H = DigestUtil.getDigest(lmsPrivateKey.getParameters().getDigestOID());
         Stack<byte[]> stack = new Stack<byte[]>();
         byte[] I = lmsPrivateKey.getI();
         for (int i = 0; i < twoToh; i++)

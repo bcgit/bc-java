@@ -5,32 +5,34 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class BCHssPublicKey
-    implements HssPublicKey
+public class HSSPublicKeyParameters
+    extends HSSKeyParameters
 {
     private final int l;
     private final LMSPublicKeyParameters lmsPublicKey;
 
-    public BCHssPublicKey(int l, LMSPublicKeyParameters lmsPublicKey)
+    public HSSPublicKeyParameters(int l, LMSPublicKeyParameters lmsPublicKey)
     {
+        super(false);
+
         this.l = l;
         this.lmsPublicKey = lmsPublicKey;
     }
 
-    static BCHssPublicKey getInstance(Object src)
+    static HSSPublicKeyParameters getInstance(Object src)
         throws Exception
     {
 
         if (src instanceof LMSPublicKeyParameters)
         {
-            return (BCHssPublicKey)src;
+            return (HSSPublicKeyParameters)src;
         }
         else if (src instanceof DataInputStream)
         {
 
             int L = ((DataInputStream)src).readInt();
             LMSPublicKeyParameters lmsPublicKey = LMSPublicKeyParameters.getInstance(src);
-            return new BCHssPublicKey(L, lmsPublicKey);
+            return new HSSPublicKeyParameters(L, lmsPublicKey);
         }
         else if (src instanceof byte[])
         {
@@ -44,13 +46,11 @@ public class BCHssPublicKey
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
-    @Override
     public int getL()
     {
         return l;
     }
 
-    @Override
     public LMSPublicKeyParameters getLmsPublicKey()
     {
         return lmsPublicKey;
@@ -68,7 +68,7 @@ public class BCHssPublicKey
             return false;
         }
 
-        BCHssPublicKey publicKey = (BCHssPublicKey)o;
+        HSSPublicKeyParameters publicKey = (HSSPublicKeyParameters)o;
 
         if (l != publicKey.l)
         {

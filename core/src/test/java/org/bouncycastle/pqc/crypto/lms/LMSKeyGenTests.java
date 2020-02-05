@@ -7,17 +7,14 @@ import org.bouncycastle.util.encoders.Hex;
 public class LMSKeyGenTests
     extends TestCase
 {
-
     public void testGeneratePrivateKey()
         throws Exception
     {
-
         //
         // This is based on the second set of vectors and the second signature.
         // We verify the correct private key is generated if the correct public key is
         // derived from it.
         //
-
         byte[] msg = Hex.decode("54686520656e756d65726174696f6e20\n" +
             "696e2074686520436f6e737469747574\n" +
             "696f6e2c206f66206365727461696e20\n" +
@@ -34,7 +31,7 @@ public class LMSKeyGenTests
         int level = 1; // This is the second level, we use this because it signs the message.
 
         // Generate the private key.
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getParametersForType(4), level, I, seed);
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSigParameters.getParametersForType(5), LMOtsParameters.getParametersForType(4), level, I, seed);
 
         // This derives the public key.
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
@@ -45,14 +42,11 @@ public class LMSKeyGenTests
         // Test public key encoded matched vector.
         assertTrue(Arrays.areEqual(Hex.decode(pkEnc), publicKey.getEncoded()));
 
-
         //
         // Fast forward and burn off some OTS private keys until we get to key number 4.
         //
+        lmsPrivateKey.extractKeyShard(3);
 
-        lmsPrivateKey.getNextOtsPrivateKey();
-        lmsPrivateKey.getNextOtsPrivateKey();
-        lmsPrivateKey.getNextOtsPrivateKey();
         LMSSignature signature = LMS.generateSign(lmsPrivateKey, msg);
 
         // The expected signature as encoded.
@@ -146,7 +140,7 @@ public class LMSKeyGenTests
 
 
         // Sanity test
-        assertTrue(LMS.verifySignature(signature, msg, publicKey));
+        assertTrue(LMS.verifySignature(publicKey, signature, msg));
 
 
     }
