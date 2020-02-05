@@ -107,7 +107,6 @@ public class LMOtsSignature
         return result;
     }
 
-    @Override
     public byte[] getEncoded()
         throws IOException
     {

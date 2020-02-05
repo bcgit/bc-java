@@ -98,7 +98,6 @@ class LMSSignature
         return result;
     }
 
-    @Override
     public byte[] getEncoded()
         throws IOException
     {
@@ -108,7 +107,6 @@ class LMSSignature
             .u32str(parameter.getType())
             .bytes(y)
             .build();
-
     }
 
     public int getQ()
