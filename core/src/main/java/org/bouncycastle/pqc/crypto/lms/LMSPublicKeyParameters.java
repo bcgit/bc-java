@@ -2,18 +2,19 @@ package org.bouncycastle.pqc.crypto.lms;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
 public class LMSPublicKeyParameters
     extends LMSKeyParameters
 {
-    private final LMSParameters parameterSet;
-    private final LmOtsParameters lmOtsType;
+    private final LMSigParameters parameterSet;
+    private final LMOtsParameters lmOtsType;
     private final byte[] I;
     private final byte[] T1;
 
-    public LMSPublicKeyParameters(LMSParameters parameterSet, LmOtsParameters lmOtsType, byte[] T1, byte[] I)
+    public LMSPublicKeyParameters(LMSigParameters parameterSet, LMOtsParameters lmOtsType, byte[] T1, byte[] I)
     {
         super(false);
         
@@ -24,7 +25,7 @@ public class LMSPublicKeyParameters
     }
 
     public static LMSPublicKeyParameters getInstance(Object src)
-        throws Exception
+        throws IOException
     {
         if (src instanceof LMSPublicKeyParameters)
         {
@@ -34,8 +35,8 @@ public class LMSPublicKeyParameters
         {
 
             int pubType = ((DataInputStream)src).readInt();
-            LMSParameters lmsParameter = LMSParameters.getParametersForType(pubType);
-            LmOtsParameters ostTypeCode = LmOtsParameters.getParametersForType(((DataInputStream)src).readInt());
+            LMSigParameters lmsParameter = LMSigParameters.getParametersForType(pubType);
+            LMOtsParameters ostTypeCode = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
 
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
@@ -66,12 +67,12 @@ public class LMSPublicKeyParameters
             .build();
     }
 
-    public LMSParameters getParameterSet()
+    public LMSigParameters getParameterSet()
     {
         return parameterSet;
     }
 
-    public LmOtsParameters getLmOtsType()
+    public LMOtsParameters getLmOtsType()
     {
         return lmOtsType;
     }

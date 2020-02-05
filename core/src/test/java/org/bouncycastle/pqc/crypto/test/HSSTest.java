@@ -6,6 +6,9 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
+import org.bouncycastle.pqc.crypto.lms.HSSKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.lms.HSSKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.lms.HSSSigner;
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyPairGenerator;
@@ -16,21 +19,24 @@ import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
-public class LMSTest
+public class HSSTest
     extends TestCase
 {
     public void testKeyGenAndSign()
         throws Exception
     {
         byte[] msg = Strings.toByteArray("Hello, world!");
-        AsymmetricCipherKeyPairGenerator kpGen = new LMSKeyPairGenerator();
+        AsymmetricCipherKeyPairGenerator kpGen = new HSSKeyPairGenerator();
 
-        kpGen.init(new LMSKeyGenerationParameters(
-            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4), new SecureRandom()));
+        kpGen.init(new HSSKeyGenerationParameters(
+            new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)
+            }, new SecureRandom()));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
-        LMSSigner signer = new LMSSigner();
+        HSSSigner signer = new HSSSigner();
 
         signer.init(true, kp.getPrivate());
 

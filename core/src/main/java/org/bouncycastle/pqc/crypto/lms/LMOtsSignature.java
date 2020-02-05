@@ -11,11 +11,11 @@ import org.bouncycastle.util.Encodable;
 public class LMOtsSignature
     implements Encodable
 {
-    private final LmOtsParameters type;
+    private final LMOtsParameters type;
     private final byte[] C;
     private final byte[] y;
 
-    public LMOtsSignature(LmOtsParameters type, byte[] c, byte[] y)
+    public LMOtsSignature(LMOtsParameters type, byte[] c, byte[] y)
     {
         this.type = type;
         C = c;
@@ -23,7 +23,7 @@ public class LMOtsSignature
     }
 
     public static LMOtsSignature getInstance(Object src)
-        throws Exception
+        throws IOException
     {
         if (src instanceof LMSPublicKeyParameters)
         {
@@ -33,7 +33,7 @@ public class LMOtsSignature
         {
 
 
-            LmOtsParameters type = LmOtsParameters.getParametersForType(((DataInputStream)src).readInt());
+            LMOtsParameters type = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
             byte[] C = new byte[type.getN()];
 
             ((DataInputStream)src).readFully(C);
@@ -57,7 +57,7 @@ public class LMOtsSignature
     }
 
 
-    public LmOtsParameters getType()
+    public LMOtsParameters getType()
     {
         return type;
     }

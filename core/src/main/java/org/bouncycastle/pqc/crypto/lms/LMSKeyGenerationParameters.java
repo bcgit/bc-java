@@ -7,30 +7,22 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 public class LMSKeyGenerationParameters
     extends KeyGenerationParameters
 {
-    private final LMSParameters lmsParam;
-    private final LmOtsParameters lmOTSParam;
+    private final LMSParameters lmsParams;
 
     /**
      * initialise the generator with a source of randomness
      * and a strength (in bits).
      *
      * @param random   the random byte source.
-     * @param strength the size, in bits, of the keys we want to produce.
      */
-    public LMSKeyGenerationParameters(SecureRandom random, LMSParameters lmsParam, LmOtsParameters lmOTSParam)
+    public LMSKeyGenerationParameters(LMSParameters lmsParams, SecureRandom random)
     {
-        super(random, 128);
-        this.lmsParam = lmsParam;
-        this.lmOTSParam = lmOTSParam;
+        super(random, 128); // TODO: need something for "strength"
+        this.lmsParams = lmsParams;
     }
 
-    public LMSParameters getLmsParam()
+    public LMSParameters getParameters()
     {
-        return lmsParam;
-    }
-
-    public LmOtsParameters getLmOTSParam()
-    {
-        return lmOTSParam;
+        return lmsParams;
     }
 }

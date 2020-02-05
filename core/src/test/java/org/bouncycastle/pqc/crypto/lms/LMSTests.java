@@ -18,12 +18,12 @@ public class LMSTests
     public void testPrivateKeyRound()
         throws Exception
     {
-        LmOtsParameters parameter = LmOtsParameters.sha256_n32_w4;
+        LMOtsParameters parameter = LMOtsParameters.sha256_n32_w4;
 
         byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
         byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
 
-        LmOtsPrivateKey privateKey = new LmOtsPrivateKey(parameter, I, 0, seed);
+        LMOtsPrivateKey privateKey = new LMOtsPrivateKey(parameter, I, 0, seed);
         LMOtsPublicKey publicKey = LM_OTS.lms_ots_generatePublicKey(privateKey);
 
         byte[] ms = new byte[32];
@@ -85,29 +85,24 @@ public class LMSTests
 
         byte[] seed = Hex.decode("a1c4696e2608035a886100d05cd99945eb3370731884a8235e2fb3d4d71f2547");
         int level = 1;
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSParameters.getParametersForType(5), LmOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
+        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSigParameters.getParametersForType(5), LMOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
 
-        lmsPrivateKey.getNextOtsPrivateKey();
-        lmsPrivateKey.getNextOtsPrivateKey();
-        lmsPrivateKey.getNextOtsPrivateKey();
-
+        lmsPrivateKey.extractKeyShard(3);
 
         LMSSignature signature = LMS.generateSign(lmsPrivateKey, msg);
-        assertTrue(LMS.verifySignature(signature, msg, publicKey));
+        assertTrue(LMS.verifySignature(publicKey, signature, msg));
 
         // Serialize / Deserialize
-        assertTrue(LMS.verifySignature(LMSSignature.getInstance(signature.getEncoded()), msg, LMSPublicKeyParameters.getInstance(publicKey.getEncoded())));
-
+        assertTrue(LMS.verifySignature(LMSPublicKeyParameters.getInstance(publicKey.getEncoded()), LMSSignature.getInstance(signature.getEncoded()), msg));
 
         //
         // Vandalise signature.
         //
-
         {
             byte[] bustedSig = signature.getEncoded().clone();
             bustedSig[100] ^= 1;
-            assertFalse(LMS.verifySignature(LMSSignature.getInstance(bustedSig), msg, publicKey));
+            assertFalse(LMS.verifySignature(publicKey, LMSSignature.getInstance(bustedSig), msg));
         }
 
         //
@@ -116,7 +111,7 @@ public class LMSTests
         {
             byte[] msg2 = msg.clone();
             msg2[10] ^= 1;
-            assertFalse(LMS.verifySignature(signature, msg2, publicKey));
+            assertFalse(LMS.verifySignature(publicKey, signature, msg2));
         }
 
     }

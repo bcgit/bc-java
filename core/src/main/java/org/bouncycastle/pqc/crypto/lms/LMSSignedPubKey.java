@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.util.Encodable;
 
-public class LMSSignedPubKey
+class LMSSignedPubKey
     implements Encodable
 {
     private final LMSSignature signature;
