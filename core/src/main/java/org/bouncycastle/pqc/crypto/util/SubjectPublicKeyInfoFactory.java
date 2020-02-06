@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -13,6 +14,9 @@ import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPublicKey;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
+import org.bouncycastle.pqc.crypto.lms.Composer;
+import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
@@ -60,6 +64,24 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.newHope);
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getPubData());
+        }
+        else if (publicKey instanceof LMSPublicKeyParameters)
+        {
+            LMSPublicKeyParameters params = (LMSPublicKeyParameters)publicKey;
+
+            byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof HSSPublicKeyParameters)
+        {
+            HSSPublicKeyParameters params = (HSSPublicKeyParameters)publicKey;
+
+            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params).build();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (publicKey instanceof XMSSPublicKeyParameters)
         {

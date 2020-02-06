@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -13,6 +14,9 @@ import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
+import org.bouncycastle.pqc.crypto.lms.Composer;
+import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
@@ -86,6 +90,24 @@ public class PrivateKeyInfoFactory
             }
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(octets));
+        }
+        else if (privateKey instanceof LMSPrivateKeyParameters)
+        {
+            LMSPrivateKeyParameters params = (LMSPrivateKeyParameters)privateKey;
+
+            byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (privateKey instanceof HSSPrivateKeyParameters)
+        {
+            HSSPrivateKeyParameters params = (HSSPrivateKeyParameters)privateKey;
+
+            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params).build();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (privateKey instanceof XMSSPrivateKeyParameters)
         {

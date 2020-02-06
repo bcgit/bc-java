@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -18,6 +19,8 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
+import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
@@ -25,6 +28,7 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -45,6 +49,7 @@ public class PublicKeyFactory
         converters.put(PQCObjectIdentifiers.xmss_mt, new XMSSMTConverter());
         converters.put(IsaraObjectIdentifiers.id_alg_xmss, new XMSSConverter());
         converters.put(IsaraObjectIdentifiers.id_alg_xmssmt, new XMSSMTConverter());
+        converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
     }
 
     /**
@@ -202,6 +207,25 @@ public class PublicKeyFactory
                 return new XMSSMTPublicKeyParameters
                     .Builder(XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
                     .withPublicKey(keyEnc).build();
+            }
+        }
+    }
+
+    private static class LMSConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            if (Pack.bigEndianToInt(keyEnc, 0) == 1)
+            {
+                return LMSPublicKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+            }
+            else
+            {
+                return HSSPublicKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
         }
     }

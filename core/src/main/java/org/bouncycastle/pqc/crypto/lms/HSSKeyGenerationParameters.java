@@ -12,9 +12,9 @@ public class HSSKeyGenerationParameters
 
     public HSSKeyGenerationParameters(
         LMSParameters[] lmsParameters,
-        SecureRandom random, int strength)
+        SecureRandom random)
     {
-        super(random, strength);
+        super(random, 128);   // TODO: need to calculate based on lmsParameters
 
         if (lmsParameters == null)
         {
@@ -103,7 +103,7 @@ public class HSSKeyGenerationParameters
 
         public HSSKeyGenerationParameters build()
         {
-            return new HSSKeyGenerationParameters(lmsParameters, lmsEntropySource, strength);
+            return new HSSKeyGenerationParameters(lmsParameters, lmsEntropySource);
         }
 
     }

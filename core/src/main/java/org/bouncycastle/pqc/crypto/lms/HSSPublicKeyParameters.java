@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class HSSPublicKeyParameters
-    extends HSSKeyParameters
+    extends LMSKeyParameters
 {
     private final int l;
     private final LMSPublicKeyParameters lmsPublicKey;
@@ -19,8 +19,8 @@ public class HSSPublicKeyParameters
         this.lmsPublicKey = lmsPublicKey;
     }
 
-    static HSSPublicKeyParameters getInstance(Object src)
-        throws Exception
+    public static HSSPublicKeyParameters getInstance(Object src)
+        throws IOException
     {
 
         if (src instanceof HSSPublicKeyParameters)
@@ -29,14 +29,12 @@ public class HSSPublicKeyParameters
         }
         else if (src instanceof DataInputStream)
         {
-
             int L = ((DataInputStream)src).readInt();
             LMSPublicKeyParameters lmsPublicKey = LMSPublicKeyParameters.getInstance(src);
             return new HSSPublicKeyParameters(L, lmsPublicKey);
         }
         else if (src instanceof byte[])
         {
-
             InputStream in = null;
             try // 1.5 / 1.6 compatibility
             {
