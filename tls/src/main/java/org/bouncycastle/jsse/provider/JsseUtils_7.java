@@ -15,6 +15,8 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 abstract class JsseUtils_7
     extends JsseUtils
 {
+    static final Set<CryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES =
+        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
     static final Set<CryptoPrimitive> TLS_CRYPTO_PRIMITIVES =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
@@ -129,6 +131,10 @@ abstract class JsseUtils_7
 
     static Set<CryptoPrimitive> exportCryptoPrimitives(Set<BCCryptoPrimitive> primitives)
     {
+        if (SIGNATURE_CRYPTO_PRIMITIVES_BC == primitives)
+        {
+            return SIGNATURE_CRYPTO_PRIMITIVES;
+        }
         if (TLS_CRYPTO_PRIMITIVES_BC == primitives)
         {
             return TLS_CRYPTO_PRIMITIVES;
@@ -193,6 +199,10 @@ abstract class JsseUtils_7
 
     static Set<BCCryptoPrimitive> importCryptoPrimitives(Set<CryptoPrimitive> primitives)
     {
+        if (SIGNATURE_CRYPTO_PRIMITIVES == primitives)
+        {
+            return SIGNATURE_CRYPTO_PRIMITIVES_BC;
+        }
         if (TLS_CRYPTO_PRIMITIVES == primitives)
         {
             return TLS_CRYPTO_PRIMITIVES_BC;
