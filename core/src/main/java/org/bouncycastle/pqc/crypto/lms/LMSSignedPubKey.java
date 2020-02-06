@@ -16,12 +16,6 @@ class LMSSignedPubKey
         this.publicKey = publicKey;
     }
 
-    static LMSSignedPubKey[] sliceTo(LMSSignedPubKey[] source, int len)
-    {
-        LMSSignedPubKey[] subList = new LMSSignedPubKey[len];
-        System.arraycopy(source, 0, subList, 0, len);
-        return subList;
-    }
 
     public LMSSignature getSignature()
     {

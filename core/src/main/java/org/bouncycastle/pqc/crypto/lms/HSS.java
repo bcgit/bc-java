@@ -6,103 +6,6 @@ class HSS
 {
 
 
-//    /**
-//     * This allows the creation of HSS Private key from 'l' number of
-//     * (SEED,I) pairs. It then generates the OTS keys and the hierarchical signatures.
-//     * <p>
-//     * This parses 'l' number of:
-//     * SEED [32 bytes]
-//     * I [16 bytes]
-//     * And applies the algorithm define in Appendix A of RFC 8554
-//     * Link: https://tools.ietf.org/html/rfc8554#appendix-A
-//     * <p>
-//     * And creates the LM-OTS private keys.
-//     * <p>
-//     * It then generates the hierarchical signatures.
-//     *
-//     * @param l   the number of keys at that level.
-//     * @param src The source, InputStream, byte[], HssPrivateKey
-//     * @return
-//     */
-//    public static HssPrivateKey getPrivateKeyAppendixA(
-//        LmsParameter lmsParameter,
-//        LmOtsParameter otsParameter,
-//        int l,
-//        Object src)
-//        throws LMSException
-//    {
-//        if (src instanceof HssPrivateKey)
-//        {
-//            return (HssPrivateKey)src;
-//        }
-//        else if (src instanceof DataInputStream)
-//        {
-//            try
-//            {
-//
-//                LmsPrivateKey[] keys = new LmsPrivateKey[l];
-//                LmsPublicKey[] publicKeys = new LmsPublicKey[l];
-//                LMSSignature[] sig = new LMSSignature[l];
-//
-//                Digest H = otsParameter.getH(); // Digest comes from OTS parameters.
-//                int twoToH = 1 << lmsParameter.getH(); // Not a digest function
-//
-//
-//                for (int q = 0; q < l; q++)
-//                {
-//                    byte[][] otsPrivateKeys = new byte[twoToH][];
-//
-//                    //
-//                    // Read in Seed and I
-//                    //
-//                    byte[] seed = new byte[32];
-//                    ((DataInputStream)src).readFully(seed);
-//                    byte[] I = new byte[16];
-//                    ((DataInputStream)src).readFully(I);
-//
-//                    // Destination for digest.
-//                    byte[] xq = new byte[H.getDigestSize()];
-//
-//                    LMSEntropySource es = new AppendixAEntropySource(otsParameter.getH(), I, q, seed);
-//
-//                    for (int i = 0; i < twoToH; i++)
-//                    {
-//                        otsPrivateKeys[i] = LM_OTS.generatePrivateKey(otsParameter, I, q, es);
-//                    }
-//
-//                    keys[q] = new LmsPrivateKey(lmsParameter, otsParameter.getType(), q, I, otsPrivateKeys);
-//                    publicKeys[q] = keys[q].getPublicKey();
-//
-//                    if (q > 0)
-//                    {
-//                        sig[q - 1] = LMS.generateSign(keys[q], keys[q - 1].getPublicKey().getEncoded(), es);
-//                    }
-//                }
-//
-//                return new HssPrivateKey(l, keys, keys[0].getPublicKey(), publicKeys, sig);
-//
-//            }
-//            catch (LMSException lmex)
-//            {
-//                throw lmex;
-//            }
-//            catch (Exception ex)
-//            {
-//                throw new LMSException(ex.getMessage(), ex);
-//            }
-//        }
-//        else if (src instanceof byte[])
-//        {
-//            return getPrivateKeyAppendixA(lmsParameter, otsParameter, l, new DataInputStream(new ByteArrayInputStream((byte[])src)));
-//        }
-//        else if (src instanceof InputStream)
-//        {
-//            return getPrivateKeyAppendixA(lmsParameter, otsParameter, l, new DataInputStream((InputStream)src));
-//        }
-//
-//        throw new IllegalArgumentException("cannot parse " + src);
-//    }
-
 
     public static HSSPrivateKeyParameters generateHSSKeyPair(HSSKeyGenerationParameters parameters)
     {
@@ -179,7 +82,7 @@ class HSS
         
         return new HSSSignature(
             L - 1,
-            signed_pub_key,   //LMSSignedPubKey.sliceTo(signed_pub_key, signed_pub_key.length),
+            signed_pub_key,
             signatureResult);
     }
 

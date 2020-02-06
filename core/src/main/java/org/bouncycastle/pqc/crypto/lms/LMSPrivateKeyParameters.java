@@ -41,7 +41,7 @@ public class LMSPrivateKeyParameters
     public static LMSPrivateKeyParameters getInstance(Object src, int secretSizeLimit)
         throws Exception
     {
-        if (src instanceof LMSPublicKeyParameters)
+        if (src instanceof LMSPrivateKeyParameters)
         {
             return (LMSPrivateKeyParameters)src;
         }
@@ -76,7 +76,16 @@ public class LMSPrivateKeyParameters
         }
         else if (src instanceof byte[])
         {
-            return getInstance(new DataInputStream(new ByteArrayInputStream((byte[])src)), secretSizeLimit);
+            InputStream in = null;
+            try // 1.5 / 1.6 compatibility
+            {
+                in = new DataInputStream(new ByteArrayInputStream((byte[])src));
+                return getInstance(in,secretSizeLimit);
+            }
+            finally
+            {
+                if (in != null) in.close();
+            }
         }
         else if (src instanceof InputStream)
         {
@@ -94,8 +103,7 @@ public class LMSPrivateKeyParameters
             {
                 throw new ExhaustedPrivateKeyException("ots private keys expired");
             }
-            LMOtsPrivateKey otsPrivateKey = new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
-            return otsPrivateKey;
+            return new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
         }
     }
 

@@ -9,13 +9,12 @@ public class HSSKeyGenerationParameters
     extends KeyGenerationParameters
 {
     private final LMSParameters[] lmsParameters;
-    private final SecureRandom lmsEntropySource;
 
     public HSSKeyGenerationParameters(
         LMSParameters[] lmsParameters,
-        SecureRandom random)
+        SecureRandom random, int strength)
     {
-        super(random, 0); // TODO: need something for strength
+        super(random, strength);
 
         if (lmsParameters == null)
         {
@@ -28,7 +27,6 @@ public class HSSKeyGenerationParameters
         }
 
         this.lmsParameters = lmsParameters;
-        this.lmsEntropySource = random;
     }
 
     public static Builder builder(int depth)
@@ -45,14 +43,15 @@ public class HSSKeyGenerationParameters
     {
         return lmsParameters;
     }
-    
+
+
     public static class Builder
     {
         private int depth;
         private LMSParameters[] lmsParameters;
         private SecureRandom lmsEntropySource;
         private byte[] masterSeed;
-        private boolean generateOTSPK;
+        private int strength;
 
         public Builder(int depth)
         {
@@ -78,10 +77,9 @@ public class HSSKeyGenerationParameters
             return this;
         }
 
-
-        public Builder generateOTSPK(boolean preGenerate)
+        public Builder setStrength(int strength)
         {
-            generateOTSPK = preGenerate;
+            this.strength = strength;
             return this;
         }
 
@@ -110,7 +108,7 @@ public class HSSKeyGenerationParameters
 
         public HSSKeyGenerationParameters build()
         {
-            return new HSSKeyGenerationParameters(lmsParameters, lmsEntropySource);
+            return new HSSKeyGenerationParameters(lmsParameters, lmsEntropySource, strength);
         }
 
     }

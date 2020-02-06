@@ -23,10 +23,16 @@ public class HSSSignature
     }
 
 
-    public static HSSSignature getInstance(Object src, int maxNspk)
+    /**
+     * @param src byte[], InputStream or HSSSignature
+     * @param L   The HSS depth, available from public key.
+     * @return An HSSSignature instance.
+     * @throws IOException
+     */
+    public static HSSSignature getInstance(Object src, int L)
         throws IOException
     {
-        if (src instanceof LMSPublicKeyParameters)
+        if (src instanceof HSSSignature)
         {
             return (HSSSignature)src;
         }
@@ -34,7 +40,7 @@ public class HSSSignature
         {
 
             int lminus = ((DataInputStream)src).readInt();
-            if (lminus > maxNspk)
+            if (lminus != L - 1)
             {
                 throw new IllegalStateException("nspk exceeded maxNspk");
             }
@@ -52,11 +58,20 @@ public class HSSSignature
         }
         else if (src instanceof byte[])
         {
-            return getInstance(new DataInputStream(new ByteArrayInputStream((byte[])src)), maxNspk);
+            InputStream in = null;
+            try // 1.5 / 1.6 compatibility
+            {
+                in = new DataInputStream(new ByteArrayInputStream((byte[])src));
+                return getInstance(in, L);
+            }
+            finally
+            {
+               if (in != null) in.close();
+            }
         }
         else if (src instanceof InputStream)
         {
-            return getInstance(new DataInputStream((InputStream)src), maxNspk);
+            return getInstance(new DataInputStream((InputStream)src), L);
         }
 
         throw new IllegalArgumentException("cannot parse " + src);
