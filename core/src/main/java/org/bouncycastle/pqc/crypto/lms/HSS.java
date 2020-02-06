@@ -44,7 +44,7 @@ class HSS
                 parameters.getLmsParameters()[i].getLmOTSParam(),
                 0, childI, childRootSeed);
 
-            sig[i - 1] = LMS.generateSign(keys[i - 1], keys[i].getPublicKey().getEncoded());
+            sig[i - 1] = LMS.generateSign(keys[i - 1], keys[i].getPublicKey().toByteArray());
         }
 
         return new HSSPrivateKeyParameters(parameters.getDepth(), keys, sig);
@@ -110,7 +110,7 @@ class HSS
         for (int i = 0; i < Nspk; i++)
         {
             LMSSignature sig = sigList[i];
-            byte[] msg = pubList[i].getEncoded();
+            byte[] msg = pubList[i].toByteArray();
             if (!LMS.verifySignature(key, sig, msg))
             {
                 return false;
@@ -125,8 +125,6 @@ class HSS
             }
         }
         return LMS.verifySignature(key, sigList[Nspk], message);
-
-
     }
 
 

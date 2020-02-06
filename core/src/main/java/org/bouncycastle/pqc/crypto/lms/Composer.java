@@ -7,7 +7,7 @@ import org.bouncycastle.util.Encodable;
 /**
  * Type to assist in build LMS messages.
  */
-class Composer
+public class Composer
 {
     private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 

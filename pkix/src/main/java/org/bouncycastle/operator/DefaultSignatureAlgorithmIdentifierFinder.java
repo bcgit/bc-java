@@ -161,6 +161,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHAKE128WITHXMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128ph);
         algorithms.put("SHAKE256WITHXMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256ph);
 
+        algorithms.put("LMS", PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
+
         algorithms.put("XMSS", IsaraObjectIdentifiers.id_alg_xmss);
         algorithms.put("XMSS-SHA256", BCObjectIdentifiers.xmss_SHA256);
         algorithms.put("XMSS-SHA512", BCObjectIdentifiers.xmss_SHA512);

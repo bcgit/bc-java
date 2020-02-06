@@ -253,6 +253,14 @@ public interface PKCSObjectIdentifiers
      */
     ASN1ObjectIdentifier id_rsa_KEM              = id_alg.branch("14");
 
+
+    /**
+     * id-alg-hss-lms-hashsig OBJECT IDENTIFIER ::= { iso(1)
+     *     member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs9(9)
+     *    smime(16) alg(3) 17 }
+     */
+    public static final ASN1ObjectIdentifier id_alg_hss_lms_hashsig = id_alg.branch("17");
+
     /**
      * <pre>
      * id-alg-AEADChaCha20Poly1305 OBJECT IDENTIFIER ::=
