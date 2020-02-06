@@ -54,6 +54,8 @@ abstract class JsseUtils
     private static final boolean provTlsAllowLegacyResumption =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
 
+    static final Set<BCCryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES_BC =
+        Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.SIGNATURE));
     static final Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES_BC =
         Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
 
