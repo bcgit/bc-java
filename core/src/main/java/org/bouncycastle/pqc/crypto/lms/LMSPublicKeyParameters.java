@@ -17,7 +17,7 @@ public class LMSPublicKeyParameters
     public LMSPublicKeyParameters(LMSigParameters parameterSet, LMOtsParameters lmOtsType, byte[] T1, byte[] I)
     {
         super(false);
-        
+
         this.parameterSet = parameterSet;
         this.lmOtsType = lmOtsType;
         this.I = I;
@@ -47,7 +47,20 @@ public class LMSPublicKeyParameters
         }
         else if (src instanceof byte[])
         {
-            return getInstance(new DataInputStream(new ByteArrayInputStream((byte[])src)));
+
+            InputStream in = null;
+            try // 1.5 / 1.6 compatibility
+            {
+                in = new DataInputStream(new ByteArrayInputStream((byte[])src));
+                return getInstance(in);
+            }
+            finally
+            {
+                if (in != null)
+                {
+                    in.close();
+                }
+            }
         }
         else if (src instanceof InputStream)
         {

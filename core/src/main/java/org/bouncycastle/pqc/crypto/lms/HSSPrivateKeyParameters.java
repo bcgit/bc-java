@@ -52,7 +52,7 @@ public class HSSPrivateKeyParameters
     static HSSPrivateKeyParameters getInstance(Object src, int maxDepth, int maxSecretSize)
         throws Exception
     {
-        if (src instanceof LMSPublicKeyParameters)
+        if (src instanceof HSSPrivateKeyParameters)
         {
             return (HSSPrivateKeyParameters)src;
         }
@@ -86,7 +86,17 @@ public class HSSPrivateKeyParameters
         }
         else if (src instanceof byte[])
         {
-            return getInstance(new DataInputStream(new ByteArrayInputStream((byte[])src)), maxDepth, maxSecretSize);
+            InputStream in = null;
+            try // 1.5 / 1.6 compatibility
+            {
+                in = new DataInputStream(new ByteArrayInputStream((byte[])src));
+                return getInstance(in, maxDepth,maxSecretSize);
+            }
+            finally
+            {
+                if (in != null) in.close();
+            }
+
         }
         else if (src instanceof InputStream)
         {
@@ -95,7 +105,7 @@ public class HSSPrivateKeyParameters
 
         throw new IllegalArgumentException("cannot parse " + src);
     }
-    
+
     public int getL()
     {
         return l;
@@ -106,7 +116,7 @@ public class HSSPrivateKeyParameters
         long used = 0;
 
         int last = keys.size() - 1;
-        
+
         for (int t = 0; t < keys.size(); t++)
         {
             LMSPrivateKeyParameters key = keys.get(t);
@@ -201,6 +211,7 @@ public class HSSPrivateKeyParameters
      * <p>
      * Note: this will use the range [index...index + usageCount) for the current key.
      * </p>
+     *
      * @param usageCount the number of usages the key should have.
      * @return a key based on the current key that can be used usageCount times.
      */
@@ -225,7 +236,7 @@ public class HSSPrivateKeyParameters
     {
         return keys;
     }
-    
+
     public synchronized List<LMSSignature> getSig()
     {
         return sig;

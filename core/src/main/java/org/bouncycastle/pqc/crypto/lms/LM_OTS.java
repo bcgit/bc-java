@@ -14,7 +14,7 @@ class LM_OTS
     private static final int SEED_RANDOMISER_INDEX = ~2;
     private static final int SEED_LEN = 32;
     private static final int MAX_HASH = 32;
-    private static final int MESG_C = 22;
+
 
 
     private static final short D_MESG = (short)0x8181;
@@ -30,10 +30,6 @@ class LM_OTS
         return (S[index] >>> shift) & mask;
     }
 
-    public static int cksm(byte[] S, LMOtsParameters parameters)
-    {
-        return cksm(S, S.length, parameters);
-    }
 
     public static int cksm(byte[] S, int sLen, LMOtsParameters parameters)
     {

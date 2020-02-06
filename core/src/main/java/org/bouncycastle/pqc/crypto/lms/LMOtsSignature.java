@@ -25,7 +25,7 @@ class LMOtsSignature
     public static LMOtsSignature getInstance(Object src)
         throws IOException
     {
-        if (src instanceof LMSPublicKeyParameters)
+        if (src instanceof LMOtsSignature)
         {
             return (LMOtsSignature)src;
         }
@@ -46,7 +46,16 @@ class LMOtsSignature
         }
         else if (src instanceof byte[])
         {
-            return getInstance(new DataInputStream(new ByteArrayInputStream((byte[])src)));
+            InputStream in = null;
+            try // 1.5 / 1.4 compatibility
+            {
+                in = new DataInputStream(new ByteArrayInputStream((byte[])src));
+                return getInstance(in);
+            }
+            finally
+            {
+                if (in != null) in.close();
+            }
         }
         else if (src instanceof InputStream)
         {
