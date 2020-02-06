@@ -29,7 +29,7 @@ public class HSSTest
             new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)
-            }, new SecureRandom(), 0 ));
+            }, new SecureRandom()));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -54,7 +54,7 @@ public class HSSTest
             new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)
-            }, new SecureRandom(),0));
+            }, new SecureRandom()));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -87,7 +87,7 @@ public class HSSTest
             new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)
-            }, new SecureRandom(),0));
+            }, new SecureRandom()));
         
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 

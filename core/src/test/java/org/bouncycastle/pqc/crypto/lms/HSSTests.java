@@ -44,7 +44,7 @@ public class HSSTests
 
         byte[] keyPairEnc = generatedPrivateKey.getEncoded();
 
-        HSSPrivateKeyParameters reconstructedPrivateKey = HSSPrivateKeyParameters.getInstance(keyPairEnc, 2, 1024);
+        HSSPrivateKeyParameters reconstructedPrivateKey = HSSPrivateKeyParameters.getInstance(keyPairEnc);
         assertTrue(reconstructedPrivateKey.equals(generatedPrivateKey));
 
 
@@ -252,8 +252,8 @@ public class HSSTests
                 //
                 // Deserialize them and see if they still equal.
                 //
-                LMSPrivateKeyParameters pk1O = LMSPrivateKeyParameters.getInstance(pk1, 1024);
-                LMSPrivateKeyParameters pk2O = LMSPrivateKeyParameters.getInstance(pk2, 1024);
+                LMSPrivateKeyParameters pk1O = LMSPrivateKeyParameters.getInstance(pk1);
+                LMSPrivateKeyParameters pk2O = LMSPrivateKeyParameters.getInstance(pk2);
 
                 assertTrue("LmsPrivateKey still equal after deserialization", pk1O.equals(pk2O));
 
@@ -295,8 +295,8 @@ public class HSSTests
                 //
                 // Deserialize them and see if they still equal.
                 //
-                LMSPrivateKeyParameters pk1O = LMSPrivateKeyParameters.getInstance(pk1, 1024);
-                LMSPrivateKeyParameters pk2O = LMSPrivateKeyParameters.getInstance(pk2, 1024);
+                LMSPrivateKeyParameters pk1O = LMSPrivateKeyParameters.getInstance(pk1);
+                LMSPrivateKeyParameters pk2O = LMSPrivateKeyParameters.getInstance(pk2);
 
                 assertFalse("LmsPrivateKey not suddenly equal after deserialization", pk1O.equals(pk2O));
 

@@ -43,6 +43,7 @@ public class AllTests
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSMTTest.class);
         suite.addTestSuite(QTESLATest.class);
+        suite.addTestSuite(LMSTest.class);
 
         return new BCTestSetup(suite);
     }

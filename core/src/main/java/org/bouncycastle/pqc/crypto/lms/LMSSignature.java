@@ -33,7 +33,6 @@ class LMSSignature
         }
         else if (src instanceof DataInputStream)
         {
-
             int q = ((DataInputStream)src).readInt();
             LMOtsSignature otsSignature = LMOtsSignature.getInstance(src);
             LMSigParameters type = LMSigParameters.getParametersForType(((DataInputStream)src).readInt());

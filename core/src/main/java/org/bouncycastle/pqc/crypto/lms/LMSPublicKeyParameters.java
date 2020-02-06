@@ -33,7 +33,6 @@ public class LMSPublicKeyParameters
         }
         else if (src instanceof DataInputStream)
         {
-
             int pubType = ((DataInputStream)src).readInt();
             LMSigParameters lmsParameter = LMSigParameters.getParametersForType(pubType);
             LMOtsParameters ostTypeCode = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
@@ -71,21 +70,17 @@ public class LMSPublicKeyParameters
     }
 
     public byte[] getEncoded()
+        throws IOException
     {
-        return Composer.compose()
-            .u32str(parameterSet.getType())
-            .u32str(lmOtsType.getType())
-            .bytes(I)
-            .bytes(T1)
-            .build();
+        return this.toByteArray();
     }
 
-    public LMSigParameters getParameterSet()
+    public LMSigParameters getSigParameters()
     {
         return parameterSet;
     }
 
-    public LMOtsParameters getLmOtsType()
+    public LMOtsParameters getOtsParameters()
     {
         return lmOtsType;
     }
@@ -137,5 +132,15 @@ public class LMSPublicKeyParameters
         result = 31 * result + Arrays.hashCode(I);
         result = 31 * result + Arrays.hashCode(T1);
         return result;
+    }
+
+    byte[] toByteArray()
+    {
+        return Composer.compose()
+            .u32str(parameterSet.getType())
+            .u32str(lmOtsType.getType())
+            .bytes(I)
+            .bytes(T1)
+            .build();
     }
 }

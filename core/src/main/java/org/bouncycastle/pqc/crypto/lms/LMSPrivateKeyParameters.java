@@ -38,8 +38,8 @@ public class LMSPrivateKeyParameters
         this.masterSecret = Arrays.clone(masterSecret);
     }
 
-    public static LMSPrivateKeyParameters getInstance(Object src, int secretSizeLimit)
-        throws Exception
+    public static LMSPrivateKeyParameters getInstance(Object src)
+        throws IOException
     {
         if (src instanceof LMSPrivateKeyParameters)
         {
@@ -47,29 +47,30 @@ public class LMSPrivateKeyParameters
         }
         else if (src instanceof DataInputStream)
         {
-            if (((DataInputStream)src).readInt() != 0)
+            DataInputStream dIn = (DataInputStream)src;
+            if (dIn.readInt() != 0)
             {
-                throw new LMSException("expected version 0 lms private key");
+                throw new IllegalStateException("expected version 0 lms private key");
             }
 
-            LMSigParameters parameter = LMSigParameters.getParametersForType(((DataInputStream)src).readInt());
-            LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
+            LMSigParameters parameter = LMSigParameters.getParametersForType(dIn.readInt());
+            LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(dIn.readInt());
             byte[] I = new byte[16];
-            ((DataInputStream)src).readFully(I);
+            dIn.readFully(I);
 
-            int q = ((DataInputStream)src).readInt();
-            int maxQ = ((DataInputStream)src).readInt();
-            int l = ((DataInputStream)src).readInt();
+            int q = dIn.readInt();
+            int maxQ = dIn.readInt();
+            int l = dIn.readInt();
             if (l < 0)
             {
-                throw new LMSException("secret length less than zero");
+                throw new IllegalStateException("secret length less than zero");
             }
-            if (l > secretSizeLimit)
+            if (l > dIn.available())
             {
-                throw new LMSException("secret length exceeded " + secretSizeLimit);
+                throw new IOException("secret length exceeded " + dIn.available());
             }
             byte[] masterSecret = new byte[l];
-            ((DataInputStream)src).readFully(masterSecret);
+            dIn.readFully(masterSecret);
 
             return new LMSPrivateKeyParameters(parameter, otsParameter, q, I, maxQ, masterSecret);
 
@@ -80,7 +81,7 @@ public class LMSPrivateKeyParameters
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
-                return getInstance(in,secretSizeLimit);
+                return getInstance(in);
             }
             finally
             {
@@ -89,7 +90,7 @@ public class LMSPrivateKeyParameters
         }
         else if (src instanceof InputStream)
         {
-            return getInstance(new DataInputStream((InputStream)src), secretSizeLimit);
+            return getInstance(new DataInputStream((InputStream)src));
         }
 
         throw new IllegalArgumentException("cannot parse " + src);
@@ -164,7 +165,7 @@ public class LMSPrivateKeyParameters
         }
     }
 
-    public LMSigParameters getParameters()
+    public LMSigParameters getSigParameters()
     {
         return parameters;
     }
@@ -296,7 +297,7 @@ public class LMSPrivateKeyParameters
     {
         //
         // NB there is no formal specification for the encoding of private keys.
-        // It is implementation independent.
+        // It is implementation dependent.
         //
         // Format:
         //     version u32

@@ -46,7 +46,7 @@ class LMS
         // byte[][] T = new byte[privateKey.getMaxQ()][];
 
         // Step 1.
-        LMSigParameters lmsParameter = privateKey.getParameters();
+        LMSigParameters lmsParameter = privateKey.getSigParameters();
 
         // Step 2
         int h = lmsParameter.getH();
@@ -77,7 +77,7 @@ class LMS
         int r = (1 << h) + q;
         byte[][] path = new byte[h][];
 
-        Digest digest = DigestUtil.getDigest(privateKey.getParameters().getDigestOID());
+        Digest digest = DigestUtil.getDigest(privateKey.getSigParameters().getDigestOID());
         while (i < h)
         {
             int tmp = (r / (1 << i)) ^ 1;
@@ -91,9 +91,7 @@ class LMS
 
     public static byte[] findT(int r, LMSPrivateKeyParameters privateKey, Digest digest)
     {
-
-
-        int h = privateKey.getParameters().getH();
+        int h = privateKey.getSigParameters().getH();
 
         int twoToh = 1 << h;
 
@@ -138,30 +136,78 @@ class LMS
 
     public static boolean verifySignature(LMSPublicKeyParameters publicKey, LMSSignature S, byte[] message)
     {
-        byte[] Tc = algorithm6a(S, publicKey.getI(), publicKey.getLmOtsType().getType(), message);
+        byte[] Tc = algorithm6a(S, publicKey.getI(), publicKey.getSigParameters().getType(), publicKey.getOtsParameters().getType(), message);
         return Arrays.areEqual(publicKey.getT1(), Tc);
     }
 
 
-    public static byte[] algorithm6a(LMSSignature S, byte[] I, int ots_typecode, byte[] message)
+    public static byte[] algorithm6a(LMSSignature S, byte[] I, int lMpubType, int ots_typecode, byte[] message)
     {
         // Step 1.
-
+//        if (S.length < 8)
+//        {
+//            throw new IllegalArgumentException("signature must be at least eight bytes");
+//        }
 
         // Step 2a
         int q = S.getQ(); //  Pack.bigEndianToInt(S, 0);
 
+//        // Step 2b
+//        int otssigtype =  S.  Pack.bigEndianToInt(S, 4);
+
+
+        // Step 2c
         if (S.getOtsSignature().getType().getType() != ots_typecode)
         {
             throw new IllegalArgumentException("ots type from lsm signature does not match ots" +
                 " signature type from embedded ots signature");
         }
 
+
+        // Step 2d
+//        LmOtsParameter otsParameter = LmOtsParameters.getOtsParameter(otssigtype);
+//        int n = otsParameter.getN();
+//        int p = otsParameter.getP();
+//        if (S.length < 12 + n * (p + 1))
+//        {
+//            throw new IllegalArgumentException("S must be at least " + (12 + n * (p + 1)) + " bytes");
+//        }
+
+        // Step 2e
+//        byte[] lmots_signature = new byte[(((7 + n * (p + 1))) - 4) + 1];
+//        System.arraycopy(S, 4, lmots_signature, 0, lmots_signature.length);
+//
+//        // Step 2f
+//        int sigType = Pack.bigEndianToInt(S, (8 + n * (p + 1)));
+//
+//        // Step 2g
+//        if (sigType != lMpubType)
+//        {
+//            throw new IllegalArgumentException("lm ");
+//        }
+//
+//        // Step 2h
         LMSigParameters lmsParameter = S.getParameter();
+        int m = lmsParameter.getM();
         int h = lmsParameter.getH();
-
+//
+//
+//        // Step 2i
+//        if (q > (1 << h) || S.length != 12 + n * (p + 1) + m * h)
+//        {
+//            throw new IllegalArgumentException("S has incorrect length.");
+//        }
+//
+//
+//        // Step 2j
+//        int pos = (8 + n * (p + 1)) + 4;
         byte[][] path = S.getY();
-
+//        for (int i = 0; i < h; i++)
+//        {
+//            path[i] = new byte[m];
+//            System.arraycopy(S, pos, path[i], 0, m);
+//            pos += m;
+//        }
 
         // Step 3
         byte[] Kc = LM_OTS.lm_ots_validate_signature_calculate(
@@ -219,8 +265,8 @@ class LMS
     {
         LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(lmsPrivateKey.getOtsParameters().getType());
 
-        int twoToh = 1 << lmsPrivateKey.getParameters().getH();
-        Digest H = DigestUtil.getDigest(lmsPrivateKey.getParameters().getDigestOID());
+        int twoToh = 1 << lmsPrivateKey.getSigParameters().getH();
+        Digest H = DigestUtil.getDigest(lmsPrivateKey.getSigParameters().getDigestOID());
         Stack<byte[]> stack = new Stack<byte[]>();
         byte[] I = lmsPrivateKey.getI();
         for (int i = 0; i < twoToh; i++)

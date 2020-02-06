@@ -13,7 +13,7 @@ import java.util.List;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 
 public class HSSPrivateKeyParameters
-    extends HSSKeyParameters
+    extends LMSKeyParameters
 {
     private final LMSPrivateKeyParameters rootKey;
     private final int l;
@@ -49,8 +49,8 @@ public class HSSPrivateKeyParameters
         this.limited = limited;
     }
 
-    static HSSPrivateKeyParameters getInstance(Object src, int maxDepth, int maxSecretSize)
-        throws Exception
+    public static HSSPrivateKeyParameters getInstance(Object src)
+        throws IOException
     {
         if (src instanceof HSSPrivateKeyParameters)
         {
@@ -60,20 +60,16 @@ public class HSSPrivateKeyParameters
         {
             if (((DataInputStream)src).readInt() != 0)
             {
-                throw new LMSException("unknown version for hss private key");
+                throw new IllegalStateException("unknown version for hss private key");
             }
             int d = ((DataInputStream)src).readInt();
-            if (d > maxDepth)
-            {
-                throw new LMSException("depth encoded exceeds maxDepth of " + maxDepth);
-            }
 
             ArrayList<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>();
             ArrayList<LMSSignature> signatures = new ArrayList<LMSSignature>();
 
             for (int t = 0; t < d; t++)
             {
-                keys.add(LMSPrivateKeyParameters.getInstance(src, maxSecretSize));
+                keys.add(LMSPrivateKeyParameters.getInstance(src));
             }
 
             for (int t = 0; t < d - 1; t++)
@@ -90,7 +86,7 @@ public class HSSPrivateKeyParameters
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
-                return getInstance(in, maxDepth,maxSecretSize);
+                return getInstance(in);
             }
             finally
             {
@@ -100,7 +96,7 @@ public class HSSPrivateKeyParameters
         }
         else if (src instanceof InputStream)
         {
-            return getInstance(new DataInputStream((InputStream)src), maxDepth, maxSecretSize);
+            return getInstance(new DataInputStream((InputStream)src));
         }
 
         throw new IllegalArgumentException("cannot parse " + src);
@@ -120,7 +116,7 @@ public class HSSPrivateKeyParameters
         for (int t = 0; t < keys.size(); t++)
         {
             LMSPrivateKeyParameters key = keys.get(t);
-            int lim = (1 << key.getParameters().getH());
+            int lim = (1 << key.getSigParameters().getH());
 
             if (t == last)
             {
@@ -148,7 +144,7 @@ public class HSSPrivateKeyParameters
         for (int t = 0; t < keys.size(); t++)
         {
             LMSPrivateKeyParameters key = keys.get(t);
-            int lim = (1 << key.getParameters().getH());
+            int lim = (1 << key.getSigParameters().getH());
             possible *= lim;
 
             if (t == last)
@@ -257,11 +253,11 @@ public class HSSPrivateKeyParameters
         byte[] rootSecret = new byte[32];
         source.nextBytes(rootSecret);
 
-        newKeys.set(d, LMS.generateKeys(rootKey.getParameters(), rootKey.getOtsParameters(), 0, I, rootSecret));
+        newKeys.set(d, LMS.generateKeys(rootKey.getSigParameters(), rootKey.getOtsParameters(), 0, I, rootSecret));
 
         List<LMSSignature> newSig = new ArrayList<LMSSignature>(sig);
 
-        newSig.set(d - 1, LMS.generateSign(newKeys.get(d - 1), newKeys.get(d).getPublicKey().getEncoded()));
+        newSig.set(d - 1, LMS.generateSign(newKeys.get(d - 1), newKeys.get(d).getPublicKey().toByteArray()));
 
         // TODO restore
         //newSig.set(d - 1, LMS.generateSign(newList.get(d), newList.get(d - 1).getPublicKey().getEncoded(), source));

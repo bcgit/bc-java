@@ -16,7 +16,7 @@ public class TypeTests
     {
         {
             Object o = new HSSPrivateKeyParameters(0, new LMSPrivateKeyParameters[]{null}, new LMSSignature[0]);
-            assert (o == HSSPrivateKeyParameters.getInstance(o, 0, 0));
+            assert (o == HSSPrivateKeyParameters.getInstance(o));
         }
 
         {
@@ -41,7 +41,7 @@ public class TypeTests
 
         {
             Object o = new LMSPrivateKeyParameters(null, null, 0, null, 0, null);
-            assert (o == LMSPrivateKeyParameters.getInstance(o, 0));
+            assert (o == LMSPrivateKeyParameters.getInstance(o));
         }
 
         {
