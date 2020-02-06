@@ -21,11 +21,6 @@ public class HSSKeyGenerationParameters
             throw new IllegalArgumentException("lms parameters are null");
         }
 
-        if (random == null)
-        {
-            random = new SecureRandom();
-        }
-
         this.lmsParameters = lmsParameters;
     }
 
