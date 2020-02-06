@@ -9,7 +9,6 @@ public class SeedDerive
     private final Digest digest;
     private int q;
     private int j;
-    private boolean incJ = false;
 
 
     public SeedDerive(byte[] I, byte[] masterSeed, Digest digest)
@@ -49,47 +48,8 @@ public class SeedDerive
         return masterSeed;
     }
 
-    public byte[] deriveSeed()
-    {
-        return deriveSeed(new byte[digest.getDigestSize()]);
-    }
 
-
-    public byte[] deriveSeed(byte[] target)
-    {
-        if (target.length < digest.getDigestSize())
-        {
-            throw new IllegalArgumentException("target length is less than digest size.");
-        }
-
-        digest.update(I, 0, I.length);
-        digest.update((byte)(q >>> 24));
-        digest.update((byte)(q >>> 16));
-        digest.update((byte)(q >>> 8));
-        digest.update((byte)(q));
-
-        digest.update((byte)(j >>> 8));
-        digest.update((byte)(j));
-        digest.update((byte)0xFF);
-        digest.update(masterSeed, 0, masterSeed.length);
-
-        digest.doFinal(target, 0); // Digest resets here.
-
-        if (incJ)
-        {
-            j++;
-        }
-
-        return target;
-    }
-
-    public byte[] deriveSeed(byte[] target, boolean incJ) {
-        return deriveSeed(target,incJ,0);
-    }
-
-
-
-    public byte[] deriveSeed(byte[] target, boolean incJ, int offset)
+    public byte[] deriveSeed(byte[] target, int offset)
     {
         if (target.length < digest.getDigestSize())
         {
@@ -109,11 +69,24 @@ public class SeedDerive
 
         digest.doFinal(target, offset); // Digest resets here.
 
+        return target;
+    }
+
+    public void deriveSeed(byte[] target, boolean incJ)
+    {
+        deriveSeed(target, incJ, 0);
+    }
+
+
+    public void deriveSeed(byte[] target, boolean incJ, int offset)
+    {
+
+        deriveSeed(target, offset);
+
         if (incJ)
         {
             j++;
         }
 
-        return target;
     }
 }

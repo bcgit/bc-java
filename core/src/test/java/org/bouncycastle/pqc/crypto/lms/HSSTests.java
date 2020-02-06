@@ -20,7 +20,7 @@ public class HSSTests
     extends TestCase
 {
 
-    public void testHssKeySerialzation()
+    public void testHssKeySerialisation()
         throws Exception
     {
         byte[] fixedSource = new byte[8192];
@@ -78,7 +78,7 @@ public class HSSTests
 
         HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
-        HSSSignature signature = HSSSignature.getInstance(blocks.get(2), 2);
+        HSSSignature signature = HSSSignature.getInstance(blocks.get(2), publicKey.getL());
         assertTrue("Test Case 1 ", HSS.verifySignature(publicKey, signature, message));
     }
 
@@ -97,7 +97,7 @@ public class HSSTests
         HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
         byte[] sig = blocks.get(2);
-        HSSSignature signature = HSSSignature.getInstance(sig, 2);
+        HSSSignature signature = HSSSignature.getInstance(sig, publicKey.getL());
         assertTrue("Test Case 2 Signature", HSS.verifySignature(publicKey, signature, message));
 
         LMSPublicKeyParameters lmsPub = LMSPublicKeyParameters.getInstance(blocks.get(3));
@@ -286,7 +286,7 @@ public class HSSTests
             for (int t = 0; t < keyPair.getKeys().size(); t++)
             {
                 //
-                // Check the private keys can be encoded and are the same.
+                // Check the private keys can be encoded and are not the same.
                 //
                 byte[] pk1 = keyPair.getKeys().get(t).getEncoded();
                 byte[] pk2 = differentKey.getKeys().get(t).getEncoded();
@@ -447,6 +447,7 @@ public class HSSTests
 
                 //
                 // Other tests vandalise HSS signatures to check they fail when tampered with
+                // we won't do that again here.
                 //
 
 
@@ -462,23 +463,6 @@ public class HSSTests
 
         }
 
-
-//        SecureRandom rand = new SecureRandom()
-//        {
-//            int c = 48;
-//
-//            @Override
-//            public void nextBytes(byte[] bytes)
-//            {
-//                for (int t = 0; t < bytes.length; t++)
-//                {
-//                    bytes[t] = (byte)c;
-//                    c--;
-//                }
-//            }
-//        };
-
-
     }
 
 
@@ -490,11 +474,6 @@ public class HSSTests
     public void testSignUnitExhaustion()
         throws Exception
     {
-        byte[] fixedSource = new byte[8192];
-        for (int t = 0; t < fixedSource.length; t++)
-        {
-            fixedSource[t] = 1;
-        }
 
         SecureRandom rand = new SecureRandom()
         {
@@ -543,7 +522,7 @@ public class HSSTests
                     //
                     byte[] rawSig = sig.getEncoded();
                     rawSig[100] ^= 1;
-                    HSSSignature parsedSig = HSSSignature.getInstance(rawSig, 2);
+                    HSSSignature parsedSig = HSSSignature.getInstance(rawSig, pk.getL());
                     assertFalse(HSS.verifySignature(pk, parsedSig, message));
 
                     try
@@ -571,7 +550,7 @@ public class HSSTests
 
                 {
                     //
-                    // Vandalise public key message
+                    // Vandalise public key
                     //
                     byte[] pkEnc = pk.getEncoded();
                     pkEnc[35] ^= 1;
