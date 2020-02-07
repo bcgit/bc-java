@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.io.Streams;
 
 class LMSSignature
     implements Encodable
@@ -61,7 +62,7 @@ class LMSSignature
         }
         else if (src instanceof InputStream)
         {
-            return getInstance(new DataInputStream((InputStream)src));
+            return getInstance(Streams.readAll((InputStream)src));
         }
 
         throw new IllegalArgumentException("cannot parse " + src);
