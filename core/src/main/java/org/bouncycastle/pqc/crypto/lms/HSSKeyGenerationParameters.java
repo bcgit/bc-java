@@ -10,11 +10,12 @@ public class HSSKeyGenerationParameters
 {
     private final LMSParameters[] lmsParameters;
 
+
     public HSSKeyGenerationParameters(
         LMSParameters[] lmsParameters,
         SecureRandom random)
     {
-        super(random, 128);   // TODO: need to calculate based on lmsParameters
+        super(random, LmsUtils.calculateStrength(lmsParameters));
 
         if (lmsParameters == null)
         {
@@ -82,7 +83,6 @@ public class HSSKeyGenerationParameters
             this.lmsEntropySource = lmsEntropySource;
             return this;
         }
-
 
 
         public HSSKeyGenerationParameters build()
