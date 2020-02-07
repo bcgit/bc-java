@@ -17,7 +17,7 @@ public class LMSKeyGenerationParameters
      */
     public LMSKeyGenerationParameters(LMSParameters lmsParams, SecureRandom random)
     {
-        super(random, 128); // TODO: need something for "strength"
+        super(random, LmsUtils.calculateStrength(lmsParams)); // TODO: need something for "strength"
         this.lmsParams = lmsParams;
     }
 

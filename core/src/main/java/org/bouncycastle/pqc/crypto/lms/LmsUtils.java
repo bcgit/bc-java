@@ -30,14 +30,9 @@ class LmsUtils
         digest.update(array, start, len);
     }
 
-    static int calculateStrength(LMSParameters[] lmsParameters)
+    static int calculateStrength(LMSParameters lmsParameters)
     {
-        if (lmsParameters.length > 0)
-        {
-            LMSigParameters sigParameters = lmsParameters[0].getLmsParam();
-            return (1 << sigParameters.getH())* sigParameters.getM();
-        }
-
-        throw new IllegalStateException("cannot crate strength for empty parameter array.");
+        LMSigParameters sigParameters = lmsParameters.getLmsParam();
+        return (1 << sigParameters.getH()) * sigParameters.getM();
     }
 }

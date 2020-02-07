@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
+import org.bouncycastle.util.io.Streams;
 
 public class HSSPrivateKeyParameters
     extends LMSKeyParameters
@@ -18,9 +19,9 @@ public class HSSPrivateKeyParameters
     private final LMSPrivateKeyParameters rootKey;
     private final int l;
     private final boolean limited;
-
     private List<LMSPrivateKeyParameters> keys;
     private List<LMSSignature> sig;
+    private final int maximumKeys;
 
     public HSSPrivateKeyParameters(int l, LMSPrivateKeyParameters[] keys, LMSSignature[] sig)
     {
@@ -31,6 +32,13 @@ public class HSSPrivateKeyParameters
         this.sig = Collections.unmodifiableList(Arrays.asList(sig.clone()));
         this.rootKey = this.keys.get(0);
         this.limited = false;
+
+        int m = 1;
+        for (LMSPrivateKeyParameters pk : keys)
+        {
+            m *= pk.getMaxQ();
+        }
+        maximumKeys = m;
     }
 
     private HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig)
@@ -47,6 +55,13 @@ public class HSSPrivateKeyParameters
         this.sig = Collections.unmodifiableList(new ArrayList<LMSSignature>(sig));
         this.rootKey = this.keys.get(0);
         this.limited = limited;
+
+        int m = 1;
+        for (LMSPrivateKeyParameters pk : keys)
+        {
+            m *= pk.getMaxQ();
+        }
+        maximumKeys = m;
     }
 
     public static HSSPrivateKeyParameters getInstance(Object src)
@@ -99,7 +114,7 @@ public class HSSPrivateKeyParameters
         }
         else if (src instanceof InputStream)
         {
-            return getInstance(new DataInputStream((InputStream)src));
+            return getInstance(Streams.readAll((InputStream)src));
         }
 
         throw new IllegalArgumentException("cannot parse " + src);
@@ -140,30 +155,28 @@ public class HSSPrivateKeyParameters
     public long getUsagesRemaining()
     {
         long used = 0;
-        long possible = 1;
-
         int last = keys.size() - 1;
+
 
         for (int t = 0; t < keys.size(); t++)
         {
             LMSPrivateKeyParameters key = keys.get(t);
             int lim = (1 << key.getSigParameters().getH());
-            possible *= lim;
 
             if (t == last)
             {
                 used += key.getIndex();
             }
-            else
+
+
+            if (t > 0 && keys.get(t - 1).getIndex() - 1 > 0)
             {
-                if (key.getIndex() - 1 > 0)
-                {
-                    used += (key.getIndex() - 1) * lim;
-                }
+                used += (keys.get(t - 1).getIndex()-1) * lim;
             }
+
         }
 
-        return possible - used;
+        return maximumKeys - used;
     }
 
     synchronized LMSPrivateKeyParameters getNextSigningKey(SecureRandom entropySource)
