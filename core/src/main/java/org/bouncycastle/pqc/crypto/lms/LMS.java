@@ -267,7 +267,7 @@ class LMS
 
         int twoToh = 1 << lmsPrivateKey.getSigParameters().getH();
         Digest H = DigestUtil.getDigest(lmsPrivateKey.getSigParameters().getDigestOID());
-        ArrayList<byte[]> stack = new ArrayList<>();
+        ArrayList<byte[]> stack = new ArrayList<byte[]>();
         byte[] I = lmsPrivateKey.getI();
         for (int i = 0; i < twoToh; i++)
         {
