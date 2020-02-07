@@ -46,7 +46,7 @@ public class HSSKeyGenerationParameters
         private LMSParameters[] lmsParameters;
         private SecureRandom lmsEntropySource;
         private byte[] masterSeed;
-        private int strength;
+
 
         public Builder(int depth)
         {
@@ -72,12 +72,6 @@ public class HSSKeyGenerationParameters
             return this;
         }
 
-        public Builder setStrength(int strength)
-        {
-            this.strength = strength;
-            return this;
-        }
-
         public Builder setLmsEntropySource(SecureRandom lmsEntropySource)
         {
             if (this.masterSeed != null)
@@ -89,16 +83,6 @@ public class HSSKeyGenerationParameters
             return this;
         }
 
-
-        public Builder setLmsEntropySource(byte[] masterSeed)
-        {
-            if (this.lmsEntropySource != null)
-            {
-                throw new IllegalArgumentException("attempting to set master seed while entropy source is not null");
-            }
-            this.masterSeed = masterSeed;
-            return this;
-        }
 
 
         public HSSKeyGenerationParameters build()

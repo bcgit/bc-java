@@ -199,7 +199,7 @@ public class HSSTests
             HSSKeyGenerationParameters.builder(2)
                 .setLmsParameters(
                     new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
-                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
                 .setLmsEntropySource(rand)
                 .build()
         );
@@ -391,7 +391,7 @@ public class HSSTests
                 {
                     lmsParams.add(new LMSParameters(lmsParameters.get(i), lmOtsParameters.get(i)));
                 }
-                
+
                 //
                 // Using our fixed entropy source generate hss keypair
                 //
@@ -491,7 +491,7 @@ public class HSSTests
             HSSKeyGenerationParameters.builder(2)
                 .setLmsParameters(
                     new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
-                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w8))
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h10, LMOtsParameters.sha256_n32_w8))
                 .setLmsEntropySource(rand)
                 .build()
         );
@@ -503,18 +503,22 @@ public class HSSTests
         byte[] message = new byte[32];
 
         //
-        // There should be a max of 1024 signatures for this key.
+        // There should be a max of 512 signatures for this key.
         //
 
-        assertTrue(keyPair.getUsagesRemaining() == 1024);
+        assertTrue(keyPair.getUsagesRemaining() == 32768);
 
         try
         {
-            while (msgCtr < 1025) // Just a number..
+            while (msgCtr < 8193) // Just a number..
             {
                 Pack.intToBigEndian(msgCtr, message, 0);
                 HSSSignature sig = HSS.generateSignature(keyPair, message, rand);
                 assertTrue(HSS.verifySignature(pk, sig, message));
+
+
+
+                assertTrue(sig.getSignature().getParameter().getType() == LMSigParameters.lms_sha256_n32_h10.getType());
 
                 {
                     //
@@ -558,13 +562,21 @@ public class HSSTests
                     assertFalse(HSS.verifySignature(rebuiltPk, sig, message));
                 }
                 msgCtr++;
+
+
+                LMSPrivateKeyParameters lmsKey =  keyPair.getNextSigningKey(rand);
+
+                lmsKey.getNextOtsPrivateKey();
+                lmsKey.getNextOtsPrivateKey();
+                lmsKey.getNextOtsPrivateKey();
+
             }
             fail();
         }
         catch (ExhaustedPrivateKeyException ex)
         {
             assertTrue(keyPair.getUsagesRemaining() == 0);
-            assertTrue(msgCtr == 1024);
+            assertTrue(msgCtr == 8192);
             assertTrue(ex.getMessage().contains("hss private key is exhausted"));
         }
 
