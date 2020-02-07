@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.bouncycastle.util.io.Streams;
+
 public class LMSPublicKeyParameters
     extends LMSKeyParameters
 {
@@ -63,7 +65,7 @@ public class LMSPublicKeyParameters
         }
         else if (src instanceof InputStream)
         {
-            return getInstance(new DataInputStream((InputStream)src));
+            return getInstance(Streams.readAll((InputStream)src));
         }
 
         throw new IllegalArgumentException("cannot parse " + src);

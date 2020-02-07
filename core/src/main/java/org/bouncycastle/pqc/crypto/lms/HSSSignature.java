@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.io.Streams;
 
 public class HSSSignature
     implements Encodable
@@ -71,7 +72,7 @@ public class HSSSignature
         }
         else if (src instanceof InputStream)
         {
-            return getInstance(new DataInputStream((InputStream)src), L);
+            return getInstance(Streams.readAll((InputStream)src),L);
         }
 
         throw new IllegalArgumentException("cannot parse " + src);
