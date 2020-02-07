@@ -7,6 +7,7 @@ import java.io.InputStream;
 
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.Streams;
 
 public class LMSPrivateKeyParameters
     extends LMSKeyParameters
@@ -90,7 +91,7 @@ public class LMSPrivateKeyParameters
         }
         else if (src instanceof InputStream)
         {
-            return getInstance(new DataInputStream((InputStream)src));
+            return getInstance(Streams.readAll((InputStream)src));
         }
 
         throw new IllegalArgumentException("cannot parse " + src);
