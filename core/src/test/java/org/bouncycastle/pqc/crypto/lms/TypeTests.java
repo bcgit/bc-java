@@ -15,7 +15,7 @@ public class TypeTests
         throws Exception
     {
         {
-            Object o = new HSSPrivateKeyParameters(0, new LMSPrivateKeyParameters[]{null}, new LMSSignature[0]);
+            Object o = new HSSPrivateKeyParameters(0, new LMSPrivateKeyParameters[]{new LMSPrivateKeyParameters(null, null, 0, null, 0, null)}, new LMSSignature[0]);
             assert (o == HSSPrivateKeyParameters.getInstance(o));
         }
 
