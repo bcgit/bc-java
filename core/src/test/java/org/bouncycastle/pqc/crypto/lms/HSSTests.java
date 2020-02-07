@@ -469,7 +469,7 @@ public class HSSTests
         HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
             new HSSKeyGenerationParameters(new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
-                new LMSParameters(LMSigParameters.lms_sha256_n32_h10, LMOtsParameters.sha256_n32_w1),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2)
             }, new SecureRandom())
         );
 
@@ -484,23 +484,44 @@ public class HSSTests
         //
         // There should be a max of 32768 signatures for this key.
         //
-        assertTrue(keyPair.getUsagesRemaining() == 32768);
+        assertEquals(1024, keyPair.getUsagesRemaining());
 
         LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey(sigRand);
+        lmsKey.getNextOtsPrivateKey(); //[0]
         lmsKey.getNextOtsPrivateKey();
         lmsKey.getNextOtsPrivateKey();
         lmsKey.getNextOtsPrivateKey();
-        lmsKey.getNextOtsPrivateKey();
-        lmsKey.getNextOtsPrivateKey();
+        lmsKey.getNextOtsPrivateKey();//[4]
 
-        assertTrue(keyPair.getUsagesRemaining() == 32768 - 5);
+        assertEquals(5, lmsKey.getIndex()); // Next key is at index 5!
 
 
-        for (int t = 0; t < 1024 - 5; t++)
+        assertEquals(1024 - 5, keyPair.getUsagesRemaining());
+
+
+        LMSPrivateKeyParameters shard = lmsKey.extractKeyShard(10);
+
+        assertEquals(15, shard.getMaxQ());
+        assertEquals(5, shard.getIndex());
+
+        // Should not be the same.
+        assertFalse(shard.getIndex() == lmsKey.getIndex());
+
+        //
+        // Should be 17 left, it will throw if it has been exhausted.
+        //
+        for (int t = 0; t < 17; t++)
         {
             lmsKey.getNextOtsPrivateKey();
         }
 
+        // We have used 32 keys.
+        assertEquals(1024 - 32, keyPair.getUsagesRemaining());
+
+
+        //
+        // This should trigger the generation of a new key.
+        //
         LMSPrivateKeyParameters potentialNewLMSKey = keyPair.getNextSigningKey(sigRand);
 
         assertFalse(potentialNewLMSKey.equals(lmsKey));
