@@ -90,7 +90,10 @@ public class HSSPrivateKeyParameters
             }
             finally
             {
-                if (in != null) in.close();
+                if (in != null)
+                {
+                    in.close();
+                }
             }
 
         }
@@ -185,7 +188,7 @@ public class HSSPrivateKeyParameters
 
         while (d < L)
         {
-            this.addNewKey(d, entropySource);
+            this.replaceConsumedKey(d, entropySource);
             d = d + 1;
         }
 
@@ -243,9 +246,14 @@ public class HSSPrivateKeyParameters
         return new HSSPublicKeyParameters(l, rootKey.getPublicKey());
     }
 
-    private void addNewKey(int d, SecureRandom source)
+    private void replaceConsumedKey(int d, SecureRandom source)
     {
         List<LMSPrivateKeyParameters> newKeys = new ArrayList<LMSPrivateKeyParameters>(keys);
+
+        //
+        // We need the parameters from the LMS key we are replacing.
+        //
+        LMSPrivateKeyParameters oldPk = keys.get(d);
 
         byte[] I = new byte[16];
         source.nextBytes(I);
@@ -253,14 +261,12 @@ public class HSSPrivateKeyParameters
         byte[] rootSecret = new byte[32];
         source.nextBytes(rootSecret);
 
-        newKeys.set(d, LMS.generateKeys(rootKey.getSigParameters(), rootKey.getOtsParameters(), 0, I, rootSecret));
+
+        newKeys.set(d, LMS.generateKeys(oldPk.getSigParameters(), oldPk.getOtsParameters(), 0, I, rootSecret));
 
         List<LMSSignature> newSig = new ArrayList<LMSSignature>(sig);
 
         newSig.set(d - 1, LMS.generateSign(newKeys.get(d - 1), newKeys.get(d).getPublicKey().toByteArray()));
-
-        // TODO restore
-        //newSig.set(d - 1, LMS.generateSign(newList.get(d), newList.get(d - 1).getPublicKey().getEncoded(), source));
 
         this.keys = Collections.unmodifiableList(newKeys);
         this.sig = Collections.unmodifiableList(newSig);
