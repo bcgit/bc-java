@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.crypto.lms;
 
 import org.bouncycastle.crypto.Digest;
 
-public class SeedDerive
+class SeedDerive
 {
     private final byte[] I;
     private final byte[] masterSeed;
