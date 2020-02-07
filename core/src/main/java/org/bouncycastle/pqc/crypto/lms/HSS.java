@@ -49,7 +49,7 @@ class HSS
     }
 
 
-    public static HSSSignature generateSignature(HSSPrivateKeyParameters keyPair, byte[] message, SecureRandom entropySource)
+    public static HSSSignature generateSignature(HSSPrivateKeyParameters keyPair, byte[] message)
     {
         int L = keyPair.getL();
 
@@ -57,7 +57,7 @@ class HSS
         // Algorithm 8
         //
         // Step 1.
-        LMSPrivateKeyParameters nextKey = keyPair.getNextSigningKey(entropySource);
+        LMSPrivateKeyParameters nextKey = keyPair.getNextSigningKey();
 
         // Step 2. Stand in for sig[L-1]
 
