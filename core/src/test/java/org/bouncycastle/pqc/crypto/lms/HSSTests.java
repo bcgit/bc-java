@@ -472,14 +472,9 @@ public class HSSTests
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2)
             }, new SecureRandom())
         );
-
-        HSSPublicKeyParameters pk = keyPair.getPublicKey();
-
+        
 
         SecureRandom sigRand = new SecureRandom();
-
-        int ctr = 0;
-        byte[] message = new byte[32];
 
         //
         // There should be a max of 32768 signatures for this key.
