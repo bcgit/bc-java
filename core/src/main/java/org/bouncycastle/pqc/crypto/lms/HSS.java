@@ -5,8 +5,6 @@ import java.security.SecureRandom;
 class HSS
 {
 
-
-
     public static HSSPrivateKeyParameters generateHSSKeyPair(HSSKeyGenerationParameters parameters)
     {
         //
