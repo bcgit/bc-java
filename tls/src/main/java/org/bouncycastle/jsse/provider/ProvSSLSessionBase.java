@@ -53,6 +53,8 @@ abstract class ProvSSLSessionBase
 
     protected abstract byte[] getIDArray();
 
+    protected abstract JsseSecurityParameters getJsseSecurityParameters();
+
     protected abstract JsseSessionParameters getJsseSessionParameters();
 
     protected abstract org.bouncycastle.tls.Certificate getLocalCertificateTLS();
@@ -154,6 +156,7 @@ abstract class ProvSSLSessionBase
         return (1 << 14) + 1 + 2 * (RecordFormat.FRAGMENT_OFFSET + 1024);
     }
 
+    @SuppressWarnings("deprecation")
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
         /*

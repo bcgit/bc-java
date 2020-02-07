@@ -660,9 +660,14 @@ class ProvSSLSocketWrap
 
     public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
     {
-        if (null != handshakeSession && !handshakeSession.isValid())
+        if (null != handshakeSession)
         {
-            connection.getSession().invalidate();
+            if (!handshakeSession.isValid())
+            {
+                connection.getSession().invalidate();
+            }
+
+            handshakeSession.getJsseSecurityParameters().clear();
         }
 
         this.handshakeSession = null;

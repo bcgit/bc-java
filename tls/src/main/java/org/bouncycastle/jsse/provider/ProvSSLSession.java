@@ -42,6 +42,12 @@ class ProvSSLSession
     }
 
     @Override
+    protected JsseSecurityParameters getJsseSecurityParameters()
+    {
+        return null;
+    }
+
+    @Override
     protected JsseSessionParameters getJsseSessionParameters()
     {
         return jsseSessionParameters;
