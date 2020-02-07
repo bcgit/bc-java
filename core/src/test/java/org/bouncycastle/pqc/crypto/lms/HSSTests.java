@@ -472,7 +472,7 @@ public class HSSTests
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2)
             }, new SecureRandom())
         );
-        
+
 
         SecureRandom sigRand = new SecureRandom();
 
@@ -512,7 +512,6 @@ public class HSSTests
 
         // We have used 32 keys.
         assertEquals(1024 - 32, keyPair.getUsagesRemaining());
-
 
         //
         // This should trigger the generation of a new key.
