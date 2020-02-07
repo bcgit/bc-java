@@ -13,6 +13,7 @@ class ProvSSLSessionHandshake
     extends ProvSSLSessionBase
 {
     protected final SecurityParameters securityParameters;
+    protected final JsseSecurityParameters jsseSecurityParameters;
 
     ProvSSLSessionHandshake(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort,
         SecurityParameters securityParameters)
@@ -20,6 +21,7 @@ class ProvSSLSessionHandshake
         super(sslSessionContext, peerHost, peerPort);
 
         this.securityParameters = securityParameters;
+        this.jsseSecurityParameters = new JsseSecurityParameters();
     }
 
     String getApplicationProtocol()
@@ -37,6 +39,12 @@ class ProvSSLSessionHandshake
     protected byte[] getIDArray()
     {
         return securityParameters.getSessionID();
+    }
+
+    @Override
+    protected JsseSecurityParameters getJsseSecurityParameters()
+    {
+        return jsseSecurityParameters;
     }
 
     @Override
@@ -92,5 +100,6 @@ class ProvSSLSessionHandshake
             : securityParameters.getServerSigAlgs();
 
         return JsseUtils.getSignatureSchemeNames(sigAlgs);
+//        return SignatureSchemeInfo.getJcaSignatureAlgorithms(signatureSchemes);
     }
 }
