@@ -10,7 +10,7 @@ class LMS
     private static final short D_LEAF = (short)0x8282;
     private static final short D_INTR = (short)0x8383;
 
-    public static LMSPrivateKeyParameters generateKeys(LMSigParameters parameterSet, LMOtsParameters lmOtsParameters, int level, byte[] I, byte[] rootSeed)
+    public static LMSPrivateKeyParameters generateKeys(LMSigParameters parameterSet, LMOtsParameters lmOtsParameters, int q, byte[] I, byte[] rootSeed)
         throws IllegalArgumentException
     {
         //
@@ -33,7 +33,7 @@ class LMS
 
         int twoToH = 1 << parameterSet.getH();
 
-        return new LMSPrivateKeyParameters(parameterSet, lmOtsParameters, level, I, twoToH, rootSeed);
+        return new LMSPrivateKeyParameters(parameterSet, lmOtsParameters, q, I, twoToH, rootSeed);
     }
 
     public static LMSSignature generateSign(LMSPrivateKeyParameters privateKey, byte[] message)

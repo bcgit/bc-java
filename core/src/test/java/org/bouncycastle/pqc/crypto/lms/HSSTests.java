@@ -39,7 +39,7 @@ public class HSSTests
             }, rand)
         );
 
-        HSSSignature sigFromGeneratedPrivateKey = HSS.generateSignature(generatedPrivateKey, Hex.decode("ABCDEF"), rand);
+        HSSSignature sigFromGeneratedPrivateKey = HSS.generateSignature(generatedPrivateKey, Hex.decode("ABCDEF"));
 
         byte[] keyPairEnc = generatedPrivateKey.getEncoded();
 
@@ -408,7 +408,7 @@ public class HSSTests
                 //
                 // Generate a signature using the keypair we generated.
                 //
-                HSSSignature sig = HSS.generateSignature(keyPair, message, fixRnd);
+                HSSSignature sig = HSS.generateSignature(keyPair, message);
 
 
                 if (!Arrays.areEqual(sig.getEncoded(), encodedSigFromVector))
@@ -474,14 +474,13 @@ public class HSSTests
         );
 
 
-        SecureRandom sigRand = new SecureRandom();
 
         //
         // There should be a max of 32768 signatures for this key.
         //
         assertEquals(1024, keyPair.getUsagesRemaining());
 
-        LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey(sigRand);
+        LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey();
         lmsKey.getNextOtsPrivateKey(); //[0]
         lmsKey.getNextOtsPrivateKey();
         lmsKey.getNextOtsPrivateKey();
@@ -516,7 +515,7 @@ public class HSSTests
         //
         // This should trigger the generation of a new key.
         //
-        LMSPrivateKeyParameters potentialNewLMSKey = keyPair.getNextSigningKey(sigRand);
+        LMSPrivateKeyParameters potentialNewLMSKey = keyPair.getNextSigningKey();
 
         assertFalse(potentialNewLMSKey.equals(lmsKey));
 
@@ -578,7 +577,7 @@ public class HSSTests
                     //
 
                     Pack.intToBigEndian(ctr, message, 0);
-                    HSSSignature sig = HSS.generateSignature(keyPair, message, rand);
+                    HSSSignature sig = HSS.generateSignature(keyPair, message);
                     assertTrue(HSS.verifySignature(pk, sig, message));
 
 
@@ -629,7 +628,7 @@ public class HSSTests
                 else
                 {
                     // Skip some keys.
-                    LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey(rand);
+                    LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey();
                     lmsKey.getNextOtsPrivateKey();
                 }
 
