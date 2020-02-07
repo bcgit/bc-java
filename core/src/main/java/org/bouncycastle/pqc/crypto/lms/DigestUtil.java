@@ -11,6 +11,9 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 
+/**
+ * LMS digest utils provides oid mapping to provider digest name.
+ */
 class DigestUtil
 {
     private static Map<String, ASN1ObjectIdentifier> nameToOid = new HashMap<String, ASN1ObjectIdentifier>();

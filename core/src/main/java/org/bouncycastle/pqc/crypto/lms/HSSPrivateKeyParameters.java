@@ -171,7 +171,7 @@ public class HSSPrivateKeyParameters
 
             if (t > 0 && keys.get(t - 1).getIndex() - 1 > 0)
             {
-                used += (keys.get(t - 1).getIndex()-1) * lim;
+                used += (keys.get(t - 1).getIndex() - 1) * lim;
             }
 
         }
@@ -179,7 +179,7 @@ public class HSSPrivateKeyParameters
         return maximumKeys - used;
     }
 
-    synchronized LMSPrivateKeyParameters getNextSigningKey(SecureRandom entropySource)
+    synchronized LMSPrivateKeyParameters getNextSigningKey()
     {
         //
         // Algorithm 8
@@ -201,7 +201,7 @@ public class HSSPrivateKeyParameters
 
         while (d < L)
         {
-            this.replaceConsumedKey(d, entropySource);
+            this.replaceConsumedKey(d);
             d = d + 1;
         }
 
@@ -259,8 +259,18 @@ public class HSSPrivateKeyParameters
         return new HSSPublicKeyParameters(l, rootKey.getPublicKey());
     }
 
-    private void replaceConsumedKey(int d, SecureRandom source)
+    private void replaceConsumedKey(int d)
     {
+
+        SeedDerive deriver = keys.get(d - 1).getCurrentOTSKey().getDerivationFunction();
+        deriver.setJ(~1);
+        byte[] childRootSeed = new byte[32];
+        deriver.deriveSeed(childRootSeed, true);
+        byte[] postImage = new byte[32];
+        deriver.deriveSeed(postImage, false);
+        byte[] childI = new byte[16];
+        System.arraycopy(postImage, 0, childI, 0, childI.length);
+
         List<LMSPrivateKeyParameters> newKeys = new ArrayList<LMSPrivateKeyParameters>(keys);
 
         //
@@ -268,14 +278,8 @@ public class HSSPrivateKeyParameters
         //
         LMSPrivateKeyParameters oldPk = keys.get(d);
 
-        byte[] I = new byte[16];
-        source.nextBytes(I);
 
-        byte[] rootSecret = new byte[32];
-        source.nextBytes(rootSecret);
-
-
-        newKeys.set(d, LMS.generateKeys(oldPk.getSigParameters(), oldPk.getOtsParameters(), 0, I, rootSecret));
+        newKeys.set(d, LMS.generateKeys(oldPk.getSigParameters(), oldPk.getOtsParameters(), 0, childI, childRootSeed));
 
         List<LMSSignature> newSig = new ArrayList<LMSSignature>(sig);
 

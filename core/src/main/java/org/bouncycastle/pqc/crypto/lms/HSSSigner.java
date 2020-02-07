@@ -42,7 +42,7 @@ public class HSSSigner
     {
         try
         {
-            return HSS.generateSignature(privKey, message, random).getEncoded();
+            return HSS.generateSignature(privKey, message).getEncoded();
         }
         catch (IOException e)
         {
