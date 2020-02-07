@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.lms;
 
-import java.util.Stack;
+import java.util.ArrayList;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
@@ -267,7 +267,7 @@ class LMS
 
         int twoToh = 1 << lmsPrivateKey.getSigParameters().getH();
         Digest H = DigestUtil.getDigest(lmsPrivateKey.getSigParameters().getDigestOID());
-        Stack<byte[]> stack = new Stack<byte[]>();
+        ArrayList<byte[]> stack = new ArrayList<>();
         byte[] I = lmsPrivateKey.getI();
         for (int i = 0; i < twoToh; i++)
         {
@@ -284,7 +284,7 @@ class LMS
             {
                 r = (r - 1) / 2;
                 j = (j - 1) / 2;
-                byte[] leftSide = stack.pop();
+                byte[] leftSide = stack.remove(stack.size() - 1); // stack.pop();
                 H.update(I, 0, I.length);
                 LmsUtils.u32str(r, H);
                 LmsUtils.u16str(D_INTR, H);
@@ -292,9 +292,9 @@ class LMS
                 H.update(temp, 0, temp.length);
                 H.doFinal(temp, 0);
             }
-            stack.push(temp);
+            stack.add(temp);
         }
-        return stack.pop();
+        return stack.remove(stack.size() - 1);
     }
 
 }
