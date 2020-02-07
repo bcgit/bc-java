@@ -31,13 +31,12 @@ public class HSSTests
 
         SecureRandom rand = new FixedSecureRandom(fixedSource);
 
+
         HSSPrivateKeyParameters generatedPrivateKey = HSS.generateHSSKeyPair(
-            HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(
-                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
-                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
-                .setLmsEntropySource(rand)
-                .build()
+            new HSSKeyGenerationParameters(new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
+            }, rand)
         );
 
         HSSSignature sigFromGeneratedPrivateKey = HSS.generateSignature(generatedPrivateKey, Hex.decode("ABCDEF"), rand);
@@ -196,13 +195,10 @@ public class HSSTests
         SecureRandom rand = new FixedSecureRandom(fixedSource);
 
         HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
-            HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(
-                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
-                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
-                .setLmsEntropySource(rand)
-                .build()
-        );
+            new HSSKeyGenerationParameters(new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
+            }, rand));
 
 
         //
@@ -228,13 +224,11 @@ public class HSSTests
             SecureRandom rand1 = new FixedSecureRandom(fixedSource);
 
             HSSPrivateKeyParameters regenKeyPair = HSS.generateHSSKeyPair(
-                HSSKeyGenerationParameters.builder(2)
-                    .setLmsParameters(
-                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
-                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
-                    .setLmsEntropySource(rand1)
-                    .build()
-            );
+                new HSSKeyGenerationParameters(new LMSParameters[]{
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
+                }, rand1));
+
 
             assertTrue("Both generated keys are the same", Arrays.areEqual(regenKeyPair.getPublicKey().getEncoded(), keyPair.getPublicKey().getEncoded()));
 
@@ -271,12 +265,10 @@ public class HSSTests
             SecureRandom rand1 = new SecureRandom();
 
             HSSPrivateKeyParameters differentKey = HSS.generateHSSKeyPair(
-                HSSKeyGenerationParameters.builder(2)
-                    .setLmsParameters(
-                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
-                        new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2))
-                    .setLmsEntropySource(rand1)
-                    .build()
+                new HSSKeyGenerationParameters(new LMSParameters[]{
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
+                }, rand1)
             );
 
 
@@ -395,11 +387,11 @@ public class HSSTests
                 //
                 // Using our fixed entropy source generate hss keypair
                 //
+
+
                 HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
-                    HSSKeyGenerationParameters.builder(d)
-                        .setLmsParameters(lmsParams)
-                        .setLmsEntropySource(fixRnd)
-                        .build()
+                    new HSSKeyGenerationParameters(
+                        lmsParams.toArray(new LMSParameters[lmsParams.size()]), fixRnd)
                 );
 
                 { // Public Key should match vector.
@@ -465,6 +457,57 @@ public class HSSTests
 
     }
 
+    /**
+     * Test remaining calculation is accurate and a new key is generated when
+     * all the ots keys for that level are consumed.
+     *
+     * @throws Exception
+     */
+    public void testRemaining()
+        throws Exception
+    {
+        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+            new HSSKeyGenerationParameters(new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h10, LMOtsParameters.sha256_n32_w1),
+            }, new SecureRandom())
+        );
+
+        HSSPublicKeyParameters pk = keyPair.getPublicKey();
+
+
+        SecureRandom sigRand = new SecureRandom();
+
+        int ctr = 0;
+        byte[] message = new byte[32];
+
+        //
+        // There should be a max of 32768 signatures for this key.
+        //
+        assertTrue(keyPair.getUsagesRemaining() == 32768);
+
+        LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey(sigRand);
+        lmsKey.getNextOtsPrivateKey();
+        lmsKey.getNextOtsPrivateKey();
+        lmsKey.getNextOtsPrivateKey();
+        lmsKey.getNextOtsPrivateKey();
+        lmsKey.getNextOtsPrivateKey();
+
+        assertTrue(keyPair.getUsagesRemaining() == 32768 - 5);
+
+
+        for (int t = 0; t < 1024 - 5; t++)
+        {
+            lmsKey.getNextOtsPrivateKey();
+        }
+
+        LMSPrivateKeyParameters potentialNewLMSKey = keyPair.getNextSigningKey(sigRand);
+
+        assertFalse(potentialNewLMSKey.equals(lmsKey));
+
+
+    }
+
 
     /**
      * Take an HSS key pair and exhaust its signing capacity.
@@ -487,96 +530,104 @@ public class HSSTests
             }
         };
 
+
         HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
-            HSSKeyGenerationParameters.builder(2)
-                .setLmsParameters(
-                    new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
-                    new LMSParameters(LMSigParameters.lms_sha256_n32_h10, LMOtsParameters.sha256_n32_w8))
-                .setLmsEntropySource(rand)
-                .build()
+            new HSSKeyGenerationParameters(new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h10, LMOtsParameters.sha256_n32_w1),
+            }, rand)
         );
 
         HSSPublicKeyParameters pk = keyPair.getPublicKey();
 
 
-        int msgCtr = 0;
+        int ctr = 0;
         byte[] message = new byte[32];
 
         //
-        // There should be a max of 512 signatures for this key.
+        // There should be a max of 32768 signatures for this key.
         //
 
         assertTrue(keyPair.getUsagesRemaining() == 32768);
 
         try
         {
-            while (msgCtr < 8193) // Just a number..
+            while (ctr < 32769) // Just a number..
             {
-                Pack.intToBigEndian(msgCtr, message, 0);
-                HSSSignature sig = HSS.generateSignature(keyPair, message, rand);
-                assertTrue(HSS.verifySignature(pk, sig, message));
 
-
-
-                assertTrue(sig.getSignature().getParameter().getType() == LMSigParameters.lms_sha256_n32_h10.getType());
-
+                if (ctr % 1024 == 0)
                 {
                     //
-                    // Vandalise hss signature.
+                    // We don't want to check every key.
+                    // The test will take over an hour to complete.
                     //
-                    byte[] rawSig = sig.getEncoded();
-                    rawSig[100] ^= 1;
-                    HSSSignature parsedSig = HSSSignature.getInstance(rawSig, pk.getL());
-                    assertFalse(HSS.verifySignature(pk, parsedSig, message));
 
-                    try
+                    Pack.intToBigEndian(ctr, message, 0);
+                    HSSSignature sig = HSS.generateSignature(keyPair, message, rand);
+                    assertTrue(HSS.verifySignature(pk, sig, message));
+
+
+                    assertTrue(sig.getSignature().getParameter().getType() == LMSigParameters.lms_sha256_n32_h10.getType());
+
                     {
-                        HSSSignature.getInstance(rawSig, 0);
-                        fail();
+                        //
+                        // Vandalise hss signature.
+                        //
+                        byte[] rawSig = sig.getEncoded();
+                        rawSig[100] ^= 1;
+                        HSSSignature parsedSig = HSSSignature.getInstance(rawSig, pk.getL());
+                        assertFalse(HSS.verifySignature(pk, parsedSig, message));
+
+                        try
+                        {
+                            HSSSignature.getInstance(rawSig, 0);
+                            fail();
+                        }
+                        catch (IllegalStateException ex)
+                        {
+                            assertTrue(ex.getMessage().contains("nspk exceeded maxNspk"));
+                        }
+
                     }
-                    catch (IllegalStateException ex)
+
+
                     {
-                        assertTrue(ex.getMessage().contains("nspk exceeded maxNspk"));
+                        //
+                        // Vandalise hss message
+                        //
+                        byte[] newMsg = message.clone();
+                        newMsg[1] ^= 1;
+                        assertFalse(HSS.verifySignature(pk, sig, newMsg));
                     }
 
+
+                    {
+                        //
+                        // Vandalise public key
+                        //
+                        byte[] pkEnc = pk.getEncoded();
+                        pkEnc[35] ^= 1;
+                        HSSPublicKeyParameters rebuiltPk = HSSPublicKeyParameters.getInstance(pkEnc);
+                        assertFalse(HSS.verifySignature(rebuiltPk, sig, message));
+                    }
                 }
-
-
+                else
                 {
-                    //
-                    // Vandalise hss message
-                    //
-                    byte[] newMsg = message.clone();
-                    newMsg[1] ^= 1;
-                    assertFalse(HSS.verifySignature(pk, sig, newMsg));
+                    // Skip some keys.
+                    LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey(rand);
+                    lmsKey.getNextOtsPrivateKey();
                 }
 
-
-                {
-                    //
-                    // Vandalise public key
-                    //
-                    byte[] pkEnc = pk.getEncoded();
-                    pkEnc[35] ^= 1;
-                    HSSPublicKeyParameters rebuiltPk = HSSPublicKeyParameters.getInstance(pkEnc);
-                    assertFalse(HSS.verifySignature(rebuiltPk, sig, message));
-                }
-                msgCtr++;
-
-
-                LMSPrivateKeyParameters lmsKey =  keyPair.getNextSigningKey(rand);
-
-                lmsKey.getNextOtsPrivateKey();
-                lmsKey.getNextOtsPrivateKey();
-                lmsKey.getNextOtsPrivateKey();
+                ctr++;
 
             }
+            System.out.println(ctr);
             fail();
         }
         catch (ExhaustedPrivateKeyException ex)
         {
             assertTrue(keyPair.getUsagesRemaining() == 0);
-            assertTrue(msgCtr == 8192);
+            assertTrue(ctr == 32768);
             assertTrue(ex.getMessage().contains("hss private key is exhausted"));
         }
 
