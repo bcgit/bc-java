@@ -20,11 +20,24 @@ class LmsUtils
     }
 
 
-    static void byteArray(byte[] array, Digest digest) {
-        digest.update(array,0,array.length);
+    static void byteArray(byte[] array, Digest digest)
+    {
+        digest.update(array, 0, array.length);
     }
 
-    static void byteArray(byte[] array, int start, int len, Digest digest) {
-        digest.update(array,start,len);
+    static void byteArray(byte[] array, int start, int len, Digest digest)
+    {
+        digest.update(array, start, len);
+    }
+
+    static int calculateStrength(LMSParameters[] lmsParameters)
+    {
+        if (lmsParameters.length > 0)
+        {
+            LMSigParameters sigParameters = lmsParameters[0].getLmsParam();
+            return (1 << sigParameters.getH())* sigParameters.getM();
+        }
+
+        throw new IllegalStateException("cannot crate strength for empty parameter array.");
     }
 }
