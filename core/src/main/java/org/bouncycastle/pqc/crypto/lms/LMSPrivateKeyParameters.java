@@ -97,6 +97,19 @@ public class LMSPrivateKeyParameters
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
+    LMOtsPrivateKey getOTSKey(int q)
+    {
+        synchronized (this)
+        {
+            if (q >= maxQ)
+            {
+                throw new ExhaustedPrivateKeyException("ots private keys expired");
+            }
+            return new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
+        }
+    }
+
+
     LMOtsPrivateKey getCurrentOTSKey()
     {
         synchronized (this)
@@ -133,15 +146,6 @@ public class LMSPrivateKeyParameters
         }
     }
 
-    public LMSPrivateKeyParameters getNextKey()
-    {
-        synchronized (this)
-        {
-            LMSPrivateKeyParameters keyParameters = this.extractKeyShard(1);
-
-            return keyParameters;
-        }
-    }
 
     /**
      * Return a key that can be used usageCount times.

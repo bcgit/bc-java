@@ -448,7 +448,7 @@ public class HSSTests
                 lmsParameters.clear();
                 message = null;
                 hssPubEnc = null;
-                encodedSigFromVector = null;
+
 
             }
 
@@ -474,51 +474,113 @@ public class HSSTests
         );
 
 
-
+        LMSPrivateKeyParameters lmsKey = keyPair.getKeys().get(keyPair.getL() - 1);
         //
         // There should be a max of 32768 signatures for this key.
         //
         assertEquals(1024, keyPair.getUsagesRemaining());
 
-        LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey();
-        lmsKey.getNextOtsPrivateKey(); //[0]
-        lmsKey.getNextOtsPrivateKey();
-        lmsKey.getNextOtsPrivateKey();
-        lmsKey.getNextOtsPrivateKey();
-        lmsKey.getNextOtsPrivateKey();//[4]
+        keyPair.incIndex();
+        keyPair.incIndex();
+        keyPair.incIndex();
+        keyPair.incIndex();
+        keyPair.incIndex();
 
-        assertEquals(5, lmsKey.getIndex()); // Next key is at index 5!
+        assertEquals(5, keyPair.getIndex()); // Next key is at index 5!
 
 
         assertEquals(1024 - 5, keyPair.getUsagesRemaining());
 
 
-        LMSPrivateKeyParameters shard = lmsKey.extractKeyShard(10);
+        HSSPrivateKeyParameters shard = keyPair.extractKeyShard(10);
 
-        assertEquals(15, shard.getMaxQ());
+        assertEquals(15, shard.getIndexLimit());
         assertEquals(5, shard.getIndex());
 
         // Should not be the same.
-        assertFalse(shard.getIndex() == lmsKey.getIndex());
+        assertFalse(shard.getIndex() == keyPair.getIndex());
 
         //
         // Should be 17 left, it will throw if it has been exhausted.
         //
         for (int t = 0; t < 17; t++)
         {
-            lmsKey.getNextOtsPrivateKey();
+            keyPair.incIndex();
         }
 
         // We have used 32 keys.
         assertEquals(1024 - 32, keyPair.getUsagesRemaining());
 
+
+        HSS.generateSignature(keyPair, "Foo".getBytes());
+
         //
         // This should trigger the generation of a new key.
         //
-        LMSPrivateKeyParameters potentialNewLMSKey = keyPair.getNextSigningKey();
-
+        LMSPrivateKeyParameters potentialNewLMSKey = keyPair.getKeys().get(keyPair.getL() - 1);
         assertFalse(potentialNewLMSKey.equals(lmsKey));
+    }
 
+
+    public void testSharding()
+        throws Exception
+    {
+        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+            new HSSKeyGenerationParameters(new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
+                new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2)
+            }, new SecureRandom())
+        );
+
+        assertEquals(1024, keyPair.getUsagesRemaining());
+        assertEquals(1024, keyPair.getIndexLimit());
+        assertEquals(0, keyPair.getIndex());
+        assertFalse(keyPair.isLimited());
+        keyPair.incIndex();
+
+
+        //
+        // Take a shard that should cross boundaries
+        //
+        HSSPrivateKeyParameters shard = keyPair.extractKeyShard(48);
+        assertTrue(shard.isLimited());
+        assertEquals(48, shard.getUsagesRemaining());
+        assertEquals(49, shard.getIndexLimit());
+        assertEquals(1, shard.getIndex());
+
+        assertEquals(49, keyPair.getIndex());
+
+
+        int t = 47;
+        while (--t >= 0)
+        {
+            shard.incIndex();
+        }
+
+        HSSSignature sig = HSS.generateSignature(shard, "Cats".getBytes());
+
+        //
+        // Test it validates and nothing has gone wrong with the public keys.
+        //
+        assertTrue(HSS.verifySignature(keyPair.getPublicKey(), sig, "Cats".getBytes()));
+        assertTrue(HSS.verifySignature(shard.getPublicKey(), sig, "Cats".getBytes()));
+
+        assertFalse(shard.getKeys().get(shard.getL() - 1).equals(keyPair.getKeys().get(keyPair.getL() - 1)));
+
+        // Signing again should fail.
+
+        try
+        {
+            HSS.generateSignature(shard, "Cats".getBytes());
+            fail();
+        }
+        catch (Exception ex)
+        {
+            assertEquals("hss private key shard is exhausted", ex.getMessage());
+        }
+
+
+        System.out.println();
 
     }
 
@@ -564,12 +626,13 @@ public class HSSTests
 
         assertTrue(keyPair.getUsagesRemaining() == 32768);
 
+        int mod = 256;
         try
         {
             while (ctr < 32769) // Just a number..
             {
 
-                if (ctr % 1024 == 0)
+                if (ctr % mod == 0)
                 {
                     //
                     // We don't want to check every key.
@@ -578,9 +641,35 @@ public class HSSTests
 
                     Pack.intToBigEndian(ctr, message, 0);
                     HSSSignature sig = HSS.generateSignature(keyPair, message);
+
+                    assertEquals(ctr % 1024, sig.getSignature().getQ());
+
+                    // Check there was a post increment in the tail end LMS key.
+                    assertEquals("" + ctr, (ctr % 1024) + 1, keyPair.getKeys().get(keyPair.getL() - 1).getIndex());
+
+                    assertEquals(ctr + 1, keyPair.getIndex());
+
+
+                    // Validate the heirarchial path building was correct.
+
+                    long[] qValues = new long[keyPair.getKeys().size()];
+                    long q = ctr;
+
+                    for (int t = keyPair.getKeys().size() - 1; t >= 0; t--)
+                    {
+                        LMSigParameters sigParameters = keyPair.getKeys().get(t).getSigParameters();
+                        int mask = (1 << sigParameters.getH()) - 1;
+                        qValues[t] = q & mask;
+                        q >>>= sigParameters.getH();
+                    }
+
+                    for (int t = 0; t < keyPair.getKeys().size(); t++)
+                    {
+                        assertEquals("" + ctr, keyPair.getKeys().get(t).getIndex() - 1, qValues[t]);
+                    }
+
+
                     assertTrue(HSS.verifySignature(pk, sig, message));
-
-
                     assertTrue(sig.getSignature().getParameter().getType() == LMSigParameters.lms_sha256_n32_h10.getType());
 
                     {
@@ -628,8 +717,7 @@ public class HSSTests
                 else
                 {
                     // Skip some keys.
-                    LMSPrivateKeyParameters lmsKey = keyPair.getNextSigningKey();
-                    lmsKey.getNextOtsPrivateKey();
+                    keyPair.incIndex();
                 }
 
                 ctr++;
@@ -640,6 +728,7 @@ public class HSSTests
         }
         catch (ExhaustedPrivateKeyException ex)
         {
+            ex.printStackTrace();
             assertTrue(keyPair.getUsagesRemaining() == 0);
             assertTrue(ctr == 32768);
             assertTrue(ex.getMessage().contains("hss private key is exhausted"));
