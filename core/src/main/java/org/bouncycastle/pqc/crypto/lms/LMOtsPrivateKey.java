@@ -22,6 +22,7 @@ class LMOtsPrivateKey
         return derive;
     }
 
+
     public LMOtsParameters getParameter()
     {
         return parameter;

@@ -4,13 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.util.io.Streams;
 
 public class HSSPrivateKeyParameters
@@ -21,7 +19,9 @@ public class HSSPrivateKeyParameters
     private final boolean limited;
     private List<LMSPrivateKeyParameters> keys;
     private List<LMSSignature> sig;
-    private final int maximumKeys;
+    private final long indexLimit;
+    private long index = 0;
+
 
     public HSSPrivateKeyParameters(int l, LMSPrivateKeyParameters[] keys, LMSSignature[] sig)
     {
@@ -38,15 +38,11 @@ public class HSSPrivateKeyParameters
         {
             m *= pk.getMaxQ();
         }
-        maximumKeys = m;
+        indexLimit = m;
     }
 
-    private HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig)
-    {
-        this(l, keys, sig, false);
-    }
 
-    private HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, boolean limited)
+    private HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit, boolean limited)
     {
         super(true);
 
@@ -54,14 +50,9 @@ public class HSSPrivateKeyParameters
         this.keys = Collections.unmodifiableList(new ArrayList<LMSPrivateKeyParameters>(keys));
         this.sig = Collections.unmodifiableList(new ArrayList<LMSSignature>(sig));
         this.rootKey = this.keys.get(0);
+        this.index = index;
+        this.indexLimit = indexLimit;
         this.limited = limited;
-
-        int m = 1;
-        for (LMSPrivateKeyParameters pk : keys)
-        {
-            m *= pk.getMaxQ();
-        }
-        maximumKeys = m;
     }
 
     public static HSSPrivateKeyParameters getInstance(Object src)
@@ -78,6 +69,10 @@ public class HSSPrivateKeyParameters
                 throw new IllegalStateException("unknown version for hss private key");
             }
             int d = ((DataInputStream)src).readInt();
+            int index = ((DataInputStream)src).readInt();
+            int maxIndex = ((DataInputStream)src).readInt();
+            boolean limited = ((DataInputStream)src).readBoolean();
+
 
             ArrayList<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>();
             ArrayList<LMSSignature> signatures = new ArrayList<LMSSignature>();
@@ -92,7 +87,7 @@ public class HSSPrivateKeyParameters
                 signatures.add(LMSSignature.getInstance(src));
             }
 
-            return new HSSPrivateKeyParameters(d, keys, signatures);
+            return new HSSPrivateKeyParameters(d, keys, signatures, index, maxIndex, limited);
 
         }
         else if (src instanceof byte[])
@@ -125,98 +120,99 @@ public class HSSPrivateKeyParameters
         return l;
     }
 
-    public long getIndex()
+    public synchronized long getIndex()
     {
-        long used = 0;
-
-        int last = keys.size() - 1;
-
-        for (int t = 0; t < keys.size(); t++)
-        {
-            LMSPrivateKeyParameters key = keys.get(t);
-            int lim = (1 << key.getSigParameters().getH());
-
-            if (t == last)
-            {
-                used += key.getIndex();
-            }
-            else
-            {
-                if (key.getIndex() - 1 > 0)
-                {
-                    used += (key.getIndex() - 1) * lim;
-                }
-            }
-        }
-
-        return used;
+        return index;
     }
 
-    public long getUsagesRemaining()
+    synchronized void incIndex()
     {
-        long used = 0;
-        int last = keys.size() - 1;
-
-
-        for (int t = 0; t < keys.size(); t++)
-        {
-            LMSPrivateKeyParameters key = keys.get(t);
-            int lim = (1 << key.getSigParameters().getH());
-
-            if (t == last)
-            {
-                used += key.getIndex();
-            }
-
-
-            if (t > 0 && keys.get(t - 1).getIndex() - 1 > 0)
-            {
-                used += (keys.get(t - 1).getIndex() - 1) * lim;
-            }
-
-        }
-
-        return maximumKeys - used;
+        index++;
     }
 
-    synchronized LMSPrivateKeyParameters getNextSigningKey()
+    public LMSPrivateKeyParameters getRootKey()
     {
-        //
-        // Algorithm 8
-        //
-        // Step 1.
-
-        int L = this.getL();
-
-        int d = L;
-        List<LMSPrivateKeyParameters> prv = this.getKeys();
-        while (prv.get(d - 1).getUsagesRemaining() == 0)
-        {
-            if (limited || d == 1) // we've exhausted the zero layer.
-            {
-                throw new ExhaustedPrivateKeyException("hss private key is exhausted");
-            }
-            d = d - 1;
-        }
-
-        while (d < L)
-        {
-            this.replaceConsumedKey(d);
-            d = d + 1;
-        }
-
-        return this.getKeys().get(L - 1);
+        return rootKey;
     }
 
-    public HSSPrivateKeyParameters getNextKey()
+    protected void updateHierarchy(LMSPrivateKeyParameters[] newKeys, LMSSignature[] newSig)
     {
         synchronized (this)
         {
-            HSSPrivateKeyParameters keyParameters = this.extractKeyShard(1);
-
-            return keyParameters;
+            keys = Collections.unmodifiableList(Arrays.asList(newKeys));
+            sig = Collections.unmodifiableList(Arrays.asList(newSig));
         }
     }
+
+    public boolean isLimited()
+    {
+        return limited;
+    }
+
+    public long getIndexLimit()
+    {
+        return indexLimit;
+    }
+
+    //        long used = 0;
+//
+//        int last = keys.size() - 1;
+//
+//        for (int t = 0; t < keys.size(); t++)
+//        {
+//            LMSPrivateKeyParameters key = keys.get(t);
+//            int lim = (1 << key.getSigParameters().getH());
+//
+//            if (t == last)
+//            {
+//                used += key.getIndex();
+//            }
+//            else
+//            {
+//                if (key.getIndex() - 1 > 0)
+//                {
+//                    used += (key.getIndex() - 1) * lim;
+//                }
+//            }
+//        }
+//
+//        return used;
+
+
+    public long getUsagesRemaining()
+    {
+        return indexLimit - index;
+    }
+
+//    synchronized LMSPrivateKeyParameters getNextSigningKey()
+//    {
+//        //
+//        // Algorithm 8
+//        //
+//        // Step 1.
+//
+//        int L = this.getL();
+//
+//        int d = L;
+//        List<LMSPrivateKeyParameters> prv = this.getKeys();
+//        while (prv.get(d - 1).getUsagesRemaining() == 0)
+//        {
+//            if (limited || d == 1) // we've exhausted the zero layer.
+//            {
+//                throw new ExhaustedPrivateKeyException("hss private key is exhausted");
+//            }
+//            d = d - 1;
+//        }
+//
+//        while (d < L)
+//        {
+//            this.replaceConsumedKey(d);
+//            d = d + 1;
+//        }
+//
+//        return this.getKeys().get(L - 1);
+//    }
+
 
     /**
      * Return a key that can be used usageCount times.
@@ -231,16 +227,23 @@ public class HSSPrivateKeyParameters
     {
         synchronized (this)
         {
-            LMSPrivateKeyParameters sKey = this.getKeys().get(getL() - 1);
-            if (sKey.getUsagesRemaining() < usageCount)
+
+            if (getUsagesRemaining() < usageCount)
             {
                 throw new IllegalArgumentException("usageCount exceeds usages remaining in current leaf");
             }
+
+            long maxIndexForShard = index + usageCount;
+            long shartStartIndex = index;
+
+            //
+            // Move this keys index along
+            //
+            index += usageCount;
+
             List<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>(this.getKeys());
-
-            keys.set(getL() - 1, sKey.extractKeyShard(usageCount));
-
-            return new HSSPrivateKeyParameters(l, keys, sig, true);
+            List<LMSSignature> sig = new ArrayList<LMSSignature>(this.getSig());
+            return new HSSPrivateKeyParameters(l, keys, sig, shartStartIndex, maxIndexForShard, true);
         }
     }
 
@@ -258,6 +261,7 @@ public class HSSPrivateKeyParameters
     {
         return new HSSPublicKeyParameters(l, rootKey.getPublicKey());
     }
+
 
     private void replaceConsumedKey(int d)
     {
@@ -290,6 +294,7 @@ public class HSSPrivateKeyParameters
 
     }
 
+    @Override
     public boolean equals(Object o)
     {
         if (this == o)
@@ -307,24 +312,39 @@ public class HSSPrivateKeyParameters
         {
             return false;
         }
+        if (limited != that.limited)
+        {
+            return false;
+        }
+        if (index != that.index)
+        {
+            return false;
+        }
+        if (indexLimit != that.indexLimit)
+        {
+            return false;
+        }
+        if (rootKey != null ? !rootKey.equals(that.rootKey) : that.rootKey != null)
+        {
+            return false;
+        }
         if (keys != null ? !keys.equals(that.keys) : that.keys != null)
         {
             return false;
         }
-        if (sig != null ? !sig.equals(that.sig) : that.sig != null)
-        {
-            return false;
-        }
-        return rootKey != null ? rootKey.equals(that.rootKey) : that.rootKey == null;
+        return sig != null ? sig.equals(that.sig) : that.sig == null;
     }
 
     @Override
     public int hashCode()
     {
-        int result = l;
+        int result = rootKey != null ? rootKey.hashCode() : 0;
+        result = 31 * result + l;
+        result = 31 * result + (limited ? 1 : 0);
         result = 31 * result + (keys != null ? keys.hashCode() : 0);
         result = 31 * result + (sig != null ? sig.hashCode() : 0);
-        result = 31 * result + (rootKey != null ? rootKey.hashCode() : 0);
+        result = 31 * result + (int)(index ^ (index >>> 32));
+        result = 31 * result + (int)(indexLimit ^ (indexLimit >>> 32));
         return result;
     }
 
@@ -338,7 +358,10 @@ public class HSSPrivateKeyParameters
 
         Composer composer = Composer.compose()
             .u32str(0) // Version.
-            .u32str(l); // Depth
+            .u32str(l)
+            .u32str(index)
+            .u32str(indexLimit)
+            .bool(limited); // Depth
 
         for (LMSPrivateKeyParameters key : keys)
         {
