@@ -179,4 +179,10 @@ public class Composer
 
         return this;
     }
+
+    public Composer bool(boolean v)
+    {
+        bos.write(v ? 1 : 0);
+        return this;
+    }
 }
