@@ -137,7 +137,7 @@ public class LMSPrivateKeyParameters
         return q;
     }
 
-    public synchronized void incIndex()
+    synchronized void incIndex()
     {
         q++;
     }
@@ -196,11 +196,6 @@ public class LMSPrivateKeyParameters
         return Arrays.clone(I);
     }
 
-    public int getMaxQ()
-    {
-        return maxQ;
-    }
-
     public byte[] getMasterSecret()
     {
         return Arrays.clone(masterSecret);
@@ -225,24 +220,6 @@ public class LMSPrivateKeyParameters
             return publicKey;
         }
     }
-
-    public byte[] getT1()
-    {
-        synchronized (this)
-        {
-            // if we have a T array then use that.
-            if (T1 == null)
-            {
-                //
-                // Otherwise use the Appendix C alg to calculate the T1 value.
-                //
-                T1 = getPublicKey().getT1();
-            }
-            return T1;
-        }
-
-    }
-
 
     @Override
     public boolean equals(Object o)
