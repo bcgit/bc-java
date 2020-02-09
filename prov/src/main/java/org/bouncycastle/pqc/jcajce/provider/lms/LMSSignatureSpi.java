@@ -11,7 +11,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSSigner;
@@ -79,10 +78,6 @@ public class LMSSignatureSpi
 
             if (param instanceof HSSPrivateKeyParameters)
             {
-                if (random != null)
-                {
-                    param = new ParametersWithRandom(param, random);
-                }
                 signer = new HSSSigner();
             }
             else
