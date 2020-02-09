@@ -58,21 +58,6 @@ class LMS
 
         LMOtsSignature ots_signature = LM_OTS.lm_ots_generate_signature(otsPk, message, false);
 
-        // Step 3;
-//        LMOtsSignature ots_signature = LM_OTS.generateSignature(
-//            LmOtsParameters.getOtsParameter(privateKey.getLmOtsType()),
-//            ,
-//            message,
-//            source);
-
-
-        // Step 4;
-        //  int q = privateKey.getQ();
-
-
-        // byte[][] T = generateTArray(privateKey,privateKey.getPublicKey());
-
-
         int i = 0;
         int r = (1 << h) + q;
         byte[][] path = new byte[h][];
@@ -88,57 +73,6 @@ class LMS
         return new LMSSignature(q, ots_signature, lmsParameter, path);
     }
 
-    static LMSSignature generateSignWithCurrentOTSKey(LMSPrivateKeyParameters privateKey, byte[] message)
-    {
-
-        //
-        // Get T from the public key.
-        // This may cause the public key to be generated.
-        //
-        // byte[][] T = new byte[privateKey.getMaxQ()][];
-
-        // Step 1.
-        LMSigParameters lmsParameter = privateKey.getSigParameters();
-
-        // Step 2
-        int h = lmsParameter.getH();
-
-        int q = privateKey.getIndex();
-        LMOtsPrivateKey otsPk = privateKey.getCurrentOTSKey();
-
-        // LmsPrivateKey.KeyWithQ keyWithQ = privateKey.getNextOtsPrivateKey();
-
-        LMOtsSignature ots_signature = LM_OTS.lm_ots_generate_signature(otsPk, message, false);
-
-        // Step 3;
-//        LMOtsSignature ots_signature = LM_OTS.generateSignature(
-//            LmOtsParameters.getOtsParameter(privateKey.getLmOtsType()),
-//            ,
-//            message,
-//            source);
-
-
-        // Step 4;
-        //  int q = privateKey.getQ();
-
-
-        // byte[][] T = generateTArray(privateKey,privateKey.getPublicKey());
-
-
-        int i = 0;
-        int r = (1 << h) + q;
-        byte[][] path = new byte[h][];
-
-        Digest digest = DigestUtil.getDigest(privateKey.getSigParameters().getDigestOID());
-        while (i < h)
-        {
-            int tmp = (r / (1 << i)) ^ 1;
-            path[i] = LMS.findT(tmp, privateKey, digest);
-            i++;
-        }
-
-        return new LMSSignature(q, ots_signature, lmsParameter, path);
-    }
 
 
 

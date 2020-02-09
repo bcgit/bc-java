@@ -480,11 +480,11 @@ public class HSSTests
         //
         assertEquals(1024, keyPair.getUsagesRemaining());
 
-        keyPair.incIndex();
-        keyPair.incIndex();
-        keyPair.incIndex();
-        keyPair.incIndex();
-        keyPair.incIndex();
+        HSS.incrementIndex(keyPair);
+        HSS.incrementIndex(keyPair);
+        HSS.incrementIndex(keyPair);
+        HSS.incrementIndex(keyPair);
+        HSS.incrementIndex(keyPair);
 
         assertEquals(5, keyPair.getIndex()); // Next key is at index 5!
 
@@ -505,7 +505,7 @@ public class HSSTests
         //
         for (int t = 0; t < 17; t++)
         {
-            keyPair.incIndex();
+            HSS.incrementIndex(keyPair);
         }
 
         // We have used 32 keys.
@@ -536,7 +536,7 @@ public class HSSTests
         assertEquals(1024, keyPair.getIndexLimit());
         assertEquals(0, keyPair.getIndex());
         assertFalse(keyPair.isLimited());
-        keyPair.incIndex();
+        HSS.incrementIndex(keyPair);
 
 
         //
@@ -554,7 +554,7 @@ public class HSSTests
         int t = 47;
         while (--t >= 0)
         {
-            shard.incIndex();
+            HSS.incrementIndex(shard);
         }
 
         HSSSignature sig = HSS.generateSignature(shard, "Cats".getBytes());
@@ -564,8 +564,6 @@ public class HSSTests
         //
         assertTrue(HSS.verifySignature(keyPair.getPublicKey(), sig, "Cats".getBytes()));
         assertTrue(HSS.verifySignature(shard.getPublicKey(), sig, "Cats".getBytes()));
-
-        assertFalse(shard.getKeys().get(shard.getL() - 1).equals(keyPair.getKeys().get(keyPair.getL() - 1)));
 
         // Signing again should fail.
 
@@ -578,6 +576,9 @@ public class HSSTests
         {
             assertEquals("hss private key shard is exhausted", ex.getMessage());
         }
+
+        // Should work without throwing.
+        HSS.generateSignature(keyPair, "Cats".getBytes());
 
 
         System.out.println();
@@ -717,7 +718,7 @@ public class HSSTests
                 else
                 {
                     // Skip some keys.
-                    keyPair.incIndex();
+                    HSS.incrementIndex(keyPair);
                 }
 
                 ctr++;
