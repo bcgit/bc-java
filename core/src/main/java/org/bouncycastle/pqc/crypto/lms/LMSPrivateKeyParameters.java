@@ -17,9 +17,9 @@ public class LMSPrivateKeyParameters
     private final LMOtsParameters otsParameters;
     private final int maxQ;
     private final byte[] masterSecret;
-    
+
     private int q;
-    
+
     //
     // These are not final because they can be generated.
     // They also do not need to be persisted.
@@ -49,6 +49,20 @@ public class LMSPrivateKeyParameters
         else if (src instanceof DataInputStream)
         {
             DataInputStream dIn = (DataInputStream)src;
+
+            /*
+            .u32str(0) // version
+            .u32str(parameters.getType()) // type
+            .u32str(otsParameters.getType()) // ots type
+            .bytes(I) // I at 16 bytes
+            .u32str(q) // q
+            .u32str(maxQ) // maximum q
+            .u32str(masterSecret.length) // length of master secret.
+            .bytes(masterSecret) // the master secret
+            .build();
+             */
+
+
             if (dIn.readInt() != 0)
             {
                 throw new IllegalStateException("expected version 0 lms private key");
@@ -86,7 +100,10 @@ public class LMSPrivateKeyParameters
             }
             finally
             {
-                if (in != null) in.close();
+                if (in != null)
+                {
+                    in.close();
+                }
             }
         }
         else if (src instanceof InputStream)
@@ -95,18 +112,6 @@ public class LMSPrivateKeyParameters
         }
 
         throw new IllegalArgumentException("cannot parse " + src);
-    }
-
-    LMOtsPrivateKey getOTSKey(int q)
-    {
-        synchronized (this)
-        {
-            if (q >= maxQ)
-            {
-                throw new ExhaustedPrivateKeyException("ots private keys expired");
-            }
-            return new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
-        }
     }
 
 
@@ -132,6 +137,11 @@ public class LMSPrivateKeyParameters
         return q;
     }
 
+    public synchronized void incIndex()
+    {
+        q++;
+    }
+
     LMOtsPrivateKey getNextOtsPrivateKey()
     {
         synchronized (this)
@@ -141,7 +151,7 @@ public class LMSPrivateKeyParameters
                 throw new ExhaustedPrivateKeyException("ots private key exhausted");
             }
             LMOtsPrivateKey otsPrivateKey = new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
-            q++;
+            incIndex();
             return otsPrivateKey;
         }
     }
@@ -152,6 +162,7 @@ public class LMSPrivateKeyParameters
      * <p>
      * Note: this will use the range [index...index + usageCount) for the current key.
      * </p>
+     *
      * @param usageCount the number of usages the key should have.
      * @return a key based on the current key that can be used usageCount times.
      */
