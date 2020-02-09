@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLSocket;
@@ -518,21 +519,6 @@ class TestUtils
         MessageDigest calc = MessageDigest.getInstance("SHA1");
 
         return calc.digest(bytes);
-    }
-
-    private static class AtomicLong
-    {
-        private long value;
-
-        public AtomicLong(long value)
-        {
-            this.value = value;
-        }
-
-        public synchronized long getAndIncrement()
-        {
-            return value++;
-        }
     }
 
     // needed for FIPS.

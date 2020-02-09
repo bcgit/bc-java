@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -438,20 +439,5 @@ class TestUtils
         digest.update(bytes, 0, bytes.length);
         digest.doFinal(resBuf, 0);
         return resBuf;
-    }
-
-    private static class AtomicLong
-    {
-        private long value;
-
-        public AtomicLong(long value)
-        {
-            this.value = value;
-        }
-
-        public synchronized long getAndIncrement()
-        {
-            return value++;
-        }
     }
 }
