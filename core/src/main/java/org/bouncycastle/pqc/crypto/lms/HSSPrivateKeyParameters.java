@@ -144,39 +144,15 @@ public class HSSPrivateKeyParameters
         }
     }
 
-    public boolean isLimited()
+    boolean isLimited()
     {
         return limited;
     }
 
-    public long getIndexLimit()
+    long getIndexLimit()
     {
         return indexLimit;
     }
-
-    //        long used = 0;
-//
-//        int last = keys.size() - 1;
-//
-//        for (int t = 0; t < keys.size(); t++)
-//        {
-//            LMSPrivateKeyParameters key = keys.get(t);
-//            int lim = (1 << key.getSigParameters().getH());
-//
-//            if (t == last)
-//            {
-//                used += key.getIndex();
-//            }
-//            else
-//            {
-//                if (key.getIndex() - 1 > 0)
-//                {
-//                    used += (key.getIndex() - 1) * lim;
-//                }
-//            }
-//        }
-//
-//        return used;
 
 
     public long getUsagesRemaining()
@@ -184,35 +160,15 @@ public class HSSPrivateKeyParameters
         return indexLimit - index;
     }
 
-//    synchronized LMSPrivateKeyParameters getNextSigningKey()
-//    {
-//        //
-//        // Algorithm 8
-//        //
-//        // Step 1.
-//
-//        int L = this.getL();
-//
-//        int d = L;
-//        List<LMSPrivateKeyParameters> prv = this.getKeys();
-//        while (prv.get(d - 1).getUsagesRemaining() == 0)
-//        {
-//            if (limited || d == 1) // we've exhausted the zero layer.
-//            {
-//                throw new ExhaustedPrivateKeyException("hss private key is exhausted");
-//            }
-//            d = d - 1;
-//        }
-//
-//        while (d < L)
-//        {
-//            this.replaceConsumedKey(d);
-//            d = d + 1;
-//        }
-//
-//        return this.getKeys().get(L - 1);
-//    }
+    public HSSPrivateKeyParameters getNextKey()
+    {
+        synchronized (this)
+        {
+            HSSPrivateKeyParameters keyParameters = this.extractKeyShard(1);
 
+            return keyParameters;
+        }
+    }
 
     /**
      * Return a key that can be used usageCount times.
@@ -227,10 +183,9 @@ public class HSSPrivateKeyParameters
     {
         synchronized (this)
         {
-
             if (getUsagesRemaining() < usageCount)
             {
-                throw new IllegalArgumentException("usageCount exceeds usages remaining in current leaf");
+                throw new IllegalArgumentException("usageCount exceeds usages remaining");
             }
 
             long maxIndexForShard = index + usageCount;
@@ -243,16 +198,17 @@ public class HSSPrivateKeyParameters
 
             List<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>(this.getKeys());
             List<LMSSignature> sig = new ArrayList<LMSSignature>(this.getSig());
+
             return new HSSPrivateKeyParameters(l, keys, sig, shartStartIndex, maxIndexForShard, true);
         }
     }
 
-    public synchronized List<LMSPrivateKeyParameters> getKeys()
+    synchronized List<LMSPrivateKeyParameters> getKeys()
     {
         return keys;
     }
 
-    public synchronized List<LMSSignature> getSig()
+    synchronized List<LMSSignature> getSig()
     {
         return sig;
     }
@@ -260,38 +216,6 @@ public class HSSPrivateKeyParameters
     public synchronized HSSPublicKeyParameters getPublicKey()
     {
         return new HSSPublicKeyParameters(l, rootKey.getPublicKey());
-    }
-
-
-    private void replaceConsumedKey(int d)
-    {
-
-        SeedDerive deriver = keys.get(d - 1).getCurrentOTSKey().getDerivationFunction();
-        deriver.setJ(~1);
-        byte[] childRootSeed = new byte[32];
-        deriver.deriveSeed(childRootSeed, true);
-        byte[] postImage = new byte[32];
-        deriver.deriveSeed(postImage, false);
-        byte[] childI = new byte[16];
-        System.arraycopy(postImage, 0, childI, 0, childI.length);
-
-        List<LMSPrivateKeyParameters> newKeys = new ArrayList<LMSPrivateKeyParameters>(keys);
-
-        //
-        // We need the parameters from the LMS key we are replacing.
-        //
-        LMSPrivateKeyParameters oldPk = keys.get(d);
-
-
-        newKeys.set(d, LMS.generateKeys(oldPk.getSigParameters(), oldPk.getOtsParameters(), 0, childI, childRootSeed));
-
-        List<LMSSignature> newSig = new ArrayList<LMSSignature>(sig);
-
-        newSig.set(d - 1, LMS.generateSign(newKeys.get(d - 1), newKeys.get(d).getPublicKey().toByteArray()));
-
-        this.keys = Collections.unmodifiableList(newKeys);
-        this.sig = Collections.unmodifiableList(newSig);
-
     }
 
     @Override

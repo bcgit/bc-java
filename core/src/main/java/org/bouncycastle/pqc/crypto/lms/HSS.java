@@ -97,7 +97,6 @@ class HSS
 
             LMSPrivateKeyParameters originalRootKey = keyPair.getRootKey();
 
-
             //
             // We need to replace the root key to a new q value.
             //
@@ -110,10 +109,8 @@ class HSS
                 changed = true;
             }
 
-
             for (int i = 1; i < qTreePath.length; i++)
             {
-
                 LMSPrivateKeyParameters intermediateKey = keys[i - 1];
 
                 byte[] childI = new byte[16];
@@ -175,9 +172,7 @@ class HSS
                         (int)qTreePath[i], childI, childSeed);
                     changed = true;
                 }
-
             }
-
 
             if (changed)
             {
