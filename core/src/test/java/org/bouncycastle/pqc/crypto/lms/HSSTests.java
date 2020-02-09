@@ -457,6 +457,126 @@ public class HSSTests
 
     }
 
+
+    public void testVectorsFromReference_Expanded()
+        throws Exception
+    {
+
+        String[] lines = new String(Streams.readAll(HSSTests.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/lms/expansion.txt"))).split("\n");
+
+        int d = 0;
+        List<LMSigParameters> lmsParameters = new ArrayList<LMSigParameters>();
+        List<LMOtsParameters> lmOtsParameters = new ArrayList<LMOtsParameters>();
+        byte[] message = null;
+        byte[] hssPubEnc = null;
+        byte[] encodedSigFromVector = null;
+        ByteArrayOutputStream fixedESBuffer = new ByteArrayOutputStream();
+        List<byte[]> sigVectors = new ArrayList<byte[]>();
+
+
+        int j = 0;
+
+        for (String line : lines)
+        {
+            line = line.trim();
+            if (line.startsWith("#") || line.length() == 0)
+            {
+                continue;
+            }
+
+            if (line.startsWith("Depth:"))
+            {
+                d = Integer.parseInt(line.substring("Depth:".length()).trim());
+            }
+            else if (line.startsWith("LMType:"))
+            {
+                int typ = Integer.parseInt(line.substring("LMType:".length()).trim());
+                lmsParameters.add(LMSigParameters.getParametersForType(typ));
+            }
+            else if (line.startsWith("LMOtsType:"))
+            {
+                int typ = Integer.parseInt(line.substring("LMOtsType:".length()).trim());
+                lmOtsParameters.add(LMOtsParameters.getParametersForType(typ));
+            }
+            else if (line.startsWith("Rand:"))
+            {
+                fixedESBuffer.write(Hex.decode(line.substring("Rand:".length()).trim()));
+            }
+            else if (line.startsWith("HSSPublicKey:"))
+            {
+                hssPubEnc = Hex.decode(line.substring("HSSPublicKey:".length()).trim());
+            }
+            else if (line.startsWith("Message:"))
+            {
+                message = Hex.decode(line.substring("Message:".length()).trim());
+
+            }
+            else if (line.startsWith("Signature:"))
+            {
+                sigVectors.add(Hex.decode(line.substring("Signature:".length()).trim()));
+            }
+        }
+
+        //
+        // Assumes Signature is the last element in the set of vectors.
+        //
+        FixedSecureRandom fixRnd = new FixedSecureRandom(fixedESBuffer.toByteArray());
+        fixedESBuffer.reset();
+
+        List<LMSParameters> lmsParams = new ArrayList<LMSParameters>();
+
+        for (int i = 0; i != lmsParameters.size(); i++)
+        {
+            lmsParams.add(new LMSParameters(lmsParameters.get(i), lmOtsParameters.get(i)));
+        }
+
+        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+            new HSSKeyGenerationParameters(
+                lmsParams.toArray(new LMSParameters[lmsParams.size()]), fixRnd)
+        );
+
+        assertTrue(Arrays.areEqual(hssPubEnc, keyPair.getPublicKey().getEncoded()));
+
+        HSSPublicKeyParameters pubKeyFromVector = HSSPublicKeyParameters.getInstance(hssPubEnc);
+        HSSPublicKeyParameters pubKeyGenerated = keyPair.getPublicKey();
+
+
+        assertEquals(1024, keyPair.getUsagesRemaining());
+        assertEquals(1024, keyPair.getIndexLimit());
+
+        int c = 0;
+        for (int i = 0; i < keyPair.getIndexLimit(); i++)
+        {
+
+            if (i % 5 == 0)
+            {
+                HSSSignature sigCalculated = HSS.generateSignature(keyPair, message);
+                assertTrue(Arrays.areEqual(sigCalculated.getEncoded(), sigVectors.get(c)));
+
+                assertTrue(HSS.verifySignature(pubKeyFromVector, sigCalculated, message));
+                assertTrue(HSS.verifySignature(pubKeyGenerated, sigCalculated, message));
+
+                HSSSignature sigFromVector = HSSSignature.getInstance(sigVectors.get(c), pubKeyFromVector.getL());
+
+                assertTrue(HSS.verifySignature(pubKeyFromVector, sigFromVector, message));
+                assertTrue(HSS.verifySignature(pubKeyGenerated, sigFromVector, message));
+
+
+                assertTrue(sigCalculated.equals(sigFromVector));
+
+
+                c++;
+            }
+            else
+            {
+                HSS.incrementIndex(keyPair);
+            }
+        }
+
+
+    }
+
+
     /**
      * Test remaining calculation is accurate and a new key is generated when
      * all the ots keys for that level are consumed.
