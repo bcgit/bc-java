@@ -686,7 +686,7 @@ public class HSSTests
         assertEquals(1024, keyPair.getUsagesRemaining());
         assertEquals(1024, keyPair.getIndexLimit());
         assertEquals(0, keyPair.getIndex());
-        assertFalse(keyPair.isLimited());
+        assertFalse(keyPair.isShard());
         HSS.incrementIndex(keyPair);
 
 
@@ -694,7 +694,7 @@ public class HSSTests
         // Take a shard that should cross boundaries
         //
         HSSPrivateKeyParameters shard = keyPair.extractKeyShard(48);
-        assertTrue(shard.isLimited());
+        assertTrue(shard.isShard());
         assertEquals(48, shard.getUsagesRemaining());
         assertEquals(49, shard.getIndexLimit());
         assertEquals(1, shard.getIndex());

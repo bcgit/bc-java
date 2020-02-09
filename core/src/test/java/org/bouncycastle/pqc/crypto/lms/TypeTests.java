@@ -16,12 +16,12 @@ public class TypeTests
     public void testTypeForType()
         throws Exception
     {
+        LMSSignature dummySig = new LMSSignature(0, null, null, null);
+
         {
-
-
             Object o = new HSSPrivateKeyParameters(0,
-                Arrays.asList(new LMSPrivateKeyParameters(null, null, 0, null, 0, null)),
-                Arrays.asList(new LMSSignature[0]), 1, 2, false);
+                Arrays.asList(new LMSPrivateKeyParameters(LMSigParameters.lms_sha256_n32_h5, null, 0, null, 0, new byte[32])),
+                Arrays.asList(dummySig), 1, 2);
             assert (o == HSSPrivateKeyParameters.getInstance(o));
         }
 
