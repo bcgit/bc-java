@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.lms;
 
+import java.util.Arrays;
+
 import junit.framework.TestCase;
 
 public class TypeTests
@@ -15,7 +17,11 @@ public class TypeTests
         throws Exception
     {
         {
-            Object o = new HSSPrivateKeyParameters(0, new LMSPrivateKeyParameters[]{new LMSPrivateKeyParameters(null, null, 0, null, 0, null)}, new LMSSignature[0]);
+
+
+            Object o = new HSSPrivateKeyParameters(0,
+                Arrays.asList(new LMSPrivateKeyParameters(null, null, 0, null, 0, null)),
+                Arrays.asList(new LMSSignature[0]), 1, 2, false);
             assert (o == HSSPrivateKeyParameters.getInstance(o));
         }
 
