@@ -15,14 +15,13 @@ public class HSSPrivateKeyParameters
     extends LMSKeyParameters
 {
     private final int l;
-    private final boolean limited;
+    private final boolean isShard;
     private List<LMSPrivateKeyParameters> keys;
     private List<LMSSignature> sig;
     private final long indexLimit;
     private long index = 0;
 
-
-    public HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit, boolean limited)
+    public HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit)
     {
         super(true);
 
@@ -31,9 +30,25 @@ public class HSSPrivateKeyParameters
         this.sig = Collections.unmodifiableList(sig);
         this.index = index;
         this.indexLimit = indexLimit;
-        this.limited = limited;
+        this.isShard = false;
+
+        //
+        // Correct Intermediate LMS values will be constructed during reset to index.
+        //
+        resetKeyToIndex();
     }
 
+    private HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit, boolean isShard)
+    {
+        super(true);
+
+        this.l = l;
+        this.keys = Collections.unmodifiableList(keys);
+        this.sig = Collections.unmodifiableList(sig);
+        this.index = index;
+        this.indexLimit = indexLimit;
+        this.isShard = isShard;
+    }
 
     public static HSSPrivateKeyParameters getInstance(Object src)
         throws IOException
@@ -53,7 +68,6 @@ public class HSSPrivateKeyParameters
             int maxIndex = ((DataInputStream)src).readInt();
             boolean limited = ((DataInputStream)src).readBoolean();
 
-
             ArrayList<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>();
             ArrayList<LMSSignature> signatures = new ArrayList<LMSSignature>();
 
@@ -68,7 +82,6 @@ public class HSSPrivateKeyParameters
             }
 
             return new HSSPrivateKeyParameters(d, keys, signatures, index, maxIndex, limited);
-
         }
         else if (src instanceof byte[])
         {
@@ -85,7 +98,6 @@ public class HSSPrivateKeyParameters
                     in.close();
                 }
             }
-
         }
         else if (src instanceof InputStream)
         {
@@ -94,7 +106,6 @@ public class HSSPrivateKeyParameters
 
         throw new IllegalArgumentException("cannot parse " + src);
     }
-
 
     public int getL()
     {
@@ -132,23 +143,22 @@ public class HSSPrivateKeyParameters
         }
     }
 
-    public boolean isLimited()
+    boolean isShard()
     {
-        return limited;
+        return isShard;
     }
 
-    public long getIndexLimit()
+    long getIndexLimit()
     {
         return indexLimit;
     }
-
 
     public long getUsagesRemaining()
     {
         return indexLimit - index;
     }
 
-    public LMSPrivateKeyParameters getRootKey()
+    LMSPrivateKeyParameters getRootKey()
     {
         return keys.get(0);
     }
@@ -192,12 +202,12 @@ public class HSSPrivateKeyParameters
     }
 
 
-    public synchronized List<LMSPrivateKeyParameters> getKeys()
+    synchronized List<LMSPrivateKeyParameters> getKeys()
     {
         return keys;
     }
 
-    public synchronized List<LMSSignature> getSig()
+    synchronized List<LMSSignature> getSig()
     {
         return sig;
     }
@@ -376,7 +386,7 @@ public class HSSPrivateKeyParameters
         {
             return false;
         }
-        if (limited != that.limited)
+        if (isShard != that.isShard)
         {
             return false;
         }
@@ -408,7 +418,7 @@ public class HSSPrivateKeyParameters
             .u32str(l)
             .u32str(index)
             .u32str(indexLimit)
-            .bool(limited); // Depth
+            .bool(isShard); // Depth
 
         for (LMSPrivateKeyParameters key : keys)
         {
@@ -427,7 +437,7 @@ public class HSSPrivateKeyParameters
     public int hashCode()
     {
         int result = l;
-        result = 31 * result + (limited ? 1 : 0);
+        result = 31 * result + (isShard ? 1 : 0);
         result = 31 * result + keys.hashCode();
         result = 31 * result + sig.hashCode();
         result = 31 * result + (int)(indexLimit ^ (indexLimit >>> 32));
