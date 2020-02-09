@@ -728,7 +728,6 @@ public class HSSTests
         }
         catch (ExhaustedPrivateKeyException ex)
         {
-            ex.printStackTrace();
             assertTrue(keyPair.getUsagesRemaining() == 0);
             assertTrue(ctr == 32768);
             assertTrue(ex.getMessage().contains("hss private key is exhausted"));
