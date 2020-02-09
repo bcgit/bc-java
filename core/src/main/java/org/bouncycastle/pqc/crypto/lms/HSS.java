@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.lms;
 import java.util.List;
 
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
-import org.bouncycastle.util.Arrays;
 
 class HSS
 {
@@ -59,7 +58,11 @@ class HSS
         //
         // New key with dummy values.
         //
-        HSSPrivateKeyParameters pk = new HSSPrivateKeyParameters(parameters.getDepth(), Arrays.asList(keys), Arrays.asList(sig), 0, hssKeyMaxIndex, false);
+        HSSPrivateKeyParameters pk = new HSSPrivateKeyParameters(
+            parameters.getDepth(),
+            java.util.Arrays.asList(keys),
+            java.util.Arrays.asList(sig),
+            0, hssKeyMaxIndex, false);
 
         //
         // Correct Intermediate LMS values will be constructed during reset to index.
