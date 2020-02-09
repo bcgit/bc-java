@@ -55,21 +55,11 @@ class HSS
             hssKeyMaxIndex *= 1 << parameters.getLmsParameters()[t].getLmsParam().getH();
         }
 
-        //
-        // New key with dummy values.
-        //
-        HSSPrivateKeyParameters pk = new HSSPrivateKeyParameters(
+        return new HSSPrivateKeyParameters(
             parameters.getDepth(),
             java.util.Arrays.asList(keys),
             java.util.Arrays.asList(sig),
-            0, hssKeyMaxIndex, false);
-
-        //
-        // Correct Intermediate LMS values will be constructed during reset to index.
-        //
-        pk.resetKeyToIndex();
-
-        return pk;
+            0, hssKeyMaxIndex);
     }
 
     /**
@@ -100,7 +90,7 @@ class HSS
             {
                 throw new ExhaustedPrivateKeyException(
                     "hss private key" +
-                        ((keyPair.isLimited()) ? " shard" : "") +
+                        ((keyPair.isShard()) ? " shard" : "") +
                         " is exhausted");
             }
 
@@ -115,7 +105,7 @@ class HSS
                 {
                     throw new ExhaustedPrivateKeyException(
                         "hss private key" +
-                            ((keyPair.isLimited()) ? " shard" : "") +
+                            ((keyPair.isShard()) ? " shard" : "") +
                             " is exhausted the maximum limit for this HSS private key");
                 }
             }
