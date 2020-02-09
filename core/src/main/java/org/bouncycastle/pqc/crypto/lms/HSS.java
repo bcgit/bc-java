@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.crypto.lms;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
+import org.bouncycastle.util.Arrays;
 
 class HSS
 {
