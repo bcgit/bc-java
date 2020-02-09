@@ -538,19 +538,50 @@ public class HSSTests
         assertTrue(Arrays.areEqual(hssPubEnc, keyPair.getPublicKey().getEncoded()));
 
         HSSPublicKeyParameters pubKeyFromVector = HSSPublicKeyParameters.getInstance(hssPubEnc);
-        HSSPublicKeyParameters pubKeyGenerated = keyPair.getPublicKey();
+        HSSPublicKeyParameters pubKeyGenerated = null;
 
 
         assertEquals(1024, keyPair.getUsagesRemaining());
         assertEquals(1024, keyPair.getIndexLimit());
 
+        //
+        // Split the space up with a shard.
+        //
+
+        HSSPrivateKeyParameters shard1 = keyPair.extractKeyShard(500);
+        pubKeyGenerated = shard1.getPublicKey();
+
+
+        HSSPrivateKeyParameters pair = shard1;
+
         int c = 0;
+        String exhaustionMessage = null;
         for (int i = 0; i < keyPair.getIndexLimit(); i++)
         {
+            if (i == 500)
+            {
+                try
+                {
+                    HSS.incrementIndex(pair);
+                    fail("shard should be exhausted.");
+                }
+                catch (ExhaustedPrivateKeyException ex)
+                {
+                    assertEquals("hss private key shard is exhausted", ex.getMessage());
+                }
+                pair = keyPair;
+                pubKeyGenerated = keyPair.getPublicKey();
+
+                assertEquals(pubKeyGenerated, shard1.getPublicKey());
+
+            }
+
 
             if (i % 5 == 0)
             {
-                HSSSignature sigCalculated = HSS.generateSignature(keyPair, message);
+
+
+                HSSSignature sigCalculated = HSS.generateSignature(pair, message);
                 assertTrue(Arrays.areEqual(sigCalculated.getEncoded(), sigVectors.get(c)));
 
                 assertTrue(HSS.verifySignature(pubKeyFromVector, sigCalculated, message));
@@ -569,7 +600,7 @@ public class HSSTests
             }
             else
             {
-                HSS.incrementIndex(keyPair);
+                HSS.incrementIndex(pair);
             }
         }
 
