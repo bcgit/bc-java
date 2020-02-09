@@ -14,7 +14,6 @@ import org.bouncycastle.util.io.Streams;
 public class HSSPrivateKeyParameters
     extends LMSKeyParameters
 {
-    private final LMSPrivateKeyParameters rootKey;
     private final int l;
     private final boolean limited;
     private List<LMSPrivateKeyParameters> keys;
@@ -23,37 +22,18 @@ public class HSSPrivateKeyParameters
     private long index = 0;
 
 
-    public HSSPrivateKeyParameters(int l, LMSPrivateKeyParameters[] keys, LMSSignature[] sig)
+    public HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit, boolean limited)
     {
         super(true);
 
         this.l = l;
-        this.keys = Collections.unmodifiableList(Arrays.asList(keys.clone()));
-        this.sig = Collections.unmodifiableList(Arrays.asList(sig.clone()));
-        this.rootKey = this.keys.get(0);
-        this.limited = false;
-
-        int m = 1;
-        for (LMSPrivateKeyParameters pk : keys)
-        {
-            m *= pk.getMaxQ();
-        }
-        indexLimit = m;
-    }
-
-
-    private HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit, boolean limited)
-    {
-        super(true);
-
-        this.l = l;
-        this.keys = Collections.unmodifiableList(new ArrayList<LMSPrivateKeyParameters>(keys));
-        this.sig = Collections.unmodifiableList(new ArrayList<LMSSignature>(sig));
-        this.rootKey = this.keys.get(0);
+        this.keys = Collections.unmodifiableList(keys);
+        this.sig = Collections.unmodifiableList(sig);
         this.index = index;
         this.indexLimit = indexLimit;
         this.limited = limited;
     }
+
 
     public static HSSPrivateKeyParameters getInstance(Object src)
         throws IOException
@@ -115,6 +95,7 @@ public class HSSPrivateKeyParameters
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
+
     public int getL()
     {
         return l;
@@ -130,9 +111,16 @@ public class HSSPrivateKeyParameters
         index++;
     }
 
-    public LMSPrivateKeyParameters getRootKey()
+    private static HSSPrivateKeyParameters makeCopy(HSSPrivateKeyParameters privateKeyParameters)
     {
-        return rootKey;
+        try
+        {
+            return HSSPrivateKeyParameters.getInstance(privateKeyParameters.getEncoded());
+        }
+        catch (Exception ex)
+        {
+            throw new RuntimeException(ex.getMessage(), ex);
+        }
     }
 
     protected void updateHierarchy(LMSPrivateKeyParameters[] newKeys, LMSSignature[] newSig)
@@ -154,65 +142,16 @@ public class HSSPrivateKeyParameters
         return indexLimit;
     }
 
-    //        long used = 0;
-//
-//        int last = keys.size() - 1;
-//
-//        for (int t = 0; t < keys.size(); t++)
-//        {
-//            LMSPrivateKeyParameters key = keys.get(t);
-//            int lim = (1 << key.getSigParameters().getH());
-//
-//            if (t == last)
-//            {
-//                used += key.getIndex();
-//            }
-//            else
-//            {
-//                if (key.getIndex() - 1 > 0)
-//                {
-//                    used += (key.getIndex() - 1) * lim;
-//                }
-//            }
-//        }
-//
-//        return used;
-
 
     public long getUsagesRemaining()
     {
         return indexLimit - index;
     }
 
-//    synchronized LMSPrivateKeyParameters getNextSigningKey()
-//    {
-//        //
-//        // Algorithm 8
-//        //
-//        // Step 1.
-//
-//        int L = this.getL();
-//
-//        int d = L;
-//        List<LMSPrivateKeyParameters> prv = this.getKeys();
-//        while (prv.get(d - 1).getUsagesRemaining() == 0)
-//        {
-//            if (limited || d == 1) // we've exhausted the zero layer.
-//            {
-//                throw new ExhaustedPrivateKeyException("hss private key is exhausted");
-//            }
-//            d = d - 1;
-//        }
-//
-//        while (d < L)
-//        {
-//            this.replaceConsumedKey(d);
-//            d = d + 1;
-//        }
-//
-//        return this.getKeys().get(L - 1);
-//    }
-
+    public LMSPrivateKeyParameters getRootKey()
+    {
+        return keys.get(0);
+    }
 
     /**
      * Return a key that can be used usageCount times.
@@ -243,9 +182,15 @@ public class HSSPrivateKeyParameters
 
             List<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>(this.getKeys());
             List<LMSSignature> sig = new ArrayList<LMSSignature>(this.getSig());
-            return new HSSPrivateKeyParameters(l, keys, sig, shartStartIndex, maxIndexForShard, true);
+
+            HSSPrivateKeyParameters shard = makeCopy(new HSSPrivateKeyParameters(l, keys, sig, shartStartIndex, maxIndexForShard, true));
+
+            resetKeyToIndex();
+
+            return shard;
         }
     }
+
 
     public synchronized List<LMSPrivateKeyParameters> getKeys()
     {
@@ -257,13 +202,131 @@ public class HSSPrivateKeyParameters
         return sig;
     }
 
-    public synchronized HSSPublicKeyParameters getPublicKey()
+    /**
+     * Reset to index will ensure that all LMS keys are correct for a given HSS index value.
+     * Normally LMS keys updated in sync with their parent HSS key but in cases of sharding
+     * the normal monotonic updating does not apply and the state of the LMS keys needs to be
+     * reset to match the current HSS index.
+     */
+    void resetKeyToIndex()
     {
-        return new HSSPublicKeyParameters(l, rootKey.getPublicKey());
+        // Extract the original keys
+        List<LMSPrivateKeyParameters> originalKeys = getKeys();
+
+
+        long[] qTreePath = new long[originalKeys.size()];
+        long q = getIndex();
+
+        for (int t = originalKeys.size() - 1; t >= 0; t--)
+        {
+            LMSigParameters sigParameters = originalKeys.get(t).getSigParameters();
+            int mask = (1 << sigParameters.getH()) - 1;
+            qTreePath[t] = q & mask;
+            q >>>= sigParameters.getH();
+        }
+
+        boolean changed = false;
+        LMSPrivateKeyParameters[] keys = originalKeys.toArray(new LMSPrivateKeyParameters[originalKeys.size()]);//  new LMSPrivateKeyParameters[originalKeys.size()];
+        LMSSignature[] sig = this.sig.toArray(new LMSSignature[this.sig.size()]);//   new LMSSignature[originalKeys.size() - 1];
+
+        LMSPrivateKeyParameters originalRootKey = this.getRootKey();
+
+
+        //
+        // We need to replace the root key to a new q value.
+        //
+        if (keys[0].getIndex() - 1 != qTreePath[0])
+        {
+            keys[0] = LMS.generateKeys(
+                originalRootKey.getSigParameters(),
+                originalRootKey.getOtsParameters(),
+                (int)qTreePath[0], originalRootKey.getI(), originalRootKey.getMasterSecret());
+            changed = true;
+        }
+
+
+        for (int i = 1; i < qTreePath.length; i++)
+        {
+
+            LMSPrivateKeyParameters intermediateKey = keys[i - 1];
+
+            byte[] childI = new byte[16];
+            byte[] childSeed = new byte[32];
+            SeedDerive derive = new SeedDerive(
+                intermediateKey.getI(),
+                intermediateKey.getMasterSecret(),
+                DigestUtil.getDigest(intermediateKey.getOtsParameters().getDigestOID()));
+            derive.setQ((int)qTreePath[i - 1]);
+            derive.setJ(~1);
+
+            derive.deriveSeed(childSeed, true);
+            byte[] postImage = new byte[32];
+            derive.deriveSeed(postImage, false);
+            System.arraycopy(postImage, 0, childI, 0, childI.length);
+
+            //
+            // Q values in LMS keys post increment after they are used.
+            // For intermediate keys they will always be out by one from the derived q value (qValues[i])
+            // For the end key its value will match so no correction is required.
+            //
+            boolean lmsQMatch =
+                (i < qTreePath.length - 1) ? qTreePath[i] == keys[i].getIndex() - 1 : qTreePath[i] == keys[i].getIndex();
+
+            //
+            // Equality is I and seed being equal and the lmsQMath.
+            // I and seed are derived from this nodes parent and will change if the parent q, I, seed changes.
+            //
+            boolean seedEquals = org.bouncycastle.util.Arrays.areEqual(childI, keys[i].getI())
+                && org.bouncycastle.util.Arrays.areEqual(childSeed, keys[i].getMasterSecret());
+
+
+            if (!seedEquals)
+            {
+                //
+                // This means the parent has changed.
+                //
+                keys[i] = LMS.generateKeys(
+                    originalKeys.get(i).getSigParameters(),
+                    originalKeys.get(i).getOtsParameters(),
+                    (int)qTreePath[i], childI, childSeed);
+
+                //
+                // Ensure post increment occurs on parent and the new public key is signed.
+                //
+                sig[i - 1] = LMS.generateSign(keys[i - 1], keys[i].getPublicKey().toByteArray());
+                changed = true;
+            }
+            else if (!lmsQMatch)
+            {
+
+                //
+                // Q is different so we can generate a new private key but it will have the same public
+                // key so we do not need to sign it again.
+                //
+                keys[i] = LMS.generateKeys(
+                    originalKeys.get(i).getSigParameters(),
+                    originalKeys.get(i).getOtsParameters(),
+                    (int)qTreePath[i], childI, childSeed);
+                changed = true;
+            }
+
+        }
+
+
+        if (changed)
+        {
+            // We mutate the HSS key here!
+            updateHierarchy(keys, sig);
+        }
+
     }
 
+    public synchronized HSSPublicKeyParameters getPublicKey()
+    {
+        return new HSSPublicKeyParameters(l, getRootKey().getPublicKey());
+    }
 
-    private void replaceConsumedKey(int d)
+    void replaceConsumedKey(int d)
     {
 
         SeedDerive deriver = keys.get(d - 1).getCurrentOTSKey().getDerivationFunction();
@@ -288,6 +351,7 @@ public class HSSPrivateKeyParameters
         List<LMSSignature> newSig = new ArrayList<LMSSignature>(sig);
 
         newSig.set(d - 1, LMS.generateSign(newKeys.get(d - 1), newKeys.get(d).getPublicKey().toByteArray()));
+
 
         this.keys = Collections.unmodifiableList(newKeys);
         this.sig = Collections.unmodifiableList(newSig);
@@ -316,36 +380,19 @@ public class HSSPrivateKeyParameters
         {
             return false;
         }
-        if (index != that.index)
-        {
-            return false;
-        }
         if (indexLimit != that.indexLimit)
         {
             return false;
         }
-        if (rootKey != null ? !rootKey.equals(that.rootKey) : that.rootKey != null)
+        if (index != that.index)
         {
             return false;
         }
-        if (keys != null ? !keys.equals(that.keys) : that.keys != null)
+        if (!keys.equals(that.keys))
         {
             return false;
         }
-        return sig != null ? sig.equals(that.sig) : that.sig == null;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = rootKey != null ? rootKey.hashCode() : 0;
-        result = 31 * result + l;
-        result = 31 * result + (limited ? 1 : 0);
-        result = 31 * result + (keys != null ? keys.hashCode() : 0);
-        result = 31 * result + (sig != null ? sig.hashCode() : 0);
-        result = 31 * result + (int)(index ^ (index >>> 32));
-        result = 31 * result + (int)(indexLimit ^ (indexLimit >>> 32));
-        return result;
+        return sig.equals(that.sig);
     }
 
     @Override
@@ -374,5 +421,24 @@ public class HSSPrivateKeyParameters
         }
 
         return composer.build();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = l;
+        result = 31 * result + (limited ? 1 : 0);
+        result = 31 * result + keys.hashCode();
+        result = 31 * result + sig.hashCode();
+        result = 31 * result + (int)(indexLimit ^ (indexLimit >>> 32));
+        result = 31 * result + (int)(index ^ (index >>> 32));
+        return result;
+    }
+
+    @Override
+    protected Object clone()
+        throws CloneNotSupportedException
+    {
+        return makeCopy(this);
     }
 }
