@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp;
 
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +21,32 @@ public class PGPCompressedData
     implements CompressionAlgorithmTags
 {
     CompressedDataPacket    data;
+
+    /**
+     * Construct a PGP compressed data object from the passed in byte array.
+     *
+     * @param encData an encoding of PGP compressed data.
+     * @throws IOException if an error occurs reading from the PGP input.
+     */
+    public PGPCompressedData(
+        byte[]    encData)
+        throws IOException
+    {
+        this(Util.createBCPGInputStream(new ByteArrayInputStream(encData), PacketTags.COMPRESSED_DATA));
+    }
+
+    /**
+     * Construct a PGP compressed data object from the passed in input stream.
+     *
+     * @param inStream an input stream containing an encoding of PGP compressed data.
+     * @throws IOException if an error occurs reading from the PGP input.
+     */
+    public PGPCompressedData(
+        InputStream    inStream)
+        throws IOException
+    {
+        this(Util.createBCPGInputStream(inStream, PacketTags.COMPRESSED_DATA));
+    }
 
     /**
      * Construct a compressed data object, reading a single {@link PacketTags#COMPRESSED_DATA}

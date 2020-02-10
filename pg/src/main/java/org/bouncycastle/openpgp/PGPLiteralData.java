@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -7,6 +8,7 @@ import java.util.Date;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.LiteralDataPacket;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.PacketTags;
 
 /**
  * A single literal data packet in a PGP object stream.
@@ -33,6 +35,38 @@ public class PGPLiteralData
 
     LiteralDataPacket    data;
 
+    /**
+     * Construct a PGP LiteralData carrier from the passed in byte array.
+     *
+     * @param encData an encoding of PGP literal data.
+     * @throws IOException if an error occurs reading from the PGP input.
+     */
+    public PGPLiteralData(
+        byte[]    encData)
+        throws IOException
+    {
+        this(Util.createBCPGInputStream(new ByteArrayInputStream(encData), PacketTags.LITERAL_DATA));
+    }
+
+    /**
+     * Construct a PGP LiteralData carrier from the passed in input stream.
+     *
+     * @param inStream an input stream containing an encoding of PGP literal data.
+     * @throws IOException if an error occurs reading from the PGP input.
+     */
+    public PGPLiteralData(
+        InputStream    inStream)
+        throws IOException
+    {
+        this(Util.createBCPGInputStream(inStream, PacketTags.LITERAL_DATA));
+    }
+
+    /**
+     * Construct a PGP LiteralData carrier from the passed in BCPG input stream.
+     *
+     * @param pIn a BCPG input stream containing an encoded PGP literal data structure.
+     * @throws IOException if an error occurs reading from the PGP input.
+     */
     public PGPLiteralData(
         BCPGInputStream    pIn)
         throws IOException
