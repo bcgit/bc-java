@@ -1,6 +1,8 @@
 package org.bouncycastle.openpgp;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -35,7 +37,41 @@ public class PGPEncryptedDataList
 
     /**
      * Construct an encrypted data packet holder, reading PGP encrypted method packets and an
-     * encrytped data packet from the stream.
+     * encrypted data packet from a stream.
+     * <p>
+     * The first packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
+     * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
+     * </p>
+     * @param encData a byte array containing an encrypted stream.
+     * @throws IOException if an error occurs reading from the PGP input.
+     */
+    public PGPEncryptedDataList(
+        byte[] encData)
+        throws IOException
+    {
+        this(Util.createBCPGInputStream(new ByteArrayInputStream(encData), PacketTags.PUBLIC_KEY_ENC_SESSION, PacketTags.SYMMETRIC_KEY_ENC_SESSION));
+    }
+
+    /**
+     * Construct an encrypted data packet holder, reading PGP encrypted method packets and an
+     * encrypted data packet from a stream.
+     * <p>
+     * The first packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
+     * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
+     * </p>
+     * @param inStream the input stream being read.
+     * @throws IOException if an error occurs reading from the PGP input.
+     */
+    public PGPEncryptedDataList(
+        InputStream inStream)
+        throws IOException
+    {
+        this(Util.createBCPGInputStream(inStream, PacketTags.PUBLIC_KEY_ENC_SESSION, PacketTags.SYMMETRIC_KEY_ENC_SESSION));
+    }
+
+    /**
+     * Construct an encrypted data packet holder, reading PGP encrypted method packets and an
+     * encrypted data packet from the stream.
      * <p>
      * The next packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
      * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
