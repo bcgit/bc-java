@@ -30,10 +30,10 @@ import org.bouncycastle.util.Iterable;
  * </p>
  */
 public class PGPEncryptedDataList
-    implements Iterable
+    implements Iterable<PGPEncryptedData>
 {
-    List                 list = new ArrayList();
-    InputStreamPacket    data;
+    List<PGPEncryptedData> methods = new ArrayList<PGPEncryptedData>();
+    InputStreamPacket      data;
 
     /**
      * Construct an encrypted data packet holder, reading PGP encrypted method packets and an
@@ -83,6 +83,8 @@ public class PGPEncryptedDataList
         BCPGInputStream    pIn)
         throws IOException
     {
+        List list = new ArrayList();
+
         while (pIn.nextPacketTag() == PacketTags.PUBLIC_KEY_ENC_SESSION
             || pIn.nextPacketTag() == PacketTags.SYMMETRIC_KEY_ENC_SESSION)
         {
@@ -101,11 +103,11 @@ public class PGPEncryptedDataList
         {
             if (list.get(i) instanceof SymmetricKeyEncSessionPacket)
             {
-                list.set(i, new PGPPBEEncryptedData((SymmetricKeyEncSessionPacket)list.get(i), data));
+                methods.add(new PGPPBEEncryptedData((SymmetricKeyEncSessionPacket)list.get(i), data));
             }
             else
             {
-                list.set(i, new PGPPublicKeyEncryptedData((PublicKeyEncSessionPacket)list.get(i), data));
+                methods.add(new PGPPublicKeyEncryptedData((PublicKeyEncSessionPacket)list.get(i), data));
             }
         }
     }
@@ -115,10 +117,10 @@ public class PGPEncryptedDataList
      *
      * @param index the encryption method to obtain (0 based).
      */
-    public Object get(
+    public PGPEncryptedData get(
         int    index)
     {
-        return list.get(index);
+        return methods.get(index);
     }
 
     /**
@@ -126,7 +128,7 @@ public class PGPEncryptedDataList
      */
     public int size()
     {
-        return list.size();
+        return methods.size();
     }
 
     /**
@@ -134,22 +136,22 @@ public class PGPEncryptedDataList
      */
     public boolean isEmpty()
     {
-        return list.isEmpty();
+        return methods.isEmpty();
     }
 
     /**
      * Returns an iterator over the encryption method objects held in this list, in the order they
      * appeared in the stream they are read from.
      */
-    public Iterator getEncryptedDataObjects()
+    public Iterator<PGPEncryptedData> getEncryptedDataObjects()
     {
-        return list.iterator();
+        return methods.iterator();
     }
 
     /**
      * Support method for Iterable where available.
      */
-    public Iterator iterator()
+    public Iterator<PGPEncryptedData> iterator()
     {
         return getEncryptedDataObjects();
     }
