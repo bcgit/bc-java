@@ -27,6 +27,13 @@ public class AuthorityInformationAccess
 {
     private AccessDescription[]    descriptions;
 
+    private static AccessDescription[] copy(AccessDescription[] descriptions)
+    {
+        AccessDescription[] result = new AccessDescription[descriptions.length];
+        System.arraycopy(descriptions, 0, result, 0, descriptions.length);
+        return result;
+    }
+
     public static AuthorityInformationAccess getInstance(
         Object  obj)
     {
@@ -45,8 +52,7 @@ public class AuthorityInformationAccess
 
     public static AuthorityInformationAccess fromExtensions(Extensions extensions)
     {
-        return AuthorityInformationAccess.getInstance(
-            Extensions.getExtensionParsedValue(extensions, Extension.authorityInfoAccess));
+        return getInstance(Extensions.getExtensionParsedValue(extensions, Extension.authorityInfoAccess));
     }
 
     private AuthorityInformationAccess(
@@ -58,7 +64,7 @@ public class AuthorityInformationAccess
         }
 
         descriptions = new AccessDescription[seq.size()];
-        
+
         for (int i = 0; i != seq.size(); i++)
         {
             descriptions[i] = AccessDescription.getInstance(seq.getObjectAt(i));
@@ -68,14 +74,13 @@ public class AuthorityInformationAccess
     public AuthorityInformationAccess(
         AccessDescription description)
     {
-        this(new AccessDescription[]{ description });
+        this.descriptions = new AccessDescription[]{ description };
     }
 
     public AuthorityInformationAccess(
         AccessDescription[] descriptions)
     {
-        this.descriptions = new AccessDescription[descriptions.length];
-        System.arraycopy(descriptions, 0, this.descriptions, 0, descriptions.length);
+        this.descriptions = copy(descriptions);
     }
 
     /**
@@ -94,9 +99,9 @@ public class AuthorityInformationAccess
      */
     public AccessDescription[] getAccessDescriptions()
     {
-        return descriptions;
+        return copy(descriptions);
     }
-    
+
     public ASN1Primitive toASN1Primitive()
     {
         return new DERSequence(descriptions);

@@ -12,6 +12,13 @@ public class CertificatePolicies
 {
     private final PolicyInformation[] policyInformation;
 
+    private static PolicyInformation[] copy(PolicyInformation[] policyInfo)
+    {
+        PolicyInformation[] result = new PolicyInformation[policyInfo.length];
+        System.arraycopy(policyInfo, 0, result, 0, policyInfo.length);
+        return result;
+    }
+
     public static CertificatePolicies getInstance(
         Object  obj)
     {
@@ -43,8 +50,7 @@ public class CertificatePolicies
      */
     public static CertificatePolicies fromExtensions(Extensions extensions)
     {
-        return CertificatePolicies.getInstance(
-            Extensions.getExtensionParsedValue(extensions, Extension.certificatePolicies));
+        return getInstance(Extensions.getExtensionParsedValue(extensions, Extension.certificatePolicies));
     }
 
     /**
@@ -61,7 +67,7 @@ public class CertificatePolicies
     public CertificatePolicies(
         PolicyInformation[] policyInformation)
     {
-        this.policyInformation = copyPolicyInfo(policyInformation);
+        this.policyInformation = copy(policyInformation);
     }
 
     private CertificatePolicies(
@@ -77,16 +83,7 @@ public class CertificatePolicies
 
     public PolicyInformation[] getPolicyInformation()
     {
-        return copyPolicyInfo(policyInformation);
-    }
-
-    private PolicyInformation[] copyPolicyInfo(PolicyInformation[] policyInfo)
-    {
-        PolicyInformation[] tmp = new PolicyInformation[policyInfo.length];
-
-        System.arraycopy(policyInfo, 0, tmp, 0, policyInfo.length);
-
-        return tmp;
+        return copy(policyInformation);
     }
 
     public PolicyInformation getPolicyInformation(ASN1ObjectIdentifier policyIdentifier)
