@@ -13,6 +13,13 @@ public class GeneralNames
 {
     private final GeneralName[] names;
 
+    private static GeneralName[] copy(GeneralName[] names)
+    {
+        GeneralName[] result = new GeneralName[names.length];
+        System.arraycopy(names, 0, result, 0, names.length);
+        return result;
+    }
+
     public static GeneralNames getInstance(
         Object  obj)
     {
@@ -38,7 +45,7 @@ public class GeneralNames
 
     public static GeneralNames fromExtensions(Extensions extensions, ASN1ObjectIdentifier extOID)
     {
-        return GeneralNames.getInstance(Extensions.getExtensionParsedValue(extensions, extOID));
+        return getInstance(Extensions.getExtensionParsedValue(extensions, extOID));
     }
 
     /**
@@ -73,15 +80,6 @@ public class GeneralNames
     public GeneralName[] getNames()
     {
         return copy(names);
-    }
-
-    private GeneralName[] copy(GeneralName[] nms)
-    {
-        GeneralName[] tmp = new GeneralName[nms.length];
-
-        System.arraycopy(nms, 0, tmp, 0, tmp.length);
-
-        return tmp;
     }
 
     /**

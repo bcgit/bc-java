@@ -34,9 +34,9 @@ import org.bouncycastle.util.encoders.Hex;
 public class AuthorityKeyIdentifier
     extends ASN1Object
 {
-    ASN1OctetString keyidentifier=null;
-    GeneralNames certissuer=null;
-    ASN1Integer certserno=null;
+    ASN1OctetString keyidentifier = null;
+    GeneralNames certissuer = null;
+    ASN1Integer certserno = null;
 
     public static AuthorityKeyIdentifier getInstance(
         ASN1TaggedObject obj,
@@ -62,8 +62,7 @@ public class AuthorityKeyIdentifier
 
     public static AuthorityKeyIdentifier fromExtensions(Extensions extensions)
     {
-         return AuthorityKeyIdentifier.getInstance(
-             Extensions.getExtensionParsedValue(extensions, Extension.authorityKeyIdentifier));
+        return getInstance(Extensions.getExtensionParsedValue(extensions, Extension.authorityKeyIdentifier));
     }
 
     protected AuthorityKeyIdentifier(
@@ -73,7 +72,7 @@ public class AuthorityKeyIdentifier
 
         while (e.hasMoreElements())
         {
-            ASN1TaggedObject o = DERTaggedObject.getInstance(e.nextElement());
+            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement());
 
             switch (o.getTagNo())
             {
@@ -108,13 +107,7 @@ public class AuthorityKeyIdentifier
     public AuthorityKeyIdentifier(
         SubjectPublicKeyInfo    spki)
     {
-        Digest  digest = new SHA1Digest();
-        byte[]  resBuf = new byte[digest.getDigestSize()];
-
-        byte[] bytes = spki.getPublicKeyData().getBytes();
-        digest.update(bytes, 0, bytes.length);
-        digest.doFinal(resBuf, 0);
-        this.keyidentifier = new DEROctetString(resBuf);
+        this(spki, null, null);
     }
 
     /**
@@ -135,8 +128,8 @@ public class AuthorityKeyIdentifier
         digest.doFinal(resBuf, 0);
 
         this.keyidentifier = new DEROctetString(resBuf);
-        this.certissuer = GeneralNames.getInstance(name.toASN1Primitive());
-        this.certserno = new ASN1Integer(serialNumber);
+        this.certissuer = name;
+        this.certserno = (serialNumber != null) ? new ASN1Integer(serialNumber) : null;
     }
 
     /**
@@ -225,6 +218,8 @@ public class AuthorityKeyIdentifier
 
     public String toString()
     {
-        return ("AuthorityKeyIdentifier: KeyID(" + ((keyidentifier != null) ? Hex.toHexString(this.keyidentifier.getOctets()) : "null") + ")");
+        String keyID = (keyidentifier != null) ? Hex.toHexString(keyidentifier.getOctets()) : "null";
+
+        return "AuthorityKeyIdentifier: KeyID(" + keyID + ")";
     }
 }

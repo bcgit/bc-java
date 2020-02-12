@@ -74,7 +74,7 @@ public class PolicyConstraints
 
     public static PolicyConstraints fromExtensions(Extensions extensions)
     {
-        return PolicyConstraints.getInstance(Extensions.getExtensionParsedValue(extensions, Extension.policyConstraints));
+        return getInstance(Extensions.getExtensionParsedValue(extensions, Extension.policyConstraints));
     }
 
     public BigInteger getRequireExplicitPolicyMapping()
