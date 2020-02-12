@@ -33,6 +33,11 @@ public class JcaPGPDigestCalculatorProviderBuilder
     {
     }
 
+    JcaPGPDigestCalculatorProviderBuilder(OperatorHelper helper)
+    {
+        this.helper = helper;
+    }
+
     /**
      * Sets the provider to use to obtain cryptographic primitives.
      *
