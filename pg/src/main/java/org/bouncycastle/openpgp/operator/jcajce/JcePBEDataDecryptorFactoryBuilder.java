@@ -25,6 +25,15 @@ public class JcePBEDataDecryptorFactoryBuilder
     private PGPDigestCalculatorProvider calculatorProvider;
 
     /**
+     * Base constructor - assume the required digest calculators can be provided from the same source as
+     * the cipher needed.
+     */
+    public JcePBEDataDecryptorFactoryBuilder()
+    {
+        this.calculatorProvider = null;
+    }
+
+    /**
      * Base constructor.
      *
      * @param calculatorProvider   a digest calculator provider to provide calculators to support the key generation calculation required.
@@ -68,6 +77,17 @@ public class JcePBEDataDecryptorFactoryBuilder
      */
     public PBEDataDecryptorFactory build(char[] passPhrase)
     {
+         if (calculatorProvider == null)
+         {
+             try
+             {
+                 calculatorProvider = new JcaPGPDigestCalculatorProviderBuilder(helper).build();
+             }
+             catch (PGPException e)
+             {
+                 throw new IllegalStateException("digest calculator provider cannot be built with current helper: " + e.getMessage());
+             }
+         }
          return new PBEDataDecryptorFactory(passPhrase, calculatorProvider)
          {
              public byte[] recoverSessionData(int keyAlgorithm, byte[] key, byte[] secKeyData)
