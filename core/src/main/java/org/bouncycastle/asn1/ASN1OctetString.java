@@ -133,7 +133,7 @@ public abstract class ASN1OctetString
          */
         if (taggedObject.isExplicit())
         {
-            ASN1OctetString singleSegment = ASN1OctetString.getInstance(o);
+            ASN1OctetString singleSegment = getInstance(o);
 
             if (taggedObject instanceof BERTaggedObject)
             {
@@ -194,7 +194,7 @@ public abstract class ASN1OctetString
         {
             try
             {
-                return ASN1OctetString.getInstance(ASN1Primitive.fromByteArray((byte[])obj));
+                return getInstance(fromByteArray((byte[])obj));
             }
             catch (IOException e)
             {

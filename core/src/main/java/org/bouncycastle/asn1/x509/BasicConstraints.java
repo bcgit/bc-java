@@ -45,7 +45,7 @@ public class BasicConstraints
 
     public static BasicConstraints fromExtensions(Extensions extensions)
     {
-        return BasicConstraints.getInstance(Extensions.getExtensionParsedValue(extensions, Extension.basicConstraints));
+        return getInstance(Extensions.getExtensionParsedValue(extensions, Extension.basicConstraints));
     }
 
     private BasicConstraints(
@@ -152,10 +152,6 @@ public class BasicConstraints
     {
         if (pathLenConstraint == null)
         {
-            if (cA == null)
-            {
-                return "BasicConstraints: isCa(false)";
-            }
             return "BasicConstraints: isCa(" + this.isCA() + ")";
         }
         return "BasicConstraints: isCa(" + this.isCA() + "), pathLenConstraint = " + pathLenConstraint.getValue();
