@@ -121,41 +121,37 @@ public class BcDefaultTlsCredentialedDecryptor
         }
 
         /*
-         * If ClientHello.client_version is TLS 1.1 or higher, server implementations MUST
-         * check the version number [..].
+         * If ClientHello.legacy_version is TLS 1.1 or higher, server implementations MUST check the
+         * version number [..].
          */
         if (versionNumberCheckDisabled && !TlsImplUtils.isTLSv11(expectedVersion))
         {
             /*
-             * If the version number is TLS 1.0 or earlier, server
-             * implementations SHOULD check the version number, but MAY have a
-             * configuration option to disable the check.
-             *
-             * So there is nothing to do here.
+             * If the version number is TLS 1.0 or earlier, server implementations SHOULD check the
+             * version number, but MAY have a configuration option to disable the check.
              */
         }
         else
         {
             /*
-             * OK, we need to compare the version number in the decrypted Pre-Master-Secret with the
-             * clientVersion received during the handshake. If they don't match, we replace the
-             * decrypted Pre-Master-Secret with a random one.
+             * Compare the version number in the decrypted Pre-Master-Secret with the legacy_version
+             * field from the ClientHello. If they don't match, continue the handshake with the
+             * randomly generated 'fallback' value.
+             *
+             * NOTE: The comparison and replacement must be constant-time.
              */
-            int correct = (expectedVersion.getMajorVersion() ^ (M[0] & 0xff))
-                        | (expectedVersion.getMinorVersion() ^ (M[1] & 0xff));
-            correct |= correct >> 1;
-            correct |= correct >> 2;
-            correct |= correct >> 4;
-            int mask = ~((correct & 1) - 1);
+            int mask = (expectedVersion.getMajorVersion() ^ (M[0] & 0xFF))
+                     | (expectedVersion.getMinorVersion() ^ (M[1] & 0xFF));
 
-            /*
-             * mask will be all bits set to 0xff if the version number differed.
-             */
+            // 'mask' will be all 1s if the versions matched, or else all 0s.
+            mask = (mask - 1) >> 31;
+
             for (int i = 0; i < 48; i++)
             {
-                M[i] = (byte)((M[i] & (~mask)) | (fallback[i] & mask));
+                M[i] = (byte)((M[i] & mask) | (fallback[i] & ~mask));
             }
         }
+
         return crypto.createSecret(M);
     }
 }
