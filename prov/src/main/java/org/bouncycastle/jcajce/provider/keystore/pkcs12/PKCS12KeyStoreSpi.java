@@ -393,26 +393,16 @@ public class PKCS12KeyStoreSpi
                 X509Certificate x509c = (X509Certificate)c;
                 Certificate nextC = null;
 
-                byte[] bytes = x509c.getExtensionValue(Extension.authorityKeyIdentifier.getId());
-                if (bytes != null)
+                byte[] akiBytes = x509c.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+                if (akiBytes != null)
                 {
-                    try
+                    ASN1OctetString akiValue = ASN1OctetString.getInstance(akiBytes);
+                    AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(akiValue.getOctets());
+
+                    byte[] keyID = aki.getKeyIdentifier();
+                    if (null != keyID)
                     {
-                        ASN1InputStream aIn = new ASN1InputStream(bytes);
-
-                        byte[] authBytes = ASN1OctetString.getInstance(aIn.readObject()).getOctets();
-                        aIn = new ASN1InputStream(authBytes);
-
-                        AuthorityKeyIdentifier id = AuthorityKeyIdentifier.getInstance(aIn.readObject());
-                        if (id.getKeyIdentifier() != null)
-                        {
-                            nextC = (Certificate)chainCerts.get(new CertId(id.getKeyIdentifier()));
-                        }
-
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e.toString());
+                        nextC = (Certificate)chainCerts.get(new CertId(keyID));
                     }
                 }
 
@@ -846,14 +836,11 @@ public class PKCS12KeyStoreSpi
                 throw new IOException("error constructing MAC: " + e.toString());
             }
         }
-        else
+        else if (password != null)
         {
             if (!Properties.isOverrideSet("org.bouncycastle.pkcs12.ignore_useless_passwd"))
             {
-                if (password != null)
-                {
-                    throw new IOException("password supplied for keystore that does not require one");
-                }
+                throw new IOException("password supplied for keystore that does not require one");
             }
         }
 
@@ -862,17 +849,16 @@ public class PKCS12KeyStoreSpi
 
         if (info.getContentType().equals(data))
         {
-            bIn = new ASN1InputStream(((ASN1OctetString)info.getContent()).getOctets());
-
-            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(bIn.readObject());
+            ASN1OctetString content = ASN1OctetString.getInstance(info.getContent());
+            AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(content.getOctets());
             ContentInfo[] c = authSafe.getContentInfo();
 
             for (int i = 0; i != c.length; i++)
             {
                 if (c[i].getContentType().equals(data))
                 {
-                    ASN1InputStream dIn = new ASN1InputStream(ASN1OctetString.getInstance(c[i].getContent()).getOctets());
-                    ASN1Sequence seq = ASN1Sequence.getInstance(dIn.readObject());
+                    ASN1OctetString authSafeContent = ASN1OctetString.getInstance(c[i].getContent());
+                    ASN1Sequence seq = ASN1Sequence.getInstance(authSafeContent.getOctets());
 
                     for (int j = 0; j != seq.size(); j++)
                     {
@@ -969,7 +955,7 @@ public class PKCS12KeyStoreSpi
                     EncryptedData d = EncryptedData.getInstance(c[i].getContent());
                     byte[] octets = cryptData(false, d.getEncryptionAlgorithm(),
                         password, wrongPKCS12Zero, d.getContent().getOctets());
-                    ASN1Sequence seq = (ASN1Sequence)ASN1Primitive.fromByteArray(octets);
+                    ASN1Sequence seq = ASN1Sequence.getInstance(octets);
 
                     for (int j = 0; j != seq.size(); j++)
                     {
