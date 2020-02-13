@@ -1,11 +1,9 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
-import org.bouncycastle.math.ec.rfc8032.Ed448;
+import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -36,26 +34,9 @@ public class BcTlsEd448Verifier
             throw new IllegalStateException();
         }
 
-        final byte[] sig = signature.getSignature();
-        final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        Ed448Signer verifier = new Ed448Signer(TlsUtils.EMPTY_BYTES);
+        verifier.init(false, publicKey);
 
-        return new TlsStreamVerifier()
-        {
-            public OutputStream getOutputStream()
-            {
-                return buf;
-            }
-
-            public boolean isVerified() throws IOException
-            {
-                byte[] pk = new byte[Ed448PublicKeyParameters.KEY_SIZE];
-                ((Ed448PublicKeyParameters)publicKey).encode(pk, 0);
-
-                byte[] ctx = TlsUtils.EMPTY_BYTES;
-                byte[] m = buf.toByteArray();
-
-                return Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
-            }
-        };
+        return new BcTlsStreamVerifier(verifier, signature.getSignature());
     }
 }

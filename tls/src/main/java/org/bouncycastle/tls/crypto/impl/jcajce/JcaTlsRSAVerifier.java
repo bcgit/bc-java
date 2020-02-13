@@ -1,11 +1,9 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.SignatureException;
 
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -62,28 +60,10 @@ public class JcaTlsRSAVerifier
                 {
                     String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
 
-                    final Signature verifier = crypto.getHelper().createSignature(algorithmName);
+                    Signature verifier = crypto.getHelper().createSignature(algorithmName);
                     verifier.initVerify(publicKey);
 
-                    return new TlsStreamVerifier()
-                    {
-                        public OutputStream getOutputStream()
-                        {
-                            return new SignatureOutputStream(verifier);
-                        }
-
-                        public boolean isVerified() throws IOException
-                        {
-                            try
-                            {
-                                return verifier.verify(signature.getSignature());
-                            }
-                            catch (SignatureException e)
-                            {
-                                throw new TlsFatalAlert(AlertDescription.internal_error, e);
-                            }
-                        }
-                    };
+                    return new JcaTlsStreamVerifier(verifier, signature.getSignature());
                 }
             }
             catch (GeneralSecurityException e)
