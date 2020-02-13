@@ -1,11 +1,9 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -35,25 +33,9 @@ public class BcTlsEd25519Verifier
             throw new IllegalStateException();
         }
 
-        final byte[] sig = signature.getSignature();
-        final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        Ed25519Signer verifier = new Ed25519Signer();
+        verifier.init(false, publicKey);
 
-        return new TlsStreamVerifier()
-        {
-            public OutputStream getOutputStream()
-            {
-                return buf;
-            }
-
-            public boolean isVerified() throws IOException
-            {
-                byte[] pk = new byte[Ed25519PublicKeyParameters.KEY_SIZE];
-                ((Ed25519PublicKeyParameters)publicKey).encode(pk, 0);
-
-                byte[] m = buf.toByteArray();
-
-                return Ed25519.verify(sig, 0, pk, 0, m, 0, m.length);
-            }
-        };
+        return new BcTlsStreamVerifier(verifier, signature.getSignature());
     }
 }
