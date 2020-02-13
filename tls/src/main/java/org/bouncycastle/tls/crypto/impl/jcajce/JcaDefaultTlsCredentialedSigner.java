@@ -52,12 +52,10 @@ public class JcaDefaultTlsCredentialedSigner
         }
         else if ("Ed25519".equals(algorithm))
         {
-            // TODO[RFC 8422] Extract public key from certificate?
             signer = new JcaTlsEd25519Signer(crypto, privateKey);
         }
         else if ("Ed448".equals(algorithm))
         {
-            // TODO[RFC 8422] Extract public key from certificate?
             signer = new JcaTlsEd448Signer(crypto, privateKey);
         }
         else

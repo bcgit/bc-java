@@ -1,11 +1,9 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Signature;
-import java.security.SignatureException;
 
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -98,28 +96,10 @@ public class JcaTlsRSASigner
                 {
                     String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
 
-                    final Signature signer = crypto.getHelper().createSignature(algorithmName);
+                    Signature signer = crypto.getHelper().createSignature(algorithmName);
                     signer.initSign(privateKey, crypto.getSecureRandom());
 
-                    return new TlsStreamSigner()
-                    {
-                        public OutputStream getOutputStream()
-                        {
-                            return new SignatureOutputStream(signer);
-                        }
-
-                        public byte[] getSignature() throws IOException
-                        {
-                            try
-                            {
-                                return signer.sign();
-                            }
-                            catch (SignatureException e)
-                            {
-                                throw new TlsFatalAlert(AlertDescription.internal_error, e);
-                            }
-                        }
-                    };
+                    return new JcaTlsStreamSigner(signer); 
                 }
             }
             catch (GeneralSecurityException e)
