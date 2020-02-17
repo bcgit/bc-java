@@ -130,12 +130,14 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto;
     exports org.bouncycastle.pqc.crypto.gmss;
     exports org.bouncycastle.pqc.crypto.gmss.util;
+    exports org.bouncycastle.pqc.crypto.lms;
     exports org.bouncycastle.pqc.crypto.mceliece;
     exports org.bouncycastle.pqc.crypto.newhope;
     exports org.bouncycastle.pqc.crypto.ntru;
     exports org.bouncycastle.pqc.crypto.rainbow;
     exports org.bouncycastle.pqc.crypto.rainbow.util;
     exports org.bouncycastle.pqc.crypto.sphincs;
+    exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
     exports org.bouncycastle.pqc.jcajce.interfaces;
     exports org.bouncycastle.pqc.jcajce.provider;
