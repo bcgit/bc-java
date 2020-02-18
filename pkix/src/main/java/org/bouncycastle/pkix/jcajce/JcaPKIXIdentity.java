@@ -49,6 +49,13 @@ public class JcaPKIXIdentity
         }
     }
 
+    /**
+     * Base constructor - a private key and its associated certificate chain. The chain
+     * should be ordered so that certs[0] is the matching public key for privKey.
+     *
+     * @param privKey the private key.
+     * @param certs the public key certificates identifying it.
+     */
     public JcaPKIXIdentity(PrivateKey privKey, X509Certificate[] certs)
     {
         super(getPrivateKeyInfo(privKey), getCertificates(certs));
@@ -57,6 +64,17 @@ public class JcaPKIXIdentity
         this.certs = new X509Certificate[certs.length];
 
         System.arraycopy(certs, 0, this.certs, 0, certs.length);
+    }
+
+    /**
+     * Base constructor - a private key and its associated public key certificate.
+     *
+     * @param privKey the private key.
+     * @param cert privKey's matching public key certificate.
+     */
+    public JcaPKIXIdentity(PrivateKey privKey, X509Certificate cert)
+    {
+        this(privKey, new X509Certificate[] { cert });
     }
 
     /**
@@ -77,5 +95,19 @@ public class JcaPKIXIdentity
     public X509Certificate getX509Certificate()
     {
         return certs[0];
+    }
+
+    /**
+     * Return the certificate chain associated with the private key.
+     *
+     * @return the certificate chain.
+     */
+    public X509Certificate[] getX509CertificateChain()
+    {
+        X509Certificate[] rv = new X509Certificate[certs.length];
+
+        System.arraycopy(certs, 0, rv, 0, rv.length);
+
+        return rv;
     }
 }
