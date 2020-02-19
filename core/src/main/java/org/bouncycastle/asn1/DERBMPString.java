@@ -81,9 +81,21 @@ public class DERBMPString
     DERBMPString(
         byte[]   string)
     {
-        char[]  cs = new char[string.length / 2];
+        if (string == null)
+        {
+            throw new NullPointerException("'string' cannot be null");
+        }
 
-        for (int i = 0; i != cs.length; i++)
+        int byteLen = string.length;
+        if (0 != (byteLen & 1))
+        {
+            throw new IllegalArgumentException("malformed BMPString encoding encountered");
+        }
+
+        int charLen = byteLen / 2;
+        char[] cs = new char[charLen];
+
+        for (int i = 0; i != charLen; i++)
         {
             cs[i] = (char)((string[2 * i] << 8) | (string[2 * i + 1] & 0xff));
         }
@@ -93,6 +105,11 @@ public class DERBMPString
 
     DERBMPString(char[] string)
     {
+        if (string == null)
+        {
+            throw new NullPointerException("'string' cannot be null");
+        }
+
         this.string = string;
     }
 
@@ -103,6 +120,11 @@ public class DERBMPString
     public DERBMPString(
         String   string)
     {
+        if (string == null)
+        {
+            throw new NullPointerException("'string' cannot be null");
+        }
+
         this.string = string.toCharArray();
     }
 
