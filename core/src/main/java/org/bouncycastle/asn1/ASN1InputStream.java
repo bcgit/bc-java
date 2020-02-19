@@ -383,23 +383,20 @@ public class ASN1InputStream
         throws IOException
     {
         int len = defIn.getRemaining();
-        if (defIn.getRemaining() < tmpBuffers.length)
-        {
-            byte[] buf = tmpBuffers[len];
-
-            if (buf == null)
-            {
-                buf = tmpBuffers[len] = new byte[len];
-            }
-
-            Streams.readFully(defIn, buf);
-
-            return buf;
-        }
-        else
+        if (len >= tmpBuffers.length)
         {
             return defIn.toByteArray();
         }
+
+        byte[] buf = tmpBuffers[len];
+        if (buf == null)
+        {
+            buf = tmpBuffers[len] = new byte[len];
+        }
+
+        defIn.readAllIntoByteArray(buf);
+
+        return buf;
     }
 
     private static char[] getBMPCharBuffer(DefiniteLengthInputStream defIn)
