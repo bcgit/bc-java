@@ -206,7 +206,20 @@ public class DTLSServerProtocol
         if (state.serverCredentials != null)
         {
             state.certificateRequest = state.server.getCertificateRequest();
-            if (state.certificateRequest != null)
+
+            if (null == state.certificateRequest)
+            {
+                /*
+                 * For static agreement key exchanges, CertificateRequest is required since
+                 * the client Certificate message is mandatory but can only be sent if the
+                 * server requests it.
+                 */
+                if (!state.keyExchange.requiresCertificateVerify())
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+            }
+            else
             {
                 if (TlsUtils.isTLSv12(state.serverContext) != (state.certificateRequest.getSupportedSignatureAlgorithms() != null))
                 {
