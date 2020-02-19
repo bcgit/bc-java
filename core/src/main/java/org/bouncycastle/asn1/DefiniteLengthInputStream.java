@@ -23,7 +23,7 @@ class DefiniteLengthInputStream
         int         length,
         int         limit)
     {
-        super(in, limit, length);
+        super(in, limit);
 
         if (length < 0)
         {
@@ -91,6 +91,33 @@ class DefiniteLengthInputStream
         return numRead;
     }
 
+    void readAllIntoByteArray(byte[] buf)
+        throws IOException
+    {
+        if (_remaining != buf.length)
+        {
+            throw new IllegalArgumentException("buffer length not right for data");
+        }
+
+        if (_remaining == 0)
+        {
+            return;
+        }
+
+        // make sure it's safe to do this!
+        int limit = getLimit();
+        if (_remaining >= limit)
+        {
+            throw new IOException("corrupted stream - out of bounds length found: " + _remaining + " >= " + limit);
+        }
+
+        if ((_remaining -= Streams.readFully(_in, buf)) != 0)
+        {
+            throw new EOFException("DEF length " + _originalLength + " object truncated by " + _remaining);
+        }
+        setParentEofDetect(true);
+    }
+
     byte[] toByteArray()
         throws IOException
     {
@@ -100,9 +127,10 @@ class DefiniteLengthInputStream
         }
 
         // make sure it's safe to do this!
-        if (_remaining >= this.getLimit())
+        int limit = getLimit();
+        if (_remaining >= limit)
         {
-            throw new IOException("corrupted stream - out of bounds length found: " + _remaining + " >= " + this.getLimit());
+            throw new IOException("corrupted stream - out of bounds length found: " + _remaining + " >= " + limit);
         }
 
         byte[] bytes = new byte[_remaining];
