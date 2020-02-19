@@ -533,7 +533,7 @@ public class ParserTest
         catch (IOException e)
         {
             if (e.getCause() != null && !e.getCause().getMessage().endsWith(message))
-            {              System.err.println(e.getCause().getMessage());
+            {
                fail("issue " + index + " exception thrown, but wrong message");
             }
             else if (e.getCause() == null && !e.getMessage().equals(message))

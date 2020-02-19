@@ -177,33 +177,24 @@ public class PGPUtil
         byte[] encoding)
         throws PGPException
     {
-        ASN1InputStream aIn = new ASN1InputStream(encoding);
-
-        ASN1Integer i1;
-        ASN1Integer i2;
+        ASN1Integer i1, i2;
 
         try
         {
-            ASN1Sequence s = ASN1Sequence.getInstance(aIn.readObject());
+            ASN1Sequence s = ASN1Sequence.getInstance(encoding);
 
             i1 = ASN1Integer.getInstance(s.getObjectAt(0));
             i2 = ASN1Integer.getInstance(s.getObjectAt(1));
         }
-        catch (IOException e)
-        {
-            throw new PGPException("exception decoding signature", e);
-        }
-        catch (IllegalArgumentException e)
+        catch (RuntimeException e)
         {
             throw new PGPException("exception decoding signature", e);
         }
 
-        MPInteger[] values = new MPInteger[2];
-
-        values[0] = new MPInteger(i1.getValue());
-        values[1] = new MPInteger(i2.getValue());
-
-        return values;
+        return new MPInteger[]{
+            new MPInteger(i1.getValue()),
+            new MPInteger(i2.getValue())
+        };
     }
 
     /**

@@ -96,7 +96,7 @@ public class PGPPublicKeyRing
                 "tag 0x" + Integer.toHexString(initialTag));
         }
 
-        PublicKeyPacket pubPk = (PublicKeyPacket)pIn.readPacket();
+        PublicKeyPacket pubPk = readPublicKeyPacket(pIn);
         TrustPacket     trustPk = readOptionalTrustPacket(pIn);
 
         // direct signatures and revocations
@@ -360,17 +360,22 @@ public class PGPPublicKeyRing
         return new PGPPublicKeyRing(keys);
     }
 
-    static PGPPublicKey readSubkey(BCPGInputStream in, KeyFingerPrintCalculator fingerPrintCalculator)
-        throws IOException, PGPException
+    static PublicKeyPacket readPublicKeyPacket(BCPGInputStream in)
+        throws IOException
     {
         Packet packet = in.readPacket();
-
         if (!(packet instanceof PublicKeyPacket))
         {
             throw new IOException("unexpected packet in stream: " + packet);
         }
 
-        PublicKeyPacket pk = (PublicKeyPacket)packet;
+        return (PublicKeyPacket)packet;
+    }
+
+    static PGPPublicKey readSubkey(BCPGInputStream in, KeyFingerPrintCalculator fingerPrintCalculator)
+        throws IOException, PGPException
+    {
+        PublicKeyPacket pk = readPublicKeyPacket(in);
         TrustPacket kTrust = readOptionalTrustPacket(in);
 
         // PGP 8 actually leaves out the signature.
