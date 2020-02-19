@@ -10,16 +10,13 @@ abstract class LimitedInputStream
 {
     protected final InputStream _in;
     private int _limit;
-    private int _length;
 
     LimitedInputStream(
         InputStream in,
-        int         limit,
-        int         length)
+        int         limit)
     {
         this._in = in;
         this._limit = limit;
-        this._length = length;
     }
 
     int getLimit()
@@ -27,12 +24,6 @@ abstract class LimitedInputStream
         return _limit;
     }
 
-    int getRemaining()
-    {
-        // TODO: maybe one day this can become more accurate
-        return _length;
-    }
-    
     protected void setParentEofDetect(boolean on)
     {
         if (_in instanceof IndefiniteLengthInputStream)

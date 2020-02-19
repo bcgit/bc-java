@@ -22,7 +22,7 @@ import java.util.Vector;
 public class BEROctetString
     extends ASN1OctetString
 {
-    private static final int DEFAULT_LENGTH = 1000;
+    private static final int DEFAULT_CHUNK_SIZE = 1000;
 
     private final int chunkSize;
     private final ASN1OctetString[] octs;
@@ -63,7 +63,7 @@ public class BEROctetString
     public BEROctetString(
         byte[] string)
     {
-        this(string, DEFAULT_LENGTH);
+        this(string, DEFAULT_CHUNK_SIZE);
     }
 
     /**
@@ -75,7 +75,7 @@ public class BEROctetString
     public BEROctetString(
         ASN1OctetString[] octs)
     {
-        this(octs, DEFAULT_LENGTH);
+        this(octs, DEFAULT_CHUNK_SIZE);
     }
 
     /**
@@ -115,10 +115,10 @@ public class BEROctetString
      * Return a concatenated byte array of all the octets making up the constructed OCTET STRING
      * @return the full OCTET STRING.
      */
-    public byte[] getOctets()
-    {
-        return string;
-    }
+//    public byte[] getOctets()
+//    {
+//        return string;
+//    }
 
     /**
      * Return the OCTET STRINGs that make up this string.
@@ -153,16 +153,7 @@ public class BEROctetString
         Vector vec = new Vector();
         for (int i = 0; i < string.length; i += chunkSize)
         { 
-            int end; 
-
-            if (i + chunkSize > string.length)
-            { 
-                end = string.length; 
-            } 
-            else 
-            { 
-                end = i + chunkSize;
-            } 
+            int end = Math.min(string.length, i + chunkSize); 
 
             byte[] nStr = new byte[end - i]; 
 
