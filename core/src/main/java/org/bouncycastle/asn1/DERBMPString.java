@@ -81,6 +81,11 @@ public class DERBMPString
     DERBMPString(
         byte[]   string)
     {
+        if (string == null)
+        {
+            throw new NullPointerException("'string' cannot be null");
+        }
+
         int byteLen = string.length;
         if (0 != (byteLen & 1))
         {
@@ -100,6 +105,11 @@ public class DERBMPString
 
     DERBMPString(char[] string)
     {
+        if (string == null)
+        {
+            throw new NullPointerException("'string' cannot be null");
+        }
+
         this.string = string;
     }
 
@@ -110,6 +120,11 @@ public class DERBMPString
     public DERBMPString(
         String   string)
     {
+        if (string == null)
+        {
+            throw new NullPointerException("'string' cannot be null");
+        }
+
         this.string = string.toCharArray();
     }
 
