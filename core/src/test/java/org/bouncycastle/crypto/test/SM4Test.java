@@ -149,7 +149,7 @@ public class SM4Test
         }
 
         byte[] mac = encCipher.getMac();
-         System.err.println(Hex.toHexString(enc));
+//         System.err.println(Hex.toHexString(enc));
         byte[] data = new byte[P.length];
         System.arraycopy(enc, 0, data, 0, data.length);
         byte[] tail = new byte[enc.length - P.length];

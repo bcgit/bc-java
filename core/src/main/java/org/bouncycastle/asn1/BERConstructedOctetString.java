@@ -85,11 +85,6 @@ public class BERConstructedOctetString
         this(obj.toASN1Primitive());
     }
 
-    public byte[] getOctets()
-    {
-        return string;
-    }
-
     /**
      * return the DER octets that make up this string.
      */
