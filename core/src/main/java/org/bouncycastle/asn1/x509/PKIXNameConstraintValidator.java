@@ -331,7 +331,7 @@ public class PKIXNameConstraintValidator
         {
             start = j;
             RDN dnsRdn = RDN.getInstance(dns.getObjectAt(j));
-            if (dnsRdn.equals(subtreeRdnStart))
+            if (IETFUtils.rDNAreEqual(subtreeRdnStart, dnsRdn))
             {
                 break;
             }
