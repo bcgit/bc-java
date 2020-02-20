@@ -5,6 +5,7 @@ module org.bouncycastle.provider
 
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.qtesla to java.base;
+    opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
 
     exports org.bouncycastle;
     exports org.bouncycastle.asn1;
