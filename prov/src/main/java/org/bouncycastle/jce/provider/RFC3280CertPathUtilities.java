@@ -170,8 +170,7 @@ class RFC3280CertPathUtilities
                             genNames = new GeneralName[1];
                             try
                             {
-                                genNames[0] = new GeneralName(X500Name.getInstance(PrincipalUtils
-                                    .getEncodedIssuerPrincipal(cert).getEncoded()));
+                                genNames[0] = new GeneralName(PrincipalUtils.getEncodedIssuerPrincipal(cert));
                             }
                             catch (Exception e)
                             {
@@ -907,7 +906,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pm = null;
         try
         {
-            pm = DERSequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
+            pm = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
                 RFC3280CertPathUtilities.POLICY_MAPPINGS));
         }
         catch (AnnotatedException ex)
@@ -1090,7 +1089,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pm = null;
         try
         {
-            pm = DERSequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
+            pm = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
                 RFC3280CertPathUtilities.POLICY_MAPPINGS));
         }
         catch (AnnotatedException ex)
@@ -1108,7 +1107,7 @@ class RFC3280CertPathUtilities
                 ASN1ObjectIdentifier subjectDomainPolicy = null;
                 try
                 {
-                    ASN1Sequence mapping = DERSequence.getInstance(mappings.getObjectAt(j));
+                    ASN1Sequence mapping = ASN1Sequence.getInstance(mappings.getObjectAt(j));
 
                     issuerDomainPolicy = ASN1ObjectIdentifier.getInstance(mapping.getObjectAt(0));
                     subjectDomainPolicy = ASN1ObjectIdentifier.getInstance(mapping.getObjectAt(1));
@@ -1165,7 +1164,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence certPolicies = null;
         try
         {
-            certPolicies = DERSequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
+            certPolicies = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
                 RFC3280CertPathUtilities.CERTIFICATE_POLICIES));
         }
         catch (AnnotatedException e)
@@ -1207,7 +1206,7 @@ class RFC3280CertPathUtilities
 
             try
             {
-                dns = DERSequence.getInstance(principal.getEncoded());
+                dns = ASN1Sequence.getInstance(principal.getEncoded());
             }
             catch (Exception e)
             {
@@ -1306,7 +1305,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence certPolicies = null;
         try
         {
-            certPolicies = DERSequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
+            certPolicies = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
                 RFC3280CertPathUtilities.CERTIFICATE_POLICIES));
         }
         catch (AnnotatedException e)
@@ -1562,11 +1561,11 @@ class RFC3280CertPathUtilities
         //
         // (a) (4) name chaining
         //
-        if (!PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(workingIssuerName))
+        X500Name issuer = PrincipalUtils.getIssuerPrincipal(cert);
+        if (!issuer.equals(workingIssuerName))
         {
-            throw new ExtCertPathValidatorException("IssuerName(" + PrincipalUtils.getEncodedIssuerPrincipal(cert)
-                + ") does not match SubjectName(" + workingIssuerName + ") of signing certificate.", null,
-                certPath, index);
+            throw new ExtCertPathValidatorException("IssuerName(" + issuer + ") does not match SubjectName("
+                + workingIssuerName + ") of signing certificate.", null, certPath, index);
         }
     }
 
@@ -1584,7 +1583,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pc = null;
         try
         {
-            pc = DERSequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
+            pc = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
                 RFC3280CertPathUtilities.POLICY_CONSTRAINTS));
         }
         catch (Exception e)
@@ -1638,7 +1637,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pc = null;
         try
         {
-            pc = DERSequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
+            pc = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
                 RFC3280CertPathUtilities.POLICY_CONSTRAINTS));
         }
         catch (Exception e)
@@ -1692,7 +1691,7 @@ class RFC3280CertPathUtilities
         NameConstraints nc = null;
         try
         {
-            ASN1Sequence ncSeq = DERSequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
+            ASN1Sequence ncSeq = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
                 RFC3280CertPathUtilities.NAME_CONSTRAINTS));
             if (ncSeq != null)
             {
@@ -2029,7 +2028,7 @@ class RFC3280CertPathUtilities
                 X500Name issuer;
                 try
                 {
-                    issuer = PrincipalUtils.getEncodedIssuerPrincipal(cert);
+                    issuer = PrincipalUtils.getIssuerPrincipal(cert);
                 }
                 catch (RuntimeException e)
                 {
@@ -2373,7 +2372,7 @@ class RFC3280CertPathUtilities
         ASN1Sequence pc = null;
         try
         {
-            pc = DERSequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
+            pc = ASN1Sequence.getInstance(CertPathValidatorUtilities.getExtensionValue(cert,
                 RFC3280CertPathUtilities.POLICY_CONSTRAINTS));
         }
         catch (AnnotatedException e)

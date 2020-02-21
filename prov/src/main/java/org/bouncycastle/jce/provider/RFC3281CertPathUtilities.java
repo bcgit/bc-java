@@ -28,8 +28,7 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.DistributionPoint;
@@ -225,14 +224,10 @@ class RFC3281CertPathUtilities
                          * fields omitted and a distribution point name of the
                          * certificate issuer.
                          */
-                        ASN1Primitive issuer = null;
+                        X500Name issuer;
                         try
                         {
-
-                            issuer = new ASN1InputStream(
-                                ((X500Principal) attrCert.getIssuer()
-                                    .getPrincipals()[0]).getEncoded())
-                                .readObject();
+                            issuer = PrincipalUtils.getEncodedIssuerPrincipal(attrCert);
                         }
                         catch (Exception e)
                         {
