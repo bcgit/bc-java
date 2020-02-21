@@ -918,12 +918,12 @@ class CertPathValidatorUtilities
                 certIssuer = PrincipalUtils.getX500Name(certificateIssuer);
             }
 
-            if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(certIssuer))
+            if (!PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(certIssuer))
             {
                 return;
             }
         }
-        else if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(PrincipalUtils.getIssuerPrincipal(crl)))
+        else if (!PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(PrincipalUtils.getIssuerPrincipal(crl)))
         {
             return;  // not for our issuer, ignore
         }
