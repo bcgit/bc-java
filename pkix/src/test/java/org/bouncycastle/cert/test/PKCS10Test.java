@@ -1,5 +1,6 @@
 package org.bouncycastle.cert.test;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -18,6 +19,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Attribute;
+import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -260,6 +262,27 @@ public class PKCS10Test
         if (!sig.verify(req.toASN1Structure().getSignature().getBytes()))
         {
             fail("signature not mapped correctly.");
+        }
+
+        // empty tests
+        try
+        {
+            new PKCS10CertificationRequest(new byte[0]);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("empty data passed to constructor", e.getMessage());
+        }
+
+        try
+        {
+            new PKCS10CertificationRequest((CertificationRequest)null);
+            fail("no exception");
+        }
+        catch (NullPointerException e)
+        {
+            isEquals("certificationRequest cannot be null", e.getMessage());
         }
     }
 
