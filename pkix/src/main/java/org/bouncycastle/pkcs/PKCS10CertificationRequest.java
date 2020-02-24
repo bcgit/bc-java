@@ -32,7 +32,14 @@ public class PKCS10CertificationRequest
     {
         try
         {
-            return CertificationRequest.getInstance(ASN1Primitive.fromByteArray(encoding));
+            CertificationRequest rv = CertificationRequest.getInstance(ASN1Primitive.fromByteArray(encoding));
+
+            if (rv == null)
+            {
+                throw new PKCSIOException("empty data passed to constructor");
+            }
+
+            return rv;
         }
         catch (ClassCastException e)
         {
@@ -51,6 +58,10 @@ public class PKCS10CertificationRequest
      */
     public PKCS10CertificationRequest(CertificationRequest certificationRequest)
     {
+         if (certificationRequest == null)
+         {
+             throw new NullPointerException("certificationRequest cannot be null");
+         }
          this.certificationRequest = certificationRequest;
     }
 
