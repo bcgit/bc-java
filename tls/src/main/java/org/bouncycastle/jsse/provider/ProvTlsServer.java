@@ -501,6 +501,12 @@ class ProvTlsServer
         return !JsseUtils.allowLegacyMasterSecret();
     }
 
+    @Override
+    public boolean shouldUseExtendedMasterSecret()
+    {
+        return JsseUtils.useExtendedMasterSecret();
+    }
+
     protected boolean isResumable(ProvSSLSession availableSSLSession)
     {
         /*

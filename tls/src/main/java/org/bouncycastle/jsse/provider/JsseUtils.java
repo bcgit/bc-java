@@ -53,6 +53,8 @@ abstract class JsseUtils
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyMasterSecret", true);
     private static final boolean provTlsAllowLegacyResumption =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
+    private static final boolean provTlsUseExtendedMasterSecret =
+        PropertyUtils.getBooleanSystemProperty("jdk.tls.useExtendedMasterSecret", true);
 
     static final Set<BCCryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES_BC =
         Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.SIGNATURE));
@@ -643,5 +645,10 @@ abstract class JsseUtils
             }
         }
         return s;
+    }
+
+    static boolean useExtendedMasterSecret()
+    {
+        return provTlsUseExtendedMasterSecret;
     }
 }

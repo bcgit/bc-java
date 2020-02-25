@@ -454,7 +454,14 @@ public class DTLSClientProtocol
 
         state.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(state.clientContext, state.client, state.clientExtensions);
 
-        TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
+        if (state.client.shouldUseExtendedMasterSecret())
+        {
+            TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
+        }
+        else if (state.client.requiresExtendedMasterSecret())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         securityParameters.clientRandom = TlsProtocol.createRandomBlock(state.client.shouldUseGMTUnixTime(), state.clientContext);
 
@@ -698,16 +705,32 @@ public class DTLSClientProtocol
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
          */
-        securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.serverExtensions);
-
-        if (!securityParameters.isExtendedMasterSecret()
-            && ((state.resumedSession && !state.client.allowLegacyResumption())
-                || state.client.requiresExtendedMasterSecret()))
         {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            final boolean acceptedExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(
+                state.serverExtensions);
+
+            if (acceptedExtendedMasterSecret)
+            {
+                if (server_version.isSSL()
+                    || (!state.resumedSession && !state.client.shouldUseExtendedMasterSecret()))
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
+            }
+            else
+            {
+                if (state.client.requiresExtendedMasterSecret()
+                    || (state.resumedSession && !state.client.allowLegacyResumption()))
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
+            }
+
+            securityParameters.extendedMasterSecret = acceptedExtendedMasterSecret;
         }
 
         /*
+         * 
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message. However, see RFC 5746 exception below. We always include
          * the SCSV, so an Extended Server Hello is always allowed.
