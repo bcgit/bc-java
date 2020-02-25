@@ -8,14 +8,14 @@ import javax.net.ssl.SSLEngine;
 class ProvSSLEngine_9
     extends ProvSSLEngine
 {
-    protected ProvSSLEngine_9(ProvSSLContextSpi context, ContextData contextData)
+    protected ProvSSLEngine_9(ContextData contextData)
     {
-        super(context, contextData);
+        super(contextData);
     }
 
-    protected ProvSSLEngine_9(ProvSSLContextSpi context, ContextData contextData, String host, int port)
+    protected ProvSSLEngine_9(ContextData contextData, String host, int port)
     {
-        super(context, contextData, host, port);
+        super(contextData, host, port);
     }
 
     @Override

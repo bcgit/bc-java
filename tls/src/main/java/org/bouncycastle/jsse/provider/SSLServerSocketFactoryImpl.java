@@ -9,6 +9,6 @@ public class SSLServerSocketFactoryImpl
 {
     public SSLServerSocketFactoryImpl() throws Exception
     {
-        super(DefaultSSLContextSpi.getDefaultInstance());
+        super(DefaultSSLContextSpi.getDefaultInstance().getContextData());
     }
 }

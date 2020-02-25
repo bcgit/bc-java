@@ -84,14 +84,16 @@ class ProvTlsServer
     protected int getMaximumNegotiableCurveBits()
     {
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
-        return SupportedGroups.getServerMaximumNegotiableCurveBits(manager.getContext().isFips(), clientSupportedGroups);
+        return SupportedGroups.getServerMaximumNegotiableCurveBits(manager.getContextData().getContext().isFips(),
+            clientSupportedGroups);
     }
 
     @Override
     protected int getMaximumNegotiableFiniteFieldBits()
     {
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
-        int maxBits = SupportedGroups.getServerMaximumNegotiableFiniteFieldBits(manager.getContext().isFips(), clientSupportedGroups);
+        int maxBits = SupportedGroups.getServerMaximumNegotiableFiniteFieldBits(
+            manager.getContextData().getContext().isFips(), clientSupportedGroups);
         return maxBits >= provEphemeralDHKeySize ? maxBits : 0;
     }
 
@@ -104,13 +106,14 @@ class ProvTlsServer
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return manager.getContext().getActiveCipherSuites(getCrypto(), sslParameters, getProtocolVersions());
+        return manager.getContextData().getContext().getActiveCipherSuites(getCrypto(), sslParameters,
+            getProtocolVersions());
     }
 
     @Override
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContext().getActiveProtocolVersions(sslParameters);
+        return manager.getContextData().getContext().getActiveProtocolVersions(sslParameters);
     }
 
     @Override
@@ -144,14 +147,15 @@ class ProvTlsServer
             return selectDHDefault(minimumFiniteFieldBits);
         }
 
-        return SupportedGroups.getServerSelectedFiniteField(getCrypto(), manager.getContext().isFips(),
+        return SupportedGroups.getServerSelectedFiniteField(getCrypto(), manager.getContextData().getContext().isFips(),
             minimumFiniteFieldBits, clientSupportedGroups);
     }
 
     @Override
     protected int selectDHDefault(int minimumFiniteFieldBits)
     {
-        return SupportedGroups.getServerDefaultDH(manager.getContext().isFips(), minimumFiniteFieldBits);
+        return SupportedGroups.getServerDefaultDH(manager.getContextData().getContext().isFips(),
+            minimumFiniteFieldBits);
     }
 
     @Override
@@ -163,14 +167,14 @@ class ProvTlsServer
             return selectECDHDefault(minimumCurveBits);
         }
 
-        return SupportedGroups.getServerSelectedCurve(getCrypto(), manager.getContext().isFips(), minimumCurveBits,
-            clientSupportedGroups);
+        return SupportedGroups.getServerSelectedCurve(getCrypto(), manager.getContextData().getContext().isFips(),
+            minimumCurveBits, clientSupportedGroups);
     }
 
     @Override
     protected int selectECDHDefault(int minimumCurveBits)
     {
-        return SupportedGroups.getServerDefaultECDH(manager.getContext().isFips(), minimumCurveBits);
+        return SupportedGroups.getServerDefaultECDH(manager.getContextData().getContext().isFips(), minimumCurveBits);
     }
 
     @Override
@@ -297,8 +301,8 @@ class ProvTlsServer
 
         keyManagerMissCache = null;
 
-        String selectedCipherSuiteName = manager.getContext().validateNegotiatedCipherSuite(sslParameters,
-            selectedCipherSuite);
+        String selectedCipherSuiteName = manager.getContextData().getContext()
+            .validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
 
         LOG.fine("Server selected cipher suite: " + selectedCipherSuiteName);
 
@@ -386,7 +390,8 @@ class ProvTlsServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        String serverVersionName = manager.getContext().validateNegotiatedProtocol(sslParameters, serverVersion);
+        String serverVersionName = manager.getContextData().getContext().validateNegotiatedProtocol(sslParameters,
+            serverVersion);
 
         LOG.fine("Server selected protocol version: " + serverVersionName);
 

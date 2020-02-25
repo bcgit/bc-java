@@ -38,7 +38,6 @@ class ProvSSLSocketDirect
     protected final AppDataInput appDataIn = new AppDataInput();
     protected final AppDataOutput appDataOut = new AppDataOutput();
 
-    protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
     protected final ProvSSLParameters sslParameters;
 
@@ -53,68 +52,57 @@ class ProvSSLSocketDirect
     protected ProvSSLSessionHandshake handshakeSession = null;
 
     /** This constructor is the one used (only) by ProvSSLServerSocket */
-    ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, boolean enableSessionCreation,
+    ProvSSLSocketDirect(ContextData contextData, boolean enableSessionCreation,
         boolean useClientMode, ProvSSLParameters sslParameters)
     {
-        this.context = context;
         this.contextData = contextData;
         this.enableSessionCreation = enableSessionCreation;
         this.useClientMode = useClientMode;
         this.sslParameters = sslParameters;
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData)
+    protected ProvSSLSocketDirect(ContextData contextData)
     {
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
+    protected ProvSSLSocketDirect(ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
         throws IOException
     {
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
 
         implBind(clientAddress, clientPort);
         implConnect(address, port);
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port) throws IOException
+    protected ProvSSLSocketDirect(ContextData contextData, InetAddress address, int port) throws IOException
     {
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
 
         implConnect(address, port);
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
+    protected ProvSSLSocketDirect(ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
         this.peerHost = host;
 
         implBind(clientAddress, clientPort);
         implConnect(host, port);
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port) throws IOException, UnknownHostException
+    protected ProvSSLSocketDirect(ContextData contextData, String host, int port) throws IOException, UnknownHostException
     {
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
         this.peerHost = host;
 
         implConnect(host, port);
-    }
-
-    public ProvSSLContextSpi getContext()
-    {
-        return context;
     }
 
     public ContextData getContextData()
@@ -309,13 +297,13 @@ class ProvSSLSocketDirect
     @Override
     public synchronized String[] getSupportedCipherSuites()
     {
-        return context.getSupportedCipherSuites();
+        return contextData.getContext().getSupportedCipherSuites();
     }
 
     @Override
     public synchronized String[] getSupportedProtocols()
     {
-        return context.getSupportedProtocols();
+        return contextData.getContext().getSupportedProtocols();
     }
 
     @Override
@@ -404,7 +392,7 @@ class ProvSSLSocketDirect
 
         if (this.useClientMode != useClientMode)
         {
-            context.updateDefaultProtocols(sslParameters, useClientMode);
+            contextData.getContext().updateDefaultProtocols(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }

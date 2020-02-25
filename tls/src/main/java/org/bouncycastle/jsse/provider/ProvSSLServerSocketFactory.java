@@ -9,48 +9,48 @@ import javax.net.ssl.SSLServerSocketFactory;
 class ProvSSLServerSocketFactory
     extends SSLServerSocketFactory
 {
-    protected final ProvSSLContextSpi context;
+    protected final ContextData contextData;
 
-    ProvSSLServerSocketFactory(ProvSSLContextSpi context)
+    ProvSSLServerSocketFactory(ContextData contextData)
     {
         super();
 
-        this.context = context;
+        this.contextData = contextData;
     }
 
     @Override
     public ServerSocket createServerSocket() throws IOException
     {
-        return new ProvSSLServerSocket(context, context.createContextData());
+        return new ProvSSLServerSocket(contextData);
     }
 
     @Override
     public ServerSocket createServerSocket(int port) throws IOException
     {
-        return new ProvSSLServerSocket(context, context.createContextData(), port);
+        return new ProvSSLServerSocket(contextData, port);
     }
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog) throws IOException
     {
-        return new ProvSSLServerSocket(context, context.createContextData(), port, backlog);
+        return new ProvSSLServerSocket(contextData, port, backlog);
     }
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog, InetAddress ifAddress) throws IOException
     {
-        return new ProvSSLServerSocket(context, context.createContextData(), port, backlog, ifAddress);
+        return new ProvSSLServerSocket(contextData, port, backlog, ifAddress);
     }
 
     @Override
     public String[] getDefaultCipherSuites()
     {
-        return context.getDefaultCipherSuites();
+        return contextData.getContext().getDefaultCipherSuites();
     }
 
     @Override
     public String[] getSupportedCipherSuites()
     {
-        return context.getSupportedCipherSuites();
+        return contextData.getContext().getSupportedCipherSuites();
     }
 }
