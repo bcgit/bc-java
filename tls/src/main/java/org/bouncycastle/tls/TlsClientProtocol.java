@@ -931,28 +931,6 @@ public class TlsClientProtocol
         }
 
         /*
-         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
-         * master secret [..]. (and see 5.2, 5.3)
-         */
-        final boolean acceptedExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
-        if (acceptedExtendedMasterSecret)
-        {
-            if (server_version.isSSL())
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
-        }
-        else
-        {
-            if ((resumedSession && !tlsClient.allowLegacyResumption()) || tlsClient.requiresExtendedMasterSecret())
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
-        }
-
-        securityParameters.extendedMasterSecret = acceptedExtendedMasterSecret;
-
-        /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message.
          * 
@@ -1081,6 +1059,34 @@ public class TlsClientProtocol
 
         // TODO[compat-gnutls] GnuTLS test server fails to send renegotiation_info extension when resuming
         this.tlsClient.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
+
+        /*
+         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
+         * master secret [..]. (and see 5.2, 5.3)
+         */
+        {
+            final boolean acceptedExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(
+                serverExtensions);
+
+            if (acceptedExtendedMasterSecret)
+            {
+                if (server_version.isSSL()
+                    || (!resumedSession && !tlsClient.shouldUseExtendedMasterSecret()))
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
+            }
+            else
+            {
+                if (tlsClient.requiresExtendedMasterSecret()
+                    || (resumedSession && !tlsClient.allowLegacyResumption()))
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
+            }
+
+            securityParameters.extendedMasterSecret = acceptedExtendedMasterSecret;
+        }
 
         /*
          * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
@@ -1323,9 +1329,13 @@ public class TlsClientProtocol
 
         this.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
-        if (!client_version.isSSL())
+        if (!client_version.isSSL() && tlsClient.shouldUseExtendedMasterSecret())
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
+        }
+        else if (tlsClient.requiresExtendedMasterSecret())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), tlsClientContext);
