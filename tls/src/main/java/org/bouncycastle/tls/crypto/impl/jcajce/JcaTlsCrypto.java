@@ -629,6 +629,19 @@ public class JcaTlsCrypto
         return hasSignatureAlgorithm(sigAndHashAlgorithm.getSignature());
     }
 
+    public boolean hasSignatureScheme(int signatureScheme)
+    {
+        /*
+         * This is somewhat overkill, but much simpler for now. It's also consistent with SunJSSE behaviour.
+         */
+        if ((signatureScheme >>> 8) == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
+        {
+            return false;
+        }
+
+        return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+    }
+
     public boolean hasSRPAuthentication()
     {
         return true;
