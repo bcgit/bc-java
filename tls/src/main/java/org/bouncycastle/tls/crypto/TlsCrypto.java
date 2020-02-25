@@ -93,6 +93,14 @@ public interface TlsCrypto
     boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm);
 
     /**
+     * Return true if this TlsCrypto can support the passed in signature scheme.
+     *
+     * @param signatureScheme the scheme of interest.
+     * @return true if signatureScheme is supported, false otherwise.
+     */
+    boolean hasSignatureScheme(int signatureScheme);
+
+    /**
      * Return true if this TlsCrypto can support SRP authentication.
      *
      * @return true if this instance can support SRP authentication, false otherwise.
