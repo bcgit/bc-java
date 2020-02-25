@@ -15,8 +15,6 @@ interface ProvTlsManager
 
     String chooseServerAlias(String keyType, Principal[] issuers);
 
-    ProvSSLContextSpi getContext();
-
     boolean getEnableSessionCreation();
 
     ContextData getContextData();

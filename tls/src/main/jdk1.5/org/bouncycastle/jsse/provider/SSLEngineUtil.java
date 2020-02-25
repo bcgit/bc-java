@@ -23,14 +23,14 @@ abstract class SSLEngineUtil
         getSSLParameters = ReflectionUtil.findMethod(methods, "getSSLParameters");
     }
 
-    static SSLEngine create(ProvSSLContextSpi context, ContextData contextData)
+    static SSLEngine create(ContextData contextData)
     {
-        return new ProvSSLEngine(context, contextData);
+        return new ProvSSLEngine(contextData);
     }
 
-    static SSLEngine create(ProvSSLContextSpi context, ContextData contextData, String host, int port)
+    static SSLEngine create(ContextData contextData, String host, int port)
     {
-        return new ProvSSLEngine(context, contextData, host, port);
+        return new ProvSSLEngine(contextData, host, port);
     }
 
     static BCExtendedSSLSession importHandshakeSession(SSLEngine sslEngine)

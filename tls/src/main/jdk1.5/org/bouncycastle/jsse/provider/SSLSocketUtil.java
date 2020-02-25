@@ -29,50 +29,50 @@ abstract class SSLSocketUtil
     }
 
     /** This factory method is the one used (only) by ProvSSLServerSocket */
-    static ProvSSLSocketDirect create(ProvSSLContextSpi context, ContextData contextData, boolean enableSessionCreation,
+    static ProvSSLSocketDirect create(ContextData contextData, boolean enableSessionCreation,
         boolean useClientMode, ProvSSLParameters sslParameters)
     {
-        return new ProvSSLSocketDirect(context, contextData, enableSessionCreation, useClientMode, sslParameters);
+        return new ProvSSLSocketDirect(contextData, enableSessionCreation, useClientMode, sslParameters);
     }
 
-    static ProvSSLSocketDirect create(ProvSSLContextSpi context, ContextData contextData)
+    static ProvSSLSocketDirect create(ContextData contextData)
     {
-        return new ProvSSLSocketDirect(context, contextData);
+        return new ProvSSLSocketDirect(contextData);
     }
 
-    static ProvSSLSocketDirect create(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port,
+    static ProvSSLSocketDirect create(ContextData contextData, InetAddress address, int port,
         InetAddress clientAddress, int clientPort) throws IOException
     {
-        return new ProvSSLSocketDirect(context, contextData, address, port, clientAddress, clientPort);
+        return new ProvSSLSocketDirect(contextData, address, port, clientAddress, clientPort);
     }
 
-    static ProvSSLSocketDirect create(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port)
+    static ProvSSLSocketDirect create(ContextData contextData, InetAddress address, int port)
         throws IOException
     {
-        return new ProvSSLSocketDirect(context, contextData, address, port);
+        return new ProvSSLSocketDirect(contextData, address, port);
     }
 
-    static ProvSSLSocketDirect create(ProvSSLContextSpi context, ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
+    static ProvSSLSocketDirect create(ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
-        return new ProvSSLSocketDirect(context, contextData, host, port, clientAddress, clientPort);
+        return new ProvSSLSocketDirect(contextData, host, port, clientAddress, clientPort);
     }
 
-    static ProvSSLSocketDirect create(ProvSSLContextSpi context, ContextData contextData, String host, int port) throws IOException, UnknownHostException
+    static ProvSSLSocketDirect create(ContextData contextData, String host, int port) throws IOException, UnknownHostException
     {
-        return new ProvSSLSocketDirect(context, contextData, host, port);
+        return new ProvSSLSocketDirect(contextData, host, port);
     }
 
-    static ProvSSLSocketWrap create(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
+    static ProvSSLSocketWrap create(ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
         throws IOException
     {
-        return new ProvSSLSocketWrap(context, contextData, s, consumed, autoClose);
+        return new ProvSSLSocketWrap(contextData, s, consumed, autoClose);
     }
 
-    static ProvSSLSocketWrap create(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
+    static ProvSSLSocketWrap create(ContextData contextData, Socket s, String host, int port, boolean autoClose)
         throws IOException
     {
-        return new ProvSSLSocketWrap(context, contextData, s, host, port, autoClose);
+        return new ProvSSLSocketWrap(contextData, s, host, port, autoClose);
     }
 
     static BCExtendedSSLSession importHandshakeSession(SSLSocket sslSocket)

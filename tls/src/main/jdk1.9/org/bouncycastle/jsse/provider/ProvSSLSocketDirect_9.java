@@ -12,39 +12,39 @@ class ProvSSLSocketDirect_9
     extends ProvSSLSocketDirect
 {
     /** This constructor is the one used (only) by ProvSSLServerSocket */
-    ProvSSLSocketDirect_9(ProvSSLContextSpi context, ContextData contextData, boolean enableSessionCreation,
+    ProvSSLSocketDirect_9(ContextData contextData, boolean enableSessionCreation,
         boolean useClientMode, ProvSSLParameters sslParameters)
     {
-        super(context, contextData, enableSessionCreation, useClientMode, sslParameters);
+        super(contextData, enableSessionCreation, useClientMode, sslParameters);
     }
 
-    protected ProvSSLSocketDirect_9(ProvSSLContextSpi context, ContextData contextData)
+    protected ProvSSLSocketDirect_9(ContextData contextData)
     {
-        super(context, contextData);
+        super(contextData);
     }
 
-    protected ProvSSLSocketDirect_9(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port,
+    protected ProvSSLSocketDirect_9(ContextData contextData, InetAddress address, int port,
         InetAddress clientAddress, int clientPort) throws IOException
     {
-        super(context, contextData, address, port, clientAddress, clientPort);
+        super(contextData, address, port, clientAddress, clientPort);
     }
 
-    protected ProvSSLSocketDirect_9(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port)
+    protected ProvSSLSocketDirect_9(ContextData contextData, InetAddress address, int port)
         throws IOException
     {
-        super(context, contextData, address, port);
+        super(contextData, address, port);
     }
 
-    protected ProvSSLSocketDirect_9(ProvSSLContextSpi context, ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
+    protected ProvSSLSocketDirect_9(ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
-        super(context, contextData, host, port, clientAddress, clientPort);
+        super(contextData, host, port, clientAddress, clientPort);
     }
 
-    protected ProvSSLSocketDirect_9(ProvSSLContextSpi context, ContextData contextData, String host, int port)
+    protected ProvSSLSocketDirect_9(ContextData contextData, String host, int port)
         throws IOException, UnknownHostException
     {
-        super(context, contextData, host, port);
+        super(contextData, host, port);
     }
 
     @Override

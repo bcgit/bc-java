@@ -52,7 +52,6 @@ class ProvSSLSocketWrap
     protected final AppDataInput appDataIn = new AppDataInput();
     protected final AppDataOutput appDataOut = new AppDataOutput();
 
-    protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
     protected final Socket wrapSocket;
     protected final InputStream consumed;
@@ -69,38 +68,31 @@ class ProvSSLSocketWrap
     protected ProvSSLConnection connection = null;
     protected ProvSSLSessionHandshake handshakeSession = null;
 
-    protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
+    protected ProvSSLSocketWrap(ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
         throws IOException
     {
-        this.context = context;
         this.contextData = contextData;
         this.wrapSocket = checkSocket(s);
         this.consumed = consumed;
         this.autoClose = autoClose;
         this.useClientMode = false;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
 
         notifyConnected();
     }
 
-    protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
+    protected ProvSSLSocketWrap(ContextData contextData, Socket s, String host, int port, boolean autoClose)
         throws IOException
     {
-        this.context = context;
         this.contextData = contextData;
         this.wrapSocket = checkSocket(s);
         this.consumed = null;
         this.peerHost = host;
         this.autoClose = autoClose;
         this.useClientMode = true;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
 
         notifyConnected();
-    }
-
-    public ProvSSLContextSpi getContext()
-    {
-        return context;
     }
 
     public ContextData getContextData()
@@ -381,13 +373,13 @@ class ProvSSLSocketWrap
     @Override
     public synchronized String[] getSupportedCipherSuites()
     {
-        return context.getSupportedCipherSuites();
+        return contextData.getContext().getSupportedCipherSuites();
     }
 
     @Override
     public synchronized String[] getSupportedProtocols()
     {
-        return context.getSupportedProtocols();
+        return contextData.getContext().getSupportedProtocols();
     }
 
     @Override
@@ -572,7 +564,7 @@ class ProvSSLSocketWrap
 
         if (this.useClientMode != useClientMode)
         {
-            context.updateDefaultProtocols(sslParameters, useClientMode);
+            contextData.getContext().updateDefaultProtocols(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }
