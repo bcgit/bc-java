@@ -11,16 +11,16 @@ import javax.net.ssl.SSLSocket;
 class ProvSSLSocketWrap_9
     extends ProvSSLSocketWrap
 {
-    protected ProvSSLSocketWrap_9(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
+    protected ProvSSLSocketWrap_9(ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
         throws IOException
     {
-        super(context, contextData, s, consumed, autoClose);
+        super(contextData, s, consumed, autoClose);
     }
 
-    protected ProvSSLSocketWrap_9(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
+    protected ProvSSLSocketWrap_9(ContextData contextData, Socket s, String host, int port, boolean autoClose)
         throws IOException
     {
-        super(context, contextData, s, host, port, autoClose);
+        super(contextData, s, host, port, autoClose);
     }
 
     @Override
