@@ -42,7 +42,6 @@ class ProvSSLEngine
 {
     private static final Logger LOG = Logger.getLogger(ProvSSLEngine.class.getName());
 
-    protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
     protected final ProvSSLParameters sslParameters;
 
@@ -60,23 +59,17 @@ class ProvSSLEngine
 
     protected SSLException deferredException = null;
 
-    protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData)
+    protected ProvSSLEngine(ContextData contextData)
     {
-        this(context, contextData, null, -1);
+        this(contextData, null, -1);
     }
 
-    protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData, String host, int port)
+    protected ProvSSLEngine(ContextData contextData, String host, int port)
     {
         super(host, port);
 
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
-    }
-
-    public ProvSSLContextSpi getContext()
-    {
-        return context;
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
     }
 
     public ContextData getContextData()
@@ -315,13 +308,13 @@ class ProvSSLEngine
     @Override
     public synchronized String[] getSupportedCipherSuites()
     {
-        return context.getSupportedCipherSuites();
+        return contextData.getContext().getSupportedCipherSuites();
     }
 
     @Override
     public synchronized String[] getSupportedProtocols()
     {
-        return context.getSupportedProtocols();
+        return contextData.getContext().getSupportedProtocols();
     }
 
     @Override
@@ -416,7 +409,7 @@ class ProvSSLEngine
 
         if (this.useClientMode != useClientMode)
         {
-            context.updateDefaultProtocols(sslParameters, useClientMode);
+            contextData.getContext().updateDefaultProtocols(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }

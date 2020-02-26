@@ -252,17 +252,27 @@ public class TlsServerProtocol
             }
         }
 
-        securityParameters.extendedMasterSecret = offeredExtendedMasterSecret && !server_version.isSSL();
-
-        if (securityParameters.isExtendedMasterSecret())
+        /*
+         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
+         * master secret [..]. (and see 5.2, 5.3)
+         */
         {
-            TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
-        }
-        else if ((resumedSession && !tlsServer.allowLegacyResumption()) || tlsServer.requiresExtendedMasterSecret())
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
+            securityParameters.extendedMasterSecret = offeredExtendedMasterSecret && !server_version.isSSL()
+                && tlsServer.shouldUseExtendedMasterSecret();
 
+            if (securityParameters.isExtendedMasterSecret())
+            {
+                TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
+            }
+            else if (tlsServer.requiresExtendedMasterSecret())
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+            else if (resumedSession && !tlsServer.allowLegacyResumption())
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
 
         /*
          * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
@@ -974,18 +984,6 @@ public class TlsServerProtocol
          * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
          */
 
-        /*
-         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
-         * master secret [..]. (and see 5.2, 5.3)
-         */
-        this.offeredExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
-
-        if (!offeredExtendedMasterSecret
-            && ((resumedSession && !tlsServer.allowLegacyResumption()) || tlsServer.requiresExtendedMasterSecret()))
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-
         byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
 
         if (securityParameters.isRenegotiating())
@@ -1075,6 +1073,8 @@ public class TlsServerProtocol
         }
 
         tlsServer.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
+
+        this.offeredExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
 
         if (clientExtensions != null)
         {

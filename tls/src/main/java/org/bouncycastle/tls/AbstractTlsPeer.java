@@ -69,6 +69,11 @@ public abstract class AbstractTlsPeer
         return true;
     }
 
+    public boolean shouldUseExtendedMasterSecret()
+    {
+        return true;
+    }
+
     public boolean shouldUseExtendedPadding()
     {
         return false;

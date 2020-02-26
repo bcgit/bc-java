@@ -64,6 +64,8 @@ public interface TlsPeer
      */
     boolean shouldCheckSigAlgOfPeerCerts();
 
+    boolean shouldUseExtendedMasterSecret();
+
     /**
      * See RFC 5246 6.2.3.2. Controls whether block cipher encryption may randomly add extra padding
      * beyond the minimum. Note that in configurations where this is known to be potential security
