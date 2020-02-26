@@ -11,58 +11,53 @@ import javax.net.ssl.SSLServerSocket;
 class ProvSSLServerSocket
     extends SSLServerSocket
 {
-    protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
     protected final ProvSSLParameters sslParameters;
 
     protected boolean enableSessionCreation = true;
     protected boolean useClientMode = false;
 
-    protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData)
+    protected ProvSSLServerSocket(ContextData contextData)
         throws IOException
     {
         super();
 
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
     }
 
-    protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port)
+    protected ProvSSLServerSocket(ContextData contextData, int port)
         throws IOException
     {
         super(port);
 
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
     }
 
-    protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port, int backlog)
+    protected ProvSSLServerSocket(ContextData contextData, int port, int backlog)
         throws IOException
     {
         super(port, backlog);
 
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
     }
 
-    protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port, int backlog, InetAddress address)
+    protected ProvSSLServerSocket(ContextData contextData, int port, int backlog, InetAddress address)
         throws IOException
     {
         super(port, backlog, address);
 
-        this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
     }
 
     @Override
     public synchronized Socket accept() throws IOException
     {
-        ProvSSLSocketDirect socket = SSLSocketUtil.create(context, contextData, enableSessionCreation,
-            useClientMode, sslParameters.copy());
+        ProvSSLSocketDirect socket = SSLSocketUtil.create(contextData, enableSessionCreation, useClientMode,
+            sslParameters.copy());
 
         implAccept(socket);
         socket.notifyConnected();
@@ -109,13 +104,13 @@ class ProvSSLServerSocket
     @Override
     public synchronized String[] getSupportedCipherSuites()
     {
-        return context.getSupportedCipherSuites();
+        return contextData.getContext().getSupportedCipherSuites();
     }
 
     @Override
     public synchronized String[] getSupportedProtocols()
     {
-        return context.getSupportedProtocols();
+        return contextData.getContext().getSupportedProtocols();
     }
 
     @Override
@@ -165,7 +160,7 @@ class ProvSSLServerSocket
     {
         if (this.useClientMode != useClientMode)
         {
-            context.updateDefaultProtocols(sslParameters, useClientMode);
+            contextData.getContext().updateDefaultProtocols(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }

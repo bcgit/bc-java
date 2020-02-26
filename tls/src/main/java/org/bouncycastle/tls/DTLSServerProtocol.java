@@ -457,9 +457,26 @@ public class DTLSServerProtocol
             }
         }
 
-        if (securityParameters.isExtendedMasterSecret())
+        /*
+         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
+         * master secret [..]. (and see 5.2, 5.3)
+         */
         {
-            TlsExtensionsUtils.addExtendedMasterSecretExtension(state.serverExtensions);
+            securityParameters.extendedMasterSecret = state.offeredExtendedMasterSecret
+                && state.server.shouldUseExtendedMasterSecret();
+
+            if (securityParameters.isExtendedMasterSecret())
+            {
+                TlsExtensionsUtils.addExtendedMasterSecretExtension(state.serverExtensions);
+            }
+            else if (state.server.requiresExtendedMasterSecret())
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+            else if (state.resumedSession && !state.server.allowLegacyResumption())
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
         }
 
         // Heartbeats
@@ -656,19 +673,6 @@ public class DTLSServerProtocol
          */
 
         /*
-         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
-         * master secret [..]. (and see 5.2, 5.3)
-         */
-        securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
-
-        if (!securityParameters.isExtendedMasterSecret()
-            && ((state.resumedSession && !state.server.allowLegacyResumption())
-                || state.server.requiresExtendedMasterSecret()))
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-
-        /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
          */
         {
@@ -710,6 +714,8 @@ public class DTLSServerProtocol
         }
 
         state.server.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
+
+        state.offeredExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
 
         if (state.clientExtensions != null)
         {
@@ -784,6 +790,7 @@ public class DTLSServerProtocol
         int[] offeredCipherSuites = null;
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
+        boolean offeredExtendedMasterSecret = false;
         boolean resumedSession = false;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;

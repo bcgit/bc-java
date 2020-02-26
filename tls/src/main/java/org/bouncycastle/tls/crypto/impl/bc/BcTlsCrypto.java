@@ -324,6 +324,11 @@ public class BcTlsCrypto
         return hasSignatureAlgorithm(sigAndHashAlgorithm.getSignature());
     }
 
+    public boolean hasSignatureScheme(int signatureScheme)
+    {
+        return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+    }
+
     public boolean hasSRPAuthentication()
     {
         return true;

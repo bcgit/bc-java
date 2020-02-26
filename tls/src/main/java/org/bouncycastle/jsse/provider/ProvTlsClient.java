@@ -80,7 +80,8 @@ class ProvTlsClient
     @Override
     protected Vector getSupportedGroups(Vector namedGroupRoles)
     {
-        return SupportedGroups.getClientSupportedGroups(getCrypto(), manager.getContext().isFips(), namedGroupRoles);
+        return SupportedGroups.getClientSupportedGroups(getCrypto(), manager.getContextData().getContext().isFips(),
+            namedGroupRoles);
     }
 
     @Override
@@ -127,7 +128,8 @@ class ProvTlsClient
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return manager.getContext().getActiveCipherSuites(getCrypto(), sslParameters, getProtocolVersions());
+        return manager.getContextData().getContext().getActiveCipherSuites(getCrypto(), sslParameters,
+            getProtocolVersions());
     }
 
     @Override
@@ -139,7 +141,7 @@ class ProvTlsClient
     @Override
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContext().getActiveProtocolVersions(sslParameters);
+        return manager.getContextData().getContext().getActiveProtocolVersions(sslParameters);
     }
 
     @Override
@@ -386,8 +388,8 @@ class ProvTlsClient
     @Override
     public void notifySelectedCipherSuite(int selectedCipherSuite)
     {
-        String selectedCipherSuiteName = manager.getContext().validateNegotiatedCipherSuite(sslParameters,
-            selectedCipherSuite);
+        String selectedCipherSuiteName = manager.getContextData().getContext()
+            .validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
 
         LOG.fine("Client notified of selected cipher suite: " + selectedCipherSuiteName);
 
@@ -397,7 +399,8 @@ class ProvTlsClient
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        String serverVersionName = manager.getContext().validateNegotiatedProtocol(sslParameters, serverVersion);
+        String serverVersionName = manager.getContextData().getContext().validateNegotiatedProtocol(sslParameters,
+            serverVersion);
 
         LOG.fine("Client notified of selected protocol version: " + serverVersionName);
 
@@ -456,6 +459,12 @@ class ProvTlsClient
     public boolean requiresExtendedMasterSecret()
     {
         return !JsseUtils.allowLegacyMasterSecret();
+    }
+
+    @Override
+    public boolean shouldUseExtendedMasterSecret()
+    {
+        return JsseUtils.useExtendedMasterSecret();
     }
 
     protected boolean isResumable(ProvSSLSession availableSSLSession)
