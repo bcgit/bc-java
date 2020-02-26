@@ -410,13 +410,7 @@ class ProvSSLContextSpi
     protected final String[] defaultProtocolsClient;
     protected final String[] defaultProtocolsServer;
 
-    protected boolean initialized = false;
-
-    private TlsCrypto crypto;
-    private X509ExtendedKeyManager x509KeyManager;
-    private BCX509ExtendedTrustManager x509TrustManager;
-    private ProvSSLSessionContext clientSessionContext;
-    private ProvSSLSessionContext serverSessionContext;
+    private ContextData contextData = null;
 
     ProvSSLContextSpi(boolean isInFipsMode, TlsCryptoProvider cryptoProvider, String[] specifiedProtocolsClient)
     {
@@ -428,11 +422,6 @@ class ProvSSLContextSpi
         this.defaultCipherSuites = getDefaultCipherSuites(isInFipsMode);
         this.defaultProtocolsClient = getDefaultEnabledProtocolsClient(supportedProtocols, specifiedProtocolsClient);
         this.defaultProtocolsServer = getDefaultEnabledProtocolsServer(supportedProtocols);
-    }
-
-    ProvSSLSessionContext createSSLSessionContext()
-    {
-        return new ProvSSLSessionContext(this, crypto);
     }
 
     String[] getDefaultCipherSuites()
@@ -625,74 +614,65 @@ class ProvSSLContextSpi
         return name;
     }
 
-    protected void checkInitialized()
-    {
-        if (!initialized)
-        {
-            throw new IllegalStateException("SSLContext has not been initialized.");
-        }
-    }
-
     @Override
     protected synchronized SSLEngine engineCreateSSLEngine()
     {
-        checkInitialized();
-        return SSLEngineUtil.create(this, createContextData());
+        return SSLEngineUtil.create(getContextData());
     }
 
     @Override
     protected synchronized SSLEngine engineCreateSSLEngine(String host, int port)
     {
-        checkInitialized();
-        return SSLEngineUtil.create(this, createContextData(), host, port);
+        return SSLEngineUtil.create(getContextData(), host, port);
     }
 
     @Override
     protected synchronized SSLSessionContext engineGetClientSessionContext()
     {
-        return clientSessionContext;
+        return getContextData().getClientSessionContext();
     }
 
     @Override
     protected synchronized SSLSessionContext engineGetServerSessionContext()
     {
-        return serverSessionContext;
+        return getContextData().getServerSessionContext();
     }
 
     @Override
     protected SSLServerSocketFactory engineGetServerSocketFactory()
     {
-        checkInitialized();
-        return new ProvSSLServerSocketFactory(this);
+        return new ProvSSLServerSocketFactory(getContextData());
     }
 
     @Override
     protected SSLSocketFactory engineGetSocketFactory()
     {
-        checkInitialized();
-        return new ProvSSLSocketFactory(this);
+        return new ProvSSLSocketFactory(getContextData());
     }
 
     @Override
     protected synchronized void engineInit(KeyManager[] kms, TrustManager[] tms, SecureRandom sr) throws KeyManagementException
     {
-        this.initialized = false;
+        this.contextData = null;
 
-        this.crypto = cryptoProvider.create(sr);
-        this.x509KeyManager = selectX509KeyManager(kms);
-        this.x509TrustManager = selectX509TrustManager(tms);
-        this.clientSessionContext = createSSLSessionContext();
-        this.serverSessionContext = createSSLSessionContext();
+        TlsCrypto crypto = cryptoProvider.create(sr);
+        X509ExtendedKeyManager x509KeyManager = selectX509KeyManager(kms);
+        BCX509ExtendedTrustManager x509TrustManager = selectX509TrustManager(tms);
 
         // Trigger (possibly expensive) RNG initialization here to avoid timeout in an actual handshake
-        this.crypto.getSecureRandom().nextInt();
+        crypto.getSecureRandom().nextInt();
 
-        this.initialized = true;
+        this.contextData = new ContextData(this, crypto, x509KeyManager, x509TrustManager);
     }
 
-    protected ContextData createContextData()
+    protected synchronized ContextData getContextData()
     {
-        return new ContextData(crypto, x509KeyManager, x509TrustManager, clientSessionContext, serverSessionContext);
+        if (null == contextData)
+        {
+            throw new IllegalStateException("SSLContext has not been initialized.");
+        }
+
+        return contextData;
     }
 
     protected X509ExtendedKeyManager selectX509KeyManager(KeyManager[] kms) throws KeyManagementException
