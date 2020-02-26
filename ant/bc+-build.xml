@@ -278,6 +278,8 @@
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
+                 <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
              </fileset>
         </copy>
 
@@ -317,6 +319,8 @@
                  <exclude name="org/bouncycastle/**/test/**" />
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
+                 <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="**/*.crl" />
                  <exclude name="org/bouncycastle/util/utiltest/**" />
                  <exclude name="org/bouncycastle/bcpg/**" />
@@ -424,6 +428,8 @@
                  <exclude name="org/bouncycastle/**/test/**" />
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
+                 <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="**/*.crl" />
                  <exclude name="**/*.key" />
                  <exclude name="org/bouncycastle/**.crt" />
@@ -468,6 +474,8 @@
                 <include name="**/*.class"/>
                 <exclude name="**/NTRU*.class" />
                 <exclude name="**/ntru/**/*.class" />
+                <exclude name="org/bouncycastle/pqc/**/*Tests.class" />
+                <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.class" />
                 <include name="**/*.properties"/>
             </jarFileSet>
             <manifestElements>
@@ -755,6 +763,7 @@
              <fileset dir="${src.dir}" includes="**/*.message" />
         </copy>
 
+        <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/lms/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages_de.properties" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages.properties" />
 
@@ -778,6 +787,10 @@
     </target>
 
     <target name="test">
+        <property name="test.target" value="bctest-${target.name}" />
+        <property name="test.target.dir" value="${artifacts.dir}/${test.target}" />
+        <property name="test.target.src.dir" value="${test.target.dir}/src" />
+
         <mkdir dir="${basedir}/${build.dir}/${target.prefix}" />
         <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed">
             <classpath>
@@ -791,7 +804,7 @@
 
             <formatter type="xml" />
             <batchtest todir="${artifacts.reports.xml.dir}" unless="testcase">
-                <fileset dir="${src.dir}">
+                <fileset dir="${test.target.src.dir}">
                     <include name="**/AllTests.java" />
                 </fileset>
             </batchtest>

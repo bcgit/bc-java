@@ -4,10 +4,6 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.pqc.crypto.lms.HSSTests;
-import org.bouncycastle.pqc.crypto.lms.LMSKeyGenTests;
-import org.bouncycastle.pqc.crypto.lms.LMSTests;
-import org.bouncycastle.pqc.crypto.lms.TypeTests;
 import org.bouncycastle.util.test.SimpleTestResult;
 
 public class AllTests
@@ -43,11 +39,6 @@ public class AllTests
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSUtilTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
-        suite.addTestSuite(HSSTests.class);
-        suite.addTestSuite(LMSKeyGenTests.class);
-        suite.addTestSuite(LMSTests.class);
-        suite.addTestSuite(TypeTests.class);
-
 
         return new BCTestSetup(suite);
     }
