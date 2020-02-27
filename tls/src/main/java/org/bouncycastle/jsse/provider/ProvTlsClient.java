@@ -53,6 +53,7 @@ class ProvTlsClient
 
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
+    protected final JsseSecurityParameters jsseSecurityParameters = new JsseSecurityParameters();
 
     protected ProvSSLSession sslSession = null;
     protected boolean handshakeComplete = false;
@@ -443,12 +444,13 @@ class ProvTlsClient
             ProvSSLSessionHandshake handshakeSession;
             if (!isResumed)
             {
-                handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort, securityParameters);
+                handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort,
+                    securityParameters, jsseSecurityParameters);
             }
             else
             {
                 handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
-                    sslSession.getTlsSession(), sslSession.getJsseSessionParameters());
+                    jsseSecurityParameters, sslSession.getTlsSession(), sslSession.getJsseSessionParameters());
             }
 
             manager.notifyHandshakeSession(handshakeSession);

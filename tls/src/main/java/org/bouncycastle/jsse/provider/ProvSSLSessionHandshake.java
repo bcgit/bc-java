@@ -16,12 +16,12 @@ class ProvSSLSessionHandshake
     protected final JsseSecurityParameters jsseSecurityParameters;
 
     ProvSSLSessionHandshake(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort,
-        SecurityParameters securityParameters)
+        SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters)
     {
         super(sslSessionContext, peerHost, peerPort);
 
         this.securityParameters = securityParameters;
-        this.jsseSecurityParameters = new JsseSecurityParameters();
+        this.jsseSecurityParameters = jsseSecurityParameters;
     }
 
     String getApplicationProtocol()
@@ -63,6 +63,7 @@ class ProvSSLSessionHandshake
     public String[] getLocalSupportedSignatureAlgorithms()
     {
         return getSupportedSignatureAlgorithms(false);
+//        return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.localSigSchemes);
     }
 
     @Override
@@ -75,6 +76,7 @@ class ProvSSLSessionHandshake
     public String[] getPeerSupportedSignatureAlgorithms()
     {
         return getSupportedSignatureAlgorithms(true);
+//        return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.peerSigSchemesCert);
     }
 
     @Override
@@ -100,6 +102,5 @@ class ProvSSLSessionHandshake
             : securityParameters.getServerSigAlgs();
 
         return JsseUtils.getSignatureSchemeNames(sigAlgs);
-//        return SignatureSchemeInfo.getJcaSignatureAlgorithms(signatureSchemes);
     }
 }

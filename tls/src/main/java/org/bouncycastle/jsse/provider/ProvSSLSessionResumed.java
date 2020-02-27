@@ -13,9 +13,10 @@ class ProvSSLSessionResumed
     protected final JsseSessionParameters jsseSessionParameters;
 
     ProvSSLSessionResumed(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort,
-        SecurityParameters securityParameters, TlsSession tlsSession, JsseSessionParameters jsseSessionParameters)
+        SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters, TlsSession tlsSession,
+        JsseSessionParameters jsseSessionParameters)
     {
-        super(sslSessionContext, peerHost, peerPort, securityParameters);
+        super(sslSessionContext, peerHost, peerPort, securityParameters, jsseSecurityParameters);
 
         this.tlsSession = tlsSession;
         this.sessionParameters = tlsSession.exportSessionParameters();
