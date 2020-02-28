@@ -3623,39 +3623,22 @@ public class TlsUtils
         }
     }
 
-    private static TlsKeyExchange initKeyExchange(TlsContext context, TlsKeyExchange keyExchange) throws IOException
-    {
-        keyExchange.init(context);
-
-        // TODO This section is a bit out-of-place here
-
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-
-        if (!isSignatureAlgorithmsExtensionAllowed(securityParameters.getNegotiatedVersion()))
-        {
-            securityParameters.clientSigAlgs = null;
-            securityParameters.clientSigAlgsCert = null;
-        }
-
-        return keyExchange;
-    }
-
     static TlsKeyExchange initKeyExchangeClient(TlsClientContext context, TlsClient client) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        int cipherSuite = securityParameters.getCipherSuite();
-        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(securityParameters.getCipherSuite());
         TlsKeyExchange keyExchange = createKeyExchangeClient(client, securityParameters.getKeyExchangeAlgorithm());
-        return initKeyExchange(context, keyExchange);
+        keyExchange.init(context);
+        return keyExchange;
     }
 
     static TlsKeyExchange initKeyExchangeServer(TlsServerContext context, TlsServer server) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        int cipherSuite = securityParameters.getCipherSuite();
-        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(securityParameters.getCipherSuite());
         TlsKeyExchange keyExchange = createKeyExchangeServer(server, securityParameters.getKeyExchangeAlgorithm());
-        return initKeyExchange(context, keyExchange);
+        keyExchange.init(context);
+        return keyExchange;
     }
 
     static TlsCipher initCipher(TlsContext context) throws IOException
@@ -4276,5 +4259,18 @@ public class TlsUtils
             }
         }
         return credentials;
+    }
+
+    static void completeHellosPhase(TlsContext context, TlsPeer peer) throws IOException
+    {
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        if (!isSignatureAlgorithmsExtensionAllowed(securityParameters.getNegotiatedVersion()))
+        {
+            securityParameters.clientSigAlgs = null;
+            securityParameters.clientSigAlgsCert = null;
+        }
+
+        peer.notifyHellosComplete();
     }
 }

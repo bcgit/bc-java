@@ -241,6 +241,10 @@ public class TlsClientProtocol
             {
                 receive13EncryptedExtensions(buf);
                 this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
+
+                // TODO[tls13] Post-negotiation derivations
+
+                TlsUtils.completeHellosPhase(tlsClientContext, tlsClient);
                 break;
             }
             default:
@@ -332,9 +336,6 @@ public class TlsClientProtocol
                 process13ServerHello(serverHello, true);
                 buf.updateHash(handshakeHash);
                 this.connection_state = CS_SERVER_HELLO;
-
-                // TODO[tls13] Check CS_CLIENT_HELLO block of legacy handler for post-CS_SERVER_HELLO behavior
-
                 break;
             }
             default:
@@ -508,6 +509,8 @@ public class TlsClientProtocol
                     handshakeHash.notifyPRFDetermined();
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO;
+
+                    TlsUtils.completeHellosPhase(tlsClientContext, tlsClient);
                 }
 
                 break;
