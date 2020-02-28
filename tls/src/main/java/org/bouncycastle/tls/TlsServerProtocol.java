@@ -406,8 +406,8 @@ public class TlsServerProtocol
                 this.connection_state = CS_CLIENT_HELLO_RETRY;
 
                 /*
-                 *  TODO[tls13] Send server flight:
-                 *      EncryptedExtensions, CertificateRequest*, Certificate, CertificateVerify, Finished
+                 * TODO[tls13] ServerHello, EncryptedExtensions (TlsUtils.completeHellosPhase),
+                 * CertificateRequest*, Certificate, CertificateVerify, Finished
                  */
 
                 this.connection_state = CS_SERVER_FINISHED; 
@@ -535,6 +535,18 @@ public class TlsServerProtocol
 
                 sendServerHelloMessage(serverHello);
                 this.connection_state = CS_SERVER_HELLO;
+
+                if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
+                {
+                    /*
+                     * TODO[tls13] EncryptedExtensions (TlsUtils.completeHellosPhase),
+                     * CertificateRequest*, Certificate, CertificateVerify, Finished
+                     */
+//                    break;
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                TlsUtils.completeHellosPhase(tlsServerContext, tlsServer);
 
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
