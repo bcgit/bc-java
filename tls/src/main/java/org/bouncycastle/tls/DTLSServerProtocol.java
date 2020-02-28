@@ -150,6 +150,7 @@ public class DTLSServerProtocol
         }
 
         handshake.getHandshakeHash().notifyPRFDetermined();
+        TlsUtils.completeHellosPhase(state.serverContext, state.server);
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)

@@ -157,6 +157,7 @@ public class DTLSClientProtocol
         }
 
         handshake.getHandshakeHash().notifyPRFDetermined();
+        TlsUtils.completeHellosPhase(state.clientContext, state.client);
 
         applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 
