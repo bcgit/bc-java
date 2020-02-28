@@ -1,12 +1,16 @@
 package org.bouncycastle.jsse.provider;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Vector;
 
 import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
@@ -15,13 +19,14 @@ final class ContextData
     private static void addSignatureScheme(TlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String name, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
-        if (crypto.hasSignatureScheme(signatureScheme))
+        boolean enabled = crypto.hasSignatureScheme(signatureScheme);
+
+        SignatureSchemeInfo signatureSchemeInfo = new SignatureSchemeInfo(signatureScheme, name, jcaSignatureAlgorithm,
+            keyAlgorithm, enabled);
+
+        if (null != ss.put(signatureScheme, signatureSchemeInfo))
         {
-            SignatureSchemeInfo signatureSchemeInfo = new SignatureSchemeInfo(signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm);
-            if (null != ss.put(signatureScheme, signatureSchemeInfo))
-            {
-                throw new IllegalStateException("Duplicate entries for SignatureSchemeInfo");
-            }
+            throw new IllegalStateException("Duplicate entries for SignatureSchemeInfo");
         }
     }
 
@@ -142,6 +147,37 @@ final class ContextData
     ProvSSLSessionContext getServerSessionContext()
     {
         return serverSessionContext;
+    }
+
+    List<SignatureSchemeInfo> getSupportedSignatureSchemes(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
+    {
+        if (null == sigAndHashAlgs || sigAndHashAlgs.isEmpty())
+        {
+            return null;
+        }
+
+        int count = sigAndHashAlgs.size();
+        ArrayList<SignatureSchemeInfo> result = new ArrayList<SignatureSchemeInfo>(count);
+        for (int i = 0; i < count; ++i)
+        {
+            SignatureAndHashAlgorithm sigAndHashAlg = sigAndHashAlgs.elementAt(i);
+            if (null != sigAndHashAlg)
+            {
+                int signatureScheme = SignatureSchemeInfo.getSignatureScheme(sigAndHashAlg);
+
+                SignatureSchemeInfo signatureSchemeInfo = supportedSignatureSchemesMap.get(signatureScheme);
+                if (null != signatureSchemeInfo)
+                {
+                    result.add(signatureSchemeInfo);
+                }
+            }
+        }
+        if (result.isEmpty())
+        {
+            return null;
+        }
+        result.trimToSize();
+        return Collections.unmodifiableList(result);
     }
 
     X509ExtendedKeyManager getX509KeyManager()

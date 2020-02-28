@@ -168,9 +168,25 @@ class ProvTlsClient
         {
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
             {
-                // TODO[jsse] What criteria determines whether we are willing to send client authentication?
+                final ContextData contextData = manager.getContextData();
+                final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-                int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
+                // Setup the peer supported signature schemes  
+                {
+                    @SuppressWarnings("unchecked")
+                    Vector<SignatureAndHashAlgorithm> serverSigAlgs = (Vector<SignatureAndHashAlgorithm>)
+                        securityParameters.getServerSigAlgs();
+                    @SuppressWarnings("unchecked")
+                    Vector<SignatureAndHashAlgorithm> serverSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
+                        securityParameters.getServerSigAlgsCert();
+
+                    jsseSecurityParameters.peerSigSchemes = contextData.getSupportedSignatureSchemes(serverSigAlgs);
+                    jsseSecurityParameters.peerSigSchemesCert = (serverSigAlgs == serverSigAlgsCert)
+                        ?   jsseSecurityParameters.peerSigSchemes
+                        :   contextData.getSupportedSignatureSchemes(serverSigAlgsCert);
+                }
+
+                int selectedCipherSuite = securityParameters.getCipherSuite();
                 int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
                 switch (keyExchangeAlgorithm)
                 {
@@ -205,9 +221,9 @@ class ProvTlsClient
                 Vector<X500Name> cas = (Vector<X500Name>)certificateRequest.getCertificateAuthorities();
                 if (cas != null && cas.size() > 0)
                 {
-                	X500Name[] names = cas.toArray(new X500Name[cas.size()]);
-                	Set<X500Principal> principals = JsseUtils.toX500Principals(names);
-                	issuers = principals.toArray(new Principal[principals.size()]);
+                    X500Name[] names = cas.toArray(new X500Name[cas.size()]);
+                    Set<X500Principal> principals = JsseUtils.toX500Principals(names);
+                    issuers = principals.toArray(new Principal[principals.size()]);
                 }
 
                 String alias = manager.chooseClientAlias(keyTypes, issuers);
@@ -223,7 +239,7 @@ class ProvTlsClient
                     throw new UnsupportedOperationException();
                 }
 
-                X509ExtendedKeyManager x509KeyManager = manager.getContextData().getX509KeyManager();
+                X509ExtendedKeyManager x509KeyManager = contextData.getX509KeyManager();
                 PrivateKey privateKey = x509KeyManager.getPrivateKey(alias);
                 Certificate certificate = JsseUtils.getCertificateMessage(crypto, x509KeyManager.getCertificateChain(alias));
 
@@ -249,7 +265,7 @@ class ProvTlsClient
                 {
                     short signatureAlgorithm = certificate.getCertificateAt(0).getLegacySignatureAlgorithm();
                     SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                        context.getSecurityParametersHandshake().getServerSigAlgs(), signatureAlgorithm);
+                        securityParameters.getServerSigAlgs(), signatureAlgorithm);
 
                     // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
                     return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
@@ -366,6 +382,30 @@ class ProvTlsClient
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
+    }
+
+    @Override
+    public void notifyHellosComplete() throws IOException
+    {
+        super.notifyHellosComplete();
+
+        final ContextData contextData = manager.getContextData();
+        final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        // Setup the local supported signature schemes  
+        {
+            @SuppressWarnings("unchecked")
+            Vector<SignatureAndHashAlgorithm> clientSigAlgs = (Vector<SignatureAndHashAlgorithm>)
+                securityParameters.getClientSigAlgs();
+            @SuppressWarnings("unchecked")
+            Vector<SignatureAndHashAlgorithm> clientSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
+                securityParameters.getClientSigAlgsCert();
+
+            jsseSecurityParameters.localSigSchemes = contextData.getSupportedSignatureSchemes(clientSigAlgs);
+            jsseSecurityParameters.localSigSchemesCert = (clientSigAlgs == clientSigAlgsCert)
+                ?   jsseSecurityParameters.localSigSchemes
+                :   contextData.getSupportedSignatureSchemes(clientSigAlgsCert);
+        }
     }
 
     @Override

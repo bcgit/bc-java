@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 
 class SignatureSchemeInfo
 {
@@ -33,17 +34,27 @@ class SignatureSchemeInfo
         return result.toArray(new String[0]);
     }
 
+    static int getSignatureScheme(SignatureAndHashAlgorithm sigAndHashAlg)
+    {
+        short hashAlgorithm = sigAndHashAlg.getHash(), signatureAlgorithm = sigAndHashAlg.getSignature();
+
+        return ((hashAlgorithm & 0xFF) << 8) | (signatureAlgorithm & 0xFF);
+    }
+
     private final int signatureScheme;
     private final String name;
     private final String jcaSignatureAlgorithm;
     private final String keyAlgorithm;
+    private final boolean enabled;
 
-    SignatureSchemeInfo(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm)
+    SignatureSchemeInfo(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm,
+        boolean enabled)
     {
         this.signatureScheme = signatureScheme;
         this.name = name;
         this.jcaSignatureAlgorithm = jcaSignatureAlgorithm;
         this.keyAlgorithm = keyAlgorithm;
+        this.enabled = enabled;
     }
 
     int getSignatureScheme()
@@ -66,6 +77,11 @@ class SignatureSchemeInfo
         return keyAlgorithm;
     }
 
+    boolean isEnabled()
+    {
+        return enabled;
+    }
+
     boolean isPermittedBy(BCAlgorithmConstraints algorithmConstraints)
     {
         Set<BCCryptoPrimitive> primitives = JsseUtils.SIGNATURE_CRYPTO_PRIMITIVES_BC;
@@ -75,5 +91,11 @@ class SignatureSchemeInfo
             // TODO SunJSSE passes AlgorithmParameters here (for PSS algorithms)
             && algorithmConstraints.permits(primitives, jcaSignatureAlgorithm, null);
             // TODO[tls13] Some schemes have a specific NamedGroup, check permission if TLS 1.3+
+    }
+
+    @Override
+    public String toString()
+    {
+        return name + "(0x" + Integer.toHexString(signatureScheme) + ")";
     }
 }
