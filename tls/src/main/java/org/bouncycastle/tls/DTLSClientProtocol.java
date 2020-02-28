@@ -246,12 +246,15 @@ public class DTLSClientProtocol
         {
             processCertificateRequest(state, serverMessage.getBody());
 
+            state.certificateRequest = TlsUtils.validateCertificateRequest(state.certificateRequest, state.keyExchange);
+
+            TlsUtils.establishServerSigAlgs(securityParameters, state.certificateRequest);
+
             /*
              * TODO Give the client a chance to immediately select the CertificateVerify hash
              * algorithm here to avoid tracking the other hash algorithms unnecessarily?
              */
-            TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(),
-                state.certificateRequest.getSupportedSignatureAlgorithms());
+            TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(), securityParameters.getServerSigAlgs());
 
             serverMessage = handshake.receiveMessage();
         }
@@ -281,7 +284,7 @@ public class DTLSClientProtocol
 
         if (null != state.certificateRequest)
         {
-            state.clientCredentials = TlsUtils.establishClientCredentials(securityParameters, state.authentication,
+            state.clientCredentials = TlsUtils.establishClientCredentials(state.authentication,
                 state.certificateRequest);
 
             /*
@@ -446,8 +449,7 @@ public class DTLSClientProtocol
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
         {
-            securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
-            securityParameters.clientSigAlgsCert = TlsExtensionsUtils.getSignatureAlgorithmsCertExtension(state.clientExtensions);
+            TlsUtils.establishClientSigAlgs(securityParameters, state.clientExtensions);
         }
 
         securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(state.clientExtensions);
@@ -560,8 +562,6 @@ public class DTLSClientProtocol
         state.certificateRequest = CertificateRequest.parse(state.clientContext, buf);
 
         TlsProtocol.assertEmpty(buf);
-
-        state.certificateRequest = TlsUtils.validateCertificateRequest(state.certificateRequest, state.keyExchange);
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)

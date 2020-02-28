@@ -248,12 +248,12 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.RSA:
                 {
                     short signatureAlgorithm = certificate.getCertificateAt(0).getLegacySignatureAlgorithm();
-                    SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                        context.getSecurityParametersHandshake().getClientSigAlgs(), signatureAlgorithm);
+                    SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
+                        context.getSecurityParametersHandshake().getServerSigAlgs(), signatureAlgorithm);
 
                     // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
                     return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
-                        privateKey, certificate, sigAlg);
+                        privateKey, certificate, sigAndHashAlg);
                 }
 
                 default:

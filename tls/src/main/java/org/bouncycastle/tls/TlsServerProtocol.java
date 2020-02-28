@@ -615,10 +615,11 @@ public class TlsServerProtocol
 
                         this.certificateRequest = TlsUtils.validateCertificateRequest(this.certificateRequest, this.keyExchange);
 
-                        sendCertificateRequestMessage(certificateRequest);
+                        TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
 
-                        TlsUtils.trackHashAlgorithms(handshakeHash,
-                            this.certificateRequest.getSupportedSignatureAlgorithms());
+                        TlsUtils.trackHashAlgorithms(handshakeHash, securityParameters.getServerSigAlgs());
+
+                        sendCertificateRequestMessage(certificateRequest);
                     }
                 }
                 this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
@@ -1089,8 +1090,7 @@ public class TlsServerProtocol
              */
             if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
             {
-                securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(clientExtensions);
-                securityParameters.clientSigAlgsCert = TlsExtensionsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
+                TlsUtils.establishClientSigAlgs(securityParameters, clientExtensions);
             }
 
             securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
