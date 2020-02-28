@@ -43,6 +43,7 @@ public class SecurityParameters
     Vector clientSigAlgsCert = null;
     int[] clientSupportedGroups = null;
     Vector serverSigAlgs = null;
+    Vector serverSigAlgsCert = null;
     int keyExchangeAlgorithm = -1;
     Certificate localCertificate = null;
     Certificate peerCertificate = null;
@@ -61,6 +62,7 @@ public class SecurityParameters
         this.clientSigAlgsCert = null;
         this.clientSupportedGroups = null;
         this.serverSigAlgs = null;
+        this.serverSigAlgsCert = null;
 
         this.earlySecret = clearSecret(earlySecret);
         this.handshakeSecret = clearSecret(handshakeSecret);
@@ -119,6 +121,11 @@ public class SecurityParameters
     public Vector getServerSigAlgs()
     {
         return serverSigAlgs;
+    }
+
+    public Vector getServerSigAlgsCert()
+    {
+        return serverSigAlgsCert;
     }
 
     /**
