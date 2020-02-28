@@ -237,20 +237,26 @@ class ProvTlsServer
             return null;
         }
 
+        final ContextData contextData = manager.getContextData();
+
         short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
             ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
-        Vector serverSigAlgs = null;
+        Vector<SignatureAndHashAlgorithm> serverSigAlgs = null;
+        Vector<SignatureAndHashAlgorithm> serverSigAlgsCert = null;
+
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
             serverSigAlgs = JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
+
+            // TODO[tls13] CertificateRequest can contain distinct serverSigAlgsCert
         }
 
         Vector certificateAuthorities = null;
         {
             Set<X500Principal> caSubjects = new HashSet<X500Principal>();
 
-            BCX509ExtendedTrustManager x509TrustManager = manager.getContextData().getX509TrustManager();
+            BCX509ExtendedTrustManager x509TrustManager = contextData.getX509TrustManager();
             for (X509Certificate caCert : x509TrustManager.getAcceptedIssuers())
             {
                 caSubjects.add(caCert.getSubjectX500Principal());
@@ -264,6 +270,14 @@ class ProvTlsServer
                     certificateAuthorities.addElement(X500Name.getInstance(caSubject.getEncoded()));
                 }
             }
+        }
+
+        // Setup the local supported signature schemes  
+        {
+            jsseSecurityParameters.localSigSchemes = contextData.getSupportedSignatureSchemes(serverSigAlgs);
+            jsseSecurityParameters.localSigSchemesCert = (null == serverSigAlgsCert)
+                ?   jsseSecurityParameters.localSigSchemes
+                :   contextData.getSupportedSignatureSchemes(serverSigAlgsCert);
         }
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
@@ -428,6 +442,30 @@ class ProvTlsServer
 
             // NOTE: We never try to continue the handshake with an untrusted client certificate
             manager.checkClientTrusted(chain, authType);
+        }
+    }
+
+    @Override
+    public void notifyHellosComplete() throws IOException
+    {
+        super.notifyHellosComplete();
+
+        final ContextData contextData = manager.getContextData();
+        final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        // Setup the peer supported signature schemes  
+        {
+            @SuppressWarnings("unchecked")
+            Vector<SignatureAndHashAlgorithm> clientSigAlgs = (Vector<SignatureAndHashAlgorithm>)
+                securityParameters.getClientSigAlgs();
+            @SuppressWarnings("unchecked")
+            Vector<SignatureAndHashAlgorithm> clientSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
+                securityParameters.getClientSigAlgsCert();
+
+            jsseSecurityParameters.peerSigSchemes = contextData.getSupportedSignatureSchemes(clientSigAlgs);
+            jsseSecurityParameters.peerSigSchemesCert = (clientSigAlgs == clientSigAlgsCert)
+                ?   jsseSecurityParameters.peerSigSchemes
+                :   contextData.getSupportedSignatureSchemes(clientSigAlgsCert);
         }
     }
 
