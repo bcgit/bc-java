@@ -573,7 +573,6 @@ class ProvTlsServer
         {
         case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.ECDH_anon:
-        case KeyExchangeAlgorithm.NULL:
             return true;
 
         case KeyExchangeAlgorithm.DHE_DSS:
@@ -583,6 +582,8 @@ class ProvTlsServer
         case KeyExchangeAlgorithm.RSA:
             break;
 
+        // TODO[tls13] Any credentials consistent with peerSigSchemes/peerSigSchemesCert
+        case KeyExchangeAlgorithm.NULL:
         default:
             return false;
         }
