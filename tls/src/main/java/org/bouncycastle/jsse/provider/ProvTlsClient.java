@@ -136,7 +136,15 @@ class ProvTlsClient
     @Override
     protected Vector getSupportedSignatureAlgorithms()
     {
-        return JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
+        ContextData contextData = manager.getContextData();
+
+        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveSignatureSchemes(sslParameters,
+            getProtocolVersions());
+
+        jsseSecurityParameters.localSigSchemes = signatureSchemes;
+        jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
+
+        return contextData.getSignatureAndHashAlgorithms(signatureSchemes);
     }
 
     @Override
@@ -180,10 +188,10 @@ class ProvTlsClient
                     Vector<SignatureAndHashAlgorithm> serverSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
                         securityParameters.getServerSigAlgsCert();
 
-                    jsseSecurityParameters.peerSigSchemes = contextData.getSupportedSignatureSchemes(serverSigAlgs);
+                    jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(serverSigAlgs);
                     jsseSecurityParameters.peerSigSchemesCert = (serverSigAlgs == serverSigAlgsCert)
                         ?   jsseSecurityParameters.peerSigSchemes
-                        :   contextData.getSupportedSignatureSchemes(serverSigAlgsCert);
+                        :   contextData.getSignatureSchemes(serverSigAlgsCert);
                 }
 
                 int keyExchangeAlgorithm = securityParameters.getKeyExchangeAlgorithm();
@@ -383,30 +391,6 @@ class ProvTlsClient
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
-    }
-
-    @Override
-    public void notifyHellosComplete() throws IOException
-    {
-        super.notifyHellosComplete();
-
-        final ContextData contextData = manager.getContextData();
-        final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-
-        // Setup the local supported signature schemes  
-        {
-            @SuppressWarnings("unchecked")
-            Vector<SignatureAndHashAlgorithm> clientSigAlgs = (Vector<SignatureAndHashAlgorithm>)
-                securityParameters.getClientSigAlgs();
-            @SuppressWarnings("unchecked")
-            Vector<SignatureAndHashAlgorithm> clientSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
-                securityParameters.getClientSigAlgsCert();
-
-            jsseSecurityParameters.localSigSchemes = contextData.getSupportedSignatureSchemes(clientSigAlgs);
-            jsseSecurityParameters.localSigSchemesCert = (clientSigAlgs == clientSigAlgsCert)
-                ?   jsseSecurityParameters.localSigSchemes
-                :   contextData.getSupportedSignatureSchemes(clientSigAlgsCert);
-        }
     }
 
     @Override

@@ -243,9 +243,13 @@ public abstract class AbstractTlsClient
          */
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
-            this.supportedSignatureAlgorithms = getSupportedSignatureAlgorithms();
+            Vector supportedSignatureAlgorithms = getSupportedSignatureAlgorithms();
+            if (null != supportedSignatureAlgorithms && !supportedSignatureAlgorithms.isEmpty())
+            {
+                this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
 
-            TlsExtensionsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
+                TlsExtensionsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
+            }
         }
 
         Vector namedGroupRoles = getNamedGroupRoles();
