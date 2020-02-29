@@ -3626,7 +3626,6 @@ public class TlsUtils
     static TlsKeyExchange initKeyExchangeClient(TlsClientContext context, TlsClient client) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(securityParameters.getCipherSuite());
         TlsKeyExchange keyExchange = createKeyExchangeClient(client, securityParameters.getKeyExchangeAlgorithm());
         keyExchange.init(context);
         return keyExchange;
@@ -3635,7 +3634,6 @@ public class TlsUtils
     static TlsKeyExchange initKeyExchangeServer(TlsServerContext context, TlsServer server) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(securityParameters.getCipherSuite());
         TlsKeyExchange keyExchange = createKeyExchangeServer(server, securityParameters.getKeyExchangeAlgorithm());
         keyExchange.init(context);
         return keyExchange;
@@ -4270,6 +4268,8 @@ public class TlsUtils
             securityParameters.clientSigAlgs = null;
             securityParameters.clientSigAlgsCert = null;
         }
+
+        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(securityParameters.getCipherSuite());
 
         peer.notifyHellosComplete();
     }
