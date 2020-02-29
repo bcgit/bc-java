@@ -41,6 +41,7 @@ final class ContextData
     private static void addSignatureSchemeHistorical(TlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String name, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
+        // TODO[tls13] Historical schemes can no longer be used
         addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm);
     }
 

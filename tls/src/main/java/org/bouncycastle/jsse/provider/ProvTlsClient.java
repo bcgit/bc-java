@@ -196,6 +196,8 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.RSA:
                     break;
 
+                // TODO[tls13] Any credentials consistent with peerSigSchemes/peerSigSchemesCert
+                case KeyExchangeAlgorithm.NULL:
                 default:
                     /* Note: internal error here; selected a key exchange we don't implement! */
                     throw new TlsFatalAlert(AlertDescription.internal_error);
