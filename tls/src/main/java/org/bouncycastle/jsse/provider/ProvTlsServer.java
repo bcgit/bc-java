@@ -243,13 +243,18 @@ class ProvTlsServer
             ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
         Vector<SignatureAndHashAlgorithm> serverSigAlgs = null;
-        Vector<SignatureAndHashAlgorithm> serverSigAlgsCert = null;
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
-            serverSigAlgs = JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
-
             // TODO[tls13] CertificateRequest can contain distinct serverSigAlgsCert
+
+            List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveSignatureSchemes(sslParameters,
+                new ProtocolVersion[]{ context.getServerVersion() });
+
+            jsseSecurityParameters.localSigSchemes = signatureSchemes;
+            jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
+
+            serverSigAlgs = contextData.getSignatureAndHashAlgorithms(signatureSchemes);
         }
 
         Vector certificateAuthorities = null;
@@ -270,14 +275,6 @@ class ProvTlsServer
                     certificateAuthorities.addElement(X500Name.getInstance(caSubject.getEncoded()));
                 }
             }
-        }
-
-        // Setup the local supported signature schemes  
-        {
-            jsseSecurityParameters.localSigSchemes = contextData.getSupportedSignatureSchemes(serverSigAlgs);
-            jsseSecurityParameters.localSigSchemesCert = (null == serverSigAlgsCert)
-                ?   jsseSecurityParameters.localSigSchemes
-                :   contextData.getSupportedSignatureSchemes(serverSigAlgsCert);
         }
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
@@ -462,10 +459,10 @@ class ProvTlsServer
             Vector<SignatureAndHashAlgorithm> clientSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
                 securityParameters.getClientSigAlgsCert();
 
-            jsseSecurityParameters.peerSigSchemes = contextData.getSupportedSignatureSchemes(clientSigAlgs);
+            jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(clientSigAlgs);
             jsseSecurityParameters.peerSigSchemesCert = (clientSigAlgs == clientSigAlgsCert)
                 ?   jsseSecurityParameters.peerSigSchemes
-                :   contextData.getSupportedSignatureSchemes(clientSigAlgsCert);
+                :   contextData.getSignatureSchemes(clientSigAlgsCert);
         }
     }
 
