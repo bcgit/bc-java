@@ -186,8 +186,7 @@ class ProvTlsClient
                         :   contextData.getSupportedSignatureSchemes(serverSigAlgsCert);
                 }
 
-                int selectedCipherSuite = securityParameters.getCipherSuite();
-                int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
+                int keyExchangeAlgorithm = securityParameters.getKeyExchangeAlgorithm();
                 switch (keyExchangeAlgorithm)
                 {
                 case KeyExchangeAlgorithm.DHE_DSS:
@@ -287,8 +286,8 @@ class ProvTlsClient
                 }
 
                 X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), serverCertificate.getCertificate());
-                int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-                String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
+                int keyExchangeAlgorithm = context.getSecurityParametersHandshake().getKeyExchangeAlgorithm();
+                String authType = JsseUtils.getAuthTypeServer(keyExchangeAlgorithm);
 
                 manager.checkServerTrusted(chain, authType);
             }
