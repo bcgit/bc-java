@@ -10,12 +10,41 @@ import java.util.Vector;
 import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 final class ContextData
 {
+    // TODO Support jdk.tls.signatureSchemes, a mooted feature in SunJSSE (see JDK-8229720)
+
+    private static final int[] DEFAULT_ACTIVE = {
+//        SignatureScheme.ed25519,
+//        SignatureScheme.ed448,
+        SignatureScheme.ecdsa_secp256r1_sha256,
+        SignatureScheme.ecdsa_secp384r1_sha384,
+        SignatureScheme.ecdsa_secp521r1_sha512,
+//        SignatureScheme.rsa_pss_rsae_sha256,
+//        SignatureScheme.rsa_pss_rsae_sha384,
+//        SignatureScheme.rsa_pss_rsae_sha512,
+//        SignatureScheme.rsa_pss_pss_sha256,
+//        SignatureScheme.rsa_pss_pss_sha384,
+//        SignatureScheme.rsa_pss_pss_sha512,
+        SignatureScheme.rsa_pkcs1_sha256,
+        SignatureScheme.rsa_pkcs1_sha384,
+        SignatureScheme.rsa_pkcs1_sha512,
+        SignatureSchemeInfo.historical_dsa_sha256,
+        SignatureSchemeInfo.historical_ecdsa_sha224,
+        SignatureSchemeInfo.historical_rsa_sha224,
+        SignatureSchemeInfo.historical_dsa_sha224,
+        SignatureScheme.ecdsa_sha1,
+        SignatureScheme.rsa_pkcs1_sha1,
+        SignatureSchemeInfo.historical_dsa_sha1,
+        SignatureSchemeInfo.historical_rsa_md5,
+    };
+
     private static void addSignatureScheme(TlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String name, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
@@ -52,7 +81,7 @@ final class ContextData
         addSignatureScheme(crypto, ss, signatureScheme, jcaSignatureAlgorithm, keyAlgorithm);
     }
 
-    private static Map<Integer, SignatureSchemeInfo> createSupportedSignatureSchemesMap(TlsCrypto crypto)
+    private static Map<Integer, SignatureSchemeInfo> createSignatureSchemesMap(TlsCrypto crypto)
     {
         Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
 
@@ -115,7 +144,7 @@ final class ContextData
     private final ProvSSLSessionContext clientSessionContext;
     private final ProvSSLSessionContext serverSessionContext;
 
-    private final Map<Integer, SignatureSchemeInfo> supportedSignatureSchemesMap;
+    private final Map<Integer, SignatureSchemeInfo> signatureSchemesMap;
 
     ContextData(ProvSSLContextSpi context, TlsCrypto crypto, X509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager)
@@ -127,7 +156,51 @@ final class ContextData
         this.clientSessionContext = new ProvSSLSessionContext(this);
         this.serverSessionContext = new ProvSSLSessionContext(this);
 
-        this.supportedSignatureSchemesMap = createSupportedSignatureSchemesMap(crypto);
+        this.signatureSchemesMap = createSignatureSchemesMap(crypto);
+    }
+
+    List<SignatureSchemeInfo> getActiveSignatureSchemes(ProvSSLParameters sslParameters,
+        ProtocolVersion[] activeProtocolVersions)
+    {
+        // TODO[tls13] SignatureSchemeInfo instances need to know their valid versions for sigAlgs/sigAlgsCert
+        if (!ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv12))
+        {
+            return null;
+        }
+
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+
+        int count = DEFAULT_ACTIVE.length;
+        ArrayList<SignatureSchemeInfo> result = new ArrayList<SignatureSchemeInfo>(count);
+        for (int i = 0; i < count; ++i)
+        {
+            int signatureScheme = DEFAULT_ACTIVE[i];
+
+            SignatureSchemeInfo signatureSchemeInfo = signatureSchemesMap.get(signatureScheme);
+            if (null == signatureSchemeInfo)
+            {
+                continue;
+            }
+            if (!signatureSchemeInfo.isEnabled())
+            {
+                continue;
+            }
+
+            // TODO[tls13] Exclude SignatureSchemeInfo instances based on their individual valid version ranges
+
+            if (!signatureSchemeInfo.isPermittedBy(algorithmConstraints))
+            {
+                continue;
+            }
+
+            result.add(signatureSchemeInfo);
+        }
+        if (result.isEmpty())
+        {
+            return null;
+        }
+        result.trimToSize();
+        return Collections.unmodifiableList(result);
     }
 
     ProvSSLContextSpi getContext()
@@ -150,7 +223,33 @@ final class ContextData
         return serverSessionContext;
     }
 
-    List<SignatureSchemeInfo> getSupportedSignatureSchemes(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
+    Vector<SignatureAndHashAlgorithm> getSignatureAndHashAlgorithms(List<SignatureSchemeInfo> signatureSchemeInfos)
+    {
+        if (null == signatureSchemeInfos || signatureSchemeInfos.isEmpty())
+        {
+            return null;
+        }
+
+        int count = signatureSchemeInfos.size();
+        Vector<SignatureAndHashAlgorithm> result = new Vector<SignatureAndHashAlgorithm>(count);
+        for (SignatureSchemeInfo signatureSchemeInfo : signatureSchemeInfos)
+        {
+            if (null != signatureSchemeInfo)
+            {
+                SignatureAndHashAlgorithm sigAndHashAlg = signatureSchemeInfo.getSignatureAndHashAlgorithm();
+
+                result.add(sigAndHashAlg);
+            }
+        }
+        if (result.isEmpty())
+        {
+            return null;
+        }
+        result.trimToSize();
+        return result;
+    }
+
+    List<SignatureSchemeInfo> getSignatureSchemes(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
     {
         if (null == sigAndHashAlgs || sigAndHashAlgs.isEmpty())
         {
@@ -166,7 +265,7 @@ final class ContextData
             {
                 int signatureScheme = SignatureSchemeInfo.getSignatureScheme(sigAndHashAlg);
 
-                SignatureSchemeInfo signatureSchemeInfo = supportedSignatureSchemesMap.get(signatureScheme);
+                SignatureSchemeInfo signatureSchemeInfo = signatureSchemesMap.get(signatureScheme);
                 if (null != signatureSchemeInfo)
                 {
                     result.add(signatureSchemeInfo);

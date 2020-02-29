@@ -333,36 +333,6 @@ abstract class JsseUtils
         return root + " " + AlertLevel.getText(alertLevel) + " " + AlertDescription.getText(alertDescription) + " alert";
     }
 
-    static Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithms(TlsCrypto crypto)
-    {
-//        SignatureAndHashAlgorithm[] intrinsicSigAlgs = { SignatureAndHashAlgorithm.ed25519,
-//            SignatureAndHashAlgorithm.ed448, SignatureAndHashAlgorithm.rsa_pss_rsae_sha256,
-//            SignatureAndHashAlgorithm.rsa_pss_rsae_sha384, SignatureAndHashAlgorithm.rsa_pss_rsae_sha512,
-//            SignatureAndHashAlgorithm.rsa_pss_pss_sha256, SignatureAndHashAlgorithm.rsa_pss_pss_sha384,
-//            SignatureAndHashAlgorithm.rsa_pss_pss_sha512 };
-        short[] hashAlgorithms = new short[]{ HashAlgorithm.sha1, HashAlgorithm.sha224, HashAlgorithm.sha256,
-            HashAlgorithm.sha384, HashAlgorithm.sha512 };
-        short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
-
-        Vector<SignatureAndHashAlgorithm> result = new Vector<SignatureAndHashAlgorithm>();
-//        for (int i = 0; i < intrinsicSigAlgs.length; ++i)
-//        {
-//            TlsUtils.addIfSupported(result, crypto, intrinsicSigAlgs[i]);
-//        }
-        for (int i = 0; i < signatureAlgorithms.length; ++i)
-        {
-            for (int j = 0; j < hashAlgorithms.length; ++j)
-            {
-                TlsUtils.addIfSupported(result, crypto, new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
-            }
-        }
-
-        // TODO Dynamically detect whether the TlsCrypto implementation can handle DSA2
-        TlsUtils.addIfSupported(result, crypto, new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
-
-        return result;
-    }
-
     static boolean isTLSv12(String protocol)
     {
         ProtocolVersion protocolVersion = ProvSSLContextSpi.getProtocolVersion(protocol);
