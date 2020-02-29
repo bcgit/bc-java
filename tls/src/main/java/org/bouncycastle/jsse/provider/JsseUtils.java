@@ -189,6 +189,10 @@ abstract class JsseUtils
             return "ECDHE_PSK";
         case KeyExchangeAlgorithm.ECDHE_RSA:
             return "ECDHE_RSA";
+        case KeyExchangeAlgorithm.NULL:
+            // For compatibility with SunJSSE, use "UNKNOWN" for TLS 1.3 cipher suites.  
+//            return "NULL";
+            return "UNKNOWN";
         case KeyExchangeAlgorithm.RSA:
             return "RSA";
         case KeyExchangeAlgorithm.RSA_PSK:
@@ -389,6 +393,10 @@ abstract class JsseUtils
         case KeyExchangeAlgorithm.RSA_PSK:
         case KeyExchangeAlgorithm.SRP_RSA:
             return privateKey instanceof RSAPrivateKey || "RSA".equals(algorithm);
+
+        case KeyExchangeAlgorithm.NULL:
+            // TODO[tls13] Consider whether any checks needed here  
+            return true;
 
         default:
             return false;

@@ -3291,6 +3291,11 @@ public class TlsUtils
 
         if (sigHashAlgs == null)
         {
+            /*
+             * TODO[tls13] RFC 8446 4.2.3 Clients which desire the server to authenticate itself via
+             * a certificate MUST send the "signature_algorithms" extension.
+             */
+
             sigHashAlgs = getDefaultSignatureAlgorithms(signatureAlgorithm);
         }
 
