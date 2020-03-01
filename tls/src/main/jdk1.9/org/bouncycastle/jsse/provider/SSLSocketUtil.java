@@ -86,14 +86,17 @@ abstract class SSLSocketUtil
         {
             return ((BCSSLSocket)sslSocket).getParameters();
         }
-        if (null != sslSocket)
+        if (null == sslSocket)
         {
-            SSLParameters sslParameters = sslSocket.getSSLParameters();
-            if (null != sslParameters)
-            {
-                return SSLParametersUtil.importSSLParameters(sslParameters);
-            }
+            return null;
         }
-        return null;
+
+        SSLParameters sslParameters = sslSocket.getSSLParameters();
+        if (null == sslParameters)
+        {
+            throw new RuntimeException("SSLSocket.getSSLParameters returned null");
+        }
+
+        return SSLParametersUtil.importSSLParameters(sslParameters);
     }
 }
