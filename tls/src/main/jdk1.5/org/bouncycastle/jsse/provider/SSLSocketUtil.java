@@ -83,16 +83,10 @@ abstract class SSLSocketUtil
         }
         if (null != sslSocket && null != getHandshakeSession)
         {
-            try
+            SSLSession sslSession = (SSLSession)ReflectionUtil.invokeGetter(sslSocket, getHandshakeSession);
+            if (null != sslSession)
             {
-                SSLSession sslSession = (SSLSession)ReflectionUtil.invokeGetter(sslSocket, getHandshakeSession);
-                if (null != sslSession)
-                {
-                    return SSLSessionUtil.importSSLSession(sslSession);
-                }
-            }
-            catch (Exception e)
-            {
+                return SSLSessionUtil.importSSLSession(sslSession);
             }
         }
         return null;
@@ -104,20 +98,17 @@ abstract class SSLSocketUtil
         {
             return ((BCSSLSocket)sslSocket).getParameters();
         }
-        if (null != sslSocket && null != getSSLParameters)
+        if (null == sslSocket || null == getSSLParameters)
         {
-            try
-            {
-                SSLParameters sslParameters = (SSLParameters)ReflectionUtil.invokeGetter(sslSocket, getSSLParameters);
-                if (null != sslParameters)
-                {
-                    return SSLParametersUtil.importSSLParameters(sslParameters);
-                }
-            }
-            catch (Exception e)
-            {
-            }
+            return null;
         }
-        return null;
+
+        SSLParameters sslParameters = (SSLParameters)ReflectionUtil.invokeGetter(sslSocket, getSSLParameters);
+        if (null == sslParameters)
+        {
+            throw new RuntimeException("SSLSocket.getSSLParameters returned null");
+        }
+
+        return SSLParametersUtil.importSSLParameters(sslParameters);
     }
 }
