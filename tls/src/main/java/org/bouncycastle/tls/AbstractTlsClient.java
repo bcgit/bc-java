@@ -20,6 +20,7 @@ public abstract class AbstractTlsClient
 
     protected Vector supportedGroups;
     protected Vector supportedSignatureAlgorithms;
+    protected Vector supportedSignatureAlgorithmsCert;
 
     public AbstractTlsClient(TlsCrypto crypto)
     {
@@ -57,9 +58,10 @@ public abstract class AbstractTlsClient
     protected Vector getNamedGroupRoles()
     {
         Vector namedGroupRoles = TlsUtils.getNamedGroupRoles(getCipherSuites());
+        Vector sigAlgs = supportedSignatureAlgorithms, sigAlgsCert = supportedSignatureAlgorithmsCert;
 
-        if (null == supportedSignatureAlgorithms
-            || TlsUtils.containsAnySignatureAlgorithm(supportedSignatureAlgorithms, SignatureAlgorithm.ecdsa))
+        if ((null == sigAlgs || TlsUtils.containsAnySignatureAlgorithm(sigAlgs, SignatureAlgorithm.ecdsa))
+            || (null != sigAlgsCert && TlsUtils.containsAnySignatureAlgorithm(sigAlgsCert, SignatureAlgorithm.ecdsa)))
         {
             TlsUtils.addToSet(namedGroupRoles, NamedGroupRole.ecdsa);
         }
@@ -153,6 +155,11 @@ public abstract class AbstractTlsClient
         return TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
     }
 
+    protected Vector getSupportedSignatureAlgorithmsCert()
+    {
+        return null;
+    }
+
     public void init(TlsClientContext context)
     {
         this.context = context;
@@ -177,6 +184,7 @@ public abstract class AbstractTlsClient
 
         this.supportedGroups = null;
         this.supportedSignatureAlgorithms = null;
+        this.supportedSignatureAlgorithmsCert = null;
     }
 
     public TlsSession getSessionToResume()
@@ -243,12 +251,20 @@ public abstract class AbstractTlsClient
          */
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
-            Vector supportedSignatureAlgorithms = getSupportedSignatureAlgorithms();
-            if (null != supportedSignatureAlgorithms && !supportedSignatureAlgorithms.isEmpty())
+            Vector supportedSigAlgs = getSupportedSignatureAlgorithms();
+            if (null != supportedSigAlgs && !supportedSigAlgs.isEmpty())
             {
-                this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
+                this.supportedSignatureAlgorithms = supportedSigAlgs;
 
-                TlsExtensionsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
+                TlsExtensionsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSigAlgs);
+            }
+
+            Vector supportedSigAlgsCert = getSupportedSignatureAlgorithmsCert();
+            if (null != supportedSigAlgsCert && !supportedSigAlgsCert.isEmpty())
+            {
+                this.supportedSignatureAlgorithmsCert = supportedSigAlgsCert;
+
+                TlsExtensionsUtils.addSignatureAlgorithmsCertExtension(clientExtensions, supportedSigAlgsCert);
             }
         }
 

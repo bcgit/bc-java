@@ -182,6 +182,7 @@ public class TlsTestSuite extends TestSuite
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientSendSignatureAlgorithms = false;
+            c.clientSendSignatureAlgorithmsCert = false;
             c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
             c.expectClientFatalAlert(AlertDescription.bad_certificate);
 
@@ -212,6 +213,7 @@ public class TlsTestSuite extends TestSuite
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientCheckSigAlgOfServerCerts = false;
             c.clientSendSignatureAlgorithms = false;
+            c.clientSendSignatureAlgorithmsCert = false;
             c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
             c.expectClientFatalAlert(AlertDescription.illegal_parameter);
 

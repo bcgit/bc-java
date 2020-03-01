@@ -148,6 +148,12 @@ class ProvTlsClient
     }
 
     @Override
+    protected Vector getSupportedSignatureAlgorithmsCert()
+    {
+        return null;
+    }
+
+    @Override
     protected ProtocolVersion[] getSupportedVersions()
     {
         return manager.getContextData().getContext().getActiveProtocolVersions(sslParameters);
