@@ -107,8 +107,8 @@ public class TrustManagerFactoryTest
             finalCert, interCert
         };
 
-        trustManager.checkServerTrusted(certs, "auth");
-        trustManager.checkClientTrusted(certs, "auth");
+        trustManager.checkServerTrusted(certs, "RSA");
+        trustManager.checkClientTrusted(certs, "RSA");
     }
 
     public void testCertPathTrustManagerParametersFailure()
@@ -153,7 +153,7 @@ public class TrustManagerFactoryTest
 
         try
         {
-            trustManager.checkServerTrusted(certs, "auth");
+            trustManager.checkServerTrusted(certs, "RSA");
             fail("no exception");
         }
         catch (CertificateException e)
@@ -163,7 +163,7 @@ public class TrustManagerFactoryTest
 
         try
         {
-            trustManager.checkClientTrusted(certs, "auth");
+            trustManager.checkClientTrusted(certs, "RSA");
             fail("no exception");
         }
         catch (CertificateException e)
