@@ -26,7 +26,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -36,7 +35,6 @@ import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
-import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 class ProvX509TrustManager
     extends BCX509ExtendedTrustManager
@@ -253,33 +251,33 @@ class ProvX509TrustManager
     static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, Socket socket,
         boolean checkServerTrusted) throws CertificateException
     {
-        if (socket instanceof SSLSocket && socket.isConnected())
-        {
-            SSLSocket sslSocket = (SSLSocket)socket;
-            BCExtendedSSLSession sslSession = getHandshakeSession(sslSocket);
-            BCSSLParameters sslParameters = getSSLParameters(sslSocket);
-            checkExtendedTrust(trustedChain, authType, checkServerTrusted, sslSession, sslParameters);
-        }
+        checkExtendedTrust(trustedChain, authType, TransportData.from(socket), checkServerTrusted);
     }
 
     static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, SSLEngine engine,
         boolean checkServerTrusted) throws CertificateException
     {
-        if (null != engine)
-        {
-            BCExtendedSSLSession sslSession = getHandshakeSession(engine);
-            BCSSLParameters sslParameters = getSSLParameters(engine);
-            checkExtendedTrust(trustedChain, authType, checkServerTrusted, sslSession, sslParameters);
-        }
+        checkExtendedTrust(trustedChain, authType, TransportData.from(engine), checkServerTrusted);
     }
 
-    private static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, boolean checkServerTrusted,
-        BCExtendedSSLSession sslSession, BCSSLParameters sslParameters) throws CertificateException
+    private static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, TransportData transportData,
+        boolean checkServerTrusted) throws CertificateException
     {
-        String endpointIDAlg = sslParameters.getEndpointIdentificationAlgorithm();
-        if (null != endpointIDAlg && endpointIDAlg.length() > 0)
+        if (null != transportData)
         {
-            checkEndpointID(trustedChain[0], endpointIDAlg, checkServerTrusted, sslSession);
+            BCSSLParameters parameters = transportData.getParameters();
+
+            String endpointIDAlg = parameters.getEndpointIdentificationAlgorithm();
+            if (null != endpointIDAlg && endpointIDAlg.length() > 0)
+            {
+                BCExtendedSSLSession handshakeSession = transportData.getHandshakeSession();
+                if (null == handshakeSession)
+                {
+                    throw new CertificateException("No handshake session");
+                }
+
+                checkEndpointID(trustedChain[0], endpointIDAlg, checkServerTrusted, handshakeSession);
+            }
         }
 
         // TODO[jsse] SunJSSE also does some AlgorithmConstraints-related checks here. 
@@ -334,24 +332,6 @@ class ProvX509TrustManager
         }
     }
 
-    private static BCAlgorithmConstraints getAlgorithmConstraints(BCExtendedSSLSession sslSession, BCSSLParameters sslParameters)
-    {
-        BCAlgorithmConstraints configAlgorithmConstraints = null;
-        if (null != sslParameters)
-        {
-            configAlgorithmConstraints = sslParameters.getAlgorithmConstraints();
-        }
-
-        if (null != sslSession && JsseUtils.isTLSv12(sslSession.getProtocol()))
-        {
-            String[] localSigAlgs = sslSession.getLocalSupportedSignatureAlgorithms();
-
-            return new ProvAlgorithmConstraints(configAlgorithmConstraints, localSigAlgs, false);
-        }
-
-        return new ProvAlgorithmConstraints(configAlgorithmConstraints, false);
-    }
-
     private static BCSNIHostName getSNIHostName(BCExtendedSSLSession sslSession)
     {
         List<BCSNIServerName> serverNames = sslSession.getRequestedServerNames();
@@ -378,46 +358,6 @@ class ProvX509TrustManager
             }
         }
         return null;
-    }
-
-    private static BCExtendedSSLSession getHandshakeSession(SSLEngine sslEngine) throws CertificateException
-    {
-        BCExtendedSSLSession handshakeSession = SSLEngineUtil.importHandshakeSession(sslEngine);
-        if (null == handshakeSession)
-        {
-            throw new CertificateException("No handshake session for engine");
-        }
-        return handshakeSession;
-    }
-
-    private static BCExtendedSSLSession getHandshakeSession(SSLSocket sslSocket) throws CertificateException
-    {
-        BCExtendedSSLSession handshakeSession = SSLSocketUtil.importHandshakeSession(sslSocket);
-        if (null == handshakeSession)
-        {
-            throw new CertificateException("No handshake session for socket");
-        }
-        return handshakeSession;
-    }
-
-    private static BCSSLParameters getSSLParameters(SSLEngine sslEngine) throws CertificateException
-    {
-        BCSSLParameters sslParameters = SSLEngineUtil.importSSLParameters(sslEngine);
-        if (null == sslParameters)
-        {
-            throw new CertificateException("No SSL parameters for engine");
-        }
-        return sslParameters;
-    }
-
-    private static BCSSLParameters getSSLParameters(SSLSocket sslSocket) throws CertificateException
-    {
-        BCSSLParameters sslParameters = SSLSocketUtil.importSSLParameters(sslSocket);
-        if (null == sslParameters)
-        {
-            throw new CertificateException("No SSL parameters for socket");
-        }
-        return sslParameters;
     }
 
     private static X509Certificate getTrustedCert(TrustAnchor trustAnchor) throws CertificateException
