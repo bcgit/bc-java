@@ -80,9 +80,14 @@ public class TlsTestConfig
     public boolean clientFallback = false;
 
     /**
-     * Configures whether a (TLS 1.2+) client will send the signature_algorithms extension in ClientHello.
+     * Configures whether a (TLS 1.2+) client may send the signature_algorithms extension in ClientHello.
      */
     public boolean clientSendSignatureAlgorithms = true;
+
+    /**
+     * Configures whether a (TLS 1.2+) client may send the signature_algorithms_cert extension in ClientHello.
+     */
+    public boolean clientSendSignatureAlgorithmsCert = true;
 
     /**
      * Configures the supported protocol versions for the client. If null, uses the library's default.
