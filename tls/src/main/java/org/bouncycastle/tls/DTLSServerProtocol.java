@@ -150,6 +150,7 @@ public class DTLSServerProtocol
         }
 
         handshake.getHandshakeHash().notifyPRFDetermined();
+        TlsUtils.completeHellosPhase(state.serverContext, state.server);
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -228,11 +229,12 @@ public class DTLSServerProtocol
 
                 state.certificateRequest = TlsUtils.validateCertificateRequest(state.certificateRequest, state.keyExchange);
 
+                TlsUtils.establishServerSigAlgs(securityParameters, state.certificateRequest);
+
+                TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(), securityParameters.getServerSigAlgs());
+
                 byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
                 handshake.sendMessage(HandshakeType.certificate_request, certificateRequestBody);
-
-                TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(),
-                    state.certificateRequest.getSupportedSignatureAlgorithms());
             }
         }
 
@@ -730,8 +732,7 @@ public class DTLSServerProtocol
              */
             if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
             {
-                securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
-                securityParameters.clientSigAlgsCert = TlsExtensionsUtils.getSignatureAlgorithmsCertExtension(state.clientExtensions);
+                TlsUtils.establishClientSigAlgs(securityParameters, state.clientExtensions);
             }
 
             securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(state.clientExtensions);

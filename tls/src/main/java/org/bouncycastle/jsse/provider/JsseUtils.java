@@ -39,7 +39,6 @@ import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -190,6 +189,10 @@ abstract class JsseUtils
             return "ECDHE_PSK";
         case KeyExchangeAlgorithm.ECDHE_RSA:
             return "ECDHE_RSA";
+        case KeyExchangeAlgorithm.NULL:
+            // For compatibility with SunJSSE, use "UNKNOWN" for TLS 1.3 cipher suites.  
+//            return "NULL";
+            return "UNKNOWN";
         case KeyExchangeAlgorithm.RSA:
             return "RSA";
         case KeyExchangeAlgorithm.RSA_PSK:
@@ -229,27 +232,6 @@ abstract class JsseUtils
         return new Certificate(certificateList);
     }
 
-    public static String getHashAlgorithmName(short hashAlgorithm)
-    {
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithm.md5:
-            return "MD5";
-        case HashAlgorithm.sha1:
-            return "SHA1";
-        case HashAlgorithm.sha224:
-            return "SHA224";
-        case HashAlgorithm.sha256:
-            return "SHA256";
-        case HashAlgorithm.sha384:
-            return "SHA384";
-        case HashAlgorithm.sha512:
-            return "SHA512";
-        default:
-            return null;
-        }
-    }
-
     public static Vector getProtocolNames(String[] applicationProtocols)
     {
         if (null == applicationProtocols || applicationProtocols.length < 1)
@@ -279,93 +261,6 @@ abstract class JsseUtils
             protocolNames .add(protocolName.getUtf8Decoding());
         }
         return protocolNames;
-    }
-
-    public static String getSignatureAlgorithmName(short signatureAlgorithm)
-    {
-        switch (signatureAlgorithm)
-        {
-        case SignatureAlgorithm.dsa:
-            return "DSA";
-        case SignatureAlgorithm.ecdsa:
-            return "ECDSA";
-        case SignatureAlgorithm.rsa:
-            return "RSA";
-        default:
-            return null;
-        }
-    }
-
-    static String getSignatureSchemeName(SignatureAndHashAlgorithm sigAndHashAlg)
-    {
-        short hashAlgorithm = sigAndHashAlg.getHash(), signatureAlgorithm = sigAndHashAlg.getSignature();
-
-        int signatureScheme = ((hashAlgorithm & 0xFF) << 8) | (signatureAlgorithm & 0xFF);
-        switch (signatureScheme)
-        {
-        case SignatureScheme.ecdsa_secp256r1_sha256:
-            return "SHA256withECDSA";
-        case SignatureScheme.ecdsa_secp384r1_sha384:
-            return "SHA384withECDSA";
-        case SignatureScheme.ecdsa_secp521r1_sha512:
-            return "SHA512withECDSA";
-        case SignatureScheme.ecdsa_sha1:
-            return "SHA1withECDSA";
-        case SignatureScheme.ed25519:
-            return "ed25519";
-        case SignatureScheme.ed448:
-            return "ed448";
-        case SignatureScheme.rsa_pkcs1_sha1:
-            return "SHA1withRSA";
-        case SignatureScheme.rsa_pkcs1_sha256:
-            return "SHA256withRSA";
-        case SignatureScheme.rsa_pkcs1_sha384:
-            return "SHA384withRSA";
-        case SignatureScheme.rsa_pkcs1_sha512:
-            return "SHA512withRSA";
-        case SignatureScheme.rsa_pss_pss_sha256:
-        case SignatureScheme.rsa_pss_pss_sha384:
-        case SignatureScheme.rsa_pss_pss_sha512:
-        case SignatureScheme.rsa_pss_rsae_sha256:
-        case SignatureScheme.rsa_pss_rsae_sha384:
-        case SignatureScheme.rsa_pss_rsae_sha512:
-            return "RSASSA-PSS";
-        default:
-            break;
-        }
-
-        String hashName = getHashAlgorithmName(hashAlgorithm);
-        if (null != hashName)
-        {
-            String signatureName = getSignatureAlgorithmName(signatureAlgorithm);
-            if (null != signatureName)
-            {
-                // TODO[jsse] Consider caching/precomputing these
-                return hashName + "with" + signatureName;
-            }
-        }
-
-        return null;
-    }
-
-    static String[] getSignatureSchemeNames(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
-    {
-        if (null == sigAndHashAlgs)
-        {
-            return new String[0];
-        }
-
-        int count = sigAndHashAlgs.size();
-        ArrayList<String> result = new ArrayList<String>(count);
-        for (int i = 0; i < count; ++i)
-        {
-            String name = getSignatureSchemeName(sigAndHashAlgs.elementAt(i));
-            if (null != name)
-            {
-                result.add(name);
-            }
-        }
-        return result.toArray(new String[result.size()]);
     }
 
     public static X509Certificate[] getX509CertificateChain(TlsCrypto crypto, Certificate certificateMessage)
@@ -438,36 +333,6 @@ abstract class JsseUtils
         return root + " " + AlertLevel.getText(alertLevel) + " " + AlertDescription.getText(alertDescription) + " alert";
     }
 
-    static Vector getSupportedSignatureAlgorithms(TlsCrypto crypto)
-    {
-//        SignatureAndHashAlgorithm[] intrinsicSigAlgs = { SignatureAndHashAlgorithm.ed25519,
-//            SignatureAndHashAlgorithm.ed448, SignatureAndHashAlgorithm.rsa_pss_rsae_sha256,
-//            SignatureAndHashAlgorithm.rsa_pss_rsae_sha384, SignatureAndHashAlgorithm.rsa_pss_rsae_sha512,
-//            SignatureAndHashAlgorithm.rsa_pss_pss_sha256, SignatureAndHashAlgorithm.rsa_pss_pss_sha384,
-//            SignatureAndHashAlgorithm.rsa_pss_pss_sha512 };
-        short[] hashAlgorithms = new short[]{ HashAlgorithm.sha1, HashAlgorithm.sha224, HashAlgorithm.sha256,
-            HashAlgorithm.sha384, HashAlgorithm.sha512 };
-        short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
-
-        Vector result = new Vector();
-//        for (int i = 0; i < intrinsicSigAlgs.length; ++i)
-//        {
-//            TlsUtils.addIfSupported(result, crypto, intrinsicSigAlgs[i]);
-//        }
-        for (int i = 0; i < signatureAlgorithms.length; ++i)
-        {
-            for (int j = 0; j < hashAlgorithms.length; ++j)
-            {
-                TlsUtils.addIfSupported(result, crypto, new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
-            }
-        }
-
-        // TODO Dynamically detect whether the TlsCrypto implementation can handle DSA2
-        TlsUtils.addIfSupported(result, crypto, new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
-
-        return result;
-    }
-
     static boolean isTLSv12(String protocol)
     {
         ProtocolVersion protocolVersion = ProvSSLContextSpi.getProtocolVersion(protocol);
@@ -498,6 +363,10 @@ abstract class JsseUtils
         case KeyExchangeAlgorithm.RSA_PSK:
         case KeyExchangeAlgorithm.SRP_RSA:
             return privateKey instanceof RSAPrivateKey || "RSA".equals(algorithm);
+
+        case KeyExchangeAlgorithm.NULL:
+            // TODO[tls13] Consider whether any checks needed here  
+            return true;
 
         default:
             return false;

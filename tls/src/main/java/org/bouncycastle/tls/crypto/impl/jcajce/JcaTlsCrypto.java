@@ -14,7 +14,6 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.EncryptionAlgorithm;
@@ -705,7 +704,7 @@ public class JcaTlsCrypto
         throws IOException
     {
         JcaTlsCertificate jcaCert = JcaTlsCertificate.convert(this, certificate);
-        jcaCert.validateKeyUsage(KeyUsage.keyEncipherment);
+        jcaCert.validateKeyUsageBit(JcaTlsCertificate.KU_KEY_ENCIPHERMENT);
 
         final RSAPublicKey pubKeyRSA = jcaCert.getPubKeyRSA();
 

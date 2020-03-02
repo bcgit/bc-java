@@ -50,7 +50,7 @@ public class PSKTlsServer
 
     public TlsCredentials getCredentials() throws IOException
     {
-        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
+        int keyExchangeAlgorithm = context.getSecurityParametersHandshake().getKeyExchangeAlgorithm();
 
         switch (keyExchangeAlgorithm)
         {

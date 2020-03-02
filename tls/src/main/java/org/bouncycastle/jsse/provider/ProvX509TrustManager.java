@@ -19,16 +19,19 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSNIHostName;
@@ -36,7 +39,6 @@ import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
-import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 class ProvX509TrustManager
     extends BCX509ExtendedTrustManager
@@ -45,6 +47,32 @@ class ProvX509TrustManager
 
     private static final boolean provCheckRevocation = PropertyUtils
         .getBooleanSystemProperty("com.sun.net.ssl.checkRevocation", false);
+
+    private static final int KU_DIGITAL_SIGNATURE = 0;
+    private static final int KU_KEY_ENCIPHERMENT = 2;
+    private static final int KU_KEY_AGREEMENT = 4;
+
+    private static final Map<String, Integer> serverKeyUsageMap = createServerKeyUsageMap();
+
+    private static Map<String, Integer> createServerKeyUsageMap()
+    {
+        Map<String, Integer> kus = new HashMap<String, Integer>();
+
+        kus.put("DHE_DSS", KU_DIGITAL_SIGNATURE);
+        kus.put("DHE_RSA", KU_DIGITAL_SIGNATURE);
+        kus.put("ECDHE_ECDSA", KU_DIGITAL_SIGNATURE);
+        kus.put("ECDHE_RSA", KU_DIGITAL_SIGNATURE);
+        kus.put("UNKNOWN", KU_DIGITAL_SIGNATURE);  // TLS 1.3
+
+        kus.put("RSA", KU_KEY_ENCIPHERMENT);
+
+        kus.put("DH_DSS", KU_KEY_AGREEMENT);
+        kus.put("DH_RSA", KU_KEY_AGREEMENT);
+        kus.put("ECDH_ECDSA", KU_KEY_AGREEMENT);
+        kus.put("ECDH_RSA", KU_KEY_AGREEMENT);
+
+        return Collections.unmodifiableMap(kus);
+    }
 
     private final JcaJceHelper helper;
     private final Set<X509Certificate> trustedCerts;
@@ -151,52 +179,8 @@ class ProvX509TrustManager
         return trustedCerts.toArray(new X509Certificate[trustedCerts.size()]);
     }
 
-    private void checkTrusted(X509Certificate[] chain, String authType, Socket socket, boolean checkServerTrusted)
-        throws CertificateException
+    private X509Certificate[] buildCertPath(X509Certificate[] chain) throws CertificateException
     {
-        X509Certificate[] trustedChain = validateChain(chain, authType, checkServerTrusted);
-
-        checkExtendedTrust(trustedChain, authType, socket, checkServerTrusted);
-    }
-
-    private void checkTrusted(X509Certificate[] chain, String authType, SSLEngine engine, boolean checkServerTrusted)
-        throws CertificateException
-    {
-        X509Certificate[] trustedChain = validateChain(chain, authType, checkServerTrusted);
-
-        checkExtendedTrust(trustedChain, authType, engine, checkServerTrusted);
-    }
-
-    // NOTE: We avoid re-reading eeCert from chain[0]
-    private CertStoreParameters getCertStoreParameters(X509Certificate eeCert, X509Certificate[] chain)
-    {
-        ArrayList<X509Certificate> certs = new ArrayList<X509Certificate>(chain.length);
-        certs.add(eeCert);
-        for (int i = 1; i < chain.length; ++i)
-        {
-            if (!trustedCerts.contains(chain[i]))
-            {
-                certs.add(chain[i]);
-            }
-        }
-        return new CollectionCertStoreParameters(certs);   
-    }
-
-    private X509Certificate[] validateChain(X509Certificate[] chain, String authType, boolean checkServerTrusted)
-        throws CertificateException
-    {
-        if (null == chain || chain.length < 1)
-        {
-            throw new IllegalArgumentException("'chain' must be a chain of at least one certificate");
-        }
-        if (null == authType || authType.length() < 1)
-        {
-            throw new IllegalArgumentException("'authType' must be a non-null, non-empty string");
-        }
-
-        // TODO[jsse] Further 'authType'-related checks (at least for server certificates)
-//        String validationAuthType = checkServerTrusted ? authType : null;
-
         /*
          * RFC 8446 4.4.2 "For maximum compatibility, all implementations SHOULD be prepared to
          * handle potentially extraneous certificates and arbitrary orderings from any TLS version,
@@ -250,36 +234,126 @@ class ProvX509TrustManager
         }
     }
 
+    private void checkTrusted(X509Certificate[] chain, String authType, Socket socket, boolean checkServerTrusted)
+        throws CertificateException
+    {
+        X509Certificate[] trustedChain = validateChain(chain, authType, checkServerTrusted);
+
+        checkExtendedTrust(trustedChain, authType, socket, checkServerTrusted);
+    }
+
+    private void checkTrusted(X509Certificate[] chain, String authType, SSLEngine engine, boolean checkServerTrusted)
+        throws CertificateException
+    {
+        X509Certificate[] trustedChain = validateChain(chain, authType, checkServerTrusted);
+
+        checkExtendedTrust(trustedChain, authType, engine, checkServerTrusted);
+    }
+
+    // NOTE: We avoid re-reading eeCert from chain[0]
+    private CertStoreParameters getCertStoreParameters(X509Certificate eeCert, X509Certificate[] chain)
+    {
+        ArrayList<X509Certificate> certs = new ArrayList<X509Certificate>(chain.length);
+        certs.add(eeCert);
+        for (int i = 1; i < chain.length; ++i)
+        {
+            if (!trustedCerts.contains(chain[i]))
+            {
+                certs.add(chain[i]);
+            }
+        }
+        return new CollectionCertStoreParameters(certs);   
+    }
+
+    private X509Certificate[] validateChain(X509Certificate[] chain, String authType, boolean checkServerTrusted)
+        throws CertificateException
+    {
+        if (null == chain || chain.length < 1)
+        {
+            throw new IllegalArgumentException("'chain' must be a chain of at least one certificate");
+        }
+        if (null == authType || authType.length() < 1)
+        {
+            throw new IllegalArgumentException("'authType' must be a non-null, non-empty string");
+        }
+
+        X509Certificate[] trustedChain = buildCertPath(chain);
+
+        String validationAuthType = checkServerTrusted ? authType : null;
+        checkEndEntity(trustedChain, validationAuthType, checkServerTrusted);
+
+        return trustedChain;
+    }
+
+    static void checkEndEntity(X509Certificate[] trustedChain, String authType, boolean checkServerTrusted)
+        throws CertificateException
+    {
+        // These checks not needed for a trust anchor
+        if (trustedChain.length > 1)
+        {
+            X509Certificate endEntity = trustedChain[0];
+
+            if (checkServerTrusted)
+            {
+                Integer requiredKeyUsage = serverKeyUsageMap.get(authType);
+                if (null == requiredKeyUsage)
+                {
+                    throw new CertificateException("Unsupported server authType: " + authType);
+                }
+
+                checkKeyUsage(endEntity, requiredKeyUsage.intValue());
+
+                checkExtendedKeyUsage(endEntity, KeyPurposeId.id_kp_serverAuth);
+            }
+            else
+            {
+                checkKeyUsage(endEntity, KU_DIGITAL_SIGNATURE);
+
+                checkExtendedKeyUsage(endEntity, KeyPurposeId.id_kp_clientAuth);
+            }
+
+            // TODO[jsse] Consider supporting jdk.security.caDistrustPolicies security property
+        }
+    }
+
+    static void checkExtendedKeyUsage(X509Certificate certificate, KeyPurposeId ekuOID) throws CertificateException
+    {
+        if (!supportsExtendedKeyUsage(certificate, ekuOID))
+        {
+            throw new CertificateException("Certificate doesn't support '" + ekuOID + "' ExtendedKeyUsage");
+        }
+    }
+
     static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, Socket socket,
         boolean checkServerTrusted) throws CertificateException
     {
-        if (socket instanceof SSLSocket && socket.isConnected())
-        {
-            SSLSocket sslSocket = (SSLSocket)socket;
-            BCExtendedSSLSession sslSession = getHandshakeSession(sslSocket);
-            BCSSLParameters sslParameters = getSSLParameters(sslSocket);
-            checkExtendedTrust(trustedChain, authType, checkServerTrusted, sslSession, sslParameters);
-        }
+        checkExtendedTrust(trustedChain, authType, TransportData.from(socket), checkServerTrusted);
     }
 
     static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, SSLEngine engine,
         boolean checkServerTrusted) throws CertificateException
     {
-        if (null != engine)
-        {
-            BCExtendedSSLSession sslSession = getHandshakeSession(engine);
-            BCSSLParameters sslParameters = getSSLParameters(engine);
-            checkExtendedTrust(trustedChain, authType, checkServerTrusted, sslSession, sslParameters);
-        }
+        checkExtendedTrust(trustedChain, authType, TransportData.from(engine), checkServerTrusted);
     }
 
-    private static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, boolean checkServerTrusted,
-        BCExtendedSSLSession sslSession, BCSSLParameters sslParameters) throws CertificateException
+    private static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, TransportData transportData,
+        boolean checkServerTrusted) throws CertificateException
     {
-        String endpointIDAlg = sslParameters.getEndpointIdentificationAlgorithm();
-        if (null != endpointIDAlg && endpointIDAlg.length() > 0)
+        if (null != transportData)
         {
-            checkEndpointID(trustedChain[0], endpointIDAlg, checkServerTrusted, sslSession);
+            BCSSLParameters parameters = transportData.getParameters();
+
+            String endpointIDAlg = parameters.getEndpointIdentificationAlgorithm();
+            if (null != endpointIDAlg && endpointIDAlg.length() > 0)
+            {
+                BCExtendedSSLSession handshakeSession = transportData.getHandshakeSession();
+                if (null == handshakeSession)
+                {
+                    throw new CertificateException("No handshake session");
+                }
+
+                checkEndpointID(trustedChain[0], endpointIDAlg, checkServerTrusted, handshakeSession);
+            }
         }
 
         // TODO[jsse] SunJSSE also does some AlgorithmConstraints-related checks here. 
@@ -334,22 +408,27 @@ class ProvX509TrustManager
         }
     }
 
-    private static BCAlgorithmConstraints getAlgorithmConstraints(BCExtendedSSLSession sslSession, BCSSLParameters sslParameters)
+    private static void checkKeyUsage(X509Certificate certificate, int kuBit) throws CertificateException
     {
-        BCAlgorithmConstraints configAlgorithmConstraints = null;
-        if (null != sslParameters)
+        if (!supportsKeyUsage(certificate, kuBit))
         {
-            configAlgorithmConstraints = sslParameters.getAlgorithmConstraints();
+            throw new CertificateException("Certificate doesn't support '" + getKeyUsageName(kuBit) + "' KeyUsage");
         }
+    }
 
-        if (null != sslSession && JsseUtils.isTLSv12(sslSession.getProtocol()))
+    private static String getKeyUsageName(int kuBit)
+    {
+        switch (kuBit)
         {
-            String[] localSigAlgs = sslSession.getLocalSupportedSignatureAlgorithms();
-
-            return new ProvAlgorithmConstraints(configAlgorithmConstraints, localSigAlgs, false);
+        case KU_DIGITAL_SIGNATURE:
+            return "digitalSignature";
+        case KU_KEY_ENCIPHERMENT:
+            return "keyEncipherment";
+        case KU_KEY_AGREEMENT:
+            return "keyAgreement";
+        default:
+            return "(" + kuBit + ")";
         }
-
-        return new ProvAlgorithmConstraints(configAlgorithmConstraints, false);
     }
 
     private static BCSNIHostName getSNIHostName(BCExtendedSSLSession sslSession)
@@ -378,46 +457,6 @@ class ProvX509TrustManager
             }
         }
         return null;
-    }
-
-    private static BCExtendedSSLSession getHandshakeSession(SSLEngine sslEngine) throws CertificateException
-    {
-        BCExtendedSSLSession handshakeSession = SSLEngineUtil.importHandshakeSession(sslEngine);
-        if (null == handshakeSession)
-        {
-            throw new CertificateException("No handshake session for engine");
-        }
-        return handshakeSession;
-    }
-
-    private static BCExtendedSSLSession getHandshakeSession(SSLSocket sslSocket) throws CertificateException
-    {
-        BCExtendedSSLSession handshakeSession = SSLSocketUtil.importHandshakeSession(sslSocket);
-        if (null == handshakeSession)
-        {
-            throw new CertificateException("No handshake session for socket");
-        }
-        return handshakeSession;
-    }
-
-    private static BCSSLParameters getSSLParameters(SSLEngine sslEngine) throws CertificateException
-    {
-        BCSSLParameters sslParameters = SSLEngineUtil.importSSLParameters(sslEngine);
-        if (null == sslParameters)
-        {
-            throw new CertificateException("No SSL parameters for engine");
-        }
-        return sslParameters;
-    }
-
-    private static BCSSLParameters getSSLParameters(SSLSocket sslSocket) throws CertificateException
-    {
-        BCSSLParameters sslParameters = SSLSocketUtil.importSSLParameters(sslSocket);
-        if (null == sslParameters)
-        {
-            throw new CertificateException("No SSL parameters for socket");
-        }
-        return sslParameters;
     }
 
     private static X509Certificate getTrustedCert(TrustAnchor trustAnchor) throws CertificateException
@@ -455,5 +494,20 @@ class ProvX509TrustManager
         certificates.toArray(result);
         result[result.length - 1] = getTrustedCert(trustAnchor);
         return result;
+    }
+
+    private static boolean supportsExtendedKeyUsage(X509Certificate certificate, KeyPurposeId ekuOID)
+        throws CertificateException
+    {
+        List<String> eku = certificate.getExtendedKeyUsage();
+
+        return null == eku || eku.contains(ekuOID.getId()) || eku.contains(KeyPurposeId.anyExtendedKeyUsage.getId()); 
+    }
+
+    private static boolean supportsKeyUsage(X509Certificate certificate, int kuBit)
+    {
+        boolean[] ku = certificate.getKeyUsage();
+
+        return null == ku || (ku.length > kuBit && ku[kuBit]);
     }
 }
