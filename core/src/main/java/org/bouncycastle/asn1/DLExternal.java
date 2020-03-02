@@ -82,7 +82,7 @@ public class DLExternal
         {
             baos.write(dataValueDescriptor.getEncoded(ASN1Encoding.DL));
         }
-        DERTaggedObject obj = new DERTaggedObject(true, encoding, externalContent);
+        ASN1TaggedObject obj = new DLTaggedObject(true, encoding, externalContent);
         baos.write(obj.getEncoded(ASN1Encoding.DL));
         
         out.writeEncoded(withTag, BERTags.CONSTRUCTED, BERTags.EXTERNAL, baos.toByteArray());
