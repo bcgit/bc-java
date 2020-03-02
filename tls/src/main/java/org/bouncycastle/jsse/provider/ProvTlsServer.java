@@ -237,20 +237,31 @@ class ProvTlsServer
             return null;
         }
 
+        final ContextData contextData = manager.getContextData();
+
         short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
             ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
-        Vector serverSigAlgs = null;
+        Vector<SignatureAndHashAlgorithm> serverSigAlgs = null;
+
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
-            serverSigAlgs = JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
+            // TODO[tls13] CertificateRequest can contain distinct serverSigAlgsCert
+
+            List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveSignatureSchemes(sslParameters,
+                new ProtocolVersion[]{ context.getServerVersion() });
+
+            jsseSecurityParameters.localSigSchemes = signatureSchemes;
+            jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
+
+            serverSigAlgs = contextData.getSignatureAndHashAlgorithms(signatureSchemes);
         }
 
         Vector certificateAuthorities = null;
         {
             Set<X500Principal> caSubjects = new HashSet<X500Principal>();
 
-            BCX509ExtendedTrustManager x509TrustManager = manager.getContextData().getX509TrustManager();
+            BCX509ExtendedTrustManager x509TrustManager = contextData.getX509TrustManager();
             for (X509Certificate caCert : x509TrustManager.getAcceptedIssuers())
             {
                 caSubjects.add(caCert.getSubjectX500Principal());
@@ -432,6 +443,30 @@ class ProvTlsServer
     }
 
     @Override
+    public void notifyHellosComplete() throws IOException
+    {
+        super.notifyHellosComplete();
+
+        final ContextData contextData = manager.getContextData();
+        final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        // Setup the peer supported signature schemes  
+        {
+            @SuppressWarnings("unchecked")
+            Vector<SignatureAndHashAlgorithm> clientSigAlgs = (Vector<SignatureAndHashAlgorithm>)
+                securityParameters.getClientSigAlgs();
+            @SuppressWarnings("unchecked")
+            Vector<SignatureAndHashAlgorithm> clientSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
+                securityParameters.getClientSigAlgsCert();
+
+            jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(clientSigAlgs);
+            jsseSecurityParameters.peerSigSchemesCert = (clientSigAlgs == clientSigAlgsCert)
+                ?   jsseSecurityParameters.peerSigSchemes
+                :   contextData.getSignatureSchemes(clientSigAlgsCert);
+        }
+    }
+
+    @Override
     public synchronized void notifyHandshakeComplete() throws IOException
     {
         super.notifyHandshakeComplete();
@@ -535,7 +570,6 @@ class ProvTlsServer
         {
         case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.ECDH_anon:
-        case KeyExchangeAlgorithm.NULL:
             return true;
 
         case KeyExchangeAlgorithm.DHE_DSS:
@@ -545,6 +579,8 @@ class ProvTlsServer
         case KeyExchangeAlgorithm.RSA:
             break;
 
+        // TODO[tls13] Any credentials consistent with peerSigSchemes/peerSigSchemesCert
+        case KeyExchangeAlgorithm.NULL:
         default:
             return false;
         }

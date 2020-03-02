@@ -1,13 +1,10 @@
 package org.bouncycastle.jsse.provider;
 
 import java.util.List;
-import java.util.Vector;
 
 import org.bouncycastle.jsse.BCSNIServerName;
-import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
-import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 
 class ProvSSLSessionHandshake
     extends ProvSSLSessionBase
@@ -62,8 +59,7 @@ class ProvSSLSessionHandshake
     @Override
     public String[] getLocalSupportedSignatureAlgorithms()
     {
-        return getSupportedSignatureAlgorithms(false);
-//        return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.localSigSchemes);
+        return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.localSigSchemesCert);
     }
 
     @Override
@@ -75,8 +71,7 @@ class ProvSSLSessionHandshake
     @Override
     public String[] getPeerSupportedSignatureAlgorithms()
     {
-        return getSupportedSignatureAlgorithms(true);
-//        return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.peerSigSchemesCert);
+        return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.peerSigSchemesCert);
     }
 
     @Override
@@ -89,18 +84,5 @@ class ProvSSLSessionHandshake
     public List<BCSNIServerName> getRequestedServerNames()
     {
         return JsseUtils.convertSNIServerNames(securityParameters.getClientServerNames());
-    }
-
-    private String[] getSupportedSignatureAlgorithms(boolean forPeer)
-    {
-        boolean isServer = (ConnectionEnd.server == securityParameters.getEntity());
-        boolean forServer = isServer ^ forPeer;
-
-        @SuppressWarnings("unchecked")
-        Vector<SignatureAndHashAlgorithm> sigAlgs = forServer
-            ? securityParameters.getClientSigAlgsCert()
-            : securityParameters.getServerSigAlgs();
-
-        return JsseUtils.getSignatureSchemeNames(sigAlgs);
     }
 }

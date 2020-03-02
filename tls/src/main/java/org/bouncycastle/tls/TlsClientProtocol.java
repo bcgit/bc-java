@@ -241,6 +241,10 @@ public class TlsClientProtocol
             {
                 receive13EncryptedExtensions(buf);
                 this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
+
+                // TODO[tls13] Post-negotiation derivations
+
+                TlsUtils.completeHellosPhase(tlsClientContext, tlsClient);
                 break;
             }
             default:
@@ -332,9 +336,6 @@ public class TlsClientProtocol
                 process13ServerHello(serverHello, true);
                 buf.updateHash(handshakeHash);
                 this.connection_state = CS_SERVER_HELLO;
-
-                // TODO[tls13] Check CS_CLIENT_HELLO block of legacy handler for post-CS_SERVER_HELLO behavior
-
                 break;
             }
             default:
@@ -508,6 +509,8 @@ public class TlsClientProtocol
                     handshakeHash.notifyPRFDetermined();
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO;
+
+                    TlsUtils.completeHellosPhase(tlsClientContext, tlsClient);
                 }
 
                 break;
@@ -581,8 +584,8 @@ public class TlsClientProtocol
                 {
                     Certificate clientCertificate = null;
 
-                    TlsCredentials clientCredentials = TlsUtils.establishClientCredentials(securityParameters,
-                        authentication, certificateRequest);
+                    TlsCredentials clientCredentials = TlsUtils.establishClientCredentials(authentication,
+                        certificateRequest);
                     if (null == clientCredentials)
                     {
                         this.keyExchange.skipClientCredentials();
@@ -722,13 +725,15 @@ public class TlsClientProtocol
 
                 assertEmpty(buf);
 
-                this.certificateRequest = TlsUtils.validateCertificateRequest(this.certificateRequest, this.keyExchange);
+                this.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, keyExchange);
+
+                TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
 
                 /*
                  * TODO Give the client a chance to immediately select the CertificateVerify hash
                  * algorithm here to avoid tracking the other hash algorithms unnecessarily?
                  */
-                TlsUtils.trackHashAlgorithms(handshakeHash, this.certificateRequest.getSupportedSignatureAlgorithms());
+                TlsUtils.trackHashAlgorithms(handshakeHash, securityParameters.getServerSigAlgs());
 
                 break;
             }
@@ -1321,8 +1326,7 @@ public class TlsClientProtocol
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
         {
-            securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(clientExtensions);
-            securityParameters.clientSigAlgsCert = TlsExtensionsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
+            TlsUtils.establishClientSigAlgs(securityParameters, clientExtensions);
         }
 
         securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);

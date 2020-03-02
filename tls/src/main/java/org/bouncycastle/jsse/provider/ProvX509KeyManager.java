@@ -20,14 +20,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.jsse.BCExtendedSSLSession;
-import org.bouncycastle.jsse.BCSSLParameters;
-import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 class ProvX509KeyManager
     extends X509ExtendedKeyManager
@@ -208,51 +204,6 @@ class ProvX509KeyManager
             }
         }
         return false;
-    }
-
-    private static BCAlgorithmConstraints getAlgorithmConstraints(Socket socket)
-    {
-        if (null == socket || !socket.isConnected() || !(socket instanceof SSLSocket))
-        {
-            return new ProvAlgorithmConstraints(null, true);
-        }
-
-        SSLSocket sslSocket = (SSLSocket)socket;
-        BCExtendedSSLSession sslSession = SSLSocketUtil.importHandshakeSession(sslSocket);
-        BCSSLParameters sslParameters = SSLSocketUtil.importSSLParameters(sslSocket);
-
-        return getAlgorithmConstraints(sslSession, sslParameters);
-    }
-
-    private static BCAlgorithmConstraints getAlgorithmConstraints(SSLEngine engine)
-    {
-        if (null == engine)
-        {
-            return new ProvAlgorithmConstraints(null, true);
-        }
-
-        BCExtendedSSLSession sslSession = SSLEngineUtil.importHandshakeSession(engine);
-        BCSSLParameters sslParameters = SSLEngineUtil.importSSLParameters(engine);
-
-        return getAlgorithmConstraints(sslSession, sslParameters);
-    }
-
-    private static BCAlgorithmConstraints getAlgorithmConstraints(BCExtendedSSLSession sslSession, BCSSLParameters sslParameters)
-    {
-        BCAlgorithmConstraints configAlgorithmConstraints = null;
-        if (null != sslParameters)
-        {
-            configAlgorithmConstraints = sslParameters.getAlgorithmConstraints();
-        }
-
-        if (null != sslSession && JsseUtils.isTLSv12(sslSession.getProtocol()))
-        {
-            String[] peerSigAlgs = sslSession.getPeerSupportedSignatureAlgorithms();
-
-            return new ProvAlgorithmConstraints(configAlgorithmConstraints, peerSigAlgs, true);
-        }
-
-        return new ProvAlgorithmConstraints(configAlgorithmConstraints, true);
     }
 
     private boolean isSuitableCertificate(boolean forServer, String keyType, X509Certificate c)
