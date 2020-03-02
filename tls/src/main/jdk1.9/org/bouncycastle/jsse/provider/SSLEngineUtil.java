@@ -43,14 +43,17 @@ abstract class SSLEngineUtil
         {
             return ((BCSSLEngine)sslEngine).getParameters();
         }
-        if (null != sslEngine)
+        if (null == sslEngine)
         {
-            SSLParameters sslParameters = sslEngine.getSSLParameters();
-            if (null != sslParameters)
-            {
-                return SSLParametersUtil.importSSLParameters(sslParameters);
-            }
+            return null;
         }
-        return null;
+
+        SSLParameters sslParameters = sslEngine.getSSLParameters();
+        if (null == sslParameters)
+        {
+            throw new RuntimeException("SSLEngine.getSSLParameters returned null");
+        }
+
+        return SSLParametersUtil.importSSLParameters(sslParameters);
     }
 }

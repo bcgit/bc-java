@@ -81,10 +81,18 @@ class TlsTestClientImpl
     public Hashtable getClientExtensions() throws IOException
     {
         Hashtable clientExtensions = super.getClientExtensions();
-        if (clientExtensions != null && !config.clientSendSignatureAlgorithms)
+        if (clientExtensions != null)
         {
-            clientExtensions.remove(TlsExtensionsUtils.EXT_signature_algorithms);
-            this.supportedSignatureAlgorithms = null;
+            if (!config.clientSendSignatureAlgorithms)
+            {
+                clientExtensions.remove(TlsExtensionsUtils.EXT_signature_algorithms);
+                this.supportedSignatureAlgorithms = null;
+            }
+            if (!config.clientSendSignatureAlgorithmsCert)
+            {
+                clientExtensions.remove(TlsExtensionsUtils.EXT_signature_algorithms_cert);
+                this.supportedSignatureAlgorithmsCert = null;
+            }
         }
         return clientExtensions;
     }

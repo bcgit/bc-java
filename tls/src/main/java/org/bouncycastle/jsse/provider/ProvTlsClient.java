@@ -136,7 +136,21 @@ class ProvTlsClient
     @Override
     protected Vector getSupportedSignatureAlgorithms()
     {
-        return JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
+        ContextData contextData = manager.getContextData();
+
+        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveSignatureSchemes(sslParameters,
+            getProtocolVersions());
+
+        jsseSecurityParameters.localSigSchemes = signatureSchemes;
+        jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
+
+        return contextData.getSignatureAndHashAlgorithms(signatureSchemes);
+    }
+
+    @Override
+    protected Vector getSupportedSignatureAlgorithmsCert()
+    {
+        return null;
     }
 
     @Override
@@ -168,10 +182,25 @@ class ProvTlsClient
         {
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
             {
-                // TODO[jsse] What criteria determines whether we are willing to send client authentication?
+                final ContextData contextData = manager.getContextData();
+                final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-                int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-                int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
+                // Setup the peer supported signature schemes  
+                {
+                    @SuppressWarnings("unchecked")
+                    Vector<SignatureAndHashAlgorithm> serverSigAlgs = (Vector<SignatureAndHashAlgorithm>)
+                        securityParameters.getServerSigAlgs();
+                    @SuppressWarnings("unchecked")
+                    Vector<SignatureAndHashAlgorithm> serverSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
+                        securityParameters.getServerSigAlgsCert();
+
+                    jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(serverSigAlgs);
+                    jsseSecurityParameters.peerSigSchemesCert = (serverSigAlgs == serverSigAlgsCert)
+                        ?   jsseSecurityParameters.peerSigSchemes
+                        :   contextData.getSignatureSchemes(serverSigAlgsCert);
+                }
+
+                int keyExchangeAlgorithm = securityParameters.getKeyExchangeAlgorithm();
                 switch (keyExchangeAlgorithm)
                 {
                 case KeyExchangeAlgorithm.DHE_DSS:
@@ -181,6 +210,8 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.RSA:
                     break;
 
+                // TODO[tls13] Any credentials consistent with peerSigSchemes/peerSigSchemesCert
+                case KeyExchangeAlgorithm.NULL:
                 default:
                     /* Note: internal error here; selected a key exchange we don't implement! */
                     throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -205,9 +236,9 @@ class ProvTlsClient
                 Vector<X500Name> cas = (Vector<X500Name>)certificateRequest.getCertificateAuthorities();
                 if (cas != null && cas.size() > 0)
                 {
-                	X500Name[] names = cas.toArray(new X500Name[cas.size()]);
-                	Set<X500Principal> principals = JsseUtils.toX500Principals(names);
-                	issuers = principals.toArray(new Principal[principals.size()]);
+                    X500Name[] names = cas.toArray(new X500Name[cas.size()]);
+                    Set<X500Principal> principals = JsseUtils.toX500Principals(names);
+                    issuers = principals.toArray(new Principal[principals.size()]);
                 }
 
                 String alias = manager.chooseClientAlias(keyTypes, issuers);
@@ -223,7 +254,7 @@ class ProvTlsClient
                     throw new UnsupportedOperationException();
                 }
 
-                X509ExtendedKeyManager x509KeyManager = manager.getContextData().getX509KeyManager();
+                X509ExtendedKeyManager x509KeyManager = contextData.getX509KeyManager();
                 PrivateKey privateKey = x509KeyManager.getPrivateKey(alias);
                 Certificate certificate = JsseUtils.getCertificateMessage(crypto, x509KeyManager.getCertificateChain(alias));
 
@@ -248,12 +279,12 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.RSA:
                 {
                     short signatureAlgorithm = certificate.getCertificateAt(0).getLegacySignatureAlgorithm();
-                    SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                        context.getSecurityParametersHandshake().getClientSigAlgs(), signatureAlgorithm);
+                    SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
+                        securityParameters.getServerSigAlgs(), signatureAlgorithm);
 
                     // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
                     return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
-                        privateKey, certificate, sigAlg);
+                        privateKey, certificate, sigAndHashAlg);
                 }
 
                 default:
@@ -271,8 +302,8 @@ class ProvTlsClient
                 }
 
                 X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), serverCertificate.getCertificate());
-                int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-                String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
+                int keyExchangeAlgorithm = context.getSecurityParametersHandshake().getKeyExchangeAlgorithm();
+                String authType = JsseUtils.getAuthTypeServer(keyExchangeAlgorithm);
 
                 manager.checkServerTrusted(chain, authType);
             }
