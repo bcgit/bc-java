@@ -34,7 +34,7 @@ final class WOTSPlus
      *
      * @param params Parameters for WOTSPlus object.
      */
-    protected WOTSPlus(WOTSPlusParameters params)
+    WOTSPlus(WOTSPlusParameters params)
     {
         super();
         if (params == null)
@@ -83,7 +83,7 @@ final class WOTSPlus
      * @param otsHashAddress OTS hash address for randomization.
      * @return WOTS+ signature.
      */
-    protected WOTSPlusSignature sign(byte[] messageDigest, OTSHashAddress otsHashAddress)
+    WOTSPlusSignature sign(byte[] messageDigest, OTSHashAddress otsHashAddress)
     {
         if (messageDigest == null)
         {
@@ -128,38 +128,6 @@ final class WOTSPlus
     }
 
     /**
-     * Verifies signature on message.
-     *
-     * @param messageDigest  The digest that was signed.
-     * @param signature      Signature on digest.
-     * @param otsHashAddress OTS hash address for randomization.
-     * @return true if signature was correct false else.
-     */
-    protected boolean verifySignature(byte[] messageDigest, WOTSPlusSignature signature,
-                                      OTSHashAddress otsHashAddress)
-    {
-        if (messageDigest == null)
-        {
-            throw new NullPointerException("messageDigest == null");
-        }
-        if (messageDigest.length != params.getTreeDigestSize())
-        {
-            throw new IllegalArgumentException("size of messageDigest needs to be equal to size of digest");
-        }
-        if (signature == null)
-        {
-            throw new NullPointerException("signature == null");
-        }
-        if (otsHashAddress == null)
-        {
-            throw new NullPointerException("otsHashAddress == null");
-        }
-        byte[][] tmpPublicKey = getPublicKeyFromSignature(messageDigest, signature, otsHashAddress).toByteArray();
-        /* compare values */
-        return XMSSUtil.areEqual(tmpPublicKey, getPublicKey(otsHashAddress).toByteArray()) ? true : false;
-    }
-
-    /**
      * Calculates a public key based on digest and signature.
      *
      * @param messageDigest  The digest that was signed.
@@ -167,7 +135,7 @@ final class WOTSPlus
      * @param otsHashAddress OTS hash address for randomization.
      * @return WOTS+ public key derived from digest and signature.
      */
-    protected WOTSPlusPublicKeyParameters getPublicKeyFromSignature(byte[] messageDigest, WOTSPlusSignature signature,
+    WOTSPlusPublicKeyParameters getPublicKeyFromSignature(byte[] messageDigest, WOTSPlusSignature signature,
                                                                     OTSHashAddress otsHashAddress)
     {
         if (messageDigest == null)
@@ -318,7 +286,7 @@ final class WOTSPlus
      * Derive WOTS+ secret key for specific index as in XMSS ref impl Andreas
      * Huelsing.
      *
-     * @param otsHashAddress
+     * @param otsHashAddress one time hash address.
      * @return WOTS+ secret key at index.
      */
     protected byte[] getWOTSPlusSecretKey(byte[] secretKeySeed, OTSHashAddress otsHashAddress)
@@ -406,7 +374,7 @@ final class WOTSPlus
      * @param otsHashAddress OTS hash address for randomization.
      * @return WOTS+ public key.
      */
-    protected WOTSPlusPublicKeyParameters getPublicKey(OTSHashAddress otsHashAddress)
+    WOTSPlusPublicKeyParameters getPublicKey(OTSHashAddress otsHashAddress)
     {
         if (otsHashAddress == null)
         {
