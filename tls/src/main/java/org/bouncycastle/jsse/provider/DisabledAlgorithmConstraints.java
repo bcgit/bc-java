@@ -9,12 +9,26 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 class DisabledAlgorithmConstraints
     extends AbstractAlgorithmConstraints
 {
+    private static final String INCLUDE_PREFIX = "include ";
+
     static DisabledAlgorithmConstraints create(AlgorithmDecomposer decomposer, String propertyName, String defaultValue)
     {
         String[] algorithms = PropertyUtils.getStringArraySecurityProperty(propertyName, defaultValue);
         if (null == algorithms)
         {
             return null;
+        }
+
+        // TODO[jsse] SunJSSE now supports "include jdk.disabled.namedCurves"
+        for (int i = 0; i < algorithms.length; ++i)
+        {
+            if (algorithms[i].regionMatches(true, 0, INCLUDE_PREFIX, 0, INCLUDE_PREFIX.length()))
+            {
+                algorithms[i] = null;
+                continue;
+            }
+
+            // TODO[jsse] Try to parse as a logical constraint (and null out if parsed)
         }
 
         return new DisabledAlgorithmConstraints(decomposer, asUnmodifiableSet(algorithms));
@@ -50,7 +64,7 @@ class DisabledAlgorithmConstraints
 
     public final boolean permits(Set<BCCryptoPrimitive> primitives, Key key)
     {
-        return checkConstraints(primitives, "", key, null);
+        return checkConstraints(primitives, null, key, null);
     }
 
     public final boolean permits(Set<BCCryptoPrimitive> primitives, String algorithm, Key key, AlgorithmParameters parameters)
