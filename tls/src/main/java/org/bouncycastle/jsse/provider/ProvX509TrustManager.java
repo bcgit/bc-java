@@ -3,6 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
@@ -209,7 +210,15 @@ class ProvX509TrustManager
             Provider pkixProvider = certificateFactory.getProvider();
 
             CertStoreParameters certStoreParameters = getCertStoreParameters(eeCert, chain);
-            CertStore certStore = CertStore.getInstance("Collection", certStoreParameters, pkixProvider);
+            CertStore certStore;
+            try
+            {
+                certStore = CertStore.getInstance("Collection", certStoreParameters, pkixProvider);
+            }
+            catch (GeneralSecurityException e)
+            {
+                certStore = CertStore.getInstance("Collection", certStoreParameters);
+            }
 
             X509CertSelector certSelector = new X509CertSelector();
             certSelector.setCertificate(eeCert);
@@ -218,7 +227,16 @@ class ProvX509TrustManager
             certPathParameters.addCertStore(certStore);
             certPathParameters.setTargetCertConstraints(certSelector);
 
-            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", pkixProvider);
+            CertPathBuilder builder;
+            try
+            {
+                builder = CertPathBuilder.getInstance("PKIX", pkixProvider);
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                builder = CertPathBuilder.getInstance("PKIX");
+            }
+
             PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(certPathParameters);
 
             /*
@@ -262,7 +280,7 @@ class ProvX509TrustManager
                 certs.add(chain[i]);
             }
         }
-        return new CollectionCertStoreParameters(certs);   
+        return new CollectionCertStoreParameters(Collections.unmodifiableCollection(certs));
     }
 
     private X509Certificate[] validateChain(X509Certificate[] chain, String authType, boolean checkServerTrusted)
