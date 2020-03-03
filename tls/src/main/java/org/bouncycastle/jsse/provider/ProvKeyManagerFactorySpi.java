@@ -19,6 +19,8 @@ import javax.net.ssl.KeyStoreBuilderParameters;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.X509ExtendedKeyManager;
 
+import org.bouncycastle.jcajce.util.JcaJceHelper;
+
 class ProvKeyManagerFactorySpi
     extends KeyManagerFactorySpi
 {
@@ -78,11 +80,13 @@ class ProvKeyManagerFactorySpi
         return new KeyStoreConfig(ks, ksPassword);
     }
 
-    // at the moment we're only accepting X.509/PKCS#8 key material so there is only one key manager needed
-    protected X509ExtendedKeyManager x509KeyManager = null;
+    protected final JcaJceHelper helper;
 
-    ProvKeyManagerFactorySpi()
+    protected X509ExtendedKeyManager x509KeyManager;
+
+    ProvKeyManagerFactorySpi(JcaJceHelper helper)
     {
+        this.helper = helper;
     }
 
     @Override
@@ -102,7 +106,7 @@ class ProvKeyManagerFactorySpi
     {
         // NOTE: When key store is null, we do not try to load defaults
 
-        this.x509KeyManager = new ProvX509KeyManagerSimple(ks, ksPassword);
+        this.x509KeyManager = new ProvX509KeyManagerSimple(helper, ks, ksPassword);
     }
 
     @Override
@@ -112,7 +116,7 @@ class ProvKeyManagerFactorySpi
         if (managerFactoryParameters instanceof KeyStoreBuilderParameters)
         {
             List<KeyStore.Builder> builders = ((KeyStoreBuilderParameters)managerFactoryParameters).getParameters();
-            this.x509KeyManager = new ProvX509KeyManager(builders);
+            this.x509KeyManager = new ProvX509KeyManager(helper, builders);
         }
         else
         {

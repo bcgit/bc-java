@@ -24,10 +24,13 @@ import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 class ProvX509KeyManager
     extends X509ExtendedKeyManager
 {
+    @SuppressWarnings("unused")
+    private final JcaJceHelper helper;
     private final List<KeyStore.Builder> builders;
 
     // TODO: does this need to be threadsafe? Will leak memory...
@@ -35,8 +38,10 @@ class ProvX509KeyManager
 
     private final AtomicLong version = new AtomicLong();
 
-    ProvX509KeyManager(List<KeyStore.Builder> builders)
+    ProvX509KeyManager(JcaJceHelper helper, List<KeyStore.Builder> builders)
     {
+        this.helper = helper;
+
         // the builder list is processed on request so the key manager is dynamic.
         this.builders = builders;
     }
