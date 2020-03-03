@@ -146,7 +146,7 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvKeyManagerFactorySpi();
+                return new ProvKeyManagerFactorySpi(cryptoProvider.getHelper());
             }
         });
         addAlias("Alg.Alias.KeyManagerFactory.X509", "X.509");

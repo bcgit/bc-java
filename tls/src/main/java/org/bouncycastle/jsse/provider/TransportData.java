@@ -59,11 +59,11 @@ class TransportData
         return new TransportData(parameters, handshakeSession);
     }
 
-    static BCAlgorithmConstraints getAlgorithmConstraints(TransportData transportData, boolean enableX509Constraints)
+    static BCAlgorithmConstraints getAlgorithmConstraints(TransportData transportData, boolean peerSigAlgs)
     {
         return null == transportData
-            ?   new ProvAlgorithmConstraints(null, enableX509Constraints)
-            :   transportData.getAlgorithmConstraints(enableX509Constraints);
+            ?   ProvAlgorithmConstraints.DEFAULT
+            :   transportData.getAlgorithmConstraints(peerSigAlgs);
     }
 
     private final BCSSLParameters parameters;
@@ -85,17 +85,28 @@ class TransportData
         return handshakeSession;
     }
 
-    BCAlgorithmConstraints getAlgorithmConstraints(boolean enableX509Constraints)
+    BCAlgorithmConstraints getAlgorithmConstraints(boolean peerSigAlgs)
     {
         BCAlgorithmConstraints configAlgorithmConstraints = parameters.getAlgorithmConstraints();
-
-        if (null == handshakeSession || !JsseUtils.isTLSv12(handshakeSession.getProtocol()))
+        if (ProvAlgorithmConstraints.DEFAULT == configAlgorithmConstraints)
         {
-            return new ProvAlgorithmConstraints(configAlgorithmConstraints, enableX509Constraints);
+            configAlgorithmConstraints = null;
         }
 
-        String[] peerSigAlgsCert = handshakeSession.getPeerSupportedSignatureAlgorithms();
+        if (null != handshakeSession && JsseUtils.isTLSv12(handshakeSession.getProtocol()))
+        {
+            String[] sigAlgsCert = peerSigAlgs
+                ?   handshakeSession.getPeerSupportedSignatureAlgorithms()
+                :   handshakeSession.getLocalSupportedSignatureAlgorithms();
 
-        return new ProvAlgorithmConstraints(configAlgorithmConstraints, peerSigAlgsCert, enableX509Constraints);
+            if (null != sigAlgsCert)
+            {
+                return new ProvAlgorithmConstraints(configAlgorithmConstraints, sigAlgsCert, true);
+            }
+        }
+
+        return null == configAlgorithmConstraints
+            ?   ProvAlgorithmConstraints.DEFAULT
+            :   new ProvAlgorithmConstraints(configAlgorithmConstraints, true);
     }
 }
