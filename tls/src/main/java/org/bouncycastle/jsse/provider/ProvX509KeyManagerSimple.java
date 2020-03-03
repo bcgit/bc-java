@@ -25,15 +25,20 @@ import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 class ProvX509KeyManagerSimple
     extends X509ExtendedKeyManager
 {
+    @SuppressWarnings("unused")
+    private final JcaJceHelper helper;
     private final Map<String, Credential> credentials = new HashMap<String, Credential>();
 
-    ProvX509KeyManagerSimple(KeyStore ks, char[] password)
+    ProvX509KeyManagerSimple(JcaJceHelper helper, KeyStore ks, char[] password)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
+        this.helper = helper;
+
         if (null == ks)
         {
             return;
