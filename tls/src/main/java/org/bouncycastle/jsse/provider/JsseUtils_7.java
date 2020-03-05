@@ -15,10 +15,12 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 abstract class JsseUtils_7
     extends JsseUtils
 {
+    static final Set<CryptoPrimitive> KEY_AGREEMENT_CRYPTO_PRIMITIVES =
+        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
+    static final Set<CryptoPrimitive> PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES =
+        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.PUBLIC_KEY_ENCRYPTION));
     static final Set<CryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
-    static final Set<CryptoPrimitive> TLS_CRYPTO_PRIMITIVES =
-        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     static class ExportAlgorithmConstraints implements AlgorithmConstraints
     {
@@ -135,9 +137,13 @@ abstract class JsseUtils_7
         {
             return SIGNATURE_CRYPTO_PRIMITIVES;
         }
-        if (TLS_CRYPTO_PRIMITIVES_BC == primitives)
+        if (KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC == primitives)
         {
-            return TLS_CRYPTO_PRIMITIVES;
+            return KEY_AGREEMENT_CRYPTO_PRIMITIVES;
+        }
+        if (PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES_BC == primitives)
+        {
+            return PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES;
         }
 
         HashSet<CryptoPrimitive> result = new HashSet<CryptoPrimitive>();
@@ -203,9 +209,13 @@ abstract class JsseUtils_7
         {
             return SIGNATURE_CRYPTO_PRIMITIVES_BC;
         }
-        if (TLS_CRYPTO_PRIMITIVES == primitives)
+        if (KEY_AGREEMENT_CRYPTO_PRIMITIVES == primitives)
         {
-            return TLS_CRYPTO_PRIMITIVES_BC;
+            return KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC;
+        }
+        if (PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES == primitives)
+        {
+            return PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES_BC;
         }
 
         HashSet<BCCryptoPrimitive> result = new HashSet<BCCryptoPrimitive>();

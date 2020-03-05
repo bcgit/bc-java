@@ -32,6 +32,7 @@ import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
@@ -45,6 +46,8 @@ class ProvSSLContextSpi
 
     private static final String PROPERTY_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
     private static final String PROPERTY_SERVER_PROTOCOLS = "jdk.tls.server.protocols";
+
+    private static final Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES_BC = JsseUtils.KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC;
 
     /*
      * TODO[jsse] Should separate this into "understood" cipher suite int<->String maps
@@ -241,7 +244,7 @@ class ProvSSLContextSpi
         int count = 0;
         for (String candidate : candidates)
         {
-            if (ProvAlgorithmConstraints.DEFAULT.permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, candidate, null))
+            if (ProvAlgorithmConstraints.DEFAULT.permits(TLS_CRYPTO_PRIMITIVES_BC, candidate, null))
             {
                 result[count++] = candidate;
             }
@@ -279,7 +282,7 @@ class ProvSSLContextSpi
             {
                 continue;
             }
-            if (!ProvAlgorithmConstraints.DEFAULT_TLS_ONLY.permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, candidate, null))
+            if (!ProvAlgorithmConstraints.DEFAULT_TLS_ONLY.permits(TLS_CRYPTO_PRIMITIVES_BC, candidate, null))
             {
                 continue;
             }
@@ -455,7 +458,7 @@ class ProvSSLContextSpi
             {
                 continue;
             }
-            if (!algorithmConstraints.permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, enabledCipherSuite, null))
+            if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES_BC, enabledCipherSuite, null))
             {
                 continue;
             }
@@ -500,7 +503,7 @@ class ProvSSLContextSpi
             {
                 continue;
             }
-            if (!algorithmConstraints.permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, enabledProtocol, null))
+            if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES_BC, enabledProtocol, null))
             {
                 continue;
             }
@@ -590,7 +593,7 @@ class ProvSSLContextSpi
         String name = getCipherSuiteName(cipherSuite);
         if (null == name
             || !JsseUtils.contains(sslParameters.getCipherSuitesArray(), name)
-            || !sslParameters.getAlgorithmConstraints().permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, name, null)
+            || !sslParameters.getAlgorithmConstraints().permits(TLS_CRYPTO_PRIMITIVES_BC, name, null)
             || !supportedCipherSuites.containsKey(name)
             || (isInFipsMode && !FipsUtils.isFipsCipherSuite(name)))
         {
@@ -605,7 +608,7 @@ class ProvSSLContextSpi
         String name = getProtocolVersionName(protocol);
         if (null == name
             || !JsseUtils.contains(sslParameters.getProtocolsArray(), name)
-            || !sslParameters.getAlgorithmConstraints().permits(JsseUtils.TLS_CRYPTO_PRIMITIVES_BC, name, null)
+            || !sslParameters.getAlgorithmConstraints().permits(TLS_CRYPTO_PRIMITIVES_BC, name, null)
             || !supportedProtocols.containsKey(name)
             || (isInFipsMode && !FipsUtils.isFipsProtocol(name)))
         {
