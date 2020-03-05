@@ -30,6 +30,7 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
@@ -38,6 +39,7 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoProvider;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class ProvSSLContextSpi
     extends SSLContextSpi
@@ -658,9 +660,9 @@ class ProvSSLContextSpi
     {
         this.contextData = null;
 
-        TlsCrypto crypto = cryptoProvider.create(sr);
-        X509ExtendedKeyManager x509KeyManager = selectX509KeyManager(kms);
-        BCX509ExtendedTrustManager x509TrustManager = selectX509TrustManager(tms);
+        JcaTlsCrypto crypto = (JcaTlsCrypto)cryptoProvider.create(sr);
+        X509ExtendedKeyManager x509KeyManager = selectX509KeyManager(crypto.getHelper(), kms);
+        BCX509ExtendedTrustManager x509TrustManager = selectX509TrustManager(crypto.getHelper(), tms);
 
         // Trigger (possibly expensive) RNG initialization here to avoid timeout in an actual handshake
         crypto.getSecureRandom().nextInt();
@@ -678,7 +680,8 @@ class ProvSSLContextSpi
         return contextData;
     }
 
-    protected X509ExtendedKeyManager selectX509KeyManager(KeyManager[] kms) throws KeyManagementException
+    protected X509ExtendedKeyManager selectX509KeyManager(JcaJceHelper helper, KeyManager[] kms)
+        throws KeyManagementException
     {
         if (kms != null)
         {
@@ -686,14 +689,15 @@ class ProvSSLContextSpi
             {
                 if (km instanceof X509KeyManager)
                 {
-                    return X509KeyManagerUtil.importX509KeyManager((X509KeyManager)km);
+                    return X509KeyManagerUtil.importX509KeyManager(helper, (X509KeyManager)km);
                 }
             }
         }
         return DummyX509KeyManager.INSTANCE;
     }
 
-    protected BCX509ExtendedTrustManager selectX509TrustManager(TrustManager[] tms) throws KeyManagementException
+    protected BCX509ExtendedTrustManager selectX509TrustManager(JcaJceHelper helper, TrustManager[] tms)
+        throws KeyManagementException
     {
         if (tms == null)
         {
@@ -718,7 +722,7 @@ class ProvSSLContextSpi
             {
                 if (tm instanceof X509TrustManager)
                 {
-                    return X509TrustManagerUtil.importX509TrustManager((X509TrustManager)tm);
+                    return X509TrustManagerUtil.importX509TrustManager(helper, (X509TrustManager)tm);
                 }
             }
         }
