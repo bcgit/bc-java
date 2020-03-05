@@ -8,6 +8,8 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 
+import org.bouncycastle.jcajce.util.JcaJceHelper;
+
 /*
  * Note that chooseEngineClientAlias() and chooseEngineServerAlias() are inherited (they return
  * null), for compatibility with SunJSSE provider.
@@ -15,10 +17,12 @@ import javax.net.ssl.X509KeyManager;
 final class ImportX509KeyManager_5
     extends X509ExtendedKeyManager
 {
+    final JcaJceHelper helper;
     final X509KeyManager x509KeyManager;
 
-    ImportX509KeyManager_5(X509KeyManager x509KeyManager)
+    ImportX509KeyManager_5(JcaJceHelper helper, X509KeyManager x509KeyManager)
     {
+        this.helper = helper;
         this.x509KeyManager = x509KeyManager;
     }
 

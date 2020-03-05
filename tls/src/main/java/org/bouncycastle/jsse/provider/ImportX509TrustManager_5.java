@@ -7,16 +7,19 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 
 class ImportX509TrustManager_5
     extends BCX509ExtendedTrustManager
     implements ImportX509TrustManager
 {
+    final JcaJceHelper helper;
     final X509TrustManager x509TrustManager;
 
-    ImportX509TrustManager_5(X509TrustManager x509TrustManager)
+    ImportX509TrustManager_5(JcaJceHelper helper, X509TrustManager x509TrustManager)
     {
+        this.helper = helper;
         this.x509TrustManager = x509TrustManager;
     }
 
