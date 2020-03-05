@@ -31,14 +31,12 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ClientCertificateType;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -55,10 +53,12 @@ abstract class JsseUtils
     private static final boolean provTlsUseExtendedMasterSecret =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.useExtendedMasterSecret", true);
 
+    static final Set<BCCryptoPrimitive> KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC =
+        Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
+    static final Set<BCCryptoPrimitive> PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES_BC =
+        Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.PUBLIC_KEY_ENCRYPTION));
     static final Set<BCCryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES_BC =
         Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.SIGNATURE));
-    static final Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES_BC =
-        Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
 
     protected static X509Certificate[] EMPTY_CHAIN = new X509Certificate[0];
 
@@ -160,6 +160,7 @@ abstract class JsseUtils
         {
         case ClientCertificateType.dss_sign:
             return "DSA";
+        // NOTE: This also covers EdDSA in TLS 1.2 (when they are in peer's signature_algorithms)
         case ClientCertificateType.ecdsa_sign:
             return "EC";
         case ClientCertificateType.rsa_sign:
