@@ -324,7 +324,7 @@ class ProvTlsClient
                 for (int i = 0; i < certificateTypes.length; ++i)
                 {
                     // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
-                    keyTypes[i] = JsseUtils.getAuthTypeClient(certificateTypes[i]);
+                    keyTypes[i] = JsseUtils.getKeyTypeClient(certificateTypes[i]);
                 }
 
                 return keyTypes;
