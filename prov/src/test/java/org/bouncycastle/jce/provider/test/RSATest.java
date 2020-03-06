@@ -49,6 +49,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -120,6 +121,9 @@ public class RSATest
             new BigInteger("10edcb544421c0f9e123624d1099feeb35c72a8b34e008ac6fa6b90210a7543f293af4e5299c8c12eb464e70092805c7256e18e5823455ba0f504d36f5ccacac1b7cd5c58ff710f9c3f92646949d88fdd1e7ea5fed1081820bb9b0d2a8cd4b093fecfdb96dabd6e28c3a6f8c186dc86cddc89afd3e403e0fcf8a9e0bcb27af0b", 16),
             new BigInteger("97fc25484b5a415eaa63c03e6efa8dafe9a1c8b004d9ee6e80548fefd6f2ce44ee5cb117e77e70285798f57d137566ce8ea4503b13e0f1b5ed5ca6942537c4aa96b2a395782a4cb5b58d0936e0b0fa63b1192954d39ced176d71ef32c6f42c84e2e19f9d4dd999c2151b032b97bd22aa73fd8c5bcd15a2dca4046d5acc997021", 16),
             new BigInteger("4bb8064e1eff7e9efc3c4578fcedb59ca4aef0993a8312dfdcb1b3decf458aa6650d3d0866f143cbf0d3825e9381181170a0a1651eefcd7def786b8eb356555d9fa07c85b5f5cbdd74382f1129b5e36b4166b6cc9157923699708648212c484958351fdc9cf14f218dbe7fbf7cbd93a209a4681fe23ceb44bab67d66f45d1c9d", 16));
+
+    static final byte[] pssPublicKey = Base64.decode("MIIBIDALBgkqhkiG9w0BAQoDggEPADCCAQoCggEBAJqAfazeBJT/qb6j+4Xck3V07pxMcsIUr8onGlhNW0b4XI5Wwxplg1MNB5EJGvdKIdQW5krd4FE8ltefbgUCjD028ALpQtOWoaccIxpptjD6lD8NyG1lVW96Oz9U+bq2nkgWH4B1aXZhrKOGq08bZSLj7Kq7wP1OCxhgSUI9iP+ketfLApH9OjUgMZY8/HOlwavy0yGvablJQbkDef+a4cMcptSSbgEbrZejfhIGYQ2XI1DDHJl2Bx4keOyG1HgC/EV+RmCp6pjhIs+kg45CPqznJqfeWQjo5hULXhr1Pj2B3Bvo1D5eOtrdfZg2p4XXpDVMV6MEiK9qQRONJ8gGC48CAwEAAQ==");
+    static final byte[] pssPrivateKey = Base64.decode("MIIEvAIBADALBgkqhkiG9w0BAQoEggSoMIIEpAIBAAKCAQEAw0FMvJJ15M3aEwAEJToG90JRFhzVnMPw2aKD/xFXJUVuP/Iet/LoWECSokcbcwDVa3GVuQVEsU1/sMS2a5aFoB5NqvMx0vetsBC4X9t85zY5EdMKzEszXX71jzX/yl3YIiMPM0r39Bfu0H+Ixv0wnyrrol+QqkR7MklgfbP6I91FWbeubPGxmSxyQRcz1qS05mH+BXTQ3uwxCBwLo0WO1hovsOIfhFu993qCnK3Oy3jPDvauLj8Z0hIfrHCQNaIxZUcArELLirJsANfCuI4+XCYvMJxQkmrd3ciNWtQu0orSQtWaIVccT1FezOUrme+6tRpELS5VOxearj059qrLIwIDAQABAoIBAG02bCaZwUmefpjcDHWKFHVe6Z31uOG7k08YIL6dw2G8iSNJWTdIrf8W9y2/mjHkSHuVh8p6kOafU4nbLbHV+p4J9SVma/r1wHfXkllDmoR1Bszaf5KviWaFafKVoKJfhVHqzEjDaRdl/5UtkKLE4dpVloE29OLX9RS2iDsnXQWLdyg8ni1U7bjt3twV8sB/8YNx3aQ9rOb051FsKwBocoPVrw8J5A/mWk/6EvhOpf1ItotH/Sjw/w6qwl9tbEyInkBP1+L/AExlr4fipOxDImNkxfvO7ICOgbUSExvTd1uhsHdo9pkEFlvD9ilM71EnLBGOcnnUiOjyDh4wh+aasSkCgYEA6m2GiBx3rDnj+4fx7WhNyh/whvUnWCGIWJF0ctcSD8Ok5CXe8G2X+bVXUlzj3CRZBeCG5xYxsx+d4lzlrjgBidBsoeBLGcmq5v+kB3tpwZiLwyLTb33/LzT0lEjpZOqCx32n7GMeehjdtZE7eaXaGL9IJUjsYkwn6vMLIO+oaS8CgYEA1Tj4z0GkglpOemkw52+nkj9iMr3mdGYGmtSWpsu+fFbq6Fslk+gP5N6nDBzxbKadzqSFBNgNkZtm+/abZqql9rTxOC2guYuFS7a4Wjj1e5gYCNcE/EOIR0wbhO6zlqxuuqcqqWRyz9hPUZC662S4dIMxwvwXv5780oBMR2QVWE0CgYEA5swR6Sttvsf35om+62cHPvoXCieOJrxMyjXaGb4YcCDD1EJcrQSY3SVl5RbC1teKNbkJ17UIFTwJavTew5ksGoxyhySVi7v6YBZLXXppckpHP0SoOVooxEc0jFEER3CCdPkHPDmRpc+ZZ8qmbWuVv0uDMgILh/NGUZAa4sBQY80CgYEAgibYmYp0JK2DIe170ImzO+48vsR0G7D7bx89JmtPxw43LcYVVgddTFMsnJQ+OhgqU6zRFXfcMHkvj7WkfjLEQ6eHZsdTSG8F2oWaWlhSYDMi2KKHhISkdwDZ+3bJYLu4i27m96c8/eoH4L37mxxMC7LZeS/wPyOJJ+TwqtNIxDECgYAf52wVSjHEo9WwsCet4MJhWukLMBkyO2J9IIwsGGP5MyOTpqZN3OfL0g0Qe6oSbExafszuI5DBJNNBJAQqRC6fdhlqLNJEmgKPthbhi/pmqmfcCvbqt4UcEcDdhrrSLMK+4maZMQj7JqaSa+Tv2TYK+pK6D9BuXJRPsTiqBMkJZw==");
 
     public void performTest()
         throws Exception
@@ -713,6 +717,49 @@ public class RSATest
         oaepDigestCheck("SHA3-256", NISTObjectIdentifiers.id_sha3_256, pub2048Key, priv2048Key, rand, Hex.decode("4460e68586ac0ca1832274919c6b9159d40ea1d383a32ca28f0e1a81962289c8c904fa117d90afd7bfefa51b6889d2d999efb72bafd4beb5594bb08f62532ecb077e4968f43e70673341e60649ed64ac49cf1a2396a64577767d8958217a251938a7ac1bbc1aec9c9197a2eb9a375c74a01097fe3717c8bde04f8a20df85ef10a59070970a4a6470131654cecb641d46e464f17ddfe7e0595025bf25f025edbd56b19487cfc87de1642ca5190f289cf78e2c4b1cf90e73ffae331581c23febcf490c32299f2e5bd5a354a0cc996cc692b5a318777d17e734b3c487ad615df7af0fc361af564e6970ee0aa9b140634cdcf1eda91d1a1156326caaa608c4d43ee4"));
         oaepDigestCheck("SHA3-384", NISTObjectIdentifiers.id_sha3_384, pub2048Key, priv2048Key, rand, Hex.decode("1b9f490569bddac8ea77e3bec8d6d38b159cb88545de86065dbc8757b35fdeb0cce90eaf93ec6d69d691c590fc3feec9974b80e0c0068929c77533be2066b4002ad6d195e473f72e8581255b8d2dfff016ff27ed50e6d3e63cfaf50851b2d43833eea8dab3b4506f517875659099815a96be6e8fd2dc1417c6e3ffadcfd3f494a5544267688d114d3eeaf43ea954686656afb7a3dc2f8a4cdc5d7b90a97acbbe32ff17b3d26d7eb2a4fbc847d49cc8cb8f837646613d1b5a78096cf3f48acf4be95205e0c4cb283447029eae1442fe3813a017604dfd59a9e841473f4d8914860f785fb2194b21cba47cd401bc32720f3df373e59336c3d64c61babd474b4bbe"));
         oaepDigestCheck("SHA3-512", NISTObjectIdentifiers.id_sha3_512, pub2048Key, priv2048Key, rand, Hex.decode("7b7870bb5ae52276a8b06b59f7321043afb1fa4e5dbca9f14bcce9efaacded531f090646ab0f8701b012cc93c51e0a8591043e6457cde1950f4ffc8ad87d946622ea48a70f95f40c22d88679eb92c10c19db487fd64857d723daf4ccfe749fdd05e6c0be28de57e09d3b5a0981322b6cc7a9743a50eec355a7af5bdcdcddc5e279ad90f599b68c47fdb39916c7a597cf989169e8667fd8602e88c9c128085d0e158ea75eeb37919a91cdf3f2cd5394adaadc4a2f25a6222d2637cb464841dc5820e54843495cb97af6b19edc72f137123813f5d78503232f79e4f617be3a9f09b0206634a2ecfe457dbd71d2d3d8e3dbca486e75e543f559dcea3112ad50a21d"));
+
+        testPSSKeys();
+    }
+
+    private void testPSSKeys()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSASSA-PSS", "BC");
+
+        isTrue("RSASSA-PSS".equals(kpGen.getAlgorithm()));
+        
+        KeyPair kp = kpGen.generateKeyPair();
+
+        isTrue("RSASSA-PSS".equals(kp.getPublic().getAlgorithm()));
+        isTrue("RSASSA-PSS".equals(kp.getPrivate().getAlgorithm()));
+
+        KeyFactory kFact = KeyFactory.getInstance("RSASSA-PSS", "BC");
+
+        isTrue("RSASSA-PSS".equals(kFact.getAlgorithm()));
+
+        PublicKey publicKey = kFact.generatePublic(new X509EncodedKeySpec(pssPublicKey));
+
+        isTrue("RSASSA-PSS".equals(publicKey.getAlgorithm()));
+
+        PrivateKey privateKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(pssPrivateKey));
+
+        isTrue("RSASSA-PSS".equals(privateKey.getAlgorithm()));
+
+        publicKey = kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        isTrue("RSASSA-PSS".equals(publicKey.getAlgorithm()));
+
+        privateKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        isTrue("RSASSA-PSS".equals(privateKey.getAlgorithm()));
+
+        SubjectPublicKeyInfo subKey = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+
+        isTrue(null == subKey.getAlgorithm().getParameters());
+
+        PrivateKeyInfo privKey = PrivateKeyInfo.getInstance(privateKey.getEncoded());
+
+        isTrue(null == privKey.getPrivateKeyAlgorithm().getParameters());
     }
 
     public void oaepDigestCheck(String digest, ASN1ObjectIdentifier oid, PublicKey pubKey, PrivateKey privKey, SecureRandom rand, byte[] expected)
