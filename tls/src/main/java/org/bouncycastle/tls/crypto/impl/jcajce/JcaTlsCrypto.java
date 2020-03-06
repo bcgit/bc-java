@@ -2,12 +2,15 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Hashtable;
 
 import javax.crypto.Cipher;
@@ -23,6 +26,7 @@ import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.SRP6Group;
@@ -349,6 +353,37 @@ public class JcaTlsCrypto
                 return verifierGenerator.generateVerifier(salt, identity, password);
             }
         };
+    }
+
+    public AlgorithmParameters getSignatureAlgorithmParameters(int signatureScheme)
+        throws GeneralSecurityException
+    {
+        switch (signatureScheme)
+        {
+        case SignatureScheme.rsa_pss_pss_sha256:
+        case SignatureScheme.rsa_pss_rsae_sha256:
+        case SignatureScheme.rsa_pss_pss_sha384:
+        case SignatureScheme.rsa_pss_rsae_sha384:
+        case SignatureScheme.rsa_pss_pss_sha512:
+        case SignatureScheme.rsa_pss_rsae_sha512:
+        {
+            short hash = SignatureScheme.getRSAPSSHashAlgorithm(signatureScheme);
+            String digestName = getDigestName(hash);
+            String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
+
+            AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, getHelper());
+
+            Signature signer = getHelper().createSignature(sigName);
+
+            // NOTE: We explicitly set them even though they should be the defaults, because providers vary
+            signer.setParameter(pssSpec);
+
+            return signer.getParameters();
+        }
+
+        default:
+            return null;
+        }
     }
 
     public boolean hasAllRawSignatureAlgorithms()
