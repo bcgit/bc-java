@@ -6,13 +6,11 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.X509ExtendedKeyManager;
-import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIHostName;
@@ -183,8 +181,9 @@ class ProvTlsClient
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
             {
                 final ContextData contextData = manager.getContextData();
+                final X509ExtendedKeyManager x509KeyManager = contextData.getX509KeyManager();
 
-                if (DummyX509KeyManager.INSTANCE == contextData.getX509KeyManager())
+                if (DummyX509KeyManager.INSTANCE == x509KeyManager)
                 {
                     return null;
                 }
@@ -223,29 +222,15 @@ class ProvTlsClient
                     throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
 
-                short[] certTypes = certificateRequest.getCertificateTypes();
-                if (certTypes == null || certTypes.length == 0)
-                {
-                    // TODO[jsse] Or does this mean ANY type - or something else?
-                    return null;
-                }
+                /*
+                 * TODO[jsse] Review and rewrite in light of RFC 5246 7.4.4:
+                 * "The interaction of the certificate_types and supported_signature_algorithms".
+                 *
+                 * TODO[RFC 8422] Rework in light of ed25519/ed448 and peerSigSchemes.
+                 */
 
-                // TODO[RFC 8422] Rework this in light of ed25519/ed448 and handle the supported signature algorithms TODO
-                String[] keyTypes = new String[certTypes.length];
-                for (int i = 0; i < certTypes.length; ++i)
-                {
-                    // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
-                    keyTypes[i] = JsseUtils.getAuthTypeClient(certTypes[i]);
-                }
-
-                Principal[] issuers = null;
-                Vector<X500Name> cas = (Vector<X500Name>)certificateRequest.getCertificateAuthorities();
-                if (cas != null && cas.size() > 0)
-                {
-                    X500Name[] names = cas.toArray(new X500Name[cas.size()]);
-                    Set<X500Principal> principals = JsseUtils.toX500Principals(names);
-                    issuers = principals.toArray(new Principal[principals.size()]);
-                }
+                String[] keyTypes = getKeyTypes(certificateRequest.getCertificateTypes());
+                Principal[] issuers = getIssuers(certificateRequest.getCertificateAuthorities());
 
                 String alias = manager.chooseClientAlias(keyTypes, issuers);
                 if (alias == null)
@@ -260,7 +245,6 @@ class ProvTlsClient
                     throw new UnsupportedOperationException();
                 }
 
-                X509ExtendedKeyManager x509KeyManager = contextData.getX509KeyManager();
                 PrivateKey privateKey = x509KeyManager.getPrivateKey(alias);
                 Certificate certificate = JsseUtils.getCertificateMessage(crypto, x509KeyManager.getCertificateChain(alias));
 
@@ -284,6 +268,13 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.ECDHE_RSA:
                 case KeyExchangeAlgorithm.RSA:
                 {
+                    /*
+                     * TODO Choose from jsseSecurityParameters.peerSigAlgs when present (TLS 1.2+,
+                     * possibly defaulted in TLS 1.2). It's in preference order, but consider
+                     * ignoring weak algorithms in first pass. (Requires that peerSigAlgs were
+                     * considered during keyType selection above).
+                     */
+
                     short signatureAlgorithm = certificate.getCertificateAt(0).getLegacySignatureAlgorithm();
                     SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
                         securityParameters.getServerSigAlgs(), signatureAlgorithm);
@@ -312,6 +303,31 @@ class ProvTlsClient
                 String authType = JsseUtils.getAuthTypeServer(keyExchangeAlgorithm);
 
                 manager.checkServerTrusted(chain, authType);
+            }
+
+            private Principal[] getIssuers(Vector<X500Name> certificateAuthorities)
+                throws IOException
+            {
+                return JsseUtils.toX500Principals(certificateAuthorities);
+            }
+
+            private String[] getKeyTypes(short[] certificateTypes)
+                throws IOException
+            {
+                if (certificateTypes == null || certificateTypes.length == 0)
+                {
+                    // TODO[jsse] Or does this mean ANY type - or something else?
+                    return null;
+                }
+
+                String[] keyTypes = new String[certificateTypes.length];
+                for (int i = 0; i < certificateTypes.length; ++i)
+                {
+                    // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
+                    keyTypes[i] = JsseUtils.getAuthTypeClient(certificateTypes[i]);
+                }
+
+                return keyTypes;
             }
         };
     }

@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -374,25 +375,26 @@ abstract class JsseUtils
         }
     }
 
-    static Set<X500Principal> toX500Principals(X500Name[] names) throws IOException
+    static X500Principal[] toX500Principals(Vector<X500Name> names) throws IOException
     {
-        if (names == null || names.length == 0)
+        if (null == names || names.isEmpty())
         {
-            return Collections.emptySet();
+            return null;
         }
 
-        Set<X500Principal> principals = new HashSet<X500Principal>(names.length);
+        Set<X500Principal> principals = new LinkedHashSet<X500Principal>();
 
-        for (int i = 0; i < names.length; ++i)
+        int count = names.size();
+        for (int i = 0; i < count; ++i)
         {
-            X500Name name = names[i];
-            if (name != null)
+            X500Name name = names.elementAt(i);
+            if (null != name)
             {
-            	principals.add(new X500Principal(name.getEncoded(ASN1Encoding.DER)));
+                principals.add(new X500Principal(name.getEncoded(ASN1Encoding.DER)));
             }
         }
 
-        return principals;
+        return principals.toArray(new X500Principal[0]);
     }
 
     static X500Name toX500Name(Principal principal)
