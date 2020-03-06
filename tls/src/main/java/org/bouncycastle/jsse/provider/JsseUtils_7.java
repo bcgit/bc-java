@@ -19,8 +19,6 @@ abstract class JsseUtils_7
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
     static final Set<CryptoPrimitive> KEY_ENCAPSULATION_CRYPTO_PRIMITIVES =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_ENCAPSULATION));
-    static final Set<CryptoPrimitive> PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES =
-        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.PUBLIC_KEY_ENCRYPTION));
     static final Set<CryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
@@ -147,10 +145,6 @@ abstract class JsseUtils_7
         {
             return KEY_ENCAPSULATION_CRYPTO_PRIMITIVES;
         }
-        if (PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES_BC == primitives)
-        {
-            return PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES;
-        }
 
         HashSet<CryptoPrimitive> result = new HashSet<CryptoPrimitive>();
         for (BCCryptoPrimitive primitive : primitives)
@@ -222,10 +216,6 @@ abstract class JsseUtils_7
         if (KEY_ENCAPSULATION_CRYPTO_PRIMITIVES == primitives)
         {
             return KEY_ENCAPSULATION_CRYPTO_PRIMITIVES_BC;
-        }
-        if (PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES == primitives)
-        {
-            return PUBLIC_KEY_ENCRYPTION_CRYPTO_PRIMITIVES_BC;
         }
 
         HashSet<BCCryptoPrimitive> result = new HashSet<BCCryptoPrimitive>();
