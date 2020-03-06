@@ -435,7 +435,7 @@ class ProvTlsServer
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), clientCertificate);
             short signatureAlgorithm = clientCertificate.getCertificateAt(0).getLegacySignatureAlgorithm();
-            String authType = JsseUtils.getAuthStringClient(signatureAlgorithm);
+            String authType = JsseUtils.getAuthTypeClient(signatureAlgorithm);
 
             // NOTE: We never try to continue the handshake with an untrusted client certificate
             manager.checkClientTrusted(chain, authType);
@@ -585,7 +585,7 @@ class ProvTlsServer
             return false;
         }
 
-        String keyType = JsseUtils.getAuthTypeServer(keyExchangeAlgorithm);
+        String keyType = JsseUtils.getKeyTypeServer(keyExchangeAlgorithm);
         if (keyManagerMissCache.contains(keyType))
         {
             return false;

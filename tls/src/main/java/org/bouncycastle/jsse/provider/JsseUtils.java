@@ -125,8 +125,14 @@ abstract class JsseUtils
         return applicationProtocol.getUtf8Decoding();
     }
 
-    static String getAuthStringClient(short signatureAlgorithm) throws IOException
+    static String getAuthTypeClient(short signatureAlgorithm) throws IOException
     {
+        /*
+         * For use with checkClientTrusted calls on a trust manager.
+         * "Determined by the actual certificate used" according to JSSE Standard Names, but in
+         * practice trust managers only require the authType to be a non-null, non-empty String.
+         */
+
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.rsa:
@@ -144,35 +150,24 @@ abstract class JsseUtils
 //        case SignatureAlgorithm.rsa_pss_rsae_sha256:
 //        case SignatureAlgorithm.rsa_pss_rsae_sha384:
 //        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-//            return "RSA_PSS_RSAE";
+//            return "RSA_PSS_RSAE"; // TODO Review
 //        case SignatureAlgorithm.rsa_pss_pss_sha256:
 //        case SignatureAlgorithm.rsa_pss_pss_sha384:
 //        case SignatureAlgorithm.rsa_pss_pss_sha512:
-//            return "RSA_PSS_PSS";
+//            return "RSA_PSS_PSS"; // TODO Review
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
-    // TODO[RFC 8422]
-    public static String getAuthTypeClient(short clientCertificateType) throws IOException
+    static String getAuthTypeServer(int keyExchangeAlgorithm) throws IOException
     {
-        switch (clientCertificateType)
-        {
-        case ClientCertificateType.dss_sign:
-            return "DSA";
-        // NOTE: This also covers EdDSA in TLS 1.2 (when they are in peer's signature_algorithms)
-        case ClientCertificateType.ecdsa_sign:
-            return "EC";
-        case ClientCertificateType.rsa_sign:
-            return "RSA";
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-    }
+        /*
+         * For use with checkServerTrusted calls on a trust manager.
+         * "The key exchange algorithm portion of the cipher suites represented as a String [..]"
+         * according to JSSE Standard Names.
+         */
 
-    public static String getAuthTypeServer(int keyExchangeAlgorithm) throws IOException
-    {
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_anon:
@@ -232,6 +227,53 @@ abstract class JsseUtils
         }
 
         return new Certificate(certificateList);
+    }
+
+    static String getKeyTypeClient(short clientCertificateType) throws IOException
+    {
+        /*
+         * For use with chooseClientAlias calls on a key manager. Values from JSSE Standard Names.
+         * 
+         * TODO[RFC 8446] "RSASSA-PSS" is listed in JSSE Standard Names - how does that work?
+         */
+
+        switch (clientCertificateType)
+        {
+        /*
+         * BCJSSE doesn't support any static key exchange cipher suites; any of these values would
+         * be filtered out (as invalid) by the low-level TLS code.
+         */
+//        case ClientCertificateType.dss_fixed_dh:
+//            return "DH_DSA";
+//        case ClientCertificateType.ecdsa_fixed_ecdh:
+//            return "EC_EC";
+//        case ClientCertificateType.rsa_fixed_dh:
+//            return "DH_RSA";
+//        case ClientCertificateType.rsa_fixed_ecdh:
+//            return "EC_RSA";
+
+        case ClientCertificateType.dss_sign:
+            return "DSA";
+        // NOTE: Compatible with peer signature_algorithms "ed25519" and "ed448" in TLS 1.2
+        case ClientCertificateType.ecdsa_sign:
+            return "EC";
+        // NOTE: (Presumably) compatible with peer signature_algorithms "rsa_pss_*" in TLS 1.2 
+        case ClientCertificateType.rsa_sign:
+            return "RSA";
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    static String getKeyTypeServer(int keyExchangeAlgorithm) throws IOException
+    {
+        /*
+         * For use with chooseServerAlias calls on a key manager. JSSE Standard Names suggest using
+         * the same set of key types as getKeyTypeClient, but this doesn't give enough information
+         * to the key manager, so we currently use the same names as getAuthTypeServer.
+         */
+
+        return getAuthTypeServer(keyExchangeAlgorithm);
     }
 
     public static Vector getProtocolNames(String[] applicationProtocols)
