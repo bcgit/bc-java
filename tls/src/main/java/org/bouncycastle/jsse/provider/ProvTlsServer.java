@@ -239,8 +239,8 @@ class ProvTlsServer
 
         final ContextData contextData = manager.getContextData();
 
-        short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
-            ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
+        short[] certificateTypes = new short[]{ ClientCertificateType.ecdsa_sign,
+            ClientCertificateType.rsa_sign, ClientCertificateType.dss_sign };
 
         Vector<SignatureAndHashAlgorithm> serverSigAlgs = null;
 
