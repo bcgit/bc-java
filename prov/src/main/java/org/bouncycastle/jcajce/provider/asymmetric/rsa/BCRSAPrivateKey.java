@@ -10,7 +10,6 @@ import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -29,6 +28,7 @@ public class BCRSAPrivateKey
     protected BigInteger modulus;
     protected BigInteger privateExponent;
 
+    protected transient AlgorithmIdentifier algorithmIdentifier = BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER;
     protected transient RSAKeyParameters rsaPrivateKey;
     protected transient PKCS12BagAttributeCarrierImpl   attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
@@ -56,8 +56,9 @@ public class BCRSAPrivateKey
         this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
     }
 
-    BCRSAPrivateKey(org.bouncycastle.asn1.pkcs.RSAPrivateKey key)
+    BCRSAPrivateKey(AlgorithmIdentifier algID, org.bouncycastle.asn1.pkcs.RSAPrivateKey key)
     {
+        this.algorithmIdentifier = algID;
         this.modulus = key.getModulus();
         this.privateExponent = key.getPrivateExponent();
         this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
@@ -75,6 +76,10 @@ public class BCRSAPrivateKey
 
     public String getAlgorithm()
     {
+        if (algorithmIdentifier.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+        {
+            return "RSASSA-PSS";
+        }
         return "RSA";
     }
 
@@ -90,7 +95,7 @@ public class BCRSAPrivateKey
 
     public byte[] getEncoded()
     {
-        return KeyUtil.getEncodedPrivateKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE), new org.bouncycastle.asn1.pkcs.RSAPrivateKey(getModulus(), ZERO, getPrivateExponent(), ZERO, ZERO, ZERO, ZERO, ZERO));
+        return KeyUtil.getEncodedPrivateKeyInfo(algorithmIdentifier, new org.bouncycastle.asn1.pkcs.RSAPrivateKey(getModulus(), ZERO, getPrivateExponent(), ZERO, ZERO, ZERO, ZERO, ZERO));
     }
 
     public boolean equals(Object o)
@@ -139,7 +144,7 @@ public class BCRSAPrivateKey
         throws IOException, ClassNotFoundException
     {
         in.defaultReadObject();
-
+        
         this.attrCarrier = new PKCS12BagAttributeCarrierImpl();
         this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
     }

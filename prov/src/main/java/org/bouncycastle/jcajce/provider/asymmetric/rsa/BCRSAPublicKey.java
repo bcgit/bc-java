@@ -18,7 +18,7 @@ import org.bouncycastle.util.Strings;
 public class BCRSAPublicKey
     implements RSAPublicKey
 {
-    private static final AlgorithmIdentifier DEFAULT_ALGORITHM_IDENTIFIER = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE);
+    static final AlgorithmIdentifier DEFAULT_ALGORITHM_IDENTIFIER = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE);
 
     static final long serialVersionUID = 2675817738516720772L;
 
@@ -31,7 +31,14 @@ public class BCRSAPublicKey
     BCRSAPublicKey(
         RSAKeyParameters key)
     {
-        this.algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
+        this(DEFAULT_ALGORITHM_IDENTIFIER, key);
+    }
+
+    BCRSAPublicKey(
+        AlgorithmIdentifier algId,
+        RSAKeyParameters key)
+    {
+        this.algorithmIdentifier = algId;
         this.modulus = key.getModulus();
         this.publicExponent = key.getExponent();
         this.rsaPublicKey = key;
@@ -100,6 +107,10 @@ public class BCRSAPublicKey
 
     public String getAlgorithm()
     {
+        if (algorithmIdentifier.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+        {
+            return "RSASSA-PSS";
+        }
         return "RSA";
     }
 

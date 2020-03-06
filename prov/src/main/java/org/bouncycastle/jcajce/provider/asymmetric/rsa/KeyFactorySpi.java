@@ -247,7 +247,7 @@ public class KeyFactorySpi
 
             if (rsaPrivKey.getCoefficient().intValue() == 0)
             {
-                return new BCRSAPrivateKey(rsaPrivKey);
+                return new BCRSAPrivateKey(keyInfo.getPrivateKeyAlgorithm(), rsaPrivKey);
             }
             else
             {
