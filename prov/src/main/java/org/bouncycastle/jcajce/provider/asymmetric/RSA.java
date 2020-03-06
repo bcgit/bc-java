@@ -81,6 +81,9 @@ public class RSA
             provider.addAlgorithm("KeyFactory.RSA", PREFIX + "KeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.RSA", PREFIX + "KeyPairGeneratorSpi");
 
+            provider.addAlgorithm("KeyFactory.RSASSA-PSS", PREFIX + "KeyFactorySpi");
+            provider.addAlgorithm("KeyPairGenerator.RSASSA-PSS", PREFIX + "KeyPairGeneratorSpi$PSS");
+
             AsymmetricKeyInfoConverter keyFact = new KeyFactorySpi();
 
             registerOid(provider, PKCSObjectIdentifiers.rsaEncryption, "RSA", keyFact);
