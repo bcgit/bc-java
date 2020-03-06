@@ -48,26 +48,22 @@ class ProvX509KeyManager
 
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
     {
-        // TODO[jsse] Socket argument currently unused
-        return chooseAlias(false, keyTypes, issuers);
+        return chooseAlias(keyTypes, issuers, TransportData.from(socket), false);
     }
 
     public String chooseEngineClientAlias(String[] keyTypes, Principal[] issuers, SSLEngine engine)
     {
-        // TODO[jsse] SSLEngine argument currently unused
-        return chooseAlias(false, keyTypes, issuers);
+        return chooseAlias(keyTypes, issuers, TransportData.from(engine), false);
     }
 
     public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine)
     {
-        // TODO[jsse] SSLEngine argument currently unused
-        return chooseAlias(true, new String[]{ keyType }, issuers);
+        return chooseAlias(new String[]{ keyType }, issuers, TransportData.from(engine), true);
     }
 
     public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
     {
-        // TODO[jsse] Socket argument currently unused
-        return chooseAlias(true, new String[]{ keyType }, issuers);
+        return chooseAlias(new String[]{ keyType }, issuers, TransportData.from(socket), true);
     }
 
     public X509Certificate[] getCertificateChain(String alias)
@@ -92,7 +88,8 @@ class ProvX509KeyManager
         return getAliases(true, keyType, issuers);
     }
 
-    private String chooseAlias(boolean forServer, String[] keyTypes, Principal[] issuers)
+    // TODO[jsse] TransportData argument currently unused
+    private String chooseAlias(String[] keyTypes, Principal[] issuers, TransportData transportData, boolean forServer)
     {
         try
         {
