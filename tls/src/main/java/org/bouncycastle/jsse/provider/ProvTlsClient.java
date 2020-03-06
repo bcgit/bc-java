@@ -183,6 +183,12 @@ class ProvTlsClient
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
             {
                 final ContextData contextData = manager.getContextData();
+
+                if (DummyX509KeyManager.INSTANCE == contextData.getX509KeyManager())
+                {
+                    return null;
+                }
+
                 final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
                 // Setup the peer supported signature schemes  
