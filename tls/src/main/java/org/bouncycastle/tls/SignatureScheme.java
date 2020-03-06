@@ -73,6 +73,24 @@ public class SignatureScheme
         }
     }
 
+    public static short getRSAPSSHashAlgorithm(int signatureScheme)
+    {
+        switch (signatureScheme)
+        {
+        case rsa_pss_rsae_sha256:
+        case rsa_pss_pss_sha256:
+            return HashAlgorithm.sha256;
+        case rsa_pss_rsae_sha384:
+        case rsa_pss_pss_sha384:
+            return HashAlgorithm.sha384;
+        case rsa_pss_rsae_sha512:
+        case rsa_pss_pss_sha512:
+            return HashAlgorithm.sha512;
+        default:
+            return -1;
+        }
+    }
+
     public static String getText(int signatureScheme)
     {
         return getName(signatureScheme) + "(" + signatureScheme + ")";

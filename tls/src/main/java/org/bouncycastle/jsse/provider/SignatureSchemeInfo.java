@@ -1,5 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
+import java.security.AlgorithmParameters;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -64,10 +65,11 @@ class SignatureSchemeInfo
     private final String name;
     private final String jcaSignatureAlgorithm;
     private final String keyAlgorithm;
+    private final AlgorithmParameters algorithmParameters;
     private final boolean enabled;
 
     SignatureSchemeInfo(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm,
-        boolean enabled)
+        AlgorithmParameters algorithmParameters, boolean enabled)
     {
         if (!TlsUtils.isValidUint16(signatureScheme))
         {
@@ -78,6 +80,7 @@ class SignatureSchemeInfo
         this.name = name;
         this.jcaSignatureAlgorithm = jcaSignatureAlgorithm;
         this.keyAlgorithm = keyAlgorithm;
+        this.algorithmParameters = algorithmParameters;
         this.enabled = enabled;
     }
 
@@ -117,8 +120,7 @@ class SignatureSchemeInfo
 
         return algorithmConstraints.permits(primitives, name, null)
             && algorithmConstraints.permits(primitives, keyAlgorithm, null)
-            // TODO SunJSSE passes AlgorithmParameters here (for PSS algorithms)
-            && algorithmConstraints.permits(primitives, jcaSignatureAlgorithm, null);
+            && algorithmConstraints.permits(primitives, jcaSignatureAlgorithm, algorithmParameters);
             // TODO[tls13] Some schemes have a specific NamedGroup, check permission if TLS 1.3+
     }
 

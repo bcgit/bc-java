@@ -1,5 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +16,7 @@ import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
-import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 final class ContextData
 {
@@ -45,13 +47,27 @@ final class ContextData
         SignatureSchemeInfo.historical_rsa_md5,
     };
 
-    private static void addSignatureScheme(TlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
-        String name, String jcaSignatureAlgorithm, String keyAlgorithm)
+    private static void addSignatureScheme(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss,
+        int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
         boolean enabled = crypto.hasSignatureScheme(signatureScheme);
 
+        AlgorithmParameters algorithmParameters = null;
+        if (enabled)
+        {
+            // TODO[jsse] Consider also fetching 'jcaSignatureAlgorithm' and 'keyAlgorithm'
+            try
+            {
+                algorithmParameters = crypto.getSignatureAlgorithmParameters(signatureScheme);
+            }
+            catch (GeneralSecurityException e)
+            {
+                enabled = false;
+            }
+        }
+
         SignatureSchemeInfo signatureSchemeInfo = new SignatureSchemeInfo(signatureScheme, name, jcaSignatureAlgorithm,
-            keyAlgorithm, enabled);
+            keyAlgorithm, algorithmParameters, enabled);
 
         if (null != ss.put(signatureScheme, signatureSchemeInfo))
         {
@@ -59,7 +75,7 @@ final class ContextData
         }
     }
 
-    private static void addSignatureScheme(TlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
+    private static void addSignatureScheme(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String jcaSignatureAlgorithm, String keyAlgorithm)
     {
         String name = SignatureScheme.getName(signatureScheme);
@@ -67,21 +83,21 @@ final class ContextData
         addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm);
     }
 
-    private static void addSignatureSchemeHistorical(TlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
+    private static void addSignatureSchemeHistorical(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String name, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
         // TODO[tls13] Historical schemes can no longer be used
         addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm);
     }
 
-    private static void addSignatureSchemeLegacy(TlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
+    private static void addSignatureSchemeLegacy(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String jcaSignatureAlgorithm, String keyAlgorithm)
     {
         // TODO[tls13] Legacy schemes can still be used for certificate signatures only
         addSignatureScheme(crypto, ss, signatureScheme, jcaSignatureAlgorithm, keyAlgorithm);
     }
 
-    private static Map<Integer, SignatureSchemeInfo> createSignatureSchemesMap(TlsCrypto crypto)
+    private static Map<Integer, SignatureSchemeInfo> createSignatureSchemesMap(JcaTlsCrypto crypto)
     {
         Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
 
@@ -94,18 +110,18 @@ final class ContextData
         addSignatureScheme(crypto, ss, SignatureScheme.ecdsa_secp384r1_sha384, "SHA384withECDSA", "EC");
         addSignatureScheme(crypto, ss, SignatureScheme.ecdsa_secp521r1_sha512, "SHA512withECDSA", "EC");
 
-        // TODO Ideally would use signature algorithm names like "SHA256withRSAandMGF1" instead of "RSASSA-PSS"
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha256, "RSASSA-PSS", "RSA");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "RSASSA-PSS", "RSA");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "RSASSA-PSS", "RSA");
+        // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
+        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha256, "SHA256withRSAandMGF1", "RSA");
+        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1", "RSA");
+        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1", "RSA");
 
         addSignatureScheme(crypto, ss, SignatureScheme.ed25519, "ed25519", "ed25519");
         addSignatureScheme(crypto, ss, SignatureScheme.ed448, "ed448", "ed448");
 
-        // TODO Ideally would use signature algorithm names like "SHA256withRSAandMGF1" instead of "RSASSA-PSS"
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "RSASSA-PSS", "RSASSA-PSS");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha384, "RSASSA-PSS", "RSASSA-PSS");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha512, "RSASSA-PSS", "RSASSA-PSS");
+        // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
+        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1", "RSASSA-PSS");
+        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha384, "SHA384withRSAandMGF1", "RSASSA-PSS");
+        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha512, "SHA512withRSAandMGF1", "RSASSA-PSS");
 
         /*
          * Legacy algorithms: "These values refer solely to signatures which appear in certificates
@@ -138,7 +154,7 @@ final class ContextData
     }
 
     private final ProvSSLContextSpi context;
-    private final TlsCrypto crypto;
+    private final JcaTlsCrypto crypto;
     private final X509ExtendedKeyManager x509KeyManager;
     private final BCX509ExtendedTrustManager x509TrustManager;
     private final ProvSSLSessionContext clientSessionContext;
@@ -146,7 +162,7 @@ final class ContextData
 
     private final Map<Integer, SignatureSchemeInfo> signatureSchemesMap;
 
-    ContextData(ProvSSLContextSpi context, TlsCrypto crypto, X509ExtendedKeyManager x509KeyManager,
+    ContextData(ProvSSLContextSpi context, JcaTlsCrypto crypto, X509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager)
     {
         this.context = context;
@@ -208,7 +224,7 @@ final class ContextData
         return context;
     }
 
-    TlsCrypto getCrypto()
+    JcaTlsCrypto getCrypto()
     {
         return crypto;
     }
