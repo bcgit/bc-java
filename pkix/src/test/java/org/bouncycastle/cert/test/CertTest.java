@@ -3526,6 +3526,55 @@ public class CertTest
         //System.out.println(cert);
     }
 
+    public void checkCreationRSAPSS()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSASSA-PSS", "BC");
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withRSAandMGF1").setProvider("BC").build(privKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        //
+        // check verifies in general
+        //
+        cert.verify(pubKey);
+
+        //
+        // check verifies with contained key
+        //
+        cert.verify(cert.getPublicKey());
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        org.bouncycastle.asn1.x509.Certificate crt = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
+
+        isTrue(PKCSObjectIdentifiers.id_RSASSA_PSS.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
+        isTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
+    }
+
     /*
      * we generate a self signed certificate across the range of ECDSA algorithms
      */
@@ -4318,6 +4367,7 @@ public class CertTest
         checkCreationDSA();
         checkCreationECDSA();
         checkCreationRSA();
+        checkCreationRSAPSS();
 
         checkSm3WithSm2Creation();
 
