@@ -156,17 +156,9 @@ public class BcTlsCertificate
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        try
+        if (!supportsKeyUsage(KeyUsage.digitalSignature))
         {
-            validateKeyUsage(KeyUsage.digitalSignature);
-        }
-        catch (IOException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
+            return -1;
         }
 
         /*
@@ -203,7 +195,7 @@ public class BcTlsCertificate
             return SignatureAlgorithm.ecdsa;
         }
 
-        throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+        return -1;
     }
 
     protected DHPublicKeyParameters getPubKeyDH() throws IOException

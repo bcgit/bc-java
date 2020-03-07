@@ -37,9 +37,8 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 
 class ProvSSLContextSpi
     extends SSLContextSpi
@@ -407,7 +406,7 @@ class ProvSSLContextSpi
     }
 
     protected final boolean isInFipsMode;
-    protected final TlsCryptoProvider cryptoProvider;
+    protected final JcaTlsCryptoProvider cryptoProvider;
 
     protected final Map<String, CipherSuiteInfo> supportedCipherSuites;
     protected final Map<String, ProtocolVersion> supportedProtocols;
@@ -417,7 +416,7 @@ class ProvSSLContextSpi
 
     private ContextData contextData = null;
 
-    ProvSSLContextSpi(boolean isInFipsMode, TlsCryptoProvider cryptoProvider, String[] specifiedProtocolsClient)
+    ProvSSLContextSpi(boolean isInFipsMode, JcaTlsCryptoProvider cryptoProvider, String[] specifiedProtocolsClient)
     {
         this.isInFipsMode = isInFipsMode;
         this.cryptoProvider = cryptoProvider;
@@ -444,7 +443,7 @@ class ProvSSLContextSpi
         return isClient ? defaultProtocolsClient : defaultProtocolsServer;
     }
 
-    int[] getActiveCipherSuites(TlsCrypto crypto, ProvSSLParameters sslParameters,
+    int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,
         ProtocolVersion[] activeProtocolVersions)
     {
         String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
@@ -660,7 +659,7 @@ class ProvSSLContextSpi
     {
         this.contextData = null;
 
-        JcaTlsCrypto crypto = (JcaTlsCrypto)cryptoProvider.create(sr);
+        JcaTlsCrypto crypto = cryptoProvider.create(sr);
         X509ExtendedKeyManager x509KeyManager = selectX509KeyManager(crypto.getHelper(), kms);
         BCX509ExtendedTrustManager x509TrustManager = selectX509TrustManager(crypto.getHelper(), tms);
 

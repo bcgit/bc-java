@@ -19,7 +19,7 @@ import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.RecordFormat;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 
 abstract class ProvSSLSessionBase
@@ -28,7 +28,7 @@ abstract class ProvSSLSessionBase
     protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
 
     protected ProvSSLSessionContext sslSessionContext;
-    protected final TlsCrypto tlsCrypto;
+    protected final JcaTlsCrypto crypto;
     protected final String peerHost;
     protected final int peerPort;
     protected final long creationTime;
@@ -40,7 +40,7 @@ abstract class ProvSSLSessionBase
     ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort)
     {
         this.sslSessionContext = sslSessionContext;
-        this.tlsCrypto = (null == sslSessionContext) ? null : sslSessionContext.getCrypto();
+        this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getCrypto();
         this.peerHost = peerHost;
         this.peerPort = peerPort;
         this.creationTime = System.currentTimeMillis();
@@ -118,9 +118,9 @@ abstract class ProvSSLSessionBase
 
     public Certificate[] getLocalCertificates()
     {
-        if (null != tlsCrypto)
+        if (null != crypto)
         {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(tlsCrypto, getLocalCertificateTLS());
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(crypto, getLocalCertificateTLS());
             if (null != chain && chain.length > 0)
             {
                 return chain;
@@ -132,9 +132,9 @@ abstract class ProvSSLSessionBase
 
     public Principal getLocalPrincipal()
     {
-        if (null != tlsCrypto)
+        if (null != crypto)
         {
-            return JsseUtils.getSubject(tlsCrypto, getLocalCertificateTLS());
+            return JsseUtils.getSubject(crypto, getLocalCertificateTLS());
         }
 
         return null;
@@ -186,9 +186,9 @@ abstract class ProvSSLSessionBase
 
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
     {
-        if (null != tlsCrypto)
+        if (null != crypto)
         {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(tlsCrypto, getPeerCertificateTLS());
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(crypto, getPeerCertificateTLS());
             if (null != chain && chain.length > 0)
             {
                 return chain;
@@ -200,9 +200,9 @@ abstract class ProvSSLSessionBase
 
     public Principal getPeerPrincipal() throws SSLPeerUnverifiedException
     {
-        if (null != tlsCrypto)
+        if (null != crypto)
         {
-            X500Principal principal = JsseUtils.getSubject(tlsCrypto, getPeerCertificateTLS());
+            X500Principal principal = JsseUtils.getSubject(crypto, getPeerCertificateTLS());
             if (null != principal)
             {
                 return principal;

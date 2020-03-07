@@ -1670,7 +1670,7 @@ public class TlsUtils
             short clientCertType = getLegacyClientCertType(signatureAlgorithm);
             if (clientCertType < 0 || !Arrays.contains(certificateRequest.getCertificateTypes(), clientCertType))
             {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
             }
         }
         else
