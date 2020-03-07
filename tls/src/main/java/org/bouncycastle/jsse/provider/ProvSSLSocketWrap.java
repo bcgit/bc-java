@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
@@ -130,14 +131,18 @@ class ProvSSLSocketWrap
         }
     }
 
-    public String chooseClientAlias(String[] keyType, Principal[] issuers)
+    public ProvX509Key chooseClientKey(String[] keyTypes, Principal[] issuers)
     {
-        return contextData.getX509KeyManager().chooseClientAlias(keyType, issuers, this);
+        X509ExtendedKeyManager x509KeyManager = getContextData().getX509KeyManager();
+        String alias = x509KeyManager.chooseClientAlias(keyTypes, issuers, this);
+        return ProvX509Key.from(x509KeyManager, alias);
     }
 
-    public String chooseServerAlias(String keyType, Principal[] issuers)
+    public ProvX509Key chooseServerKey(String keyType, Principal[] issuers)
     {
-        return contextData.getX509KeyManager().chooseServerAlias(keyType, issuers, this);
+        X509ExtendedKeyManager x509KeyManager = getContextData().getX509KeyManager();
+        String alias = x509KeyManager.chooseServerAlias(keyType, issuers, this);
+        return ProvX509Key.from(x509KeyManager, alias);
     }
 
     @Override

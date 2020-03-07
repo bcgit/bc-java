@@ -244,17 +244,9 @@ public class JcaTlsCertificate
     {
          PublicKey publicKey = getPublicKey();
 
-         try
+         if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE))
          {
-             validateKeyUsageBit(KU_DIGITAL_SIGNATURE);
-         }
-         catch (IOException e)
-         {
-             throw e;
-         }
-         catch (Exception e)
-         {
-             throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
+             return -1;
          }
 
          /*
@@ -291,7 +283,7 @@ public class JcaTlsCertificate
              return SignatureAlgorithm.ecdsa;
          }
 
-         throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+         return -1;
     }
 
     public boolean supportsSignatureAlgorithm(short signatureAlgorithm)
@@ -385,7 +377,7 @@ public class JcaTlsCertificate
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
+            throw new TlsFatalAlert(AlertDescription.bad_certificate, e);
         }
     }
 

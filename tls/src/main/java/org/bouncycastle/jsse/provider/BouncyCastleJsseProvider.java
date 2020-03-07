@@ -73,7 +73,7 @@ public class BouncyCastleJsseProvider
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalArgumentException("unable to set up TlsCrypto: " + e.getMessage(), e);
+            throw new IllegalArgumentException("unable to set up JcaTlsCryptoProvider: " + e.getMessage(), e);
         }
 
         this.isInFipsMode = configure(fipsMode, cryptoProvider);
@@ -127,15 +127,15 @@ public class BouncyCastleJsseProvider
         }
         catch (ClassNotFoundException e)
         {
-            throw new IllegalArgumentException("unable to find Provider/TlsCrypto class: " + cryptoName);
+            throw new IllegalArgumentException("unable to find Provider/JcaTlsCryptoProvider class: " + cryptoName);
         }
         catch (InstantiationException e)
         {
-            throw new IllegalArgumentException("unable to create Provider/TlsCrypto class '" + cryptoName + "': " + e.getMessage(), e);
+            throw new IllegalArgumentException("unable to create Provider/JcaTlsCryptoProvider class '" + cryptoName + "': " + e.getMessage(), e);
         }
         catch (IllegalAccessException e)
         {
-            throw new IllegalArgumentException("unable to create Provider/TlsCrypto class '" + cryptoName + "': " + e.getMessage(), e);
+            throw new IllegalArgumentException("unable to create Provider/JcaTlsCryptoProvider class '" + cryptoName + "': " + e.getMessage(), e);
         }
     }
 

@@ -16,6 +16,7 @@ import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
@@ -155,14 +156,18 @@ class ProvSSLEngine
         }
     }
 
-    public String chooseClientAlias(String[] keyType, Principal[] issuers)
+    public ProvX509Key chooseClientKey(String[] keyTypes, Principal[] issuers)
     {
-        return contextData.getX509KeyManager().chooseEngineClientAlias(keyType, issuers, this);
+        X509ExtendedKeyManager x509KeyManager = getContextData().getX509KeyManager();
+        String alias = x509KeyManager.chooseEngineClientAlias(keyTypes, issuers, this);
+        return ProvX509Key.from(x509KeyManager, alias);
     }
 
-    public String chooseServerAlias(String keyType, Principal[] issuers)
+    public ProvX509Key chooseServerKey(String keyType, Principal[] issuers)
     {
-        return contextData.getX509KeyManager().chooseEngineServerAlias(keyType, issuers, this);
+        X509ExtendedKeyManager x509KeyManager = getContextData().getX509KeyManager();
+        String alias = x509KeyManager.chooseEngineServerAlias(keyType, issuers, this);
+        return ProvX509Key.from(x509KeyManager, alias);
     }
 
     @Override
