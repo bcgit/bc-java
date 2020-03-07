@@ -181,13 +181,6 @@ class ProvTlsClient
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
             {
                 final ContextData contextData = manager.getContextData();
-                final X509ExtendedKeyManager x509KeyManager = contextData.getX509KeyManager();
-
-                if (DummyX509KeyManager.INSTANCE == x509KeyManager)
-                {
-                    return null;
-                }
-
                 final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
                 // Setup the peer supported signature schemes  
@@ -203,6 +196,13 @@ class ProvTlsClient
                     jsseSecurityParameters.peerSigSchemesCert = (serverSigAlgs == serverSigAlgsCert)
                         ?   jsseSecurityParameters.peerSigSchemes
                         :   contextData.getSignatureSchemes(serverSigAlgsCert);
+                }
+
+                final X509ExtendedKeyManager x509KeyManager = contextData.getX509KeyManager();
+
+                if (DummyX509KeyManager.INSTANCE == x509KeyManager)
+                {
+                    return null;
                 }
 
                 int keyExchangeAlgorithm = securityParameters.getKeyExchangeAlgorithm();
