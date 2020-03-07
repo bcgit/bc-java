@@ -11,11 +11,10 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 
 /**
- * Basic builder class for constructing standard TlsCrypto classes.
+ * Basic builder class for constructing standard JcaTlsCrypto classes.
  */
 public class JcaTlsCryptoProvider
     implements TlsCryptoProvider
@@ -27,7 +26,7 @@ public class JcaTlsCryptoProvider
     }
 
     /**
-     * Set the provider of cryptographic services for any TlsCrypto we build.
+     * Set the provider of cryptographic services for any JcaTlsCrypto we build.
      *
      * @param provider the provider class to source cryptographic services from.
      * @return the current builder instance.
@@ -40,7 +39,7 @@ public class JcaTlsCryptoProvider
     }
 
     /**
-     * Set the provider of cryptographic services for any TlsCrypto we build by name.
+     * Set the provider of cryptographic services for any JcaTlsCrypto we build by name.
      *
      * @param providerName the name of the provider class to source cryptographic services from.
      * @return the current builder instance.
@@ -53,12 +52,12 @@ public class JcaTlsCryptoProvider
     }
 
     /**
-     * Create a new TlsCrypto using the current builder configuration and the passed in entropy source..
+     * Create a new JcaTlsCrypto using the current builder configuration and the passed in entropy source..
      *
      * @param random SecureRandom for generating key material and seeds for nonce generation.
-     * @return a new TlsCrypto.
+     * @return a new JcaTlsCrypto.
      */
-    public TlsCrypto create(SecureRandom random)
+    public JcaTlsCrypto create(SecureRandom random)
     {
         try
         {
@@ -78,18 +77,18 @@ public class JcaTlsCryptoProvider
         }
         catch (GeneralSecurityException e)
         {
-            throw Exceptions.illegalStateException("unable to create TlsCrypto: " + e.getMessage(), e);
+            throw Exceptions.illegalStateException("unable to create JcaTlsCrypto: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Create a new TlsCrypto using the current builder configuration.
+     * Create a new JcaTlsCrypto using the current builder configuration.
      *
      * @param keyRandom SecureRandom for generating key material.
      * @param nonceRandom SecureRandom for generating nonces.
-     * @return a new TlsCrypto.
+     * @return a new JcaTlsCrypto.
      */
-    public TlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
+    public JcaTlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
         return new JcaTlsCrypto(helper, keyRandom, nonceRandom);
     }

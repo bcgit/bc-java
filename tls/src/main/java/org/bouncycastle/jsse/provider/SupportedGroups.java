@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.NamedGroupRole;
-import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -87,7 +87,7 @@ abstract class SupportedGroups
         return result;
     }
 
-    static Vector getClientSupportedGroups(TlsCrypto crypto, boolean isFips, Vector namedGroupRoles)
+    static Vector getClientSupportedGroups(JcaTlsCrypto crypto, boolean isFips, Vector namedGroupRoles)
     {
         int[] namedGroups = provJdkTlsNamedGroups != null ? provJdkTlsNamedGroups : defaultClientNamedGroups;
 
@@ -279,7 +279,8 @@ abstract class SupportedGroups
         }
     }
 
-    static int getServerSelectedCurve(TlsCrypto crypto, boolean isFips, int minimumCurveBits, int[] clientSupportedGroups)
+    static int getServerSelectedCurve(JcaTlsCrypto crypto, boolean isFips, int minimumCurveBits,
+        int[] clientSupportedGroups)
     {
         /*
          * If supported groups wasn't explicitly configured, servers support all available curves
@@ -314,7 +315,8 @@ abstract class SupportedGroups
         return -1;
     }
 
-    static int getServerSelectedFiniteField(TlsCrypto crypto, boolean isFips, int minimumFiniteFieldBits, int[] clientSupportedGroups)
+    static int getServerSelectedFiniteField(JcaTlsCrypto crypto, boolean isFips, int minimumFiniteFieldBits,
+        int[] clientSupportedGroups)
     {
         /*
          * If supported groups wasn't explicitly configured, servers support all available finite fields.

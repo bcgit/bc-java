@@ -3,7 +3,6 @@ package org.bouncycastle.jsse.provider;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.ECPrivateKey;
@@ -41,7 +40,6 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
@@ -86,6 +84,18 @@ abstract class JsseUtils
         for (int i = 0; i < values.length; ++i)
         {
             if (value.equals(values[i]))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static <T> boolean containsNull(T[] ts)
+    {
+        for (int i = 0; i < ts.length; ++i)
+        {
+            if (null == ts[i])
             {
                 return true;
             }
@@ -205,7 +215,7 @@ abstract class JsseUtils
         }
     }
 
-    public static Certificate getCertificateMessage(TlsCrypto crypto, X509Certificate[] chain) throws IOException
+    static Certificate getCertificateMessage(JcaTlsCrypto crypto, X509Certificate[] chain)
     {
         if (chain == null || chain.length < 1)
         {
@@ -213,19 +223,10 @@ abstract class JsseUtils
         }
 
         TlsCertificate[] certificateList = new TlsCertificate[chain.length];
-        try
+        for (int i = 0; i < chain.length; ++i)
         {
-            for (int i = 0; i < chain.length; ++i)
-            {
-                // TODO[jsse] Prefer an option that will not re-encode for typical use-cases
-                certificateList[i] = crypto.createCertificate(chain[i].getEncoded());
-            }
+            certificateList[i] = new JcaTlsCertificate(crypto, chain[i]);
         }
-        catch (CertificateEncodingException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error, e);
-        }
-
         return new Certificate(certificateList);
     }
 
@@ -307,7 +308,7 @@ abstract class JsseUtils
         return protocolNames;
     }
 
-    public static X509Certificate[] getX509CertificateChain(TlsCrypto crypto, Certificate certificateMessage)
+    static X509Certificate[] getX509CertificateChain(JcaTlsCrypto crypto, Certificate certificateMessage)
     {
         if (certificateMessage == null || certificateMessage.isEmpty())
         {
@@ -319,7 +320,7 @@ abstract class JsseUtils
             X509Certificate[] chain = new X509Certificate[certificateMessage.getLength()];
             for (int i = 0; i < chain.length; ++i)
             {
-                chain[i] = JcaTlsCertificate.convert((JcaTlsCrypto)crypto, certificateMessage.getCertificateAt(i)).getX509Certificate();
+                chain[i] = JcaTlsCertificate.convert(crypto, certificateMessage.getCertificateAt(i)).getX509Certificate();
             }
             return chain;
         }
@@ -353,7 +354,7 @@ abstract class JsseUtils
         return x509Chain;
     }
 
-    public static X500Principal getSubject(TlsCrypto crypto, Certificate certificateMessage)
+    static X500Principal getSubject(JcaTlsCrypto crypto, Certificate certificateMessage)
     {
         if (certificateMessage == null || certificateMessage.isEmpty())
         {
@@ -362,7 +363,7 @@ abstract class JsseUtils
 
         try
         {
-            return JcaTlsCertificate.convert((JcaTlsCrypto)crypto, certificateMessage.getCertificateAt(0)).getX509Certificate()
+            return JcaTlsCertificate.convert(crypto, certificateMessage.getCertificateAt(0)).getX509Certificate()
                 .getSubjectX500Principal();
         }
         catch (IOException e)

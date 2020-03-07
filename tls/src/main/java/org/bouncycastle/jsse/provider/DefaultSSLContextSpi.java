@@ -6,7 +6,6 @@ import java.security.SecureRandom;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 
-import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 
 class DefaultSSLContextSpi extends ProvSSLContextSpi
@@ -79,7 +78,7 @@ class DefaultSSLContextSpi extends ProvSSLContextSpi
         return LazyInstance.instance;
     }
 
-    DefaultSSLContextSpi(boolean isInFipsMode, TlsCryptoProvider cryptoProvider) throws KeyManagementException
+    DefaultSSLContextSpi(boolean isInFipsMode, JcaTlsCryptoProvider cryptoProvider) throws KeyManagementException
     {
         super(isInFipsMode, cryptoProvider, null);
 

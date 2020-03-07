@@ -15,7 +15,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLException;
-import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -38,7 +37,6 @@ import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
@@ -281,6 +279,12 @@ class ProvTlsServer
     }
 
     @Override
+    public JcaTlsCrypto getCrypto()
+    {
+        return manager.getContextData().getCrypto();
+    }
+
+    @Override
     public int getSelectedCipherSuite() throws IOException
     {
         /*
@@ -434,7 +438,13 @@ class ProvTlsServer
         else
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), clientCertificate);
+
             short signatureAlgorithm = clientCertificate.getCertificateAt(0).getLegacySignatureAlgorithm();
+            if (signatureAlgorithm < 0)
+            {
+                throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            }
+
             String authType = JsseUtils.getAuthTypeClient(signatureAlgorithm);
 
             // NOTE: We never try to continue the handshake with an untrusted client certificate
@@ -594,64 +604,37 @@ class ProvTlsServer
         // TODO[jsse] Is there some extension where the client can specify these (SNI maybe)?
         Principal[] issuers = null;
 
-        String alias = manager.chooseServerAlias(keyType, issuers);
-        if (alias == null)
+        ProvX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+        if (null == x509Key
+            // TODO[jsse] Move this private key check into the key manager(s)
+            || !JsseUtils.isUsableKeyForServer(keyExchangeAlgorithm, x509Key.getPrivateKey()))
         {
             keyManagerMissCache.add(keyType);
             return false;
         }
 
-        TlsCrypto crypto = getCrypto();
-        if (!(crypto instanceof JcaTlsCrypto))
-        {
-            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
-            throw new UnsupportedOperationException();
-        }
-
-        X509ExtendedKeyManager x509KeyManager = manager.getContextData().getX509KeyManager();
-        PrivateKey privateKey = x509KeyManager.getPrivateKey(alias);
-        Certificate certificate = JsseUtils.getCertificateMessage(crypto, x509KeyManager.getCertificateChain(alias));
-
-        if (privateKey == null
-            || !JsseUtils.isUsableKeyForServer(keyExchangeAlgorithm, privateKey)
-            || certificate.isEmpty())
-        {
-            keyManagerMissCache.add(keyType);
-            return false;
-        }
+        JcaTlsCrypto crypto = getCrypto();
+        PrivateKey privateKey = x509Key.getPrivateKey();
+        Certificate tlsCertificate = JsseUtils.getCertificateMessage(crypto, x509Key.getCertificateChain());
 
         /*
          * TODO[jsse] Before proceeding with EC credentials, should we check (TLS 1.2+) that the
          * used curve is supported by the client according to the elliptic_curves/named_groups
          * extension?
          */
-        
-        switch (keyExchangeAlgorithm)
-        {
-        case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-        case KeyExchangeAlgorithm.ECDHE_RSA:
-        {
-            short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
-            SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                context.getSecurityParametersHandshake().getClientSigAlgs(), signatureAlgorithm);
 
-            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
-            this.credentials = new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
-                privateKey, certificate, sigAlg);
+        if (KeyExchangeAlgorithm.RSA == keyExchangeAlgorithm)
+        {
+            this.credentials = new JceDefaultTlsCredentialedDecryptor(crypto, tlsCertificate, privateKey);
             return true;
         }
 
-        case KeyExchangeAlgorithm.RSA:
-        {
-            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
-            this.credentials = new JceDefaultTlsCredentialedDecryptor((JcaTlsCrypto)crypto, certificate, privateKey);
-            return true;
-        }
+        short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
+        SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
+            context.getSecurityParametersHandshake().getClientSigAlgs(), signatureAlgorithm);
 
-        default:
-            return false;
-        }
+        this.credentials = new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), crypto, privateKey,
+            tlsCertificate, sigAndHashAlg);
+        return true;
     }
 }
