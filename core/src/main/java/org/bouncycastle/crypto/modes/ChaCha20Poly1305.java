@@ -542,7 +542,7 @@ public class ChaCha20Poly1305
 
     private void padMAC(long count)
     {
-        int partial = (int)count % MAC_SIZE;
+        int partial = (int)count & (MAC_SIZE - 1);
         if (0 != partial)
         {
             poly1305.update(ZEROES, 0, MAC_SIZE - partial);
