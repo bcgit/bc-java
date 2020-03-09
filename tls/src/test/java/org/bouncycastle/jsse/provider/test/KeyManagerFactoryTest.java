@@ -185,7 +185,7 @@ public class KeyManagerFactoryTest
 
         trustManagerFactory.init(trustStore);
 
-        SSLContext context = SSLContext.getInstance("TLS");
+        SSLContext context = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         context.init(null, trustManagerFactory.getTrustManagers(), null);
 
@@ -223,7 +223,7 @@ public class KeyManagerFactoryTest
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
         trustManagerFactory.init(trustStore);
 
-        SSLContext context = SSLContext.getInstance("TLS");
+        SSLContext context = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         context.init(null, trustManagerFactory.getTrustManagers(), null);
 
@@ -261,7 +261,7 @@ public class KeyManagerFactoryTest
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
         trustManagerFactory.init(clientTS);
 
-        SSLContext context = SSLContext.getInstance("TLS");
+        SSLContext context = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         context.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
