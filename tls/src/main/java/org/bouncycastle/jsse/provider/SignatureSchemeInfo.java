@@ -84,6 +84,26 @@ class SignatureSchemeInfo
         this.enabled = enabled;
     }
 
+    String getJcaSignatureAlgorithm()
+    {
+        return jcaSignatureAlgorithm;
+    }
+
+    String getKeyAlgorithm()
+    {
+        return keyAlgorithm;
+    }
+
+    String getName()
+    {
+        return name;
+    }
+
+    short getSignatureAlgorithm()
+    {
+        return (short)(signatureScheme & 0xFF);
+    }
+
     SignatureAndHashAlgorithm getSignatureAndHashAlgorithm()
     {
         return getSignatureAndHashAlgorithm(signatureScheme);
@@ -94,19 +114,11 @@ class SignatureSchemeInfo
         return signatureScheme;
     }
 
-    String getName()
+    boolean isActive(BCAlgorithmConstraints algorithmConstraints)
     {
-        return name;
-    }
-
-    String getJcaSignatureAlgorithm()
-    {
-        return jcaSignatureAlgorithm;
-    }
-
-    String getKeyAlgorithm()
-    {
-        return keyAlgorithm;
+        // TODO[tls13] Exclude based on per-instance valid protocol version ranges
+        return enabled
+            && isPermittedBy(algorithmConstraints);
     }
 
     boolean isEnabled()

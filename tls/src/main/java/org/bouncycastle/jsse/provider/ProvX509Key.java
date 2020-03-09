@@ -40,6 +40,13 @@ class ProvX509Key
             return null;
         }
 
+        // TODO[jsse] Consider taking a 'keyAlgorithm' parameter and validating the key algorithms
+//        if ((!keyAlgorithm.equals(privateKey.getAlgorithm())
+//            || !keyAlgorithm.equals(certificateChain[0].getPublicKey().getAlgorithm()))
+//        {
+//            return null;
+//        }
+
         return new ProvX509Key(privateKey, certificateChain);
     }
 
