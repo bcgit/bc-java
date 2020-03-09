@@ -7,12 +7,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -24,7 +20,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 class ProvX509KeyManagerSimple
@@ -150,7 +145,8 @@ class ProvX509KeyManagerSimple
     private boolean isSuitableCredential(boolean forServer, String keyType, Set<X500Name> issuerNames, Credential credential)
     {
         X509Certificate[] certificateChain = credential.getCertificateChain();
-        if (!isSuitableCertificate(forServer, keyType, certificateChain[0]))
+        if (null == certificateChain || certificateChain.length < 1
+            || !ProvX509KeyManager.isSuitableCertificate(forServer, keyType, certificateChain[0]))
         {
             return false;
         }
@@ -167,51 +163,6 @@ class ProvX509KeyManagerSimple
             }
         }
         return false;
-    }
-
-    private boolean isSuitableCertificate(boolean forServer, String keyType, X509Certificate c)
-    {
-        if (keyType == null || c == null)
-        {
-            return false;
-        }
-        PublicKey pub = c.getPublicKey();
-        if (keyType.equalsIgnoreCase("DHE_RSA")
-            || keyType.equalsIgnoreCase("ECDHE_RSA")
-            || keyType.equalsIgnoreCase("SRP_RSA"))
-        {
-            return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
-        }
-        else if (keyType.equalsIgnoreCase("DHE_DSS")
-            || keyType.equalsIgnoreCase("SRP_DSS"))
-        {
-            return (pub instanceof DSAPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
-        }
-        else if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
-        {
-            return (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
-        }
-        else if (keyType.equalsIgnoreCase("RSA"))
-        {
-            int keyUsage = forServer ? KeyUsage.keyEncipherment : KeyUsage.digitalSignature;
-            return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(keyUsage, c);
-        }
-        else if (keyType.equalsIgnoreCase("DSA"))
-        {
-            return !forServer && (pub instanceof DSAPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
-        }
-        else if (keyType.equalsIgnoreCase("EC"))
-        {
-            // NOTE: SunJSSE server asks for "EC" for ECDHE_ECDSA key exchange
-            return (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
-        }
-        // TODO[jsse] Support other key exchanges (and client certificate types)
-        return false;
-    }
-
-    private static boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)
-    {
-        return ProvX509KeyManager.isSuitableKeyUsage(keyUsageBits, c);
     }
 
     private static class Credential
