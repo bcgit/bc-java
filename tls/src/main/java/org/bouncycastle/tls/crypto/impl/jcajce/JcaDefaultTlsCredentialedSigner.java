@@ -23,7 +23,9 @@ public class JcaDefaultTlsCredentialedSigner
         String algorithm = privateKey.getAlgorithm();
 
         TlsSigner signer;
-        if (privateKey instanceof RSAPrivateKey || "RSA".equals(algorithm))
+
+        // TODO We probably want better distinction b/w the rsa_pss_pss and rsa_pss_rsae cases here
+        if (privateKey instanceof RSAPrivateKey || "RSA".equals(algorithm) || "RSASSA-PSS".equals(algorithm))
         {
             if (signatureAndHashAlgorithm != null)
             {
