@@ -29,11 +29,16 @@ class JcaAlgorithmDecomposer
             }
         }
 
-        ensureBothIfEither(result, "SHA1", "SHA-1");
-        ensureBothIfEither(result, "SHA224", "SHA-224");
-        ensureBothIfEither(result, "SHA256", "SHA-256");
-        ensureBothIfEither(result, "SHA384", "SHA-384");
-        ensureBothIfEither(result, "SHA512", "SHA-512");
+        result.remove(algorithm);
+
+        if (!result.isEmpty())
+        {
+            ensureBothIfEither(result, "SHA1", "SHA-1");
+            ensureBothIfEither(result, "SHA224", "SHA-224");
+            ensureBothIfEither(result, "SHA256", "SHA-256");
+            ensureBothIfEither(result, "SHA384", "SHA-384");
+            ensureBothIfEither(result, "SHA512", "SHA-512");
+        }
 
         return result;
     }
