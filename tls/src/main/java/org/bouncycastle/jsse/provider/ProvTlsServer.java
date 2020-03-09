@@ -249,6 +249,7 @@ class ProvTlsServer
             List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveSignatureSchemes(sslParameters,
                 new ProtocolVersion[]{ context.getServerVersion() });
 
+            // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate this 
             jsseSecurityParameters.localSigSchemes = signatureSchemes;
             jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
 
@@ -469,6 +470,7 @@ class ProvTlsServer
             Vector<SignatureAndHashAlgorithm> clientSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
                 securityParameters.getClientSigAlgsCert();
 
+            // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate these conversions 
             jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(clientSigAlgs);
             jsseSecurityParameters.peerSigSchemesCert = (clientSigAlgs == clientSigAlgsCert)
                 ?   jsseSecurityParameters.peerSigSchemes
