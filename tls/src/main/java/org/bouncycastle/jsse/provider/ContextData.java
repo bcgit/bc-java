@@ -22,18 +22,19 @@ final class ContextData
 {
     // TODO Support jdk.tls.signatureSchemes, a mooted feature in SunJSSE (see JDK-8229720)
 
+    // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
     private static final int[] DEFAULT_ACTIVE = {
-//        SignatureScheme.ed25519,
-//        SignatureScheme.ed448,
+        SignatureScheme.ed25519,
+        SignatureScheme.ed448,
         SignatureScheme.ecdsa_secp256r1_sha256,
         SignatureScheme.ecdsa_secp384r1_sha384,
         SignatureScheme.ecdsa_secp521r1_sha512,
-//        SignatureScheme.rsa_pss_rsae_sha256,
-//        SignatureScheme.rsa_pss_rsae_sha384,
-//        SignatureScheme.rsa_pss_rsae_sha512,
-//        SignatureScheme.rsa_pss_pss_sha256,
-//        SignatureScheme.rsa_pss_pss_sha384,
-//        SignatureScheme.rsa_pss_pss_sha512,
+        SignatureScheme.rsa_pss_rsae_sha256,
+        SignatureScheme.rsa_pss_rsae_sha384,
+        SignatureScheme.rsa_pss_rsae_sha512,
+        SignatureScheme.rsa_pss_pss_sha256,
+        SignatureScheme.rsa_pss_pss_sha384,
+        SignatureScheme.rsa_pss_pss_sha512,
         SignatureScheme.rsa_pkcs1_sha256,
         SignatureScheme.rsa_pkcs1_sha384,
         SignatureScheme.rsa_pkcs1_sha512,
@@ -111,17 +112,17 @@ final class ContextData
         addSignatureScheme(crypto, ss, SignatureScheme.ecdsa_secp521r1_sha512, "SHA512withECDSA", "EC");
 
         // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha256, "SHA256withRSAandMGF1", "RSA");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1", "RSA");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1", "RSA");
+//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha256, "SHA256withRSAandMGF1", "RSA");
+//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1", "RSA");
+//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1", "RSA");
 
-        addSignatureScheme(crypto, ss, SignatureScheme.ed25519, "ed25519", "ed25519");
-        addSignatureScheme(crypto, ss, SignatureScheme.ed448, "ed448", "ed448");
+//        addSignatureScheme(crypto, ss, SignatureScheme.ed25519, "ed25519", "ed25519");
+//        addSignatureScheme(crypto, ss, SignatureScheme.ed448, "ed448", "ed448");
 
         // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1", "RSASSA-PSS");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha384, "SHA384withRSAandMGF1", "RSASSA-PSS");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha512, "SHA512withRSAandMGF1", "RSASSA-PSS");
+//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1", "RSASSA-PSS");
+//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha384, "SHA384withRSAandMGF1", "RSASSA-PSS");
+//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha512, "SHA512withRSAandMGF1", "RSASSA-PSS");
 
         /*
          * Legacy algorithms: "These values refer solely to signatures which appear in certificates
@@ -190,26 +191,12 @@ final class ContextData
         ArrayList<SignatureSchemeInfo> result = new ArrayList<SignatureSchemeInfo>(count);
         for (int i = 0; i < count; ++i)
         {
-            int signatureScheme = DEFAULT_ACTIVE[i];
-
-            SignatureSchemeInfo signatureSchemeInfo = signatureSchemesMap.get(signatureScheme);
-            if (null == signatureSchemeInfo)
+            SignatureSchemeInfo signatureSchemeInfo = signatureSchemesMap.get(DEFAULT_ACTIVE[i]);
+            if (null != signatureSchemeInfo
+                && signatureSchemeInfo.isActive(algorithmConstraints))
             {
-                continue;
+                result.add(signatureSchemeInfo);
             }
-            if (!signatureSchemeInfo.isEnabled())
-            {
-                continue;
-            }
-
-            // TODO[tls13] Exclude SignatureSchemeInfo instances based on their individual valid version ranges
-
-            if (!signatureSchemeInfo.isPermittedBy(algorithmConstraints))
-            {
-                continue;
-            }
-
-            result.add(signatureSchemeInfo);
         }
         if (result.isEmpty())
         {

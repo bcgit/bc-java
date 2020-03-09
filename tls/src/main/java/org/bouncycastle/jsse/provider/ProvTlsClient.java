@@ -5,13 +5,16 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -21,6 +24,7 @@ import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
+import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentialedSigner;
@@ -135,6 +139,7 @@ class ProvTlsClient
         List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveSignatureSchemes(sslParameters,
             getProtocolVersions());
 
+        // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate this 
         jsseSecurityParameters.localSigSchemes = signatureSchemes;
         jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
 
@@ -188,6 +193,7 @@ class ProvTlsClient
                     Vector<SignatureAndHashAlgorithm> serverSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
                         securityParameters.getServerSigAlgsCert();
 
+                    // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate these conversions 
                     jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(serverSigAlgs);
                     jsseSecurityParameters.peerSigSchemesCert = (serverSigAlgs == serverSigAlgsCert)
                         ?   jsseSecurityParameters.peerSigSchemes
@@ -451,46 +457,52 @@ class ProvTlsClient
         throws IOException
     {
         /*
-         * TODO[jsse] Review and rewrite in light of RFC 5246 7.4.4:
-         * "The interaction of the certificate_types and supported_signature_algorithms".
-         *
-         * TODO[RFC 8422] Rework in light of ed25519/ed448 and peerSigSchemes.
+         * RFC 5246 7.4.4 The end-entity certificate provided by the client MUST contain a key that
+         * is compatible with certificate_types. If the key is a signature key, it MUST be usable
+         * with some hash/signature algorithm pair in supported_signature_algorithms.
          */
 
-        String[] keyTypes = getKeyTypes(certificateTypes);
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+        Set<String> keyManagerMissCache = new HashSet<String>();
 
-        ProvX509Key x509Key = manager.chooseClientKey(keyTypes, issuers);
-        if (null == x509Key)
+        for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
-            return null;
+            String keyType = signatureSchemeInfo.getKeyAlgorithm();
+            if (keyManagerMissCache.contains(keyType))
+            {
+                continue;
+            }
+
+            short signatureAlgorithm = signatureSchemeInfo.getSignatureAlgorithm();
+            short certificateType = SignatureAlgorithm.getClientCertificateType(signatureAlgorithm);
+            if (certificateType < 0 || !Arrays.contains(certificateTypes, certificateType))
+            {
+                continue;
+            }
+
+            if (!signatureSchemeInfo.isActive(algorithmConstraints))
+            {
+                continue;
+            }
+
+            ProvX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
+            if (null == x509Key)
+            {
+                keyManagerMissCache.add(keyType);
+                continue;
+            }
+
+            /*
+             * TODO[jsse] Before proceeding with EC credentials,check (TLS 1.2+) that the used curve
+             * was actually declared in the client's elliptic_curves/named_groups extension.
+             */
+
+            return createCredentialedSigner(x509Key.getPrivateKey(),
+                JsseUtils.getCertificateMessage(getCrypto(), x509Key.getCertificateChain()),
+                signatureSchemeInfo.getSignatureAndHashAlgorithm());
         }
 
-        Certificate tlsCertificate = JsseUtils.getCertificateMessage(getCrypto(), x509Key.getCertificateChain());
-
-        /*
-         * TODO[jsse] Before proceeding with EC credentials, should we check (TLS 1.2+) that
-         * the used curve was actually declared in the client's elliptic_curves/named_groups
-         * extension?
-         */
-
-        /*
-         * TODO Choose from jsseSecurityParameters.peerSigAlgs when present (TLS 1.2+,
-         * possibly defaulted in TLS 1.2). It's in preference order, but consider
-         * ignoring weak algorithms in first pass. (Requires that peerSigAlgs were
-         * considered during keyType selection above).
-         */
-
-        short signatureAlgorithm = tlsCertificate.getCertificateAt(0).getLegacySignatureAlgorithm();
-        if (signatureAlgorithm < 0)
-        {
-            // TODO[jsse] Log that the credentials weren't usable
-            return null;
-        }
-
-        SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-            context.getSecurityParametersHandshake().getServerSigAlgs(), signatureAlgorithm);
-
-        return createCredentialedSigner(x509Key.getPrivateKey(), tlsCertificate, sigAndHashAlg);
+        return null;
     }
 
     protected TlsCredentials chooseClientCredentials13(Principal[] issuers) throws IOException
