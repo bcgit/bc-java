@@ -22,14 +22,14 @@ class TestProtocolUtil
         implements Runnable
     {
         private final Callable<Exception> callable;
-        private Exception result = null;
+        private Throwable result = null;
 
         public Task(Callable<Exception> callable)
         {
             this.callable = callable;
         }
 
-        public Exception getResult()
+        public Throwable getResult()
         {
             return result;
         }
@@ -40,9 +40,9 @@ class TestProtocolUtil
             {
                 result = callable.call();
             }
-            catch (Exception e)
+            catch (Throwable t)
             {
-                result = e;
+                result = t;
             }
         }
     }
