@@ -9,9 +9,13 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
@@ -23,6 +27,19 @@ class ProvAlgorithmChecker
     static final int KU_DIGITAL_SIGNATURE = 0;
     static final int KU_KEY_ENCIPHERMENT = 2;
     static final int KU_KEY_AGREEMENT = 4;
+
+    private static final Map<String, String> sigAlgNames = createSigAlgNames();
+
+    private static Map<String, String> createSigAlgNames()
+    {
+        Map<String, String> names = new HashMap<String, String>();
+
+        // TODO[jsse] We may need more mappings (from sigAlgOID) here for SunJSSE compatibility (e.g. RSASSA-PSS?)
+        names.put(EdECObjectIdentifiers.id_Ed25519.getId(), "Ed25519");
+        names.put(EdECObjectIdentifiers.id_Ed448.getId(), "Ed448");
+
+        return Collections.unmodifiableMap(names);
+    }
 
     private final JcaJceHelper helper;
     private final BCAlgorithmConstraints algorithmConstraints;
@@ -216,7 +233,12 @@ class ProvAlgorithmChecker
 
     private static String getSigAlgName(X509Certificate cert)
     {
-        // TODO[jsse] We may need our own name mapping (from sigAlgOID) here for SunJSSE compatibility (e.g. RSASSA-PSS?)
+        String sigAlgName = sigAlgNames.get(cert.getSigAlgOID());
+        if (null != sigAlgName)
+        {
+            return sigAlgName;
+        }
+
         return cert.getSigAlgName();
     }
 
