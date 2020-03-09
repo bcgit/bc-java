@@ -118,7 +118,7 @@ public class PKIXCertPathBuilderSpi
         {
 
             throw new CertPathBuilderException(
-                "No certificate found matching targetContraints.");
+                "No certificate found matching targetConstraints.");
         }
 
         CertPathBuilderResult result = null;
