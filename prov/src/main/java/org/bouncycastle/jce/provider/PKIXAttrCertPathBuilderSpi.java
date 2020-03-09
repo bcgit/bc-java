@@ -120,7 +120,7 @@ public class PKIXAttrCertPathBuilderSpi
         if (targets.isEmpty())
         {
             throw new CertPathBuilderException(
-                    "No attribute certificate found matching targetContraints.");
+                    "No attribute certificate found matching targetConstraints.");
         }
 
         CertPathBuilderResult result = null;
