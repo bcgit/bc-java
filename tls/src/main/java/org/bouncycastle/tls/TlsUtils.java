@@ -3203,53 +3203,9 @@ public class TlsUtils
 
     static boolean isValidSignatureAlgorithmForCertificateVerify(short signatureAlgorithm, short[] clientCertificateTypes)
     {
-        for (int i = 0; i < clientCertificateTypes.length; ++i)
-        {
-            if (isValidSignatureAlgorithmForClientCertType(signatureAlgorithm, clientCertificateTypes[i]))
-            {
-                return true;
-            }
-        }
+        short clientCertificateType = SignatureAlgorithm.getClientCertificateType(signatureAlgorithm);
 
-        return false;
-    }
-
-    static boolean isValidSignatureAlgorithmForClientCertType(short signatureAlgorithm, short clientCertificateType)
-    {
-        switch (clientCertificateType)
-        {
-        case ClientCertificateType.rsa_sign:
-            switch (signatureAlgorithm)
-            {
-            case SignatureAlgorithm.rsa:
-            case SignatureAlgorithm.rsa_pss_rsae_sha256:
-            case SignatureAlgorithm.rsa_pss_rsae_sha384:
-            case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            case SignatureAlgorithm.rsa_pss_pss_sha256:
-            case SignatureAlgorithm.rsa_pss_pss_sha384:
-            case SignatureAlgorithm.rsa_pss_pss_sha512:
-                return true;
-            default:
-                return false;
-            }
-
-        case ClientCertificateType.dss_sign:
-            return SignatureAlgorithm.dsa == signatureAlgorithm;
-
-        case ClientCertificateType.ecdsa_sign:
-            switch (signatureAlgorithm)
-            {
-            case SignatureAlgorithm.ecdsa:
-            case SignatureAlgorithm.ed25519:
-            case SignatureAlgorithm.ed448:
-                return true;
-            default:
-                return false;
-            }
-
-        default:
-            return false;
-        }
+        return clientCertificateType >= 0 &&  Arrays.contains(clientCertificateTypes, clientCertificateType);
     }
 
     static boolean isValidSignatureAlgorithmForServerKeyExchange(short signatureAlgorithm, int keyExchangeAlgorithm)

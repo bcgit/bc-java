@@ -26,6 +26,32 @@ public class SignatureAlgorithm
     public static final short rsa_pss_pss_sha384 = 10;
     public static final short rsa_pss_pss_sha512 = 11;
 
+    public static short getClientCertificateType(short signatureAlgorithm)
+    {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return ClientCertificateType.rsa_sign;
+
+        case SignatureAlgorithm.dsa:
+            return ClientCertificateType.dss_sign;
+
+        case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ed25519:
+        case SignatureAlgorithm.ed448:
+            return ClientCertificateType.ecdsa_sign;
+
+        default:
+            return -1;
+        }
+    }
+
     public static String getName(short signatureAlgorithm)
     {
         switch (signatureAlgorithm)
