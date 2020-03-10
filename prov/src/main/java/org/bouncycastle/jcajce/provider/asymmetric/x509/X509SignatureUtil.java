@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -78,35 +79,18 @@ class X509SignatureUtil
                 
                 return getDigestAlgName((ASN1ObjectIdentifier)ecDsaParams.getObjectAt(0)) + "withECDSA";
             }
-        }
-
-        Provider prov = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
-
-        if (prov != null)
-        {
-            String      algName = prov.getProperty("Alg.Alias.Signature." + sigAlgId.getAlgorithm().getId());
-
-            if (algName != null)
+            // to avoid OCD for those who love correct case...
+            if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed25519))
             {
-                return algName;
+                return "Ed25519";
+            }
+            if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed448))
+            {
+                return "Ed448";
             }
         }
 
-        Provider[] provs = Security.getProviders();
-
-        //
-        // search every provider looking for a real algorithm
-        //
-        for (int i = 0; i != provs.length; i++)
-        {
-            String algName = provs[i].getProperty("Alg.Alias.Signature." + sigAlgId.getAlgorithm().getId());
-            if (algName != null)
-            {
-                return algName;
-            }
-        }
-
-        return sigAlgId.getAlgorithm().getId();
+        return findAlgName(sigAlgId.getAlgorithm());
     }
     
     /**
@@ -125,5 +109,54 @@ class X509SignatureUtil
         }
 
         return MessageDigestUtils.getDigestName(digestAlgOID);
+    }
+
+    private static String findAlgName(ASN1ObjectIdentifier algOid)
+    {
+        Provider prov = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
+
+        if (prov != null)
+        {
+            String algName = lookupAlg(prov, algOid);
+            if (algName != null)
+            {
+                return algName;
+            }
+        }
+
+        Provider[] provs = Security.getProviders();
+
+        for (int i = 0; i != provs.length; i++)
+        {
+            if (prov != provs[i])
+            {
+                String algName = lookupAlg(provs[i], algOid);
+                if (algName != null)
+                {
+                    return algName;
+                }
+            }
+        }
+
+        return algOid.getId();
+    }
+
+    private static String lookupAlg(Provider prov, ASN1ObjectIdentifier algOid)
+    {
+        String      algName = prov.getProperty("Alg.Alias.Signature." + algOid);
+
+        if (algName != null)
+        {
+            return algName;
+        }
+
+        algName = prov.getProperty("Alg.Alias.Signature.OID" + algOid);
+
+        if (algName != null)
+        {
+            return algName;
+        }
+
+        return null;
     }
 }
