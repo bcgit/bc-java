@@ -22,6 +22,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +37,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -68,20 +69,35 @@ import org.bouncycastle.jsse.BCSSLSocket;
 class TestUtils
 {
     private static AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
-    private static Map algIds = new HashMap();
+    private static Map<String, AlgorithmIdentifier> algIDs = createAlgIds();
 
-    static
+    private static Map<String, AlgorithmIdentifier> createAlgIds()
     {
-        algIds.put("GOST3411withGOST3410", new AlgorithmIdentifier(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_94));
-        algIds.put("SHA1withDSA", new AlgorithmIdentifier(OIWObjectIdentifiers.dsaWithSHA1, DERNull.INSTANCE));
-        algIds.put("SHA224withDSA", new AlgorithmIdentifier(NISTObjectIdentifiers.dsa_with_sha224, DERNull.INSTANCE));
-        algIds.put("SHA256withDSA", new AlgorithmIdentifier(NISTObjectIdentifiers.dsa_with_sha256, DERNull.INSTANCE));
-        algIds.put("SHA1withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha1WithRSAEncryption, DERNull.INSTANCE));
-        algIds.put("SHA224withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha224WithRSAEncryption, DERNull.INSTANCE));
-        algIds.put("SHA256withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE));
-        algIds.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
-        algIds.put("SHA224withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA224));
-        algIds.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
+        Map<String, AlgorithmIdentifier> algIDs = new HashMap<String, AlgorithmIdentifier>();
+
+        algIDs.put("SHA1withDSA", new AlgorithmIdentifier(OIWObjectIdentifiers.dsaWithSHA1, DERNull.INSTANCE));
+        algIDs.put("SHA224withDSA", new AlgorithmIdentifier(NISTObjectIdentifiers.dsa_with_sha224, DERNull.INSTANCE));
+        algIDs.put("SHA256withDSA", new AlgorithmIdentifier(NISTObjectIdentifiers.dsa_with_sha256, DERNull.INSTANCE));
+        algIDs.put("SHA1withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha1WithRSAEncryption, DERNull.INSTANCE));
+        algIDs.put("SHA224withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha224WithRSAEncryption, DERNull.INSTANCE));
+        algIDs.put("SHA256withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE));
+        algIDs.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
+        algIDs.put("SHA224withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA224));
+        algIDs.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
+        algIDs.put("Ed25519", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519));
+        algIDs.put("Ed448", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448));
+
+        return Collections.unmodifiableMap(algIDs);
+    }
+
+    private static AlgorithmIdentifier getAlgID(String sigAlgName)
+    {
+        AlgorithmIdentifier algID = algIDs.get(sigAlgName);
+        if (null == algID)
+        {
+            throw new IllegalArgumentException();
+        }
+        return algID;
     }
 
     public static X509Certificate createSelfSignedCert(String dn, String sigName, KeyPair keyPair)
@@ -102,7 +118,7 @@ class TestUtils
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
+        certGen.setSignature(getAlgID(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
         Signature sig = Signature.getInstance(sigName, BouncyCastleProvider.PROVIDER_NAME);
@@ -116,7 +132,7 @@ class TestUtils
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add((AlgorithmIdentifier)algIds.get(sigName));
+        v.add(getAlgID(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME)
@@ -141,7 +157,7 @@ class TestUtils
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
+        certGen.setSignature(getAlgID(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);
 
@@ -156,7 +172,7 @@ class TestUtils
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add((AlgorithmIdentifier)algIds.get(sigName));
+        v.add(getAlgID(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME)
@@ -199,6 +215,26 @@ class TestUtils
         return kpGen.generateKeyPair();
     }
 
+    public static KeyPair generateEd25519KeyPair()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed25519", BouncyCastleProvider.PROVIDER_NAME);
+
+        kpGen.initialize(255, new SecureRandom());
+
+        return kpGen.generateKeyPair();
+    }
+
+    public static KeyPair generateEd448KeyPair()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed448", BouncyCastleProvider.PROVIDER_NAME);
+
+        kpGen.initialize(448, new SecureRandom());
+
+        return kpGen.generateKeyPair();
+    }
+
     public static X509Certificate generateRootCert(KeyPair pair)
         throws Exception
     {
@@ -211,23 +247,22 @@ class TestUtils
         {
             return createSelfSignedCert("CN=Test CA Certificate", "SHA256withRSA", pair);
         }
-        else
+        else if (alg.equals("EC"))
         {
             return createSelfSignedCert("CN=Test CA Certificate", "SHA256withECDSA", pair);
         }
-    }
-
-    public static X509Certificate generateRootCert(KeyPair pair, X500Name dn)
-        throws Exception
-    {
-        return createSelfSignedCert(dn, "SHA256withRSA", pair);
-    }
-
-    public static X509Certificate generateIntermediateCert(PublicKey intKey, PrivateKey caKey, X509Certificate caCert)
-        throws Exception
-    {
-        return generateIntermediateCert(
-            intKey, new X500Name("CN=Test Intermediate Certificate"), caKey, caCert);
+        else if (alg.equals("Ed25519"))
+        {
+            return createSelfSignedCert("CN=Test CA Certificate", "Ed25519", pair);
+        }
+        else if (alg.equals("Ed448"))
+        {
+            return createSelfSignedCert("CN=Test CA Certificate", "Ed448", pair);
+        }
+        else
+        {
+            throw new IllegalArgumentException();
+        }
     }
 
     public static X509Certificate generateIntermediateCert(PublicKey intKey, X500Name subject, PrivateKey caKey, X509Certificate caCert)
@@ -291,7 +326,7 @@ class TestUtils
     public static X509Certificate generateEndEntityCertSign(PublicKey entityKey, X500Name subject, PrivateKey caKey, X509Certificate caCert)
         throws Exception
     {
-        return generateEndEntityCert(entityKey, subject, KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign, caKey, caCert);
+        return generateEndEntityCert(entityKey, subject, KeyUsage.digitalSignature, caKey, caCert);
     }
 
     public static X509Certificate generateEndEntityCert(PublicKey entityKey, X500Name subject, int keyUsage, PrivateKey caKey, X509Certificate caCert)
@@ -310,15 +345,23 @@ class TestUtils
 
         if (entityKey.getAlgorithm().equals("RSA"))
         {
-            return createCert(
-                caCertLw.getSubject(),
-                caKey, subject, "SHA256withRSA", extGen.generate(), entityKey);
+            return createCert(caCertLw.getSubject(), caKey, subject, "SHA256withRSA", extGen.generate(), entityKey);
+        }
+        else if (entityKey.getAlgorithm().equals("EC"))
+        {
+            return createCert(caCertLw.getSubject(), caKey, subject, "SHA256withECDSA", extGen.generate(), entityKey);
+        }
+        else if (entityKey.getAlgorithm().equals("Ed25519"))
+        {
+            return createCert(caCertLw.getSubject(), caKey, subject, "Ed25519", extGen.generate(), entityKey);
+        }
+        else if (entityKey.getAlgorithm().equals("Ed448"))
+        {
+            return createCert(caCertLw.getSubject(), caKey, subject, "Ed448", extGen.generate(), entityKey);
         }
         else
         {
-            return createCert(
-                caCertLw.getSubject(),
-                caKey, subject, "SHA256withECDSA", extGen.generate(), entityKey);
+            throw new IllegalArgumentException();
         }
     }
 
