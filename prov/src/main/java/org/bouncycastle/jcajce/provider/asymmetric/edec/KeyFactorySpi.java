@@ -281,28 +281,28 @@ public class KeyFactorySpi
         }
     }
 
-    public static class EDDSA
+    public static class EdDSA
         extends KeyFactorySpi
     {
-        public EDDSA()
+        public EdDSA()
         {
             super("EdDSA", false, 0);
         }
     }
 
-    public static class ED448
+    public static class Ed448
         extends KeyFactorySpi
     {
-        public ED448()
+        public Ed448()
         {
             super("Ed448", false, Ed448_type);
         }
     }
 
-    public static class ED25519
+    public static class Ed25519
         extends KeyFactorySpi
     {
-        public ED25519()
+        public Ed25519()
         {
             super("Ed25519", false, Ed25519_type);
         }
