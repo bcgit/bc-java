@@ -33,9 +33,9 @@ public class EdEC
             provider.addAlgorithm("KeyFactory.X448", PREFIX + "KeyFactorySpi$X448");
             provider.addAlgorithm("KeyFactory.X25519", PREFIX + "KeyFactorySpi$X25519");
 
-            provider.addAlgorithm("KeyFactory.EDDSA", PREFIX + "KeyFactorySpi$EDDSA");
-            provider.addAlgorithm("KeyFactory.ED448", PREFIX + "KeyFactorySpi$ED448");
-            provider.addAlgorithm("KeyFactory.ED25519", PREFIX + "KeyFactorySpi$ED25519");
+            provider.addAlgorithm("KeyFactory.EDDSA", PREFIX + "KeyFactorySpi$EdDSA");
+            provider.addAlgorithm("KeyFactory.ED448", PREFIX + "KeyFactorySpi$Ed448");
+            provider.addAlgorithm("KeyFactory.ED25519", PREFIX + "KeyFactorySpi$Ed25519");
 
             provider.addAlgorithm("Signature.EDDSA", PREFIX + "SignatureSpi$EdDSA");
             provider.addAlgorithm("Signature.ED448", PREFIX + "SignatureSpi$Ed448");
