@@ -10,9 +10,9 @@ class X509CertificateInternal extends X509CertificateImpl
     private final byte[] encoding;
 
     X509CertificateInternal(JcaJceHelper bcHelper, org.bouncycastle.asn1.x509.Certificate c,
-        BasicConstraints basicConstraints, boolean[] keyUsage, byte[] encoding)
+        BasicConstraints basicConstraints, boolean[] keyUsage, String sigAlgName, byte[] sigAlgParams, byte[] encoding)
     {
-        super(bcHelper, c, basicConstraints, keyUsage);
+        super(bcHelper, c, basicConstraints, keyUsage, sigAlgName, sigAlgParams);
 
         this.encoding = encoding;
     }
