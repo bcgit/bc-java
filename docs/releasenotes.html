@@ -31,6 +31,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>ChaCha20Poly1305 could fail for large (&gt;~2GB) files. This has been fixed.</li>
 <li>ChaCha20Poly1305 could fail for small updates when used via the provider. This has been fixed.</li>
 <li>Properties.getPropertyValue could ignore system property when other local overrides set. This has been fixed.</li>
+<li>The entropy gathering thread was not running in daemon mode, meaning there could be a delay in an application shutting down due to it. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
