@@ -32,7 +32,7 @@ class LmsUtils
 
     static int calculateStrength(LMSParameters lmsParameters)
     {
-        LMSigParameters sigParameters = lmsParameters.getLmsParam();
+        LMSigParameters sigParameters = lmsParameters.getLMSigParam();
         return (1 << sigParameters.getH()) * sigParameters.getM();
     }
 }

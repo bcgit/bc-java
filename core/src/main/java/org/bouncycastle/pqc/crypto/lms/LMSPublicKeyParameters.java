@@ -4,8 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 public class LMSPublicKeyParameters
@@ -22,8 +22,8 @@ public class LMSPublicKeyParameters
 
         this.parameterSet = parameterSet;
         this.lmOtsType = lmOtsType;
-        this.I = I;
-        this.T1 = T1;
+        this.I = Arrays.clone(I);
+        this.T1 = Arrays.clone(T1);
     }
 
     public static LMSPublicKeyParameters getInstance(Object src)
@@ -87,12 +87,27 @@ public class LMSPublicKeyParameters
         return lmOtsType;
     }
 
+    public LMSParameters getLMSParameters()
+    {
+        return new LMSParameters(this.getSigParameters(), this.getOtsParameters());
+    }
+
     public byte[] getT1()
     {
-        return T1;
+        return Arrays.clone(T1);
+    }
+
+    boolean matchesT1(byte[] sig)
+    {
+        return Arrays.areEqual(T1, sig);
     }
 
     public byte[] getI()
+    {
+        return Arrays.clone(I);
+    }
+
+    byte[] refI()
     {
         return I;
     }
@@ -119,11 +134,11 @@ public class LMSPublicKeyParameters
         {
             return false;
         }
-        if (!Arrays.equals(I, publicKey.I))
+        if (!Arrays.areEqual(I, publicKey.I))
         {
             return false;
         }
-        return Arrays.equals(T1, publicKey.T1);
+        return Arrays.areEqual(T1, publicKey.T1);
     }
 
     @Override
