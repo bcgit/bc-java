@@ -226,6 +226,15 @@ class ProvX509KeyManager
 
         if (isSuitableKeyUsage(KeyUsage.digitalSignature, c))
         {
+            if ("Ed25519".equalsIgnoreCase(keyType))
+            {
+                return "Ed25519".equalsIgnoreCase(pub.getAlgorithm());
+            }
+            if ("Ed448".equalsIgnoreCase(keyType))
+            {
+                return "Ed448".equalsIgnoreCase(pub.getAlgorithm());
+            }
+
             if (forServer)
             {
                 if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
