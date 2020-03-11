@@ -79,15 +79,16 @@ class X509SignatureUtil
                 
                 return getDigestAlgName((ASN1ObjectIdentifier)ecDsaParams.getObjectAt(0)) + "withECDSA";
             }
-            // to avoid OCD for those who love correct case...
-            if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed25519))
-            {
-                return "Ed25519";
-            }
-            if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed448))
-            {
-                return "Ed448";
-            }
+        }
+
+        // to avoid OCD for those who love correct case...
+        if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed25519))
+        {
+            return "Ed25519";
+        }
+        if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed448))
+        {
+            return "Ed448";
         }
 
         return findAlgName(sigAlgId.getAlgorithm());

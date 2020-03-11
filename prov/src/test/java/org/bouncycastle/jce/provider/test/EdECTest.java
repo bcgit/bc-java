@@ -16,6 +16,8 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
@@ -103,6 +105,12 @@ public class EdECTest
 
         isTrue(sig.verify(x25519Cert.getSignature().getBytes()));
 
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        X509Certificate c = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(EdECTest.x25519Cert));
+
+        isTrue("Ed25519".equals(c.getSigAlgName()));
+        
         x448AgreementTest();
         x25519AgreementTest();
         ed448SignatureTest();
