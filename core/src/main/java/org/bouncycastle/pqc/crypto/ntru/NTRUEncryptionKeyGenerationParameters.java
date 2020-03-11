@@ -88,14 +88,12 @@ public class NTRUEncryptionKeyGenerationParameters
 
     /**
      * Constructs a parameter set that uses ternary private keys (i.e. <code>polyType=SIMPLE</code>).
-     *
-     * @param random       entropy source, if <code>null</code> uses {@link CryptoServicesRegistrar#getSecureRandom()}
      * @param N            number of polynomial coefficients
      * @param q            modulus
      * @param df           number of ones in the private polynomial <code>f</code>
      * @param dm0          minimum acceptable number of -1's, 0's, and 1's in the polynomial <code>m'</code> in the last encryption step
      * @param db           number of random bits to prepend to the message
-     * @param c            a parameter for the Index Generation Function ({@link org.bouncycastle.pqc.crypto.ntru.IndexGenerator})
+     * @param c            a parameter for the Index Generation Function ({@link IndexGenerator})
      * @param minCallsR    minimum number of hash calls for the IGF to make
      * @param minCallsMask minimum number of calls to generate the masking polynomial
      * @param hashSeed     whether to hash the seed in the MGF first (true) or use the seed directly (false)
@@ -103,8 +101,9 @@ public class NTRUEncryptionKeyGenerationParameters
      * @param sparse       whether to treat ternary polynomials as sparsely populated ({@link org.bouncycastle.pqc.math.ntru.polynomial.SparseTernaryPolynomial} vs {@link org.bouncycastle.pqc.math.ntru.polynomial.DenseTernaryPolynomial})
      * @param fastFp       whether <code>f=1+p*F</code> for a ternary <code>F</code> (true) or <code>f</code> is ternary (false)
      * @param hashAlg      a valid identifier for a <code>java.security.MessageDigest</code> instance such as <code>SHA-256</code>. The <code>MessageDigest</code> must support the <code>getDigestLength()</code> method.
+     * @param random       entropy source, if <code>null</code> uses {@link CryptoServicesRegistrar#getSecureRandom()}
      */
-    public NTRUEncryptionKeyGenerationParameters(SecureRandom random, int N, int q, int df, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg)
+    public NTRUEncryptionKeyGenerationParameters(int N, int q, int df, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg, SecureRandom random)
     {
         super(null != random ? random : CryptoServicesRegistrar.getSecureRandom(), db);
         this.N = N;
@@ -141,14 +140,13 @@ public class NTRUEncryptionKeyGenerationParameters
      * @param fastFp       whether <code>f=1+p*F</code> for a ternary <code>F</code> (true) or <code>f</code> is ternary (false)
      * @param hashAlg      a valid identifier for a <code>java.security.MessageDigest</code> instance such as <code>SHA-256</code>. The <code>MessageDigest</code> must support the <code>getDigestLength()</code> method.
      */
-    public NTRUEncryptionKeyGenerationParameters(int N, int q, int df, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg) {
-        this(null, N, q, df, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, hashAlg);
+    public NTRUEncryptionKeyGenerationParameters(int N, int q, int df, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg)
+    {
+        this(N, q, df, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, hashAlg, null);
     }
 
     /**
      * Constructs a parameter set that uses product-form private keys (i.e. <code>polyType=PRODUCT</code>).
-     *
-     * @param random       entropy source, if <code>null</code> uses {@link CryptoServicesRegistrar#getSecureRandom()}
      * @param N            number of polynomial coefficients
      * @param q            modulus
      * @param df1          number of ones in the private polynomial <code>f1</code>
@@ -156,7 +154,7 @@ public class NTRUEncryptionKeyGenerationParameters
      * @param df3          number of ones in the private polynomial <code>f3</code>
      * @param dm0          minimum acceptable number of -1's, 0's, and 1's in the polynomial <code>m'</code> in the last encryption step
      * @param db           number of random bits to prepend to the message
-     * @param c            a parameter for the Index Generation Function ({@link org.bouncycastle.pqc.crypto.ntru.IndexGenerator})
+     * @param c            a parameter for the Index Generation Function ({@link IndexGenerator})
      * @param minCallsR    minimum number of hash calls for the IGF to make
      * @param minCallsMask minimum number of calls to generate the masking polynomial
      * @param hashSeed     whether to hash the seed in the MGF first (true) or use the seed directly (false)
@@ -164,8 +162,9 @@ public class NTRUEncryptionKeyGenerationParameters
      * @param sparse       whether to treat ternary polynomials as sparsely populated ({@link org.bouncycastle.pqc.math.ntru.polynomial.SparseTernaryPolynomial} vs {@link org.bouncycastle.pqc.math.ntru.polynomial.DenseTernaryPolynomial})
      * @param fastFp       whether <code>f=1+p*F</code> for a ternary <code>F</code> (true) or <code>f</code> is ternary (false)
      * @param hashAlg      a valid identifier for a <code>java.security.MessageDigest</code> instance such as <code>SHA-256</code>
+     * @param random       entropy source, if <code>null</code> uses {@link CryptoServicesRegistrar#getSecureRandom()}
      */
-    public NTRUEncryptionKeyGenerationParameters(SecureRandom random, int N, int q, int df1, int df2, int df3, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg)
+    public NTRUEncryptionKeyGenerationParameters(int N, int q, int df1, int df2, int df3, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg, SecureRandom random)
     {
         super(null != random ? random : CryptoServicesRegistrar.getSecureRandom(), db);
 
@@ -208,8 +207,9 @@ public class NTRUEncryptionKeyGenerationParameters
      * @param fastFp       whether <code>f=1+p*F</code> for a ternary <code>F</code> (true) or <code>f</code> is ternary (false)
      * @param hashAlg      a valid identifier for a <code>java.security.MessageDigest</code> instance such as <code>SHA-256</code>
      */
-    public NTRUEncryptionKeyGenerationParameters(int N, int q, int df1, int df2, int df3, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg) {
-        this(null, N, q, df1, df2, df3, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, hashAlg);
+    public NTRUEncryptionKeyGenerationParameters(int N, int q, int df1, int df2, int df3, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg)
+    {
+        this(N, q, df1, df2, df3, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, hashAlg, null);
     }
 
     private void init()
