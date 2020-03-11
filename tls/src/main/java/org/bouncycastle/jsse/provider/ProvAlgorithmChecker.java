@@ -96,7 +96,12 @@ class ProvAlgorithmChecker
 
         X509Certificate subjectCert = (X509Certificate)cert;
 
-        if (null != issuerCert)
+        if (null == issuerCert)
+        {
+            // NOTE: This would be redundant with the 'taCert' check in 'checkCertPathExtras'
+            //checkIssued(helper, algorithmConstraints, subjectCert);
+        }
+        else
         {
             checkIssuedBy(helper, algorithmConstraints, subjectCert, issuerCert);
         }
@@ -107,7 +112,7 @@ class ProvAlgorithmChecker
     static void checkCertPathExtras(JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
         X509Certificate[] chain, KeyPurposeId ekuOID, int kuBit) throws CertPathValidatorException
     {
-        X509Certificate taCert = chain[chain.length - 1]; 
+        X509Certificate taCert = chain[chain.length - 1];
 
         if (chain.length > 1)
         {
@@ -161,8 +166,7 @@ class ProvAlgorithmChecker
     {
         if (!supportsExtendedKeyUsage(eeCert, ekuOID))
         {
-            throw new CertPathValidatorException(
-                "Certificate doesn't support '" + ekuOID + "' ExtendedKeyUsage");
+            throw new CertPathValidatorException("Certificate doesn't support '" + ekuOID + "' ExtendedKeyUsage");
         }
 
         if (!supportsKeyUsage(eeCert, kuBit))
@@ -280,7 +284,8 @@ class ProvAlgorithmChecker
         {
             List<String> eku = cert.getExtendedKeyUsage();
 
-            return null == eku || eku.contains(ekuOID.getId()) || eku.contains(KeyPurposeId.anyExtendedKeyUsage.getId());
+            return null == eku || eku.contains(ekuOID.getId())
+                || eku.contains(KeyPurposeId.anyExtendedKeyUsage.getId());
         }
         catch (CertificateParsingException e)
         {
