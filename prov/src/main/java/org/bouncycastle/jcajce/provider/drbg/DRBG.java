@@ -133,7 +133,7 @@ public class DRBG
             }
             catch (Exception e)
             {
-                return new SecureRandom();  // we're desperate, it's worth a try.
+                return new CoreSecureRandom(findSource());
             }
         }
     }
@@ -292,7 +292,7 @@ public class DRBG
                     }
                     catch (IOException e)
                     {
-                        throw new InternalError("unable to open random source");
+                        throw new IllegalStateException("unable to open random source");
                     }
                 }
             });
