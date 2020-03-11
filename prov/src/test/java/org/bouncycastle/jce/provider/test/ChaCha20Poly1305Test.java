@@ -133,6 +133,8 @@ public class ChaCha20Poly1305Test
         // check for alg params.
         AlgorithmParameters algorithmParameters = AlgorithmParameters.getInstance("ChaCha20-Poly1305", "BC"); // to be sure
         algorithmParameters = AlgorithmParameters.getInstance(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.getId(), "BC");
+
+        GitHub674Test();
     }
 
     private void checkTestCase(
@@ -272,6 +274,24 @@ public class ChaCha20Poly1305Test
         isTrue(areEqual(encCipher.getIV(), N));
         
         checkTestCase(encCipher, decCipher, testName + " (reused)", SA, P, C, T);
+    }
+
+    private void GitHub674Test() throws Exception
+    {
+        byte[] K = new byte[32];
+        byte[] N = new byte[12];
+        byte[] A = new byte[0];
+
+        SecretKeySpec keySpec = new SecretKeySpec(K, "ChaCha20");
+        AEADParameterSpec parameters = new AEADParameterSpec(N, 128, A);
+        Cipher encCipher = initCipher(true, keySpec, parameters);
+
+        /*
+         * This resulted in a NullPointerException before fix. It depended on the update length (63
+         * being less than the internal buffer size of the ChaCha20Poly1305 engine.
+         */
+        byte[] encrypted = encCipher.update(new byte[63]);
+        isTrue(null == encrypted);
     }
 
     public static void main(String[] args) throws Exception
