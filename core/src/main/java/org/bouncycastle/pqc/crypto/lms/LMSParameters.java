@@ -2,21 +2,21 @@ package org.bouncycastle.pqc.crypto.lms;
 
 public class LMSParameters
 {
-    private final LMSigParameters lmsParam;
+    private final LMSigParameters lmSigParam;
     private final LMOtsParameters lmOTSParam;
 
-    public LMSParameters(LMSigParameters lmsParam, LMOtsParameters lmOTSParam)
+    public LMSParameters(LMSigParameters lmSigParam, LMOtsParameters lmOTSParam)
     {
-        this.lmsParam = lmsParam;
+        this.lmSigParam = lmSigParam;
         this.lmOTSParam = lmOTSParam;
     }
 
-    public LMSigParameters getLmsParam()
+    public LMSigParameters getLMSigParam()
     {
-        return lmsParam;
+        return lmSigParam;
     }
 
-    public LMOtsParameters getLmOTSParam()
+    public LMOtsParameters getLMOTSParam()
     {
         return lmOTSParam;
     }

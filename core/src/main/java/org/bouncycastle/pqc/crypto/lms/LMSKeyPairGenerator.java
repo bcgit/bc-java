@@ -26,7 +26,7 @@ public class LMSKeyPairGenerator
         byte[] rootSecret = new byte[32];
         source.nextBytes(rootSecret);
 
-        LMSPrivateKeyParameters privKey = LMS.generateKeys(param.getParameters().getLmsParam(), param.getParameters().getLmOTSParam(), 0, I, rootSecret);
+        LMSPrivateKeyParameters privKey = LMS.generateKeys(param.getParameters().getLMSigParam(), param.getParameters().getLMOTSParam(), 0, I, rootSecret);
 
         return new AsymmetricCipherKeyPair(privKey.getPublicKey(), privKey);
     }

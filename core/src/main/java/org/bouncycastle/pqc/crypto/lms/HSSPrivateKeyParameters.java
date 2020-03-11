@@ -117,6 +117,22 @@ public class HSSPrivateKeyParameters
         return index;
     }
 
+    public synchronized LMSParameters[] getLMSParameters()
+    {
+        int len = keys.size();
+
+        LMSParameters[] parms = new LMSParameters[len];
+
+        for (int i = 0; i < len; i++)
+        {
+            LMSPrivateKeyParameters lmsPrivateKey = keys.get(i);
+
+            parms[i] = new LMSParameters(lmsPrivateKey.getSigParameters(), lmsPrivateKey.getOtsParameters());
+        }
+
+        return parms;
+    }
+
     synchronized void incIndex()
     {
         index++;

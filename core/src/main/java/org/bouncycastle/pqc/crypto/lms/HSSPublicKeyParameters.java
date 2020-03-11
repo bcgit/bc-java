@@ -24,7 +24,6 @@ public class HSSPublicKeyParameters
     public static HSSPublicKeyParameters getInstance(Object src)
         throws IOException
     {
-
         if (src instanceof HSSPublicKeyParameters)
         {
             return (HSSPublicKeyParameters)src;
@@ -61,7 +60,7 @@ public class HSSPublicKeyParameters
         return l;
     }
 
-    LMSPublicKeyParameters getLmsPublicKey()
+    public LMSPublicKeyParameters getLMSPublicKey()
     {
         return lmsPublicKey;
     }
