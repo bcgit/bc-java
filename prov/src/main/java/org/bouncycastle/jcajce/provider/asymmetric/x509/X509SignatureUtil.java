@@ -151,7 +151,7 @@ class X509SignatureUtil
             return algName;
         }
 
-        algName = prov.getProperty("Alg.Alias.Signature.OID" + algOid);
+        algName = prov.getProperty("Alg.Alias.Signature.OID." + algOid);
 
         if (algName != null)
         {
