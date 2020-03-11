@@ -110,7 +110,14 @@ public class EdECTest
         X509Certificate c = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(EdECTest.x25519Cert));
 
         isTrue("Ed25519".equals(c.getSigAlgName()));
-        
+
+        // this may look abit strange but it turn's out the Oracle CertificateFactory tampers
+        // with public key parameters on building the public key. If the keyfactory doesn't
+        // take things into account the generate throws an exception!
+        certFact = CertificateFactory.getInstance("X.509", "SUN");
+
+        c = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(EdECTest.x25519Cert));
+
         x448AgreementTest();
         x25519AgreementTest();
         ed448SignatureTest();

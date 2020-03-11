@@ -9,6 +9,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -16,6 +17,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -161,8 +163,26 @@ public class KeyFactorySpi
         {
             byte[] enc = ((X509EncodedKeySpec)keySpec).getEncoded();
             // optimise if we can
-            if (specificBase == 0 || specificBase == enc[8])
+            if ((specificBase == 0 || specificBase == enc[8]))
             {
+                // watch out for badly placed DER NULL - the default X509Cert will add these!
+                if (enc[9] == 0x05 && enc[10] == 0x00)
+                {
+                    SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(enc);
+
+                    keyInfo = new SubjectPublicKeyInfo(
+                        new AlgorithmIdentifier(keyInfo.getAlgorithm().getAlgorithm()), keyInfo.getPublicKeyData().getBytes());
+
+                    try
+                    {
+                        enc = keyInfo.getEncoded(ASN1Encoding.DER);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new InvalidKeySpecException("attempt to reconstruct key failed: " + e.getMessage());
+                    }
+                }
+
                 switch (enc[8])
                 {
                 case x448_type:
