@@ -281,9 +281,15 @@ public class ChaCha20Poly1305
         {
             throw new NullPointerException("'in' cannot be null");
         }
+        /*
+         * The BC provider can pass null when it expects no output (e.g. based on a
+         * getUpdateOutputSize call).
+         * 
+         * See https://github.com/bcgit/bc-java/issues/674
+         */
         if (null == out)
         {
-            throw new NullPointerException("'out' cannot be null");
+//            throw new NullPointerException("'out' cannot be null");
         }
         if (inOff < 0)
         {

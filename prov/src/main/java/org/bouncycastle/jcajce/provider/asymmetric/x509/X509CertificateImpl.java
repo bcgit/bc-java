@@ -75,14 +75,18 @@ abstract class X509CertificateImpl
     protected org.bouncycastle.asn1.x509.Certificate c;
     protected BasicConstraints basicConstraints;
     protected boolean[] keyUsage;
+    protected String sigAlgName;
+    protected byte[] sigAlgParams;
 
     X509CertificateImpl(JcaJceHelper bcHelper, org.bouncycastle.asn1.x509.Certificate c,
-        BasicConstraints basicConstraints, boolean[] keyUsage)
+        BasicConstraints basicConstraints, boolean[] keyUsage, String sigAlgName, byte[] sigAlgParams)
     {
         this.bcHelper = bcHelper;
         this.c = c;
         this.basicConstraints = basicConstraints;
         this.keyUsage = keyUsage;
+        this.sigAlgName = sigAlgName;
+        this.sigAlgParams = sigAlgParams;
     }
 
     public X500Name getIssuerX500Name()
@@ -203,7 +207,7 @@ abstract class X509CertificateImpl
      */
     public String getSigAlgName()
     {
-        return X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
+        return sigAlgName;
     }
 
     /**
@@ -219,21 +223,7 @@ abstract class X509CertificateImpl
      */
     public byte[] getSigAlgParams()
     {
-        if (c.getSignatureAlgorithm().getParameters() != null)
-        {
-            try
-            {
-                return c.getSignatureAlgorithm().getParameters().toASN1Primitive().getEncoded(ASN1Encoding.DER);
-            }
-            catch (IOException e)
-            {
-                return null;
-            }
-        }
-        else
-        {
-            return null;
-        }
+        return Arrays.clone(sigAlgParams);
     }
 
     public boolean[] getIssuerUniqueID()
