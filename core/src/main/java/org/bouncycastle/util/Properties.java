@@ -18,11 +18,10 @@ public class Properties
 {
     private Properties()
     {
-
     }
 
     private static final ThreadLocal threadProperties = new ThreadLocal();
-                          
+
     /**
      * Return whether a particular override has been set to true.
      *
@@ -35,12 +34,7 @@ public class Properties
         {
             String p = getPropertyValue(propertyName);
 
-            if (p != null)
-            {
-                return "true".equals(Strings.toLowerCase(p));
-            }
-
-            return false;
+            return "true".equalsIgnoreCase(p);
         }
         catch (AccessControlException e)
         {
@@ -53,7 +47,7 @@ public class Properties
      *
      * @param propertyName the property name for the override.
      * @param enable true if the override should be enabled, false if it should be disabled.
-     * @return true if the override was already set, false otherwise.
+     * @return true if the override was already set true, false otherwise.
      */
     public static boolean setThreadOverride(String propertyName, boolean enable)
     {
@@ -63,43 +57,39 @@ public class Properties
         if (localProps == null)
         {
             localProps = new HashMap();
+
+            threadProperties.set(localProps);
         }
 
         localProps.put(propertyName, enable ? "true" : "false");
-
-        threadProperties.set(localProps);
 
         return isSet;
     }
 
     /**
-     * Enable the specified override property in the current thread only.
+     * Remove any value for the specified override property for the current thread only.
      *
      * @param propertyName the property name for the override.
-     * @return true if the override set true in thread local, false otherwise.
+     * @return true if the override was already set true in thread local, false otherwise.
      */
     public static boolean removeThreadOverride(String propertyName)
     {
-        boolean isSet = isOverrideSet(propertyName);
-
         Map localProps = (Map)threadProperties.get();
-        if (localProps == null)
+        if (localProps != null)
         {
-            return false;
+            String p = (String)localProps.remove(propertyName);
+            if (p != null)
+            {
+                if (localProps.isEmpty())
+                {
+                    threadProperties.remove();
+                }
+
+                return "true".equalsIgnoreCase(p);
+            }
         }
 
-        localProps.remove(propertyName);
-
-        if (localProps.isEmpty())
-        {
-            threadProperties.remove();
-        }
-        else
-        {
-            threadProperties.set(localProps);
-        }
-
-        return isSet;
+        return false;
     }
 
     public static BigInteger asBigInteger(String propertyName)
@@ -134,16 +124,20 @@ public class Properties
 
     public static String getPropertyValue(final String propertyName)
     {
+        Map localProps = (Map)threadProperties.get();
+        if (localProps != null)
+        {
+            String p = (String)localProps.get(propertyName);
+            if (p != null)
+            {
+                return p;
+            }
+        }
+
         return (String)AccessController.doPrivileged(new PrivilegedAction()
         {
             public Object run()
             {
-                Map localProps = (Map)threadProperties.get();
-                if (localProps != null)
-                {
-                    return localProps.get(propertyName);
-                }
-
                 return System.getProperty(propertyName);
             }
         });
