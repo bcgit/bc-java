@@ -35,24 +35,24 @@ class HSS
             if (t == 0)
             {
                 keys[t] = new LMSPrivateKeyParameters(
-                    parameters.getLmsParameters()[t].getLmsParam(),
-                    parameters.getLmsParameters()[t].getLmOTSParam(),
+                    parameters.getLmsParameters()[t].getLMSigParam(),
+                    parameters.getLmsParameters()[t].getLMOTSParam(),
                     0,
                     I,
-                    1 << parameters.getLmsParameters()[t].getLmsParam().getH(),
+                    1 << parameters.getLmsParameters()[t].getLMSigParam().getH(),
                     rootSeed);
             }
             else
             {
                 keys[t] = new PlaceholderLMSPrivateKey(
-                    parameters.getLmsParameters()[t].getLmsParam(),
-                    parameters.getLmsParameters()[t].getLmOTSParam(),
+                    parameters.getLmsParameters()[t].getLMSigParam(),
+                    parameters.getLmsParameters()[t].getLMOTSParam(),
                     -1,
                     zero,
-                    1 << parameters.getLmsParameters()[t].getLmsParam().getH(),
+                    1 << parameters.getLmsParameters()[t].getLMSigParam().getH(),
                     zero);
             }
-            hssKeyMaxIndex *= 1 << parameters.getLmsParameters()[t].getLmsParam().getH();
+            hssKeyMaxIndex *= 1 << parameters.getLmsParameters()[t].getLMSigParam().getH();
         }
 
         return new HSSPrivateKeyParameters(
@@ -221,7 +221,7 @@ class HSS
         }
         sigList[Nspk] = signature.getSignature();
 
-        LMSPublicKeyParameters key = publicKey.getLmsPublicKey();
+        LMSPublicKeyParameters key = publicKey.getLMSPublicKey();
 
         for (int i = 0; i < Nspk; i++)
         {

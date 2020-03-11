@@ -9,6 +9,7 @@ import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.pqc.crypto.lms.HSSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSSigner;
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSParameters;
@@ -60,11 +61,19 @@ public class HSSTest
 
         HSSPrivateKeyParameters privKey = (HSSPrivateKeyParameters)kp.getPrivate();
 
+        HSSPublicKeyParameters pubKey = (HSSPublicKeyParameters)kp.getPublic();
+        
+        LMSParameters lmsParam = pubKey.getLMSPublicKey().getLMSParameters();
+
+        assertEquals(LMSigParameters.lms_sha256_n32_h5, lmsParam.getLMSigParam());
+        assertEquals(LMOtsParameters.sha256_n32_w4, lmsParam.getLMOTSParam());
+
         HSSSigner signer = new HSSSigner();
 
         signer.init(true, privKey);
 
         assertEquals(1024, privKey.getUsagesRemaining());
+        assertEquals(2, privKey.getLMSParameters().length);
 
         for (int i = 1; i <= 1024; i++)
         {

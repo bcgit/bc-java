@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.lms;
 import java.util.ArrayList;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.util.Arrays;
 
 class LMS
 {
@@ -123,12 +122,13 @@ class LMS
 
     public static boolean verifySignature(LMSPublicKeyParameters publicKey, LMSSignature S, byte[] message)
     {
-        byte[] Tc = algorithm6a(S, publicKey.getI(), publicKey.getSigParameters().getType(), publicKey.getOtsParameters().getType(), message);
-        return Arrays.areEqual(publicKey.getT1(), Tc);
+        byte[] Tc = algorithm6a(S, publicKey.refI(), publicKey.getOtsParameters().getType(), message);
+
+        return publicKey.matchesT1(Tc);
     }
 
 
-    public static byte[] algorithm6a(LMSSignature S, byte[] I, int lMpubType, int ots_typecode, byte[] message)
+    public static byte[] algorithm6a(LMSSignature S, byte[] I, int ots_typecode, byte[] message)
     {
         // Step 1.
 //        if (S.length < 8)
