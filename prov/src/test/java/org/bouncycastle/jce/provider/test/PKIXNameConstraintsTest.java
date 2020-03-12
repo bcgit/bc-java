@@ -234,6 +234,31 @@ public class PKIXNameConstraintsTest
 
         PKIXNameConstraintValidator validator = new PKIXNameConstraintValidator();
         validator.intersectPermittedSubtree(subtree);
+
+        name = new GeneralName(GeneralName.otherName, new OtherName(new ASN1ObjectIdentifier("1.1"), DERNull.INSTANCE));
+        subtree = new GeneralSubtree(name);
+
+        validator = new PKIXNameConstraintValidator();
+        validator.intersectPermittedSubtree(subtree);
+        validator.addExcludedSubtree(subtree);
+
+        try
+        {
+            validator.checkExcluded(name);
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            isEquals("OtherName is from an excluded subtree.", e.getMessage());
+        }
+
+        try
+        {
+            validator.checkPermitted(name);
+        }
+        catch (PKIXNameConstraintValidatorException e)
+        {
+            fail(e.getMessage());
+        }
     }
 
     /**
