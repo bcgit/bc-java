@@ -2169,8 +2169,4 @@ public class PKIXNameConstraintValidator
         }
         return temp.toString();
     }
-
-    public static void main(final String[] args) {
-
-    }
 }
