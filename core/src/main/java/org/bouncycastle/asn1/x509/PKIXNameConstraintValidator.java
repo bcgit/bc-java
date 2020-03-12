@@ -487,7 +487,7 @@ public class PKIXNameConstraintValidator
             Iterator it = excluded.iterator();
             while (it.hasNext())
             {
-                ASN1Sequence subtree = (ASN1Sequence)it.next();
+                ASN1Sequence subtree = ASN1Sequence.getInstance(it.next());
 
                 if (withinDNSubtree(dn, subtree))
                 {
@@ -513,7 +513,7 @@ public class PKIXNameConstraintValidator
         Set intersect = new HashSet();
         for (Iterator it = otherNames.iterator(); it.hasNext();)
         {
-            Object otName = it.next();
+            Object otName = OtherName.getInstance(((GeneralSubtree)it.next()).getBase().getName());
 
             if (permitted == null)
             {
@@ -865,7 +865,7 @@ public class PKIXNameConstraintValidator
 
         while (it.hasNext())
         {
-            OtherName str = ((OtherName)it.next());
+            OtherName str = OtherName.getInstance(it.next());
 
             if (otherNameIsConstrained(name, str))
             {
@@ -2168,5 +2168,9 @@ public class PKIXNameConstraintValidator
             addLine(temp, stringifyOtherNameCollection(excludedSubtreesOtherName));
         }
         return temp.toString();
+    }
+
+    public static void main(final String[] args) {
+
     }
 }
