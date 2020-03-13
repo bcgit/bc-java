@@ -19,6 +19,14 @@ public abstract class AbstractTlsPeer
         this.crypto = crypto;
     }
 
+    /**
+     * Get the {@link ProtocolVersion} values that are supported by this peer.
+     * <p/>
+     * WARNING: Mixing DTLS and TLS versions in the returned array is currently NOT supported. Use a
+     * separate (sub-)class for each case.
+     *
+     * @return an array of supported {@link ProtocolVersion} values.
+     */
     protected ProtocolVersion[] getSupportedVersions()
     {
         return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
