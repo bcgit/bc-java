@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.Security;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -124,6 +125,18 @@ public class Properties
 
     public static String getPropertyValue(final String propertyName)
     {
+        String val = (String)AccessController.doPrivileged(new PrivilegedAction()
+        {
+            public Object run()
+            {
+                return Security.getProperty(propertyName);
+            }
+        });
+        if (val != null)
+        {
+            return val;
+        }
+
         Map localProps = (Map)threadProperties.get();
         if (localProps != null)
         {
