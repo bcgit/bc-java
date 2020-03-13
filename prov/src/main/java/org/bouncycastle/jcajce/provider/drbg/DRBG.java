@@ -27,6 +27,21 @@ import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
+/**
+ * <b>DRBG Configuration</b><br/>
+ * <p>org.bouncycastle.drbg.gather_pause_secs - is to stop the entropy collection thread from grabbing all
+ * available entropy on the system. The original motivation for the hybrid infrastructure was virtual machines
+ * sometimes produce very few bits of entropy a second, the original approach (which "worked" at least for BC) was
+ * to just read on the second thread and allow things to progress around it, but it did tend to hog the system
+ * if other processes were using /dev/random. By default the thread will pause for 5 seconds between 64 bit reads,
+ * increasing this time will reduce the demands on the system entropy pool. Ideally the pause will be set to large
+ * enough to allow everyone to work together, but small enough to ensure the provider's DRBG is being regularly
+ * reseeded.
+ * </p>
+ * <p>org.bouncycastle.drbg.entropysource - is the class name for an implementation of EntropySourceProvider.
+ * For example, one could be provided which just reads directly from /dev/random and the extra infrastructure used here
+ * could be avoided.</p>
+ */
 public class DRBG
 {
     private static final String PREFIX = DRBG.class.getName();
@@ -140,7 +155,7 @@ public class DRBG
 
     private static EntropySourceProvider createEntropySource()
     {
-        final String sourceClass = System.getProperty("org.bouncycastle.drbg.entropysource");
+        final String sourceClass = Properties.getPropertyValue("org.bouncycastle.drbg.entropysource");
 
         return AccessController.doPrivileged(new PrivilegedAction<EntropySourceProvider>()
         {
@@ -162,7 +177,7 @@ public class DRBG
 
     private static SecureRandom createBaseRandom(boolean isPredictionResistant)
     {
-        if (System.getProperty("org.bouncycastle.drbg.entropysource") != null)
+        if (Properties.getPropertyValue("org.bouncycastle.drbg.entropysource") != null)
         {
             EntropySourceProvider entropyProvider = createEntropySource();
 
