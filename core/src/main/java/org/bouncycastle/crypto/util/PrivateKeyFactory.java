@@ -207,15 +207,24 @@ public class PrivateKeyFactory
                     gostParams.getPublicKeyParamSet(),
                     gostParams.getDigestParamSet(),
                     gostParams.getEncryptionParamSet());
-                ASN1Encodable privKey = keyInfo.parsePrivateKey();
-                if (privKey instanceof ASN1Integer)
+                ASN1OctetString privEnc = keyInfo.getPrivateKey();
+
+                if (privEnc.getOctets().length == 32 || privEnc.getOctets().length == 64)
                 {
-                    d = ASN1Integer.getInstance(privKey).getPositiveValue();
+                    d = new BigInteger(1, Arrays.reverse(privEnc.getOctets()));
                 }
                 else
                 {
-                    byte[] dVal = Arrays.reverse(ASN1OctetString.getInstance(privKey).getOctets());
-                    d = new BigInteger(1, dVal);
+                    ASN1Encodable privKey = keyInfo.parsePrivateKey();
+                    if (privKey instanceof ASN1Integer)
+                    {
+                        d = ASN1Integer.getInstance(privKey).getPositiveValue();
+                    }
+                    else
+                    {
+                        byte[] dVal = Arrays.reverse(ASN1OctetString.getInstance(privKey).getOctets());
+                        d = new BigInteger(1, dVal);
+                    }
                 }
             }
             else
@@ -273,7 +282,7 @@ public class PrivateKeyFactory
                 }
                 else
                 {
-                    org.bouncycastle.asn1.sec.ECPrivateKey ec = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(privKey);
+                    ECPrivateKey ec = ECPrivateKey.getInstance(privKey);
 
                     d = ec.getKey();
                 }

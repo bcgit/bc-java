@@ -11,6 +11,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -18,9 +19,12 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
@@ -355,6 +359,8 @@ public class ParserTest
         edSig.update(msg);
 
         isTrue(edSig.verify(s));
+
+        doOpenSslGost2012Test();
     }
 
     private void checkTrustedCert(X509TrustedCertificateBlock trusted)
@@ -484,6 +490,27 @@ public class ParserTest
     {
         keyDecryptTest(fileName, expectedPrivKeyClass, new JcePEMDecryptorProviderBuilder().setProvider("BC").build("changeit".toCharArray()));
         keyDecryptTest(fileName, expectedPrivKeyClass, new BcPEMDecryptorProvider("changeit".toCharArray()));
+    }
+
+    private void doOpenSslGost2012Test()
+        throws Exception
+    {
+        String fileName = "gost2012_priv.pem";
+
+        PEMParser pr = openPEMResource("data/" + fileName);
+        PKCS8EncryptedPrivateKeyInfo pInfo = (PKCS8EncryptedPrivateKeyInfo)pr.readObject();
+
+        InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().setProvider("BC").build("test".toCharArray());
+
+        KeyFactory keyFact = KeyFactory.getInstance("ECGOST3410-2012", "BC");
+
+        PrivateKey privKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(pInfo.decryptPrivateKeyInfo(pkcs8Prov).getEncoded()));
+
+        pr = openPEMResource("data/gost2012_cert.pem");
+        X509Certificate cert = (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(
+            new ByteArrayInputStream(((X509CertificateHolder)pr.readObject()).getEncoded()));
+
+        cert.verify(cert.getPublicKey());
     }
 
     private void keyDecryptTest(String fileName, Class expectedPrivKeyClass, PEMDecryptorProvider decProv)

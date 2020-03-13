@@ -41,6 +41,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Represent two kind of GOST34.10 2012 PrivateKeys: with 256 and 512 size
@@ -214,23 +215,26 @@ public class BCECGOST3410_2012PrivateKey
                 EC5Util.convertPoint(spec.getG()),
                 spec.getN(), spec.getH());
 
-            ASN1Encodable privKey = info.parsePrivateKey();
+            ASN1OctetString privEnc = info.getPrivateKey();
 
-            if (privKey instanceof ASN1Integer)
+            if (privEnc.getOctets().length == 32 || privEnc.getOctets().length == 64)
             {
-                this.d = ASN1Integer.getInstance(privKey).getPositiveValue();
+                this.d = new BigInteger(1, Arrays.reverse(privEnc.getOctets()));
             }
             else
             {
-                byte[] encVal = ASN1OctetString.getInstance(privKey).getOctets();
-                byte[] dVal = new byte[encVal.length];
+                ASN1Encodable privKey = info.parsePrivateKey();
 
-                for (int i = 0; i != encVal.length; i++)
+                if (privKey instanceof ASN1Integer)
                 {
-                    dVal[i] = encVal[encVal.length - 1 - i];
+                    this.d = ASN1Integer.getInstance(privKey).getPositiveValue();
                 }
+                else
+                {
+                    byte[] encVal = ASN1OctetString.getInstance(privKey).getOctets();
 
-                this.d = new BigInteger(1, dVal);
+                    this.d = new BigInteger(1, Arrays.reverse(encVal));
+                }
             }
         }
         else
