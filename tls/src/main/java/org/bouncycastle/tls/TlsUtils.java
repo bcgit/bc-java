@@ -4189,15 +4189,6 @@ public class TlsUtils
          * TODO[tls13] RFC 8446 4.2.3 Clients which desire the server to authenticate itself via a
          * certificate MUST send the "signature_algorithms" extension.
          */
-        if (null == securityParameters.getClientSigAlgs())
-        {
-            securityParameters.clientSigAlgs = getLegacySupportedSignatureAlgorithms();
-        }
-
-        if (null == securityParameters.getClientSigAlgsCert())
-        {
-            securityParameters.clientSigAlgsCert = securityParameters.getClientSigAlgs();
-        }
     }
 
     static TlsCredentials establishServerCredentials(TlsServer server) throws IOException
@@ -4234,18 +4225,34 @@ public class TlsUtils
         return credentials;
     }
 
-    static void completeHellosPhase(TlsContext context, TlsPeer peer) throws IOException
+    static void negotiatedCipherSuite(TlsContext context) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        int cipherSuite = securityParameters.getCipherSuite();
 
-        if (!isSignatureAlgorithmsExtensionAllowed(securityParameters.getNegotiatedVersion()))
+        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+    }
+
+    static void negotiatedVersion(TlsContext context) throws IOException
+    {
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
+        if (!isSignatureAlgorithmsExtensionAllowed(negotiatedVersion))
         {
             securityParameters.clientSigAlgs = null;
             securityParameters.clientSigAlgsCert = null;
+            return;
         }
 
-        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(securityParameters.getCipherSuite());
+        if (null == securityParameters.getClientSigAlgs())
+        {
+            securityParameters.clientSigAlgs = getLegacySupportedSignatureAlgorithms();
+        }
 
-        peer.notifyHellosComplete();
+        if (null == securityParameters.getClientSigAlgsCert())
+        {
+            securityParameters.clientSigAlgsCert = securityParameters.getClientSigAlgs();
+        }
     }
 }

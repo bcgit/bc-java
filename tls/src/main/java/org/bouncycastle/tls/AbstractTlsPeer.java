@@ -123,10 +123,6 @@ public abstract class AbstractTlsPeer
     {
     }
 
-    public void notifyHellosComplete() throws IOException
-    {
-    }
-
     public void notifyHandshakeComplete() throws IOException
     {
     }

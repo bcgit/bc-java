@@ -288,15 +288,17 @@ class ProvTlsServer
     @Override
     public int getSelectedCipherSuite() throws IOException
     {
+        final ContextData contextData = manager.getContextData();
+        final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
         /*
          * TODO[jsse] Ideally, setting the handshake session would be done in getSessionToResume, but
          * that is currently never called.
          */
         {
-            ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
+            ProvSSLSessionContext sslSessionContext = contextData.getServerSessionContext();
             String peerHost = manager.getPeerHost();
             int peerPort = manager.getPeerPort();
-            SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
             ProvSSLSessionHandshake handshakeSession;
             if (null == sslSession)
@@ -311,6 +313,22 @@ class ProvTlsServer
             }
 
             manager.notifyHandshakeSession(handshakeSession);
+        }
+
+        // Setup the peer supported signature schemes  
+        {
+            @SuppressWarnings("unchecked")
+            Vector<SignatureAndHashAlgorithm> clientSigAlgs = (Vector<SignatureAndHashAlgorithm>)
+                securityParameters.getClientSigAlgs();
+            @SuppressWarnings("unchecked")
+            Vector<SignatureAndHashAlgorithm> clientSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
+                securityParameters.getClientSigAlgsCert();
+
+            // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate these conversions 
+            jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(clientSigAlgs);
+            jsseSecurityParameters.peerSigSchemesCert = (clientSigAlgs == clientSigAlgsCert)
+                ?   jsseSecurityParameters.peerSigSchemes
+                :   contextData.getSignatureSchemes(clientSigAlgsCert);
         }
 
         keyManagerMissCache = new HashSet<String>();
@@ -450,31 +468,6 @@ class ProvTlsServer
 
             // NOTE: We never try to continue the handshake with an untrusted client certificate
             manager.checkClientTrusted(chain, authType);
-        }
-    }
-
-    @Override
-    public void notifyHellosComplete() throws IOException
-    {
-        super.notifyHellosComplete();
-
-        final ContextData contextData = manager.getContextData();
-        final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-
-        // Setup the peer supported signature schemes  
-        {
-            @SuppressWarnings("unchecked")
-            Vector<SignatureAndHashAlgorithm> clientSigAlgs = (Vector<SignatureAndHashAlgorithm>)
-                securityParameters.getClientSigAlgs();
-            @SuppressWarnings("unchecked")
-            Vector<SignatureAndHashAlgorithm> clientSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
-                securityParameters.getClientSigAlgsCert();
-
-            // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate these conversions 
-            jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(clientSigAlgs);
-            jsseSecurityParameters.peerSigSchemesCert = (clientSigAlgs == clientSigAlgsCert)
-                ?   jsseSecurityParameters.peerSigSchemes
-                :   contextData.getSignatureSchemes(clientSigAlgsCert);
         }
     }
 
