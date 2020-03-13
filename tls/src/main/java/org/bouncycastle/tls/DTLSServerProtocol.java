@@ -150,7 +150,6 @@ public class DTLSServerProtocol
         }
 
         handshake.getHandshakeHash().notifyPRFDetermined();
-        TlsUtils.completeHellosPhase(state.serverContext, state.server);
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -401,6 +400,7 @@ public class DTLSServerProtocol
 //
 //            recordLayer.setWriteVersion(legacy_record_version);
             securityParameters.negotiatedVersion = server_version;
+            TlsUtils.negotiatedVersion(context);
         }
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), context);
@@ -420,6 +420,7 @@ public class DTLSServerProtocol
             }
             securityParameters.cipherSuite = validateSelectedCipherSuite(selectedCipherSuite,
                 AlertDescription.internal_error);
+            TlsUtils.negotiatedCipherSuite(state.serverContext);
         }
 
         state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.server.getServerExtensions());

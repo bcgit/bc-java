@@ -244,7 +244,6 @@ public class TlsClientProtocol
 
                 // TODO[tls13] Post-negotiation derivations
 
-                TlsUtils.completeHellosPhase(tlsClientContext, tlsClient);
                 break;
             }
             default:
@@ -509,8 +508,6 @@ public class TlsClientProtocol
                     handshakeHash.notifyPRFDetermined();
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO;
-
-                    TlsUtils.completeHellosPhase(tlsClientContext, tlsClient);
                 }
 
                 break;
@@ -883,14 +880,15 @@ public class TlsClientProtocol
             securityParameters.negotiatedVersion = server_version;
         }
 
+        TlsUtils.negotiatedVersion(tlsClientContext);
+        this.tlsClient.notifyServerVersion(server_version);
+
         // TODO[tls13] At some point after here we should redirect to process13ServerHello
 //        if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(server_version))
 //        {
 //            process13ServerHello(serverHello, false);
 //            return;
 //        }
-
-        this.tlsClient.notifyServerVersion(server_version);
 
         securityParameters.serverRandom = serverHello.getRandom();
 
@@ -932,6 +930,7 @@ public class TlsClientProtocol
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
             securityParameters.cipherSuite = selectedCipherSuite;
+            TlsUtils.negotiatedCipherSuite(tlsClientContext);
             this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
         }
 
