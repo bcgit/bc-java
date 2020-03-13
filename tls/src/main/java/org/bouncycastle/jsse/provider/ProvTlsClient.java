@@ -208,17 +208,12 @@ class ProvTlsClient
                 @SuppressWarnings("unchecked")
                 Principal[] issuers = JsseUtils.toX500Principals(certificateRequest.getCertificateAuthorities());
 
-                ProtocolVersion negotiatedVersion = context.getServerVersion();
-                if (TlsUtils.isTLSv13(negotiatedVersion))
-                {
-                    return chooseClientCredentials13(issuers);
-                }
-
+                // TODO[tls13] Should be null from TLS 1.3
                 short[] certificateTypes = certificateRequest.getCertificateTypes();
 
-                if (TlsUtils.isTLSv12(negotiatedVersion))
+                if (TlsUtils.isTLSv12(context))
                 {
-                    return chooseClientCredentials12(issuers, certificateTypes);
+                    return chooseClientCredentials(issuers, certificateTypes);
                 }
 
                 return chooseClientCredentialsLegacy(issuers, certificateTypes);
@@ -453,7 +448,7 @@ class ProvTlsClient
         return createCredentialedSigner(x509Key.getPrivateKey(), tlsCertificate, null);
     }
 
-    protected TlsCredentials chooseClientCredentials12(Principal[] issuers, short[] certificateTypes)
+    protected TlsCredentials chooseClientCredentials(Principal[] issuers, short[] certificateTypes)
         throws IOException
     {
         /*
@@ -473,11 +468,14 @@ class ProvTlsClient
                 continue;
             }
 
-            short signatureAlgorithm = signatureSchemeInfo.getSignatureAlgorithm();
-            short certificateType = SignatureAlgorithm.getClientCertificateType(signatureAlgorithm);
-            if (certificateType < 0 || !Arrays.contains(certificateTypes, certificateType))
+            if (null != certificateTypes)
             {
-                continue;
+                short signatureAlgorithm = signatureSchemeInfo.getSignatureAlgorithm();
+                short certificateType = SignatureAlgorithm.getClientCertificateType(signatureAlgorithm);
+                if (certificateType < 0 || !Arrays.contains(certificateTypes, certificateType))
+                {
+                    continue;
+                }
             }
 
             if (!signatureSchemeInfo.isActive(algorithmConstraints))
@@ -503,12 +501,6 @@ class ProvTlsClient
         }
 
         return null;
-    }
-
-    protected TlsCredentials chooseClientCredentials13(Principal[] issuers) throws IOException
-    {
-        // TODO[tls13]
-        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected TlsCredentialedSigner createCredentialedSigner(PrivateKey privateKey, Certificate certificate,
