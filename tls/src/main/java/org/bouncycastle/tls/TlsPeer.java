@@ -112,12 +112,6 @@ public interface TlsPeer
     void notifyAlertReceived(short alertLevel, short alertDescription);
 
     /**
-     * Notifies the peer that the ClientHello/ServerHello exchange is complete (including
-     * EncryptedExtensions in the case of TLS 1.3).
-     */
-    void notifyHellosComplete() throws IOException;
-
-    /**
      * Notifies the peer that the handshake has been successfully completed.
      */
     void notifyHandshakeComplete() throws IOException;

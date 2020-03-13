@@ -164,6 +164,8 @@ public class TlsServerProtocol
             securityParameters.negotiatedVersion = server_version;
         }
 
+        TlsUtils.negotiatedVersion(tlsServerContext);
+
         // TODO[tls13] At some point after here we should redirect to generate13ServerHello
 //        if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(server_version))
 //        {
@@ -195,6 +197,7 @@ public class TlsServerProtocol
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
             securityParameters.cipherSuite = selectedCipherSuite;
+            TlsUtils.negotiatedCipherSuite(tlsServerContext);
         }
 
         this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
@@ -406,8 +409,8 @@ public class TlsServerProtocol
                 this.connection_state = CS_CLIENT_HELLO_RETRY;
 
                 /*
-                 * TODO[tls13] ServerHello, EncryptedExtensions (TlsUtils.completeHellosPhase),
-                 * CertificateRequest*, Certificate, CertificateVerify, Finished
+                 * TODO[tls13] ServerHello, EncryptedExtensions, CertificateRequest*, Certificate,
+                 * CertificateVerify, Finished
                  */
 
                 this.connection_state = CS_SERVER_FINISHED; 
@@ -539,14 +542,12 @@ public class TlsServerProtocol
                 if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                 {
                     /*
-                     * TODO[tls13] EncryptedExtensions (TlsUtils.completeHellosPhase),
-                     * CertificateRequest*, Certificate, CertificateVerify, Finished
+                     * TODO[tls13] EncryptedExtensions, CertificateRequest*, Certificate,
+                     * CertificateVerify, Finished
                      */
 //                    break;
                     throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
-
-                TlsUtils.completeHellosPhase(tlsServerContext, tlsServer);
 
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)

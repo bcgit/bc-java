@@ -157,7 +157,6 @@ public class DTLSClientProtocol
         }
 
         handshake.getHandshakeHash().notifyPRFDetermined();
-        TlsUtils.completeHellosPhase(state.clientContext, state.client);
 
         applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 
@@ -684,6 +683,7 @@ public class DTLSClientProtocol
             }
             securityParameters.cipherSuite = validateSelectedCipherSuite(selectedCipherSuite,
                 AlertDescription.illegal_parameter);
+            TlsUtils.negotiatedCipherSuite(state.clientContext);
             state.client.notifySelectedCipherSuite(selectedCipherSuite);
         }
 
@@ -923,22 +923,27 @@ public class DTLSClientProtocol
         throws IOException
     {
         TlsClientContextImpl context = state.clientContext;
-        ProtocolVersion currentServerVersion = context.getServerVersion();
-        if (null == currentServerVersion)
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        ProtocolVersion currentServerVersion = securityParameters.getNegotiatedVersion();
+        if (null != currentServerVersion)
         {
-            if (!ProtocolVersion.isSupportedDTLSVersion(server_version)
-                || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
+            if (!currentServerVersion.equals(server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-
-            context.getSecurityParametersHandshake().negotiatedVersion = server_version;
-            state.client.notifyServerVersion(server_version);
+            return;
         }
-        else if (!currentServerVersion.equals(server_version))
+
+        if (!ProtocolVersion.isSupportedDTLSVersion(server_version)
+            || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
+
+        securityParameters.negotiatedVersion = server_version;
+        TlsUtils.negotiatedVersion(context);
+        state.client.notifyServerVersion(server_version);
     }
 
     protected static byte[] patchClientHelloWithCookie(byte[] clientHelloBody, byte[] cookie)
