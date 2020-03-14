@@ -21,13 +21,11 @@ public class Composer
         return new Composer();
     }
 
-    public Composer u32str(long n)
+    public Composer u64str(long n)
     {
-        n &= 0xFFFFFFFFL;
-        bos.write((byte)(n >>> 24));
-        bos.write((byte)(n >>> 16));
-        bos.write((byte)(n >>> 8));
-        bos.write((byte)(n));
+        u32str((int)(n >>> 32));
+        u32str((int)n);
+
         return this;
     }
 
