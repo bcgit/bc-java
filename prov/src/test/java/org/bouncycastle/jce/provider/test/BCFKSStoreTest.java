@@ -539,6 +539,32 @@ public class BCFKSStoreTest
         checkOnePrivateKeyDef(kp1.getPrivate(), new X509Certificate[]{interCert, finalCert}, testPassword);
     }
 
+    public void shouldStoreOnePrivateKeyWithChainEdDSA()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EDDSA", "BC");
+
+        kpGen.initialize(448);
+
+        KeyPair kp1 = kpGen.generateKeyPair();
+        KeyPair kp2 = kpGen.generateKeyPair();
+
+        X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "Ed448", kp2);
+        X509Certificate interCert = TestUtils.createCert(
+            TestUtils.getCertSubject(finalCert),
+            kp2.getPrivate(),
+            "CN=EE",
+            "Ed448",
+            null,
+            kp1.getPublic());
+
+        checkOnePrivateKeyFips(kp1.getPrivate(), new X509Certificate[]{interCert, finalCert}, null);
+        checkOnePrivateKeyFips(kp1.getPrivate(), new X509Certificate[]{interCert, finalCert}, testPassword);
+
+        checkOnePrivateKeyDef(kp1.getPrivate(), new X509Certificate[]{interCert, finalCert}, null);
+        checkOnePrivateKeyDef(kp1.getPrivate(), new X509Certificate[]{interCert, finalCert}, testPassword);
+    }
+
     public void shouldStoreOneECKeyWithChain()
         throws Exception
     {
@@ -1548,6 +1574,7 @@ public class BCFKSStoreTest
         shouldParseOldStores();
         shouldStoreUsingKWP();
         //shouldRejectInconsistentKeys();
+        shouldStoreOnePrivateKeyWithChainEdDSA();
     }
 
     public static void main(
