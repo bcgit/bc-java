@@ -64,8 +64,8 @@ public class HSSPrivateKeyParameters
                 throw new IllegalStateException("unknown version for hss private key");
             }
             int d = ((DataInputStream)src).readInt();
-            int index = ((DataInputStream)src).readInt();
-            int maxIndex = ((DataInputStream)src).readInt();
+            long index = ((DataInputStream)src).readLong();
+            long maxIndex = ((DataInputStream)src).readLong();
             boolean limited = ((DataInputStream)src).readBoolean();
 
             ArrayList<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>();
@@ -432,8 +432,8 @@ public class HSSPrivateKeyParameters
         Composer composer = Composer.compose()
             .u32str(0) // Version.
             .u32str(l)
-            .u32str(index)
-            .u32str(indexLimit)
+            .u64str(index)
+            .u64str(indexLimit)
             .bool(isShard); // Depth
 
         for (LMSPrivateKeyParameters key : keys)
