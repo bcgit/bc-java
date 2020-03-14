@@ -28,13 +28,16 @@ import junit.framework.TestCase;
 public class EdDSACredentialsTest
     extends TestCase
 {
+    private static final String PROV_NAME_BC = BouncyCastleProvider.PROVIDER_NAME;
+    private static final String PROV_NAME_BCJSSE = BouncyCastleJsseProvider.PROVIDER_NAME;
+
     protected void setUp()
     {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(PROV_NAME_BC) == null)
         {
             Security.addProvider(new BouncyCastleProvider());
         }
-        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(PROV_NAME_BCJSSE) == null)
         {
             Security.addProvider(new BouncyCastleJsseProvider());
         }
@@ -57,8 +60,7 @@ public class EdDSACredentialsTest
             throws GeneralSecurityException, IOException
         {
             this.port = port;
-            this.trustStore = KeyStore.getInstance("JKS");
-            trustStore.load(null, null);
+            this.trustStore = createKeyStore();
             trustStore.setCertificateEntry("server", trustAnchor);
 
             this.clientStore = clientStore;
@@ -70,20 +72,15 @@ public class EdDSACredentialsTest
         {
             try
             {
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
-
+                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX", PROV_NAME_BCJSSE);
                 trustMgrFact.init(trustStore);
 
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
-
+                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX", PROV_NAME_BCJSSE);
                 keyMgrFact.init(clientStore, clientKeyPass);
 
-                SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-
+                SSLContext clientContext = SSLContext.getInstance("TLS", PROV_NAME_BCJSSE);
                 clientContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+                    SecureRandom.getInstance("DEFAULT", PROV_NAME_BC));
 
                 SSLSocketFactory fact = clientContext.getSocketFactory();
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
@@ -126,8 +123,7 @@ public class EdDSACredentialsTest
             this.port = port;
             this.serverStore = serverStore;
             this.keyPass = keyPass;
-            this.trustStore = KeyStore.getInstance("JKS");
-            trustStore.load(null, null);
+            this.trustStore = createKeyStore();
             trustStore.setCertificateEntry("client", trustAnchor);
 
             this.latch = new CountDownLatch(1);
@@ -137,20 +133,15 @@ public class EdDSACredentialsTest
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
-
+                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX", PROV_NAME_BCJSSE);
                 keyMgrFact.init(serverStore, keyPass);
 
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
-
+                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX", PROV_NAME_BCJSSE);
                 trustMgrFact.init(trustStore);
 
-                SSLContext serverContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-
+                SSLContext serverContext = SSLContext.getInstance("TLS", PROV_NAME_BCJSSE);
                 serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+                    SecureRandom.getInstance("DEFAULT", PROV_NAME_BC));
 
                 SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
                 SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
@@ -195,11 +186,9 @@ public class EdDSACredentialsTest
         X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
 
         KeyStore serverKs = createKeyStore();
-        serverKs.load(null, null);
         serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
         KeyStore clientKs = createKeyStore();
-        clientKs.load(null, null);
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
         TestProtocolUtil.runClientAndServer(new EdDSAServer(PORT_NO_ED25519, serverKs, keyPass, caCert),
@@ -214,25 +203,25 @@ public class EdDSACredentialsTest
         X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
 
         KeyStore serverKs = createKeyStore();
-        serverKs.load(null, null);
         serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
         KeyStore clientKs = createKeyStore();
-        clientKs.load(null, null);
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
         TestProtocolUtil.runClientAndServer(new EdDSAServer(PORT_NO_ED448, serverKs, keyPass, caCert),
             new EdDSAClient(PORT_NO_ED448, clientKs, keyPass, caCert));
     }
 
-    private static KeyStore createKeyStore() throws GeneralSecurityException
+    private static KeyStore createKeyStore() throws GeneralSecurityException, IOException
     {
         /*
          * NOTE: At the time of writing, default JKS implementation can't recover PKCS8 private keys
          * with version != 0, which e.g. is the case when a public key is included, which the BC
          * provider currently does for EdDSA.
          */
-//        return KeyStore.getInstance("JKS");
-        return KeyStore.getInstance("PKCS12");
+//        KeyStore keyStore = KeyStore.getInstance("JKS");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(null, null);
+        return keyStore;
     }
 }
