@@ -8,6 +8,7 @@ import java.util.Set;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsUtils;
 
 class SignatureSchemeInfo
@@ -43,8 +44,8 @@ class SignatureSchemeInfo
             throw new IllegalArgumentException();
         }
 
-        short hashAlgorithm = (short)((signatureScheme >>> 8) & 0xFF);
-        short signatureAlgorithm = (short)(signatureScheme & 0xFF);
+        short hashAlgorithm = SignatureScheme.getHashAlgorithm(signatureScheme);
+        short signatureAlgorithm = SignatureScheme.getSignatureAlgorithm(signatureScheme);
 
         return SignatureAndHashAlgorithm.getInstance(hashAlgorithm, signatureAlgorithm);
     }
@@ -84,6 +85,11 @@ class SignatureSchemeInfo
         this.enabled = enabled;
     }
 
+    short getHashAlgorithm()
+    {
+        return SignatureScheme.getHashAlgorithm(signatureScheme);
+    }
+
     String getJcaSignatureAlgorithm()
     {
         return jcaSignatureAlgorithm;
@@ -101,7 +107,7 @@ class SignatureSchemeInfo
 
     short getSignatureAlgorithm()
     {
-        return (short)(signatureScheme & 0xFF);
+        return SignatureScheme.getSignatureAlgorithm(signatureScheme);
     }
 
     SignatureAndHashAlgorithm getSignatureAndHashAlgorithm()
@@ -116,7 +122,10 @@ class SignatureSchemeInfo
 
     boolean isActive(BCAlgorithmConstraints algorithmConstraints)
     {
-        // TODO[tls13] Exclude based on per-instance valid protocol version ranges
+        /*
+         * TODO[tls13] Exclude based on per-instance valid protocol version ranges. Presumably
+         * callers of this method want to exclude historical/legacy schemes from TLS 1.3.
+         */
         return enabled
             && isPermittedBy(algorithmConstraints);
     }
