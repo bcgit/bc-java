@@ -166,7 +166,8 @@ class ProvAlgorithmChecker
     {
         if (!supportsExtendedKeyUsage(eeCert, ekuOID))
         {
-            throw new CertPathValidatorException("Certificate doesn't support '" + ekuOID + "' ExtendedKeyUsage");
+            throw new CertPathValidatorException(
+                "Certificate doesn't support '" + getExtendedKeyUsageName(ekuOID) + "' ExtendedKeyUsage");
         }
 
         if (!supportsKeyUsage(eeCert, kuBit))
@@ -205,6 +206,19 @@ class ProvAlgorithmChecker
         {
             throw new CertPathValidatorException();
         }
+    }
+
+    private static String getExtendedKeyUsageName(KeyPurposeId ekuOID)
+    {
+        if (KeyPurposeId.id_kp_clientAuth.equals(ekuOID))
+        {
+            return "clientAuth";
+        }
+        if (KeyPurposeId.id_kp_serverAuth.equals(ekuOID))
+        {
+            return "serverAuth";
+        }
+        return "(" + ekuOID + ")";
     }
 
     private static String getKeyUsageName(int kuBit)
