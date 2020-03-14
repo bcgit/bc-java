@@ -29,7 +29,7 @@ class HSS
 
         byte[] zero = new byte[0];
 
-        int hssKeyMaxIndex = 1;
+        long hssKeyMaxIndex = 1;
         for (int t = 0; t < keys.length; t++)
         {
             if (t == 0)
@@ -53,6 +53,13 @@ class HSS
                     zero);
             }
             hssKeyMaxIndex *= 1 << parameters.getLmsParameters()[t].getLMSigParam().getH();
+        }
+
+        // if this has happened we're trying to generate a really large key
+        // we'll use MAX_VALUE so that it's at least usable until someone upgrades the structure.
+        if (hssKeyMaxIndex == 0)
+        {
+            hssKeyMaxIndex = Long.MAX_VALUE;
         }
 
         return new HSSPrivateKeyParameters(
