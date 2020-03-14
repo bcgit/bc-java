@@ -2,7 +2,6 @@ package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,7 +16,6 @@ import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
-import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
@@ -27,15 +25,12 @@ import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
-import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsDHGroupVerifier;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCryptoParameters;
-import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.IPAddress;
@@ -211,12 +206,12 @@ class ProvTlsClient
                 // TODO[tls13] Should be null from TLS 1.3
                 short[] certificateTypes = certificateRequest.getCertificateTypes();
 
-                if (TlsUtils.isTLSv12(context))
+                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(securityParameters.getNegotiatedVersion()))
                 {
-                    return chooseClientCredentials(issuers, certificateTypes);
+                    return chooseClientCredentialsLegacy(issuers, certificateTypes);
                 }
 
-                return chooseClientCredentialsLegacy(issuers, certificateTypes);
+                return chooseClientCredentials(issuers, certificateTypes);
             }
 
             public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
@@ -432,22 +427,6 @@ class ProvTlsClient
         return JsseUtils.useExtendedMasterSecret();
     }
 
-    protected TlsCredentials chooseClientCredentialsLegacy(Principal[] issuers, short[] certificateTypes)
-        throws IOException
-    {
-        String[] keyTypes = getKeyTypes(certificateTypes);
-
-        ProvX509Key x509Key = manager.chooseClientKey(keyTypes, issuers);
-        if (null == x509Key)
-        {
-            return null;
-        }
-
-        Certificate tlsCertificate = JsseUtils.getCertificateMessage(getCrypto(), x509Key.getCertificateChain());
-
-        return createCredentialedSigner(x509Key.getPrivateKey(), tlsCertificate, null);
-    }
-
     protected TlsCredentials chooseClientCredentials(Principal[] issuers, short[] certificateTypes)
         throws IOException
     {
@@ -462,7 +441,7 @@ class ProvTlsClient
 
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
-            String keyType = signatureSchemeInfo.getKeyAlgorithm();
+            String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
             if (keyManagerMissCache.contains(keyType))
             {
                 continue;
@@ -490,27 +469,28 @@ class ProvTlsClient
                 continue;
             }
 
-            /*
-             * TODO[jsse] Before proceeding with EC credentials,check (TLS 1.2+) that the used curve
-             * was actually declared in the client's elliptic_curves/named_groups extension.
-             */
-
-            return createCredentialedSigner(x509Key.getPrivateKey(),
-                JsseUtils.getCertificateMessage(getCrypto(), x509Key.getCertificateChain()),
+            return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key,
                 signatureSchemeInfo.getSignatureAndHashAlgorithm());
         }
 
         return null;
     }
 
-    protected TlsCredentialedSigner createCredentialedSigner(PrivateKey privateKey, Certificate certificate,
-        SignatureAndHashAlgorithm sigAndHashAlg)
+    protected TlsCredentials chooseClientCredentialsLegacy(Principal[] issuers, short[] certificateTypes)
+        throws IOException
     {
-        return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), getCrypto(), privateKey,
-            certificate, sigAndHashAlg);
+        String[] keyTypes = getKeyTypesLegacy(certificateTypes);
+
+        ProvX509Key x509Key = manager.chooseClientKey(keyTypes, issuers);
+        if (null == x509Key)
+        {
+            return null;
+        }
+
+        return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key, null);
     }
 
-    protected String[] getKeyTypes(short[] certificateTypes) throws IOException
+    protected String[] getKeyTypesLegacy(short[] certificateTypes) throws IOException
     {
         if (null == certificateTypes || certificateTypes.length == 0)
         {
@@ -522,7 +502,7 @@ class ProvTlsClient
         for (int i = 0; i < certificateTypes.length; ++i)
         {
             // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
-            keyTypes[i] = JsseUtils.getKeyTypeClient(certificateTypes[i]);
+            keyTypes[i] = JsseUtils.getKeyTypeLegacyClient(certificateTypes[i]);
         }
 
         return keyTypes;

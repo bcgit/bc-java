@@ -12,7 +12,7 @@ class ECUtil
 {
     static boolean isECPrivateKey(PrivateKey key)
     {
-        return key instanceof ECPrivateKey || "EC".equals(key.getAlgorithm());
+        return key instanceof ECPrivateKey || "EC".equalsIgnoreCase(key.getAlgorithm());
     }
 
     static boolean isCurveSupported(String curveName, JcaJceHelper helper)
