@@ -135,7 +135,7 @@ public class HSSTest
         }
         catch (ExhaustedPrivateKeyException e)
         {
-            assertEquals("hss private key is exhausted", e.getMessage());
+            assertEquals("hss private key shard is exhausted", e.getMessage());
         }
 
         signer.init(true, ((HSSPrivateKeyParameters)kp.getPrivate()));
