@@ -31,7 +31,7 @@ public class HSSPrivateKeyParameters
         this.index = index;
         this.indexLimit = indexLimit;
         this.isShard = false;
-        System.err.println(indexLimit);
+
         //
         // Correct Intermediate LMS values will be constructed during reset to index.
         //
