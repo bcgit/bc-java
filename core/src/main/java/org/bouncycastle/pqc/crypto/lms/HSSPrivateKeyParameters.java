@@ -31,7 +31,7 @@ public class HSSPrivateKeyParameters
         this.index = index;
         this.indexLimit = indexLimit;
         this.isShard = false;
-
+        System.err.println(indexLimit);
         //
         // Correct Intermediate LMS values will be constructed during reset to index.
         //
@@ -199,7 +199,7 @@ public class HSSPrivateKeyParameters
             }
 
             long maxIndexForShard = index + usageCount;
-            long shartStartIndex = index;
+            long shardStartIndex = index;
 
             //
             // Move this keys index along
@@ -209,7 +209,7 @@ public class HSSPrivateKeyParameters
             List<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>(this.getKeys());
             List<LMSSignature> sig = new ArrayList<LMSSignature>(this.getSig());
 
-            HSSPrivateKeyParameters shard = makeCopy(new HSSPrivateKeyParameters(l, keys, sig, shartStartIndex, maxIndexForShard, true));
+            HSSPrivateKeyParameters shard = makeCopy(new HSSPrivateKeyParameters(l, keys, sig, shardStartIndex, maxIndexForShard, true));
 
             resetKeyToIndex();
 
