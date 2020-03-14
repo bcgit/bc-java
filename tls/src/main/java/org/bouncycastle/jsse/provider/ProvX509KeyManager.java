@@ -216,52 +216,52 @@ class ProvX509KeyManager
             return false;
         }
 
-        PublicKey pub = c.getPublicKey();
+        PublicKey publicKey = c.getPublicKey();
 
         if (keyType.equalsIgnoreCase("RSA"))
         {
             int keyUsage = forServer ? KeyUsage.keyEncipherment : KeyUsage.digitalSignature;
-            return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(keyUsage, c);
+            return publicKey instanceof RSAPublicKey && isSuitableKeyUsage(keyUsage, c);
         }
 
         if (isSuitableKeyUsage(KeyUsage.digitalSignature, c))
         {
             if ("Ed25519".equalsIgnoreCase(keyType))
             {
-                return "Ed25519".equalsIgnoreCase(pub.getAlgorithm());
+                return "Ed25519".equalsIgnoreCase(publicKey.getAlgorithm());
             }
             if ("Ed448".equalsIgnoreCase(keyType))
             {
-                return "Ed448".equalsIgnoreCase(pub.getAlgorithm());
+                return "Ed448".equalsIgnoreCase(publicKey.getAlgorithm());
             }
 
             if (forServer)
             {
                 if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
                 {
-                    return (pub instanceof ECPublicKey);
+                    return publicKey instanceof ECPublicKey;
                 }
                 if (keyType.equalsIgnoreCase("ECDHE_RSA")
                     ||  keyType.equalsIgnoreCase("DHE_RSA")
                     ||  keyType.equalsIgnoreCase("SRP_RSA"))
                 {
-                    return (pub instanceof RSAPublicKey);
+                    return publicKey instanceof RSAPublicKey;
                 }
                 if (keyType.equalsIgnoreCase("DHE_DSS")
                     || keyType.equalsIgnoreCase("SRP_DSS"))
                 {
-                    return (pub instanceof DSAPublicKey);
+                    return publicKey instanceof DSAPublicKey;
                 }
             }
             else 
             {
                 if (keyType.equalsIgnoreCase("EC"))
                 {
-                    return (pub instanceof ECPublicKey);
+                    return publicKey instanceof ECPublicKey;
                 }
                 if (keyType.equalsIgnoreCase("DSA"))
                 {
-                    return (pub instanceof DSAPublicKey);
+                    return publicKey instanceof DSAPublicKey;
                 }
             }
         }
