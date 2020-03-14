@@ -98,7 +98,8 @@ final class ContextData
         addSignatureScheme(crypto, ss, signatureScheme, jcaSignatureAlgorithm, keyAlgorithm);
     }
 
-    private static Map<Integer, SignatureSchemeInfo> createSignatureSchemesMap(JcaTlsCrypto crypto)
+    private static Map<Integer, SignatureSchemeInfo> createSignatureSchemesMap(ProvSSLContextSpi context,
+        JcaTlsCrypto crypto)
     {
         Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
 
@@ -116,8 +117,12 @@ final class ContextData
 //        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1", "RSA");
 //        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1", "RSA");
 
-        addSignatureScheme(crypto, ss, SignatureScheme.ed25519, "Ed25519", "Ed25519");
-        addSignatureScheme(crypto, ss, SignatureScheme.ed448, "Ed448", "Ed448");
+        // TODO[jsse] Preferably add FipsUtils.removeNonFipsSignatureSchemes or similar
+        if (!context.isFips())
+        {
+            addSignatureScheme(crypto, ss, SignatureScheme.ed25519, "Ed25519", "Ed25519");
+            addSignatureScheme(crypto, ss, SignatureScheme.ed448, "Ed448", "Ed448");
+        }
 
         // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
 //        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1", "RSASSA-PSS");
@@ -173,7 +178,7 @@ final class ContextData
         this.clientSessionContext = new ProvSSLSessionContext(this);
         this.serverSessionContext = new ProvSSLSessionContext(this);
 
-        this.signatureSchemesMap = createSignatureSchemesMap(crypto);
+        this.signatureSchemesMap = createSignatureSchemesMap(context, crypto);
     }
 
     List<SignatureSchemeInfo> getActiveSignatureSchemes(ProvSSLParameters sslParameters,
