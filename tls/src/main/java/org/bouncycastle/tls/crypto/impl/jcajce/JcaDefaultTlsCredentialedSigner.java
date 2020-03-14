@@ -25,7 +25,9 @@ public class JcaDefaultTlsCredentialedSigner
         TlsSigner signer;
 
         // TODO We probably want better distinction b/w the rsa_pss_pss and rsa_pss_rsae cases here
-        if (privateKey instanceof RSAPrivateKey || "RSA".equals(algorithm) || "RSASSA-PSS".equals(algorithm))
+        if (privateKey instanceof RSAPrivateKey
+            || "RSA".equalsIgnoreCase(algorithm)
+            || "RSASSA-PSS".equalsIgnoreCase(algorithm))
         {
             if (signatureAndHashAlgorithm != null)
             {
@@ -44,7 +46,8 @@ public class JcaDefaultTlsCredentialedSigner
 
             signer = new JcaTlsRSASigner(crypto, privateKey);
         }
-        else if (privateKey instanceof DSAPrivateKey || "DSA".equals(algorithm))
+        else if (privateKey instanceof DSAPrivateKey
+            || "DSA".equalsIgnoreCase(algorithm))
         {
             signer = new JcaTlsDSASigner(crypto, privateKey);
         }
@@ -52,11 +55,11 @@ public class JcaDefaultTlsCredentialedSigner
         {
             signer = new JcaTlsECDSASigner(crypto, privateKey);
         }
-        else if ("Ed25519".equals(algorithm))
+        else if ("Ed25519".equalsIgnoreCase(algorithm))
         {
             signer = new JcaTlsEd25519Signer(crypto, privateKey);
         }
-        else if ("Ed448".equals(algorithm))
+        else if ("Ed448".equalsIgnoreCase(algorithm))
         {
             signer = new JcaTlsEd448Signer(crypto, privateKey);
         }

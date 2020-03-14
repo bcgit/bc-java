@@ -3150,38 +3150,45 @@ public class TlsUtils
         return CipherType.stream == getCipherType(cipherSuite);
     }
 
+    /**
+     * @return Whether a server can select the specified cipher suite given the available signature
+     *         algorithms for ServerKeyExchange.
+     */
     public static boolean isValidCipherSuiteForSignatureAlgorithms(int cipherSuite, Vector sigAlgs)
     {
-        int keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+        final int keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
 
         switch (keyExchangeAlgorithm)
         {
-        case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.ECDHE_RSA:
-        case KeyExchangeAlgorithm.SRP_RSA:
-            return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa))
-                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa_pss_rsae_sha256))
-                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa_pss_rsae_sha384))
-                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa_pss_rsae_sha512))
-                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa_pss_pss_sha256))
-                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa_pss_pss_sha384))
-                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa_pss_pss_sha512));
-
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.SRP_DSS:
-            return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.dsa));
-
+        case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ecdsa))
-                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ed25519))
-                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ed448));
-
-        case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.NULL:
+        case KeyExchangeAlgorithm.SRP_RSA:
+        case KeyExchangeAlgorithm.SRP_DSS:
+            break;
+
         default:
             return true;
         }
+
+        int count = sigAlgs.size();
+        for (int i = 0; i < count; ++i)
+        {
+            Short sigAlg = (Short)sigAlgs.elementAt(i);
+            if (null != sigAlg)
+            {
+                short signatureAlgorithm = sigAlg.shortValue();
+
+                if (isValidSignatureAlgorithmForServerKeyExchange(signatureAlgorithm, keyExchangeAlgorithm))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion version)
@@ -3249,6 +3256,13 @@ public class TlsUtils
         default:
             return false;
         }
+    }
+
+    public static boolean isValidSignatureSchemeForServerKeyExchange(int signatureScheme, int keyExchangeAlgorithm)
+    {
+        short signatureAlgorithm = SignatureScheme.getSignatureAlgorithm(signatureScheme);
+
+        return isValidSignatureAlgorithmForServerKeyExchange(signatureAlgorithm, keyExchangeAlgorithm);
     }
 
     public static SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(TlsContext context, Vector sigHashAlgs, short signatureAlgorithm)

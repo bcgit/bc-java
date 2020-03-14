@@ -37,11 +37,18 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.TlsCredentialedDecryptor;
+import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedDecryptor;
 
 abstract class JsseUtils
 {
@@ -110,6 +117,29 @@ abstract class JsseUtils
         return tmp;
     }
 
+    static TlsCredentialedDecryptor createCredentialedDecryptor(JcaTlsCrypto crypto, ProvX509Key x509Key)
+    {
+        PrivateKey privateKey = x509Key.getPrivateKey();
+        Certificate certificate = getCertificateMessage(crypto, x509Key.getCertificateChain());
+
+        return new JceDefaultTlsCredentialedDecryptor(crypto, certificate, privateKey);
+    }
+
+    static TlsCredentialedSigner createCredentialedSigner(TlsContext context, JcaTlsCrypto crypto, ProvX509Key x509Key,
+        SignatureAndHashAlgorithm sigAndHashAlg)
+    {
+        /*
+         * TODO[jsse] Before proceeding with EC credentials,check (TLS 1.2+) that the used curve
+         * was actually declared in the client's elliptic_curves/named_groups extension.
+         */
+
+        TlsCryptoParameters cryptoParams = new TlsCryptoParameters(context);
+        PrivateKey privateKey = x509Key.getPrivateKey();
+        Certificate certificate = getCertificateMessage(crypto, x509Key.getCertificateChain());
+
+        return new JcaDefaultTlsCredentialedSigner(cryptoParams, crypto, privateKey, certificate, sigAndHashAlg);
+    }
+
     static String[] resize(String[] data, int count)
     {
         if (count < data.length)
@@ -151,11 +181,10 @@ abstract class JsseUtils
             return "DSA";
         case SignatureAlgorithm.ecdsa:
             return "EC";
-        // TODO[RFC 8422]
-//        case SignatureAlgorithm.ed25519:
-//            return "Ed25519";
-//        case SignatureAlgorithm.ed448:
-//            return "Ed448";
+        case SignatureAlgorithm.ed25519:
+            return "Ed25519";
+        case SignatureAlgorithm.ed448:
+            return "Ed448";
         // TODO[RFC 8446]
 //        case SignatureAlgorithm.rsa_pss_rsae_sha256:
 //        case SignatureAlgorithm.rsa_pss_rsae_sha384:
@@ -180,20 +209,12 @@ abstract class JsseUtils
 
         switch (keyExchangeAlgorithm)
         {
-        case KeyExchangeAlgorithm.DH_anon:
-            return "DH_anon";
         case KeyExchangeAlgorithm.DHE_DSS:
             return "DHE_DSS";
-        case KeyExchangeAlgorithm.DHE_PSK:
-            return "DHE_PSK";
         case KeyExchangeAlgorithm.DHE_RSA:
             return "DHE_RSA";
-        case KeyExchangeAlgorithm.ECDH_anon:
-            return "ECDH_anon";
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
             return "ECDHE_ECDSA";
-        case KeyExchangeAlgorithm.ECDHE_PSK:
-            return "ECDHE_PSK";
         case KeyExchangeAlgorithm.ECDHE_RSA:
             return "ECDHE_RSA";
         case KeyExchangeAlgorithm.NULL:
@@ -202,14 +223,6 @@ abstract class JsseUtils
             return "UNKNOWN";
         case KeyExchangeAlgorithm.RSA:
             return "RSA";
-        case KeyExchangeAlgorithm.RSA_PSK:
-            return "RSA_PSK";
-        case KeyExchangeAlgorithm.SRP:
-            return "SRP";
-        case KeyExchangeAlgorithm.SRP_DSS:
-            return "SRP_DSS";
-        case KeyExchangeAlgorithm.SRP_RSA:
-            return "SRP_RSA";
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -230,7 +243,12 @@ abstract class JsseUtils
         return new Certificate(certificateList);
     }
 
-    static String getKeyTypeClient(short clientCertificateType) throws IOException
+    static String getKeyType(SignatureSchemeInfo signatureSchemeInfo)
+    {
+        return signatureSchemeInfo.getKeyAlgorithm();
+    }
+
+    static String getKeyTypeLegacyClient(short clientCertificateType) throws IOException
     {
         /*
          * For use with chooseClientAlias calls on a key manager. Values from JSSE Standard Names.
@@ -258,7 +276,7 @@ abstract class JsseUtils
         // NOTE: Compatible with peer signature_algorithms "ed25519" and "ed448" in TLS 1.2
         case ClientCertificateType.ecdsa_sign:
             return "EC";
-        // NOTE: (Presumably) compatible with peer signature_algorithms "rsa_pss_*" in TLS 1.2 
+        // NOTE: Compatible with peer signature_algorithms "rsa_pss_*" in TLS 1.2 
         case ClientCertificateType.rsa_sign:
             return "RSA";
         default:
@@ -266,7 +284,7 @@ abstract class JsseUtils
         }
     }
 
-    static String getKeyTypeServer(int keyExchangeAlgorithm) throws IOException
+    static String getKeyTypeLegacyServer(int keyExchangeAlgorithm) throws IOException
     {
         /*
          * For use with chooseServerAlias calls on a key manager. JSSE Standard Names suggest using
@@ -385,34 +403,54 @@ abstract class JsseUtils
         return null != protocolVersion && TlsUtils.isTLSv12(protocolVersion); 
     }
 
-    public static boolean isUsableKeyForServer(int keyExchangeAlgorithm, PrivateKey privateKey) throws IOException
+    static boolean isUsableKeyForServer(short signatureAlgorithm, PrivateKey privateKey)
     {
-        if (privateKey == null)
+        final String algorithm = privateKey.getAlgorithm();
+
+        switch (signatureAlgorithm)
         {
+        case SignatureAlgorithm.dsa:
+            return privateKey instanceof DSAPrivateKey || "DSA".equalsIgnoreCase(algorithm);
+
+        case SignatureAlgorithm.ecdsa:
+            return privateKey instanceof ECPrivateKey || "EC".equalsIgnoreCase(algorithm);
+
+        case SignatureAlgorithm.ed25519:
+            return "Ed25519".equalsIgnoreCase(algorithm);
+
+        case SignatureAlgorithm.ed448:
+            return "Ed448".equalsIgnoreCase(algorithm);
+
+        case SignatureAlgorithm.rsa:
+            return privateKey instanceof RSAPrivateKey || "RSA".equalsIgnoreCase(algorithm);
+
+        // TODO[RFC 8446]
+//        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+//        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+//        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+//        case SignatureAlgorithm.rsa_pss_pss_sha256:
+//        case SignatureAlgorithm.rsa_pss_pss_sha384:
+//        case SignatureAlgorithm.rsa_pss_pss_sha512:
+        default:
             return false;
         }
+    }
 
-        String algorithm = privateKey.getAlgorithm();
+    static boolean isUsableKeyForServerLegacy(int keyExchangeAlgorithm, PrivateKey privateKey)
+    {
         switch (keyExchangeAlgorithm)
         {
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            return privateKey instanceof ECPrivateKey || "EC".equals(algorithm);
-
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.SRP_DSS:
-            return privateKey instanceof DSAPrivateKey || "DSA".equals(algorithm);
-
         case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
+            return isUsableKeyForServer(TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm), privateKey);
+
         case KeyExchangeAlgorithm.RSA:
-        case KeyExchangeAlgorithm.RSA_PSK:
-        case KeyExchangeAlgorithm.SRP_RSA:
-            return privateKey instanceof RSAPrivateKey || "RSA".equals(algorithm);
+            return privateKey instanceof RSAPrivateKey || "RSA".equalsIgnoreCase(privateKey.getAlgorithm());
 
+        // NOTE: This method should never be called for TLS 1.3 
         case KeyExchangeAlgorithm.NULL:
-            // TODO[tls13] Consider whether any checks needed here  
-            return true;
-
         default:
             return false;
         }

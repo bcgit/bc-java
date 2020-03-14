@@ -91,6 +91,16 @@ public class SignatureScheme
         }
     }
 
+    public static short getHashAlgorithm(int signatureScheme)
+    {
+        return (short)((signatureScheme >>> 8) & 0xFF);
+    }
+
+    public static short getSignatureAlgorithm(int signatureScheme)
+    {
+        return (short)(signatureScheme & 0xFF);
+    }
+
     public static String getText(int signatureScheme)
     {
         return getName(signatureScheme) + "(" + signatureScheme + ")";

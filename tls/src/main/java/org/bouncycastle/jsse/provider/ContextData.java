@@ -116,8 +116,8 @@ final class ContextData
 //        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1", "RSA");
 //        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1", "RSA");
 
-//        addSignatureScheme(crypto, ss, SignatureScheme.ed25519, "ed25519", "ed25519");
-//        addSignatureScheme(crypto, ss, SignatureScheme.ed448, "ed448", "ed448");
+        addSignatureScheme(crypto, ss, SignatureScheme.ed25519, "Ed25519", "Ed25519");
+        addSignatureScheme(crypto, ss, SignatureScheme.ed448, "Ed448", "Ed448");
 
         // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
 //        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1", "RSASSA-PSS");
