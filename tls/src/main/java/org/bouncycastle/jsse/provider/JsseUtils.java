@@ -357,7 +357,7 @@ abstract class JsseUtils
         }
         if (chain instanceof X509Certificate[])
         {
-            return (X509Certificate[])chain;
+            return JsseUtils.containsNull(chain) ? null : (X509Certificate[])chain;
         }
         X509Certificate[] x509Chain = new X509Certificate[chain.length];
         for (int i = 0; i < chain.length; ++i)
@@ -574,6 +574,33 @@ abstract class JsseUtils
             }
         }
 
+        return null;
+    }
+
+    static BCSNIHostName getSNIHostName(List<BCSNIServerName> serverNames)
+    {
+        if (null != serverNames)
+        {
+            for (BCSNIServerName serverName : serverNames)
+            {
+                if (null != serverName && BCStandardConstants.SNI_HOST_NAME == serverName.getType())
+                {
+                    if (serverName instanceof BCSNIHostName)
+                    {
+                        return (BCSNIHostName)serverName;
+                    }
+
+                    try
+                    {
+                        return new BCSNIHostName(serverName.getEncoded());
+                    }
+                    catch (RuntimeException e)
+                    {
+                        return null;
+                    }
+                }
+            }
+        }
         return null;
     }
 
