@@ -28,6 +28,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.asn1.gnu;
     exports org.bouncycastle.asn1.iana;
     exports org.bouncycastle.asn1.icao;
+    exports org.bouncycastle.asn1.isara;
     exports org.bouncycastle.asn1.isismtt;
     exports org.bouncycastle.asn1.isismtt.ocsp;
     exports org.bouncycastle.asn1.isismtt.x509;
