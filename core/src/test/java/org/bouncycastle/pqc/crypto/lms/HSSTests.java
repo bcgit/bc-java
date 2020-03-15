@@ -457,7 +457,6 @@ public class HSSTests
 
     }
 
-
     public void testVectorsFromReference_Expanded()
         throws Exception
     {
@@ -576,11 +575,8 @@ public class HSSTests
 
             }
 
-
             if (i % 5 == 0)
             {
-
-
                 HSSSignature sigCalculated = HSS.generateSignature(pair, message);
                 assertTrue(Arrays.areEqual(sigCalculated.getEncoded(), sigVectors.get(c)));
 
@@ -603,8 +599,6 @@ public class HSSTests
                 HSS.incrementIndex(pair);
             }
         }
-
-
     }
 
 
@@ -672,7 +666,6 @@ public class HSSTests
         assertFalse(potentialNewLMSKey.equals(lmsKey));
     }
 
-
     public void testSharding()
         throws Exception
     {
@@ -736,7 +729,6 @@ public class HSSTests
 
     }
 
-
     /**
      * Take an HSS key pair and exhaust its signing capacity.
      *
@@ -757,7 +749,6 @@ public class HSSTests
                 }
             }
         };
-
 
         HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
             new HSSKeyGenerationParameters(new LMSParameters[]{
@@ -875,7 +866,7 @@ public class HSSTests
                 ctr++;
 
             }
-            System.out.println(ctr);
+            //System.out.println(ctr);
             fail();
         }
         catch (ExhaustedPrivateKeyException ex)
