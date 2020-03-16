@@ -156,6 +156,16 @@ public final class XMSSMTParameters
     }
 
     /**
+     * Return the tree digest OID.
+     *
+     * @return OID for digest used to build the tree.
+     */
+    public ASN1ObjectIdentifier getTreeDigestOID()
+    {
+        return xmssParams.getTreeDigestOID();
+    }
+
+    /**
      * Getter Winternitz parameter.
      *
      * @return Winternitz parameter.

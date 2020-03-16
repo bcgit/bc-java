@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.text.ParseException;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -41,6 +42,7 @@ public class XMSSMTTest
         byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
         assertEquals(true, Arrays.areEqual(Hex.decode(expectedPrivateKey), strippedPrivateKey));
         assertEquals(true, Arrays.areEqual(Hex.decode(expectedPublicKey), publicKey));
+        assertEquals(NISTObjectIdentifiers.id_sha256, params.getTreeDigestOID());
     }
 
     public void testGenKeyPairSHA512()
@@ -65,6 +67,7 @@ public class XMSSMTTest
         byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
         assertEquals(true, Arrays.areEqual(Hex.decode(expectedPrivateKey), strippedPrivateKey));
         assertEquals(true, Arrays.areEqual(Hex.decode(expectedPublicKey), publicKey));
+        assertEquals(NISTObjectIdentifiers.id_sha512, params.getTreeDigestOID());
     }
 
     public void testSignSHA256()
