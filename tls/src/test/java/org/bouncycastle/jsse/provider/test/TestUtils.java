@@ -240,7 +240,7 @@ class TestUtils
         String alg = pair.getPublic().getAlgorithm();
         if (alg.equals("DSA"))
         {
-            return createSelfSignedCert("CN=Test CA Certificate", "SHA1withDSA", pair);
+            return createSelfSignedCert("CN=Test CA Certificate", "SHA256withDSA", pair);
         }
         else if (alg.equals("RSA"))
         {

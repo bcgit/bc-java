@@ -19,6 +19,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
@@ -46,6 +47,8 @@ import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
+import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
@@ -880,6 +883,53 @@ public class JcaTlsCrypto
     {
         return new TlsNullCipher(cryptoParams, createMAC(cryptoParams, macAlgorithm),
             createMAC(cryptoParams, macAlgorithm));
+    }
+
+    protected TlsStreamSigner createStreamSigner(SignatureAndHashAlgorithm algorithm, PrivateKey privateKey,
+        boolean needsRandom) throws IOException
+    {
+        String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
+
+        return createStreamSigner(algorithmName, privateKey, needsRandom);
+    }
+
+    protected TlsStreamSigner createStreamSigner(String algorithmName, PrivateKey privateKey, boolean needsRandom)
+        throws IOException
+    {
+        try
+        {
+            Signature signer = getHelper().createSignature(algorithmName);
+            signer.initSign(privateKey, needsRandom ? getSecureRandom() : null);
+
+            return new JcaTlsStreamSigner(signer);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
+    protected TlsStreamVerifier createStreamVerifier(DigitallySigned signature, PublicKey publicKey) throws IOException
+    {
+        String algorithmName = JcaUtils.getJcaAlgorithmName(signature.getAlgorithm());
+
+        return createStreamVerifier(algorithmName, signature.getSignature(), publicKey);
+    }
+
+    protected TlsStreamVerifier createStreamVerifier(String algorithmName, byte[] signature, PublicKey publicKey)
+        throws IOException
+    {
+        try
+        {
+            Signature verifier = getHelper().createSignature(algorithmName);
+            verifier.initVerify(publicKey);
+
+            return new JcaTlsStreamVerifier(verifier, signature);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
     }
 
     protected boolean isCurveSupported(String curveName)

@@ -51,7 +51,7 @@ public abstract class JcaTlsDSSSigner
         {
             Signature signer = crypto.getHelper().createSignature(algorithmName);
 
-            signer.initSign(privateKey);
+            signer.initSign(privateKey, crypto.getSecureRandom());
             if (algorithm == null)
             {
                 // Note: Only use the SHA1 part of the (MD5/SHA1) hash
@@ -70,6 +70,7 @@ public abstract class JcaTlsDSSSigner
     }
 
     public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
+        throws IOException
     {
         return null;
     }
