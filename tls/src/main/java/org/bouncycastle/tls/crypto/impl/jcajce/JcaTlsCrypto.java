@@ -890,17 +890,20 @@ public class JcaTlsCrypto
     {
         String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
 
-        return createStreamSigner(algorithmName, privateKey, needsRandom);
+        return createStreamSigner(algorithmName, null, privateKey, needsRandom);
     }
 
-    protected TlsStreamSigner createStreamSigner(String algorithmName, PrivateKey privateKey, boolean needsRandom)
-        throws IOException
+    protected TlsStreamSigner createStreamSigner(String algorithmName, AlgorithmParameterSpec parameter,
+        PrivateKey privateKey, boolean needsRandom) throws IOException
     {
         try
         {
             Signature signer = getHelper().createSignature(algorithmName);
+            if (null != parameter)
+            {
+                signer.setParameter(parameter);
+            }
             signer.initSign(privateKey, needsRandom ? getSecureRandom() : null);
-
             return new JcaTlsStreamSigner(signer);
         }
         catch (GeneralSecurityException e)
@@ -913,17 +916,20 @@ public class JcaTlsCrypto
     {
         String algorithmName = JcaUtils.getJcaAlgorithmName(signature.getAlgorithm());
 
-        return createStreamVerifier(algorithmName, signature.getSignature(), publicKey);
+        return createStreamVerifier(algorithmName, null, signature.getSignature(), publicKey);
     }
 
-    protected TlsStreamVerifier createStreamVerifier(String algorithmName, byte[] signature, PublicKey publicKey)
-        throws IOException
+    protected TlsStreamVerifier createStreamVerifier(String algorithmName, AlgorithmParameterSpec parameter,
+        byte[] signature, PublicKey publicKey) throws IOException
     {
         try
         {
             Signature verifier = getHelper().createSignature(algorithmName);
+            if (null != parameter)
+            {
+                verifier.setParameter(parameter);
+            }
             verifier.initVerify(publicKey);
-
             return new JcaTlsStreamVerifier(verifier, signature);
         }
         catch (GeneralSecurityException e)
