@@ -8,11 +8,9 @@ import java.security.Signature;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
-import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
@@ -50,26 +48,12 @@ public class JcaTlsRSAVerifier
         /*
          * NOTE: The SunMSCAPI provider's "NoneWithRSA" can't produce/verify RSA signatures in the correct format for TLS 1.2
          */
-        if (algorithm != null && algorithm.getSignature() == SignatureAlgorithm.rsa && JcaUtils.isSunMSCAPIProviderActive())
+        if (algorithm != null
+            && algorithm.getSignature() == SignatureAlgorithm.rsa
+            && JcaUtils.isSunMSCAPIProviderActive()
+            && isSunMSCAPIRawVerifier())
         {
-            try
-            {
-                Signature rawVerifier = getRawVerifier();
-
-                if (JcaUtils.isSunMSCAPIProvider(rawVerifier.getProvider()))
-                {
-                    String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
-
-                    Signature verifier = crypto.getHelper().createSignature(algorithmName);
-                    verifier.initVerify(publicKey);
-
-                    return new JcaTlsStreamVerifier(verifier, signature.getSignature());
-                }
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error, e);
-            }
+            return crypto.createStreamVerifier(signature, publicKey);
         }
 
         return null;
@@ -124,5 +108,20 @@ public class JcaTlsRSAVerifier
             rawVerifier.initVerify(publicKey);
         }
         return rawVerifier;
+    }
+
+    protected boolean isSunMSCAPIRawVerifier() throws IOException
+    {
+        try
+        {
+            Signature rawVerifier = getRawVerifier();
+
+            return JcaUtils.isSunMSCAPIProvider(rawVerifier.getProvider());
+        }
+        catch (GeneralSecurityException e)
+        {
+            // Assume the worst!
+            return true;
+        }
     }
 }

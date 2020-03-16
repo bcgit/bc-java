@@ -86,26 +86,12 @@ public class JcaTlsRSASigner
         /*
          * NOTE: The SunMSCAPI provider's "NoneWithRSA" can't produce/verify RSA signatures in the correct format for TLS 1.2
          */
-        if (algorithm != null && algorithm.getSignature() == SignatureAlgorithm.rsa && JcaUtils.isSunMSCAPIProviderActive())
+        if (algorithm != null
+            && SignatureAlgorithm.rsa == algorithm.getSignature()
+            && JcaUtils.isSunMSCAPIProviderActive()
+            && isSunMSCAPIRawSigner())
         {
-            try
-            {
-                Signature rawSigner = getRawSigner();
-
-                if (JcaUtils.isSunMSCAPIProvider(rawSigner.getProvider()))
-                {
-                    String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
-
-                    Signature signer = crypto.getHelper().createSignature(algorithmName);
-                    signer.initSign(privateKey, crypto.getSecureRandom());
-
-                    return new JcaTlsStreamSigner(signer); 
-                }
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error, e);
-            }
+            return crypto.createStreamSigner(algorithm, privateKey, true);
         }
 
         return null;
@@ -119,5 +105,20 @@ public class JcaTlsRSASigner
             rawSigner.initSign(privateKey, crypto.getSecureRandom());
         }
         return rawSigner;
+    }
+
+    protected boolean isSunMSCAPIRawSigner() throws IOException
+    {
+        try
+        {
+            Signature rawSigner = getRawSigner();
+
+            return JcaUtils.isSunMSCAPIProvider(rawSigner.getProvider());
+        }
+        catch (GeneralSecurityException e)
+        {
+            // Assume the worst!
+            return true;
+        }
     }
 }

@@ -1,5 +1,6 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -37,7 +38,7 @@ public abstract class JcaTlsDSSVerifier
         this.algorithmName = algorithmName;
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException
     {
         return null;
     }
