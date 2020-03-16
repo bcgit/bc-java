@@ -1,6 +1,5 @@
 package org.bouncycastle.jsse.provider;
 
-import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertPathValidatorException;
@@ -16,7 +15,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
@@ -37,6 +38,8 @@ class ProvAlgorithmChecker
         // TODO[jsse] We may need more mappings (from sigAlgOID) here for SunJSSE compatibility (e.g. RSASSA-PSS?)
         names.put(EdECObjectIdentifiers.id_Ed25519.getId(), "Ed25519");
         names.put(EdECObjectIdentifiers.id_Ed448.getId(), "Ed448");
+        names.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "SHA1withDSA");
+        names.put(X9ObjectIdentifiers.id_dsa_with_sha1.getId(), "SHA1withDSA");
 
         return Collections.unmodifiableMap(names);
     }
@@ -164,22 +167,28 @@ class ProvAlgorithmChecker
     private static void checkEndEntity(JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
         X509Certificate eeCert, KeyPurposeId ekuOID, int kuBit) throws CertPathValidatorException
     {
-        if (!supportsExtendedKeyUsage(eeCert, ekuOID))
+        if (null != ekuOID)
         {
-            throw new CertPathValidatorException(
-                "Certificate doesn't support '" + getExtendedKeyUsageName(ekuOID) + "' ExtendedKeyUsage");
+            if (!supportsExtendedKeyUsage(eeCert, ekuOID))
+            {
+                throw new CertPathValidatorException(
+                    "Certificate doesn't support '" + getExtendedKeyUsageName(ekuOID) + "' ExtendedKeyUsage");
+            }
         }
 
-        if (!supportsKeyUsage(eeCert, kuBit))
+        if (kuBit >= 0)
         {
-            throw new CertPathValidatorException(
-                "Certificate doesn't support '" + getKeyUsageName(kuBit) + "' KeyUsage");
-        }
+            if (!supportsKeyUsage(eeCert, kuBit))
+            {
+                throw new CertPathValidatorException(
+                    "Certificate doesn't support '" + getKeyUsageName(kuBit) + "' KeyUsage");
+            }
 
-        if (!algorithmConstraints.permits(getKeyUsagePrimitives(kuBit), eeCert.getPublicKey()))
-        {
-            throw new CertPathValidatorException(
-                "Public key not permitted for '" + getKeyUsageName(kuBit) + "' KeyUsage");
+            if (!algorithmConstraints.permits(getKeyUsagePrimitives(kuBit), eeCert.getPublicKey()))
+            {
+                throw new CertPathValidatorException(
+                    "Public key not permitted for '" + getKeyUsageName(kuBit) + "' KeyUsage");
+            }
         }
     }
 
@@ -284,7 +293,7 @@ class ProvAlgorithmChecker
         {
             sigAlgParams.init(encoded);
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             throw new CertPathValidatorException(e);
         }
@@ -292,14 +301,11 @@ class ProvAlgorithmChecker
         return sigAlgParams;
     }
 
-    private static boolean supportsExtendedKeyUsage(X509Certificate cert, KeyPurposeId ekuOID)
+    static boolean supportsExtendedKeyUsage(X509Certificate cert, KeyPurposeId ekuOID)
     {
         try
         {
-            List<String> eku = cert.getExtendedKeyUsage();
-
-            return null == eku || eku.contains(ekuOID.getId())
-                || eku.contains(KeyPurposeId.anyExtendedKeyUsage.getId());
+            return supportsExtendedKeyUsage(cert.getExtendedKeyUsage(), ekuOID);
         }
         catch (CertificateParsingException e)
         {
@@ -307,10 +313,20 @@ class ProvAlgorithmChecker
         }
     }
 
-    private static boolean supportsKeyUsage(X509Certificate cert, int kuBit)
+    static boolean supportsExtendedKeyUsage(List<String> eku, KeyPurposeId ekuOID)
     {
-        boolean[] ku = cert.getKeyUsage();
+        return null == eku
+            || eku.contains(ekuOID.getId())
+            || eku.contains(KeyPurposeId.anyExtendedKeyUsage.getId());
+    }
 
+    static boolean supportsKeyUsage(X509Certificate cert, int kuBit)
+    {
+        return supportsKeyUsage(cert.getKeyUsage(), kuBit);
+    }
+
+    static boolean supportsKeyUsage(boolean[] ku, int kuBit)
+    {
         return null == ku || (ku.length > kuBit && ku[kuBit]);
     }
 }

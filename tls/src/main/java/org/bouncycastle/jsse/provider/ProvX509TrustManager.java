@@ -36,9 +36,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSNIHostName;
-import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCSSLParameters;
-import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
@@ -300,6 +298,26 @@ class ProvX509TrustManager
         }
     }
 
+    static void checkEndpointID(String hostname, X509Certificate certificate, String endpointIDAlg)
+        throws CertificateException
+    {
+        // Strip "[]" off IPv6 addresses
+        hostname = JsseUtils.stripSquareBrackets(hostname);
+
+        if (endpointIDAlg.equalsIgnoreCase("HTTPS"))
+        {
+            HostnameUtil.checkHostname(hostname, certificate, true);
+        }
+        else if (endpointIDAlg.equalsIgnoreCase("LDAP") || endpointIDAlg.equalsIgnoreCase("LDAPS"))
+        {
+            HostnameUtil.checkHostname(hostname, certificate, false);
+        }
+        else
+        {
+            throw new CertificateException("Unknown endpoint ID algorithm: " + endpointIDAlg);
+        }
+    }
+
     static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, TransportData transportData,
         boolean checkServerTrusted) throws CertificateException
     {
@@ -321,9 +339,9 @@ class ProvX509TrustManager
         }
     }
 
-    static KeyPurposeId getRequiredExtendedKeyUsage(boolean checkServerTrusted)
+    static KeyPurposeId getRequiredExtendedKeyUsage(boolean forServer)
     {
-        return checkServerTrusted
+        return forServer
             ?   KeyPurposeId.id_kp_serverAuth
             :   KeyPurposeId.id_kp_clientAuth;
     }
@@ -351,7 +369,7 @@ class ProvX509TrustManager
         String peerHost = sslSession.getPeerHost();
         if (checkServerTrusted)
         {
-            BCSNIHostName sniHostName = getSNIHostName(sslSession);
+            BCSNIHostName sniHostName = JsseUtils.getSNIHostName(sslSession.getRequestedServerNames());
             if (null != sniHostName)
             {
                 String hostname = sniHostName.getAsciiName();
@@ -372,54 +390,6 @@ class ProvX509TrustManager
         }
 
         checkEndpointID(peerHost, certificate, endpointIDAlg);
-    }
-
-    private static void checkEndpointID(String hostname, X509Certificate certificate, String endpointIDAlg)
-        throws CertificateException
-    {
-        // Strip "[]" off IPv6 addresses
-        hostname = JsseUtils.stripSquareBrackets(hostname);
-
-        if (endpointIDAlg.equalsIgnoreCase("HTTPS"))
-        {
-            HostnameUtil.checkHostname(hostname, certificate, true);
-        }
-        else if (endpointIDAlg.equalsIgnoreCase("LDAP") || endpointIDAlg.equalsIgnoreCase("LDAPS"))
-        {
-            HostnameUtil.checkHostname(hostname, certificate, false);
-        }
-        else
-        {
-            throw new CertificateException("Unknown endpoint ID algorithm: " + endpointIDAlg);
-        }
-    }
-
-    private static BCSNIHostName getSNIHostName(BCExtendedSSLSession sslSession)
-    {
-        List<BCSNIServerName> serverNames = sslSession.getRequestedServerNames();
-        if (null != serverNames)
-        {
-            for (BCSNIServerName serverName : serverNames)
-            {
-                if (null != serverName && BCStandardConstants.SNI_HOST_NAME == serverName.getType())
-                {
-                    if (serverName instanceof BCSNIHostName)
-                    {
-                        return (BCSNIHostName)serverName;
-                    }
-
-                    try
-                    {
-                        return new BCSNIHostName(serverName.getEncoded());
-                    }
-                    catch (RuntimeException e)
-                    {
-                        return null;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     private static X509Certificate getTrustedCert(TrustAnchor trustAnchor) throws CertificateException

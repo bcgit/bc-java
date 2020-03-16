@@ -10,6 +10,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -106,7 +107,8 @@ class ProvKeyManagerFactorySpi
     {
         // NOTE: When key store is null, we do not try to load defaults
 
-        this.x509KeyManager = new ProvX509KeyManagerSimple(helper, ks, ksPassword);
+        List<KeyStore.Builder> builders = getKeyStoreBuilders(ks, ksPassword);
+        this.x509KeyManager = new ProvX509KeyManager(helper, builders);
     }
 
     @Override
@@ -132,6 +134,26 @@ class ProvKeyManagerFactorySpi
         return (null == ksProv || ksProv.length() < 1)
             ?   KeyStore.getInstance(ksType)
             :   KeyStore.getInstance(ksType, ksProv);
+    }
+
+    private static List<KeyStore.Builder> getKeyStoreBuilders(KeyStore ks, char[] ksPassword)
+        throws KeyStoreException
+    {
+        if (null == ks)
+        {
+            return Collections.emptyList();
+        }
+
+        try
+        {
+            KeyStore.Builder builder = KeyStore.Builder.newInstance(ks, new KeyStore.PasswordProtection(ksPassword));
+
+            return Collections.singletonList(builder);
+        }
+        catch (RuntimeException e)
+        {
+            throw new KeyStoreException("initialization failed", e);
+        }
     }
 
     private static String getKeyStoreType(String defaultType)
