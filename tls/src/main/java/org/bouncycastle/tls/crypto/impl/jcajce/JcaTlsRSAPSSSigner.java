@@ -1,15 +1,12 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
-import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsSigner;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 
@@ -61,22 +58,9 @@ public class JcaTlsRSAPSSSigner
         String digestName = crypto.getDigestName(hash);
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
-        try
-        {
-            AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, crypto.getHelper());
+        // NOTE: We explicitly set them even though they should be the defaults, because providers vary
+        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, crypto.getHelper());
 
-            Signature signer = crypto.getHelper().createSignature(sigName);
-
-            // NOTE: We explicitly set them even though they should be the defaults, because providers vary
-            signer.setParameter(pssSpec);
-
-            signer.initSign(privateKey, crypto.getSecureRandom());
-
-            return new JcaTlsStreamSigner(signer);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new TlsCryptoException(sigName + " signature failed", e);
-        }
+        return crypto.createStreamSigner(sigName, pssSpec, privateKey, true);
     }
 }

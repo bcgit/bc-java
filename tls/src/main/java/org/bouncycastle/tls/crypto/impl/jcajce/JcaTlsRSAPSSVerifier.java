@@ -1,16 +1,13 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.PublicKey;
-import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
@@ -63,22 +60,9 @@ public class JcaTlsRSAPSSVerifier
         String digestName = crypto.getDigestName(hash);
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
-        try
-        {
-            AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, crypto.getHelper());
+        // NOTE: We explicitly set them even though they should be the defaults, because providers vary
+        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, crypto.getHelper());
 
-            Signature verifier = crypto.getHelper().createSignature(sigName);
-
-            // NOTE: We explicitly set them even though they should be the defaults, because providers vary
-            verifier.setParameter(pssSpec);
-
-            verifier.initVerify(publicKey);
-
-            return new JcaTlsStreamVerifier(verifier, signature.getSignature());
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new TlsCryptoException(sigName + " verification failed", e);
-        }
+        return crypto.createStreamVerifier(sigName, pssSpec, signature.getSignature(), publicKey);
     }
 }
