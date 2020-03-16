@@ -109,6 +109,16 @@ public final class XMSSParameters
     }
 
     /**
+     * Return the tree digest OID.
+     *
+     * @return OID for digest used to build the tree.
+     */
+    public ASN1ObjectIdentifier getTreeDigestOID()
+    {
+        return treeDigestOID;
+    }
+
+    /**
      * Getter height.
      *
      * @return XMSS tree height.
@@ -123,10 +133,7 @@ public final class XMSSParameters
         return treeDigest;
     }
 
-    ASN1ObjectIdentifier getTreeDigestOID()
-    {
-        return treeDigestOID;
-    }
+
 
     int getLen()
     {

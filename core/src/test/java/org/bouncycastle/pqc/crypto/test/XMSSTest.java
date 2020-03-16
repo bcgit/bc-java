@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.util.List;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.pqc.crypto.xmss.XMSS;
@@ -42,6 +43,8 @@ public class XMSSTest
         };
         byte[] signature = xmss.sign(new byte[1024]);
         XMSSSignature sig = new XMSSSignature.Builder(xmssParams).withSignature(signature).build();
+
+        assertEquals(NISTObjectIdentifiers.id_sha256, xmssParams.getTreeDigestOID());
 
         List<XMSSNode> authPath = sig.getAuthPath();
         for (int i = 0; i < authPath.size(); i++)
