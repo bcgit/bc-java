@@ -17,8 +17,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -48,6 +50,65 @@ class ProvX509KeyManager
                 return size() > 16;
             }
         });
+
+    private static final Map<String, PublicKeyFilter> FILTERS_CLIENT = createFiltersClient();
+    private static final Map<String, PublicKeyFilter> FILTERS_SERVER = createFiltersServer();
+
+    private static void addFilter(Map<String, PublicKeyFilter> filters, String keyType)
+    {
+        String algorithm = keyType;
+
+        addFilter(filters, algorithm, null, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, keyType);
+    }
+
+    private static void addFilter(Map<String, PublicKeyFilter> filters, Class<? extends PublicKey> clazz, String... keyTypes)
+    {
+        addFilter(filters, null, clazz, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, keyTypes);
+    }
+
+    private static void addFilter(Map<String, PublicKeyFilter> filters, String algorithm,
+        Class<? extends PublicKey> clazz, int keyUsageBit, String... keyTypes)
+    {
+        PublicKeyFilter filter = new PublicKeyFilter(algorithm, clazz, keyUsageBit);
+
+        for (String keyType : keyTypes)
+        {
+            if (null != filters.put(keyType.toUpperCase(Locale.ENGLISH), filter))
+            {
+                throw new IllegalStateException("Duplicate names in filters");
+            }
+        }
+    }
+
+    private static Map<String, PublicKeyFilter> createFiltersClient()
+    {
+        Map<String, PublicKeyFilter> filters = new HashMap<String, PublicKeyFilter>();
+
+        addFilter(filters, "Ed25519");
+        addFilter(filters, "Ed448");
+
+        addFilter(filters, DSAPublicKey.class, "DSA");
+        addFilter(filters, ECPublicKey.class, "EC");
+        addFilter(filters, RSAPublicKey.class, "RSA");
+
+        return Collections.unmodifiableMap(filters);
+    }
+
+    private static Map<String, PublicKeyFilter> createFiltersServer()
+    {
+        Map<String, PublicKeyFilter> filters = new HashMap<String, PublicKeyFilter>();
+
+        addFilter(filters, "Ed25519");
+        addFilter(filters, "Ed448");
+
+        addFilter(filters, DSAPublicKey.class, "DHE_DSS", "SRP_DSS");
+        addFilter(filters, ECPublicKey.class, "ECDHE_ECDSA");
+        addFilter(filters, RSAPublicKey.class, "DHE_RSA", "ECDHE_RSA", "SRP_RSA");
+
+        addFilter(filters, null, RSAPublicKey.class, ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT, "RSA");
+
+        return Collections.unmodifiableMap(filters);
+    }
 
     private final AtomicLong versions = new AtomicLong();
 
@@ -407,7 +468,7 @@ class ProvX509KeyManager
             {
                 if (null != keyType)
                 {
-                    result.add(keyType);
+                    result.add(keyType.toUpperCase(Locale.ENGLISH));
                 }
             }
             return result;
@@ -457,74 +518,17 @@ class ProvX509KeyManager
     private static boolean isSuitableEECert(X509Certificate eeCert, List<String> keyTypes,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer)
     {
+        Map<String, PublicKeyFilter> filters = forServer ? FILTERS_SERVER : FILTERS_CLIENT;
+
+        PublicKey publicKey = eeCert.getPublicKey();
+        boolean[] keyUsage = eeCert.getKeyUsage();
+
         for (String keyType : keyTypes)
         {
-            if (isSuitableEECert(eeCert, keyType, algorithmConstraints, forServer))
+            PublicKeyFilter filter = filters.get(keyType);
+            if (null != filter && filter.accepts(publicKey, keyUsage, algorithmConstraints))
             {
                 return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static boolean isSuitableEECert(X509Certificate eeCert, String keyType,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer)
-    {
-        PublicKey publicKey = eeCert.getPublicKey();
-        boolean[] keyUsage = eeCert.getKeyUsage(); 
-
-        if (forServer && keyType.equalsIgnoreCase("RSA"))
-        {
-            return publicKey instanceof RSAPublicKey
-                && ProvAlgorithmChecker.supportsKeyUsage(keyUsage, ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT)
-                && algorithmConstraints.permits(JsseUtils.KEY_ENCAPSULATION_CRYPTO_PRIMITIVES_BC,  publicKey);
-        }
-
-        if (ProvAlgorithmChecker.supportsKeyUsage(keyUsage, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE)
-            && algorithmConstraints.permits(JsseUtils.SIGNATURE_CRYPTO_PRIMITIVES_BC, publicKey))
-        {
-            if ("Ed25519".equalsIgnoreCase(keyType))
-            {
-                return "Ed25519".equalsIgnoreCase(publicKey.getAlgorithm());
-            }
-            if ("Ed448".equalsIgnoreCase(keyType))
-            {
-                return "Ed448".equalsIgnoreCase(publicKey.getAlgorithm());
-            }
-
-            if (forServer)
-            {
-                if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
-                {
-                    return publicKey instanceof ECPublicKey;
-                }
-                if (keyType.equalsIgnoreCase("ECDHE_RSA")
-                    ||  keyType.equalsIgnoreCase("DHE_RSA")
-                    ||  keyType.equalsIgnoreCase("SRP_RSA"))
-                {
-                    return publicKey instanceof RSAPublicKey;
-                }
-                if (keyType.equalsIgnoreCase("DHE_DSS")
-                    || keyType.equalsIgnoreCase("SRP_DSS"))
-                {
-                    return publicKey instanceof DSAPublicKey;
-                }
-            }
-            else 
-            {
-                if (keyType.equalsIgnoreCase("EC"))
-                {
-                    return publicKey instanceof ECPublicKey;
-                }
-                if (keyType.equalsIgnoreCase("RSA"))
-                {
-                    return publicKey instanceof RSAPublicKey;
-                }
-                if (keyType.equalsIgnoreCase("DSA"))
-                {
-                    return publicKey instanceof DSAPublicKey;
-                }
             }
         }
 
@@ -562,6 +566,32 @@ class ProvX509KeyManager
         public int compareTo(Match other)
         {
             return this.quality.compareTo(other.quality);
+        }
+    }
+
+    private static final class PublicKeyFilter
+    {
+        final String algorithm;
+        final Class<? extends PublicKey> clazz;
+        final int keyUsageBit;
+
+        PublicKeyFilter(String algorithm, Class<? extends PublicKey> clazz, int keyUsageBit)
+        {
+            this.algorithm = algorithm;
+            this.clazz = clazz;
+            this.keyUsageBit = keyUsageBit;
+        }
+
+        boolean accepts(PublicKey publicKey, boolean[] keyUsage, BCAlgorithmConstraints algorithmConstraints)
+        {
+            return appliesTo(publicKey)
+                && ProvAlgorithmChecker.permitsKeyUsage(publicKey, keyUsage, keyUsageBit, algorithmConstraints);
+        }
+
+        private boolean appliesTo(PublicKey publicKey)
+        {
+            return (null != algorithm && algorithm.equalsIgnoreCase(publicKey.getAlgorithm()))
+                || (null != clazz && clazz.isInstance(publicKey));
         }
     }
 }
