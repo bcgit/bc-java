@@ -1,7 +1,5 @@
 package org.bouncycastle.jsse.provider.test;
 
-import static org.junit.Assert.assertNotEquals;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -20,10 +18,9 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-
-import junit.framework.TestCase;
 
 public class EdDSACredentialsTest
     extends TestCase
@@ -87,7 +84,7 @@ public class EdDSACredentialsTest
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
-                assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                assertFalse("SSL_NULL_WITH_NULL_NULL".equals(session.getCipherSuite()));
                 assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
                 assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
 
@@ -155,7 +152,7 @@ public class EdDSACredentialsTest
 
                 SSLSession session = sslSock.getSession();
                 assertNotNull(session);
-                assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                assertFalse("SSL_NULL_WITH_NULL_NULL".equals(session.getCipherSuite()));
                 assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
                 assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
 
