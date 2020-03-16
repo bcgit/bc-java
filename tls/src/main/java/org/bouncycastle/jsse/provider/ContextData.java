@@ -148,10 +148,11 @@ final class ContextData
 
         addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_dsa_sha1, "dsa_sha1", "SHA1withDSA",
             "DSA");
-        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_dsa_sha224, "dsa_sha224",
-            "SHA224withDSA", "DSA");
-        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_dsa_sha256, "dsa_sha256",
-            "SHA256withDSA", "DSA");
+        // TODO[jsse] JcaTlsCrypto currently uses raw DSA signing, but SUN provider only supports 20 byte hash for that
+//        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_dsa_sha224, "dsa_sha224",
+//            "SHA224withDSA", "DSA");
+//        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_dsa_sha256, "dsa_sha256",
+//            "SHA256withDSA", "DSA");
 
         addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_ecdsa_sha224, "ecdsa_sha224",
             "SHA224withECDSA", "EC");
