@@ -81,6 +81,7 @@ class ImportSSLSession_7
         return sslSession.getPacketBufferSize();
     }
 
+    @SuppressWarnings("deprecation")
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
         return sslSession.getPeerCertificateChain();

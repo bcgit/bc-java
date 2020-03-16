@@ -1,7 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +30,7 @@ import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
+import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
@@ -96,7 +96,7 @@ class ProvTlsServer
     }
 
     @Override
-    protected Vector getProtocolNames()
+    protected Vector<ProtocolName> getProtocolNames()
     {
         return JsseUtils.getProtocolNames(sslParameters.getApplicationProtocols());
     }
@@ -189,7 +189,10 @@ class ProvTlsServer
             return super.selectProtocolName();
         }
 
-        List<String> protocols = JsseUtils.getProtocolNames(clientProtocolNames);
+        @SuppressWarnings("unchecked")
+        Vector<ProtocolName> applicationProtocols = clientProtocolNames;
+
+        List<String> protocols = JsseUtils.getProtocolNames(applicationProtocols);
         String protocol = manager.selectApplicationProtocol(Collections.unmodifiableList(protocols));
         if (null == protocol)
         {
@@ -262,7 +265,7 @@ class ProvTlsServer
             serverSigAlgs = contextData.getSignatureAndHashAlgorithms(signatureSchemes);
         }
 
-        Vector certificateAuthorities = null;
+        Vector<X500Name> certificateAuthorities = null;
         {
             Set<X500Principal> caSubjects = new HashSet<X500Principal>();
 
@@ -274,10 +277,10 @@ class ProvTlsServer
 
             if (!caSubjects.isEmpty())
             {
-                certificateAuthorities = new Vector(caSubjects.size());
+                certificateAuthorities = new Vector<X500Name>(caSubjects.size());
                 for (X500Principal caSubject : caSubjects)
                 {
-                    certificateAuthorities.addElement(X500Name.getInstance(caSubject.getEncoded()));
+                    certificateAuthorities.add(X500Name.getInstance(caSubject.getEncoded()));
                 }
             }
         }
@@ -358,7 +361,7 @@ class ProvTlsServer
     }
 
     @Override
-    public Hashtable getServerExtensions() throws IOException
+    public Hashtable<Integer, byte[]> getServerExtensions() throws IOException
     {
         super.getServerExtensions();
 
@@ -371,7 +374,10 @@ class ProvTlsServer
             TlsExtensionsUtils.addServerNameExtensionServer(checkServerExtensions());
         }
 
-        return serverExtensions;
+        @SuppressWarnings("unchecked")
+        Hashtable<Integer, byte[]> result = serverExtensions;
+
+        return result;
     }
 
     @Override
@@ -544,7 +550,7 @@ class ProvTlsServer
     }
 
     @Override
-    public void processClientExtensions(Hashtable clientExtensions) throws IOException
+    public void processClientExtensions(@SuppressWarnings("rawtypes") Hashtable clientExtensions) throws IOException
     {
         super.processClientExtensions(clientExtensions);
 
@@ -552,7 +558,9 @@ class ProvTlsServer
          * TODO[jsse] RFC 6066 A server that implements this extension MUST NOT accept the
          * request to resume the session if the server_name extension contains a different name.
          */
-        Vector serverNameList = context.getSecurityParametersHandshake().getClientServerNames();
+
+        @SuppressWarnings("unchecked")
+        Vector<ServerName> serverNameList = context.getSecurityParametersHandshake().getClientServerNames();
         if (null != serverNameList)
         {
             Collection<BCSNIMatcher> sniMatchers = sslParameters.getSNIMatchers();
@@ -609,16 +617,13 @@ class ProvTlsServer
         case KeyExchangeAlgorithm.NULL:
         case KeyExchangeAlgorithm.RSA:
         {
-            // TODO[jsse] Is there some extension where the client can specify these (SNI maybe)?
-            Principal[] issuers = null;
-
             if (KeyExchangeAlgorithm.RSA == keyExchangeAlgorithm
                 || !TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
             {
-                return selectServerCredentialsLegacy(keyExchangeAlgorithm, issuers);
+                return selectServerCredentialsLegacy(keyExchangeAlgorithm);
             }
 
-            return selectServerCredentials(keyExchangeAlgorithm, issuers);
+            return selectServerCredentials(keyExchangeAlgorithm);
         }
 
         default:
@@ -626,7 +631,7 @@ class ProvTlsServer
         }
     }
 
-    protected TlsCredentials selectServerCredentials(int keyExchangeAlgorithm, Principal[] issuers) throws IOException
+    protected TlsCredentials selectServerCredentials(int keyExchangeAlgorithm) throws IOException
     {
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
@@ -661,7 +666,7 @@ class ProvTlsServer
                 continue;
             }
 
-            ProvX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+            ProvX509Key x509Key = manager.chooseServerKey(keyType, null);
             if (null == x509Key
                 || !JsseUtils.isUsableKeyForServer(signatureAlgorithm, x509Key.getPrivateKey()))
             {
@@ -676,7 +681,7 @@ class ProvTlsServer
         return null;
     }
 
-    protected TlsCredentials selectServerCredentialsLegacy(int keyExchangeAlgorithm, Principal[] issuers) throws IOException
+    protected TlsCredentials selectServerCredentialsLegacy(int keyExchangeAlgorithm) throws IOException
     {
         String keyType = JsseUtils.getKeyTypeLegacyServer(keyExchangeAlgorithm);
         if (keyManagerMissCache.contains(keyType))
@@ -684,7 +689,7 @@ class ProvTlsServer
             return null;
         }
 
-        ProvX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+        ProvX509Key x509Key = manager.chooseServerKey(keyType, null);
         if (null == x509Key
             || !JsseUtils.isUsableKeyForServerLegacy(keyExchangeAlgorithm, x509Key.getPrivateKey()))
         {
