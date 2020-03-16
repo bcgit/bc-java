@@ -1,10 +1,12 @@
 package org.bouncycastle.jsse.provider;
 
 import java.util.List;
+import java.util.Vector;
 
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
+import org.bouncycastle.tls.ServerName;
 
 class ProvSSLSessionHandshake
     extends ProvSSLSessionBase
@@ -83,6 +85,9 @@ class ProvSSLSessionHandshake
     @Override
     public List<BCSNIServerName> getRequestedServerNames()
     {
-        return JsseUtils.convertSNIServerNames(securityParameters.getClientServerNames());
+        @SuppressWarnings("unchecked")
+        Vector<ServerName> clientServerNames = securityParameters.getClientServerNames();
+
+        return JsseUtils.convertSNIServerNames(clientServerNames);
     }
 }

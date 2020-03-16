@@ -87,7 +87,8 @@ abstract class SupportedGroups
         return result;
     }
 
-    static Vector getClientSupportedGroups(JcaTlsCrypto crypto, boolean isFips, Vector namedGroupRoles)
+    static Vector<Integer> getClientSupportedGroups(JcaTlsCrypto crypto, boolean isFips,
+        Vector<Integer> namedGroupRoles)
     {
         int[] namedGroups = provJdkTlsNamedGroups != null ? provJdkTlsNamedGroups : defaultClientNamedGroups;
 
@@ -95,7 +96,7 @@ abstract class SupportedGroups
         boolean roleECDH = namedGroupRoles.contains(NamedGroupRole.ecdh);
         boolean roleECDSA = namedGroupRoles.contains(NamedGroupRole.ecdsa);
 
-        Vector result = new Vector();
+        Vector<Integer> result = new Vector<Integer>();
         for (int namedGroup : namedGroups)
         {
             if ((roleDH && NamedGroup.refersToASpecificFiniteField(namedGroup))
@@ -106,7 +107,7 @@ abstract class SupportedGroups
                 {
                     if (crypto.hasNamedGroup(namedGroup))
                     {
-                        result.addElement(namedGroup);
+                        result.add(namedGroup);
                     }
                 }
             }
