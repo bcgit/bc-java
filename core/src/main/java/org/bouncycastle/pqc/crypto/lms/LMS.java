@@ -6,8 +6,8 @@ import org.bouncycastle.crypto.Digest;
 
 class LMS
 {
-    private static final short D_LEAF = (short)0x8282;
-    private static final short D_INTR = (short)0x8383;
+    static final short D_LEAF = (short)0x8282;
+    static final short D_INTR = (short)0x8383;
 
     public static LMSPrivateKeyParameters generateKeys(LMSigParameters parameterSet, LMOtsParameters lmOtsParameters, int q, byte[] I, byte[] rootSeed)
         throws IllegalArgumentException
@@ -61,64 +61,16 @@ class LMS
         int r = (1 << h) + q;
         byte[][] path = new byte[h][];
 
-        Digest digest = DigestUtil.getDigest(privateKey.getSigParameters().getDigestOID());
         while (i < h)
         {
             int tmp = (r / (1 << i)) ^ 1;
-            path[i] = findT(tmp, privateKey, digest);
+
+            path[i] = privateKey.findT(tmp);
             i++;
         }
 
         return new LMSSignature(q, ots_signature, lmsParameter, path);
     }
-
-
-
-
-    public static byte[] findT(int r, LMSPrivateKeyParameters privateKey, Digest digest)
-    {
-        int h = privateKey.getSigParameters().getH();
-
-        int twoToh = 1 << h;
-
-        byte[] T;
-
-        // r is a base 1 index.
-
-
-        if (r >= (1 << h))
-        {
-            LmsUtils.byteArray(privateKey.getI(), digest);
-            LmsUtils.u32str(r, digest);
-            LmsUtils.u16str(D_LEAF, digest);
-
-            //
-            // These can be pre generated at the time of key generation and held within the private key.
-            // However it will cost memory to have them stick around.
-            //
-            byte[] K = LM_OTS.lms_ots_generatePublicKey(privateKey.getOtsParameters(), privateKey.getI(), (r - twoToh), privateKey.getMasterSecret());
-
-            LmsUtils.byteArray(K, digest);
-            T = new byte[digest.getDigestSize()];
-            digest.doFinal(T, 0);
-            return T;
-        }
-
-        byte[] t2r = findT(2 * r, privateKey, digest);
-        byte[] t2rPlus1 = findT((2 * r + 1), privateKey, digest);
-
-        LmsUtils.byteArray(privateKey.getI(), digest);
-        LmsUtils.u32str(r, digest);
-        LmsUtils.u16str(D_INTR, digest);
-        LmsUtils.byteArray(t2r, digest);
-        LmsUtils.byteArray(t2rPlus1, digest);
-        T = new byte[digest.getDigestSize()];
-        digest.doFinal(T, 0);
-
-        return T;
-
-    }
-
 
     public static boolean verifySignature(LMSPublicKeyParameters publicKey, LMSSignature S, byte[] message)
     {
@@ -126,7 +78,6 @@ class LMS
 
         return publicKey.matchesT1(Tc);
     }
-
 
     public static byte[] algorithm6a(LMSSignature S, byte[] I, int ots_typecode, byte[] message)
     {

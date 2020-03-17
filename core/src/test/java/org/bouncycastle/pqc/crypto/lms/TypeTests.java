@@ -46,7 +46,7 @@ public class TypeTests
         }
 
         {
-            Object o = new LMSPrivateKeyParameters(null, null, 0, null, 0, null);
+            Object o = new LMSPrivateKeyParameters(LMSigParameters.lms_sha256_n32_h5, null, 0, null, 0, null);
             assert (o == LMSPrivateKeyParameters.getInstance(o));
         }
 
