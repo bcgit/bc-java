@@ -50,6 +50,6 @@ public class JcaTlsEdDSAVerifier
             throw new IllegalStateException();
         }
 
-        return crypto.createStreamVerifier(algorithmName, signature.getSignature(), publicKey);
+        return crypto.createStreamVerifier(algorithmName, null, signature.getSignature(), publicKey);
     }
 }
