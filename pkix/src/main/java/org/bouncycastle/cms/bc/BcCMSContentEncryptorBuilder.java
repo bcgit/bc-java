@@ -3,52 +3,25 @@ package org.bouncycastle.cms.bc;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.CipherFactory;
+import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
-import org.bouncycastle.util.Integers;
+import org.bouncycastle.operator.SecretKeySizeProvider;
 
 public class BcCMSContentEncryptorBuilder
 {
-    private static Map keySizes = new HashMap();
-
-    static
-    {
-        keySizes.put(CMSAlgorithm.AES128_CBC, Integers.valueOf(128));
-        keySizes.put(CMSAlgorithm.AES192_CBC, Integers.valueOf(192));
-        keySizes.put(CMSAlgorithm.AES256_CBC, Integers.valueOf(256));
-
-        keySizes.put(CMSAlgorithm.AES128_GCM, Integers.valueOf(128));
-        keySizes.put(CMSAlgorithm.AES192_GCM, Integers.valueOf(192));
-        keySizes.put(CMSAlgorithm.AES256_GCM, Integers.valueOf(256));
-
-        keySizes.put(CMSAlgorithm.CAMELLIA128_CBC, Integers.valueOf(128));
-        keySizes.put(CMSAlgorithm.CAMELLIA192_CBC, Integers.valueOf(192));
-        keySizes.put(CMSAlgorithm.CAMELLIA256_CBC, Integers.valueOf(256));
-    }
-
-    private static int getKeySize(ASN1ObjectIdentifier oid)
-    {
-        Integer size = (Integer)keySizes.get(oid);
-
-        if (size != null)
-        {
-            return size.intValue();
-        }
-
-        return -1;
-    }
+    private static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
 
     private final ASN1ObjectIdentifier encryptionOID;
     private final int keySize;
@@ -58,13 +31,38 @@ public class BcCMSContentEncryptorBuilder
 
     public BcCMSContentEncryptorBuilder(ASN1ObjectIdentifier encryptionOID)
     {
-        this(encryptionOID, getKeySize(encryptionOID));
+        this(encryptionOID, KEY_SIZE_PROVIDER.getKeySize(encryptionOID));
     }
 
     public BcCMSContentEncryptorBuilder(ASN1ObjectIdentifier encryptionOID, int keySize)
     {
         this.encryptionOID = encryptionOID;
-        this.keySize = keySize;
+        int fixedSize = KEY_SIZE_PROVIDER.getKeySize(encryptionOID);
+
+        if (encryptionOID.equals(PKCSObjectIdentifiers.des_EDE3_CBC))
+        {
+            if (keySize != 168 && keySize != fixedSize)
+            {
+                throw new IllegalArgumentException("incorrect keySize for encryptionOID passed to builder.");
+            }
+            this.keySize = 168;
+        }
+        else if (encryptionOID.equals(OIWObjectIdentifiers.desCBC))
+        {
+            if (keySize != 56 && keySize != fixedSize)
+            {
+                throw new IllegalArgumentException("incorrect keySize for encryptionOID passed to builder.");
+            }
+            this.keySize = 56;
+        }
+        else
+        {
+            if (fixedSize > 0 && fixedSize != keySize)
+            {
+                throw new IllegalArgumentException("incorrect keySize for encryptionOID passed to builder.");
+            }
+            this.keySize = keySize;
+        }
     }
 
     public BcCMSContentEncryptorBuilder setSecureRandom(SecureRandom random)
@@ -99,7 +97,7 @@ public class BcCMSContentEncryptorBuilder
                 random = new SecureRandom();
             }
 
-            CipherKeyGenerator keyGen = helper.createKeyGenerator(encryptionOID, random);
+            CipherKeyGenerator keyGen = helper.createKeyGenerator(encryptionOID, keySize, random);
 
             encKey = new KeyParameter(keyGen.generateKey());
 
