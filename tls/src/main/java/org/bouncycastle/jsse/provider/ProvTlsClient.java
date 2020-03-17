@@ -19,6 +19,7 @@ import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
@@ -60,7 +61,7 @@ class ProvTlsClient
     }
 
     @Override
-    protected Vector getProtocolNames()
+    protected Vector<ProtocolName> getProtocolNames()
     {
         return JsseUtils.getProtocolNames(sslParameters.getApplicationProtocols());
     }
@@ -72,14 +73,17 @@ class ProvTlsClient
     }
 
     @Override
-    protected Vector getSupportedGroups(Vector namedGroupRoles)
+    protected Vector<Integer> getSupportedGroups(@SuppressWarnings("rawtypes") Vector namedGroupRolesRaw)
     {
+        @SuppressWarnings("unchecked")
+        Vector<Integer> namedGroupRoles = namedGroupRolesRaw;
+
         return SupportedGroups.getClientSupportedGroups(getCrypto(), manager.getContextData().getContext().isFips(),
             namedGroupRoles);
     }
 
     @Override
-    protected Vector getSNIServerNames()
+    protected Vector<ServerName> getSNIServerNames()
     {
         if (provEnableSNIExtension)
         {
@@ -108,10 +112,10 @@ class ProvTlsClient
             // NOTE: We follow SunJSSE behaviour and disable SNI if there are no server names to send
             if (null != sniServerNames && !sniServerNames.isEmpty())
             {
-                Vector serverNames = new Vector(sniServerNames.size());
+                Vector<ServerName> serverNames = new Vector<ServerName>(sniServerNames.size());
                 for (BCSNIServerName sniServerName : sniServerNames)
                 {
-                    serverNames.addElement(new ServerName((short)sniServerName.getType(), sniServerName.getEncoded()));
+                    serverNames.add(new ServerName((short)sniServerName.getType(), sniServerName.getEncoded()));
                 }
                 return serverNames;
             }
@@ -127,7 +131,7 @@ class ProvTlsClient
     }
 
     @Override
-    protected Vector getSupportedSignatureAlgorithms()
+    protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithms()
     {
         ContextData contextData = manager.getContextData();
 
@@ -142,7 +146,7 @@ class ProvTlsClient
     }
 
     @Override
-    protected Vector getSupportedSignatureAlgorithmsCert()
+    protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithmsCert()
     {
         return null;
     }

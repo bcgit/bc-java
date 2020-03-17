@@ -2,6 +2,7 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.PublicKey;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateParsingException;
@@ -232,7 +233,7 @@ class ProvAlgorithmChecker
         }
     }
 
-    private static String getExtendedKeyUsageName(KeyPurposeId ekuOID)
+    static String getExtendedKeyUsageName(KeyPurposeId ekuOID)
     {
         if (KeyPurposeId.id_kp_clientAuth.equals(ekuOID))
         {
@@ -245,7 +246,7 @@ class ProvAlgorithmChecker
         return "(" + ekuOID + ")";
     }
 
-    private static String getKeyUsageName(int kuBit)
+    static String getKeyUsageName(int kuBit)
     {
         switch (kuBit)
         {
@@ -260,7 +261,7 @@ class ProvAlgorithmChecker
         }
     }
 
-    private static Set<BCCryptoPrimitive> getKeyUsagePrimitives(int kuBit)
+    static Set<BCCryptoPrimitive> getKeyUsagePrimitives(int kuBit)
     {
         switch (kuBit)
         {
@@ -273,7 +274,7 @@ class ProvAlgorithmChecker
         }
     }
 
-    private static String getSigAlgName(X509Certificate cert)
+    static String getSigAlgName(X509Certificate cert)
     {
         String sigAlgName = sigAlgNames.get(cert.getSigAlgOID());
         if (null != sigAlgName)
@@ -284,7 +285,7 @@ class ProvAlgorithmChecker
         return cert.getSigAlgName();
     }
 
-    private static AlgorithmParameters getSigAlgParams(JcaJceHelper helper, X509Certificate cert)
+    static AlgorithmParameters getSigAlgParams(JcaJceHelper helper, X509Certificate cert)
         throws CertPathValidatorException
     {
         byte[] encoded = cert.getSigAlgParams();
@@ -306,7 +307,7 @@ class ProvAlgorithmChecker
         }
         catch (GeneralSecurityException e)
         {
-            // TODO[jsse] Consider requiring 'encoded' to be a DER NULL encoding here
+            // TODO[jsse] Consider requiring 'encoded' to be DER_NULL_ENCODING here
             return null;
         }
 
@@ -320,6 +321,12 @@ class ProvAlgorithmChecker
         }
 
         return sigAlgParams;
+    }
+
+    static boolean permitsKeyUsage(PublicKey publicKey, boolean[] ku, int kuBit, BCAlgorithmConstraints algorithmConstraints)
+    {
+        return supportsKeyUsage(ku, kuBit)
+            && algorithmConstraints.permits(getKeyUsagePrimitives(kuBit), publicKey);
     }
 
     static boolean supportsExtendedKeyUsage(X509Certificate cert, KeyPurposeId ekuOID)

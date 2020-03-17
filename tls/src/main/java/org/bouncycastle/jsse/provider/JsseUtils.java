@@ -295,35 +295,34 @@ abstract class JsseUtils
         return getAuthTypeServer(keyExchangeAlgorithm);
     }
 
-    public static Vector getProtocolNames(String[] applicationProtocols)
+    static Vector<ProtocolName> getProtocolNames(String[] applicationProtocols)
     {
         if (null == applicationProtocols || applicationProtocols.length < 1)
         {
             return null;
         }
 
-        Vector protocolNames = new Vector(applicationProtocols.length);
+        Vector<ProtocolName> result = new Vector<ProtocolName>(applicationProtocols.length);
         for (String applicationProtocol : applicationProtocols)
         {
-            protocolNames.addElement(ProtocolName.asUtf8Encoding(applicationProtocol));
+            result.add(ProtocolName.asUtf8Encoding(applicationProtocol));
         }
-        return protocolNames;
+        return result;
     }
 
-    public static List<String> getProtocolNames(Vector applicationProtocols)
+    static List<String> getProtocolNames(Vector<ProtocolName> applicationProtocols)
     {
         if (null == applicationProtocols || applicationProtocols.isEmpty())
         {
             return null;
         }
 
-        ArrayList<String> protocolNames = new ArrayList<String>(applicationProtocols.size());
-        for (int i = 0; i < applicationProtocols.size(); ++i)
+        ArrayList<String> result = new ArrayList<String>(applicationProtocols.size());
+        for (ProtocolName applicationProtocol : applicationProtocols)
         {
-            ProtocolName protocolName = (ProtocolName)applicationProtocols.elementAt(i);
-            protocolNames .add(protocolName.getUtf8Decoding());
+            result.add(applicationProtocol.getUtf8Decoding());
         }
-        return protocolNames;
+        return result;
     }
 
     static X509Certificate[] getX509CertificateChain(JcaTlsCrypto crypto, Certificate certificateMessage)
@@ -349,7 +348,7 @@ abstract class JsseUtils
         }
     }
 
-    public static X509Certificate[] getX509CertificateChain(java.security.cert.Certificate[] chain)
+    static X509Certificate[] getX509CertificateChain(java.security.cert.Certificate[] chain)
     {
         if (chain == null)
         {
@@ -530,7 +529,7 @@ abstract class JsseUtils
         }
     }
 
-    static List<BCSNIServerName> convertSNIServerNames(Vector serverNameList)
+    static List<BCSNIServerName> convertSNIServerNames(Vector<ServerName> serverNameList)
     {
         if (null == serverNameList || serverNameList.isEmpty())
         {
@@ -539,16 +538,17 @@ abstract class JsseUtils
 
         ArrayList<BCSNIServerName> result = new ArrayList<BCSNIServerName>(serverNameList.size());
 
-        Enumeration serverNames = serverNameList.elements();
+        Enumeration<ServerName> serverNames = serverNameList.elements();
         while (serverNames.hasMoreElements())
         {
-            result.add(convertSNIServerName((ServerName)serverNames.nextElement()));
+            result.add(convertSNIServerName(serverNames.nextElement()));
         }
 
         return Collections.unmodifiableList(result);
     }
 
-    static BCSNIServerName findMatchingSNIServerName(Vector serverNameList, Collection<BCSNIMatcher> sniMatchers)
+    static BCSNIServerName findMatchingSNIServerName(Vector<ServerName> serverNameList,
+        Collection<BCSNIMatcher> sniMatchers)
     {
         if (!serverNameList.isEmpty())
         {

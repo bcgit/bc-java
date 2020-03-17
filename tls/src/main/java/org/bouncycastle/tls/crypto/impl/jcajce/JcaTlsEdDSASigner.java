@@ -47,6 +47,6 @@ public abstract class JcaTlsEdDSASigner
             throw new IllegalStateException();
         }
 
-        return crypto.createStreamSigner(algorithmName, privateKey, false);
+        return crypto.createStreamSigner(algorithmName, null, privateKey, false);
     }
 }
