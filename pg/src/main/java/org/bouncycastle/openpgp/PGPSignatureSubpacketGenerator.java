@@ -10,6 +10,8 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.EmbeddedSignature;
 import org.bouncycastle.bcpg.sig.Exportable;
 import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -56,9 +58,9 @@ public class PGPSignatureSubpacketGenerator
      * Add a TrustSignature packet to the signature. The values for depth and trust are
      * largely installation dependent but there are some guidelines in RFC 4880 -
      * 5.2.3.13.
-     * 
-     * @param isCritical true if the packet is critical.
-     * @param depth depth level.
+     *
+     * @param isCritical  true if the packet is critical.
+     * @param depth       depth level.
      * @param trustAmount trust amount.
      */
     public void setTrust(boolean isCritical, int depth, int trustAmount)
@@ -69,7 +71,7 @@ public class PGPSignatureSubpacketGenerator
     /**
      * Set the number of seconds a key is valid for after the time of its creation. A
      * value of zero means the key never expires.
-     * 
+     *
      * @param isCritical true if should be treated as critical, false otherwise.
      * @param seconds
      */
@@ -81,7 +83,7 @@ public class PGPSignatureSubpacketGenerator
     /**
      * Set the number of seconds a signature is valid for after the time of its creation.
      * A value of zero means the signature never expires.
-     * 
+     *
      * @param isCritical true if should be treated as critical, false otherwise.
      * @param seconds
      */
@@ -170,7 +172,7 @@ public class PGPSignatureSubpacketGenerator
     }
 
     public void setNotationData(boolean isCritical, boolean isHumanReadable, String notationName,
-        String notationValue)
+                                String notationValue)
     {
         list.add(new NotationData(isCritical, isHumanReadable, notationName, notationValue));
     }
@@ -206,6 +208,39 @@ public class PGPSignatureSubpacketGenerator
     public void setSignatureTarget(boolean isCritical, int publicKeyAlgorithm, int hashAlgorithm, byte[] hashData)
     {
         list.add(new SignatureTarget(isCritical, publicKeyAlgorithm, hashAlgorithm, hashData));
+    }
+
+    /**
+     * Sets the signature issuer fingerprint for the signing key.
+     *
+     * @param isCritical true if critical, false otherwise.
+     * @param secretKey the secret key used to generate the associated signature.
+     */
+    public void setIssuerFingerprint(boolean isCritical, PGPSecretKey secretKey)
+    {
+        this.setIssuerFingerprint(isCritical, secretKey.getPublicKey());
+    }
+
+    /**
+     * Sets the signature issuer fingerprint for the signing key.
+     *
+     * @param isCritical true if critical, false otherwise.
+     * @param publicKey the public key needed to verify the associated signature.
+     */
+    public void setIssuerFingerprint(boolean isCritical, PGPPublicKey publicKey)
+    {
+        list.add(new IssuerFingerprint(isCritical, publicKey.getVersion(), publicKey.getFingerprint()));
+    }
+
+    /**
+     * Sets the intended recipient fingerprint for an encrypted payload the signature is associated with.
+     * 
+     * @param isCritical true if critical, false otherwise.
+     * @param publicKey the public key the encrypted payload was encrypted against.
+     */
+    public void setIntendedRecipientFingerprint(boolean isCritical, PGPPublicKey publicKey)
+    {
+        list.add(new IntendedRecipientFingerprint(isCritical, publicKey.getVersion(), publicKey.getFingerprint()));
     }
 
     public PGPSignatureSubpacketVector generate()
