@@ -25,6 +25,7 @@ public class JceAEADCipherImpl
 {
     private static final int BUF_SIZE = 32 * 1024;
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static boolean checkForAEAD()
     {
         return (Boolean)AccessController.doPrivileged(new PrivilegedAction()
