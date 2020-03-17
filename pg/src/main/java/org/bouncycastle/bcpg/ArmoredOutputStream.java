@@ -150,14 +150,15 @@ public class ArmoredOutputStream
     }
 
     /**
-     * Set an additional header entry. A null value will clear the entry for name.
+     * Set an additional header entry. Any current value(s) under the same name will be
+     * replaced by the new one. A null value will clear the entry for name.
      *
      * @param name the name of the header entry.
      * @param value the value of the header entry.
      */
     public void setHeader(
-        String  name,
-        String  value)
+        String name,
+        String value)
     {
         if (value == null)
         {
@@ -180,6 +181,13 @@ public class ArmoredOutputStream
     }
 
 
+    /**
+     * Set an additional header entry. The current value(s) will continue to exist together
+     * with the new one. Adding a null value has no effect.
+     *
+     * @param name the name of the header entry.
+     * @param value the value of the header entry.
+     */
     public void addHeader(
         String name,
         String value)
