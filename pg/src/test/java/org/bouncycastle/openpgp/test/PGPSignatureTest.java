@@ -17,6 +17,8 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.SignatureTarget;
@@ -604,6 +606,10 @@ public class PGPSignatureTest
 
         hashedGen.setSignatureCreationTime(false, new Date(0L));
 
+        hashedGen.setIssuerFingerprint(false, secretDSAKey);
+
+        hashedGen.setIntendedRecipientFingerprint(false, secretKey.getPublicKey());
+
         sGen.setHashedSubpackets(hashedGen.generate());
 
         sGen.setUnhashedSubpackets(null);
@@ -619,7 +625,7 @@ public class PGPSignatureTest
 
         hashedPcks = sig.getHashedSubPackets();
 
-        if (hashedPcks.size() != 1)
+        if (hashedPcks.size() != 3)
         {
             fail("found wrong number of hashed packets in override test");
         }
@@ -633,6 +639,24 @@ public class PGPSignatureTest
         {
             fail("creation of overriden date failed.");
         }
+
+        if (!hashedPcks.hasSubpacket(SignatureSubpacketTags.ISSUER_FINGERPRINT))
+        {
+            fail("hasSubpacket test for issuer fingerprint");
+        }
+
+        if (!hashedPcks.hasSubpacket(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT))
+        {
+            fail("hasSubpacket test for intended fingerprint");
+        }
+
+        IssuerFingerprint isFig = hashedPcks.getIssuerFingerprint();
+
+        isTrue("mismatch on issuer fingerprint", Arrays.areEqual(secretDSAKey.getPublicKey().getFingerprint(), isFig.getFingerprint()));
+
+        IntendedRecipientFingerprint intFig = hashedPcks.getIntendedRecipientFingerprint();
+
+        isTrue("mismatch on intended rec. fingerprint", Arrays.areEqual(secretKey.getPublicKey().getFingerprint(), intFig.getFingerprint()));
 
         prefAlgs = hashedPcks.getPreferredCompressionAlgorithms();
         preferredAlgorithmCheck("compression", NO_PREFERENCES, prefAlgs);
