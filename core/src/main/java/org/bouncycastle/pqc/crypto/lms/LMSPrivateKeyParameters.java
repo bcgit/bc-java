@@ -4,9 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.WeakHashMap;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.io.Streams;
 
 public class LMSPrivateKeyParameters
@@ -25,18 +28,22 @@ public class LMSPrivateKeyParameters
     // They also do not need to be persisted.
     //
     private LMSPublicKeyParameters publicKey;
-    private byte[] T1;
+    private int maxCacheR;
+    private WeakHashMap<Integer, byte[]> tCache;
+    private Digest tDigest;
 
     public LMSPrivateKeyParameters(LMSigParameters lmsParameter, LMOtsParameters otsParameters, int q, byte[] I, int maxQ, byte[] masterSecret)
     {
         super(true);
-
         this.parameters = lmsParameter;
         this.otsParameters = otsParameters;
         this.q = q;
         this.I = Arrays.clone(I);
         this.maxQ = maxQ;
         this.masterSecret = Arrays.clone(masterSecret);
+        this.maxCacheR = 1 << (parameters.getH() - 1);
+        this.tCache = new WeakHashMap<Integer, byte[]>();
+        this.tDigest = DigestUtil.getDigest(lmsParameter.getDigestOID());
     }
 
     public static LMSPrivateKeyParameters getInstance(Object src)
@@ -212,13 +219,76 @@ public class LMSPrivateKeyParameters
         {
             if (publicKey == null)
             {
-
-                T1 = LMS.appendixC(this);
+                byte[] T1 = LMS.appendixC(this);
 
                 publicKey = new LMSPublicKeyParameters(parameters, otsParameters, T1, I);
             }
             return publicKey;
         }
+    }
+
+    byte[] findT(int r)
+    {
+        synchronized (this)
+        {
+            if (r <= maxCacheR)
+            {
+                byte[] t = tCache.get(Integers.valueOf(r));
+
+                if (t != null)
+                {
+                    return t;
+                }
+
+                t = calcT(r);
+                tCache.put(Integers.valueOf(r), t);
+
+                return t;
+            }
+
+            return calcT(r);
+        }
+    }
+
+    private byte[] calcT(int r)
+    {
+        int h = this.getSigParameters().getH();
+
+        int twoToh = 1 << h;
+
+        byte[] T;
+
+        // r is a base 1 index.
+
+        if (r >= twoToh)
+        {
+            LmsUtils.byteArray(this.getI(), tDigest);
+            LmsUtils.u32str(r, tDigest);
+            LmsUtils.u16str(LMS.D_LEAF, tDigest);
+            //
+            // These can be pre generated at the time of key generation and held within the private key.
+            // However it will cost memory to have them stick around.
+            //
+            byte[] K = LM_OTS.lms_ots_generatePublicKey(this.getOtsParameters(), this.getI(), (r - twoToh), this.getMasterSecret());
+
+            LmsUtils.byteArray(K, tDigest);
+            T = new byte[tDigest.getDigestSize()];
+            tDigest.doFinal(T, 0);
+            return T;
+        }
+
+        byte[] t2r = this.findT(2 * r);
+        byte[] t2rPlus1 = this.findT((2 * r + 1));
+
+        LmsUtils.byteArray(this.getI(), tDigest);
+        LmsUtils.u32str(r, tDigest);
+        LmsUtils.u16str(LMS.D_INTR, tDigest);
+        LmsUtils.byteArray(t2r, tDigest);
+        LmsUtils.byteArray(t2rPlus1, tDigest);
+        T = new byte[tDigest.getDigestSize()];
+        tDigest.doFinal(T, 0);
+
+        return T;
     }
 
     @Override
@@ -313,6 +383,5 @@ public class LMSPrivateKeyParameters
             .u32str(masterSecret.length) // length of master secret.
             .bytes(masterSecret) // the master secret
             .build();
-
     }
 }
