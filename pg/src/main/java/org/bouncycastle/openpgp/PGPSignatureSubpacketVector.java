@@ -9,6 +9,8 @@ import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -302,6 +304,30 @@ public class PGPSignatureSubpacketVector
         }
 
         return new Features(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public IssuerFingerprint getIssuerFingerprint()
+    {
+        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.ISSUER_FINGERPRINT);
+
+        if (p == null)
+        {
+            return null;
+        }
+
+        return new IssuerFingerprint(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public IntendedRecipientFingerprint getIntendedRecipientFingerprint()
+    {
+        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT);
+
+        if (p == null)
+        {
+            return null;
+        }
+
+        return new IntendedRecipientFingerprint(p.isCritical(), p.isLongLength(), p.getData());
     }
 
     /**

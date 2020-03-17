@@ -7,6 +7,7 @@ import java.io.InputStream;
 import org.bouncycastle.bcpg.sig.EmbeddedSignature;
 import org.bouncycastle.bcpg.sig.Exportable;
 import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
@@ -176,6 +177,8 @@ public class SignatureSubpacketInputStream
             return new SignatureTarget(isCritical, isLongLength, data);
         case ISSUER_FINGERPRINT:
             return new IssuerFingerprint(isCritical, isLongLength, data);
+        case INTENDED_RECIPIENT_FINGERPRINT:
+            return new IntendedRecipientFingerprint(isCritical, isLongLength, data);
         }
 
         return new SignatureSubpacket(type, isCritical, isLongLength, data);

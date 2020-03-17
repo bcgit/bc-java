@@ -5,25 +5,25 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Arrays;
 
 /**
- * packet giving the issuer key fingerprint.
+ * packet giving the intended recipient fingerprint.
  */
-public class IssuerFingerprint
+public class IntendedRecipientFingerprint
     extends SignatureSubpacket
 {
-    public IssuerFingerprint(
+    public IntendedRecipientFingerprint(
         boolean    critical,
         boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.ISSUER_FINGERPRINT, critical, isLongLength, data);
+        super(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT, critical, isLongLength, data);
     }
 
-    public IssuerFingerprint(
+    public IntendedRecipientFingerprint(
         boolean    critical,
         int        keyVersion,
         byte[]     fingerprint)
     {
-        super(SignatureSubpacketTags.ISSUER_FINGERPRINT, critical, false,
+        super(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT, critical, false,
                     Arrays.concatenate(new byte[] { (byte)keyVersion }, fingerprint));
     }
 
