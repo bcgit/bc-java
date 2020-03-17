@@ -2,6 +2,7 @@ package org.bouncycastle.bcpg;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -121,12 +122,12 @@ public class ArmoredOutputStream
             nl = "\r\n";
         }
 
-        headers.put(VERSION_HDR, version);
+        setHeader(VERSION_HDR, version);
     }
 
     /**
      * Constructs an armored output stream with default and custom headers.
-     * 
+     *
      * @param out the OutputStream to wrap.
      * @param headers additional headers that add to or override the {@link #resetHeaders() default
      *            headers}.
@@ -142,8 +143,9 @@ public class ArmoredOutputStream
         while (e.hasMoreElements())
         {
             Object key = e.nextElement();
-
-            this.headers.put(key, headers.get(key));
+            ArrayList headerList = new ArrayList();
+            headerList.add(headers.get(key));
+            this.headers.put(key, headerList);
         }
     }
 
@@ -154,8 +156,8 @@ public class ArmoredOutputStream
      * @param value the value of the header entry.
      */
     public void setHeader(
-        String name,
-        String value)
+        String  name,
+        String  value)
     {
         if (value == null)
         {
@@ -163,22 +165,51 @@ public class ArmoredOutputStream
         }
         else
         {
-            this.headers.put(name, value);
+            ArrayList valueList = (ArrayList)headers.get(name);
+            if (valueList == null)
+            {
+                valueList = new ArrayList();
+                headers.put(name, valueList);
+            }
+            else
+            {
+                valueList.clear();
+            }
+            valueList.add(value);
         }
     }
+
+
+    public void addHeader(
+        String name,
+        String value)
+    {
+        if (value == null || name == null)
+        {
+            return;
+        }
+        ArrayList valueList = (ArrayList)headers.get(name);
+        if (valueList == null)
+        {
+            valueList = new ArrayList();
+            headers.put(name, valueList);
+        }
+        valueList.add(value);
+    }
+
 
     /**
      * Reset the headers to only contain a Version string (if one is present)
      */
     public void resetHeaders()
     {
-        String version = (String)headers.get(VERSION_HDR);
+        ArrayList versions = (ArrayList)headers.get(VERSION_HDR);
 
         headers.clear();
 
-        if (version != null)
+        if (versions != null)
         {
-            headers.put(VERSION_HDR, version);
+            setHeader(VERSION_HDR, version);
         }
     }
 
@@ -345,7 +376,7 @@ public class ArmoredOutputStream
 
             if (headers.containsKey(VERSION_HDR))
             {
-                writeHeaderEntry(VERSION_HDR, (String)headers.get(VERSION_HDR));
+                writeHeaderEntry(VERSION_HDR, ((ArrayList)headers.get(VERSION_HDR)).get(0).toString());
             }
 
             Enumeration e = headers.keys();
@@ -355,7 +386,11 @@ public class ArmoredOutputStream
 
                 if (!key.equals(VERSION_HDR))
                 {
-                    writeHeaderEntry(key, (String)headers.get(key));
+                    ArrayList values = (ArrayList)headers.get(key);
+                    for (Object value : values)
+                    {
+                        writeHeaderEntry(key, value.toString());
+                    }
                 }
             }
 
