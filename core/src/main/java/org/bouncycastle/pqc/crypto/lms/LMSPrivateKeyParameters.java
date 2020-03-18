@@ -4,17 +4,29 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.io.Streams;
 
 public class LMSPrivateKeyParameters
     extends LMSKeyParameters
 {
+    private static CacheKey T1 = new CacheKey(1);
+    private static CacheKey[] internedKeys = new CacheKey[129];
+
+    static
+    {
+        internedKeys[1] = T1;
+        for (int i = 2; i < internedKeys.length; i++)
+        {
+            internedKeys[i] = new CacheKey(i);
+        }
+    }
+
     private final byte[] I;
     private final LMSigParameters parameters;
     private final LMOtsParameters otsParameters;
@@ -29,7 +41,8 @@ public class LMSPrivateKeyParameters
     //
     private LMSPublicKeyParameters publicKey;
     private int maxCacheR;
-    private WeakHashMap<Integer, byte[]> tCache;
+    private Map<CacheKey, byte[]> tCache;
+
     private Digest tDigest;
 
     public LMSPrivateKeyParameters(LMSigParameters lmsParameter, LMOtsParameters otsParameters, int q, byte[] I, int maxQ, byte[] masterSecret)
@@ -41,9 +54,24 @@ public class LMSPrivateKeyParameters
         this.I = Arrays.clone(I);
         this.maxQ = maxQ;
         this.masterSecret = Arrays.clone(masterSecret);
-        this.maxCacheR = 1 << (parameters.getH() - 1);
-        this.tCache = new WeakHashMap<Integer, byte[]>();
+        this.maxCacheR = 1 << (parameters.getH() + 1);
+        this.tCache = new WeakHashMap<CacheKey, byte[]>();
         this.tDigest = DigestUtil.getDigest(lmsParameter.getDigestOID());
+    }
+
+    private LMSPrivateKeyParameters(LMSPrivateKeyParameters parent, int q, int maxQ)
+    {
+        super(true);
+        this.parameters = parent.parameters;
+        this.otsParameters = parent.otsParameters;
+        this.q = q;
+        this.I = parent.I;
+        this.maxQ = maxQ;
+        this.masterSecret = parent.masterSecret;
+        this.maxCacheR = 1 << parameters.getH();
+        this.tCache = parent.tCache;
+        this.tDigest = DigestUtil.getDigest(parameters.getDigestOID());
+        this.publicKey = parent.publicKey;
     }
 
     public static LMSPrivateKeyParameters getInstance(Object src)
@@ -219,9 +247,7 @@ public class LMSPrivateKeyParameters
         {
             if (publicKey == null)
             {
-                byte[] T1 = LMS.appendixC(this);
-
-                publicKey = new LMSPublicKeyParameters(parameters, otsParameters, T1, I);
+                publicKey = new LMSPublicKeyParameters(parameters, otsParameters, this.findT(T1), I);
             }
             return publicKey;
         }
@@ -229,24 +255,29 @@ public class LMSPrivateKeyParameters
 
     byte[] findT(int r)
     {
-        synchronized (this)
+        if (r < maxCacheR)
         {
-            if (r <= maxCacheR)
+            return findT(r < internedKeys.length ? internedKeys[r] : new CacheKey(r));
+        }
+
+        return calcT(r);
+    }
+
+    private byte[] findT(CacheKey key)
+    {
+        synchronized (tCache)
+        {
+            byte[] t = tCache.get(key);
+
+            if (t != null)
             {
-                byte[] t = tCache.get(Integers.valueOf(r));
-
-                if (t != null)
-                {
-                    return t;
-                }
-
-                t = calcT(r);
-                tCache.put(Integers.valueOf(r), t);
-
                 return t;
             }
 
-            return calcT(r);
+            t = calcT(key.index);
+            tCache.put(key, t);
+
+            return t;
         }
     }
 
@@ -277,8 +308,8 @@ public class LMSPrivateKeyParameters
             return T;
         }
 
-        byte[] t2r = this.findT(2 * r);
-        byte[] t2rPlus1 = this.findT((2 * r + 1));
+        byte[] t2r = findT(2 * r);
+        byte[] t2rPlus1 = findT((2 * r + 1));
 
         LmsUtils.byteArray(this.getI(), tDigest);
         LmsUtils.u32str(r, tDigest);
@@ -383,5 +414,30 @@ public class LMSPrivateKeyParameters
             .u32str(masterSecret.length) // length of master secret.
             .bytes(masterSecret) // the master secret
             .build();
+    }
+
+    private static class CacheKey
+    {
+        private final int index;
+
+        CacheKey(int index)
+        {
+            this.index = index;
+        }
+
+        public int hashCode()
+        {
+            return index;
+        }
+
+        public boolean equals(Object o)
+        {
+            if (o instanceof CacheKey)
+            {
+                return ((CacheKey)o).index == this.index;
+            }
+
+            return false;
+        }
     }
 }
