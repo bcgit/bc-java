@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.lms;
 
-import java.util.ArrayList;
-
 import org.bouncycastle.crypto.Digest;
 
 class LMS
@@ -198,41 +196,4 @@ class LMS
         }
         return tmp;
     }
-
-    static byte[] appendixC(LMSPrivateKeyParameters lmsPrivateKey)
-    {
-        LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(lmsPrivateKey.getOtsParameters().getType());
-
-        int twoToh = 1 << lmsPrivateKey.getSigParameters().getH();
-        Digest H = DigestUtil.getDigest(lmsPrivateKey.getSigParameters().getDigestOID());
-        ArrayList<byte[]> stack = new ArrayList<byte[]>();
-        byte[] I = lmsPrivateKey.getI();
-        for (int i = 0; i < twoToh; i++)
-        {
-            int r = i + twoToh; //OTS_PUB.length;
-            byte[] temp = new byte[H.getDigestSize()];
-            H.update(I, 0, I.length);
-            LmsUtils.u32str(r, H);
-            LmsUtils.u16str(D_LEAF, H);
-            byte[] K = LM_OTS.lms_ots_generatePublicKey(otsParameter, lmsPrivateKey.getI(), i, lmsPrivateKey.getMasterSecret());
-            H.update(K, 0, K.length);
-            H.doFinal(temp, 0);
-            int j = i;
-            while (j % 2 == 1)
-            {
-                r = (r - 1) / 2;
-                j = (j - 1) / 2;
-                byte[] leftSide = stack.remove(stack.size() - 1); // stack.pop();
-                H.update(I, 0, I.length);
-                LmsUtils.u32str(r, H);
-                LmsUtils.u16str(D_INTR, H);
-                H.update(leftSide, 0, leftSide.length);
-                H.update(temp, 0, temp.length);
-                H.doFinal(temp, 0);
-            }
-            stack.add(temp);
-        }
-        return stack.remove(stack.size() - 1);
-    }
-
 }
