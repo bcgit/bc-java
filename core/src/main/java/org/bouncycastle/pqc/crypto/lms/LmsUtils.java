@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.Digest;
 
 class LmsUtils
 {
-
     static void u32str(int n, Digest d)
     {
         d.update((byte)(n >>> 24));
@@ -19,7 +18,6 @@ class LmsUtils
         d.update((byte)(n));
     }
 
-
     static void byteArray(byte[] array, Digest digest)
     {
         digest.update(array, 0, array.length);
@@ -32,6 +30,11 @@ class LmsUtils
 
     static int calculateStrength(LMSParameters lmsParameters)
     {
+        if (lmsParameters == null)
+        {
+            throw new NullPointerException("lmsParameters cannot be null");
+        }
+
         LMSigParameters sigParameters = lmsParameters.getLMSigParam();
         return (1 << sigParameters.getH()) * sigParameters.getM();
     }
