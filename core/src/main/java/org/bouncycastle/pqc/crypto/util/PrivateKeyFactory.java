@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.util;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -93,9 +94,16 @@ public class PrivateKeyFactory
         else if (algOID.equals(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            ASN1BitString pubKey = keyInfo.getPublicKeyData();
 
             if (Pack.bigEndianToInt(keyEnc, 0) == 1)
             {
+                if (pubKey != null)
+                {
+                    byte[] pubEnc = pubKey.getOctets();
+
+                    return LMSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length), Arrays.copyOfRange(pubEnc, 4, pubEnc.length));
+                }
                 return LMSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
             else

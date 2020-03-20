@@ -96,18 +96,20 @@ public class PrivateKeyInfoFactory
             LMSPrivateKeyParameters params = (LMSPrivateKeyParameters)privateKey;
 
             byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
+            byte[] pubEncoding = Composer.compose().u32str(1).bytes(params.getPublicKey()).build();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
         }
         else if (privateKey instanceof HSSPrivateKeyParameters)
         {
             HSSPrivateKeyParameters params = (HSSPrivateKeyParameters)privateKey;
 
             byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params).build();
+            byte[] pubEncoding = Composer.compose().u32str(params.getL()).bytes(params.getPublicKey()).build();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
         }
         else if (privateKey instanceof XMSSPrivateKeyParameters)
         {
@@ -116,7 +118,7 @@ public class PrivateKeyInfoFactory
                 new XMSSKeyParams(keyParams.getParameters().getHeight(),
                     Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
 
-            return new PrivateKeyInfo(algorithmIdentifier, xmssCreateKeyStructure(keyParams));
+            return new PrivateKeyInfo(algorithmIdentifier, xmssCreateKeyStructure(keyParams), attributes);
         }
         else if (privateKey instanceof XMSSMTPrivateKeyParameters)
         {
@@ -125,7 +127,7 @@ public class PrivateKeyInfoFactory
                 new XMSSMTKeyParams(keyParams.getParameters().getHeight(), keyParams.getParameters().getLayers(),
                     Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
 
-            return new PrivateKeyInfo(algorithmIdentifier, xmssmtCreateKeyStructure(keyParams));
+            return new PrivateKeyInfo(algorithmIdentifier, xmssmtCreateKeyStructure(keyParams), attributes);
         }
         else
         {
