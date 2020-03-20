@@ -3,8 +3,10 @@ package org.bouncycastle.pqc.crypto.test;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
@@ -13,6 +15,8 @@ import org.bouncycastle.pqc.crypto.lms.LMSParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSSigner;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -102,6 +106,13 @@ public class LMSTest
         assertFalse(Arrays.areEqual(sig1, sig));
 
         signer.init(false, kp.getPublic());
+
+        assertTrue(signer.verifySignature(msg1, sig1));
+
+        PrivateKeyInfo pInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate());
+        AsymmetricKeyParameter pKey = PrivateKeyFactory.createKey(pInfo.getEncoded());
+
+        signer.init(false, ((LMSPrivateKeyParameters)pKey).getPublicKey());
 
         assertTrue(signer.verifySignature(msg1, sig1));
     }
