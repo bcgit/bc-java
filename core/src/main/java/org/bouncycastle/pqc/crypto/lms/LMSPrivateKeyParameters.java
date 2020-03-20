@@ -74,6 +74,16 @@ public class LMSPrivateKeyParameters
         this.publicKey = parent.publicKey;
     }
 
+    public static LMSPrivateKeyParameters getInstance(byte[] privEnc, byte[] pubEnc)
+        throws IOException
+    {
+        LMSPrivateKeyParameters pKey = getInstance(privEnc);
+    
+        pKey.publicKey = LMSPublicKeyParameters.getInstance(pubEnc);
+
+        return pKey;
+    }
+
     public static LMSPrivateKeyParameters getInstance(Object src)
         throws IOException
     {
@@ -209,7 +219,7 @@ public class LMSPrivateKeyParameters
             {
                 throw new IllegalArgumentException("usageCount exceeds usages remaining");
             }
-            LMSPrivateKeyParameters keyParameters = new LMSPrivateKeyParameters(parameters, otsParameters, q, I, q + usageCount, masterSecret);
+            LMSPrivateKeyParameters keyParameters = new LMSPrivateKeyParameters(this, q, q + usageCount);
             q += usageCount;
 
             return keyParameters;
