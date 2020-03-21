@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
@@ -38,6 +40,8 @@ import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 class ProvX509KeyManager
     extends X509ExtendedKeyManager
 {
+    private static final Logger LOG = Logger.getLogger(ProvX509KeyManager.class.getName());
+
     private final JcaJceHelper helper;
     private final List<KeyStore.Builder> builders;
 
@@ -194,7 +198,15 @@ class ProvX509KeyManager
             }
         }
 
-        return Match.NOTHING == bestMatch ? null : getAlias(bestMatch, getNextVersionSuffix());
+        if (Match.NOTHING == bestMatch)
+        {
+            LOG.fine("No matching key found");
+            return null;
+        }
+
+        String alias = getAlias(bestMatch, getNextVersionSuffix());
+        LOG.fine("Found matching key, returning alias: " + alias);
+        return alias;
     }
 
     private Match chooseAliasFromBuilder(int builderIndex, List<String> keyTypes, Set<X500Name> issuerNames,
@@ -317,47 +329,27 @@ class ProvX509KeyManager
 
     private KeyStore.PrivateKeyEntry getPrivateKeyEntry(String alias)
     {
-        if (null != alias)
+        if (null == alias)
         {
-            SoftReference<KeyStore.PrivateKeyEntry> entryRef = cachedEntries.get(alias);
-            if (null != entryRef)
-            {
-                KeyStore.PrivateKeyEntry cachedEntry = entryRef.get();
-                if (null != cachedEntry)
-                {
-                    return cachedEntry;
-                }
-            }
+            return null;
+        }
 
-            try
+        SoftReference<KeyStore.PrivateKeyEntry> entryRef = cachedEntries.get(alias);
+        if (null != entryRef)
+        {
+            KeyStore.PrivateKeyEntry cachedEntry = entryRef.get();
+            if (null != cachedEntry)
             {
-                String[] parts = alias.split("\\.");
-                if (parts.length == 3)
-                {
-                    int builderIndex = Integer.parseInt(parts[0]);
-                    if (0 <= builderIndex && builderIndex < builders.size())
-                    {
-                        KeyStore.Builder builder = builders.get(builderIndex);
-
-                        String localAlias = parts[1];
-                        KeyStore keyStore = builder.getKeyStore();
-                        ProtectionParameter protectionParameter = builder.getProtectionParameter(localAlias);
-
-                        KeyStore.Entry entry = keyStore.getEntry(localAlias, protectionParameter);
-                        if (entry instanceof KeyStore.PrivateKeyEntry)
-                        {
-                            KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry)entry;
-                            cachedEntries.put(alias, new SoftReference<KeyStore.PrivateKeyEntry>(privateKeyEntry));
-                            return privateKeyEntry;
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
+                return cachedEntry;
             }
         }
-        return null;
+
+        KeyStore.PrivateKeyEntry result = loadPrivateKeyEntry(alias);
+        if (null != result)
+        {
+            cachedEntries.put(alias, new SoftReference<KeyStore.PrivateKeyEntry>(result));
+        }
+        return result;
     }
 
     private boolean isSuitableChain(X509Certificate[] chain, List<String> keyTypes, Set<X500Name> issuerNames,
@@ -384,6 +376,43 @@ class ProvX509KeyManager
         }
 
         return true;
+    }
+
+    private KeyStore.PrivateKeyEntry loadPrivateKeyEntry(String alias)
+    {
+        try
+        {
+            int builderIndexStart = 0;
+            int builderIndexEnd = alias.indexOf('.', builderIndexStart);
+            if (builderIndexEnd > builderIndexStart)
+            {
+                int localAliasStart = builderIndexEnd + 1;
+                int localAliasEnd = alias.indexOf('.', localAliasStart);
+                if (localAliasEnd > localAliasStart)
+                {
+                    int builderIndex = Integer.parseInt(alias.substring(builderIndexStart, builderIndexEnd));
+                    if (0 <= builderIndex && builderIndex < builders.size())
+                    {
+                        KeyStore.Builder builder = builders.get(builderIndex);
+
+                        String localAlias = alias.substring(localAliasStart, localAliasEnd);
+                        KeyStore keyStore = builder.getKeyStore();
+                        ProtectionParameter protectionParameter = builder.getProtectionParameter(localAlias);
+
+                        KeyStore.Entry entry = keyStore.getEntry(localAlias, protectionParameter);
+                        if (entry instanceof KeyStore.PrivateKeyEntry)
+                        {
+                            return (KeyStore.PrivateKeyEntry)entry;
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            LOG.log(Level.FINER, "Failed to load PrivateKeyEntry: " + alias, e);
+        }
+        return null;
     }
 
     private static List<Match> addToAllMatches(List<Match> allMatches, List<Match> matches)
