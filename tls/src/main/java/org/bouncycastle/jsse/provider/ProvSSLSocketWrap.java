@@ -669,6 +669,8 @@ class ProvSSLSocketWrap
 
         this.handshakeSession = null;
         this.connection = connection;
+
+        notifyHandshakeCompletedListeners(connection.getSession().exportSSLSession);
     }
 
     public synchronized void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession)
