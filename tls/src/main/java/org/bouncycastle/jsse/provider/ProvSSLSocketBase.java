@@ -177,7 +177,10 @@ abstract class ProvSSLSocketBase
             }            
         };
 
-        new Thread(null, notifyRunnable, "BCJSSE-HandshakeCompleted-Thread", 0L, false).start();
+        Thread notifyThread = new Thread(null, notifyRunnable, "BCJSSE-HandshakeCompleted-Thread", 0L);
+        notifyThread.setDaemon(true);
+        notifyThread.start();
+        //new Thread(null, notifyRunnable, "BCJSSE-HandshakeCompleted-Thread", 0L, false).start();
     }
 
     private Collection<Map.Entry<HandshakeCompletedListener, AccessControlContext>> getHandshakeCompletedEntries()
