@@ -141,7 +141,11 @@ public class BouncyCastleProviderTest
                 return (T)constructor.invokeWithArguments(Arrays.asList(params));
             }
         }
-        catch (IllegalAccessException | NoSuchMethodException e)
+        catch (IllegalAccessException e)
+        {
+            throw new AssertionError(String.format("Key [%s] contains class which failed on instance creation: %s %s", key, clazz.getName(), e.getMessage()));
+        }
+        catch (NoSuchMethodException e)
         {
             throw new AssertionError(String.format("Key [%s] contains class which failed on instance creation: %s %s", key, clazz.getName(), e.getMessage()));
         }
