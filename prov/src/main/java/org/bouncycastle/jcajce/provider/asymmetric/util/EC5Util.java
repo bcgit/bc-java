@@ -13,12 +13,16 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
+import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
@@ -90,15 +94,28 @@ public class EC5Util
         {
             curve = configuration.getEcImplicitlyCa().getCurve();
         }
-        else if (acceptableCurves.isEmpty())
-        {
-            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
-
-            curve = ecP.getCurve();
-        }
         else
         {
-            throw new IllegalStateException("encoded parameters not acceptable");
+            ASN1Sequence pSeq = ASN1Sequence.getInstance(params.getParameters());
+            if (acceptableCurves.isEmpty())
+            {
+                if (pSeq.size() > 3)
+                {
+                    X9ECParameters ecP = X9ECParameters.getInstance(pSeq);
+
+                    curve = ecP.getCurve();
+                }
+                else    // GOST parameters
+                {
+                    ASN1ObjectIdentifier gostCurve = ASN1ObjectIdentifier.getInstance(pSeq.getObjectAt(0));
+
+                    curve = ECGOST3410NamedCurves.getByOID(gostCurve).getCurve();
+                }
+            }
+            else
+            {
+                throw new IllegalStateException("encoded parameters not acceptable");
+            }
         }
 
         return curve;
@@ -158,25 +175,45 @@ public class EC5Util
         }
         else
         {
-            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
-
-            ellipticCurve = EC5Util.convertCurve(curve, ecP.getSeed());
-
-            if (ecP.getH() != null)
+            ASN1Sequence pSeq = ASN1Sequence.getInstance(params.getParameters());
+            if (pSeq.size() > 3)
             {
-                ecSpec = new ECParameterSpec(
-                    ellipticCurve,
-                    convertPoint(ecP.getG()),
-                    ecP.getN(),
-                    ecP.getH().intValue());
+                X9ECParameters ecP = X9ECParameters.getInstance(pSeq);
+
+                ellipticCurve = EC5Util.convertCurve(curve, ecP.getSeed());
+
+                if (ecP.getH() != null)
+                {
+                    ecSpec = new ECParameterSpec(
+                        ellipticCurve,
+                        convertPoint(ecP.getG()),
+                        ecP.getN(),
+                        ecP.getH().intValue());
+                }
+                else
+                {
+                    ecSpec = new ECParameterSpec(
+                        ellipticCurve,
+                        convertPoint(ecP.getG()),
+                        ecP.getN(),
+                        1);      // TODO: not strictly correct... need to fix the test data...
+                }
             }
-            else
+            else    // GOST parameters
             {
-                ecSpec = new ECParameterSpec(
+                GOST3410PublicKeyAlgParameters gostParams = GOST3410PublicKeyAlgParameters.getInstance(pSeq);
+
+                ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(
+                    gostParams.getPublicKeyParamSet()));
+
+                curve = spec.getCurve();
+                ellipticCurve = EC5Util.convertCurve(curve, spec.getSeed());
+
+                ecSpec = new ECNamedCurveSpec(
+                    ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()),
                     ellipticCurve,
-                    convertPoint(ecP.getG()),
-                    ecP.getN(),
-                    1);      // TODO: not strictly correct... need to fix the test data...
+                    EC5Util.convertPoint(spec.getG()),
+                    spec.getN(), spec.getH());
             }
         }
 
