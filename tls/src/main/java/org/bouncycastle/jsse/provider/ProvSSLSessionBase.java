@@ -298,8 +298,7 @@ abstract class ProvSSLSessionBase
     {
         if (value instanceof SSLSessionBindingListener)
         {
-            new SessionBindingListenerAdapter((SSLSessionBindingListener)value)
-                .valueBound(new SSLSessionBindingEvent(this, name));
+            ((SSLSessionBindingListener)value).valueBound(new SSLSessionBindingEvent(this, name));
         }
     }
 
@@ -307,8 +306,7 @@ abstract class ProvSSLSessionBase
     {
         if (value instanceof SSLSessionBindingListener)
         {
-            new SessionBindingListenerAdapter((SSLSessionBindingListener)value)
-                .valueUnbound(new SSLSessionBindingEvent(this, name));
+            ((SSLSessionBindingListener)value).valueUnbound(new SSLSessionBindingEvent(this, name));
         }
     }
 }
