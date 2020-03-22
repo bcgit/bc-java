@@ -1023,7 +1023,7 @@ public abstract class Nat
     }
 
     /**
-     * @deprecated Use {@link #squareWordAddTo(int[], int, int, int[], int) instead.
+     * @deprecated Use {@link #squareWordAddTo(int[], int, int, int[], int)} instead.
      */
     public static int squareWordAdd(int[] x, int xOff, int xPos, int[] z, int zOff)
     {
