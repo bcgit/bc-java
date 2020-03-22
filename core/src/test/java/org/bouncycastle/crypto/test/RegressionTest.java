@@ -173,7 +173,8 @@ public class RegressionTest
             new ZucTest(),
             new Haraka256DigestTest(),
             new Haraka512DigestTest(),
-            new KMACTest()
+            new KMACTest(),
+            new SipHash128Test()
         };
 
     public static void main(String[] args)
