@@ -2,12 +2,8 @@ package org.bouncycastle.jcajce.provider.test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.security.Security;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -34,8 +30,8 @@ public class BouncyCastleProviderTest
 
     public void testRegisteredClasses()
     {
-        Set<Object> keys = new TreeSet<>(provider.keySet());
-        List<String> errors = new ArrayList<>();
+        Set<Object> keys = new TreeSet<Object>(provider.keySet());
+        List<String> errors = new ArrayList<String>();
 
         for (Object rawKey : keys)
         {
@@ -136,9 +132,7 @@ public class BouncyCastleProviderTest
             }
             else
             {
-                MethodType constructorType = MethodType.methodType(void.class, Arrays.stream(params).map(Object::getClass).toArray(Class[]::new));
-                MethodHandle constructor = MethodHandles.publicLookup().findConstructor(clazz, constructorType);
-                return (T)constructor.invokeWithArguments(Arrays.asList(params));
+                throw new IllegalStateException();
             }
         }
         catch (IllegalAccessException e)
