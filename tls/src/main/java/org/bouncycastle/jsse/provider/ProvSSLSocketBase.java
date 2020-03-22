@@ -8,11 +8,18 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
+import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 import org.bouncycastle.jsse.BCSSLSocket;
@@ -32,8 +39,8 @@ abstract class ProvSSLSocketBase
         }
     };
 
-    protected final Set<HandshakeCompletedListenerAdapter> listeners = Collections.synchronizedSet(
-        new HashSet<HandshakeCompletedListenerAdapter>());
+    protected final Map<HandshakeCompletedListener, AccessControlContext> listeners = Collections.synchronizedMap(
+        new HashMap<HandshakeCompletedListener, AccessControlContext>(4));
 
     protected ProvSSLSocketBase()
     {
@@ -47,7 +54,7 @@ abstract class ProvSSLSocketBase
             throw new IllegalArgumentException("'listener' cannot be null");
         }
 
-        listeners.add(new HandshakeCompletedListenerAdapter(listener));
+        listeners.put(listener, AccessController.getContext());
     }
 
     protected void closeSocket() throws IOException
@@ -75,7 +82,7 @@ abstract class ProvSSLSocketBase
         {
             throw new IllegalArgumentException("'listener' cannot be null");
         }
-        if (!listeners.remove(new HandshakeCompletedListenerAdapter(listener)))
+        if (null == listeners.remove(listener))
         {
             throw new IllegalArgumentException("'listener' is not registered");
         }
@@ -137,5 +144,49 @@ abstract class ProvSSLSocketBase
             :   new InetSocketAddress(host, port);
 
         connect(socketAddress, 0);
+    }
+
+    protected void notifyHandshakeCompletedListeners(final SSLSession eventSession)
+    {
+        final Collection<Map.Entry<HandshakeCompletedListener, AccessControlContext>> entries = getHandshakeCompletedEntries();
+        if (null == entries)
+        {
+            return;
+        }
+
+        final HandshakeCompletedEvent event = new HandshakeCompletedEvent(this, eventSession);
+
+        final Runnable notifyRunnable = new Runnable()
+        {
+            public void run()
+            {
+                for (Map.Entry<HandshakeCompletedListener, AccessControlContext> entry : entries)
+                {
+                    final HandshakeCompletedListener listener = entry.getKey();
+                    final AccessControlContext accessControlContext = entry.getValue();
+
+                    AccessController.doPrivileged(new PrivilegedAction<Void>()
+                    {
+                        public Void run()
+                        {
+                            listener.handshakeCompleted(event);
+                            return null;
+                        }
+                    }, accessControlContext);
+                }
+            }            
+        };
+
+        new Thread(null, notifyRunnable, "BCJSSE-HandshakeCompleted-Thread", 0L, false).start();
+    }
+
+    private Collection<Map.Entry<HandshakeCompletedListener, AccessControlContext>> getHandshakeCompletedEntries()
+    {
+        synchronized (listeners)
+        {
+            return listeners.isEmpty()
+                ? null
+                : new ArrayList<Map.Entry<HandshakeCompletedListener, AccessControlContext>>(listeners.entrySet());
+        }
     }
 }
