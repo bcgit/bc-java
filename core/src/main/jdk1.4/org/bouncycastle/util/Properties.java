@@ -81,10 +81,10 @@ public class Properties
             String p = (String)localProps.remove(propertyName);
             if (p != null)
             {
-                if (localProps.isEmpty())
-                {
-                    threadProperties.remove();
-                }
+                //if (localProps.isEmpty())
+                //{
+                    //threadProperties.remove();
+                //}
 
                 return "true".equalsIgnoreCase(p);
             }

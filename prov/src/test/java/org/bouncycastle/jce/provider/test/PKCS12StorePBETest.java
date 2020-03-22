@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.Security;
-import java.util.Collections;
+import java.util.Enumeration;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
@@ -113,8 +113,9 @@ public class PKCS12StorePBETest
 
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
 
-        for (String keyAlias : Collections.list(keyStore.aliases())) {
-            Key key = keyStore.getKey(keyAlias, "password".toCharArray());
+        for (Enumeration en = keyStore.aliases(); en.hasMoreElements();)
+        {
+            Key key = keyStore.getKey((String)en.nextElement(), "password".toCharArray());
         }
     }
 

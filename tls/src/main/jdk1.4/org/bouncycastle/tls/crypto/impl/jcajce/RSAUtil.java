@@ -33,7 +33,6 @@ class RSAUtil
     }
 
     static AlgorithmParameterSpec getPSSParameterSpec(short hash, String digestName, JcaJceHelper helper)
-        throws NoSuchProviderException, NoSuchAlgorithmException
     {
 // Used where providers can't handle PSSParameterSpec properly.
         AlgorithmIdentifier hashAlg = getHashAlgorithmID(hash);
@@ -44,21 +43,30 @@ class RSAUtil
             new ASN1Integer(HashAlgorithm.getOutputSize(hash)),
             RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
 
-        AlgorithmParameters params = helper.createAlgorithmParameters("PSS");
 
         try
         {
+            AlgorithmParameters params = helper.createAlgorithmParameters("PSS");
+
             params.init(pssParams.getEncoded(), "ASN.1");
 
             return params.getParameterSpec(AlgorithmParameterSpec.class);
         }
         catch (IOException e)
         {   // this should never happen!
-            throw new NoSuchAlgorithmException("cannot encode RSASSAPSSparams: " + e.getMessage());
+            throw new IllegalStateException("cannot encode RSASSAPSSparams: " + e.getMessage());
         }
         catch (InvalidParameterSpecException e)
         {
-            throw new NoSuchAlgorithmException("cannot recover PSS paramSpec: " + e.getMessage());
+            throw new IllegalStateException("cannot recover PSS paramSpec: " + e.getMessage());
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException("cannot recover PSS paramSpec: " + e.getMessage());
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new IllegalStateException("cannot recover PSS paramSpec: " + e.getMessage());
         }
 
 //        MGF1ParameterSpec mgf1Spec = new MGF1ParameterSpec(digestName);
