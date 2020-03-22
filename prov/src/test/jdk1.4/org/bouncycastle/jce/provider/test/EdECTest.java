@@ -16,6 +16,8 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -26,7 +28,9 @@ import java.util.Set;
 
 import javax.crypto.KeyAgreement;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
@@ -90,13 +94,28 @@ public class EdECTest
 
         Signature sig = Signature.getInstance("EDDSA", "BC");
 
-        Certificate x25519Cert = Certificate.getInstance(EdECTest.x25519Cert);
+        ASN1Sequence x25519Seq = ASN1Sequence.getInstance(EdECTest.x25519Cert);
+        Certificate x25519Cert = Certificate.getInstance(x25519Seq);
 
         sig.initVerify(pub);
 
-        sig.update(x25519Cert.getTBSCertificate().getEncoded());
+        // yes, the demo certificate is invalid...
+        sig.update(x25519Seq.getObjectAt(0).toASN1Primitive().getEncoded(ASN1Encoding.DL));
 
         isTrue(sig.verify(x25519Cert.getSignature().getBytes()));
+
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        X509Certificate c = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(EdECTest.x25519Cert));
+
+        isTrue("Ed25519".equals(c.getSigAlgName()));
+
+        // this may look abit strange but it turn's out the Oracle CertificateFactory tampers
+        // with public key parameters on building the public key. If the keyfactory doesn't
+        // take things into account the generate throws an exception!
+        certFact = CertificateFactory.getInstance("X.509", "SUN");
+
+        c = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(EdECTest.x25519Cert));
 
         x448AgreementTest();
         x25519AgreementTest();
@@ -216,6 +235,12 @@ public class EdECTest
 
         isTrue("X448".equals(kp.getPublic().getAlgorithm()));
 
+//        kpGen.initialize(new ECGenParameterSpec(XDHParameterSpec.X448));
+//
+//        kp = kpGen.generateKeyPair();
+//
+//        isTrue("X448".equals(kp.getPublic().getAlgorithm()));
+
         kpGen.initialize(448);
 
         kp = kpGen.generateKeyPair();
@@ -229,6 +254,12 @@ public class EdECTest
         kp = kpGen.generateKeyPair();
 
         isTrue("X25519".equals(kp.getPublic().getAlgorithm()));
+
+//        kpGen.initialize(new ECGenParameterSpec(XDHParameterSpec.X25519));
+//
+//        kp = kpGen.generateKeyPair();
+//
+//        isTrue("X25519".equals(kp.getPublic().getAlgorithm()));
 
         kpGen.initialize(256);
 
@@ -324,6 +355,12 @@ public class EdECTest
         kp = kpGen.generateKeyPair();
 
         isTrue("Ed25519".equals(kp.getPublic().getAlgorithm()));
+
+//        kpGen.initialize(new ECGenParameterSpec(EdDSAParameterSpec.Ed25519));
+//
+//        kp = kpGen.generateKeyPair();
+//
+//        isTrue("Ed25519".equals(kp.getPublic().getAlgorithm()));
 
         kpGen.initialize(256);
 
@@ -426,6 +463,8 @@ public class EdECTest
     private void x448withCKDFTest()
         throws Exception
     {
+        agreementTest("X448withSHA256CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("X448withSHA384CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
         agreementTest("X448withSHA512CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
     }
 
@@ -433,6 +472,8 @@ public class EdECTest
         throws Exception
     {
         agreementTest("X25519withSHA256CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("X25519withSHA384CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("X25519withSHA512CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
     }
 
     private void x448withKDFTest()

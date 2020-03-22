@@ -120,7 +120,7 @@ public class PGPEncryptedDataList
     public PGPEncryptedData get(
         int    index)
     {
-        return methods.get(index);
+        return (PGPEncryptedData)methods.get(index);
     }
 
     /**

@@ -495,6 +495,15 @@ public class ParserTest
     private void doOpenSslGost2012Test()
         throws Exception
     {
+        try
+        {
+            KeyFactory.getInstance("ECGOST3410-2012", "BC"); // check for algorithm
+        }
+        catch (Exception e)
+        {
+            return;
+        }
+
         String fileName = "gost2012_priv.pem";
 
         PEMParser pr = openPEMResource("data/" + fileName);
