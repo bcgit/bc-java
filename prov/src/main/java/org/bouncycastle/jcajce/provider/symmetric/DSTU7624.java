@@ -430,7 +430,7 @@ public class DSTU7624
     public static class AlgParamGen128
         extends AlgParamGen
     {
-        AlgParamGen128()
+        public AlgParamGen128()
         {
             super(128);
         }
@@ -439,7 +439,7 @@ public class DSTU7624
     public static class AlgParamGen256
         extends AlgParamGen
     {
-        AlgParamGen256()
+        public AlgParamGen256()
         {
             super(256);
         }
@@ -448,7 +448,7 @@ public class DSTU7624
     public static class AlgParamGen512
         extends AlgParamGen
     {
-        AlgParamGen512()
+        public AlgParamGen512()
         {
             super(512);
         }
@@ -475,7 +475,7 @@ public class DSTU7624
         public void configure(ConfigurableProvider provider)
         {
 
-            provider.addAlgorithm("AlgorithmParameters.DSTU7624", PREFIX + "$AlgParams128");
+            provider.addAlgorithm("AlgorithmParameters.DSTU7624", PREFIX + "$AlgParams");
             provider.addAlgorithm("AlgorithmParameters", UAObjectIdentifiers.dstu7624cbc_128, PREFIX + "$AlgParams");
             provider.addAlgorithm("AlgorithmParameters",  UAObjectIdentifiers.dstu7624cbc_256, PREFIX + "$AlgParams");
             provider.addAlgorithm("AlgorithmParameters",  UAObjectIdentifiers.dstu7624cbc_512, PREFIX + "$AlgParams");
