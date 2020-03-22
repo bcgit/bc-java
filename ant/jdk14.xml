@@ -25,6 +25,7 @@
             <fileset dir="core/src/main/java">
                 <exclude name="**/ntru/**/*.java"/>
                 <exclude name="**/xmss/**/*.java"/>
+                <exclude name="**/lms/**/*.java"/>
             </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/**/*.java"/>
@@ -55,9 +56,11 @@
                 <exclude name="**/JDKPKCS12StoreParameter.java"/>
                 <exclude name="**/NTRU*.java"/>
                 <exclude name="**/XMS*.java"/>
+                <exclude name="**/LMS*.java"/>
                 <exclude name="**/IndexGenerator.java"/>
                 <exclude name="**/ntru/**/*.java"/>
                 <exclude name="**/xmss/**/*.java"/>
+                <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/asymmetric/DSTU*.java"/>
                 <exclude name="**/asymmetric/dstu/*.java"/>
                 <exclude name="**/asymmetric/ecgost12/*.java"/>
@@ -73,10 +76,13 @@
                 <exclude name="**/KDFCounterGener*.java"/>
                 <exclude name="**/ntru/**/*.java"/>
                 <exclude name="**/xmss/**/*.java"/>
+                <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/NTRU*.java"/>
                 <exclude name="**/pqc/**/EncryptionKeyTest.java"/>
                 <exclude name="**/pqc/**/BitStringTest.java"/>
                 <exclude name="**/pqc/**/XMS*.java"/>
+                <exclude name="**/pqc/**/LMS*.java"/>
+                <exclude name="**/pqc/**/HSS*.java"/>
                 <exclude name="**/GetInstanceTest.java"/>
             </fileset>
             <fileset dir="pg/src/test/java">

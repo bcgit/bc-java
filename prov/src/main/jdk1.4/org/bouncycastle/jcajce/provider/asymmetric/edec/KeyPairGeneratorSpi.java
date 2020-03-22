@@ -9,6 +9,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
@@ -47,42 +48,56 @@ public class KeyPairGeneratorSpi
     public void initialize(int strength, SecureRandom secureRandom)
     {
         this.secureRandom = secureRandom;
-
-        switch (strength)
+        try
         {
-        case 255:
-        case 256:
-            switch (algorithm)
+            switch (strength)
             {
-            case EdDSA:
-            case Ed25519:
-                setupGenerator(Ed25519);
+            case 255:
+            case 256:
+                switch (algorithm)
+                {
+                case EdDSA:
+                case Ed25519:
+                    algorithmCheck(Ed25519);
+                    this.generator = new Ed25519KeyPairGenerator();
+                    setupGenerator(Ed25519);
+                    break;
+                case XDH:
+                case X25519:
+                    algorithmCheck(X25519);
+                    this.generator = new X25519KeyPairGenerator();
+                    setupGenerator(X25519);
+                    break;
+                default:
+                    throw new InvalidParameterException("key size not configurable");
+                }
                 break;
-            case XDH:
-            case X25519:
-                setupGenerator(X25519);
+            case 448:
+                switch (algorithm)
+                {
+                case EdDSA:
+                case Ed448:
+                    algorithmCheck(Ed448);
+                    this.generator = new Ed448KeyPairGenerator();
+                    setupGenerator(Ed448);
+                    break;
+                case XDH:
+                case X448:
+                    algorithmCheck(X448);
+                    this.generator = new X448KeyPairGenerator();
+                    setupGenerator(X448);
+                    break;
+                default:
+                    throw new InvalidParameterException("key size not configurable");
+                }
                 break;
             default:
-                throw new InvalidParameterException("key size not configurable");
+                throw new InvalidParameterException("unknown key size");
             }
-            break;
-        case 448:
-            switch (algorithm)
-            {
-            case EdDSA:
-            case Ed448:
-                setupGenerator(Ed448);
-                break;
-            case XDH:
-            case X448:
-                setupGenerator(X448);
-                break;
-            default:
-                throw new InvalidParameterException("key size not configurable");
-            }
-            break;
-        default:
-            throw new InvalidParameterException("unknown key size");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            throw new InvalidParameterException(e.getMessage());
         }
     }
 
@@ -198,7 +213,7 @@ public class KeyPairGeneratorSpi
 
         if (secureRandom == null)
         {
-            secureRandom = new SecureRandom();
+            secureRandom = CryptoServicesRegistrar.getSecureRandom();
         }
 
         switch (algorithm)

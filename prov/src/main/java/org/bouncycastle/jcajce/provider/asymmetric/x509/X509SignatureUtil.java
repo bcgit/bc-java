@@ -95,7 +95,7 @@ class X509SignatureUtil
         }
 
         // deal with the "weird" ones.
-        String algName = algNames.get(sigAlgId.getAlgorithm());
+        String algName = (String)algNames.get(sigAlgId.getAlgorithm());
         if (algName != null)
         {
             return algName;
