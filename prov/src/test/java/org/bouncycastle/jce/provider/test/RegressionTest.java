@@ -89,7 +89,8 @@ public class RegressionTest
         new OpenSSHSpecTests(),
         new SM2CipherTest(),
         new ZucTest(),
-        new ChaCha20Poly1305Test()
+        new ChaCha20Poly1305Test(),
+        new SipHash128Test()
     };
 
     public static void main(String[] args)
