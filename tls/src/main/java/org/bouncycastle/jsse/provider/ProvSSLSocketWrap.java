@@ -262,7 +262,7 @@ class ProvSSLSocketWrap
         return null == handshakeSession ? null : handshakeSession.getApplicationProtocol();
     }
 
-    @Override
+    // An SSLSocket method from JDK 7
     public synchronized SSLSession getHandshakeSession()
     {
         return null == handshakeSession ? null : handshakeSession.getExportSSLSession();
@@ -369,7 +369,7 @@ class ProvSSLSocketWrap
         return SSLParametersUtil.getParameters(sslParameters);
     }
 
-    @Override
+    // An SSLSocket method from JDK 6
     public synchronized SSLParameters getSSLParameters()
     {
         return SSLParametersUtil.getSSLParameters(sslParameters);
@@ -541,7 +541,7 @@ class ProvSSLSocketWrap
         wrapSocket.setSoTimeout(timeout);
     }
 
-    @Override
+    // An SSLSocket method from JDK 6
     public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
         SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
