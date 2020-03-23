@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
@@ -17,6 +18,8 @@ import org.bouncycastle.jsse.BCSSLSocket;
 
 abstract class SSLSocketUtil
 {
+    private static AtomicInteger threadNumber = new AtomicInteger();
+
     private static final Method getHandshakeSession;
     private static final Method getSSLParameters;
 
@@ -73,6 +76,13 @@ abstract class SSLSocketUtil
         throws IOException
     {
         return new ProvSSLSocketWrap(contextData, s, host, port, autoClose);
+    }
+
+    static void handshakeCompleted(Runnable notifyRunnable)
+    {
+        String name = "BCJSSE-HandshakeCompleted-" + (threadNumber.getAndIncrement() & 0x7FFFFFFF);
+
+        new Thread(notifyRunnable, name).start();
     }
 
     static BCExtendedSSLSession importHandshakeSession(SSLSocket sslSocket)
