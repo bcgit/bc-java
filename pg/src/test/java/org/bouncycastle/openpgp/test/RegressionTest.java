@@ -29,6 +29,7 @@ public class RegressionTest
         new PGPECDHTest(),
         new PGPECMessageTest(),
         new PGPParsingTest(),
+        new PGPEdDSATest(),
         new SExprTest(),
         new ArmoredInputStreamTest(),
         new PGPUtilTest()
