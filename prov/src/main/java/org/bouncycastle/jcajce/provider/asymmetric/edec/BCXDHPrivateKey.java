@@ -22,7 +22,7 @@ public class BCXDHPrivateKey
 {
     static final long serialVersionUID = 1L;
 
-    private transient AsymmetricKeyParameter xdhPrivateKey;
+    protected transient AsymmetricKeyParameter xdhPrivateKey;
 
     private final boolean hasPublicKey;
     private final byte[] attributes;
