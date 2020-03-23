@@ -60,6 +60,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -128,13 +129,19 @@ public class JcaPGPKeyConverter
 
                 return fact.generatePublic(elSpec);
             case PublicKeyAlgorithmTags.ECDH:
+            {
                 ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
-                X9ECParameters ecdhParams = JcaJcePGPUtil.getX9Parameters(ecdhK.getCurveOID());
 
                 if (ecdhK.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
                 {
                     byte[] pEnc = ecdhK.getEncodedPoint().toByteArray();
+
                     // skip the 0x40 header byte.
+                    if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
+                    {
+                        throw new IllegalArgumentException("Invalid Curve25519 public key");
+                    }
+
                     X509EncodedKeySpec ecDhSpec =
                         new X509EncodedKeySpec(
                                   new SubjectPublicKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
@@ -145,6 +152,7 @@ public class JcaPGPKeyConverter
                 }
                 else
                 {
+                    X9ECParameters ecdhParams = JcaJcePGPUtil.getX9Parameters(ecdhK.getCurveOID());
                     ECPoint ecdhPoint = JcaJcePGPUtil.decodePoint(ecdhK.getEncodedPoint(), ecdhParams.getCurve());
 
                     ECPublicKeySpec ecDhSpec = new ECPublicKeySpec(
@@ -154,6 +162,7 @@ public class JcaPGPKeyConverter
 
                     return fact.generatePublic(ecDhSpec);
                 }
+            }
             case PublicKeyAlgorithmTags.ECDSA:
                 ECDSAPublicBCPGKey ecdsaK = (ECDSAPublicBCPGKey)publicPk.getKey();
                 X9ECParameters ecdsaParams = JcaJcePGPUtil.getX9Parameters(ecdsaK.getCurveOID());

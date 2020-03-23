@@ -78,7 +78,7 @@ public class RFC6637KDFCalculator
     private static byte[] KDF(PGPDigestCalculator digCalc, ECPoint s, int keyLen, byte[] param)
         throws IOException
     {
-        byte[] ZB = s.getXCoord().getEncoded();
+        byte[] ZB = s.getAffineXCoord().getEncoded();
 
         OutputStream dOut = digCalc.getOutputStream();
 

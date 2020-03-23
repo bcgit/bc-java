@@ -24,9 +24,9 @@ class TransportData
         if (null == parameters)
         {
             /*
-             * NOTE: This will only be null before JDK 1.6 (meaning neither parameters nor handshake
-             * session exist). For backward compatibility, our KeyManager/TrustManager
-             * implementations will behave as if no transport was provided.
+             * NOTE: For non-BCJSSE sockets, this could be null before JDK 1.6 (meaning neither
+             * parameters nor handshake session exist). For backward compatibility, our
+             * KeyManager/TrustManager implementations will behave as if no transport was provided.
              */
             return null;
         }
@@ -47,9 +47,9 @@ class TransportData
         if (null == parameters)
         {
             /*
-             * NOTE: This will only be null before JDK 1.6 (meaning neither parameters nor handshake
-             * session exist). For backward compatibility, our KeyManager/TrustManager
-             * implementations will behave as if no transport was provided.
+             * NOTE: For non-BCJSSE engines, this could be null before JDK 1.6 (meaning neither
+             * parameters nor handshake session exist). For backward compatibility, our
+             * KeyManager/TrustManager implementations will behave as if no transport was provided.
              */
             return null;
         }

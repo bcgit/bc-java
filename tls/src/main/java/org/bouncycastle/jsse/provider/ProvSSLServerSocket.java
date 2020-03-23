@@ -23,7 +23,7 @@ class ProvSSLServerSocket
         super();
 
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
     }
 
     protected ProvSSLServerSocket(ContextData contextData, int port)
@@ -32,7 +32,7 @@ class ProvSSLServerSocket
         super(port);
 
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
     }
 
     protected ProvSSLServerSocket(ContextData contextData, int port, int backlog)
@@ -41,7 +41,7 @@ class ProvSSLServerSocket
         super(port, backlog);
 
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
     }
 
     protected ProvSSLServerSocket(ContextData contextData, int port, int backlog, InetAddress address)
@@ -50,7 +50,7 @@ class ProvSSLServerSocket
         super(port, backlog, address);
 
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
     }
 
     @Override
@@ -160,7 +160,7 @@ class ProvSSLServerSocket
     {
         if (this.useClientMode != useClientMode)
         {
-            contextData.getContext().updateDefaultProtocols(sslParameters, useClientMode);
+            contextData.getContext().updateDefaultSSLParameters(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }

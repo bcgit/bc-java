@@ -90,7 +90,8 @@ abstract class SSLParametersUtil
 
         if (null != setAlgorithmConstraints)
         {
-            set(ssl, setAlgorithmConstraints, JsseUtils_7.exportAlgorithmConstraints(prov.getAlgorithmConstraints()));
+            set(ssl, setAlgorithmConstraints,
+                JsseUtils_7.exportAlgorithmConstraintsDynamic(prov.getAlgorithmConstraints()));
         }
 
         if (null != setEndpointIdentificationAlgorithm)
@@ -110,16 +111,16 @@ abstract class SSLParametersUtil
             List<BCSNIServerName> serverNames = prov.getServerNames();
             if (null != serverNames)
             {
-                set(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(serverNames));
+                set(ssl, setServerNames, JsseUtils_8.exportSNIServerNamesDynamic(serverNames));
             }
         }
 
         if (null != setSNIMatchers)
         {
-            Collection<BCSNIMatcher> sniMatchers = prov.getSNIMatchers();
-            if (null != sniMatchers)
+            Collection<BCSNIMatcher> matchers = prov.getSNIMatchers();
+            if (null != matchers)
             {
-                set(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(sniMatchers));
+                set(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchersDynamic(matchers));
             }
         }
 
@@ -148,10 +149,10 @@ abstract class SSLParametersUtil
 
         if (null != getAlgorithmConstraints)
         {
-            Object getAlgorithmConstraintsResult = get(ssl, getAlgorithmConstraints);
-            if (null != getAlgorithmConstraintsResult)
+            Object constraints = get(ssl, getAlgorithmConstraints);
+            if (null != constraints)
             {
-                bc.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
+                bc.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraintsDynamic(constraints));
             }
         }
 
@@ -173,19 +174,19 @@ abstract class SSLParametersUtil
 
         if (null != getServerNames)
         {
-            Object getServerNamesResult = get(ssl, getServerNames);
-            if (null != getServerNamesResult)
+            Object serverNames = get(ssl, getServerNames);
+            if (null != serverNames)
             {
-                bc.setServerNames(JsseUtils_8.importSNIServerNames(getServerNamesResult));
+                bc.setServerNames(JsseUtils_8.importSNIServerNamesDynamic(serverNames));
             }
         }
 
         if (null != getSNIMatchers)
         {
-            Object getSNIMatchersResult = get(ssl, getSNIMatchers);
-            if (null != getSNIMatchersResult)
+            Object matchers = get(ssl, getSNIMatchers);
+            if (null != matchers)
             {
-                bc.setSNIMatchers(JsseUtils_8.importSNIMatchers(getSNIMatchersResult));
+                bc.setSNIMatchers(JsseUtils_8.importSNIMatchersDynamic(matchers));
             }
         }
 
@@ -285,10 +286,10 @@ abstract class SSLParametersUtil
 
         if (null != getAlgorithmConstraints)
         {
-            Object getAlgorithmConstraintsResult = get(ssl, getAlgorithmConstraints);
-            if (null != getAlgorithmConstraintsResult)
+            Object constraints = get(ssl, getAlgorithmConstraints);
+            if (null != constraints)
             {
-                prov.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
+                prov.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraintsDynamic(constraints));
             }
         }
 
@@ -310,19 +311,19 @@ abstract class SSLParametersUtil
 
         if (null != getServerNames)
         {
-            Object getServerNamesResult = get(ssl, getServerNames);
-            if (null != getServerNamesResult)
+            Object serverNames = get(ssl, getServerNames);
+            if (null != serverNames)
             {
-                prov.setServerNames(JsseUtils_8.importSNIServerNames(getServerNamesResult));
+                prov.setServerNames(JsseUtils_8.importSNIServerNamesDynamic(serverNames));
             }
         }
 
         if (null != getSNIMatchers)
         {
-            Object getSNIMatchersResult = get(ssl, getSNIMatchers);
-            if (null != getSNIMatchersResult)
+            Object matchers = get(ssl, getSNIMatchers);
+            if (null != matchers)
             {
-                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(getSNIMatchersResult));
+                prov.setSNIMatchers(JsseUtils_8.importSNIMatchersDynamic(matchers));
             }
         }
     }
