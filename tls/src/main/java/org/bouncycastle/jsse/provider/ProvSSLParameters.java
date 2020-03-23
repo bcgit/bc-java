@@ -90,12 +90,19 @@ final class ProvSSLParameters
 
     String[] getCipherSuitesArray()
     {
+        // NOTE: ProvSSLContextSpi.updateDefaultSSLParameters depends on this not making a copy
         return cipherSuites;
     }
 
     public void setCipherSuites(String[] cipherSuites)
     {
         this.cipherSuites = context.getSupportedCipherSuites(cipherSuites);
+    }
+
+    void setCipherSuitesArray(String[] cipherSuites)
+    {
+        // NOTE: ProvSSLContextSpi.updateDefaultSSLParameters depends on this not making a copy
+        this.cipherSuites = cipherSuites;
     }
 
     public String[] getProtocols()
@@ -105,7 +112,7 @@ final class ProvSSLParameters
 
     String[] getProtocolsArray()
     {
-        // NOTE: The mechanism of ProvSSLContextSpi.updateDefaultProtocols depends on this not making a copy
+        // NOTE: ProvSSLContextSpi.updateDefaultSSLParameters depends on this not making a copy
         return protocols;
     }
 
@@ -121,7 +128,7 @@ final class ProvSSLParameters
 
     void setProtocolsArray(String[] protocols)
     {
-        // NOTE: The mechanism of ProvSSLContextSpi.updateDefaultProtocols depends on this not making a copy
+        // NOTE: ProvSSLContextSpi.updateDefaultSSLParameters depends on this not making a copy
         this.protocols = protocols;
     }
 
