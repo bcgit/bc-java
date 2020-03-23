@@ -12,6 +12,7 @@ import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
@@ -503,6 +504,14 @@ public class PGPSignature
             if (sigValues.length == 1)    // an RSA signature
             {
                 signature = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
+            }
+            else if (this.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA)
+            {
+                signature = new byte[64];
+                byte[] a = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
+                byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
+                System.arraycopy(a, 0, signature, 32 - a.length, a.length);
+                System.arraycopy(b, 0, signature, 64 - b.length, b.length);
             }
             else
             {

@@ -18,6 +18,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -36,10 +37,12 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.util.Arrays;
 
 public class JcePublicKeyKeyEncryptionMethodGenerator
     extends PublicKeyKeyEncryptionMethodGenerator
 {
+    public static final byte[] X_HDR = {0x40};
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private SecureRandom random;
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
@@ -47,7 +50,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
     /**
      * Create a public key encryption method generator with the method to be based on the passed in key.
      *
-     * @param key   the public key to use for encryption.
+     * @param key the public key to use for encryption.
      */
     public JcePublicKeyKeyEncryptionMethodGenerator(PGPPublicKey key)
     {
@@ -75,8 +78,8 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
     /**
      * Provide a user defined source of randomness.
      *
-     * @param random  the secure random to be used.
-     * @return  the current generator.
+     * @param random the secure random to be used.
+     * @return the current generator.
      */
     public JcePublicKeyKeyEncryptionMethodGenerator setSecureRandom(SecureRandom random)
     {
@@ -90,52 +93,89 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
     {
         try
         {
+
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
-                // Generate the ephemeral key pair
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
-                X9ECParameters x9Params = JcaJcePGPUtil.getX9Parameters(ecKey.getCurveOID());
-                AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters("EC");
 
-                ecAlgParams.init(new X962Parameters(ecKey.getCurveOID()).getEncoded());
+                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                {
+                    KeyPairGenerator kpGen = helper.createKeyPairGenerator("X25519");
+                    KeyPair ephKP = kpGen.generateKeyPair();
 
-                KeyPairGenerator kpGen = helper.createKeyPairGenerator("EC");
+                    KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKey.getPublicKeyPacket()));
 
-                kpGen.initialize(ecAlgParams.getParameterSpec(AlgorithmParameterSpec.class));
+                    agreement.init(ephKP.getPrivate(), new UserKeyingMaterialSpec(RFC6637Utils.createUserKeyingMaterial(pubKey.getPublicKeyPacket(), new JcaKeyFingerprintCalculator())));
 
-                KeyPair ephKP = kpGen.generateKeyPair();
+                    agreement.doPhase(keyConverter.getPublicKey(pubKey), true);
+                    Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
 
-                KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKey.getPublicKeyPacket()));
+                    Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
 
-                agreement.init(ephKP.getPrivate(), new UserKeyingMaterialSpec(RFC6637Utils.createUserKeyingMaterial(pubKey.getPublicKeyPacket(), new JcaKeyFingerprintCalculator())));
+                    c.init(Cipher.WRAP_MODE, key, random);
 
-                agreement.doPhase(keyConverter.getPublicKey(pubKey), true);
+                    byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
 
-                Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
+                    byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
 
-                Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
+                    SubjectPublicKeyInfo epPubKey = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded());
 
-                c.init(Cipher.WRAP_MODE, key, random);
+                    byte[] VB = new MPInteger(new BigInteger(1, Arrays.concatenate(X_HDR, epPubKey.getPublicKeyData().getBytes()))).getEncoded();
 
-                byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
+                    byte[] rv = new byte[VB.length + 1 + C.length];
 
-                byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
+                    System.arraycopy(VB, 0, rv, 0, VB.length);
+                    rv[VB.length] = (byte)C.length;
+                    System.arraycopy(C, 0, rv, VB.length + 1, C.length);
 
-                SubjectPublicKeyInfo epPubKey = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded());
+                    return rv;
+                }
+                else
+                {
+                    // Generate the ephemeral key pair
+                    X9ECParameters x9Params = JcaJcePGPUtil.getX9Parameters(ecKey.getCurveOID());
+                    AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters("EC");
 
-                X9ECPoint derQ = new X9ECPoint(x9Params.getCurve(), epPubKey.getPublicKeyData().getBytes());
+                    ecAlgParams.init(new X962Parameters(ecKey.getCurveOID()).getEncoded());
 
-                ECPoint publicPoint = derQ.getPoint();
+                    KeyPairGenerator kpGen = helper.createKeyPairGenerator("EC");
 
-                byte[] VB = new MPInteger(new BigInteger(1, publicPoint.getEncoded(false))).getEncoded();
+                    kpGen.initialize(ecAlgParams.getParameterSpec(AlgorithmParameterSpec.class));
 
-                byte[] rv = new byte[VB.length + 1 + C.length];
+                    KeyPair ephKP = kpGen.generateKeyPair();
 
-                System.arraycopy(VB, 0, rv, 0, VB.length);
-                rv[VB.length] = (byte)C.length;
-                System.arraycopy(C, 0, rv, VB.length + 1, C.length);
+                    KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKey.getPublicKeyPacket()));
 
-                return rv;
+                    agreement.init(ephKP.getPrivate(), new UserKeyingMaterialSpec(RFC6637Utils.createUserKeyingMaterial(pubKey.getPublicKeyPacket(), new JcaKeyFingerprintCalculator())));
+
+                    agreement.doPhase(keyConverter.getPublicKey(pubKey), true);
+
+                    Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
+
+                    Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
+
+                    c.init(Cipher.WRAP_MODE, key, random);
+
+                    byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
+
+                    byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
+
+                    SubjectPublicKeyInfo epPubKey = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded());
+
+                    X9ECPoint derQ = new X9ECPoint(x9Params.getCurve(), epPubKey.getPublicKeyData().getBytes());
+
+                    ECPoint publicPoint = derQ.getPoint();
+
+                    byte[] VB = new MPInteger(new BigInteger(1, publicPoint.getEncoded(false))).getEncoded();
+
+                    byte[] rv = new byte[VB.length + 1 + C.length];
+
+                    System.arraycopy(VB, 0, rv, 0, VB.length);
+                    rv[VB.length] = (byte)C.length;
+                    System.arraycopy(C, 0, rv, VB.length + 1, C.length);
+
+                    return rv;
+                }
             }
             else
             {

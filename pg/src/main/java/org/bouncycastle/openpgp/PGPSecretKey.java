@@ -15,6 +15,7 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
@@ -522,6 +523,10 @@ public class PGPSecretKey
                 ECSecretBCPGKey ecPriv = new ECSecretBCPGKey(in);
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, ecPriv);
+            case PGPPublicKey.EDDSA:
+                EdSecretBCPGKey edPriv = new EdSecretBCPGKey(in);
+
+                return new PGPPrivateKey(this.getKeyID(), pubPk, edPriv);
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }

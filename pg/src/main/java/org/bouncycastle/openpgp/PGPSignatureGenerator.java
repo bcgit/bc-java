@@ -17,6 +17,7 @@ import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.openpgp.operator.PGPContentSigner;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -261,6 +262,14 @@ public class PGPSignatureGenerator
         {
             sigValues = new MPInteger[1];
             sigValues[0] = new MPInteger(new BigInteger(1, contentSigner.getSignature()));
+        }
+        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA)
+        {
+            byte[] enc = contentSigner.getSignature();
+            sigValues = new MPInteger[]{
+                        new MPInteger(new BigInteger(1, Arrays.copyOfRange(enc, 0, enc.length / 2))),
+                        new MPInteger(new BigInteger(1, Arrays.copyOfRange(enc, enc.length / 2, enc.length)))
+                    };
         }
         else
         {   
