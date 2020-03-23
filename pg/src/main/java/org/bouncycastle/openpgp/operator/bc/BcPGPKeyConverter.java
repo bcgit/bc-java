@@ -6,6 +6,7 @@ import java.util.Date;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -37,6 +38,7 @@ import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
@@ -191,6 +193,30 @@ public class BcPGPKeyConverter
 
                 return new ElGamalPublicKeyParameters(elK.getY(), new ElGamalParameters(elK.getP(), elK.getG()));
             case PGPPublicKey.ECDH:
+            {
+                ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
+
+                if (ecdhK.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                {
+                    byte[] pEnc = ecdhK.getEncodedPoint().toByteArray();
+
+                    // skip the 0x40 header byte.
+                    if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
+                    {
+                        throw new IllegalArgumentException("Invalid Curve25519 public key");
+                    }
+
+                    return new X25519PublicKeyParameters(pEnc, 1);
+                }
+                else
+                {
+                    ECPublicBCPGKey ecPub = ecdhK;
+                    X9ECParameters x9 = BcUtil.getX9Parameters(ecPub.getCurveOID());
+
+                    return new ECPublicKeyParameters(BcUtil.decodePoint(ecPub.getEncodedPoint(), x9.getCurve()),
+                        new ECNamedDomainParameters(ecPub.getCurveOID(), x9.getCurve(), x9.getG(), x9.getN(), x9.getH()));
+                }
+            }
             case PGPPublicKey.ECDSA:
                 ECPublicBCPGKey ecPub = (ECPublicBCPGKey)publicPk.getKey();
                 X9ECParameters x9 = BcUtil.getX9Parameters(ecPub.getCurveOID());

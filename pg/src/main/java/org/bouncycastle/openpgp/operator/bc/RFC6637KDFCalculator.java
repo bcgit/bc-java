@@ -29,10 +29,16 @@ class RFC6637KDFCalculator
     public byte[] createKey(ECPoint s, byte[] userKeyingMaterial)
         throws PGPException
     {
+        return createKey(s.getAffineXCoord().getEncoded(), userKeyingMaterial);
+    }
+
+    public byte[] createKey(byte[] secret, byte[] userKeyingMaterial)
+        throws PGPException
+    {
         try
         {
             // RFC 6637 - Section 8
-            return KDF(digCalc, s, getKeyLen(keyAlgorithm), userKeyingMaterial);
+            return KDF(digCalc, secret, getKeyLen(keyAlgorithm), userKeyingMaterial);
         }
         catch (IOException e)
         {
@@ -53,11 +59,9 @@ class RFC6637KDFCalculator
     //         ZB = x;
     //         MB = Hash ( 00 || 00 || 00 || 01 || ZB || Param );
     //   return oBits leftmost bits of MB.
-    private static byte[] KDF(PGPDigestCalculator digCalc, ECPoint s, int keyLen, byte[] param)
+    private static byte[] KDF(PGPDigestCalculator digCalc, byte[] ZB, int keyLen, byte[] param)
         throws IOException
     {
-        byte[] ZB = s.getXCoord().getEncoded();
-
         OutputStream dOut = digCalc.getOutputStream();
 
         dOut.write(0x00);
