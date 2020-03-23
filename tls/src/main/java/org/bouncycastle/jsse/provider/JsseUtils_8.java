@@ -87,12 +87,9 @@ abstract class JsseUtils_8
         return new ExportSNIMatcher(matcher);
     }
 
-    /*
-     * NOTE: Currently return type is Object to isolate callers from JDK8 type
-     */
-    static Object exportSNIMatchers(Collection<BCSNIMatcher> matchers)
+    static List<SNIMatcher> exportSNIMatchers(Collection<BCSNIMatcher> matchers)
     {
-        if (matchers.isEmpty())
+        if (null == matchers || matchers.isEmpty())
         {
             return Collections.<SNIMatcher>emptyList();
         }
@@ -103,6 +100,14 @@ abstract class JsseUtils_8
             result.add(exportSNIMatcher(matcher));
         }
         return Collections.unmodifiableList(result);
+    }
+
+    /*
+     * NOTE: Return type is Object to isolate callers from JDK 8 type
+     */
+    static Object exportSNIMatchersDynamic(Collection<BCSNIMatcher> matchers)
+    {
+        return exportSNIMatchers(matchers);
     }
 
     static SNIServerName exportSNIServerName(BCSNIServerName serverName)
@@ -124,12 +129,9 @@ abstract class JsseUtils_8
         }
     }
 
-    /*
-     * NOTE: Currently return type is Object to isolate callers from JDK8 type
-     */
-    static Object exportSNIServerNames(Collection<BCSNIServerName> serverNames)
+    static List<SNIServerName> exportSNIServerNames(Collection<BCSNIServerName> serverNames)
     {
-        if (serverNames.isEmpty())
+        if (null == serverNames || serverNames.isEmpty())
         {
             return Collections.<SNIServerName>emptyList();
         }
@@ -140,6 +142,14 @@ abstract class JsseUtils_8
             result.add(exportSNIServerName(serverName));
         }
         return Collections.unmodifiableList(result);
+    }
+
+    /*
+     * NOTE: Return type is Object to isolate callers from JDK 8 type
+     */
+    static Object exportSNIServerNamesDynamic(Collection<BCSNIServerName> serverNames)
+    {
+        return exportSNIServerNames(serverNames);
     }
 
     static BCSNIMatcher importSNIMatcher(SNIMatcher matcher)
@@ -157,15 +167,9 @@ abstract class JsseUtils_8
         return new ImportSNIMatcher(matcher);
     }
 
-    /*
-     * NOTE: Currently argument is Object type to isolate callers from JDK8 type
-     */
-    static List<BCSNIMatcher> importSNIMatchers(Object getSNIMatchersResult)
+    static List<BCSNIMatcher> importSNIMatchers(Collection<SNIMatcher> matchers)
     {
-        @SuppressWarnings("unchecked")
-        Collection<SNIMatcher> matchers = (Collection<SNIMatcher>)getSNIMatchersResult;
-
-        if (matchers.isEmpty())
+        if (null == matchers || matchers.isEmpty())
         {
             return Collections.emptyList();
         }
@@ -176,6 +180,15 @@ abstract class JsseUtils_8
             result.add(importSNIMatcher(matcher));
         }
         return Collections.unmodifiableList(result);
+    }
+
+    /*
+     * NOTE: Argument type is Object to isolate callers from JDK 8 type
+     */
+    @SuppressWarnings("unchecked")
+    static List<BCSNIMatcher> importSNIMatchersDynamic(Object matchers)
+    {
+        return importSNIMatchers((Collection<SNIMatcher>)matchers);
     }
 
     static BCSNIServerName importSNIServerName(SNIServerName serverName)
@@ -197,15 +210,9 @@ abstract class JsseUtils_8
         }
     }
 
-    /*
-     * NOTE: Currently argument is Object type to isolate callers from JDK8 type
-     */
-    static List<BCSNIServerName> importSNIServerNames(Object getServerNamesResult)
+    static List<BCSNIServerName> importSNIServerNames(Collection<SNIServerName> serverNames)
     {
-        @SuppressWarnings("unchecked")
-        Collection<SNIServerName> serverNames = (Collection<SNIServerName>)getServerNamesResult;
-
-        if (serverNames.isEmpty())
+        if (null == serverNames || serverNames.isEmpty())
         {
             return Collections.emptyList();
         }
@@ -216,5 +223,14 @@ abstract class JsseUtils_8
             result.add(importSNIServerName(serverName));
         }
         return Collections.unmodifiableList(result);
+    }
+
+    /*
+     * NOTE: Argument type is Object to isolate callers from JDK 8 type
+     */
+    @SuppressWarnings("unchecked")
+    static List<BCSNIServerName> importSNIServerNamesDynamic(Object serverNames)
+    {
+        return importSNIServerNames((Collection<SNIServerName>)serverNames);
     }
 }

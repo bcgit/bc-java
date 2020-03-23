@@ -75,15 +75,15 @@ abstract class SSLParametersUtil
             List<BCSNIServerName> serverNames = prov.getServerNames();
             if (null != serverNames)
             {
-                ssl.setServerNames((List<SNIServerName>)JsseUtils_8.exportSNIServerNames(serverNames));
+                ssl.setServerNames(JsseUtils_8.exportSNIServerNames(serverNames));
             }
         }
 
         {
-            Collection<BCSNIMatcher> sniMatchers = prov.getSNIMatchers();
-            if (null != sniMatchers)
+            Collection<BCSNIMatcher> matchers = prov.getSNIMatchers();
+            if (null != matchers)
             {
-                ssl.setSNIMatchers((Collection<SNIMatcher>)JsseUtils_8.exportSNIMatchers(sniMatchers));
+                ssl.setSNIMatchers(JsseUtils_8.exportSNIMatchers(matchers));
             }
         }
 
@@ -135,18 +135,18 @@ abstract class SSLParametersUtil
         bc.setUseCipherSuitesOrder(ssl.getUseCipherSuitesOrder());
 
         {
-            List<SNIServerName> getServerNamesResult = ssl.getServerNames();
-            if (null != getServerNamesResult)
+            List<SNIServerName> serverNames = ssl.getServerNames();
+            if (null != serverNames)
             {
-                bc.setServerNames(JsseUtils_8.importSNIServerNames(getServerNamesResult));
+                bc.setServerNames(JsseUtils_8.importSNIServerNames(serverNames));
             }
         }
 
         {
-            Collection<SNIMatcher> getSNIMatchersResult = ssl.getSNIMatchers();
-            if (null != getSNIMatchersResult)
+            Collection<SNIMatcher> matchers = ssl.getSNIMatchers();
+            if (null != matchers)
             {
-                bc.setSNIMatchers(JsseUtils_8.importSNIMatchers(getSNIMatchersResult));
+                bc.setSNIMatchers(JsseUtils_8.importSNIMatchers(matchers));
             }
         }
 
@@ -275,18 +275,18 @@ abstract class SSLParametersUtil
         prov.setUseCipherSuitesOrder(ssl.getUseCipherSuitesOrder());
 
         {
-            List<SNIServerName> getServerNamesResult = ssl.getServerNames();
-            if (null != getServerNamesResult)
+            List<SNIServerName> serverNames = ssl.getServerNames();
+            if (null != serverNames)
             {
-                prov.setServerNames(JsseUtils_8.importSNIServerNames(getServerNamesResult));
+                prov.setServerNames(JsseUtils_8.importSNIServerNames(serverNames));
             }
         }
 
         {
-            Collection<SNIMatcher> getSNIMatchersResult = ssl.getSNIMatchers();
-            if (null != getSNIMatchersResult)
+            Collection<SNIMatcher> matchers = ssl.getSNIMatchers();
+            if (null != matchers)
             {
-                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(getSNIMatchersResult));
+                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(matchers));
             }
         }
 
