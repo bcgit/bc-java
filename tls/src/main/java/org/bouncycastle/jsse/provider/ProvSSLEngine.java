@@ -70,7 +70,7 @@ class ProvSSLEngine
         super(host, port);
 
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
     }
 
     public ContextData getContextData()
@@ -414,7 +414,7 @@ class ProvSSLEngine
 
         if (this.useClientMode != useClientMode)
         {
-            contextData.getContext().updateDefaultProtocols(sslParameters, useClientMode);
+            contextData.getContext().updateDefaultSSLParameters(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }
