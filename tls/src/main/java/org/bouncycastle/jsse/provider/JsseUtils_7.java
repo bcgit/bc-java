@@ -108,7 +108,7 @@ abstract class JsseUtils_7
     }
 
     /*
-     * NOTE: Return type is Object to isolate callers from JDK7 type
+     * NOTE: Return type is Object to isolate callers from JDK 7 type
      */
     static Object exportAlgorithmConstraintsDynamic(BCAlgorithmConstraints constraints)
     {
@@ -183,7 +183,7 @@ abstract class JsseUtils_7
     }
 
     /*
-     * NOTE: Argument type is Object to isolate callers from JDK7 type
+     * NOTE: Argument type is Object to isolate callers from JDK 7 type
      */
     static BCAlgorithmConstraints importAlgorithmConstraintsDynamic(Object constraints)
     {
