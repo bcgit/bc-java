@@ -18,7 +18,7 @@ public class BCXDHPublicKey
 {
     static final long serialVersionUID = 1L;
 
-    private transient AsymmetricKeyParameter xdhPublicKey;
+    protected transient AsymmetricKeyParameter xdhPublicKey;
 
     BCXDHPublicKey(AsymmetricKeyParameter pubKey)
     {
