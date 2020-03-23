@@ -22,6 +22,9 @@ abstract class JsseUtils_7
     static final Set<CryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
+    static final AlgorithmConstraints DEFAULT_ALGORITHM_CONSTRAINTS = new ExportAlgorithmConstraints(
+        DEFAULT_ALGORITHM_CONSTRAINTS_BC);
+
     static class ExportAlgorithmConstraints implements AlgorithmConstraints
     {
         private final BCAlgorithmConstraints constraints;
@@ -84,11 +87,13 @@ abstract class JsseUtils_7
         }
     }
 
-    /*
-     * NOTE: Currently return type is Object to isolate callers from JDK7 type
-     */
-    static Object exportAlgorithmConstraints(BCAlgorithmConstraints constraints)
+    static AlgorithmConstraints exportAlgorithmConstraints(BCAlgorithmConstraints constraints)
     {
+        if (DEFAULT_ALGORITHM_CONSTRAINTS_BC == constraints)
+        {
+            return DEFAULT_ALGORITHM_CONSTRAINTS;
+        }
+
         if (constraints == null)
         {
             return null;
@@ -100,6 +105,14 @@ abstract class JsseUtils_7
         }
 
         return new ExportAlgorithmConstraints(constraints);
+    }
+
+    /*
+     * NOTE: Return type is Object to isolate callers from JDK7 type
+     */
+    static Object exportAlgorithmConstraintsDynamic(BCAlgorithmConstraints constraints)
+    {
+        return exportAlgorithmConstraints(constraints);
     }
 
     static CryptoPrimitive exportCryptoPrimitive(BCCryptoPrimitive primitive)
@@ -154,17 +167,12 @@ abstract class JsseUtils_7
         return result;
     }
 
-    /*
-     * NOTE: Currently argument is Object type to isolate callers from JDK7 type
-     */
-    static BCAlgorithmConstraints importAlgorithmConstraints(Object getAlgorithmConstraintsResult)
+    static BCAlgorithmConstraints importAlgorithmConstraints(AlgorithmConstraints constraints)
     {
-        if (getAlgorithmConstraintsResult == null)
+        if (null == constraints)
         {
             return null;
         }
-
-        AlgorithmConstraints constraints = (AlgorithmConstraints)getAlgorithmConstraintsResult;
 
         if (constraints instanceof ExportAlgorithmConstraints)
         {
@@ -172,6 +180,14 @@ abstract class JsseUtils_7
         }
 
         return new ImportAlgorithmConstraints(constraints);
+    }
+
+    /*
+     * NOTE: Argument type is Object to isolate callers from JDK7 type
+     */
+    static BCAlgorithmConstraints importAlgorithmConstraintsDynamic(Object constraints)
+    {
+        return importAlgorithmConstraints((AlgorithmConstraints)constraints);
     }
 
     static BCCryptoPrimitive importCryptoPrimitive(CryptoPrimitive primitive)
