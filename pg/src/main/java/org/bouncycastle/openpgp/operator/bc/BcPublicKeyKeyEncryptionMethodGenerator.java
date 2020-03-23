@@ -4,29 +4,35 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
-import org.bouncycastle.crypto.EphemeralKeyPair;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
+import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * A method generator for supporting public key based encryption operations.
@@ -34,6 +40,8 @@ import org.bouncycastle.openpgp.operator.RFC6637Utils;
 public class BcPublicKeyKeyEncryptionMethodGenerator
     extends PublicKeyKeyEncryptionMethodGenerator
 {
+    private static final byte X_HDR = 0x40;
+
     private SecureRandom random;
     private BcPGPKeyConverter keyConverter = new BcPGPKeyConverter();
 
@@ -65,65 +73,64 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     {
         try
         {
-            if (pubKey.getAlgorithm() != PGPPublicKey.ECDH)
+            AsymmetricKeyParameter cryptoPublicKey = keyConverter.getPublicKey(pubKey);
+
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
-                AsymmetricBlockCipher c = BcImplProvider.createPublicKeyCipher(pubKey.getAlgorithm());
+                PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
+                ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
 
-                AsymmetricKeyParameter key = keyConverter.getPublicKey(pubKey);
+                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyPacket,
+                    new BcKeyFingerprintCalculator());
 
-                if (random == null)
+                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
                 {
-                    random = new SecureRandom();
+                    X25519KeyPairGenerator gen = new X25519KeyPairGenerator();
+                    gen.init(new X25519KeyGenerationParameters(random));
+
+                    AsymmetricCipherKeyPair ephKp = gen.generateKeyPair();
+
+                    X25519Agreement agreement = new X25519Agreement();
+                    agreement.init(ephKp.getPrivate());
+
+                    byte[] secret = new byte[agreement.getAgreementSize()];
+                    agreement.calculateAgreement(cryptoPublicKey, secret, 0);
+
+                    byte[] ephPubEncoding = Arrays.prepend(((X25519PublicKeyParameters)ephKp.getPublic()).getEncoded(), X_HDR);
+
+                    return encryptSessionInfo(ecKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
                 }
+                else
+                {
+                    ECDomainParameters ecParams = ((ECPublicKeyParameters)cryptoPublicKey).getParameters();
 
-                c.init(true, new ParametersWithRandom(key, random));
+                    ECKeyPairGenerator gen = new ECKeyPairGenerator();
+                    gen.init(new ECKeyGenerationParameters(ecParams, random));
 
-                return c.processBlock(sessionInfo, 0, sessionInfo.length);
+                    AsymmetricCipherKeyPair ephKp = gen.generateKeyPair();
+
+                    ECDHBasicAgreement agreement = new ECDHBasicAgreement();
+                    agreement.init(ephKp.getPrivate());
+                    BigInteger S = agreement.calculateAgreement(cryptoPublicKey);
+                    byte[] secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
+
+                    byte[] ephPubEncoding = ((ECPublicKeyParameters)ephKp.getPublic()).getQ().getEncoded(false);
+
+                    return encryptSessionInfo(ecKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
+                }
             }
             else
             {
-                ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
-                X9ECParameters x9Params = BcUtil.getX9Parameters(ecKey.getCurveOID());
-                ECDomainParameters ecParams = new ECDomainParameters(x9Params.getCurve(), x9Params.getG(), x9Params.getN());
+                AsymmetricBlockCipher c = BcImplProvider.createPublicKeyCipher(pubKey.getAlgorithm());
 
-                // Generate the ephemeral key pair
-                ECKeyPairGenerator gen = new ECKeyPairGenerator();
-                gen.init(new ECKeyGenerationParameters(ecParams, random));
-
-                EphemeralKeyPairGenerator kGen = new EphemeralKeyPairGenerator(gen, new KeyEncoder()
+                if (random == null)
                 {
-                    public byte[] getEncoded(AsymmetricKeyParameter keyParameter)
-                    {
-                        return ((ECPublicKeyParameters)keyParameter).getQ().getEncoded(false);
-                    }
-                });
+                    random = CryptoServicesRegistrar.getSecureRandom();
+                }
 
-                EphemeralKeyPair ephKp = kGen.generate();
+                c.init(true, new ParametersWithRandom(cryptoPublicKey, random));
 
-                ECPrivateKeyParameters ephPriv = (ECPrivateKeyParameters)ephKp.getKeyPair().getPrivate();
-
-                ECPoint S = BcUtil.decodePoint(ecKey.getEncodedPoint(), x9Params.getCurve()).multiply(ephPriv.getD()).normalize();
-
-                RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
-
-                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(S, RFC6637Utils.createUserKeyingMaterial(pubKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator())));
-
-                Wrapper c = BcImplProvider.createWrapper(ecKey.getSymmetricKeyAlgorithm());
-
-                c.init(true, new ParametersWithRandom(key, random));
-
-                byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
-
-                byte[] C = c.wrap(paddedSessionData, 0, paddedSessionData.length);
-                byte[] VB = new MPInteger(new BigInteger(1, ephKp.getEncodedPublicKey())).getEncoded();
-
-                byte[] rv = new byte[VB.length + 1 + C.length];
-
-                System.arraycopy(VB, 0, rv, 0, VB.length);
-                rv[VB.length] = (byte)C.length;
-                System.arraycopy(C, 0, rv, VB.length + 1, C.length);
-
-                return rv;
+                return c.processBlock(sessionInfo, 0, sessionInfo.length);
             }
         }
         catch (InvalidCipherTextException e)
@@ -134,5 +141,27 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         {
             throw new PGPException("exception encrypting session info: " + e.getMessage(), e);
         }
+    }
+
+    private byte[] encryptSessionInfo(ECDHPublicBCPGKey ecKey, byte[] sessionInfo, byte[] secret,
+        byte[] userKeyingMaterial, byte[] ephPubEncoding) throws IOException, PGPException
+    {
+        RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(
+            new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
+        KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
+
+        byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
+
+        Wrapper c = BcImplProvider.createWrapper(ecKey.getSymmetricKeyAlgorithm());
+        c.init(true, new ParametersWithRandom(key, random));
+        byte[] C = c.wrap(paddedSessionData, 0, paddedSessionData.length);
+
+        byte[] VB = new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded();
+
+        byte[] rv = new byte[VB.length + 1 + C.length];
+        System.arraycopy(VB, 0, rv, 0, VB.length);
+        rv[VB.length] = (byte)C.length;
+        System.arraycopy(C, 0, rv, VB.length + 1, C.length);
+        return rv;
     }
 }
