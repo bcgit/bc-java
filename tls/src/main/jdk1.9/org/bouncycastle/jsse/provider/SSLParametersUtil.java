@@ -63,7 +63,7 @@ abstract class SSLParametersUtil
 
         // From JDK 1.7
 
-        ssl.setAlgorithmConstraints((AlgorithmConstraints)JsseUtils_7.exportAlgorithmConstraints(prov.getAlgorithmConstraints()));
+        ssl.setAlgorithmConstraints(JsseUtils_7.exportAlgorithmConstraints(prov.getAlgorithmConstraints()));
 
         ssl.setEndpointIdentificationAlgorithm(prov.getEndpointIdentificationAlgorithm());
 
@@ -115,10 +115,10 @@ abstract class SSLParametersUtil
         // From JDK 1.7
 
         {
-            AlgorithmConstraints getAlgorithmConstraintsResult = ssl.getAlgorithmConstraints();
-            if (null != getAlgorithmConstraintsResult)
+            AlgorithmConstraints constraints = ssl.getAlgorithmConstraints();
+            if (null != constraints)
             {
-                bc.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
+                bc.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(constraints));
             }
         }
 
@@ -255,10 +255,10 @@ abstract class SSLParametersUtil
         // From JDK 1.7
 
         {
-            AlgorithmConstraints getAlgorithmConstraintsResult = ssl.getAlgorithmConstraints();
-            if (null != getAlgorithmConstraintsResult)
+            AlgorithmConstraints constraints = ssl.getAlgorithmConstraints();
+            if (null != constraints)
             {
-                prov.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
+                prov.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(constraints));
             }
         }
 
