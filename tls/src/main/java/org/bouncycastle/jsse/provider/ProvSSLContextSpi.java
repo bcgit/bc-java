@@ -21,6 +21,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContextSpi;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -233,7 +234,7 @@ class ProvSSLContextSpi
         return Collections.unmodifiableMap(ps);
     }
 
-    private static String[] getDefaultCipherSuites(boolean isInFipsMode)
+    private static String[] getDefaultEnabledCipherSuites(boolean isInFipsMode)
     {
         /*
          * TODO[jsse] SunJSSE also filters this initial list based on the default protocol versions.
@@ -423,24 +424,9 @@ class ProvSSLContextSpi
 
         this.supportedCipherSuites = isInFipsMode ? SUPPORTED_CIPHERSUITE_MAP_FIPS : SUPPORTED_CIPHERSUITE_MAP;
         this.supportedProtocols = isInFipsMode ? SUPPORTED_PROTOCOL_MAP_FIPS : SUPPORTED_PROTOCOL_MAP;
-        this.defaultCipherSuites = getDefaultCipherSuites(isInFipsMode);
+        this.defaultCipherSuites = getDefaultEnabledCipherSuites(isInFipsMode);
         this.defaultProtocolsClient = getDefaultEnabledProtocolsClient(supportedProtocols, specifiedProtocolsClient);
         this.defaultProtocolsServer = getDefaultEnabledProtocolsServer(supportedProtocols);
-    }
-
-    String[] getDefaultCipherSuites()
-    {
-        return defaultCipherSuites.clone();
-    }
-
-    ProvSSLParameters getDefaultParameters(boolean isClient)
-    {
-        return new ProvSSLParameters(this, defaultCipherSuites, getDefaultProtocols(isClient));
-    }
-
-    String[] getDefaultProtocols(boolean isClient)
-    {
-        return isClient ? defaultProtocolsClient : defaultProtocolsServer;
     }
 
     int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,
@@ -526,6 +512,21 @@ class ProvSSLContextSpi
         return result.toArray(new ProtocolVersion[result.size()]);
     }
 
+    String[] getDefaultCipherSuites(boolean isClient)
+    {
+        return implGetDefaultCipherSuites(isClient).clone();
+    }
+
+    String[] getDefaultProtocols(boolean isClient)
+    {
+        return implGetDefaultProtocols(isClient).clone();
+    }
+
+    ProvSSLParameters getDefaultSSLParameters(boolean isClient)
+    {
+        return new ProvSSLParameters(this, implGetDefaultCipherSuites(isClient), implGetDefaultProtocols(isClient));
+    }
+
     String[] getSupportedCipherSuites()
     {
         return getKeysArray(supportedCipherSuites);
@@ -551,12 +552,19 @@ class ProvSSLContextSpi
                 result.add(cipherSuite);
             }
         }
+
+        // NOTE: This method must always return a copy, so no fast path when all supported
         return getArray(result);
     }
 
     String[] getSupportedProtocols()
     {
         return getKeysArray(supportedProtocols);
+    }
+
+    ProvSSLParameters getSupportedSSLParameters(boolean isClient)
+    {
+        return new ProvSSLParameters(this, getSupportedCipherSuites(), getSupportedProtocols());
     }
 
     boolean isFips()
@@ -580,11 +588,15 @@ class ProvSSLContextSpi
         return true;
     }
 
-    void updateDefaultProtocols(ProvSSLParameters sslParameters, boolean isClient)
+    void updateDefaultSSLParameters(ProvSSLParameters sslParameters, boolean isClient)
     {
-        if (sslParameters.getProtocolsArray() == getDefaultProtocols(!isClient))
+        if (sslParameters.getCipherSuitesArray() == implGetDefaultCipherSuites(!isClient))
         {
-            sslParameters.setProtocolsArray(getDefaultProtocols(isClient));
+            sslParameters.setCipherSuitesArray(implGetDefaultCipherSuites(isClient));
+        }
+        if (sslParameters.getProtocolsArray() == implGetDefaultProtocols(!isClient))
+        {
+            sslParameters.setProtocolsArray(implGetDefaultProtocols(isClient));
         }
     }
 
@@ -652,6 +664,26 @@ class ProvSSLContextSpi
     protected SSLSocketFactory engineGetSocketFactory()
     {
         return new ProvSSLSocketFactory(getContextData());
+    }
+
+    // An SSLContextSpi method from JDK 6
+    protected SSLParameters engineGetDefaultSSLParameters()
+    {
+        // Fail if uninitialized
+        getContextData();
+
+        // Implicitly for a client socket
+        return SSLParametersUtil.getSSLParameters(getDefaultSSLParameters(true));
+    }
+
+    // An SSLContextSpi method from JDK 6
+    protected SSLParameters engineGetSupportedSSLParameters()
+    {
+        // Fail if uninitialized
+        getContextData();
+
+        // Implicitly for a client socket
+        return SSLParametersUtil.getSSLParameters(getSupportedSSLParameters(true));
     }
 
     @Override
@@ -726,5 +758,15 @@ class ProvSSLContextSpi
             }
         }
         return DummyX509TrustManager.INSTANCE;
+    }
+
+    private String[] implGetDefaultCipherSuites(boolean isClient)
+    {
+        return defaultCipherSuites;
+    }
+
+    private String[] implGetDefaultProtocols(boolean isClient)
+    {
+        return isClient ? defaultProtocolsClient : defaultProtocolsServer;
     }
 }

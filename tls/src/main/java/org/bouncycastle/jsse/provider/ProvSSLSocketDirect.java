@@ -65,14 +65,14 @@ class ProvSSLSocketDirect
     protected ProvSSLSocketDirect(ContextData contextData)
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
     }
 
     protected ProvSSLSocketDirect(ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
         throws IOException
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
 
         implBind(clientAddress, clientPort);
         implConnect(address, port);
@@ -81,7 +81,7 @@ class ProvSSLSocketDirect
     protected ProvSSLSocketDirect(ContextData contextData, InetAddress address, int port) throws IOException
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
 
         implConnect(address, port);
     }
@@ -90,7 +90,7 @@ class ProvSSLSocketDirect
         throws IOException, UnknownHostException
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
         this.peerHost = host;
 
         implBind(clientAddress, clientPort);
@@ -100,7 +100,7 @@ class ProvSSLSocketDirect
     protected ProvSSLSocketDirect(ContextData contextData, String host, int port) throws IOException, UnknownHostException
     {
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
         this.peerHost = host;
 
         implConnect(host, port);
@@ -397,7 +397,7 @@ class ProvSSLSocketDirect
 
         if (this.useClientMode != useClientMode)
         {
-            contextData.getContext().updateDefaultProtocols(sslParameters, useClientMode);
+            contextData.getContext().updateDefaultSSLParameters(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }
