@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
@@ -16,6 +17,8 @@ import org.bouncycastle.jsse.BCSSLSocket;
 
 abstract class SSLSocketUtil
 {
+    private static AtomicInteger threadNumber = new AtomicInteger();
+
     /** This factory method is the one used (only) by ProvSSLServerSocket */
     static ProvSSLSocketDirect create(ContextData contextData, boolean enableSessionCreation,
         boolean useClientMode, ProvSSLParameters sslParameters)
@@ -61,6 +64,13 @@ abstract class SSLSocketUtil
         throws IOException
     {
         return new ProvSSLSocketWrap_9(contextData, s, host, port, autoClose);
+    }
+
+    static void handshakeCompleted(Runnable notifyRunnable)
+    {
+        String name = "BCJSSE-HandshakeCompleted-" + Integer.toUnsignedString(threadNumber.getAndIncrement());
+
+        new Thread(null, notifyRunnable, name, 0, false).start();
     }
 
     static BCExtendedSSLSession importHandshakeSession(SSLSocket sslSocket)

@@ -14,9 +14,8 @@ class ExportSSLSession_8
         super(sslSession);
     }
 
-    @SuppressWarnings("unchecked")
     public List<SNIServerName> getRequestedServerNames()
     {
-        return (List<SNIServerName>)JsseUtils_8.exportSNIServerNames(sslSession.getRequestedServerNames());
+        return JsseUtils_8.exportSNIServerNames(sslSession.getRequestedServerNames());
     }
 }

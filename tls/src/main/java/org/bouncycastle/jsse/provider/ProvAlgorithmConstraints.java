@@ -38,7 +38,7 @@ class ProvAlgorithmConstraints
     private final Set<String> supportedSignatureAlgorithms;
     private final boolean enableX509Constraints;
 
-    public ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints, boolean enableX509Constraints)
+    ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints, boolean enableX509Constraints)
     {
         super(null);
 
@@ -47,7 +47,7 @@ class ProvAlgorithmConstraints
         this.enableX509Constraints = enableX509Constraints;
     }
 
-    public ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints,
+    ProvAlgorithmConstraints(BCAlgorithmConstraints configAlgorithmConstraints,
         String[] supportedSignatureAlgorithms, boolean enableX509Constraints)
     {
         super(null);

@@ -70,7 +70,7 @@ class ProvSSLEngine
         super(host, port);
 
         this.contextData = contextData;
-        this.sslParameters = contextData.getContext().getDefaultParameters(useClientMode);
+        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
     }
 
     public ContextData getContextData()
@@ -275,7 +275,7 @@ class ProvSSLEngine
         return null == handshakeSession ? null : handshakeSession.getApplicationProtocol();
     }
 
-    @Override
+    // An SSLEngine method from JDK 7
     public synchronized SSLSession getHandshakeSession()
     {
         return null == handshakeSession ? null : handshakeSession.getExportSSLSession();
@@ -304,7 +304,7 @@ class ProvSSLEngine
         return getSessionImpl().getExportSSLSession();
     }
 
-    @Override
+    // An SSLEngine method from JDK 6
     public synchronized SSLParameters getSSLParameters()
     {
         return SSLParametersUtil.getSSLParameters(sslParameters);
@@ -398,7 +398,7 @@ class ProvSSLEngine
         SSLParametersUtil.setParameters(this.sslParameters, parameters);
     }
 
-    @Override
+    // An SSLEngine method from JDK 6
     public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
         SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
@@ -414,7 +414,7 @@ class ProvSSLEngine
 
         if (this.useClientMode != useClientMode)
         {
-            contextData.getContext().updateDefaultProtocols(sslParameters, useClientMode);
+            contextData.getContext().updateDefaultSSLParameters(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }

@@ -15,8 +15,6 @@ import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 final class ProvSSLParameters
 {
-    private static final BCAlgorithmConstraints DEFAULT_ALGORITHM_CONSTRAINTS = ProvAlgorithmConstraints.DEFAULT;
-
     private static <T> List<T> copyList(Collection<T> list)
     {
         if (list == null)
@@ -36,7 +34,7 @@ final class ProvSSLParameters
     private String[] protocols;
     private boolean needClientAuth = false;
     private boolean wantClientAuth = false;
-    private BCAlgorithmConstraints algorithmConstraints = DEFAULT_ALGORITHM_CONSTRAINTS;
+    private BCAlgorithmConstraints algorithmConstraints = JsseUtils.DEFAULT_ALGORITHM_CONSTRAINTS_BC;
     private String endpointIdentificationAlgorithm;
     private boolean useCipherSuitesOrder = true;
     private List<BCSNIMatcher> sniMatchers;
@@ -75,7 +73,7 @@ final class ProvSSLParameters
     {
         ProvSSLParameters p = copy();
 
-        if (DEFAULT_ALGORITHM_CONSTRAINTS != p.algorithmConstraints)
+        if (JsseUtils.DEFAULT_ALGORITHM_CONSTRAINTS_BC != p.algorithmConstraints)
         {
             p.algorithmConstraints = new ProvAlgorithmConstraints(p.algorithmConstraints, true);
         }
@@ -90,12 +88,19 @@ final class ProvSSLParameters
 
     String[] getCipherSuitesArray()
     {
+        // NOTE: ProvSSLContextSpi.updateDefaultSSLParameters depends on this not making a copy
         return cipherSuites;
     }
 
     public void setCipherSuites(String[] cipherSuites)
     {
         this.cipherSuites = context.getSupportedCipherSuites(cipherSuites);
+    }
+
+    void setCipherSuitesArray(String[] cipherSuites)
+    {
+        // NOTE: ProvSSLContextSpi.updateDefaultSSLParameters depends on this not making a copy
+        this.cipherSuites = cipherSuites;
     }
 
     public String[] getProtocols()
@@ -105,7 +110,7 @@ final class ProvSSLParameters
 
     String[] getProtocolsArray()
     {
-        // NOTE: The mechanism of ProvSSLContextSpi.updateDefaultProtocols depends on this not making a copy
+        // NOTE: ProvSSLContextSpi.updateDefaultSSLParameters depends on this not making a copy
         return protocols;
     }
 
@@ -121,7 +126,7 @@ final class ProvSSLParameters
 
     void setProtocolsArray(String[] protocols)
     {
-        // NOTE: The mechanism of ProvSSLContextSpi.updateDefaultProtocols depends on this not making a copy
+        // NOTE: ProvSSLContextSpi.updateDefaultSSLParameters depends on this not making a copy
         this.protocols = protocols;
     }
 
