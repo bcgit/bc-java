@@ -90,7 +90,8 @@ abstract class SSLParametersUtil
 
         if (null != setAlgorithmConstraints)
         {
-            set(ssl, setAlgorithmConstraints, JsseUtils_7.exportAlgorithmConstraints(prov.getAlgorithmConstraints()));
+            set(ssl, setAlgorithmConstraints,
+                JsseUtils_7.exportAlgorithmConstraintsDynamic(prov.getAlgorithmConstraints()));
         }
 
         if (null != setEndpointIdentificationAlgorithm)
@@ -148,10 +149,10 @@ abstract class SSLParametersUtil
 
         if (null != getAlgorithmConstraints)
         {
-            Object getAlgorithmConstraintsResult = get(ssl, getAlgorithmConstraints);
-            if (null != getAlgorithmConstraintsResult)
+            Object constraints = get(ssl, getAlgorithmConstraints);
+            if (null != constraints)
             {
-                bc.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
+                bc.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraintsDynamic(constraints));
             }
         }
 
@@ -285,10 +286,10 @@ abstract class SSLParametersUtil
 
         if (null != getAlgorithmConstraints)
         {
-            Object getAlgorithmConstraintsResult = get(ssl, getAlgorithmConstraints);
-            if (null != getAlgorithmConstraintsResult)
+            Object constraints = get(ssl, getAlgorithmConstraints);
+            if (null != constraints)
             {
-                prov.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
+                prov.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraintsDynamic(constraints));
             }
         }
 
