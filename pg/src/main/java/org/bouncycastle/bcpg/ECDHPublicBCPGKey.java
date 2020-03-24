@@ -1,6 +1,7 @@
 package org.bouncycastle.bcpg;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.math.ec.ECPoint;
@@ -44,6 +45,22 @@ public class ECDHPublicBCPGKey
     public ECDHPublicBCPGKey(
         ASN1ObjectIdentifier oid,
         ECPoint point,
+        int hashAlgorithm,
+        int symmetricKeyAlgorithm)
+    {
+        super(oid, point);
+
+        reserved = 1;
+        hashFunctionId = (byte)hashAlgorithm;
+        symAlgorithmId = (byte)symmetricKeyAlgorithm;
+
+        verifyHashAlgorithm();
+        verifySymmetricKeyAlgorithm();
+    }
+
+    public ECDHPublicBCPGKey(
+        ASN1ObjectIdentifier oid,
+        BigInteger point,
         int hashAlgorithm,
         int symmetricKeyAlgorithm)
     {

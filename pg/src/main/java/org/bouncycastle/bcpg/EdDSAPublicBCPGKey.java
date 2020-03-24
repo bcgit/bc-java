@@ -32,9 +32,7 @@ public class EdDSAPublicBCPGKey
     public EdDSAPublicBCPGKey(
            ASN1ObjectIdentifier oid,
            BigInteger encodedPoint)
-        throws IOException
     {
         super(oid, encodedPoint);
     }
-
 }
