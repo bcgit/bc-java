@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
+import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -27,7 +28,6 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
@@ -42,6 +42,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
@@ -106,7 +107,7 @@ public class PGPEdDSATest
         return "PGPEdDSATest";
     }
 
-    private void encryptDecryptTest(PGPPublicKey pubKey, PGPSecretKey secKey)
+    private void encryptDecryptTest(PGPPublicKey pubKey, PGPPrivateKey secKey)
         throws Exception
     {
         byte[] text = {(byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n'};
@@ -139,7 +140,7 @@ public class PGPEdDSATest
 
         PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(secKey.extractPrivateKey(null)));
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(secKey));
 
         pgpF = new JcaPGPObjectFactory(clear);
 
@@ -179,18 +180,73 @@ public class PGPEdDSATest
         dhKp.initialize(new ECGenParameterSpec("X25519"));
 
         PGPKeyPair dhKeyPair = new JcaPGPKeyPair(PGPPublicKey.ECDH, dhKp.generateKeyPair(), new Date());
+
+        encryptDecryptTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
+
         PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
 
-        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
-            identity, sha1Calc, null, null, new JcaPGPContentSignerBuilder(dsaKeyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passPhrase));
+        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(
+            PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
+            identity, sha1Calc, null, null,
+            new JcaPGPContentSignerBuilder(dsaKeyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256),
+            new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passPhrase));
 
         keyRingGen.addSubKey(dhKeyPair);
 
         ByteArrayOutputStream secretOut = new ByteArrayOutputStream();
 
-        keyRingGen.generateSecretKeyRing().encode(secretOut);
+        PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
+
+        PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
+
+        secRing.encode(secretOut);
 
         secretOut.close();
+        secRing = new PGPSecretKeyRing(secretOut.toByteArray(), new JcaKeyFingerprintCalculator());
+
+        Iterator pIt = secRing.getPublicKeys();
+        pIt.next();
+        
+        PGPPublicKey sKey = (PGPPublicKey)pIt.next();
+        PGPPublicKey vKey = secRing.getPublicKey();
+
+        Iterator    sIt = sKey.getSignatures();
+        int count = 0;
+        while (sIt.hasNext())
+        {
+            PGPSignature    sig = (PGPSignature)sIt.next();
+
+            if (sig.getKeyID() == vKey.getKeyID()
+                && sig.getSignatureType() == PGPSignature.SUBKEY_BINDING)
+            {
+                count++;
+                sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), vKey);
+
+                if (!sig.verifyCertification(vKey, sKey))
+                {
+                    fail("failed to verify sub-key signature.");
+                }
+            }
+        }
+
+        isTrue(count == 1);
+
+        secRing = new PGPSecretKeyRing(secretOut.toByteArray(), new JcaKeyFingerprintCalculator());
+        PGPPublicKey pubKey = null;
+        PGPPrivateKey privKey = null;
+
+        for (Iterator it = secRing.getPublicKeys(); it.hasNext();)
+        {
+            pubKey = (PGPPublicKey)it.next();
+            if (pubKey.isEncryptionKey())
+            {
+                privKey = secRing.getSecretKey(pubKey.getKeyID()).extractPrivateKey(
+                    new JcePBESecretKeyDecryptorBuilder().build(passPhrase));
+                break;
+            }
+        }
+
+        encryptDecryptTest(pubKey, privKey);
     }
 
     public void performTest()
@@ -216,7 +272,8 @@ public class PGPEdDSATest
 
         isTrue(sig.verifyCertification(pubKeyRing.getPublicKey(), pubKeyRing.getPublicKey(5145070902336167606L)));
 
-        encryptDecryptTest(pubKeyRing.getPublicKey(5145070902336167606L), secRing.getSecretKey(5145070902336167606L));
+        encryptDecryptTest(pubKeyRing.getPublicKey(5145070902336167606L),
+            secRing.getSecretKey(5145070902336167606L).extractPrivateKey(null));
 
         aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(revBlock)));
 
@@ -228,7 +285,7 @@ public class PGPEdDSATest
 
         isTrue(sig.verifyCertification(pubKeyRing.getPublicKey()));
 
-        //keyringTest();
+        keyringTest();
         sksKeyTest();
         aliceBcKeyTest();
     }
@@ -274,15 +331,6 @@ public class PGPEdDSATest
 
         cOut.close();
 
-        {
-            JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(cbOut.toByteArray());
-
-            PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
-
-            PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
-
-            InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(privKey));
-        }
         JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(cbOut.toByteArray());
 
         PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
@@ -310,35 +358,6 @@ public class PGPEdDSATest
         {
             fail("wrong plain text in generated packet");
         }
-
-//        byte[] data = Strings.toByteArray("testing, 1, 2, 3, testing...");
-//
-//
-//        BcPGPDataEncryptorBuilder encBuilder = new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_128);
-//        encBuilder.setWithIntegrityPacket(true);
-//        PGPEncryptedDataGenerator encDataGen = new PGPEncryptedDataGenerator(encBuilder);
-//
-//        BcPublicKeyKeyEncryptionMethodGenerator
-//            encMethodGen = new BcPublicKeyKeyEncryptionMethodGenerator(rng.getPublicKey(5145070902336167606L));
-//        encDataGen.addMethod(encMethodGen);
-//
-//        ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
-//
-//        OutputStream cOut = encDataGen.open(new UncloseableOutputStream(cbOut), data.length);
-//
-//        cOut.write(data);
-//
-//        cOut.close();
-//
-//        JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(cbOut.toByteArray());
-//
-//        PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
-//
-//        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
-//
-//        InputStream clear = encP.getDataStream();
-//
-//        System.err.println(Strings.fromByteArray(Streams.readAll(clear)));
     }
 
     private void sksKeyTest()

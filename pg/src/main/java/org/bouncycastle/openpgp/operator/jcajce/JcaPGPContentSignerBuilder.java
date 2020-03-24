@@ -93,6 +93,7 @@ public class JcaPGPContentSignerBuilder
         throws PGPException
     {
         final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
+        final PGPDigestCalculator edDigestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final Signature           signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
 
         try
@@ -137,7 +138,7 @@ public class JcaPGPContentSignerBuilder
             {
                 if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA)
                 {
-                    return digestCalculator.getOutputStream();
+                    return new TeeOutputStream(edDigestCalculator.getOutputStream(), digestCalculator.getOutputStream());
                 }
                 return new TeeOutputStream(OutputStreamFactory.createStream(signature), digestCalculator.getOutputStream());
             }
@@ -148,7 +149,7 @@ public class JcaPGPContentSignerBuilder
                 {
                     if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA)
                     {
-                         signature.update(digestCalculator.getDigest());
+                         signature.update(edDigestCalculator.getDigest());
                     }
                     return signature.sign();
                 }
