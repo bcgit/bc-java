@@ -111,6 +111,10 @@ public abstract class ECPublicBCPGKey
         {
             throw new IOException("future extensions not yet implemented");
         }
+        if (length > 127)
+        {
+            throw new IOException("unsupported OID");
+        }
 
         byte[] buffer = new byte[length + 2];
         in.readFully(buffer, 2, buffer.length - 2);
