@@ -5,14 +5,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.Security;
 import java.security.SignatureException;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
@@ -23,12 +27,15 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class PGPClearSignedSignatureTest 
@@ -178,6 +185,43 @@ public class PGPClearSignedSignatureTest
       + "dMgLEGhmqsgaetVq1ZIuBZj5S4j2apBJCDpF6GBfpBOfwIZs0Tpmlw==\r\n"
       + "=84Nd\r"
       + "-----END PGP SIGNATURE-----\r\n";
+
+    final String edDsaSignedMessage =
+            "-----BEGIN PGP SIGNED MESSAGE-----\n" +
+            "Hash: SHA256\n" +
+            "\n" +
+            "person:  First Person\n" +
+            "address: St James Street\n" +
+            "address: Burnley\n" +
+            "address: UK\n" +
+            "phone:   +44 282 420469\n" +
+            "nic-hdl: FP1-TEST\n" +
+            "mnt-by:  OWNER-MNT\n" +
+            "source:  TEST\n" +
+            "-----BEGIN PGP SIGNATURE-----\n" +
+            "Comment: GPGTools - http://gpgtools.org\n" +
+            "\n" +
+            "iHUEARYIAB0WIQRiNGNQyuJDPiQAHXKU+mLDZIGuNAUCXiWfSQAKCRCU+mLDZIGu\n" +
+            "NIiqAQD+sksm61T9mYmoLRPhV+D3jSg2IE19id3WyjaH0vCwXQEA6v5xpZQ7AXQe\n" +
+            "vbSHvSrRBNBSAUuJfIYQLsAf6l80MAI=\n" +
+            "=pQ32\n" +
+            "-----END PGP SIGNATURE-----";
+
+    final String edDsaPublicKey =
+    "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
+    "Comment: GPGTools - http://gpgtools.org\n" +
+    "\n" +
+    "mDMEXiWeSRYJKwYBBAHaRw8BAQdAEo+4wi/WI0xtbQF+PoIGxaDFJw23d+3w/ov+\n" +
+    "go85qdi0GVRlc3QgVXNlciA8dGVzdEByaXBlLm5ldD6IkAQTFggAOBYhBGI0Y1DK\n" +
+    "4kM+JAAdcpT6YsNkga40BQJeJZ5JAhsDBQsJCAcCBhUKCQgLAgQWAgMBAh4BAheA\n" +
+    "AAoJEJT6YsNkga40WLEBAKGMQaC1zKbmuD5Pav0ssuhxaznoMbuZqJ45VNiGKzLE\n" +
+    "AQCGFbH+9pAvcEuorOa180+GLDZOpVYgQy40KsGaQgC5Drg4BF4lnkkSCisGAQQB\n" +
+    "l1UBBQEBB0DFLFEhV9RSM92t1LwC/ClmND/Yw9P0a3paC2XGzTNTAwMBCAeIeAQY\n" +
+    "FggAIBYhBGI0Y1DK4kM+JAAdcpT6YsNkga40BQJeJZ5JAhsMAAoJEJT6YsNkga40\n" +
+    "LbQBALZ5BaNX5OxdS++mzwdWAVLZXAPRDFr6Q2otdxbnR0FTAP4ok4PiOpe1BfdF\n" +
+    "itv84V9zda3NL6zJLhR3kewd30UDCA==\n" +
+    "=Dxc9\n" +
+    "-----END PGP PUBLIC KEY BLOCK-----\n";
 
     public String getName()
     {
@@ -343,6 +387,146 @@ public class PGPClearSignedSignatureTest
         messageTest(new String(bOut.toByteArray()), type);
     }
 
+    private static int getLengthWithoutSeparatorOrTrailingWhitespace(byte[] line)
+    {
+        int    end = line.length - 1;
+
+        while (end >= 0 && isWhiteSpace(line[end]))
+        {
+            end--;
+        }
+
+        return end + 1;
+    }
+
+    private void edDsaTest()
+        throws Exception
+    {
+        ArmoredInputStream aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaPublicKey)));
+
+        PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
+
+        isTrue(areEqual(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34"), pubKeyRing.getPublicKey().getFingerprint()));
+
+        aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaSignedMessage)));
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
+        int                   lookAhead = readInputLine(lineOut, aIn);
+        byte[]                lineSep = Strings.toByteArray("\n");
+
+        if (lookAhead != -1 && aIn.isClearText())
+        {
+            byte[] line = lineOut.toByteArray();
+            out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
+            out.write(lineSep);
+
+            while (lookAhead != -1 && aIn.isClearText())
+            {
+                lookAhead = readInputLine(lineOut, lookAhead, aIn);
+
+                line = lineOut.toByteArray();
+                out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
+                out.write(lineSep);
+            }
+        }
+
+        JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(aIn);
+        PGPSignatureList           p3 = (PGPSignatureList)pgpFact.nextObject();
+        PGPSignature               sig = p3.get(0);
+
+        PGPPublicKey publicKey = pubKeyRing.getPublicKey(sig.getKeyID());
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
+
+        InputStream sigIn = new ByteArrayInputStream(out.toByteArray());
+
+        lookAhead = readInputLine(lineOut, sigIn);
+
+        processLine(sig, lineOut.toByteArray());
+
+        if (lookAhead != -1)
+        {
+            do
+            {
+                lookAhead = readInputLine(lineOut, lookAhead, sigIn);
+
+                sig.update((byte)'\r');
+                sig.update((byte)'\n');
+
+                processLine(sig, lineOut.toByteArray());
+            }
+            while (lookAhead != -1);
+        }
+
+        sigIn.close();
+
+        isTrue(sig.verify());
+    }
+
+    private void edDsaBcTest()
+        throws Exception
+    {
+        ArmoredInputStream aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaPublicKey)));
+
+        PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
+
+        isTrue(areEqual(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34"), pubKeyRing.getPublicKey().getFingerprint()));
+
+        aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaSignedMessage)));
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
+        int                   lookAhead = readInputLine(lineOut, aIn);
+        byte[]                lineSep = Strings.toByteArray("\n");
+
+        if (lookAhead != -1 && aIn.isClearText())
+        {
+            byte[] line = lineOut.toByteArray();
+            out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
+            out.write(lineSep);
+
+            while (lookAhead != -1 && aIn.isClearText())
+            {
+                lookAhead = readInputLine(lineOut, lookAhead, aIn);
+
+                line = lineOut.toByteArray();
+                out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
+                out.write(lineSep);
+            }
+        }
+
+        JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(aIn);
+        PGPSignatureList           p3 = (PGPSignatureList)pgpFact.nextObject();
+        PGPSignature               sig = p3.get(0);
+
+        PGPPublicKey publicKey = pubKeyRing.getPublicKey(sig.getKeyID());
+        sig.init(new BcPGPContentVerifierBuilderProvider(), publicKey);
+
+        InputStream sigIn = new ByteArrayInputStream(out.toByteArray());
+
+        lookAhead = readInputLine(lineOut, sigIn);
+
+        processLine(sig, lineOut.toByteArray());
+
+        if (lookAhead != -1)
+        {
+            do
+            {
+                lookAhead = readInputLine(lineOut, lookAhead, sigIn);
+
+                sig.update((byte)'\r');
+                sig.update((byte)'\n');
+
+                processLine(sig, lineOut.toByteArray());
+            }
+            while (lookAhead != -1);
+        }
+
+        sigIn.close();
+
+        isTrue("sig failed", sig.verify());
+    }
+
     private static int readInputLine(ByteArrayOutputStream bOut, InputStream fIn)
         throws IOException
     {
@@ -449,11 +633,16 @@ public class PGPClearSignedSignatureTest
         generateTest(nlOnlyMessage, "\\r");
         generateTest(crOnlyMessage, "\\n");
         generateTest(crNlMessage, "\\r\\n");
+
+        edDsaTest();
+        edDsaBcTest();
     }
     
     public static void main(
         String[]    args)
     {
+        Security.addProvider(new BouncyCastleProvider());
+        
         runTest(new PGPClearSignedSignatureTest());
     }
 }
