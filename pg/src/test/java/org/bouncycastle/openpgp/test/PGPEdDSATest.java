@@ -15,6 +15,11 @@ import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
+import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
+import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
+import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
@@ -32,9 +37,17 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -163,6 +176,62 @@ public class PGPEdDSATest
         }
     }
 
+    private void encryptDecryptBcTest(PGPPublicKey pubKey, PGPPrivateKey secKey)
+        throws Exception
+    {
+        byte[] text = {(byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n'};
+
+        PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
+        ByteArrayOutputStream ldOut = new ByteArrayOutputStream();
+        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, text.length, new Date());
+
+        pOut.write(text);
+
+        pOut.close();
+
+        byte[] data = ldOut.toByteArray();
+
+        ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
+
+        PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setSecureRandom(new SecureRandom()));
+
+        cPk.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(pubKey));
+
+        OutputStream cOut = cPk.open(new UncloseableOutputStream(cbOut), data.length);
+
+        cOut.write(data);
+
+        cOut.close();
+
+        BcPGPObjectFactory pgpF = new BcPGPObjectFactory(cbOut.toByteArray());
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(secKey));
+
+        pgpF = new BcPGPObjectFactory(clear);
+
+        PGPLiteralData ld = (PGPLiteralData)pgpF.nextObject();
+
+        clear = ld.getInputStream();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        int ch;
+        while ((ch = clear.read()) >= 0)
+        {
+            bOut.write(ch);
+        }
+
+        byte[] out = bOut.toByteArray();
+
+        if (!areEqual(out, text))
+        {
+            fail("wrong plain text in generated packet");
+        }
+    }
+
     private void keyringTest()
         throws Exception
     {
@@ -182,6 +251,7 @@ public class PGPEdDSATest
         PGPKeyPair dhKeyPair = new JcaPGPKeyPair(PGPPublicKey.ECDH, dhKp.generateKeyPair(), new Date());
 
         encryptDecryptTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
+        encryptDecryptBcTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
 
         PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
 
@@ -247,6 +317,93 @@ public class PGPEdDSATest
         }
 
         encryptDecryptTest(pubKey, privKey);
+        encryptDecryptBcTest(pubKey, privKey);
+    }
+
+    private void keyringBcTest()
+        throws Exception
+    {
+        String identity = "eric@bouncycastle.org";
+        char[] passPhrase = "Hello, world!".toCharArray();
+
+        Ed25519KeyPairGenerator edKp = new Ed25519KeyPairGenerator();
+        edKp.init(new Ed25519KeyGenerationParameters(CryptoServicesRegistrar.getSecureRandom()));
+
+        PGPKeyPair dsaKeyPair = new BcPGPKeyPair(PGPPublicKey.EDDSA, edKp.generateKeyPair(), new Date());
+
+        X25519KeyPairGenerator dhKp = new X25519KeyPairGenerator();
+        dhKp.init(new X25519KeyGenerationParameters(CryptoServicesRegistrar.getSecureRandom()));
+
+        PGPKeyPair dhKeyPair = new BcPGPKeyPair(PGPPublicKey.ECDH, dhKp.generateKeyPair(), new Date());
+
+        encryptDecryptBcTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
+        encryptDecryptTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
+
+        PGPDigestCalculator sha1Calc = new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1);
+
+        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(
+            PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
+            identity, sha1Calc, null, null,
+            new BcPGPContentSignerBuilder(dsaKeyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256),
+            new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).build(passPhrase));
+
+        keyRingGen.addSubKey(dhKeyPair);
+
+        ByteArrayOutputStream secretOut = new ByteArrayOutputStream();
+
+        PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
+
+        PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
+
+        secRing.encode(secretOut);
+
+        secretOut.close();
+        secRing = new PGPSecretKeyRing(secretOut.toByteArray(), new BcKeyFingerprintCalculator());
+
+        Iterator pIt = secRing.getPublicKeys();
+        pIt.next();
+        
+        PGPPublicKey sKey = (PGPPublicKey)pIt.next();
+        PGPPublicKey vKey = secRing.getPublicKey();
+
+        Iterator    sIt = sKey.getSignatures();
+        int count = 0;
+        while (sIt.hasNext())
+        {
+            PGPSignature    sig = (PGPSignature)sIt.next();
+
+            if (sig.getKeyID() == vKey.getKeyID()
+                && sig.getSignatureType() == PGPSignature.SUBKEY_BINDING)
+            {
+                count++;
+                sig.init(new BcPGPContentVerifierBuilderProvider(), vKey);
+
+                if (!sig.verifyCertification(vKey, sKey))
+                {
+                    fail("failed to verify sub-key signature.");
+                }
+            }
+        }
+
+        isTrue(count == 1);
+
+        secRing = new PGPSecretKeyRing(secretOut.toByteArray(), new BcKeyFingerprintCalculator());
+        PGPPublicKey pubKey = null;
+        PGPPrivateKey privKey = null;
+
+        for (Iterator it = secRing.getPublicKeys(); it.hasNext();)
+        {
+            pubKey = (PGPPublicKey)it.next();
+            if (pubKey.isEncryptionKey())
+            {
+                privKey = secRing.getSecretKey(pubKey.getKeyID()).extractPrivateKey(
+                    new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
+                break;
+            }
+        }
+
+        encryptDecryptBcTest(pubKey, privKey);
+        encryptDecryptTest(pubKey, privKey);
     }
 
     public void performTest()
@@ -275,6 +432,9 @@ public class PGPEdDSATest
         encryptDecryptTest(pubKeyRing.getPublicKey(5145070902336167606L),
             secRing.getSecretKey(5145070902336167606L).extractPrivateKey(null));
 
+        encryptDecryptBcTest(pubKeyRing.getPublicKey(5145070902336167606L),
+            secRing.getSecretKey(5145070902336167606L).extractPrivateKey(null));
+
         aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(revBlock)));
 
         PGPSignatureList sigs = (PGPSignatureList)new PGPObjectFactory(aIn, new JcaKeyFingerprintCalculator()).nextObject();
@@ -286,6 +446,7 @@ public class PGPEdDSATest
         isTrue(sig.verifyCertification(pubKeyRing.getPublicKey()));
 
         keyringTest();
+        keyringBcTest();
         sksKeyTest();
         aliceBcKeyTest();
     }
