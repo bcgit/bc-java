@@ -26,7 +26,9 @@ import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
@@ -468,7 +470,7 @@ public class PGPClearSignedSignatureTest
     {
         ArmoredInputStream aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaPublicKey)));
 
-        PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
+        PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new BcKeyFingerprintCalculator());
 
         isTrue(areEqual(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34"), pubKeyRing.getPublicKey().getFingerprint()));
 
@@ -495,7 +497,7 @@ public class PGPClearSignedSignatureTest
             }
         }
 
-        JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(aIn);
+        BcPGPObjectFactory        pgpFact = new BcPGPObjectFactory(aIn);
         PGPSignatureList           p3 = (PGPSignatureList)pgpFact.nextObject();
         PGPSignature               sig = p3.get(0);
 
