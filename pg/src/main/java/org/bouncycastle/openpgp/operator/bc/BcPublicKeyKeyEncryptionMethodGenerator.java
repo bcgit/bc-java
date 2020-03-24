@@ -71,6 +71,11 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionInfo)
         throws PGPException
     {
+        if (random == null)
+        {
+            random = CryptoServicesRegistrar.getSecureRandom();
+        }
+
         try
         {
             AsymmetricKeyParameter cryptoPublicKey = keyConverter.getPublicKey(pubKey);
@@ -122,11 +127,6 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             else
             {
                 AsymmetricBlockCipher c = BcImplProvider.createPublicKeyCipher(pubKey.getAlgorithm());
-
-                if (random == null)
-                {
-                    random = CryptoServicesRegistrar.getSecureRandom();
-                }
 
                 c.init(true, new ParametersWithRandom(cryptoPublicKey, random));
 
