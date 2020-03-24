@@ -1,32 +1,31 @@
 package org.bouncycastle.openpgp.operator.bc;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
-import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
-import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -35,12 +34,13 @@ import org.bouncycastle.util.BigIntegers;
 public class BcPublicKeyDataDecryptorFactory
     implements PublicKeyDataDecryptorFactory
 {
-    private BcPGPKeyConverter keyConverter = new BcPGPKeyConverter();
-    private PGPPrivateKey privKey;
+    private static final BcPGPKeyConverter KEY_CONVERTER = new BcPGPKeyConverter();
 
-    public BcPublicKeyDataDecryptorFactory(PGPPrivateKey privKey)
+    private final PGPPrivateKey pgpPrivKey;
+
+    public BcPublicKeyDataDecryptorFactory(PGPPrivateKey pgpPrivKey)
     {
-        this.privKey = privKey;
+        this.pgpPrivKey = pgpPrivKey;
     }
 
     public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
@@ -48,18 +48,18 @@ public class BcPublicKeyDataDecryptorFactory
     {
         try
         {
-            if (keyAlgorithm != PGPPublicKey.ECDH)
+            AsymmetricKeyParameter privKey = KEY_CONVERTER.getPrivateKey(pgpPrivKey);
+
+            if (keyAlgorithm != PublicKeyAlgorithmTags.ECDH)
             {
                 AsymmetricBlockCipher c = BcImplProvider.createPublicKeyCipher(keyAlgorithm);
 
-                AsymmetricKeyParameter key = keyConverter.getPrivateKey(privKey);
-
                 BufferedAsymmetricBlockCipher c1 = new BufferedAsymmetricBlockCipher(c);
 
-                c1.init(false, key);
+                c1.init(false, privKey);
 
-                if (keyAlgorithm == PGPPublicKey.RSA_ENCRYPT
-                    || keyAlgorithm == PGPPublicKey.RSA_GENERAL)
+                if (keyAlgorithm == PublicKeyAlgorithmTags.RSA_ENCRYPT
+                    || keyAlgorithm == PublicKeyAlgorithmTags.RSA_GENERAL)
                 {
                     byte[] bi = secKeyData[0];
 
@@ -67,8 +67,7 @@ public class BcPublicKeyDataDecryptorFactory
                 }
                 else
                 {
-                    BcPGPKeyConverter converter = new BcPGPKeyConverter();
-                    ElGamalPrivateKeyParameters parms = (ElGamalPrivateKeyParameters)converter.getPrivateKey(privKey);
+                    ElGamalPrivateKeyParameters parms = (ElGamalPrivateKeyParameters)privKey;
                     int size = (parms.getParameters().getP().bitLength() + 7) / 8;
                     byte[] tmp = new byte[size];
 
@@ -104,7 +103,7 @@ public class BcPublicKeyDataDecryptorFactory
             }
             else
             {
-                ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)privKey.getPublicKeyPacket().getKey();
+                ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pgpPrivKey.getPublicKeyPacket().getKey();
                 byte[] enc = secKeyData[0];
 
                 int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
@@ -125,11 +124,9 @@ public class BcPublicKeyDataDecryptorFactory
                 byte[] keyEnc = new byte[keyLen];
                 System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
 
-                Wrapper c = BcImplProvider.createWrapper(ecKey.getSymmetricKeyAlgorithm());
-                KeyParameter key;
-
+                byte[] secret;
                 // XDH
-                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
                 {
                     // skip the 0x40 header byte.
                     if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
@@ -137,29 +134,38 @@ public class BcPublicKeyDataDecryptorFactory
                         throw new IllegalArgumentException("Invalid Curve25519 public key");
                     }
 
+                    X25519PublicKeyParameters ephPub = new X25519PublicKeyParameters(pEnc, 1);
+
                     X25519Agreement agreement = new X25519Agreement();
+                    agreement.init(privKey);
 
-                    agreement.init(new X25519PrivateKeyParameters(Arrays.reverse(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privKey.getPrivateKeyDataPacket()).getX())), 0));
-
-                    byte[] secret = new byte[agreement.getAgreementSize()];
-                    agreement.calculateAgreement(new X25519PublicKeyParameters(pEnc, 1), secret, 0);
-
-                    RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
-                    key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, RFC6637Utils.createUserKeyingMaterial(privKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator())));
+                    secret = new byte[agreement.getAgreementSize()];
+                    agreement.calculateAgreement(ephPub, secret, 0);
                 }
                 else
                 {
-                    X9ECParameters x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
-                 
-                    ECPoint S = x9Params.getCurve().decodePoint(pEnc).multiply(((ECSecretBCPGKey)privKey.getPrivateKeyDataPacket()).getX()).normalize();
+                    ECDomainParameters ecParameters = ((ECPrivateKeyParameters)privKey).getParameters();
 
-                    RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
-                    key = new KeyParameter(rfc6637KDFCalculator.createKey(S, RFC6637Utils.createUserKeyingMaterial(privKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator())));
+                    ECPublicKeyParameters ephPub = new ECPublicKeyParameters(ecParameters.getCurve().decodePoint(pEnc),
+                        ecParameters);
+
+                    ECDHBasicAgreement agreement = new ECDHBasicAgreement();
+                    agreement.init(privKey);
+                    BigInteger S = agreement.calculateAgreement(ephPub);
+                    secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
                 }
 
-                c.init(false, key);
+                RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(
+                    new BcPGPDigestCalculatorProvider().get(ecPubKey.getHashAlgorithm()),
+                    ecPubKey.getSymmetricKeyAlgorithm());
+                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pgpPrivKey.getPublicKeyPacket(),
+                    new BcKeyFingerprintCalculator());
 
-                              return PGPPad.unpadSessionData(c.unwrap(keyEnc, 0, keyEnc.length));
+                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
+
+                Wrapper c = BcImplProvider.createWrapper(ecPubKey.getSymmetricKeyAlgorithm());
+                c.init(false, key);
+                return PGPPad.unpadSessionData(c.unwrap(keyEnc, 0, keyEnc.length));
             }
         }
         catch (IOException e)

@@ -31,7 +31,6 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -83,12 +82,12 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
                 PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
-                ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
+                ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
 
                 byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyPacket,
                     new BcKeyFingerprintCalculator());
 
-                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
                 {
                     X25519KeyPairGenerator gen = new X25519KeyPairGenerator();
                     gen.init(new X25519KeyGenerationParameters(random));
@@ -101,9 +100,11 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                     byte[] secret = new byte[agreement.getAgreementSize()];
                     agreement.calculateAgreement(cryptoPublicKey, secret, 0);
 
-                    byte[] ephPubEncoding = Arrays.prepend(((X25519PublicKeyParameters)ephKp.getPublic()).getEncoded(), X_HDR);
+                    byte[] ephPubEncoding = new byte[1 + X25519PublicKeyParameters.KEY_SIZE];
+                    ephPubEncoding[0] = X_HDR;
+                    ((X25519PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
 
-                    return encryptSessionInfo(ecKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
+                    return encryptSessionInfo(ecPubKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
                 }
                 else
                 {
@@ -121,7 +122,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
                     byte[] ephPubEncoding = ((ECPublicKeyParameters)ephKp.getPublic()).getQ().getEncoded(false);
 
-                    return encryptSessionInfo(ecKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
+                    return encryptSessionInfo(ecPubKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
                 }
             }
             else
@@ -143,16 +144,16 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         }
     }
 
-    private byte[] encryptSessionInfo(ECDHPublicBCPGKey ecKey, byte[] sessionInfo, byte[] secret,
+    private byte[] encryptSessionInfo(ECDHPublicBCPGKey ecPubKey, byte[] sessionInfo, byte[] secret,
         byte[] userKeyingMaterial, byte[] ephPubEncoding) throws IOException, PGPException
     {
         RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(
-            new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
+            new BcPGPDigestCalculatorProvider().get(ecPubKey.getHashAlgorithm()), ecPubKey.getSymmetricKeyAlgorithm());
         KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
 
         byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
 
-        Wrapper c = BcImplProvider.createWrapper(ecKey.getSymmetricKeyAlgorithm());
+        Wrapper c = BcImplProvider.createWrapper(ecPubKey.getSymmetricKeyAlgorithm());
         c.init(true, new ParametersWithRandom(key, random));
         byte[] C = c.wrap(paddedSessionData, 0, paddedSessionData.length);
 

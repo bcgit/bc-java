@@ -37,9 +37,11 @@ import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
@@ -212,6 +214,43 @@ public class PGPECDHTest
         PGPCompressedData cd = (PGPCompressedData)pgpF.nextObject();
 
         PGPLiteralData ld = (PGPLiteralData)new JcaPGPObjectFactory(cd.getDataStream()).nextObject();
+
+        clear = ld.getInputStream();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        int ch;
+        while ((ch = clear.read()) >= 0)
+        {
+            bOut.write(ch);
+        }
+
+        byte[] out = bOut.toByteArray();
+
+        if (!areEqual(out, Strings.toByteArray("Hello world\n")))
+        {
+            fail("wrong plain text in generated packet");
+        }
+    }
+
+    private void testCurve25519MessageBc()
+        throws Exception
+    {
+        PGPSecretKeyRing ring = new PGPSecretKeyRing(curve25519Priv, new BcKeyFingerprintCalculator());
+
+        BcPGPObjectFactory pgpF = new BcPGPObjectFactory(curve25519Message);
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(ring.getSecretKey(encP.getKeyID())
+            .extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(curve25519Pwd))));
+
+        pgpF = new BcPGPObjectFactory(clear);
+
+        PGPCompressedData cd = (PGPCompressedData)pgpF.nextObject();
+
+        PGPLiteralData ld = (PGPLiteralData)new BcPGPObjectFactory(cd.getDataStream()).nextObject();
 
         clear = ld.getInputStream();
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -413,6 +452,7 @@ public class PGPECDHTest
         encryptDecryptBCTest("brainpoolP512r1");
 
         testCurve25519Message();
+        testCurve25519MessageBc();
 
         generate();
     }
