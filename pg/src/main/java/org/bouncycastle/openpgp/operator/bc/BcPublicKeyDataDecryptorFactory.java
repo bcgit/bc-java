@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
@@ -11,9 +12,12 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -22,6 +26,8 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * A decryptor factory for handling public key decryption operations.
@@ -99,8 +105,6 @@ public class BcPublicKeyDataDecryptorFactory
             else
             {
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)privKey.getPublicKeyPacket().getKey();
-                X9ECParameters x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
-
                 byte[] enc = secKeyData[0];
 
                 int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
@@ -122,15 +126,40 @@ public class BcPublicKeyDataDecryptorFactory
                 System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
 
                 Wrapper c = BcImplProvider.createWrapper(ecKey.getSymmetricKeyAlgorithm());
+                KeyParameter key;
 
-                ECPoint S = x9Params.getCurve().decodePoint(pEnc).multiply(((ECSecretBCPGKey)privKey.getPrivateKeyDataPacket()).getX()).normalize();
+                // XDH
+                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                {
+                    // skip the 0x40 header byte.
+                    if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
+                    {
+                        throw new IllegalArgumentException("Invalid Curve25519 public key");
+                    }
 
-                RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
-                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(S, RFC6637Utils.createUserKeyingMaterial(privKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator())));
+                    X25519Agreement agreement = new X25519Agreement();
+
+                    agreement.init(new X25519PrivateKeyParameters(Arrays.reverse(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privKey.getPrivateKeyDataPacket()).getX())), 0));
+
+                    byte[] secret = new byte[agreement.getAgreementSize()];
+                    agreement.calculateAgreement(new X25519PublicKeyParameters(pEnc, 1), secret, 0);
+
+                    RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
+                    key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, RFC6637Utils.createUserKeyingMaterial(privKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator())));
+                }
+                else
+                {
+                    X9ECParameters x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
+                 
+                    ECPoint S = x9Params.getCurve().decodePoint(pEnc).multiply(((ECSecretBCPGKey)privKey.getPrivateKeyDataPacket()).getX()).normalize();
+
+                    RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
+                    key = new KeyParameter(rfc6637KDFCalculator.createKey(S, RFC6637Utils.createUserKeyingMaterial(privKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator())));
+                }
 
                 c.init(false, key);
 
-                return PGPPad.unpadSessionData(c.unwrap(keyEnc, 0, keyEnc.length));
+                              return PGPPad.unpadSessionData(c.unwrap(keyEnc, 0, keyEnc.length));
             }
         }
         catch (IOException e)
