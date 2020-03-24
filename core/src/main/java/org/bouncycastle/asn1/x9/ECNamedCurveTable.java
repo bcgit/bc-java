@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.anssi.ANSSINamedCurves;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
@@ -104,6 +105,11 @@ public class ECNamedCurveTable
             oid = GMNamedCurves.getOID(name);
         }
 
+        if (oid == null && name.equals("curve25519"))
+        {
+            oid = CryptlibObjectIdentifiers.curvey25519;
+        }
+        
         return oid;
     }
 
