@@ -263,7 +263,7 @@ public class JcaPGPKeyConverter
             }
             else if (algorithm == PGPPublicKey.ECDSA)
             {
-                bcpgKey = new ECDSAPublicBCPGKey(GNUObjectIdentifiers.Ed25519, derQ.getPoint());
+                bcpgKey = new ECDSAPublicBCPGKey(curveOid, derQ.getPoint());
             }
             else
             {
@@ -278,7 +278,7 @@ public class JcaPGPKeyConverter
             pointEnc[0] = 0x40;
             System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);
 
-            bcpgKey = new EdDSAPublicBCPGKey(pubInfo.getAlgorithm().getAlgorithm(), new BigInteger(1, pointEnc));
+            bcpgKey = new EdDSAPublicBCPGKey(GNUObjectIdentifiers.Ed25519, new BigInteger(1, pointEnc));
         }
         else if (Strings.toUpperCase(pubKey.getAlgorithm()).startsWith("X2"))
         {
