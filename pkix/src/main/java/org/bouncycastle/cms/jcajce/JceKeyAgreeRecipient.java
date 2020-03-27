@@ -57,7 +57,7 @@ public abstract class JceKeyAgreeRecipient
     protected EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
     protected EnvelopedDataHelper contentHelper = helper;
     private SecretKeySizeProvider keySizeProvider = new DefaultSecretKeySizeProvider();
-
+    private AlgorithmIdentifier privKeyAlgID = null;
 
     public JceKeyAgreeRecipient(PrivateKey recipientKey)
     {
@@ -116,6 +116,20 @@ public abstract class JceKeyAgreeRecipient
     public JceKeyAgreeRecipient setContentProvider(String providerName)
     {
         this.contentHelper = CMSUtils.createContentHelper(providerName);
+
+        return this;
+    }
+
+    /**
+     * Set the algorithm identifier for the private key. You'll want to use this if you are
+     * dealing with a HSM and it is not possible to get the encoding of the private key.
+     *
+     * @param privKeyAlgID the name of the provider to use.
+     * @return this recipient.
+     */
+    public JceKeyAgreeRecipient setPrivateKeyAlgorithmIdentifier(AlgorithmIdentifier privKeyAlgID)
+    {
+        this.privKeyAlgID = privKeyAlgID;
 
         return this;
     }
@@ -276,7 +290,12 @@ public abstract class JceKeyAgreeRecipient
 
     public AlgorithmIdentifier getPrivateKeyAlgorithmIdentifier()
     {
-        return PrivateKeyInfo.getInstance(recipientKey.getEncoded()).getPrivateKeyAlgorithm();
+        if (privKeyAlgID == null)
+        {
+            privKeyAlgID = PrivateKeyInfo.getInstance(recipientKey.getEncoded()).getPrivateKeyAlgorithm();
+        }
+
+        return privKeyAlgID;
     }
 
     private static KeyMaterialGenerator old_ecc_cms_Generator = new KeyMaterialGenerator()
