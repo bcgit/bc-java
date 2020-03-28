@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -21,6 +20,7 @@ import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
@@ -240,13 +240,13 @@ public class PGPEdDSATest
 
         KeyPairGenerator edKp = KeyPairGenerator.getInstance("EdDSA", "BC");
 
-        edKp.initialize(new ECGenParameterSpec("Ed25519"));
+        edKp.initialize(new ECNamedCurveGenParameterSpec("Ed25519"));
 
         PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.EDDSA, edKp.generateKeyPair(), new Date());
 
         KeyPairGenerator dhKp = KeyPairGenerator.getInstance("XDH", "BC");
 
-        dhKp.initialize(new ECGenParameterSpec("X25519"));
+        dhKp.initialize(new ECNamedCurveGenParameterSpec("X25519"));
 
         PGPKeyPair dhKeyPair = new JcaPGPKeyPair(PGPPublicKey.ECDH, dhKp.generateKeyPair(), new Date());
 
