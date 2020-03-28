@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import org.bouncycastle.util.Strings;
 
@@ -395,9 +396,9 @@ public class ArmoredOutputStream
                 if (!key.equals(VERSION_HDR))
                 {
                     ArrayList values = (ArrayList)headers.get(key);
-                    for (Object value : values)
+                    for (Iterator it = values.iterator(); it.hasNext();)
                     {
-                        writeHeaderEntry(key, value.toString());
+                        writeHeaderEntry(key, it.next().toString());
                     }
                 }
             }
