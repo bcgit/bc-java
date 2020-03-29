@@ -5,6 +5,7 @@ import java.util.List;
 class JsseSecurityParameters
 {
     List<SignatureSchemeInfo> localSigSchemes, localSigSchemesCert, peerSigSchemes, peerSigSchemesCert;
+    List<byte[]> statusResponses;
 
     void clear()
     {
@@ -12,5 +13,6 @@ class JsseSecurityParameters
         this.localSigSchemesCert = null;
         this.peerSigSchemes = null;
         this.peerSigSchemesCert = null;
+        this.statusResponses = null;
     }
 }

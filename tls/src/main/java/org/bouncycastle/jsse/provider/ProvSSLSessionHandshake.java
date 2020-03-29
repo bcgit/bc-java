@@ -1,5 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -89,5 +91,22 @@ class ProvSSLSessionHandshake
         Vector<ServerName> clientServerNames = securityParameters.getClientServerNames();
 
         return JsseUtils.convertSNIServerNames(clientServerNames);
+    }
+
+    @Override
+    public List<byte[]> getStatusResponses()
+    {
+        List<byte[]> statusResponses = jsseSecurityParameters.statusResponses;
+        if (null == statusResponses || statusResponses.isEmpty())
+        {
+            return Collections.emptyList();
+        }
+
+        ArrayList<byte[]> result = new ArrayList<byte[]>(statusResponses.size());
+        for (byte[] statusResponse : statusResponses)
+        {
+            result.add(statusResponse.clone());
+        }
+        return Collections.unmodifiableList(result);
     }
 }
