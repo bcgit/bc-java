@@ -246,6 +246,16 @@ abstract class JsseUtils
         return new Certificate(certificateList);
     }
 
+    static X509Certificate getEndEntity(JcaTlsCrypto crypto, Certificate certificateMessage) throws IOException
+    {
+        if (certificateMessage == null || certificateMessage.isEmpty())
+        {
+            return null;
+        }
+
+        return getX509Certificate(crypto, certificateMessage.getCertificateAt(0));
+    }
+
     static String getKeyType(SignatureSchemeInfo signatureSchemeInfo)
     {
         return signatureSchemeInfo.getKeyAlgorithm();
@@ -328,6 +338,11 @@ abstract class JsseUtils
         return result;
     }
 
+    static X509Certificate getX509Certificate(JcaTlsCrypto crypto, TlsCertificate tlsCertificate) throws IOException
+    {
+        return JcaTlsCertificate.convert(crypto, tlsCertificate).getX509Certificate();
+    }
+
     static X509Certificate[] getX509CertificateChain(JcaTlsCrypto crypto, Certificate certificateMessage)
     {
         if (certificateMessage == null || certificateMessage.isEmpty())
@@ -383,8 +398,7 @@ abstract class JsseUtils
 
         try
         {
-            return JcaTlsCertificate.convert(crypto, certificateMessage.getCertificateAt(0)).getX509Certificate()
-                .getSubjectX500Principal();
+            return getX509Certificate(crypto, certificateMessage.getCertificateAt(0)).getSubjectX500Principal();
         }
         catch (IOException e)
         {
