@@ -59,7 +59,7 @@ public class Ed25519Test
 
         signer.init(true, privateKey);
 
-        areEqual(sig, signer.generateSignature());
+        isTrue(areEqual(sig, signer.generateSignature()));
 
         signer.init(false, publicKey);
 

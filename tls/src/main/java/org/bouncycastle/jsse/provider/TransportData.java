@@ -1,6 +1,8 @@
 package org.bouncycastle.jsse.provider;
 
 import java.net.Socket;
+import java.util.Collections;
+import java.util.List;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
@@ -66,6 +68,13 @@ class TransportData
             :   transportData.getAlgorithmConstraints(peerSigAlgs);
     }
 
+    static List<byte[]> getStatusResponses(TransportData transportData, boolean checkServerTrusted)
+    {
+        return null == transportData
+            ?   Collections.<byte[]> emptyList()
+            :   transportData.getStatusResponses(checkServerTrusted);
+    }
+
     private final BCSSLParameters parameters;
     private final BCExtendedSSLSession handshakeSession;
 
@@ -108,5 +117,12 @@ class TransportData
         return null == configAlgorithmConstraints
             ?   ProvAlgorithmConstraints.DEFAULT
             :   new ProvAlgorithmConstraints(configAlgorithmConstraints, true);
+    }
+
+    List<byte[]> getStatusResponses(boolean checkServerTrusted)
+    {
+        return null == handshakeSession || !checkServerTrusted
+            ?   Collections.<byte[]> emptyList()
+            :   handshakeSession.getStatusResponses();
     }
 }

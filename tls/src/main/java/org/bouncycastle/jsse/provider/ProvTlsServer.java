@@ -24,6 +24,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.CertificateStatus;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
@@ -48,6 +49,11 @@ class ProvTlsServer
     private static final Logger LOG = Logger.getLogger(ProvTlsServer.class.getName());
 
     private static final int provEphemeralDHKeySize = PropertyUtils.getIntegerSystemProperty("jdk.tls.ephemeralDHKeySize", 2048, 1024, 8192);
+
+    // TODO[jsse] Support providing OCSP CertificateStatus
+//    private static final boolean provServerEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
+//        "jdk.tls.server.enableStatusRequestExtension", false);
+    private static final boolean provServerEnableStatusRequest = false;
 
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
@@ -75,7 +81,7 @@ class ProvTlsServer
     @Override
     protected boolean allowCertificateStatus()
     {
-        return false;
+        return provServerEnableStatusRequest;
     }
 
     @Override
@@ -286,6 +292,24 @@ class ProvTlsServer
         }
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
+    }
+
+    @Override
+    public CertificateStatus getCertificateStatus() throws IOException
+    {
+        // TODO[jsse] Support providing OCSP CertificateStatus
+//        if (CertificateStatusType.ocsp == certificateStatusRequest.getStatusType())
+//        {
+//            OCSPStatusRequest ocspStatusRequest = certificateStatusRequest.getOCSPStatusRequest();
+//
+//            @SuppressWarnings("unchecked")
+//            Vector<ResponderID> responderIDList = ocspStatusRequest.getResponderIDList();
+//            Extensions requestExtensions = ocspStatusRequest.getRequestExtensions();
+//
+//            X509Certificate eeCert = JsseUtils.getEndEntity(getCrypto(), credentials.getCertificate());
+//        }
+
+        return null;
     }
 
     @Override
