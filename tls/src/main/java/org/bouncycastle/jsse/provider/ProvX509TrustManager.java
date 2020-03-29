@@ -72,7 +72,7 @@ class ProvX509TrustManager
 
     private final JcaJceHelper helper;
     private final Set<X509Certificate> trustedCerts;
-    private final PKIXBuilderParameters baseParameters;
+    private final PKIXBuilderParameters pkixParametersTemplate;
     private final X509TrustManager exportX509TrustManager;
 
     ProvX509TrustManager(JcaJceHelper helper, Set<TrustAnchor> trustAnchors)
@@ -84,12 +84,12 @@ class ProvX509TrustManager
         // Setup PKIX parameters
         if (trustedCerts.isEmpty())
         {
-            this.baseParameters = null;
+            this.pkixParametersTemplate = null;
         }
         else
         {
-            this.baseParameters = new PKIXBuilderParameters(trustAnchors, null);
-            this.baseParameters.setRevocationEnabled(provCheckRevocation);
+            this.pkixParametersTemplate = new PKIXBuilderParameters(trustAnchors, null);
+            this.pkixParametersTemplate.setRevocationEnabled(provCheckRevocation);
         }
 
         this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
@@ -104,26 +104,26 @@ class ProvX509TrustManager
         // Setup PKIX parameters
         if (trustedCerts.isEmpty())
         {
-            this.baseParameters = null;
+            this.pkixParametersTemplate = null;
         }
         else if (baseParameters instanceof PKIXBuilderParameters)
         {
-            this.baseParameters = (PKIXBuilderParameters)baseParameters.clone();
-            this.baseParameters.setTargetCertConstraints(null);
+            this.pkixParametersTemplate = (PKIXBuilderParameters)baseParameters.clone();
+            this.pkixParametersTemplate.setTargetCertConstraints(null);
         }
         else
         {
-            this.baseParameters = new PKIXBuilderParameters(baseParameters.getTrustAnchors(), null);
-            this.baseParameters.setAnyPolicyInhibited(baseParameters.isAnyPolicyInhibited());
-            this.baseParameters.setCertPathCheckers(baseParameters.getCertPathCheckers());
-            this.baseParameters.setCertStores(baseParameters.getCertStores());
-            this.baseParameters.setDate(baseParameters.getDate());
-            this.baseParameters.setExplicitPolicyRequired(baseParameters.isExplicitPolicyRequired());
-            this.baseParameters.setInitialPolicies(baseParameters.getInitialPolicies());
-            this.baseParameters.setPolicyMappingInhibited(baseParameters.isPolicyMappingInhibited());
-            this.baseParameters.setPolicyQualifiersRejected(baseParameters.getPolicyQualifiersRejected());
-            this.baseParameters.setRevocationEnabled(baseParameters.isRevocationEnabled());
-            this.baseParameters.setSigProvider(baseParameters.getSigProvider());
+            this.pkixParametersTemplate = new PKIXBuilderParameters(baseParameters.getTrustAnchors(), null);
+            this.pkixParametersTemplate.setAnyPolicyInhibited(baseParameters.isAnyPolicyInhibited());
+            this.pkixParametersTemplate.setCertPathCheckers(baseParameters.getCertPathCheckers());
+            this.pkixParametersTemplate.setCertStores(baseParameters.getCertStores());
+            this.pkixParametersTemplate.setDate(baseParameters.getDate());
+            this.pkixParametersTemplate.setExplicitPolicyRequired(baseParameters.isExplicitPolicyRequired());
+            this.pkixParametersTemplate.setInitialPolicies(baseParameters.getInitialPolicies());
+            this.pkixParametersTemplate.setPolicyMappingInhibited(baseParameters.isPolicyMappingInhibited());
+            this.pkixParametersTemplate.setPolicyQualifiersRejected(baseParameters.getPolicyQualifiersRejected());
+            this.pkixParametersTemplate.setRevocationEnabled(baseParameters.isRevocationEnabled());
+            this.pkixParametersTemplate.setSigProvider(baseParameters.getSigProvider());
         }
 
         this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
@@ -175,8 +175,8 @@ class ProvX509TrustManager
         return trustedCerts.toArray(new X509Certificate[trustedCerts.size()]);
     }
 
-    private X509Certificate[] buildCertPath(X509Certificate[] chain, BCAlgorithmConstraints algorithmConstraints)
-        throws GeneralSecurityException
+    private X509Certificate[] buildCertPath(X509Certificate[] chain, BCAlgorithmConstraints algorithmConstraints,
+        List<byte[]> statusResponses) throws GeneralSecurityException
     {
         /*
          * RFC 8446 4.4.2 "For maximum compatibility, all implementations SHOULD be prepared to
@@ -188,11 +188,6 @@ class ProvX509TrustManager
         {
             return new X509Certificate[]{ eeCert };
         }
-
-        /*
-         * TODO[jsse] When 'checkServerTrusted' (only?), make use of any status responses (OCSP) via
-         * BCExtendedSSLSession.getStatusResponses()
-         */
 
         // TODO Can we cache the CertificateFactory instance?
         CertificateFactory certificateFactory = helper.createCertificateFactory("X.509");
@@ -212,22 +207,27 @@ class ProvX509TrustManager
         X509CertSelector certSelector = new X509CertSelector();
         certSelector.setCertificate(eeCert);
 
-        PKIXBuilderParameters certPathParameters = (PKIXBuilderParameters)baseParameters.clone();
-        certPathParameters.addCertPathChecker(new ProvAlgorithmChecker(helper, algorithmConstraints));
-        certPathParameters.addCertStore(certStore);
-        certPathParameters.setTargetCertConstraints(certSelector);
-
-        CertPathBuilder builder;
+        CertPathBuilder pkixBuilder;
         try
         {
-            builder = CertPathBuilder.getInstance("PKIX", pkixProvider);
+            pkixBuilder = CertPathBuilder.getInstance("PKIX", pkixProvider);
         }
         catch (NoSuchAlgorithmException e)
         {
-            builder = CertPathBuilder.getInstance("PKIX");
+            pkixBuilder = CertPathBuilder.getInstance("PKIX");
         }
 
-        PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(certPathParameters);
+        PKIXBuilderParameters pkixParameters = (PKIXBuilderParameters)pkixParametersTemplate.clone();
+        pkixParameters.addCertPathChecker(new ProvAlgorithmChecker(helper, algorithmConstraints));
+        pkixParameters.addCertStore(certStore);
+        pkixParameters.setTargetCertConstraints(certSelector);
+
+        if (!statusResponses.isEmpty())
+        {
+            addStatusResponses(pkixBuilder, pkixParameters, chain, statusResponses);
+        }
+
+        PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)pkixBuilder.build(pkixParameters);
 
         /*
          * TODO[jsse] Determine 'chainsToPublicCA' based on the trust anchor for the result
@@ -249,7 +249,7 @@ class ProvX509TrustManager
             throw new IllegalArgumentException("'authType' must be a non-null, non-empty string");
         }
 
-        if (null == baseParameters)
+        if (null == pkixParametersTemplate)
         {
             throw new CertificateException("Unable to build a CertPath: no PKIXBuilderParameters available");
         }
@@ -280,8 +280,9 @@ class ProvX509TrustManager
         try
         {
             BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, false);
+            List<byte[]> statusResponses = TransportData.getStatusResponses(transportData, checkServerTrusted);
 
-            X509Certificate[] trustedChain = buildCertPath(chain, algorithmConstraints);
+            X509Certificate[] trustedChain = buildCertPath(chain, algorithmConstraints, statusResponses);
 
             KeyPurposeId ekuOID = getRequiredExtendedKeyUsage(checkServerTrusted);
             int kuBit = getRequiredKeyUsage(checkServerTrusted, authType);
@@ -361,6 +362,40 @@ class ProvX509TrustManager
         }
 
         return requiredKeyUsage.intValue();
+    }
+
+    private static void addStatusResponses(CertPathBuilder pkixBuilder, PKIXBuilderParameters pkixParameters,
+        X509Certificate[] chain, List<byte[]> statusResponses)
+    {
+        Map<X509Certificate, byte[]> statusResponseMap = new HashMap<X509Certificate, byte[]>();
+        int count = Math.min(chain.length, statusResponses.size());
+        for (int i = 0; i < count; ++i)
+        {
+            byte[] statusResponse = statusResponses.get(i);
+            if (null != statusResponse && statusResponse.length > 0)
+            {
+                X509Certificate certificate = chain[i];
+
+                // TODO[jsse] putIfAbsent from JDK 8
+                if (!statusResponseMap.containsKey(certificate))
+                {
+                    statusResponseMap.put(certificate, statusResponse);
+                }
+            }
+        }
+
+        if (!statusResponseMap.isEmpty())
+        {
+            try
+            {
+                PKIXUtil.addStatusResponses(pkixBuilder, pkixParameters, statusResponseMap);
+            }
+            catch (RuntimeException e)
+            {
+                // Use of the status responses is an optional optimization
+                LOG.log(Level.FINE, "Failed to add status responses for revocation checking", e);
+            }
+        }
     }
 
     private static void checkEndpointID(X509Certificate certificate, String endpointIDAlg, boolean checkServerTrusted,
