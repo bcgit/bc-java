@@ -1,9 +1,15 @@
 package org.bouncycastle.jsse.provider;
 
+import java.security.cert.CertPathBuilder;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathChecker;
+import java.security.cert.PKIXRevocationChecker;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIMatcher;
@@ -87,6 +93,38 @@ abstract class JsseUtils_8
         return new ExportSNIMatcher(matcher);
     }
 
+    static void addStatusResponses(CertPathBuilder pkixBuilder, PKIXBuilderParameters pkixParameters,
+        Map<X509Certificate, byte[]> statusResponseMap)
+    {
+        if (statusResponseMap.isEmpty())
+        {
+            return;
+        }
+
+        List<PKIXCertPathChecker> certPathCheckers = pkixParameters.getCertPathCheckers();
+        PKIXRevocationChecker existingChecker = getFirstRevocationChecker(certPathCheckers);
+
+        if (null != existingChecker)
+        {
+            // NOTE: Existing checker will be used irrespective of pkixParameters.isRevocationEnabled
+            Map<X509Certificate, byte[]> ocspResponses = existingChecker.getOcspResponses();
+            if (putAnyAbsent(ocspResponses, statusResponseMap) > 0)
+            {
+                existingChecker.setOcspResponses(ocspResponses);
+                pkixParameters.setCertPathCheckers(certPathCheckers);
+            }
+        }
+        else
+        {
+            if (pkixParameters.isRevocationEnabled())
+            {
+                PKIXRevocationChecker checker = (PKIXRevocationChecker)pkixBuilder.getRevocationChecker();
+                checker.setOcspResponses(statusResponseMap);
+                pkixParameters.addCertPathChecker(checker);
+            }
+        }
+    }
+
     static List<SNIMatcher> exportSNIMatchers(Collection<BCSNIMatcher> matchers)
     {
         if (null == matchers || matchers.isEmpty())
@@ -150,6 +188,18 @@ abstract class JsseUtils_8
     static Object exportSNIServerNamesDynamic(Collection<BCSNIServerName> serverNames)
     {
         return exportSNIServerNames(serverNames);
+    }
+
+    static PKIXRevocationChecker getFirstRevocationChecker(List<PKIXCertPathChecker> certPathCheckers)
+    {
+        for (PKIXCertPathChecker certPathChecker : certPathCheckers)
+        {
+            if (certPathChecker instanceof PKIXRevocationChecker)
+            {
+                return (PKIXRevocationChecker)certPathChecker;
+            }
+        }
+        return null;
     }
 
     static BCSNIMatcher importSNIMatcher(SNIMatcher matcher)
@@ -232,5 +282,18 @@ abstract class JsseUtils_8
     static List<BCSNIServerName> importSNIServerNamesDynamic(Object serverNames)
     {
         return importSNIServerNames((Collection<SNIServerName>)serverNames);
+    }
+
+    static <K, V> int putAnyAbsent(Map<K, V> to, Map<K, V> from)
+    {
+        int count = 0;
+        for (Map.Entry<K, V> entry : from.entrySet())
+        {
+            if (null == to.putIfAbsent(entry.getKey(), entry.getValue()))
+            {
+                ++count;
+            }
+        }
+        return count;
     }
 }
