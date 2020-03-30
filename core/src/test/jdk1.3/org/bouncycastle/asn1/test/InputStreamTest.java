@@ -78,8 +78,8 @@ public class InputStreamTest
         testWithByteArray(classCast2, "unknown object encountered: class org.bouncycastle.asn1.BERTaggedObjectParser");
         testWithByteArray(classCast3, "unknown object encountered in constructed OCTET STRING: class org.bouncycastle.asn1.DLTaggedObject");
 
-        testWithByteArray(memoryError1, "corrupted stream - out of bounds length found: 2078365180 >= 110");
-        testWithByteArray(memoryError2, "corrupted stream - out of bounds length found: 2102504523 >= 110");
+        testWithByteArray(memoryError1, "corrupted stream - out of bounds length found: 2078365180 >= 39");
+        testWithByteArray(memoryError2, "corrupted stream - out of bounds length found: 2102504523 >= 39");
     }
 
     private void testWithByteArray(byte[] data, String message)

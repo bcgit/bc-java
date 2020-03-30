@@ -59,11 +59,17 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/ntru
     rm -rf org/bouncycastle/pqc/crypto/*/NTRU*
     rm -rf org/bouncycastle/pqc/crypto/xmss
+    rm -rf org/bouncycastle/pqc/crypto/lms
     rm -rf org/bouncycastle/pqc/jcajce/provider/xmss
     rm -rf org/bouncycastle/pqc/jcajce/provider/XMSS*
+    rm -rf org/bouncycastle/pqc/jcajce/provider/LMS*
+    rm -rf org/bouncycastle/pqc/jcajce/provider/lms
     rm -rf org/bouncycastle/pqc/crypto/*/XMSS*
+    rm -rf org/bouncycastle/pqc/crypto/*/LMS*
+    rm -rf org/bouncycastle/pqc/crypto/*/HSS*
     rm -rf org/bouncycastle/pqc/crypto/*/EncryptionKey*
     rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
+    rm org/bouncycastle/pqc/jcajce/spec/LMS*
     rm -rf org/bouncycastle/crypto/*/test
     rm -rf org/bouncycastle/crypto/*/IndexGenerator*
     rm -rf org/bouncycastle/util/utiltest
@@ -539,7 +545,10 @@ Implementation-Version: $version.0
 %
 
     cp ../../../../pg/src/test/resources/org/bouncycastle/openpgp/test/bigpub.asc classes/org/bouncycastle/openpgp/test/bigpub.asc
+    cp ../../../../pg/src/test/resources/org/bouncycastle/openpgp/test/eddsa-sks-pub-keyring.asc classes/org/bouncycastle/openpgp/test/eddsa-sks-pub-keyring.asc
     cp ../../../../pg/src/test/resources/org/bouncycastle/openpgp/test/longSigSubPack.asc classes/org/bouncycastle/openpgp/test/longSigSubPack.asc
+    (dbase=`pwd`; cd ../../../../pg/src/test/resources/; tar cf - pgpdata | (cd $dbase/classes; tar xf -)) 
+    
 
     (cd classes; jar cmf pg.mf ../../bcpg-jdk12-$base.jar org)
     java -classpath ../jce-jdk12-$base.jar:classes org.bouncycastle.openpgp.test.RegressionTest
