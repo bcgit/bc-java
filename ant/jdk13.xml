@@ -50,6 +50,7 @@
                 <exclude name="**/IndexGenerator.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/xmss/**/*.java" />
+                <exclude name="**/lms/*.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
@@ -77,9 +78,11 @@
                 <exclude name="**/JDKPKCS12StoreParameter.java" />
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/XMSS*.java" />
+                <exclude name="**/spec/LMS*.java" />
                 <exclude name="**/IndexGenerator.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/xmss/**/*.java" />
+                <exclude name="**/lms/**/*.java" />
                 <exclude name="**/ecgost12/**/*.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
@@ -124,6 +127,9 @@
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/XMSS*.java" />
+                <exclude name="**/HSS*.java" />
+                <exclude name="**/LMS*.java" />
+                <exclude name="**/lms/*.java" />
                 <exclude name="**/crypto/engines/test/BitStringTest.java" />
                 <exclude name="**/crypto/engines/test/AllTests.java" />
                 <exclude name="**/crypto/signers/test/AllTests.java" />
@@ -164,6 +170,8 @@
                 <exclude name="**/GetInstanceTest.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/NTRU*.java" />
+                <exclude name="**/LMS*.java" />
+                <exclude name="**/HSS*.java" />
                 <exclude name="**/crypto/engines/test/BitStringTest.java" />
                 <exclude name="**/crypto/engines/test/AllTests.java" />
                 <exclude name="**/crypto/signers/test/AllTests.java" />

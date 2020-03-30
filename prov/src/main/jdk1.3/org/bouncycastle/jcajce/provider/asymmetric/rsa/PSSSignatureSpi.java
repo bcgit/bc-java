@@ -14,7 +14,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -26,10 +25,15 @@ import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 public class PSSSignatureSpi
     extends Signature
 {
+    private final JcaJceHelper helper = new BCJcaJceHelper();
+
     private AlgorithmParameters engineParams;
     private PSSParamSpec paramSpec;
     private AsymmetricBlockCipher signer;
@@ -38,9 +42,8 @@ public class PSSSignatureSpi
     private int saltLength;
     private byte trailer;
     private boolean isRaw;
-    private ByteArrayOutputStream bOut;
+
     private org.bouncycastle.crypto.signers.PSSSigner pss;
-    private CipherParameters sigParams;
 
     private byte getTrailer(
         int trailerField)
@@ -73,17 +76,21 @@ public class PSSSignatureSpi
         super(name);
 
         this.signer = signer;
-        this.mgfDigest = digest;
 
         if (digest != null)
         {
             this.saltLength = digest.getDigestSize();
+            this.mgfDigest = digest;
         }
         else
         {
             this.saltLength = 20;
         }
 
+        if (paramSpec != null)
+        {
+            this.saltLength = paramSpec.getSaltLength();
+        }
         this.isRaw = false;
 
         setupContentDigest();
@@ -99,15 +106,20 @@ public class PSSSignatureSpi
         super(name);
 
         this.signer = signer;
-        this.mgfDigest = digest;
-        
+
         if (digest != null)
         {
             this.saltLength = digest.getDigestSize();
+            this.mgfDigest = digest;
         }
         else
         {
             this.saltLength = 20;
+        }
+
+        if (paramSpec != null)
+        {
+            this.saltLength = paramSpec.getSaltLength();
         }
 
         this.isRaw = isRaw;
@@ -130,18 +142,9 @@ public class PSSSignatureSpi
             setupContentDigest();
         }
 
-        sigParams = RSAUtil.generatePublicKeyParameter((RSAPublicKey)publicKey);
-
-        if (isRaw)
-        {
-            bOut = new ByteArrayOutputStream();
-        }
-        else
-        {
-            pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
-            pss.init(false,
-                sigParams);
-        }
+        pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
+        pss.init(false,
+            RSAUtil.generatePublicKeyParameter((RSAPublicKey)publicKey));
     }
 
     protected void engineInitSign(
@@ -154,23 +157,14 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPrivateKey instance");
         }
 
-        sigParams = new ParametersWithRandom(RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey), random);
-
         if (mgfDigest == null)
         {
             mgfDigest = new SHA1Digest();
             setupContentDigest();
         }
 
-        if (isRaw)
-        {
-            bOut = new ByteArrayOutputStream();
-        }
-        else
-        {
-            pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
-            pss.init(true, sigParams);
-        }
+        pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
+        pss.init(true, new ParametersWithRandom(RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey), random));
     }
 
     protected void engineInitSign(
@@ -182,37 +176,21 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPrivateKey instance");
         }
 
-        sigParams = RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey);
-
         if (mgfDigest == null)
         {
             mgfDigest = new SHA1Digest();
             setupContentDigest();
         }
         
-        if (isRaw)
-        {
-            bOut = new ByteArrayOutputStream();
-        }
-        else
-        {
-            pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
-            pss.init(true, sigParams);
-        }
+        pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
+        pss.init(true, RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey));
     }
 
     protected void engineUpdate(
         byte    b)
         throws SignatureException
     {
-        if (isRaw)
-        {
-            bOut.write(b);
-        }
-        else
-        {
-            pss.update(b);
-        }
+        pss.update(b);
     }
 
     protected void engineUpdate(
@@ -221,14 +199,7 @@ public class PSSSignatureSpi
         int     len) 
         throws SignatureException
     {
-        if (isRaw)
-        {
-            bOut.write(b, off, len);
-        }
-        else
-        {
-            pss.update(b, off, len);
-        }
+        pss.update(b, off, len);
     }
 
     protected byte[] engineSign()
@@ -236,15 +207,6 @@ public class PSSSignatureSpi
     {
         try
         {
-            if (isRaw)
-            {
-                byte[] hash = bOut.toByteArray();
-                contentDigest = mgfDigest = guessDigest(hash.length);
-                saltLength = contentDigest.getDigestSize();
-                pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, new NullPssDigest(contentDigest), mgfDigest, saltLength);
-
-                pss.init(true, sigParams);
-            }
             return pss.generateSignature();
         }
         catch (CryptoException e)
@@ -257,17 +219,6 @@ public class PSSSignatureSpi
         byte[]  sigBytes) 
         throws SignatureException
     {
-        if (isRaw)
-        {
-            byte[] hash = bOut.toByteArray();
-            contentDigest = mgfDigest = guessDigest(hash.length);
-            saltLength = contentDigest.getDigestSize();
-            pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, new NullPssDigest(contentDigest), mgfDigest, saltLength);
-
-            pss.init(false, sigParams);
-
-            pss.update(hash, 0, hash.length);
-        }
         return pss.verifySignature(sigBytes);
     }
 
@@ -361,6 +312,19 @@ public class PSSSignatureSpi
 
     protected AlgorithmParameters engineGetParameters()
     {
+        if (engineParams == null)
+        {
+            try
+            {
+                engineParams = helper.createAlgorithmParameters("PSS");
+                engineParams.init(new PSSParamSpec(saltLength, mgfDigest.getAlgorithmName()));
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e.toString());
+            }
+        }
+
         return engineParams;
     }
     
@@ -378,25 +342,6 @@ public class PSSSignatureSpi
         String param)
     {
         throw new UnsupportedOperationException("engineGetParameter unsupported");
-    }
-
-    private Digest guessDigest(int size)
-    {
-        switch (size)
-        {
-        case 20:
-            return new SHA1Digest();
-        case 28:
-            return new SHA224Digest();
-        case 32:
-            return new SHA256Digest();
-        case 48:
-            return new SHA384Digest();
-        case 64:
-            return new SHA512Digest();
-        }
-
-        return null;
     }
 
     static public class nonePSS
@@ -515,6 +460,7 @@ public class PSSSignatureSpi
             super("SHA3-512withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(512));
         }
     }
+
     private class NullPssDigest
         implements Digest
     {
