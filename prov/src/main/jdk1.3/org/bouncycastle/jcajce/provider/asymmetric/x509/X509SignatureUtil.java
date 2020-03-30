@@ -1,26 +1,47 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
+import java.io.IOException;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
-import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.jcajce.util.MessageDigestUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 class X509SignatureUtil
 {
-    private static final ASN1Null       derNull = new DERNull();
-    
+    private static final Map<ASN1ObjectIdentifier, String> algNames = new HashMap<ASN1ObjectIdentifier, String>();
+
+    static
+    {
+        algNames.put(EdECObjectIdentifiers.id_Ed25519, "Ed25519");
+        algNames.put(EdECObjectIdentifiers.id_Ed448, "Ed448");
+        algNames.put(OIWObjectIdentifiers.dsaWithSHA1, "SHA1withDSA");
+        algNames.put(X9ObjectIdentifiers.id_dsa_with_sha1, "SHA1withDSA");
+    }
+
+    private static final ASN1Null       derNull = DERNull.INSTANCE;
+
     static void setSignatureParameters(
         Signature signature,
         ASN1Encodable params)
@@ -28,27 +49,35 @@ class X509SignatureUtil
     {
         if (params != null && !derNull.equals(params))
         {
-            /*
-            AlgorithmParameters  sigParams = AlgorithmParameters.getInstance(signature.getAlgorithm(), signature.getProvider());
-            
+
+            AlgorithmParameters  sigParams;
+
             try
             {
-                sigParams.init(params.getDERObject().getDEREncoded());
+                sigParams = AlgorithmParameters.getInstance(signature.getAlgorithm(), signature.getProvider().getName());
+            
+                sigParams.init(params.toASN1Primitive().getEncoded());
+            }
+            catch (NoSuchProviderException e)
+            {
+                throw new SignatureException("exception decoding parameters: " + e.getMessage());
             }
             catch (IOException e)
             {
                 throw new SignatureException("IOException decoding parameters: " + e.getMessage());
             }
-
-            try
+            
+            if (signature.getAlgorithm().endsWith("MGF1"))
             {
-                signature.setParameters(sigParams.getParameterSpec(PSSParameterSpec.class));
+                try
+                {
+                    signature.setParameter(sigParams.getParameterSpec(AlgorithmParameterSpec.class));
+                }
+                catch (GeneralSecurityException e)
+                {
+                    throw new SignatureException("Exception extracting parameters: " + e.getMessage());
+                }
             }
-            catch (GeneralSecurityException e)
-            {
-                throw new SignatureException("Exception extracting parameters: " + e.getMessage());
-            }
-            */
         }
     }
     
@@ -65,9 +94,22 @@ class X509SignatureUtil
                 
                 return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "withRSAandMGF1";
             }
+            if (sigAlgId.getAlgorithm().equals(X9ObjectIdentifiers.ecdsa_with_SHA2))
+            {
+                ASN1Sequence ecDsaParams = ASN1Sequence.getInstance(params);
+                
+                return getDigestAlgName((ASN1ObjectIdentifier)ecDsaParams.getObjectAt(0)) + "withECDSA";
+            }
         }
 
-        return sigAlgId.getAlgorithm().getId();
+        // deal with the "weird" ones.
+        String algName = (String)algNames.get(sigAlgId.getAlgorithm());
+        if (algName != null)
+        {
+            return algName;
+        }
+
+        return findAlgName(sigAlgId.getAlgorithm());
     }
     
     /**
@@ -77,49 +119,63 @@ class X509SignatureUtil
     private static String getDigestAlgName(
         ASN1ObjectIdentifier digestAlgOID)
     {
-        if (PKCSObjectIdentifiers.md5.equals(digestAlgOID))
+        String name = MessageDigestUtils.getDigestName(digestAlgOID);
+
+        int dIndex = name.indexOf('-');
+        if (dIndex > 0 && !name.startsWith("SHA3"))
         {
-            return "MD5";
+            return name.substring(0, dIndex) + name.substring(dIndex + 1);
         }
-        else if (OIWObjectIdentifiers.idSHA1.equals(digestAlgOID))
+
+        return MessageDigestUtils.getDigestName(digestAlgOID);
+    }
+
+    private static String findAlgName(ASN1ObjectIdentifier algOid)
+    {
+        Provider prov = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
+
+        if (prov != null)
         {
-            return "SHA1";
+            String algName = lookupAlg(prov, algOid);
+            if (algName != null)
+            {
+                return algName;
+            }
         }
-        else if (NISTObjectIdentifiers.id_sha224.equals(digestAlgOID))
+
+        Provider[] provs = Security.getProviders();
+
+        for (int i = 0; i != provs.length; i++)
         {
-            return "SHA224";
+            if (prov != provs[i])
+            {
+                String algName = lookupAlg(provs[i], algOid);
+                if (algName != null)
+                {
+                    return algName;
+                }
+            }
         }
-        else if (NISTObjectIdentifiers.id_sha256.equals(digestAlgOID))
+
+        return algOid.getId();
+    }
+
+    private static String lookupAlg(Provider prov, ASN1ObjectIdentifier algOid)
+    {
+        String      algName = prov.getProperty("Alg.Alias.Signature." + algOid);
+
+        if (algName != null)
         {
-            return "SHA256";
+            return algName;
         }
-        else if (NISTObjectIdentifiers.id_sha384.equals(digestAlgOID))
+
+        algName = prov.getProperty("Alg.Alias.Signature.OID." + algOid);
+
+        if (algName != null)
         {
-            return "SHA384";
+            return algName;
         }
-        else if (NISTObjectIdentifiers.id_sha512.equals(digestAlgOID))
-        {
-            return "SHA512";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd128.equals(digestAlgOID))
-        {
-            return "RIPEMD128";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd160.equals(digestAlgOID))
-        {
-            return "RIPEMD160";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd256.equals(digestAlgOID))
-        {
-            return "RIPEMD256";
-        }
-        else if (CryptoProObjectIdentifiers.gostR3411.equals(digestAlgOID))
-        {
-            return "GOST3411";
-        }
-        else
-        {
-            return digestAlgOID.getId();            
-        }
+
+        return null;
     }
 }

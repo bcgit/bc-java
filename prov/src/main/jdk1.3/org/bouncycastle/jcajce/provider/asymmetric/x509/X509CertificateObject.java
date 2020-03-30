@@ -10,14 +10,15 @@ import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.jce.X509Principal;
 
 class X509CertificateObject
     extends X509CertificateImpl
@@ -38,7 +39,7 @@ class X509CertificateObject
     X509CertificateObject(JcaJceHelper bcHelper, org.bouncycastle.asn1.x509.Certificate c)
         throws CertificateParsingException
     {
-        super(bcHelper, c, createBasicConstraints(c), createKeyUsage(c));
+        super(bcHelper, c, createBasicConstraints(c), createKeyUsage(c), createSigAlgName(c), createSigAlgParams(c));
     }
 
     public void checkValidity(Date date) throws CertificateExpiredException, CertificateNotYetValidException
@@ -211,7 +212,8 @@ class X509CertificateObject
             encoding = null;
         }
 
-        X509CertificateInternal temp = new X509CertificateInternal(bcHelper, c, basicConstraints, keyUsage, encoding);
+        X509CertificateInternal temp = new X509CertificateInternal(bcHelper, c, basicConstraints, keyUsage, sigAlgName,
+            sigAlgParams, encoding);
 
         synchronized (cacheLock)
         {
@@ -270,6 +272,36 @@ class X509CertificateObject
         catch (Exception e)
         {
             throw new CertificateParsingException("cannot construct KeyUsage: " + e);
+        }
+    }
+
+    private static String createSigAlgName(org.bouncycastle.asn1.x509.Certificate c) throws CertificateParsingException
+    {
+        try
+        {
+            return X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
+        }
+        catch (Exception e)
+        {
+            throw new CertificateParsingException("cannot construct SigAlgName: " + e);
+        }
+    }
+
+    private static byte[] createSigAlgParams(org.bouncycastle.asn1.x509.Certificate c) throws CertificateParsingException
+    {
+        try
+        {
+            ASN1Encodable parameters = c.getSignatureAlgorithm().getParameters();
+            if (null == parameters)
+            {
+                return null;
+            }
+
+            return parameters.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+        }
+        catch (Exception e)
+        {
+            throw new CertificateParsingException("cannot construct SigAlgParams: " + e);
         }
     }
 }

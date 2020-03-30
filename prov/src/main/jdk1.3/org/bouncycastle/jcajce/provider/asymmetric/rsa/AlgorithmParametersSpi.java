@@ -152,7 +152,7 @@ public abstract class AlgorithmParametersSpi
             Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (paramSpec == PSSParamSpec.class && currentSpec != null)
+            if ((paramSpec == PSSParamSpec.class || paramSpec == AlgorithmParameterSpec.class) && currentSpec != null)
             {
                 return currentSpec;
             }
