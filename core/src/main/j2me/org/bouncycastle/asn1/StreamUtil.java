@@ -16,7 +16,7 @@ class StreamUtil
     {
         if (in instanceof LimitedInputStream)
         {
-            return ((LimitedInputStream)in).getRemaining();
+            return ((LimitedInputStream)in).getLimit();
         }
         else if (in instanceof ASN1InputStream)
         {
