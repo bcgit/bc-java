@@ -83,7 +83,10 @@ then
         rm -rf src/org/bouncycastle/pqc/crypto/*/BitStringTest*
         rm -rf src/org/bouncycastle/pqc/crypto/*/IndexGenerator*
         rm -rf src/org/bouncycastle/pqc/crypto/xmss
+        rm -rf src/org/bouncycastle/pqc/crypto/lms
         rm -rf src/org/bouncycastle/pqc/crypto/test/XMSS*
+        rm -rf src/org/bouncycastle/pqc/crypto/test/LMS*
+        rm -rf src/org/bouncycastle/pqc/crypto/test/HSS*
         rm src/org/bouncycastle/pqc/crypto/qtesla/QTeslaKeyEncodingTests.java
         rm -rf src/org/bouncycastle/gpg/keybox
         rm -rf src/org/bouncycastle/gpg/test
