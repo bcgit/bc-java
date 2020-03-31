@@ -421,3 +421,20 @@ w
 q
 %
 
+ed org/bouncycastle/jcajce/provider/symmetric/util/BCPBEKey.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/pkix/PKIXIdentity.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/pkix/jcajce/JcaPKIXIdentity.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
