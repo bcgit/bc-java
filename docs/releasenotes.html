@@ -24,7 +24,7 @@ to conform the algorithms to the JCE framework.
 
 <h3>2.1.1 Version</h3>
 Release: 1.65<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, March 31st.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>DLExternal would encode using DER encoding for tagged SETs. This has been fixed.</li>
@@ -32,6 +32,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>ChaCha20Poly1305 could fail for small updates when used via the provider. This has been fixed.</li>
 <li>Properties.getPropertyValue could ignore system property when other local overrides set. This has been fixed.</li>
 <li>The entropy gathering thread was not running in daemon mode, meaning there could be a delay in an application shutting down due to it. This has been fixed.</li>
+<li>A recent change in Java 11 could cause an exception with the BC Provider's implementation of PSS. This has been fixed.</li>
 <li>BCJSSE: TrustManager now tolerates having no trusted certificates.</li>
 <li>BCJSSE: Choice of credentials and signing algorithm now respect the peer's signature_algorithms extension properly.</li>
 <li>BCJSSE: KeyManager for KeyStoreBuilderParameters no longer leaks memory.</li>
@@ -46,6 +47,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>BCJSSE: KeyManager and TrustManager now check algorithm constraints for keys and certificate chains.</li>
 <li>BCJSSE: KeyManager selection of server credentials now prefers matching SNI hostname (if any).</li>
 <li>BCJSSE: KeyManager may now fallback to imperfect credentials (expired, SNI mismatch).</li>
+<li>BCJSSE: Client-side OCSP stapling support (beta version: via status_request extension only, provides jdk.tls.client.enableStatusRequestExtension, and requires CertPathBuilder support).</li>
 <li>TLS: DSA in JcaTlsCrypto now falls back to stream signing to work around NoneWithDSA limitations in default provider.</li>
 </ul>
 

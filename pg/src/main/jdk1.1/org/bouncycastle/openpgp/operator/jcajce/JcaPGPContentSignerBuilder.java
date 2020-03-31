@@ -2,17 +2,20 @@ package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
+import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.openpgp.operator.PGPContentSigner;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -73,21 +76,35 @@ public class JcaPGPContentSignerBuilder
         return this;
     }
 
-    public PGPContentSigner build(final int signatureType, final PGPPrivateKey privateKey)
+    public PGPContentSigner build(final int signatureType, PGPPrivateKey privateKey)
+        throws PGPException
+    {
+        if (privateKey instanceof JcaPGPPrivateKey)
+        {
+            return build(signatureType, privateKey.getKeyID(), ((JcaPGPPrivateKey)privateKey).getPrivateKey());
+        }
+        else
+        {
+            return build(signatureType, privateKey.getKeyID(), keyConverter.getPrivateKey(privateKey));
+        }
+    }
+
+    public PGPContentSigner build(final int signatureType, final long keyID, final PrivateKey privateKey)
         throws PGPException
     {
         final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
+        final PGPDigestCalculator edDigestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final Signature           signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
 
         try
         {
             if (random != null)
             {
-                signature.initSign(keyConverter.getPrivateKey(privateKey));
+                signature.initSign(privateKey);
             }
             else
             {
-                signature.initSign(keyConverter.getPrivateKey(privateKey));
+                signature.initSign(privateKey);
             }
         }
         catch (InvalidKeyException e)
@@ -114,11 +131,15 @@ public class JcaPGPContentSignerBuilder
 
             public long getKeyID()
             {
-                return privateKey.getKeyID();
+                return keyID;
             }
 
             public OutputStream getOutputStream()
             {
+                if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA)
+                {
+                    return new TeeOutputStream(edDigestCalculator.getOutputStream(), digestCalculator.getOutputStream());
+                }
                 return new TeeOutputStream(OutputStreamFactory.createStream(signature), digestCalculator.getOutputStream());
             }
 
@@ -126,11 +147,15 @@ public class JcaPGPContentSignerBuilder
             {
                 try
                 {
+                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA)
+                    {
+                         signature.update(edDigestCalculator.getDigest());
+                    }
                     return signature.sign();
                 }
                 catch (SignatureException e)
-                {    // TODO: need a specific runtime exception for PGP operators.
-                    throw new IllegalStateException("unable to create signature");
+                {
+                    throw new PGPRuntimeOperationException("Unable to create signature: " + e.getMessage(), e);
                 }
             }
 

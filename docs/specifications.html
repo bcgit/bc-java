@@ -362,6 +362,7 @@ implementations
 <tr><td><b>Poly1305</b></td><td>128 bits</td><td>Usable with 128 bit block ciphers. Use Poly1305KeyGenerator to generate keys.</td></tr>
 <tr><td><b>SkeinMac</b></td><td>any byte length</td><td>256 bit, 512 bit and 1024 state size variants. Additional parameterisation using SkeinParameters.</td></tr>
 <tr><td><b>SipHash</b></td><td>64 bits</td><td>&nbsp;</td></tr>
+<tr><td><b>SipHash128</b></td><td>128 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>VMPCMac</b></td><td>160 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>Zuc128Mac</b></td><td>32 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>Zuc256Mac</b></td><td>32, 64, 128 bits</td><td>&nbsp;</td></tr>
@@ -813,6 +814,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <tr><td>HMAC-Skein-1024-*</td><td>384, 512, 1024</td><td>e.g. HMAC-Skein-1024-1024</td></tr>
 <tr><td>Siphash-2-4 (SipHash)</td><td>64</td><td></td></tr>
 <tr><td>Siphash-4-8</td><td>64</td><td></td></tr>
+<tr><td>Siphash128-2-4 (SipHash128)</td><td>128</td><td></td></tr>
 <tr><td>Skein-MAC-256-*</td><td>128, 160, 224, 256</td><td>e.g. Skein-MAC-256-160</td></tr>
 <tr><td>Skein-MAC-512-*</td><td>128, 160, 224, 256, 384, 512</td><td>e.g. Skein-MAC-512-256</td></tr>
 <tr><td>Skein-MAC-1024-*</td><td>384, 512, 1024</td><td>e.g. Skein-MAC-1024-1024</td></tr>
@@ -930,6 +932,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA3-512withSPHINCS256 (BCPQC)</li>
 <li>SHA256withSM2</li>
 <li>SM3withSM2</li>
+<li>LMS</li>
 <li>XMSS-SHA256</li>
 <li>XMSS-SHA512</li>
 <li>XMSS-SHAKE128</li>
