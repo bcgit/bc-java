@@ -128,6 +128,11 @@ protected void isTrue(
     {
         return Arrays.areEqual(a, b);
     }
+
+    protected boolean areEqual(byte[] a, int aFromIndex, int aToIndex, byte[] b, int bFromIndex, int bToIndex)
+    {
+        return Arrays.areEqual(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
+    }
     
     public TestResult perform()
     {
