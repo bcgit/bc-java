@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -21,19 +20,11 @@ import org.bouncycastle.pqc.crypto.gmss.GMSSSigner;
 import org.bouncycastle.pqc.crypto.gmss.GMSSStateAwareSigner;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
-
 
 public class GMSSSignerTest
     extends SimpleTest
 {
-    byte[] keyData = Hex.decode("b5014e4b60ef2ba8b6211b4062ba3224e0427dd3");
-
-    SecureRandom keyRandom = new FixedSecureRandom(
-        new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(keyData), new FixedSecureRandom.Data(keyData)});
-
     public String getName()
     {
         return "GMSS";
@@ -42,7 +33,6 @@ public class GMSSSignerTest
     public void performTest()
         throws Exception
     {
-
         GMSSParameters params = new GMSSParameters(3,
             new int[]{15, 15, 10}, new int[]{5, 5, 4}, new int[]{3, 3, 2});
 
@@ -56,7 +46,7 @@ public class GMSSSignerTest
 
         GMSSKeyPairGenerator gmssKeyGen = new GMSSKeyPairGenerator(digProvider);
 
-        GMSSKeyGenerationParameters genParam = new GMSSKeyGenerationParameters(keyRandom, params);
+        GMSSKeyGenerationParameters genParam = new GMSSKeyGenerationParameters(null, params);
 
         gmssKeyGen.init(genParam);
 
@@ -64,7 +54,7 @@ public class GMSSSignerTest
 
         GMSSPrivateKeyParameters privKey = (GMSSPrivateKeyParameters)pair.getPrivate();
 
-        ParametersWithRandom param = new ParametersWithRandom(privKey, keyRandom);
+        ParametersWithRandom param = new ParametersWithRandom(privKey, null);
 
         // TODO
         Signer gmssSigner = new DigestingMessageSigner(new GMSSSigner(digProvider), new SHA224Digest());
