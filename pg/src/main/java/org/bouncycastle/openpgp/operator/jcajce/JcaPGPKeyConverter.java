@@ -83,6 +83,10 @@ import org.bouncycastle.util.BigIntegers;
 
 public class JcaPGPKeyConverter
 {
+    // We default to these as they are specified as mandatory in RFC 6631.
+    private static final PGPKdfParameters DEFAULT_KDF_PARAMETERS = new PGPKdfParameters(HashAlgorithmTags.SHA256,
+        SymmetricKeyAlgorithmTags.AES_128);
+
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private KeyFingerPrintCalculator fingerPrintCalculator = new JcaKeyFingerprintCalculator();
 
@@ -459,12 +463,8 @@ public class JcaPGPKeyConverter
 
             if (algorithm == PGPPublicKey.ECDH)
             {
-                PGPKdfParameters kdfParams = (PGPKdfParameters)algorithmParameters;
-                if (kdfParams == null)
-                {
-                    // We default to these as they are specified as mandatory in RFC 6631.
-                    kdfParams = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-                }
+                PGPKdfParameters kdfParams = implGetKdfParameters(algorithmParameters);
+
                 return new ECDHPublicBCPGKey(curveOid, derQ.getPoint(), kdfParams.getHashAlgorithm(),
                     kdfParams.getSymmetricWrapAlgorithm());
             }
@@ -495,12 +495,8 @@ public class JcaPGPKeyConverter
             pointEnc[0] = 0x40;
             System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);
 
-            PGPKdfParameters kdfParams = (PGPKdfParameters)algorithmParameters;
-            if (kdfParams == null)
-            {
-                // We default to these as they are specified as mandatory in RFC 6631.
-                kdfParams = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-            }
+            PGPKdfParameters kdfParams = implGetKdfParameters(algorithmParameters);
+
             return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, pointEnc),
                 kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
         }
@@ -522,6 +518,11 @@ public class JcaPGPKeyConverter
     {
         KeyFactory keyFactory = helper.createKeyFactory(keyAlgorithm);
         return keyFactory.generatePublic(keySpec);
+    }
+
+    private PGPKdfParameters implGetKdfParameters(PGPAlgorithmParameters algorithmParameters)
+    {
+        return null == algorithmParameters ? DEFAULT_KDF_PARAMETERS : (PGPKdfParameters)algorithmParameters;
     }
 
     private PrivateKey implGetPrivateKeyEC(String keyAlgorithm, ECPublicBCPGKey ecPub, ECSecretBCPGKey ecPriv)
