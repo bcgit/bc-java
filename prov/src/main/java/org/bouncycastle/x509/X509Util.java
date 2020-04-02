@@ -97,11 +97,12 @@ class X509Util
         noParams.add(X9ObjectIdentifiers.ecdsa_with_SHA384);
         noParams.add(X9ObjectIdentifiers.ecdsa_with_SHA512);
         noParams.add(X9ObjectIdentifiers.id_dsa_with_sha1);
+        noParams.add(OIWObjectIdentifiers.dsaWithSHA1);
         noParams.add(NISTObjectIdentifiers.dsa_with_sha224);
         noParams.add(NISTObjectIdentifiers.dsa_with_sha256);
         noParams.add(NISTObjectIdentifiers.dsa_with_sha384);
         noParams.add(NISTObjectIdentifiers.dsa_with_sha512);
-        
+
         //
         // RFC 4491
         //
