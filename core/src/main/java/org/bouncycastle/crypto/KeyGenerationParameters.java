@@ -21,7 +21,7 @@ public class KeyGenerationParameters
         SecureRandom    random,
         int             strength)
     {
-        this.random = random;
+        this.random = CryptoServicesRegistrar.getSecureRandom(random);
         this.strength = strength;
     }
 

@@ -169,7 +169,7 @@ public class DSASigner
 
     protected SecureRandom initSecureRandom(boolean needed, SecureRandom provided)
     {
-        return !needed ? null : (provided != null) ? provided : CryptoServicesRegistrar.getSecureRandom();
+        return needed ? CryptoServicesRegistrar.getSecureRandom(provided) : null;
     }
 
     private BigInteger getRandomizer(BigInteger q, SecureRandom provided)
@@ -177,6 +177,6 @@ public class DSASigner
         // Calculate a random multiple of q to add to k. Note that g^q = 1 (mod p), so adding multiple of q to k does not change r.
         int randomBits = 7;
 
-        return BigIntegers.createRandomBigInteger(randomBits, provided != null ? provided : CryptoServicesRegistrar.getSecureRandom()).add(BigInteger.valueOf(128)).multiply(q);
+        return BigIntegers.createRandomBigInteger(randomBits, CryptoServicesRegistrar.getSecureRandom(provided)).add(BigInteger.valueOf(128)).multiply(q);
     }
 }

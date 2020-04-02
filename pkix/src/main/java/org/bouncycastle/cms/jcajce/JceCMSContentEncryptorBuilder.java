@@ -180,10 +180,7 @@ public class JceCMSContentEncryptorBuilder
         {
             KeyGenerator keyGen = helper.createKeyGenerator(encryptionOID);
 
-            if (random == null)
-            {
-                random = CryptoServicesRegistrar.getSecureRandom();
-            }
+            random = CryptoServicesRegistrar.getSecureRandom(random);
 
             if (keySize < 0)
             {
