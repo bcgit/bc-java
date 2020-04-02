@@ -28,6 +28,7 @@ abstract class ProvSSLSessionBase
     protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
 
     protected ProvSSLSessionContext sslSessionContext;
+    protected final boolean isFips;
     protected final JcaTlsCrypto crypto;
     protected final String peerHost;
     protected final int peerPort;
@@ -40,6 +41,7 @@ abstract class ProvSSLSessionBase
     ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort)
     {
         this.sslSessionContext = sslSessionContext;
+        this.isFips = (null == sslSessionContext) ? false : sslSessionContext.getSSLContext().isFips();
         this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getCrypto();
         this.peerHost = peerHost;
         this.peerPort = peerPort;
@@ -159,7 +161,7 @@ abstract class ProvSSLSessionBase
     @SuppressWarnings("deprecation")
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
-        if (null != sslSessionContext && sslSessionContext.getSSLContext().isFips())
+        if (isFips)
         {
             throw new UnsupportedOperationException();
         }
