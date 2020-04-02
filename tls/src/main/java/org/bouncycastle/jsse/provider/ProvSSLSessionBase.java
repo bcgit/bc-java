@@ -159,7 +159,7 @@ abstract class ProvSSLSessionBase
     @SuppressWarnings("deprecation")
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
-        if (sslSessionContext.getSSLContext().isFips())
+        if (null != sslSessionContext && sslSessionContext.getSSLContext().isFips())
         {
             throw new UnsupportedOperationException();
         }
