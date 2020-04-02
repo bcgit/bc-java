@@ -253,6 +253,6 @@ public class ECDSASigner
 
     protected SecureRandom initSecureRandom(boolean needed, SecureRandom provided)
     {
-        return !needed ? null : (provided != null) ? provided : CryptoServicesRegistrar.getSecureRandom();
+        return needed ? CryptoServicesRegistrar.getSecureRandom(provided) : null;
     }
 }

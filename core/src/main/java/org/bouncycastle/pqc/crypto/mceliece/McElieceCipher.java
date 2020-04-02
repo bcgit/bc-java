@@ -105,7 +105,6 @@ public class McElieceCipher
 
     private void initCipherEncrypt(McEliecePublicKeyParameters pubKey)
     {
-        this.sr = sr != null ? sr : CryptoServicesRegistrar.getSecureRandom();
         n = pubKey.getN();
         k = pubKey.getK();
         t = pubKey.getT();
