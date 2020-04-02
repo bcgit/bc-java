@@ -1406,9 +1406,12 @@ class QTesla1p
                     prod[ppos + j] = prod[ppos + j] + sign_list[i] * pk[pkPos + j - pos];
                 }
             }
+
+            for (i = 0; i < PARAM_N; i++)
+            {
+                prod[ppos + i] = barr_reduce(prod[ppos + i]);
+            }
         }
-
-
     }
 
 }
