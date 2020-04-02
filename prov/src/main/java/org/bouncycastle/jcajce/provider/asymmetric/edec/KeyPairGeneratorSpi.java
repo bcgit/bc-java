@@ -10,7 +10,6 @@ import java.security.spec.ECGenParameterSpec;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
@@ -225,11 +224,6 @@ public class KeyPairGeneratorSpi
     private void setupGenerator(int algorithm)
     {
         initialised = true;
-
-        if (secureRandom == null)
-        {
-            secureRandom = CryptoServicesRegistrar.getSecureRandom();
-        }
 
         switch (algorithm)
         {

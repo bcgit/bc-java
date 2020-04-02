@@ -111,7 +111,6 @@ public class McEliecePointchevalCipher
 
     private void initCipherEncrypt(McElieceCCA2PublicKeyParameters pubKey)
     {
-        this.sr = sr != null ? sr : CryptoServicesRegistrar.getSecureRandom();
         this.messDigest = Utils.getDigest(pubKey.getDigest());
         n = pubKey.getN();
         k = pubKey.getK();

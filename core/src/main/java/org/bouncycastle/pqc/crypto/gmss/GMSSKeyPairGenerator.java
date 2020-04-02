@@ -5,7 +5,6 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.gmss.util.GMSSRandom;
@@ -429,8 +428,8 @@ public class GMSSKeyPairGenerator
         this.currentSeeds = new byte[numLayer][mdLength];
         this.nextNextSeeds = new byte[numLayer - 1][mdLength];
 
-        // construct SecureRandom for initial seed generation
-        SecureRandom secRan = CryptoServicesRegistrar.getSecureRandom();
+        // SecureRandom for initial seed generation
+        SecureRandom secRan = param.getRandom();
 
         // generation of initial seeds
         for (int i = 0; i < numLayer; i++)
@@ -452,7 +451,7 @@ public class GMSSKeyPairGenerator
         int[] defw = {3, 3, 3, 3};
         int[] defk = {2, 2, 2, 2};
 
-        KeyGenerationParameters kgp = new GMSSKeyGenerationParameters(CryptoServicesRegistrar.getSecureRandom(), new GMSSParameters(defh.length, defh, defw, defk));
+        KeyGenerationParameters kgp = new GMSSKeyGenerationParameters(null, new GMSSParameters(defh.length, defh, defw, defk));
         this.initialize(kgp);
 
     }

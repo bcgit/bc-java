@@ -58,10 +58,7 @@ public class BcCRMFEncryptorBuilder
         CRMFOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, SecureRandom random)
             throws CRMFException
         {
-            if (random == null)
-            {
-                random = CryptoServicesRegistrar.getSecureRandom();
-            }
+            random = CryptoServicesRegistrar.getSecureRandom(random);
 
             CipherKeyGenerator keyGen = helper.createKeyGenerator(encryptionOID, random);
 

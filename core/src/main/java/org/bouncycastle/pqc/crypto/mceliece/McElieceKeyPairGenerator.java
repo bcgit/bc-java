@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
@@ -61,7 +60,7 @@ public class McElieceKeyPairGenerator
      */
     private void initializeDefault()
     {
-        McElieceKeyGenerationParameters mcParams = new McElieceKeyGenerationParameters(CryptoServicesRegistrar.getSecureRandom(), new McElieceParameters());
+        McElieceKeyGenerationParameters mcParams = new McElieceKeyGenerationParameters(null, new McElieceParameters());
         initialize(mcParams);
     }
 
@@ -69,13 +68,7 @@ public class McElieceKeyPairGenerator
         KeyGenerationParameters param)
     {
         this.mcElieceParams = (McElieceKeyGenerationParameters)param;
-
-        // set source of randomness
         this.random = param.getRandom();
-        if (this.random == null)
-        {
-            this.random = CryptoServicesRegistrar.getSecureRandom();
-        }
 
         this.m = this.mcElieceParams.getParameters().getM();
         this.n = this.mcElieceParams.getParameters().getN();
