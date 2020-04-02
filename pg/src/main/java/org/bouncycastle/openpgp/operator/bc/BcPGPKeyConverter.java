@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -13,9 +12,7 @@ import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
@@ -51,7 +48,6 @@ import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
@@ -63,6 +59,10 @@ import org.bouncycastle.util.BigIntegers;
 
 public class BcPGPKeyConverter
 {
+    // We default to these as they are specified as mandatory in RFC 6631.
+    private static final PGPKdfParameters DEFAULT_KDF_PARAMETERS = new PGPKdfParameters(HashAlgorithmTags.SHA256,
+        SymmetricKeyAlgorithmTags.AES_128);
+
     public PGPPrivateKey getPGPPrivateKey(PGPPublicKey pubKey, AsymmetricKeyParameter privKey)
         throws PGPException
     {
@@ -337,37 +337,21 @@ public class BcPGPKeyConverter
         }
         else if (pubKey instanceof ECPublicKeyParameters)
         {
-            SubjectPublicKeyInfo keyInfo;
-            try
-            {
-                keyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubKey);
-            }
-            catch (IOException e)
-            {
-                throw new PGPException("Unable to encode key: " + e.getMessage(), e);
-            }
+            ECPublicKeyParameters ecK = (ECPublicKeyParameters)pubKey;
 
-            // TODO: should probably match curve by comparison as well
-            ASN1ObjectIdentifier curveOid = ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters());
-
-            X9ECParameters params = ECNamedCurveTable.getByOID(curveOid);
-
-            ASN1OctetString key = new DEROctetString(keyInfo.getPublicKeyData().getBytes());
-            X9ECPoint derQ = new X9ECPoint(params.getCurve(), key);
+            // TODO Should we have a way to recognize named curves when the name is missing?
+            ECNamedDomainParameters parameters = (ECNamedDomainParameters)ecK.getParameters();
 
             if (algorithm == PGPPublicKey.ECDH)
             {
-                PGPKdfParameters kdfParams = (PGPKdfParameters)algorithmParameters;
-                if (kdfParams == null)
-                {
-                    // We default to these as they are specified as mandatory in RFC 6631.
-                    kdfParams = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-                }
-                return new ECDHPublicBCPGKey(curveOid, derQ.getPoint(), kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+                PGPKdfParameters kdfParams = implGetKdfParameters(algorithmParameters);
+
+                return new ECDHPublicBCPGKey(parameters.getName(), ecK.getQ(), kdfParams.getHashAlgorithm(),
+                    kdfParams.getSymmetricWrapAlgorithm());
             }
             else if (algorithm == PGPPublicKey.ECDSA)
             {
-                return new ECDSAPublicBCPGKey(curveOid, derQ.getPoint());
+                return new ECDSAPublicBCPGKey(parameters.getName(), ecK.getQ());
             }
             else
             {
@@ -387,12 +371,8 @@ public class BcPGPKeyConverter
             pointEnc[0] = 0x40;
             ((X25519PublicKeyParameters)pubKey).encode(pointEnc, 1);
 
-            PGPKdfParameters kdfParams = (PGPKdfParameters)algorithmParameters;
-            if (kdfParams == null)
-            {
-                // We default to these as they are specified as mandatory in RFC 6631.
-                kdfParams = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-            }
+            PGPKdfParameters kdfParams = implGetKdfParameters(algorithmParameters);
+
             return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, pointEnc),
                 kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
         }
@@ -400,6 +380,11 @@ public class BcPGPKeyConverter
         {
             throw new PGPException("unknown key class");
         }
+    }
+
+    private PGPKdfParameters implGetKdfParameters(PGPAlgorithmParameters algorithmParameters)
+    {
+        return null == algorithmParameters ? DEFAULT_KDF_PARAMETERS : (PGPKdfParameters)algorithmParameters;
     }
 
     private ECNamedDomainParameters implGetParametersEC(ECPublicBCPGKey ecPub)
