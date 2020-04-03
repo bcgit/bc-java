@@ -131,6 +131,16 @@ public class Ed25519Test
             }
         }
 
+        if (msg.length > 0)
+        {
+            boolean shouldNotVerify = verifier.verifySignature(signature);
+
+            if (shouldNotVerify)
+            {
+                fail("Ed25519(" + algorithm + ") wrong length failure did not reset verifier");
+            }
+        }
+
         {
             byte[] badSignature = Arrays.clone(signature);
             badSignature[(RANDOM.nextInt() >>> 1) % badSignature.length] ^= 1 << (RANDOM.nextInt() & 7);

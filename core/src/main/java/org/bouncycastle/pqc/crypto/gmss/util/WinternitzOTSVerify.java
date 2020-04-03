@@ -10,8 +10,9 @@ import org.bouncycastle.crypto.Digest;
  */
 public class WinternitzOTSVerify
 {
-
     private Digest messDigestOTS;
+
+    private int mdsize;
 
     /**
      * The Winternitz parameter
@@ -30,6 +31,7 @@ public class WinternitzOTSVerify
         this.w = w;
 
         messDigestOTS = digest;
+        mdsize = messDigestOTS.getDigestSize();
     }
 
     /**
@@ -56,13 +58,10 @@ public class WinternitzOTSVerify
      */
     public byte[] Verify(byte[] message, byte[] signature)
     {
-
-        int mdsize = messDigestOTS.getDigestSize();
         byte[] hash = new byte[mdsize]; // hash of message m
 
         // create hash of message m
         messDigestOTS.update(message, 0, message.length);
-        hash = new byte[messDigestOTS.getDigestSize()];
         messDigestOTS.doFinal(hash, 0);
 
         int size = ((mdsize << 3) + (w - 1)) / w;
@@ -86,7 +85,6 @@ public class WinternitzOTSVerify
         {
             int d = 8 / w;
             int k = (1 << w) - 1;
-            byte[] hlp = new byte[mdsize];
 
             // verify signature
             for (int i = 0; i < hash.length; i++)
@@ -95,18 +93,7 @@ public class WinternitzOTSVerify
                 {
                     test = hash[i] & k;
                     c += test;
-
-                    System.arraycopy(signature, counter * mdsize, hlp, 0, mdsize);
-
-                    while (test < k)
-                    {
-                        messDigestOTS.update(hlp, 0, hlp.length);
-                        hlp = new byte[messDigestOTS.getDigestSize()];
-                        messDigestOTS.doFinal(hlp, 0);
-                        test++;
-                    }
-
-                    System.arraycopy(hlp, 0, testKey, counter * mdsize, mdsize);
+                    hashSignatureBlock(signature, counter * mdsize, k - test, testKey, counter * mdsize);
                     hash[i] = (byte)(hash[i] >>> w);
                     counter++;
                 }
@@ -116,17 +103,7 @@ public class WinternitzOTSVerify
             for (int i = 0; i < logs; i += w)
             {
                 test = c & k;
-
-                System.arraycopy(signature, counter * mdsize, hlp, 0, mdsize);
-
-                while (test < k)
-                {
-                    messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
-                    messDigestOTS.doFinal(hlp, 0);
-                    test++;
-                }
-                System.arraycopy(hlp, 0, testKey, counter * mdsize, mdsize);
+                hashSignatureBlock(signature, counter * mdsize, k - test, testKey, counter * mdsize);
                 c >>>= w;
                 counter++;
             }
@@ -135,7 +112,6 @@ public class WinternitzOTSVerify
         {
             int d = mdsize / w;
             int k = (1 << w) - 1;
-            byte[] hlp = new byte[mdsize];
             long big8;
             int ii = 0;
             // create signature
@@ -152,18 +128,7 @@ public class WinternitzOTSVerify
                 {
                     test = (int)(big8 & k);
                     c += test;
-
-                    System.arraycopy(signature, counter * mdsize, hlp, 0, mdsize);
-
-                    while (test < k)
-                    {
-                        messDigestOTS.update(hlp, 0, hlp.length);
-                        hlp = new byte[messDigestOTS.getDigestSize()];
-                        messDigestOTS.doFinal(hlp, 0);
-                        test++;
-                    }
-
-                    System.arraycopy(hlp, 0, testKey, counter * mdsize, mdsize);
+                    hashSignatureBlock(signature, counter * mdsize, k - test, testKey, counter * mdsize);
                     big8 >>>= w;
                     counter++;
                 }
@@ -181,18 +146,7 @@ public class WinternitzOTSVerify
             {
                 test = (int)(big8 & k);
                 c += test;
-
-                System.arraycopy(signature, counter * mdsize, hlp, 0, mdsize);
-
-                while (test < k)
-                {
-                    messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
-                    messDigestOTS.doFinal(hlp, 0);
-                    test++;
-                }
-
-                System.arraycopy(hlp, 0, testKey, counter * mdsize, mdsize);
+                hashSignatureBlock(signature, counter * mdsize, k - test, testKey, counter * mdsize);
                 big8 >>>= w;
                 counter++;
             }
@@ -202,18 +156,7 @@ public class WinternitzOTSVerify
             for (int i = 0; i < logs; i += w)
             {
                 test = c & k;
-
-                System.arraycopy(signature, counter * mdsize, hlp, 0, mdsize);
-
-                while (test < k)
-                {
-                    messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
-                    messDigestOTS.doFinal(hlp, 0);
-                    test++;
-                }
-
-                System.arraycopy(hlp, 0, testKey, counter * mdsize, mdsize);
+                hashSignatureBlock(signature, counter * mdsize, k - test, testKey, counter * mdsize);
                 c >>>= w;
                 counter++;
             }
@@ -251,7 +194,6 @@ public class WinternitzOTSVerify
                 while (test8 < k)
                 {
                     messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
                     messDigestOTS.doFinal(hlp, 0);
                     test8++;
                 }
@@ -282,7 +224,6 @@ public class WinternitzOTSVerify
                 while (test8 < k)
                 {
                     messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
                     messDigestOTS.doFinal(hlp, 0);
                     test8++;
                 }
@@ -301,7 +242,6 @@ public class WinternitzOTSVerify
                 while (test8 < k)
                 {
                     messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
                     messDigestOTS.doFinal(hlp, 0);
                     test8++;
                 }
@@ -312,13 +252,11 @@ public class WinternitzOTSVerify
             }
         }// end if(w<57)
 
-        byte[] TKey = new byte[mdsize];
         messDigestOTS.update(testKey, 0, testKey.length);
-        TKey = new byte[messDigestOTS.getDigestSize()];
+
+        byte[] TKey = new byte[mdsize];
         messDigestOTS.doFinal(TKey, 0);
-
         return TKey;
-
     }
 
     /**
@@ -341,4 +279,22 @@ public class WinternitzOTSVerify
         return log;
     }
 
+    private void hashSignatureBlock(byte[] sig, int sigOff, int rounds, byte[] buf, int bufOff)
+    {
+        if (rounds < 1)
+        {
+            System.arraycopy(sig, sigOff, buf, bufOff, mdsize);
+        }
+        else
+        {
+            messDigestOTS.update(sig, sigOff, mdsize);
+            messDigestOTS.doFinal(buf, bufOff);
+
+            while (--rounds > 0)
+            {
+                messDigestOTS.update(buf, bufOff, mdsize);
+                messDigestOTS.doFinal(buf, bufOff);
+            }
+        }
+    }
 }

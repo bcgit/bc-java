@@ -92,6 +92,7 @@ public class Ed448Signer
         {
             if (Ed448.SIGNATURE_SIZE != signature.length)
             {
+                reset();
                 return false;
             }
 

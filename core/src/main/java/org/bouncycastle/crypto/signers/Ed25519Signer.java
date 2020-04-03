@@ -89,6 +89,7 @@ public class Ed25519Signer
         {
             if (Ed25519.SIGNATURE_SIZE != signature.length)
             {
+                reset();
                 return false;
             }
 

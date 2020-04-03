@@ -77,6 +77,7 @@ public class Ed25519phSigner
         }
         if (Ed25519.SIGNATURE_SIZE != signature.length)
         {
+            prehash.reset();
             return false;
         }
 

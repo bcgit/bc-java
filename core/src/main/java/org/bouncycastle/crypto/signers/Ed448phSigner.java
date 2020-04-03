@@ -77,6 +77,7 @@ public class Ed448phSigner
         }
         if (Ed448.SIGNATURE_SIZE != signature.length)
         {
+            prehash.reset();
             return false;
         }
 

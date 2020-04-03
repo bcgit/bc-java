@@ -179,10 +179,8 @@ public class JceAsymmetricKeyWrapper
         {
             try
             {
-                if (random == null)
-                {
-                    random = CryptoServicesRegistrar.getSecureRandom();
-                }
+                random = CryptoServicesRegistrar.getSecureRandom(random);
+
                 KeyPairGenerator kpGen = helper.createKeyPairGenerator(getAlgorithmIdentifier().getAlgorithm());
 
                 kpGen.initialize(((ECPublicKey)publicKey).getParams(), random);
