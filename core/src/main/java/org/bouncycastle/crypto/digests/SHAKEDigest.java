@@ -92,7 +92,7 @@ public class SHAKEDigest
 
         if (finalBits >= 8)
         {
-            absorb(new byte[]{ (byte)finalInput }, 0, 1);
+            absorb((byte)finalInput);
             finalBits -= 8;
             finalInput >>>= 8;
         }

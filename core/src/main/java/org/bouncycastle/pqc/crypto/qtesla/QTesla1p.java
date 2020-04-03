@@ -137,7 +137,7 @@ class QTesla1p
     {
         byte[] c = new byte[CRYPTO_C_BYTES];
         byte[] randomness = new byte[CRYPTO_SEEDBYTES];
-        byte[] randomness_input = new byte[CRYPTO_RANDOMBYTES + CRYPTO_SEEDBYTES + HM_BYTES];
+        byte[] randomness_input = new byte[CRYPTO_SEEDBYTES + CRYPTO_RANDOMBYTES + HM_BYTES];
         int[] pos_list = new int[PARAM_H];
         short[] sign_list = new short[PARAM_H];
         long[] y = new long[PARAM_N];
@@ -154,10 +154,10 @@ class QTesla1p
         int nonce = 0;  // Initialize domain separator for sampling y
         boolean rsp = false;
 
-        //  randombytes(randomness_input + CRYPTO_RANDOMBYTES, CRYPTO_RANDOMBYTES);
+        //  randombytes(randomness_input + CRYPTO_SEEDBYTES, CRYPTO_RANDOMBYTES);
         byte[] temporaryRandomnessInput = new byte[CRYPTO_RANDOMBYTES];
         secureRandom.nextBytes(temporaryRandomnessInput);
-        System.arraycopy(temporaryRandomnessInput, 0, randomness_input, CRYPTO_RANDOMBYTES, CRYPTO_RANDOMBYTES);
+        System.arraycopy(temporaryRandomnessInput, 0, randomness_input, CRYPTO_SEEDBYTES, CRYPTO_RANDOMBYTES);
         // --
 
 
@@ -166,10 +166,10 @@ class QTesla1p
         // --
 
         HashUtils.secureHashAlgorithmKECCAK128(
-            randomness_input, CRYPTO_RANDOMBYTES + CRYPTO_SEEDBYTES, HM_BYTES, message, 0, messageLength);
+            randomness_input, CRYPTO_SEEDBYTES + CRYPTO_RANDOMBYTES, HM_BYTES, message, 0, messageLength);
 
         HashUtils.secureHashAlgorithmKECCAK128(
-            randomness, 0, CRYPTO_SEEDBYTES, randomness_input, 0, CRYPTO_RANDOMBYTES + CRYPTO_SEEDBYTES + HM_BYTES);
+            randomness, 0, CRYPTO_SEEDBYTES, randomness_input, 0, randomness_input.length);
 
 
         QTesla1PPolynomial.poly_uniform(a, privateKey, CRYPTO_SECRETKEYBYTES - 2 * CRYPTO_SEEDBYTES);
@@ -266,7 +266,7 @@ class QTesla1p
         {      // Compute w = az - tc
             QTesla1PPolynomial.sparse_mul32(Tc, k * PARAM_N, pk_t, (k * PARAM_N), pos_list, sign_list);
             QTesla1PPolynomial.poly_mul(w, k * PARAM_N, a, k * PARAM_N, z_ntt);
-            QTesla1PPolynomial.poly_sub(w, k * PARAM_N, w, k * PARAM_N, Tc, k * PARAM_N);
+            QTesla1PPolynomial.poly_sub_reduce(w, k * PARAM_N, w, k * PARAM_N, Tc, k * PARAM_N);
         }
 
         HashUtils.secureHashAlgorithmKECCAK128(
@@ -1119,51 +1119,26 @@ class QTesla1p
                     for (j = jFirst; j < jFirst + NumoProblems; j++)
                     {
                         long temp = reduce(W * a[j + NumoProblems]);
-                        a[j + NumoProblems] = a[j] + (PARAM_Q - temp);
-                        a[j] = temp + a[j];
+                        a[j + NumoProblems] = a[j] - temp;
+                        a[j + NumoProblems] += (int)(a[j + NumoProblems] >> 63) & PARAM_Q;  // If result < 0 then add q
+                        a[j] = a[j] + temp - PARAM_Q;
+                        a[j] += (int)(a[j + NumoProblems] >> 63) & PARAM_Q;                 // If result >= q then subtract q
                     }
                 }
             }
         }
 
 
-        static long barr_reduce(long a)
+        static int barr_reduce(int a)
         { // Barrett reduction
-            long u = (((long)a * PARAM_BARR_MULT) >> PARAM_BARR_DIV); // TODO u may need to be cast back to int.
+            int u = (int)(((long)a * PARAM_BARR_MULT) >> PARAM_BARR_DIV);
             return a - u * PARAM_Q;
         }
 
-
-        static void nttinv(long[] a, long[] w)
-        { // Inverse NTT transform
-            int NumoProblems = 1, jTwiddle = 0;
-            for (NumoProblems = 1; NumoProblems < PARAM_N; NumoProblems *= 2)
-            {
-                int jFirst, j = 0;
-                for (jFirst = 0; jFirst < PARAM_N; jFirst = j + NumoProblems)
-                {
-                    int W = (int)w[jTwiddle++];
-                    for (j = jFirst; j < jFirst + NumoProblems; j++)
-                    {
-                        long temp = a[j];
-
-                        if (NumoProblems == 16)
-                        {
-                            a[j] = barr_reduce(temp + a[j + NumoProblems]);
-                        }
-                        else
-                        {
-                            a[j] = temp + a[j + NumoProblems];
-                        }
-                        a[j + NumoProblems] = reduce((long)W * (temp - a[j + NumoProblems]));
-                    }
-                }
-            }
-
-            for (int i = 0; i < PARAM_N / 2; i++)
-            {
-                a[i] = reduce((long)PARAM_R * a[i]);
-            }
+        static long barr_reduce64(long a)
+        { // Barrett reduction
+            long u = (a * PARAM_BARR_MULT) >> PARAM_BARR_DIV;
+            return a - u * PARAM_Q;
         }
 
         static void nttinv(long[] a, int aPos, long[] w)
@@ -1178,21 +1153,8 @@ class QTesla1p
                     for (j = jFirst; j < jFirst + NumoProblems; j++)
                     {
                         long temp = a[aPos + j];
-                        a[aPos + j] = temp + a[aPos + j + NumoProblems];
-                        a[aPos + j + NumoProblems] = reduce((long)W * (temp + (2 * PARAM_Q - a[aPos + j + NumoProblems])));
-                    }
-                }
-
-
-                NumoProblems *= 2;
-                for (jFirst = 0; jFirst < PARAM_N; jFirst = j + NumoProblems)
-                {
-                    int W = (int)w[jTwiddle++];
-                    for (j = jFirst; j < jFirst + NumoProblems; j++)
-                    {
-                        long temp = a[aPos + j];
-                        a[aPos + j] = barr_reduce(temp + a[aPos + j + NumoProblems]);
-                        a[aPos + j + NumoProblems] = reduce((long)W * (temp + (2 * PARAM_Q - a[aPos + j + NumoProblems])));
+                        a[aPos + j] = barr_reduce((int)(temp + a[aPos + j + NumoProblems]));
+                        a[aPos + j + NumoProblems] = reduce((long)W * (temp - a[aPos + j + NumoProblems]));
                     }
                 }
             }
@@ -1209,16 +1171,6 @@ class QTesla1p
             ntt(x_ntt, zeta);
         }
 
-
-        static void poly_pointwise(long[] result, long[] x, long[] y)
-        { // Pointwise polynomial multiplication result = x.y
-
-            for (int i = 0; i < PARAM_N; i++)
-            {
-                result[i] = reduce((long)x[i] * y[i]);
-            }
-        }
-
         static void poly_pointwise(long[] result, int rpos, long[] x, int xpos, long[] y)
         { // Pointwise polynomial multiplication result = x.y
 
@@ -1227,16 +1179,6 @@ class QTesla1p
                 result[i + rpos] = reduce((long)x[i + xpos] * y[i]);
             }
         }
-
-
-        static void poly_mul(long[] result, long[] x, long[] y)
-        { // Polynomial multiplication result = x*y, with in place reduction for (X^N+1)
-            // The input x is assumed to be in NTT form
-
-            poly_pointwise(result, x, y);
-            nttinv(result, zetainv);
-        }
-
 
         static void poly_mul(long[] result, int rpos, long[] x, int xpos, long[] y)
         { // Polynomial multiplication result = x*y, with in place reduction for (X^N+1)
@@ -1255,35 +1197,34 @@ class QTesla1p
             }
         }
 
-        static void poly_sub(long[] result, int rpos, long[] x, int xpos, long[] y, int ypos)
-        { // Polynomial subtraction result = x-y
-
-            for (int i = 0; i < PARAM_N; i++)
-            {
-                result[rpos + i] = barr_reduce(x[xpos + i] - y[ypos + i]);
-            }
-        }
-
-
         static void poly_add_correct(long[] result, int rpos, long[] x, int xpos, long[] y, int ypos)
         { // Polynomial addition result = x+y with correction
 
             for (int i = 0; i < PARAM_N; i++)
             {
-                result[rpos + i] = x[xpos + i] + y[ypos + i];
-                result[rpos + i] -= PARAM_Q;
-                result[rpos + i] += (result[rpos + i] >> (RADIX32 - 1)) & PARAM_Q;   // If result[i] >= q then subtract q
+                long ri = x[xpos + i] + y[ypos + i];
+                ri += (int)(ri >> 63) & PARAM_Q;    // If result[i] < 0 then add q
+                ri -= PARAM_Q;
+                ri += (int)(ri >> 63) & PARAM_Q;    // If result[i] >= q then subtract q
+                result[rpos + i] = ri;
             }
         }
 
-
-        static void poly_sub_correct(int[] result, int[] x, int[] y)
-        { // Polynomial subtraction result = x-y with correction
+        static void poly_sub(long[] result, int rpos, long[] x, int xpos, long[] y, int ypos)
+        { // Polynomial subtraction result = x-y
 
             for (int i = 0; i < PARAM_N; i++)
             {
-                result[i] = x[i] - y[i];
-                result[i] += (result[i] >> (RADIX32 - 1)) & PARAM_Q;    // If result[i] < 0 then add q
+                result[rpos + i] = x[xpos + i] - y[ypos + i];
+            }
+        }
+
+        static void poly_sub_reduce(long[] result, int rpos, long[] x, int xpos, long[] y, int ypos)
+        { // Polynomial subtraction result = x-y
+
+            for (int i = 0; i < PARAM_N; i++)
+            {
+                result[rpos + i] = barr_reduce((int)(x[xpos + i] - y[ypos + i]));
             }
         }
 
@@ -1361,30 +1302,6 @@ class QTesla1p
             }
         }
 
-
-        static void sparse_mul32(int[] prod, int[] pk, int[] pos_list, short[] sign_list)
-        {
-            int i, j, pos;
-
-            for (i = 0; i < PARAM_N; i++)
-            {
-                prod[i] = 0;
-            }
-
-            for (i = 0; i < PARAM_H; i++)
-            {
-                pos = pos_list[i];
-                for (j = 0; j < pos; j++)
-                {
-                    prod[j] = prod[j] - sign_list[i] * pk[j + PARAM_N - pos];
-                }
-                for (j = pos; j < PARAM_N; j++)
-                {
-                    prod[j] = prod[j] + sign_list[i] * pk[j - pos];
-                }
-            }
-        }
-
         static void sparse_mul32(long[] prod, int ppos, int[] pk, int pkPos, int[] pos_list, short[] sign_list)
         {
             int i, j, pos;
@@ -1406,9 +1323,12 @@ class QTesla1p
                     prod[ppos + j] = prod[ppos + j] + sign_list[i] * pk[pkPos + j - pos];
                 }
             }
+
+            for (i = 0; i < PARAM_N; i++)
+            {
+                prod[ppos + i] = (int)barr_reduce64(prod[ppos + i]);
+            }
         }
-
-
     }
 
 }

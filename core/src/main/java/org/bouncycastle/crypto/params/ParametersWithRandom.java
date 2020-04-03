@@ -15,14 +15,14 @@ public class ParametersWithRandom
         CipherParameters    parameters,
         SecureRandom        random)
     {
-        this.random = random;
+        this.random = CryptoServicesRegistrar.getSecureRandom(random);
         this.parameters = parameters;
     }
 
     public ParametersWithRandom(
         CipherParameters    parameters)
     {
-        this(parameters, CryptoServicesRegistrar.getSecureRandom());
+        this(parameters, null);
     }
 
     public SecureRandom getRandom()

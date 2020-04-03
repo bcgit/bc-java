@@ -129,6 +129,17 @@ public final class CryptoServicesRegistrar
     }
 
     /**
+     * Return either the passed-in SecureRandom, or if it is null, then the default source of randomness.
+     *
+     * @param secureRandom the SecureRandom to use if it is not null.
+     * @return the SecureRandom parameter if it is not null, or else the default SecureRandom
+     */
+    public static SecureRandom getSecureRandom(SecureRandom secureRandom)
+    {
+        return null == secureRandom ? getSecureRandom() : secureRandom;
+    }
+
+    /**
      * Set a default secure random to be used where none is otherwise provided.
      *
      * @param secureRandom the SecureRandom to use as the default.
