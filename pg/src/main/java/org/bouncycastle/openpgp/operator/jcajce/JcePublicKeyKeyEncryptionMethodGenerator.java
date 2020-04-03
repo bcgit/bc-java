@@ -108,6 +108,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                 if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
                 {
                     KeyPairGenerator kpGen = helper.createKeyPairGenerator("X25519");
+                    kpGen.initialize(255, random);
 
                     KeyPair ephKP = kpGen.generateKeyPair();
 
@@ -127,7 +128,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                     ecAlgParams.init(new X962Parameters(ecKey.getCurveOID()).getEncoded());
 
                     KeyPairGenerator kpGen = helper.createKeyPairGenerator("EC");
-                    kpGen.initialize(ecAlgParams.getParameterSpec(AlgorithmParameterSpec.class));
+                    kpGen.initialize(ecAlgParams.getParameterSpec(AlgorithmParameterSpec.class), random);
 
                     KeyPair ephKP = kpGen.generateKeyPair();
 

@@ -59,7 +59,6 @@ public class WinternitzOTSignature
      */
     public WinternitzOTSignature(byte[] seed0, Digest digest, int w)
     {
-        // this.name = name;
         this.w = w;
 
         messDigestOTS = digest;
@@ -70,24 +69,13 @@ public class WinternitzOTSignature
         // array
 
         mdsize = messDigestOTS.getDigestSize();
-        int mdsizeBit = mdsize << 3;
-        messagesize = (int)Math.ceil((double)(mdsizeBit) / (double)w);
+        messagesize = ((mdsize << 3) + w - 1) / w;
 
         checksumsize = getLog((messagesize << w) + 1);
+        keysize = messagesize + (checksumsize + w - 1) / w;
 
-        keysize = messagesize
-            + (int)Math.ceil((double)checksumsize / (double)w);
-
-        /*
-           * mdsize = messDigestOTS.getDigestLength(); messagesize =
-           * ((mdsize<<3)+(w-1))/w;
-           *
-           * checksumsize = getlog((messagesize<<w)+1);
-           *
-           * keysize = messagesize + (checksumsize+w-1)/w;
-           */
         // define the private key messagesize
-        privateKeyOTS = new byte[keysize][mdsize];
+        privateKeyOTS = new byte[keysize][];
 
         // gmssRandom.setSeed(seed0);
         byte[] dummy = new byte[mdsize];
@@ -114,28 +102,21 @@ public class WinternitzOTSignature
      */
     public byte[] getPublicKey()
     {
-        byte[] helppubKey = new byte[keysize * mdsize];
+        byte[] buf = new byte[keysize * mdsize];
 
-        byte[] help = new byte[mdsize];
-        int two_power_t = 1 << w;
+        int pos = 0;
+        int rounds = (1 << w) - 1;
 
         for (int i = 0; i < keysize; i++)
         {
             // hash w-1 time the private key and assign it to the public key
-            messDigestOTS.update(privateKeyOTS[i], 0, privateKeyOTS[i].length);
-            help = new byte[messDigestOTS.getDigestSize()];
-            messDigestOTS.doFinal(help, 0);
-            for (int j = 2; j < two_power_t; j++)
-            {
-                messDigestOTS.update(help, 0, help.length);
-                help = new byte[messDigestOTS.getDigestSize()];
-                messDigestOTS.doFinal(help, 0);
-            }
-            System.arraycopy(help, 0, helppubKey, mdsize * i, mdsize);
+            hashPrivateKeyBlock(i, rounds, buf, pos);
+            pos += mdsize;
         }
 
-        messDigestOTS.update(helppubKey, 0, helppubKey.length);
-        byte[] tmp = new byte[messDigestOTS.getDigestSize()];
+        messDigestOTS.update(buf, 0, buf.length);
+
+        byte[] tmp = new byte[mdsize];
         messDigestOTS.doFinal(tmp, 0);
         return tmp;
     }
@@ -154,14 +135,12 @@ public class WinternitzOTSignature
         int test = 0;
         // create hash of message m
         messDigestOTS.update(message, 0, message.length);
-        hash = new byte[messDigestOTS.getDigestSize()];
         messDigestOTS.doFinal(hash, 0);
 
         if (8 % w == 0)
         {
             int d = 8 / w;
             int k = (1 << w) - 1;
-            byte[] hlp = new byte[mdsize];
 
             // create signature
             for (int i = 0; i < hash.length; i++)
@@ -170,17 +149,7 @@ public class WinternitzOTSignature
                 {
                     test = hash[i] & k;
                     c += test;
-
-                    System.arraycopy(privateKeyOTS[counter], 0, hlp, 0, mdsize);
-
-                    while (test > 0)
-                    {
-                        messDigestOTS.update(hlp, 0, hlp.length);
-                        hlp = new byte[messDigestOTS.getDigestSize()];
-                        messDigestOTS.doFinal(hlp, 0);
-                        test--;
-                    }
-                    System.arraycopy(hlp, 0, sign, counter * mdsize, mdsize);
+                    hashPrivateKeyBlock(counter, test, sign, counter * mdsize);
                     hash[i] = (byte)(hash[i] >>> w);
                     counter++;
                 }
@@ -190,17 +159,7 @@ public class WinternitzOTSignature
             for (int i = 0; i < checksumsize; i += w)
             {
                 test = c & k;
-
-                System.arraycopy(privateKeyOTS[counter], 0, hlp, 0, mdsize);
-
-                while (test > 0)
-                {
-                    messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
-                    messDigestOTS.doFinal(hlp, 0);
-                    test--;
-                }
-                System.arraycopy(hlp, 0, sign, counter * mdsize, mdsize);
+                hashPrivateKeyBlock(counter, test, sign, counter * mdsize);
                 c >>>= w;
                 counter++;
             }
@@ -209,7 +168,6 @@ public class WinternitzOTSignature
         {
             int d = mdsize / w;
             int k = (1 << w) - 1;
-            byte[] hlp = new byte[mdsize];
             long big8;
             int ii = 0;
             // create signature
@@ -224,19 +182,9 @@ public class WinternitzOTSignature
                 }
                 for (int j = 0; j < 8; j++)
                 {
-                    test = (int)(big8 & k);
+                    test = (int)big8 & k;
                     c += test;
-
-                    System.arraycopy(privateKeyOTS[counter], 0, hlp, 0, mdsize);
-
-                    while (test > 0)
-                    {
-                        messDigestOTS.update(hlp, 0, hlp.length);
-                        hlp = new byte[messDigestOTS.getDigestSize()];
-                        messDigestOTS.doFinal(hlp, 0);
-                        test--;
-                    }
-                    System.arraycopy(hlp, 0, sign, counter * mdsize, mdsize);
+                    hashPrivateKeyBlock(counter, test, sign, counter * mdsize);
                     big8 >>>= w;
                     counter++;
                 }
@@ -252,19 +200,9 @@ public class WinternitzOTSignature
             d <<= 3;
             for (int j = 0; j < d; j += w)
             {
-                test = (int)(big8 & k);
+                test = (int)big8 & k;
                 c += test;
-
-                System.arraycopy(privateKeyOTS[counter], 0, hlp, 0, mdsize);
-
-                while (test > 0)
-                {
-                    messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
-                    messDigestOTS.doFinal(hlp, 0);
-                    test--;
-                }
-                System.arraycopy(hlp, 0, sign, counter * mdsize, mdsize);
+                hashPrivateKeyBlock(counter, test, sign, counter * mdsize);
                 big8 >>>= w;
                 counter++;
             }
@@ -274,17 +212,7 @@ public class WinternitzOTSignature
             for (int i = 0; i < checksumsize; i += w)
             {
                 test = c & k;
-
-                System.arraycopy(privateKeyOTS[counter], 0, hlp, 0, mdsize);
-
-                while (test > 0)
-                {
-                    messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
-                    messDigestOTS.doFinal(hlp, 0);
-                    test--;
-                }
-                System.arraycopy(hlp, 0, sign, counter * mdsize, mdsize);
+                hashPrivateKeyBlock(counter, test, sign, counter * mdsize);
                 c >>>= w;
                 counter++;
             }
@@ -321,7 +249,6 @@ public class WinternitzOTSignature
                 while (test8 > 0)
                 {
                     messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
                     messDigestOTS.doFinal(hlp, 0);
                     test8--;
                 }
@@ -350,7 +277,6 @@ public class WinternitzOTSignature
                 while (test8 > 0)
                 {
                     messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
                     messDigestOTS.doFinal(hlp, 0);
                     test8--;
                 }
@@ -368,7 +294,6 @@ public class WinternitzOTSignature
                 while (test8 > 0)
                 {
                     messDigestOTS.update(hlp, 0, hlp.length);
-                    hlp = new byte[messDigestOTS.getDigestSize()];
                     messDigestOTS.doFinal(hlp, 0);
                     test8--;
                 }
@@ -401,4 +326,22 @@ public class WinternitzOTSignature
         return log;
     }
 
+    private void hashPrivateKeyBlock(int index, int rounds, byte[] buf, int off)
+    {
+        if (rounds < 1)
+        {
+            System.arraycopy(privateKeyOTS[index], 0, buf, off, mdsize);
+        }
+        else
+        {
+            messDigestOTS.update(privateKeyOTS[index], 0, mdsize);
+            messDigestOTS.doFinal(buf, off);
+
+            while (--rounds > 0)
+            {
+                messDigestOTS.update(buf, off, mdsize);
+                messDigestOTS.doFinal(buf, off);
+            }
+        }
+    }
 }

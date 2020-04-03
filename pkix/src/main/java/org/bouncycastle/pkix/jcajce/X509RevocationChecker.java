@@ -70,7 +70,7 @@ public class X509RevocationChecker
      * of this: The PKIX model and the modified PKIX model. The PKIX model
      * verifies that all involved certificates must have been valid at the
      * current time. The modified PKIX model verifies that all involved
-     * certificates were valid at the signing time. Both are indirectly choosen
+     * certificates were valid at the time of signing. Both are indirectly chosen
      * with the {@link PKIXParameters#setDate(Date)} method, so this
      * methods sets the Date when <em>all</em> certificates must have been
      * valid.
