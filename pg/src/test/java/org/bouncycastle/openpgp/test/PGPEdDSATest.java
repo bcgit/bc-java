@@ -419,6 +419,8 @@ public class PGPEdDSATest
 
         PGPSecretKeyRing secRing = new PGPSecretKeyRing(aIn, new JcaKeyFingerprintCalculator());
 
+        isTrue(secRing.getSecretKey().isSigningKey());
+
         PGPSignatureGenerator pgpGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.EDDSA, HashAlgorithmTags.SHA256));
 
         pgpGen.init(PGPSignature.SUBKEY_BINDING, secRing.getSecretKey().extractPrivateKey(null));
