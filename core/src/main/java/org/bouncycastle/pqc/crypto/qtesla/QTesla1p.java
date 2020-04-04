@@ -8,8 +8,8 @@ import org.bouncycastle.util.Pack;
 class QTesla1p
 {
     private static final int PARAM_N = 1024;
-    private static final int PARAM_N_LOG = 10;
-    private static final double PARAM_SIGMA = 8.5;
+//    private static final int PARAM_N_LOG = 10;
+//    private static final double PARAM_SIGMA = 8.5;
     private static final int PARAM_Q = 343576577;
     private static final int PARAM_Q_LOG = 29;
     private static final long PARAM_QINV = 2205847551L;
@@ -19,7 +19,7 @@ class QTesla1p
     private static final int PARAM_B_BITS = 19;
     private static final int PARAM_S_BITS = 8;
     private static final int PARAM_K = 4;
-    private static final double PARAM_SIGMA_E = PARAM_SIGMA;
+//    private static final double PARAM_SIGMA_E = PARAM_SIGMA;
     private static final int PARAM_H = 25;
     private static final int PARAM_D = 22;
     private static final int PARAM_GEN_A = 108;
@@ -28,30 +28,27 @@ class QTesla1p
     private static final int PARAM_KEYGEN_BOUND_S = 554;
     private static final int PARAM_S = PARAM_KEYGEN_BOUND_S;
     private static final int PARAM_R2_INVN = 13632409;
-    private static final int PARAM_R = 172048372;
+//    private static final int PARAM_R = 172048372;
 
     private static final int CRYPTO_RANDOMBYTES = 32;
     private static final int CRYPTO_SEEDBYTES = 32;
     private static final int CRYPTO_C_BYTES = 32;
     private static final int HM_BYTES = 64;
 
-    private static final int RADIX = 32;
+//    private static final int RADIX = 32;
     private static final int RADIX32 = 32;
 
 
-    static final int CRYPTO_BYTES = ((PARAM_N * (PARAM_B_BITS + 1) + 7) / 8 + CRYPTO_C_BYTES);
+    // Contains signature (z,c). z is a polynomial bounded by B, c is the output of a hashed string
+    static final int CRYPTO_BYTES = (PARAM_N * (PARAM_B_BITS + 1) + 7) / 8 + CRYPTO_C_BYTES;
     // Contains polynomial s and e, and seeds seed_a and seed_y
-    static final int CRYPTO_SECRETKEYBYTES = (1 * PARAM_N + 1 * PARAM_N * PARAM_K + 2 * CRYPTO_SEEDBYTES);
-
+    static final int CRYPTO_SECRETKEYBYTES = (PARAM_K + 1) * PARAM_S_BITS * PARAM_N / 8 + 2 * CRYPTO_SEEDBYTES;
     // Contains seed_a and polynomials t
-    static final int CRYPTO_PUBLICKEYBYTES = ((PARAM_Q_LOG * PARAM_N * PARAM_K + 7) / 8 + CRYPTO_SEEDBYTES);
+    static final int CRYPTO_PUBLICKEYBYTES = (PARAM_K * PARAM_Q_LOG * PARAM_N + 7) / 8 + CRYPTO_SEEDBYTES;
 
 
-    static int generateKeyPair(
-
-        byte[] publicKey, byte[] privateKey, SecureRandom secureRandom)
+    static int generateKeyPair(byte[] publicKey, byte[] privateKey, SecureRandom secureRandom)
     {
-
         /* Initialize Domain Separator for Error Polynomial and Secret Polynomial */
         int nonce = 0;
 
@@ -60,36 +57,32 @@ class QTesla1p
         /* Extend Random Bytes to Seed Generation of Error Polynomial and Secret Polynomial */
         byte[] randomnessExtended = new byte[(PARAM_K + 3) * CRYPTO_SEEDBYTES];
 
-        long[] secretPolynomial = new long[PARAM_N];
-        long[] errorPolynomial = new long[PARAM_N * PARAM_K];
-        long[] A = new long[PARAM_N * PARAM_K];
-        long[] T = new long[PARAM_N * PARAM_K];
+        int[] secretPolynomial = new int[PARAM_N];
+        int[] errorPolynomial = new int[PARAM_N * PARAM_K];
+        int[] A = new int[PARAM_N * PARAM_K];
+        int[] T = new int[PARAM_N * PARAM_K];
 
-        long[] s_ntt = new long[PARAM_N];
+        int[] s_ntt = new int[PARAM_N];
 
         /* Get randomnessExtended <- seedErrorPolynomial, seedSecretPolynomial, seedA, seedY */
         // this.rng.randomByte (randomness, (short) 0, Polynomial.RANDOM);
         secureRandom.nextBytes(randomness);
 
-
         HashUtils.secureHashAlgorithmKECCAK128(randomnessExtended, 0, (PARAM_K + 3) * CRYPTO_SEEDBYTES, randomness, 0, CRYPTO_RANDOMBYTES);
-
 
         /*
          * Sample the Error Polynomial Fulfilling the Criteria
          * Choose All Error Polynomial in R with Entries from D_SIGMA
          * Repeat Step at Iteration if the h Largest Entries of Error Polynomial Summation to L_E
          */
-
         for (int k = 0; k < PARAM_K; k++)
         {
             do
             {
-                Gaussian.sample_gauss_polly(++nonce, randomnessExtended, k * CRYPTO_SEEDBYTES, errorPolynomial, k * PARAM_N);
+                Gaussian.sample_gauss_poly(++nonce, randomnessExtended, k * CRYPTO_SEEDBYTES, errorPolynomial, k * PARAM_N);
             }
             while (checkPolynomial(errorPolynomial, k * PARAM_N, PARAM_KEYGEN_BOUND_E));
         }
-
 
         /*
          * Sample the Secret Polynomial Fulfilling the Criteria
@@ -98,18 +91,12 @@ class QTesla1p
          */
         do
         {
-
-            Gaussian.sample_gauss_polly(++nonce, randomnessExtended, PARAM_K * CRYPTO_SEEDBYTES, secretPolynomial, 0);
-
-            //Sample.polynomialGaussSamplerI(secretPolynomial, 0, randomnessExtended, Polynomial.SEED, ++nonce);
+            Gaussian.sample_gauss_poly(++nonce, randomnessExtended, PARAM_K * CRYPTO_SEEDBYTES, secretPolynomial, 0);
         }
         while (checkPolynomial(secretPolynomial, 0, PARAM_KEYGEN_BOUND_S));
 
-
         QTesla1PPolynomial.poly_uniform(A, randomnessExtended, (PARAM_K + 1) * CRYPTO_SEEDBYTES);
-
         QTesla1PPolynomial.poly_ntt(s_ntt, secretPolynomial);
-
 
         for (int k = 0; k < PARAM_K; k++)
         {
@@ -117,38 +104,30 @@ class QTesla1p
             QTesla1PPolynomial.poly_add_correct(T, k * PARAM_N, T, k * PARAM_N, errorPolynomial, k * PARAM_N);
         }
 
-
         /* Pack Public and Private Keys */
-
         encodePublicKey(publicKey, T, randomnessExtended, (PARAM_K + 1) * CRYPTO_SEEDBYTES);
         encodePrivateKey(privateKey, secretPolynomial, errorPolynomial, randomnessExtended, (PARAM_K + 1) * CRYPTO_SEEDBYTES);
 
         return 0;
-
     }
 
-
-    static int generateSignature(
-
-        byte[] signature,
-        final byte[] message, int messageOffset, int messageLength,
-        final byte[] privateKey, SecureRandom secureRandom
-    )
+    static int generateSignature(byte[] signature, byte[] message, int messageOffset, int messageLength,
+        byte[] privateKey, SecureRandom secureRandom)
     {
         byte[] c = new byte[CRYPTO_C_BYTES];
         byte[] randomness = new byte[CRYPTO_SEEDBYTES];
         byte[] randomness_input = new byte[CRYPTO_SEEDBYTES + CRYPTO_RANDOMBYTES + HM_BYTES];
         int[] pos_list = new int[PARAM_H];
         short[] sign_list = new short[PARAM_H];
-        long[] y = new long[PARAM_N];
+        int[] y = new int[PARAM_N];
 
-        long[] y_ntt = new long[PARAM_N];
-        long[] Sc = new long[PARAM_N];
-        long[] z = new long[PARAM_N];
+        int[] y_ntt = new int[PARAM_N];
+        int[] Sc = new int[PARAM_N];
+        int[] z = new int[PARAM_N];
 
-        long[] v = new long[PARAM_N * PARAM_K];
-        long[] Ec = new long[PARAM_N * PARAM_K];
-        long[] a = new long[PARAM_N * PARAM_K];
+        int[] v = new int[PARAM_N * PARAM_K];
+        int[] Ec = new int[PARAM_N * PARAM_K];
+        int[] a = new int[PARAM_N * PARAM_K];
 
         int k;
         int nonce = 0;  // Initialize domain separator for sampling y
@@ -187,7 +166,7 @@ class QTesla1p
             hashFunction(c, 0, v, randomness_input, CRYPTO_RANDOMBYTES + CRYPTO_SEEDBYTES);
             encodeC(pos_list, sign_list, c, 0);
 
-            QTesla1PPolynomial.sparse_mul8(Sc, privateKey, pos_list, sign_list);
+            QTesla1PPolynomial.sparse_mul8(Sc, 0, privateKey, 0, pos_list, sign_list);
 
             QTesla1PPolynomial.poly_add(z, y, Sc);
 
@@ -211,23 +190,14 @@ class QTesla1p
                 continue;
             }
 
-
             encodeSignature(signature, 0, c, 0, z);
             return 0;
-
         }
-
-        // return 0;
     }
 
-
-    static int verifying(
-
-        byte[] message,
-        final byte[] signature, int signatureOffset, int signatureLength,
+    static int verifying(byte[] message, final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey)
     {
-
         byte c[] = new byte[CRYPTO_C_BYTES];
         byte c_sig[] = new byte[CRYPTO_C_BYTES];
         byte seed[] = new byte[CRYPTO_SEEDBYTES];
@@ -235,12 +205,12 @@ class QTesla1p
         int pos_list[] = new int[PARAM_H];
         short sign_list[] = new short[PARAM_H];
         int pk_t[] = new int[PARAM_N * PARAM_K];
-        long[] w = new long[PARAM_N * PARAM_K];
-        long[] a = new long[PARAM_N * PARAM_K];
-        long[] Tc = new long[PARAM_N * PARAM_K];
+        int[] w = new int[PARAM_N * PARAM_K];
+        int[] a = new int[PARAM_N * PARAM_K];
+        int[] Tc = new int[PARAM_N * PARAM_K];
 
-        long[] z = new long[PARAM_N];
-        long[] z_ntt = new long[PARAM_N];
+        int[] z = new int[PARAM_N];
+        int[] z_ntt = new int[PARAM_N];
 
         int k = 0;
 
@@ -282,10 +252,9 @@ class QTesla1p
         return 0;
     }
 
-
-    static void encodePrivateKey(byte[] privateKey, final long[] secretPolynomial, final long[] errorPolynomial, final byte[] seed, int seedOffset)
+    static void encodePrivateKey(byte[] privateKey, int[] secretPolynomial, int[] errorPolynomial,
+        byte[] seed, int seedOffset)//, byte[] hash, int hashOffset)
     {
-
         int i, k = 0;
         int skPtr = 0;
 
@@ -293,66 +262,66 @@ class QTesla1p
         {
             privateKey[skPtr + i] = (byte)secretPolynomial[i];
         }
-
         skPtr += PARAM_N;
+
         for (k = 0; k < PARAM_K; k++)
         {
             for (i = 0; i < PARAM_N; i++)
             {
                 privateKey[skPtr + (k * PARAM_N + i)] = (byte)errorPolynomial[k * PARAM_N + i];
-                //  System.out.printf("%d,   %x\n", skPtr + (k * PARAM_N + i), privateKey[skPtr + (k * PARAM_N + i)]);
             }
         }
+        skPtr += PARAM_K * PARAM_N;
 
-        System.arraycopy(seed, seedOffset, privateKey, skPtr + (PARAM_K * PARAM_N), CRYPTO_SEEDBYTES * 2);
+        System.arraycopy(seed, seedOffset, privateKey, skPtr, CRYPTO_SEEDBYTES * 2);
+        skPtr += CRYPTO_SEEDBYTES * 2;
 
+//        System.arraycopy(hash, hashOffset, privateKey, skPtr, HM_BYTES);
+//        skPtr += HM_BYTES;
+
+//        assert CRYPTO_SECRETKEYBYTES == skPtr;
     }
 
-
-    static void encodePublicKey(byte[] publicKey, final long[] T, final byte[] seedA, int seedAOffset)
+    static void encodePublicKey(byte[] publicKey, final int[] T, final byte[] seedA, int seedAOffset)
     {
-
         int j = 0;
-
 
         for (int i = 0; i < (PARAM_N * PARAM_K * PARAM_Q_LOG / 32); i += PARAM_Q_LOG)
         {
-            at(publicKey, i, 0, (int)(T[j] | (T[j + 1] << 29)));
-            at(publicKey, i, 1, (int)((T[j + 1] >> 3) | (T[j + 2] << 26)));
-            at(publicKey, i, 2, (int)((T[j + 2] >> 6) | (T[j + 3] << 23)));
-            at(publicKey, i, 3, (int)((T[j + 3] >> 9) | (T[j + 4] << 20)));
-            at(publicKey, i, 4, (int)((T[j + 4] >> 12) | (T[j + 5] << 17)));
-            at(publicKey, i, 5, (int)((T[j + 5] >> 15) | (T[j + 6] << 14)));
-            at(publicKey, i, 6, (int)((T[j + 6] >> 18) | (T[j + 7] << 11)));
-            at(publicKey, i, 7, (int)((T[j + 7] >> 21) | (T[j + 8] << 8)));
-            at(publicKey, i, 8, (int)((T[j + 8] >> 24) | (T[j + 9] << 5)));
-            at(publicKey, i, 9, (int)((T[j + 9] >> 27) | (T[j + 10] << 2) | (T[j + 11] << 31)));
-            at(publicKey, i, 10, (int)((T[j + 11] >> 1) | (T[j + 12] << 28)));
-            at(publicKey, i, 11, (int)((T[j + 12] >> 4) | (T[j + 13] << 25)));
-            at(publicKey, i, 12, (int)((T[j + 13] >> 7) | (T[j + 14] << 22)));
-            at(publicKey, i, 13, (int)((T[j + 14] >> 10) | (T[j + 15] << 19)));
-            at(publicKey, i, 14, (int)((T[j + 15] >> 13) | (T[j + 16] << 16)));
-            at(publicKey, i, 15, (int)((T[j + 16] >> 16) | (T[j + 17] << 13)));
-            at(publicKey, i, 16, (int)((T[j + 17] >> 19) | (T[j + 18] << 10)));
-            at(publicKey, i, 17, (int)((T[j + 18] >> 22) | (T[j + 19] << 7)));
-            at(publicKey, i, 18, (int)((T[j + 19] >> 25) | (T[j + 20] << 4)));
-            at(publicKey, i, 19, (int)((T[j + 20] >> 28) | (T[j + 21] << 1) | (T[j + 22] << 30)));
-            at(publicKey, i, 20, (int)((T[j + 22] >> 2) | (T[j + 23] << 27)));
-            at(publicKey, i, 21, (int)((T[j + 23] >> 5) | (T[j + 24] << 24)));
-            at(publicKey, i, 22, (int)((T[j + 24] >> 8) | (T[j + 25] << 21)));
-            at(publicKey, i, 23, (int)((T[j + 25] >> 11) | (T[j + 26] << 18)));
-            at(publicKey, i, 24, (int)((T[j + 26] >> 14) | (T[j + 27] << 15)));
-            at(publicKey, i, 25, (int)((T[j + 27] >> 17) | (T[j + 28] << 12)));
-            at(publicKey, i, 26, (int)((T[j + 28] >> 20) | (T[j + 29] << 9)));
-            at(publicKey, i, 27, (int)((T[j + 29] >> 23) | (T[j + 30] << 6)));
-            at(publicKey, i, 28, (int)((T[j + 30] >> 26) | (T[j + 31] << 3)));
+            at(publicKey, i, 0, T[j] | (T[j + 1] << 29));
+            at(publicKey, i, 1, (T[j + 1] >> 3) | (T[j + 2] << 26));
+            at(publicKey, i, 2, (T[j + 2] >> 6) | (T[j + 3] << 23));
+            at(publicKey, i, 3, (T[j + 3] >> 9) | (T[j + 4] << 20));
+            at(publicKey, i, 4, (T[j + 4] >> 12) | (T[j + 5] << 17));
+            at(publicKey, i, 5, (T[j + 5] >> 15) | (T[j + 6] << 14));
+            at(publicKey, i, 6, (T[j + 6] >> 18) | (T[j + 7] << 11));
+            at(publicKey, i, 7, (T[j + 7] >> 21) | (T[j + 8] << 8));
+            at(publicKey, i, 8, (T[j + 8] >> 24) | (T[j + 9] << 5));
+            at(publicKey, i, 9, (T[j + 9] >> 27) | (T[j + 10] << 2) | (T[j + 11] << 31));
+            at(publicKey, i, 10, (T[j + 11] >> 1) | (T[j + 12] << 28));
+            at(publicKey, i, 11, (T[j + 12] >> 4) | (T[j + 13] << 25));
+            at(publicKey, i, 12, (T[j + 13] >> 7) | (T[j + 14] << 22));
+            at(publicKey, i, 13, (T[j + 14] >> 10) | (T[j + 15] << 19));
+            at(publicKey, i, 14, (T[j + 15] >> 13) | (T[j + 16] << 16));
+            at(publicKey, i, 15, (T[j + 16] >> 16) | (T[j + 17] << 13));
+            at(publicKey, i, 16, (T[j + 17] >> 19) | (T[j + 18] << 10));
+            at(publicKey, i, 17, (T[j + 18] >> 22) | (T[j + 19] << 7));
+            at(publicKey, i, 18, (T[j + 19] >> 25) | (T[j + 20] << 4));
+            at(publicKey, i, 19, (T[j + 20] >> 28) | (T[j + 21] << 1) | (T[j + 22] << 30));
+            at(publicKey, i, 20, (T[j + 22] >> 2) | (T[j + 23] << 27));
+            at(publicKey, i, 21, (T[j + 23] >> 5) | (T[j + 24] << 24));
+            at(publicKey, i, 22, (T[j + 24] >> 8) | (T[j + 25] << 21));
+            at(publicKey, i, 23, (T[j + 25] >> 11) | (T[j + 26] << 18));
+            at(publicKey, i, 24, (T[j + 26] >> 14) | (T[j + 27] << 15));
+            at(publicKey, i, 25, (T[j + 27] >> 17) | (T[j + 28] << 12));
+            at(publicKey, i, 26, (T[j + 28] >> 20) | (T[j + 29] << 9));
+            at(publicKey, i, 27, (T[j + 29] >> 23) | (T[j + 30] << 6));
+            at(publicKey, i, 28, (T[j + 30] >> 26) | (T[j + 31] << 3));
             j += 32;
         }
 
         System.arraycopy(seedA, seedAOffset, publicKey, PARAM_N * PARAM_K * PARAM_Q_LOG / 8, CRYPTO_SEEDBYTES);
-
     }
-
 
     static void decodePublicKey(int[] publicKey, byte[] seedA, int seedAOffset, final byte[] publicKeyInput)
     {
@@ -404,45 +373,38 @@ class QTesla1p
 
     }
 
-    private static boolean testZ(long[] Z)
+    private static boolean testZ(int[] Z)
     {
         // Returns false if valid, otherwise outputs 1 if invalid (rejected)
 
         for (int i = 0; i < PARAM_N; i++)
         {
-
             if ((Z[i] < -(PARAM_B - PARAM_S)) || (Z[i] > PARAM_B - PARAM_S))
             {
-
                 return true;
-
             }
-
         }
-
         return false;
-
     }
-
 
     private static final int maskb1 = ((1 << (PARAM_B_BITS + 1)) - 1);
 
-    static void encodeSignature(byte[] signature, int signatureOffset, byte[] C, int cOffset, long[] Z)
+    static void encodeSignature(byte[] signature, int signatureOffset, byte[] C, int cOffset, int[] Z)
     {
         int j = 0;
 
         for (int i = 0; i < (PARAM_N * (PARAM_B_BITS + 1) / 32); i += 10)
         {
-            at(signature, i, 0, (int)((Z[j] & ((1 << 20) - 1)) | (Z[j + 1] << 20)));
-            at(signature, i, 1, (int)(((Z[j + 1] >>> 12) & ((1 << 8) - 1)) | ((Z[j + 2] & maskb1) << 8) | (Z[j + 3] << 28)));
-            at(signature, i, 2, (int)(((Z[j + 3] >>> 4) & ((1 << 16) - 1)) | (Z[j + 4] << 16)));
-            at(signature, i, 3, (int)(((Z[j + 4] >>> 16) & ((1 << 4) - 1)) | ((Z[j + 5] & maskb1) << 4) | (Z[j + 6] << 24)));
-            at(signature, i, 4, (int)(((Z[j + 6] >>> 8) & ((1 << 12) - 1)) | (Z[j + 7] << 12)));
-            at(signature, i, 5, (int)((Z[j + 8] & ((1 << 20) - 1)) | (Z[j + 9] << 20)));
-            at(signature, i, 6, (int)(((Z[j + 9] >>> 12) & ((1 << 8) - 1)) | ((Z[j + 10] & maskb1) << 8) | (Z[j + 11] << 28)));
-            at(signature, i, 7, (int)(((Z[j + 11] >>> 4) & ((1 << 16) - 1)) | (Z[j + 12] << 16)));
-            at(signature, i, 8, (int)(((Z[j + 12] >>> 16) & ((1 << 4) - 1)) | ((Z[j + 13] & maskb1) << 4) | (Z[j + 14] << 24)));
-            at(signature, i, 9, (int)(((Z[j + 14] >>> 8) & ((1 << 12) - 1)) | (Z[j + 15] << 12)));
+            at(signature, i, 0, (Z[j] & ((1 << 20) - 1)) | (Z[j + 1] << 20));
+            at(signature, i, 1, ((Z[j + 1] >>> 12) & ((1 << 8) - 1)) | ((Z[j + 2] & maskb1) << 8) | (Z[j + 3] << 28));
+            at(signature, i, 2, ((Z[j + 3] >>> 4) & ((1 << 16) - 1)) | (Z[j + 4] << 16));
+            at(signature, i, 3, ((Z[j + 4] >>> 16) & ((1 << 4) - 1)) | ((Z[j + 5] & maskb1) << 4) | (Z[j + 6] << 24));
+            at(signature, i, 4, ((Z[j + 6] >>> 8) & ((1 << 12) - 1)) | (Z[j + 7] << 12));
+            at(signature, i, 5, (Z[j + 8] & ((1 << 20) - 1)) | (Z[j + 9] << 20));
+            at(signature, i, 6, ((Z[j + 9] >>> 12) & ((1 << 8) - 1)) | ((Z[j + 10] & maskb1) << 8) | (Z[j + 11] << 28));
+            at(signature, i, 7, ((Z[j + 11] >>> 4) & ((1 << 16) - 1)) | (Z[j + 12] << 16));
+            at(signature, i, 8, ((Z[j + 12] >>> 16) & ((1 << 4) - 1)) | ((Z[j + 13] & maskb1) << 4) | (Z[j + 14] << 24));
+            at(signature, i, 9, ((Z[j + 14] >>> 8) & ((1 << 12) - 1)) | (Z[j + 15] << 12));
             j += 16;
         }
 
@@ -450,10 +412,8 @@ class QTesla1p
 
     }
 
-
-    static void decodeSignature(byte[] C, long[] Z, final byte[] signature, int signatureOffset)
+    static void decodeSignature(byte[] C, int[] Z, final byte[] signature, int signatureOffset)
     {
-
         int j = 0;
         for (int i = 0; i < PARAM_N; i += 16)
         {
@@ -476,10 +436,7 @@ class QTesla1p
             j += 10;
         }
         System.arraycopy(signature, signatureOffset + PARAM_N * (PARAM_B_BITS + 1) / 8, C, 0, CRYPTO_C_BYTES);
-
-
     }
-
 
     static void encodeC(int[] positionList, short[] signList, byte[] output, int outputOffset)
     {
@@ -548,15 +505,11 @@ class QTesla1p
             }
 
             count += 3;
-
         }
-
     }
 
-
-    private static void hashFunction(byte[] output, int outputOffset, long[] v, final byte[] message, int messageOffset) //, int n, int d, int q)
+    private static void hashFunction(byte[] output, int outputOffset, int[] v, byte[] message, int messageOffset)
     {
-
         int mask;
         int cL;
 
@@ -567,7 +520,7 @@ class QTesla1p
             int index = k * PARAM_N;
             for (int i = 0; i < PARAM_N; i++)
             {
-                int temp = (int)v[index];
+                int temp = v[index];
                 // If v[i] > PARAM_Q/2 then v[i] -= PARAM_Q
                 mask = (PARAM_Q / 2 - temp) >> (RADIX32 - 1);
                 temp = ((temp - PARAM_Q) & mask) | (temp & ~mask);
@@ -581,11 +534,9 @@ class QTesla1p
         }
         System.arraycopy(message, messageOffset, T, PARAM_N * PARAM_K, HM_BYTES);
         HashUtils.secureHashAlgorithmKECCAK128(output, outputOffset, CRYPTO_C_BYTES, T, 0, PARAM_K * PARAM_N + HM_BYTES);
-
     }
 
-
-    static int lE24BitToInt(byte[] bs, int off)
+    static int littleEndianToInt24(byte[] bs, int off)
     {
         int n = bs[off] & 0xff;
         n |= (bs[++off] & 0xff) << 8;
@@ -593,12 +544,10 @@ class QTesla1p
         return n;
     }
 
-
     private static int NBLOCKS_SHAKE = HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE / (((PARAM_B_BITS + 1) + 7) / 8);
     private static int BPLUS1BYTES = ((PARAM_B_BITS + 1) + 7) / 8;
 
-
-    static void sample_y(long[] y, byte[] seed, int seedOffset, int nonce)
+    static void sample_y(int[] y, byte[] seed, int seedOffset, int nonce)
     { // Sample polynomial y, such that each coefficient is in the range [-B,B]
         int i = 0, pos = 0, nblocks = PARAM_N;
         byte buf[] = new byte[PARAM_N * BPLUS1BYTES+1];
@@ -608,7 +557,6 @@ class QTesla1p
         HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
             buf, 0, PARAM_N * nbytes, dmsp++, seed, seedOffset, CRYPTO_RANDOMBYTES
         );
-
 
         while (i < PARAM_N)
         {
@@ -620,7 +568,7 @@ class QTesla1p
                 );
                 pos = 0;
             }
-            y[i] = lE24BitToInt(buf, pos) & ((1 << (PARAM_B_BITS + 1)) - 1);
+            y[i] = littleEndianToInt24(buf, pos) & ((1 << (PARAM_B_BITS + 1)) - 1);
             y[i] -= PARAM_B;
             if (y[i] != (1 << PARAM_B_BITS))
             {
@@ -630,25 +578,17 @@ class QTesla1p
         }
     }
 
-
     private static void at(byte[] bs, int base, int index, int value)
     {
-        org.bouncycastle.util.Pack.intToLittleEndian(value, bs, (base * 4) + (index * 4));
+        Pack.intToLittleEndian(value, bs, (base + index) << 2);
     }
 
     private static int at(byte[] bs, int base, int index)
     {
-        int off = (base * 4) + (index * 4);
-
-        int n = bs[off] & 0xff;
-        n |= (bs[++off] & 0xff) << 8;
-        n |= (bs[++off] & 0xff) << 16;
-        n |= bs[++off] << 24;
-        return n;
+        return Pack.littleEndianToInt(bs, (base + index) << 2);
     }
 
-
-    static boolean test_correctness(long[] v, int vpos)
+    static boolean test_correctness(int[] v, int vpos)
     { // Check bounds for w = v - ec during signature verification. Returns 0 if valid, otherwise outputs 1 if invalid (rejected).
         // This function leaks the position of the coefficient that fails the test (but this is independent of the secret data).
         // It does not leak the sign of the coefficients.
@@ -658,16 +598,17 @@ class QTesla1p
         for (int i = 0; i < PARAM_N; i++)
         {
             // If v[i] > PARAM_Q/2 then v[i] -= PARAM_Q
-            mask = (int)(PARAM_Q / 2 - v[vpos + i]) >> (RADIX32 - 1);
-            val = (int)(((v[vpos + i] - PARAM_Q) & mask) | (v[vpos + i] & ~mask));
+            int a = v[vpos + i];
+            mask = (PARAM_Q / 2 - a) >> (RADIX32 - 1);
+            val =  ((a - PARAM_Q) & mask) | (a & ~mask);
             // If (Abs(val) < PARAM_Q/2 - PARAM_E) then t0 = 0, else t0 = 1
-            t0 = (int)(~(absolute(val) - (PARAM_Q / 2 - PARAM_E))) >>> (RADIX32 - 1);
+            t0 = (~(absolute(val) - (PARAM_Q / 2 - PARAM_E))) >>> (RADIX32 - 1);
 
             left = val;
             val = (val + (1 << (PARAM_D - 1)) - 1) >> PARAM_D;
             val = left - (val << PARAM_D);
             // If (Abs(val) < (1<<(PARAM_D-1))-PARAM_E) then t1 = 0, else t1 = 1
-            t1 = (int)(~(absolute(val) - ((1 << (PARAM_D - 1)) - PARAM_E))) >>> (RADIX32 - 1);
+            t1 = (~(absolute(val) - ((1 << (PARAM_D - 1)) - PARAM_E))) >>> (RADIX32 - 1);
 
             if ((t0 | t1) == 1)  // Returns 1 if any of the two tests failed
             {
@@ -677,43 +618,29 @@ class QTesla1p
         return false;
     }
 
-
-    private static boolean testRejection(long[] Z) //, int n, int b, int u)
+    private static boolean testRejection(int[] Z)
     {
-
         int valid = 0;
 
         for (int i = 0; i < PARAM_N; i++)
         {
             valid |= (PARAM_B - PARAM_S) - absolute(Z[i]);
-
         }
 
-        return (valid >>> 31) > 0;
-
+        return (valid >>> 31) != 0;
     }
 
     private static int absolute(int value)
     {
-
-        return ((value >> RADIX32 - 1) ^ value) - (value >> RADIX32 - 1);
-
+        int sign = value >> (RADIX32 - 1);
+        return (sign ^ value) - sign;
     }
 
-    private static long absolute(long value)
+    private static boolean checkPolynomial(int[] polynomial, int polyOffset, int bound)
     {
-
-        return ((value >> 63) ^ value) - (value >> 63);
-
-    }
-
-
-    private static boolean checkPolynomial(long[] polynomial, int polyOffset, int bound)
-    {
-
         int i, j, sum = 0, limit = PARAM_N;
-        long temp, mask;
-        long[] list = new long[PARAM_N];
+        int temp, mask;
+        int[] list = new int[PARAM_N];
 
         for (j = 0; j < PARAM_N; j++)
         {
@@ -724,17 +651,18 @@ class QTesla1p
         {
             for (i = 0; i < limit - 1; i++)
             {
+                int a = list[i], b = list[i + 1];
                 // If list[i+1] > list[i] then exchange contents
-                mask = (list[i + 1] - list[i]) >> (RADIX32 - 1);
-                temp = (list[i + 1] & mask) | (list[i] & ~mask);
-                list[i + 1] = (list[i] & mask) | (list[i + 1] & ~mask);
+                mask = (b - a) >> (RADIX32 - 1);
+                temp = (b & mask) | (a & ~mask);
+                list[i + 1] = (a & mask) | (b & ~mask);
                 list[i] = temp;
             }
             sum += list[limit - 1];
             limit -= 1;
         }
 
-        return (sum > bound);
+        return sum > bound;
     }
 
     static boolean memoryEqual(byte[] left, int leftOffset, byte[] right, int rightOffset, int length)
@@ -767,102 +695,96 @@ class QTesla1p
 
     }
 
-
     // End of outer.
 
     static class Gaussian
     {
-
         private static final int CDT_ROWS = 78;
         private static final int CDT_COLS = 2;
         private static final int CHUNK_SIZE = 512;
 
-        private static final long[] cdt_v = new long[]{
-            0x00000000L, 0x00000000L, // 0
-            0x0601F22AL, 0x280663D4L, // 1
-            0x11F09FFAL, 0x162FE23DL, // 2
-            0x1DA089E9L, 0x437226E8L, // 3
-            0x28EAB25DL, 0x04C51FE2L, // 4
-            0x33AC2F26L, 0x14FDBA70L, // 5
-            0x3DC767DCL, 0x4565C960L, // 6
-            0x4724FC62L, 0x3342C78AL, // 7
-            0x4FB448F4L, 0x5229D06DL, // 8
-            0x576B8599L, 0x7423407FL, // 9
-            0x5E4786DAL, 0x3210BAF7L, // 10
-            0x644B2C92L, 0x431B3947L, // 11
-            0x697E90CEL, 0x77C362C4L, // 12
-            0x6DEE0B96L, 0x2798C9CEL, // 13
-            0x71A92144L, 0x5765FCE4L, // 14
-            0x74C16FD5L, 0x1E2A0990L, // 15
-            0x7749AC92L, 0x0DF36EEBL, // 16
-            0x7954BFA4L, 0x28079289L, // 17
-            0x7AF5067AL, 0x2EDC2050L, // 18
-            0x7C3BC17CL, 0x123D5E7BL, // 19
-            0x7D38AD76L, 0x2A9381D9L, // 20
-            0x7DF9C5DFL, 0x0E868CA7L, // 21
-            0x7E8B2ABAL, 0x18E5C811L, // 22
-            0x7EF7237CL, 0x00908272L, // 23
-            0x7F4637C5L, 0x6DBA5126L, // 24
-            0x7F7F5707L, 0x4A52EDEBL, // 25
-            0x7FA808CCL, 0x23290599L, // 26
-            0x7FC4A083L, 0x69BDF2D5L, // 27
-            0x7FD870CAL, 0x42275558L, // 28
-            0x7FE5FB5DL, 0x3EF82C1BL, // 29
-            0x7FEF1BFAL, 0x6C03A362L, // 30
-            0x7FF52D4EL, 0x316C2C8CL, // 31
-            0x7FF927BAL, 0x12AE54AFL, // 32
-            0x7FFBBA43L, 0x749CC0E2L, // 33
-            0x7FFD5E3DL, 0x4524AD91L, // 34
-            0x7FFE6664L, 0x535785B5L, // 35
-            0x7FFF0A41L, 0x0B291681L, // 36
-            0x7FFF6E81L, 0x132C3D6FL, // 37
-            0x7FFFAAFEL, 0x4DBC6BEDL, // 38
-            0x7FFFCEFDL, 0x7A1E2D14L, // 39
-            0x7FFFE41EL, 0x4C6EC115L, // 40
-            0x7FFFF059L, 0x319503C8L, // 41
-            0x7FFFF754L, 0x5DDD0D40L, // 42
-            0x7FFFFB43L, 0x0B9E9823L, // 43
-            0x7FFFFD71L, 0x76B81AE1L, // 44
-            0x7FFFFEA3L, 0x7E66A1ECL, // 45
-            0x7FFFFF49L, 0x26F6E191L, // 46
-            0x7FFFFFA1L, 0x2FA31694L, // 47
-            0x7FFFFFCFL, 0x5247BEC9L, // 48
-            0x7FFFFFE7L, 0x4F4127C7L, // 49
-            0x7FFFFFF3L, 0x6FAA69FDL, // 50
-            0x7FFFFFFAL, 0x0630D073L, // 51
-            0x7FFFFFFDL, 0x0F2957BBL, // 52
-            0x7FFFFFFEL, 0x4FD29432L, // 53
-            0x7FFFFFFFL, 0x2CFAD60DL, // 54
-            0x7FFFFFFFL, 0x5967A930L, // 55
-            0x7FFFFFFFL, 0x6E4C9DFFL, // 56
-            0x7FFFFFFFL, 0x77FDCCC8L, // 57
-            0x7FFFFFFFL, 0x7C6CE89EL, // 58
-            0x7FFFFFFFL, 0x7E6D116FL, // 59
-            0x7FFFFFFFL, 0x7F50FA31L, // 60
-            0x7FFFFFFFL, 0x7FB50089L, // 61
-            0x7FFFFFFFL, 0x7FE04C2DL, // 62
-            0x7FFFFFFFL, 0x7FF2C7C1L, // 63
-            0x7FFFFFFFL, 0x7FFA8FE3L, // 64
-            0x7FFFFFFFL, 0x7FFDCB1BL, // 65
-            0x7FFFFFFFL, 0x7FFF1DE2L, // 66
-            0x7FFFFFFFL, 0x7FFFA6B7L, // 67
-            0x7FFFFFFFL, 0x7FFFDD39L, // 68
-            0x7FFFFFFFL, 0x7FFFF2A3L, // 69
-            0x7FFFFFFFL, 0x7FFFFAEFL, // 70
-            0x7FFFFFFFL, 0x7FFFFE1BL, // 71
-            0x7FFFFFFFL, 0x7FFFFF4DL, // 72
-            0x7FFFFFFFL, 0x7FFFFFBFL, // 73
-            0x7FFFFFFFL, 0x7FFFFFE9L, // 74
-            0x7FFFFFFFL, 0x7FFFFFF8L, // 75
-            0x7FFFFFFFL, 0x7FFFFFFDL, // 76
-            0x7FFFFFFFL, 0x7FFFFFFFL, // 77
+        private static final int[] cdt_v = new int[]{
+            0x00000000, 0x00000000, // 0
+            0x0601F22A, 0x280663D4, // 1
+            0x11F09FFA, 0x162FE23D, // 2
+            0x1DA089E9, 0x437226E8, // 3
+            0x28EAB25D, 0x04C51FE2, // 4
+            0x33AC2F26, 0x14FDBA70, // 5
+            0x3DC767DC, 0x4565C960, // 6
+            0x4724FC62, 0x3342C78A, // 7
+            0x4FB448F4, 0x5229D06D, // 8
+            0x576B8599, 0x7423407F, // 9
+            0x5E4786DA, 0x3210BAF7, // 10
+            0x644B2C92, 0x431B3947, // 11
+            0x697E90CE, 0x77C362C4, // 12
+            0x6DEE0B96, 0x2798C9CE, // 13
+            0x71A92144, 0x5765FCE4, // 14
+            0x74C16FD5, 0x1E2A0990, // 15
+            0x7749AC92, 0x0DF36EEB, // 16
+            0x7954BFA4, 0x28079289, // 17
+            0x7AF5067A, 0x2EDC2050, // 18
+            0x7C3BC17C, 0x123D5E7B, // 19
+            0x7D38AD76, 0x2A9381D9, // 20
+            0x7DF9C5DF, 0x0E868CA7, // 21
+            0x7E8B2ABA, 0x18E5C811, // 22
+            0x7EF7237C, 0x00908272, // 23
+            0x7F4637C5, 0x6DBA5126, // 24
+            0x7F7F5707, 0x4A52EDEB, // 25
+            0x7FA808CC, 0x23290599, // 26
+            0x7FC4A083, 0x69BDF2D5, // 27
+            0x7FD870CA, 0x42275558, // 28
+            0x7FE5FB5D, 0x3EF82C1B, // 29
+            0x7FEF1BFA, 0x6C03A362, // 30
+            0x7FF52D4E, 0x316C2C8C, // 31
+            0x7FF927BA, 0x12AE54AF, // 32
+            0x7FFBBA43, 0x749CC0E2, // 33
+            0x7FFD5E3D, 0x4524AD91, // 34
+            0x7FFE6664, 0x535785B5, // 35
+            0x7FFF0A41, 0x0B291681, // 36
+            0x7FFF6E81, 0x132C3D6F, // 37
+            0x7FFFAAFE, 0x4DBC6BED, // 38
+            0x7FFFCEFD, 0x7A1E2D14, // 39
+            0x7FFFE41E, 0x4C6EC115, // 40
+            0x7FFFF059, 0x319503C8, // 41
+            0x7FFFF754, 0x5DDD0D40, // 42
+            0x7FFFFB43, 0x0B9E9823, // 43
+            0x7FFFFD71, 0x76B81AE1, // 44
+            0x7FFFFEA3, 0x7E66A1EC, // 45
+            0x7FFFFF49, 0x26F6E191, // 46
+            0x7FFFFFA1, 0x2FA31694, // 47
+            0x7FFFFFCF, 0x5247BEC9, // 48
+            0x7FFFFFE7, 0x4F4127C7, // 49
+            0x7FFFFFF3, 0x6FAA69FD, // 50
+            0x7FFFFFFA, 0x0630D073, // 51
+            0x7FFFFFFD, 0x0F2957BB, // 52
+            0x7FFFFFFE, 0x4FD29432, // 53
+            0x7FFFFFFF, 0x2CFAD60D, // 54
+            0x7FFFFFFF, 0x5967A930, // 55
+            0x7FFFFFFF, 0x6E4C9DFF, // 56
+            0x7FFFFFFF, 0x77FDCCC8, // 57
+            0x7FFFFFFF, 0x7C6CE89E, // 58
+            0x7FFFFFFF, 0x7E6D116F, // 59
+            0x7FFFFFFF, 0x7F50FA31, // 60
+            0x7FFFFFFF, 0x7FB50089, // 61
+            0x7FFFFFFF, 0x7FE04C2D, // 62
+            0x7FFFFFFF, 0x7FF2C7C1, // 63
+            0x7FFFFFFF, 0x7FFA8FE3, // 64
+            0x7FFFFFFF, 0x7FFDCB1B, // 65
+            0x7FFFFFFF, 0x7FFF1DE2, // 66
+            0x7FFFFFFF, 0x7FFFA6B7, // 67
+            0x7FFFFFFF, 0x7FFFDD39, // 68
+            0x7FFFFFFF, 0x7FFFF2A3, // 69
+            0x7FFFFFFF, 0x7FFFFAEF, // 70
+            0x7FFFFFFF, 0x7FFFFE1B, // 71
+            0x7FFFFFFF, 0x7FFFFF4D, // 72
+            0x7FFFFFFF, 0x7FFFFFBF, // 73
+            0x7FFFFFFF, 0x7FFFFFE9, // 74
+            0x7FFFFFFF, 0x7FFFFFF8, // 75
+            0x7FFFFFFF, 0x7FFFFFFD, // 76
+            0x7FFFFFFF, 0x7FFFFFFF, // 77
         };
 
-
-
-
-
-        static void sample_gauss_polly(int nonce, byte[] seed, int seedOffset, long[] poly, int polyOffset)
+        static void sample_gauss_poly(int nonce, byte[] seed, int seedOffset, int[] poly, int polyOffset)
         {
             int dmsp = nonce << 8;
 
@@ -873,7 +795,6 @@ class QTesla1p
 
             for (int chunk = 0; chunk < PARAM_N; chunk += CHUNK_SIZE)
             {
-
                 HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
                     samp, 0, CHUNK_SIZE * CDT_COLS * 4, (short)dmsp++, seed, seedOffset, CRYPTO_SEEDBYTES);
 
@@ -882,27 +803,24 @@ class QTesla1p
                     for (int j = 1; j < CDT_ROWS; j++) {
                         borrow = 0;
                         for (int k = CDT_COLS-1; k >= 0; k--) {
-                            c[k] = (int)(( at(samp, 0,i*CDT_COLS+k) & mask) - (cdt_v[j*CDT_COLS+k] + borrow));
+                            c[k] = (at(samp, i*CDT_COLS, k) & mask) - (cdt_v[j*CDT_COLS+k] + borrow);
                             borrow = c[k] >> (RADIX32-1);
                         }
                         poly[polyOffset+chunk+i] += ~borrow & 1;
                     }
-                    sign =  at(samp,0,i*CDT_COLS) >> (RADIX32-1);
+
+//                    sign =  at(samp,i*CDT_COLS, 0) >> (RADIX32-1);
+                    sign = (int)samp[((i*CDT_COLS) << 2) + 3] >> (RADIX32 - 1);
+
                     poly[polyOffset+chunk+i] = (sign & -poly[polyOffset+chunk+i]) | (~sign & poly[polyOffset+chunk+i]);
                 }
-
             }
-
         }
-
     }
-
 
     static class QTesla1PPolynomial
     {
-
-
-        private static final long[] zeta = new long[]{
+        private static final int[] zeta = new int[]{
             184007114, 341297933, 172127038, 306069179, 260374244, 269720605, 20436325, 2157599, 36206659, 61987110, 112759694, 92762708, 278504038, 139026960, 183642748, 298230187,
             37043356, 230730845, 107820937, 97015745, 156688276, 38891102, 170244636, 259345227, 170077366, 141586883, 100118513, 328793523, 289946488, 263574185, 132014089, 14516260,
             87424978, 192691578, 190961717, 262687761, 333967048, 12957952, 326574509, 273585413, 151922543, 195893203, 261889302, 120488377, 169571794, 44896463, 128576039, 68257019,
@@ -969,7 +887,7 @@ class QTesla1p
             254049694, 285174861, 264316834, 11792643, 149333889, 214699018, 261331547, 317320791, 24527858, 118790777, 264146824, 174296812, 332779737, 94199786, 288227027, 172048372,
         };
 
-        private static final long[] zetainv = new long[]{
+        private static final int[] zetainv = new int[]{
             55349550, 249376791, 10796840, 169279765, 79429753, 224785800, 319048719, 26255786, 82245030, 128877559, 194242688, 331783934, 79259743, 58401716, 89526883, 107622248,
             126812171, 206603058, 33048689, 37579319, 62444874, 9574084, 8041001, 174424626, 78818320, 129371885, 166295850, 139513654, 199147441, 68038492, 277843711, 65999573,
             21850993, 252252426, 124803757, 15185295, 68854578, 54386191, 197879894, 131754200, 265727759, 156946887, 166260901, 255298661, 209284049, 222086502, 264918555, 105866478,
@@ -1036,8 +954,7 @@ class QTesla1p
             159933829, 204549617, 65072539, 250813869, 230816883, 281589467, 307369918, 341418978, 323140252, 73855972, 83202333, 37507398, 171449539, 2278644, 159569463, 171528205,
         };
 
-
-        static void poly_uniform(long[] a, byte[] seed, int seedOffset)
+        static void poly_uniform(int[] a, byte[] seed, int seedOffset)
         {
             int pos = 0, i = 0, nbytes = (PARAM_Q_LOG + 7) / 8;
             int nblocks = PARAM_GEN_A;
@@ -1045,13 +962,11 @@ class QTesla1p
             byte[] buf = new byte[HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * PARAM_GEN_A];
             short dmsp = 0;
 
-
             HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
                 buf, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * PARAM_GEN_A,
                 dmsp++,
                 seed, seedOffset, CRYPTO_RANDOMBYTES
             );
-
 
             while (i < PARAM_K * PARAM_N)
             {
@@ -1067,6 +982,7 @@ class QTesla1p
 
                     pos = 0;
                 }
+
                 val1 = Pack.littleEndianToInt(buf, pos) & mask;
                 pos += nbytes;
                 val2 = Pack.littleEndianToInt(buf, pos) & mask;
@@ -1075,6 +991,7 @@ class QTesla1p
                 pos += nbytes;
                 val4 = Pack.littleEndianToInt(buf, pos) & mask;
                 pos += nbytes;
+
                 if (val1 < PARAM_Q && i < PARAM_K * PARAM_N)
                 {
                     a[i++] = reduce((long)val1 * PARAM_R2_INVN);
@@ -1094,19 +1011,17 @@ class QTesla1p
             }
         }
 
-
-        static long reduce(long a)
+        static int reduce(long a)
         { // Montgomery reduction
             long u;
 
             u = (a * (long)PARAM_QINV) & 0xFFFFFFFFL;
             u *= PARAM_Q;
             a += u;
-            return a >> 32;
+            return (int)(a >> 32);
         }
 
-
-        static void ntt(long[] a, long[] w)
+        static void ntt(int[] a, int[] w)
         { // Forward NTT transform
             int NumoProblems = PARAM_N >> 1, jTwiddle = 0;
 
@@ -1115,33 +1030,36 @@ class QTesla1p
                 int jFirst, j = 0;
                 for (jFirst = 0; jFirst < PARAM_N; jFirst = j + NumoProblems)
                 {
-                    long W = (int)w[jTwiddle++];
+                    int W = w[jTwiddle++];
                     for (j = jFirst; j < jFirst + NumoProblems; j++)
                     {
-                        long temp = reduce(W * a[j + NumoProblems]);
-                        a[j + NumoProblems] = a[j] - temp;
-                        a[j + NumoProblems] += (int)(a[j + NumoProblems] >> 63) & PARAM_Q;  // If result < 0 then add q
-                        a[j] = a[j] + temp - PARAM_Q;
-                        a[j] += (int)(a[j + NumoProblems] >> 63) & PARAM_Q;                 // If result >= q then subtract q
+                        int a_j = a[j], a_n = a[j + NumoProblems];
+                        int temp = reduce((long)W * a_n);
+                        a[j] = correct(a_j + temp - PARAM_Q);
+                        a[j + NumoProblems] = correct(a_j - temp);
                     }
                 }
             }
         }
 
-
-        static int barr_reduce(int a)
+        private static int barr_reduce(int a)
         { // Barrett reduction
             int u = (int)(((long)a * PARAM_BARR_MULT) >> PARAM_BARR_DIV);
             return a - u * PARAM_Q;
         }
 
-        static long barr_reduce64(long a)
+        private static int barr_reduce64(long a)
         { // Barrett reduction
             long u = (a * PARAM_BARR_MULT) >> PARAM_BARR_DIV;
-            return a - u * PARAM_Q;
+            return (int)(a - u * PARAM_Q);
         }
 
-        static void nttinv(long[] a, int aPos, long[] w)
+        private static int correct(int x)
+        {
+            return x + ((x >> (RADIX32 - 1)) & PARAM_Q);
+        }
+
+        static void nttinv(int[] a, int aPos, int[] w)
         { // Inverse NTT transform
             int NumoProblems = 1, jTwiddle = 0;
             for (NumoProblems = 1; NumoProblems < PARAM_N; NumoProblems *= 2)
@@ -1149,19 +1067,18 @@ class QTesla1p
                 int jFirst, j = 0;
                 for (jFirst = 0; jFirst < PARAM_N; jFirst = j + NumoProblems)
                 {
-                    int W = (int)w[jTwiddle++];
+                    int W = w[jTwiddle++];
                     for (j = jFirst; j < jFirst + NumoProblems; j++)
                     {
-                        long temp = a[aPos + j];
-                        a[aPos + j] = barr_reduce((int)(temp + a[aPos + j + NumoProblems]));
+                        int temp = a[aPos + j];
+                        a[aPos + j] = barr_reduce(temp + a[aPos + j + NumoProblems]);
                         a[aPos + j + NumoProblems] = reduce((long)W * (temp - a[aPos + j + NumoProblems]));
                     }
                 }
             }
         }
 
-
-        static void poly_ntt(long[] x_ntt, long[] x)
+        static void poly_ntt(int[] x_ntt, int[] x)
         { // Call to NTT function. Avoids input destruction
 
             for (int i = 0; i < PARAM_N; i++)
@@ -1171,7 +1088,7 @@ class QTesla1p
             ntt(x_ntt, zeta);
         }
 
-        static void poly_pointwise(long[] result, int rpos, long[] x, int xpos, long[] y)
+        static void poly_pointwise(int[] result, int rpos, int[] x, int xpos, int[] y)
         { // Pointwise polynomial multiplication result = x.y
 
             for (int i = 0; i < PARAM_N; i++)
@@ -1180,15 +1097,14 @@ class QTesla1p
             }
         }
 
-        static void poly_mul(long[] result, int rpos, long[] x, int xpos, long[] y)
+        static void poly_mul(int[] result, int rpos, int[] x, int xpos, int[] y)
         { // Polynomial multiplication result = x*y, with in place reduction for (X^N+1)
 
             poly_pointwise(result, rpos, x, xpos, y);
             nttinv(result, rpos, zetainv);
         }
 
-
-        static void poly_add(long[] result, long[] x, long[] y)
+        static void poly_add(int[] result, int[] x, int[] y)
         { // Polynomial addition result = x+y
 
             for (int i = 0; i < PARAM_N; i++)
@@ -1197,20 +1113,17 @@ class QTesla1p
             }
         }
 
-        static void poly_add_correct(long[] result, int rpos, long[] x, int xpos, long[] y, int ypos)
+        static void poly_add_correct(int[] result, int rpos, int[] x, int xpos, int[] y, int ypos)
         { // Polynomial addition result = x+y with correction
 
             for (int i = 0; i < PARAM_N; i++)
             {
-                long ri = x[xpos + i] + y[ypos + i];
-                ri += (int)(ri >> 63) & PARAM_Q;    // If result[i] < 0 then add q
-                ri -= PARAM_Q;
-                ri += (int)(ri >> 63) & PARAM_Q;    // If result[i] >= q then subtract q
-                result[rpos + i] = ri;
+                int ri = correct(x[xpos + i] + y[ypos + i]);
+                result[rpos + i] = correct(ri - PARAM_Q);
             }
         }
 
-        static void poly_sub(long[] result, int rpos, long[] x, int xpos, long[] y, int ypos)
+        static void poly_sub(int[] result, int rpos, int[] x, int xpos, int[] y, int ypos)
         { // Polynomial subtraction result = x-y
 
             for (int i = 0; i < PARAM_N; i++)
@@ -1219,18 +1132,18 @@ class QTesla1p
             }
         }
 
-        static void poly_sub_reduce(long[] result, int rpos, long[] x, int xpos, long[] y, int ypos)
+        static void poly_sub_reduce(int[] result, int rpos, int[] x, int xpos, int[] y, int ypos)
         { // Polynomial subtraction result = x-y
 
             for (int i = 0; i < PARAM_N; i++)
             {
-                result[rpos + i] = barr_reduce((int)(x[xpos + i] - y[ypos + i]));
+                result[rpos + i] = barr_reduce(x[xpos + i] - y[ypos + i]);
             }
         }
 
-
-        static void sparse_mul8(long[] prod, int ppos, byte[] s, int spos, int[] pos_list, short[] sign_list)
+        static void sparse_mul8(int[] prod, int ppos, byte[] s, int spos, int[] pos_list, short[] sign_list)
         {
+            // TODO Review multiplications involving elements of s (an unsigned char* in reference implementation)
             int i, j, pos;
 
             for (i = 0; i < PARAM_N; i++)
@@ -1252,83 +1165,28 @@ class QTesla1p
             }
         }
 
-
-        static void sparse_mul8(long[] prod, byte[] s, int[] pos_list, short[] sign_list)
+        static void sparse_mul32(int[] prod, int ppos, int[] pk, int pkPos, int[] pos_list, short[] sign_list)
         {
             int i, j, pos;
-            byte t[] = s;
-
-            for (i = 0; i < PARAM_N; i++)
-            {
-                prod[i] = 0;
-            }
+            long[] temp = new long[PARAM_N];
 
             for (i = 0; i < PARAM_H; i++)
             {
                 pos = pos_list[i];
                 for (j = 0; j < pos; j++)
                 {
-                    prod[j] = prod[j] - sign_list[i] * t[j + PARAM_N - pos];
+                    temp[j] = temp[j] - sign_list[i] * pk[pkPos + j + PARAM_N - pos];
                 }
                 for (j = pos; j < PARAM_N; j++)
                 {
-                    prod[j] = prod[j] + sign_list[i] * t[j - pos];
-                }
-            }
-        }
-
-
-        static void sparse_mul16(int[] prod, int s[], int pos_list[], short sign_list[])
-        {
-            int i, j, pos;
-//            short[] t = s;
-
-            for (i = 0; i < PARAM_N; i++)
-            {
-                prod[i] = 0;
-            }
-
-            for (i = 0; i < PARAM_H; i++)
-            {
-                pos = pos_list[i];
-                for (j = 0; j < pos; j++)
-                {
-                    prod[j] = prod[j] - sign_list[i] * s[j + PARAM_N - pos];
-                }
-                for (j = pos; j < PARAM_N; j++)
-                {
-                    prod[j] = prod[j] + sign_list[i] * s[j - pos];
-                }
-            }
-        }
-
-        static void sparse_mul32(long[] prod, int ppos, int[] pk, int pkPos, int[] pos_list, short[] sign_list)
-        {
-            int i, j, pos;
-
-            for (i = 0; i < PARAM_N; i++)
-            {
-                prod[ppos + i] = 0;
-            }
-
-            for (i = 0; i < PARAM_H; i++)
-            {
-                pos = pos_list[i];
-                for (j = 0; j < pos; j++)
-                {
-                    prod[ppos + j] = prod[ppos + j] - sign_list[i] * pk[pkPos + j + PARAM_N - pos];
-                }
-                for (j = pos; j < PARAM_N; j++)
-                {
-                    prod[ppos + j] = prod[ppos + j] + sign_list[i] * pk[pkPos + j - pos];
+                    temp[j] = temp[j] + sign_list[i] * pk[pkPos + j - pos];
                 }
             }
 
             for (i = 0; i < PARAM_N; i++)
             {
-                prod[ppos + i] = (int)barr_reduce64(prod[ppos + i]);
+                prod[ppos + i] = barr_reduce64(temp[i]);
             }
         }
     }
-
 }
