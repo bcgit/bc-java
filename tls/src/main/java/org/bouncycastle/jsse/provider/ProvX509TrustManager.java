@@ -280,7 +280,7 @@ class ProvX509TrustManager
         try
         {
             BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, false);
-            List<byte[]> statusResponses = TransportData.getStatusResponses(transportData, checkServerTrusted);
+            List<byte[]> statusResponses = TransportData.getStatusResponses(transportData);
 
             X509Certificate[] trustedChain = buildCertPath(chain, algorithmConstraints, statusResponses);
 

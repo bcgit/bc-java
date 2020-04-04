@@ -68,11 +68,11 @@ class TransportData
             :   transportData.getAlgorithmConstraints(peerSigAlgs);
     }
 
-    static List<byte[]> getStatusResponses(TransportData transportData, boolean checkServerTrusted)
+    static List<byte[]> getStatusResponses(TransportData transportData)
     {
         return null == transportData
             ?   Collections.<byte[]> emptyList()
-            :   transportData.getStatusResponses(checkServerTrusted);
+            :   transportData.getStatusResponses();
     }
 
     private final BCSSLParameters parameters;
@@ -119,9 +119,9 @@ class TransportData
             :   new ProvAlgorithmConstraints(configAlgorithmConstraints, true);
     }
 
-    List<byte[]> getStatusResponses(boolean checkServerTrusted)
+    List<byte[]> getStatusResponses()
     {
-        return null == handshakeSession || !checkServerTrusted
+        return null == handshakeSession
             ?   Collections.<byte[]> emptyList()
             :   handshakeSession.getStatusResponses();
     }
