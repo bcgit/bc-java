@@ -56,7 +56,7 @@ public class CertificateStatusRequest
         switch (statusType)
         {
         case CertificateStatusType.ocsp:
-            ((OCSPStatusRequest) request).encode(output);
+            ((OCSPStatusRequest)request).encode(output);
             break;
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -74,18 +74,18 @@ public class CertificateStatusRequest
     public static CertificateStatusRequest parse(InputStream input) throws IOException
     {
         short status_type = TlsUtils.readUint8(input);
-        Object result;
+        Object request;
 
         switch (status_type)
         {
         case CertificateStatusType.ocsp:
-            result = OCSPStatusRequest.parse(input);
+            request = OCSPStatusRequest.parse(input);
             break;
         default:
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
-        return new CertificateStatusRequest(status_type, result);
+        return new CertificateStatusRequest(status_type, request);
     }
 
     protected static boolean isCorrectType(short statusType, Object request)
