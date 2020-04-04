@@ -39,6 +39,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
     public static final Integer EXT_signature_algorithms_cert = Integers.valueOf(ExtensionType.signature_algorithms_cert);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
+    public static final Integer EXT_status_request_v2 = Integers.valueOf(ExtensionType.status_request_v2);
     public static final Integer EXT_supported_groups = Integers.valueOf(ExtensionType.supported_groups);
     public static final Integer EXT_supported_versions = Integers.valueOf(ExtensionType.supported_versions);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
@@ -219,6 +220,12 @@ public class TlsExtensionsUtils
         throws IOException
     {
         extensions.put(EXT_status_request, createStatusRequestExtension(statusRequest));
+    }
+
+    public static void addStatusRequestV2Extension(Hashtable extensions, Vector statusRequestV2)
+        throws IOException
+    {
+        extensions.put(EXT_status_request_v2, createStatusRequestV2Extension(statusRequestV2));
     }
 
     public static void addSupportedGroupsExtension(Hashtable extensions, Vector namedGroups) throws IOException
@@ -423,6 +430,13 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_status_request);
         return extensionData == null ? null : readStatusRequestExtension(extensionData);
+    }
+
+    public static Vector getStatusRequestV2Extension(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_status_request_v2);
+        return extensionData == null ? null : readStatusRequestV2Extension(extensionData);
     }
 
     public static int[] getSupportedGroupsExtension(Hashtable extensions) throws IOException
@@ -829,6 +843,32 @@ public class TlsExtensionsUtils
         return buf.toByteArray();
     }
 
+    public static byte[] createStatusRequestV2Extension(Vector statusRequestV2)
+        throws IOException
+    {
+        if (statusRequestV2 == null || statusRequestV2.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        // Placeholder for length
+        TlsUtils.writeUint16(0, buf);
+
+        for (int i = 0; i < statusRequestV2.size(); ++i)
+        {
+            CertificateStatusRequestItemV2 entry = (CertificateStatusRequestItemV2)statusRequestV2.elementAt(i);
+            entry.encode(buf);
+        }
+
+        int length = buf.size() - 2;
+        TlsUtils.checkUint16(length);
+        byte[] extensionData = buf.toByteArray();
+        TlsUtils.writeUint16(length, extensionData, 0);
+        return extensionData;
+    }
+
     public static byte[] createSupportedGroupsExtension(Vector namedGroups) throws IOException
     {
         if (namedGroups == null || namedGroups.isEmpty())
@@ -897,10 +937,13 @@ public class TlsExtensionsUtils
         // Placeholder for length
         TlsUtils.writeUint16(0, buf);
 
-        for (int i = 0; i < trustedAuthoritiesList.size(); ++i)
+        if (trustedAuthoritiesList != null)
         {
-            TrustedAuthority entry = (TrustedAuthority)trustedAuthoritiesList.elementAt(i);
-            entry.encode(buf);
+            for (int i = 0; i < trustedAuthoritiesList.size(); ++i)
+            {
+                TrustedAuthority entry = (TrustedAuthority)trustedAuthoritiesList.elementAt(i);
+                entry.encode(buf);
+            }
         }
 
         int length = buf.size() - 2;
@@ -1278,6 +1321,35 @@ public class TlsExtensionsUtils
         TlsProtocol.assertEmpty(buf);
 
         return statusRequest;
+    }
+
+    public static Vector readStatusRequestV2Extension(byte[] extensionData)
+        throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+        if (extensionData.length < 3)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
+
+        int length = TlsUtils.readUint16(buf);
+        if (length != (extensionData.length - 2))
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        Vector statusRequestV2 = new Vector();
+        while (buf.available() > 0)
+        {
+            CertificateStatusRequestItemV2 entry = CertificateStatusRequestItemV2.parse(buf);
+            statusRequestV2.add(entry);
+        }
+        return statusRequestV2;
     }
 
     public static int[] readSupportedGroupsExtension(byte[] extensionData) throws IOException
