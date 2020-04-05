@@ -226,7 +226,7 @@ public class KeccakDigest
 
     private void padAndSwitchToSqueezingPhase()
     {
-        dataQueue[bitsInQueue >>> 3] |= (byte)(1L << (bitsInQueue & 7));
+        dataQueue[bitsInQueue >>> 3] |= (byte)(1 << (bitsInQueue & 7));
 
         if (++bitsInQueue == rate)
         {
