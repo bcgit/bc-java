@@ -218,7 +218,7 @@ public class ArmoredOutputStream
 
         if (versions != null)
         {
-            setHeader(VERSION_HDR, version);
+            headers.put(VERSION_HDR, versions);
         }
     }
 
