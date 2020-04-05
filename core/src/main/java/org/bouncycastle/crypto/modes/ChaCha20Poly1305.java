@@ -175,7 +175,7 @@ public class ChaCha20Poly1305
         case State.ENC_DATA:
             return total + MAC_SIZE;
         default:
-            throw new IllegalStateException("state="+state);
+            throw new IllegalStateException();
         }
     }
 
