@@ -172,8 +172,8 @@ public class KeccakDigest
             throw new IllegalStateException("attempt to absorb while squeezing");
         }
 
-        int bytesInQueue = bitsInQueue >> 3;
-        int rateBytes = rate >> 3;
+        int bytesInQueue = bitsInQueue >>> 3;
+        int rateBytes = rate >>> 3;
 
         if (len < (rateBytes - bytesInQueue))
         {
