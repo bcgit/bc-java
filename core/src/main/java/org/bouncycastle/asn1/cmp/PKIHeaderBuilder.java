@@ -76,7 +76,7 @@ public class PKIHeaderBuilder
         return setRecipKID(kid == null ? null : new DEROctetString(kid));
     }
 
-    public PKIHeaderBuilder setRecipKID(DEROctetString kid)
+    public PKIHeaderBuilder setRecipKID(ASN1OctetString kid)
     {
         recipKID = kid;
 
