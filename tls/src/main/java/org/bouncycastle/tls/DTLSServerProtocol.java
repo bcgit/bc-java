@@ -183,11 +183,11 @@ public class DTLSServerProtocol
             // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
             if (serverCertificate == null || serverCertificate.isEmpty())
             {
-                state.allowCertificateStatus = false;
+                securityParameters.statusRequestVersion = 0;
             }
         }
 
-        if (state.allowCertificateStatus)
+        if (securityParameters.getStatusRequestVersion() > 0)
         {
             CertificateStatus certificateStatus = state.server.getCertificateStatus();
             if (certificateStatus != null)
@@ -367,6 +367,7 @@ public class DTLSServerProtocol
         throws IOException
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        // TODO[tls13] Ensure this cannot happen for (D)TLS1.3+
         certificateStatus.encode(buf);
         return buf.toByteArray();
     }
@@ -516,9 +517,20 @@ public class DTLSServerProtocol
              * TODO It's surprising that there's no provision to allow a 'fresh' CertificateStatus to be sent in
              * a session resumption handshake.
              */
-            state.allowCertificateStatus = !state.resumedSession
-                && TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
-                    TlsExtensionsUtils.EXT_status_request, AlertDescription.internal_error);
+            if (!state.resumedSession)
+            {
+                // TODO[tls13] See RFC 8446 4.4.2.1
+                if (TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
+                    TlsExtensionsUtils.EXT_status_request_v2, AlertDescription.internal_error))
+                {
+                    securityParameters.statusRequestVersion = 2;
+                }
+                else if (TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
+                    TlsExtensionsUtils.EXT_status_request, AlertDescription.internal_error))
+                {
+                    securityParameters.statusRequestVersion = 1;
+                }
+            }
 
             state.expectSessionTicket = !state.resumedSession
                 && TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions, TlsProtocol.EXT_SessionTicket,
@@ -794,7 +806,6 @@ public class DTLSServerProtocol
         Hashtable serverExtensions = null;
         boolean offeredExtendedMasterSecret = false;
         boolean resumedSession = false;
-        boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
         TlsCredentials serverCredentials = null;
