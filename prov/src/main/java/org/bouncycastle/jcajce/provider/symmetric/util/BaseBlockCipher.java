@@ -1166,6 +1166,11 @@ public class BaseBlockCipher
             return tmp;
         }
 
+        if (len > tmp.length)
+        {
+            throw new IllegalBlockSizeException("internal buffer overflow");
+        }
+
         byte[]  out = new byte[len];
 
         System.arraycopy(tmp, 0, out, 0, len);
