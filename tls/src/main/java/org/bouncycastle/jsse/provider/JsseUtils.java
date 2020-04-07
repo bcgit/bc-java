@@ -21,6 +21,7 @@ import java.util.Vector;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
@@ -31,6 +32,8 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.CertificateStatus;
+import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
@@ -336,6 +339,42 @@ abstract class JsseUtils
             result.add(applicationProtocol.getUtf8Decoding());
         }
         return result;
+    }
+
+    static byte[] getStatusResponse(OCSPResponse ocspResponse) throws IOException
+    {
+        return null == ocspResponse ? TlsUtils.EMPTY_BYTES : ocspResponse.getEncoded(ASN1Encoding.DER);
+    }
+
+    static List<byte[]> getStatusResponses(CertificateStatus certificateStatus) throws IOException
+    {
+        if (null != certificateStatus)
+        {
+            switch (certificateStatus.getStatusType())
+            {
+            case CertificateStatusType.ocsp:
+            {
+                OCSPResponse ocspResponse = certificateStatus.getOCSPResponse();
+                return Collections.singletonList(getStatusResponse(ocspResponse));
+            }
+            case CertificateStatusType.ocsp_multi:
+            {
+                @SuppressWarnings("unchecked")
+                Vector<OCSPResponse> ocspResponseList = certificateStatus.getOCSPResponseList();
+                int count = ocspResponseList.size();
+
+                ArrayList<byte[]> statusResponses = new ArrayList<byte[]>(count);
+                for (int i = 0; i < count; ++i)
+                {
+                    OCSPResponse ocspResponse = (OCSPResponse)ocspResponseList.elementAt(i);
+                    statusResponses.add(getStatusResponse(ocspResponse));
+                }
+
+                return Collections.unmodifiableList(statusResponses);
+            }
+            }
+        }
+        return null;
     }
 
     static X509Certificate getX509Certificate(JcaTlsCrypto crypto, TlsCertificate tlsCertificate) throws IOException

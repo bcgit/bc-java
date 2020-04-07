@@ -11,17 +11,17 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
-import org.bouncycastle.tls.CertificateStatus;
 import org.bouncycastle.tls.CertificateStatusRequest;
+import org.bouncycastle.tls.CertificateStatusRequestItemV2;
 import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.OCSPStatusRequest;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
@@ -80,7 +80,26 @@ class ProvTlsClient
         }
 
         // JSSE API provides no way to specify responders or extensions, so use default request
-        return super.getCertificateStatusRequest();
+        OCSPStatusRequest ocspStatusRequest = new OCSPStatusRequest(null, null);
+
+        return new CertificateStatusRequest(CertificateStatusType.ocsp, ocspStatusRequest);
+    }
+
+    @Override
+    protected Vector<CertificateStatusRequestItemV2> getMultiCertStatusRequest()
+    {
+        if (!provClientEnableStatusRequest)
+        {
+            return null;
+        }
+
+        // JSSE API provides no way to specify responders or extensions, so use default request
+        OCSPStatusRequest ocspStatusRequest = new OCSPStatusRequest(null, null);
+
+        Vector<CertificateStatusRequestItemV2> result = new Vector<CertificateStatusRequestItemV2>(2);
+        result.add(new CertificateStatusRequestItemV2(CertificateStatusType.ocsp_multi, ocspStatusRequest));
+        result.add(new CertificateStatusRequestItemV2(CertificateStatusType.ocsp, ocspStatusRequest));
+        return result;
     }
 
     @Override
@@ -237,16 +256,14 @@ class ProvTlsClient
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
 
-                X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), serverCertificate.getCertificate());
-                int keyExchangeAlgorithm = context.getSecurityParametersHandshake().getKeyExchangeAlgorithm();
-                String authType = JsseUtils.getAuthTypeServer(keyExchangeAlgorithm);
+                X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(),
+                    serverCertificate.getCertificate());
 
-                CertificateStatus certificateStatus = serverCertificate.getCertificateStatus();
-                if (null != certificateStatus && CertificateStatusType.ocsp == certificateStatus.getStatusType())
-                {
-                    jsseSecurityParameters.statusResponses = Collections.singletonList(
-                        certificateStatus.getOCSPResponse().getEncoded(ASN1Encoding.DER));
-                }
+                String authType = JsseUtils.getAuthTypeServer(
+                    context.getSecurityParametersHandshake().getKeyExchangeAlgorithm());
+
+                jsseSecurityParameters.statusResponses = JsseUtils.getStatusResponses(
+                    serverCertificate.getCertificateStatus());
 
                 manager.checkServerTrusted(chain, authType);
             }
