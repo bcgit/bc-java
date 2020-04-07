@@ -155,7 +155,6 @@ public abstract class TlsProtocol
     protected short connection_state = CS_START;
     protected boolean resumedSession = false;
     protected boolean receivedChangeCipherSpec = false;
-    protected boolean allowCertificateStatus = false;
     protected boolean expectSessionTicket = false;
 
     protected boolean blocking;
@@ -437,7 +436,6 @@ public abstract class TlsProtocol
 
         this.resumedSession = false;
         this.receivedChangeCipherSpec = false;
-        this.allowCertificateStatus = false;
         this.expectSessionTicket = false;
     }
 

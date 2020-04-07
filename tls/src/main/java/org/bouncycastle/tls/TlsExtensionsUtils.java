@@ -100,6 +100,11 @@ public class TlsExtensionsUtils
         extensions.put(EXT_early_data, createEarlyDataMaxSize(maxSize));
     }
 
+    public static void addEmptyExtensionData(Hashtable extensions, Integer extType)
+    {
+        extensions.put(extType, createEmptyExtensionData());
+    }
+
     public static void addEncryptThenMACExtension(Hashtable extensions)
     {
         extensions.put(EXT_encrypt_then_mac, createEncryptThenMACExtension());

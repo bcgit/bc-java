@@ -50,7 +50,7 @@ class ProvTlsServer
 
     private static final int provEphemeralDHKeySize = PropertyUtils.getIntegerSystemProperty("jdk.tls.ephemeralDHKeySize", 2048, 1024, 8192);
 
-    // TODO[jsse] Support providing OCSP CertificateStatus
+    // TODO[jsse] Support status_request and status_request_v2 extensions
 //    private static final boolean provServerEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
 //        "jdk.tls.server.enableStatusRequestExtension", false);
     private static final boolean provServerEnableStatusRequest = false;
@@ -80,6 +80,12 @@ class ProvTlsServer
 
     @Override
     protected boolean allowCertificateStatus()
+    {
+        return provServerEnableStatusRequest;
+    }
+
+    @Override
+    protected boolean allowMultiCertStatus()
     {
         return provServerEnableStatusRequest;
     }
@@ -291,22 +297,63 @@ class ProvTlsServer
             }
         }
 
+        /*
+         * TODO[tls13] RFC 8446 4.4.2.1. A server MAY request that a client present an OCSP response
+         * with its certificate by sending an empty "status_request" extension in its
+         * CertificateRequest message.
+         */
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
 
     @Override
     public CertificateStatus getCertificateStatus() throws IOException
     {
-        // TODO[jsse] Support providing OCSP CertificateStatus
-//        if (CertificateStatusType.ocsp == certificateStatusRequest.getStatusType())
+        // TODO[jsse] Support status_request and status_request_v2 extensions
+//        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+//        int statusRequestVersion = securityParameters.getStatusRequestVersion();
+//
+//        if (statusRequestVersion == 2)
 //        {
-//            OCSPStatusRequest ocspStatusRequest = certificateStatusRequest.getOCSPStatusRequest();
+//            int count = statusRequestV2.size();
+//            for (int i = 0; i < count; ++i)
+//            {
+//                CertificateStatusRequestItemV2 item = (CertificateStatusRequestItemV2)statusRequestV2.get(i);
+//                short statusType = item.getStatusType();
+//                if (CertificateStatusType.ocsp_multi == statusType)
+//                {
+//                    int chainLength = credentials.getCertificate().getLength();
+//                    Vector ocspResponseList = new Vector(chainLength);
+//                    for (int j = 0; j < chainLength; ++j)
+//                    {
+//                        // TODO Actual OCSP response
+//                        ocspResponseList.add(null);
+//                    }
 //
-//            @SuppressWarnings("unchecked")
-//            Vector<ResponderID> responderIDList = ocspStatusRequest.getResponderIDList();
-//            Extensions requestExtensions = ocspStatusRequest.getRequestExtensions();
+//                    return new CertificateStatus(CertificateStatusType.ocsp_multi, ocspResponseList);
+//                }
+//                else if (CertificateStatusType.ocsp == statusType)
+//                {
+//                    // TODO Actual OCSP response
+//                    OCSPResponse ocspResponse;
 //
-//            X509Certificate eeCert = JsseUtils.getEndEntity(getCrypto(), credentials.getCertificate());
+//                    return new CertificateStatus(CertificateStatusType.ocsp, ocspResponse);
+//                }
+//            }
+//        }
+//        else if (statusRequestVersion == 1)
+//        {
+//            if (CertificateStatusType.ocsp == certificateStatusRequest.getStatusType())
+//            {
+//                OCSPStatusRequest ocspStatusRequest = certificateStatusRequest.getOCSPStatusRequest();
+//
+//                @SuppressWarnings("unchecked")
+//                Vector<ResponderID> responderIDList = ocspStatusRequest.getResponderIDList();
+//                Extensions requestExtensions = ocspStatusRequest.getRequestExtensions();
+//
+//                X509Certificate eeCert = JsseUtils.getEndEntity(getCrypto(), credentials.getCertificate());
+//
+//                // ...
+//            }
 //        }
 
         return null;
