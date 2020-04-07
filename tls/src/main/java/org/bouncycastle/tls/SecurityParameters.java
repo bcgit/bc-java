@@ -48,6 +48,7 @@ public class SecurityParameters
     Certificate localCertificate = null;
     Certificate peerCertificate = null;
     ProtocolVersion negotiatedVersion = null;
+    int statusRequestVersion = 0;
 
     // TODO[tls-ops] Investigate whether we can handle verify data using TlsSecret
     byte[] localVerifyData = null;
@@ -63,6 +64,7 @@ public class SecurityParameters
         this.clientSupportedGroups = null;
         this.serverSigAlgs = null;
         this.serverSigAlgsCert = null;
+        this.statusRequestVersion = 0;
 
         this.earlySecret = clearSecret(earlySecret);
         this.handshakeSecret = clearSecret(handshakeSecret);
@@ -290,6 +292,11 @@ public class SecurityParameters
     public ProtocolVersion getNegotiatedVersion()
     {
         return negotiatedVersion;
+    }
+
+    public int getStatusRequestVersion()
+    {
+        return statusRequestVersion;
     }
 
     private static TlsSecret clearSecret(TlsSecret secret)
