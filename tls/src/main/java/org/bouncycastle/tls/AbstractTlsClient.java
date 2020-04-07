@@ -109,6 +109,14 @@ public abstract class AbstractTlsClient
         return new CertificateStatusRequest(CertificateStatusType.ocsp, new OCSPStatusRequest(null, null));
     }
 
+    /**
+     * @return a {@link Vector} of {@link CertificateStatusRequestItemV2} (or null).
+     */
+    protected Vector getMultiCertStatusRequest()
+    {
+        return null;
+    }
+
     protected Vector getSNIServerNames()
     {
         return null;
@@ -241,6 +249,15 @@ public abstract class AbstractTlsClient
         if (statusRequest != null)
         {
             TlsExtensionsUtils.addStatusRequestExtension(clientExtensions, statusRequest);
+        }
+
+        if (offeringPreTLSv13)
+        {
+            Vector statusRequestV2 = getMultiCertStatusRequest();
+            if (statusRequestV2 != null)
+            {
+                TlsExtensionsUtils.addStatusRequestV2Extension(clientExtensions, statusRequestV2);
+            }
         }
 
         ProtocolVersion clientVersion = context.getClientVersion();

@@ -105,6 +105,11 @@ class SignatureSchemeInfo
         return name;
     }
 
+    int getNamedGroup()
+    {
+        return SignatureScheme.getNamedGroup(signatureScheme);
+    }
+
     short getSignatureAlgorithm()
     {
         return SignatureScheme.getSignatureAlgorithm(signatureScheme);
