@@ -71,6 +71,11 @@ public class Certificate
         return certificateList[index];
     }
 
+    public short getCertificateType()
+    {
+        return CertificateType.X509;
+    }
+
     public int getLength()
     {
         return certificateList.length;
@@ -109,10 +114,11 @@ public class Certificate
             TlsUtils.writeOpaque8(certificateRequestContext, messageOutput);
         }
 
-        Vector derEncodings = new Vector(this.certificateList.length);
+        int count = certificateList.length;
+        Vector derEncodings = new Vector(count);
 
-        int totalLength = 0;
-        for (int i = 0; i < this.certificateList.length; ++i)
+        long totalLength = 0;
+        for (int i = 0; i < count; ++i)
         {
             TlsCertificate cert = certificateList[i];
             byte[] derEncoding = cert.getEncoded();
@@ -123,7 +129,8 @@ public class Certificate
             }
 
             derEncodings.addElement(derEncoding);
-            totalLength += derEncoding.length + 3;
+            totalLength += derEncoding.length;
+            totalLength += 3;
 
             if (isTLSv13)
             {
@@ -133,9 +140,9 @@ public class Certificate
         }
 
         TlsUtils.checkUint24(totalLength);
-        TlsUtils.writeUint24(totalLength, messageOutput);
+        TlsUtils.writeUint24((int)totalLength, messageOutput);
 
-        for (int i = 0; i < derEncodings.size(); ++i)
+        for (int i = 0; i < count; ++i)
         {
             byte[] derEncoding = (byte[])derEncodings.elementAt(i);
             TlsUtils.writeOpaque24(derEncoding, messageOutput);

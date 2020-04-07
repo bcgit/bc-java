@@ -300,13 +300,20 @@ public class TlsServerProtocol
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
-            /*
-             * TODO It's surprising that there's no provision to allow a 'fresh' CertificateStatus to be sent in
-             * a session resumption handshake.
-             */
-            this.allowCertificateStatus = !resumedSession
-                && TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request,
-                    AlertDescription.internal_error);
+            if (!resumedSession)
+            {
+                // TODO[tls13] See RFC 8446 4.4.2.1
+                if (TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request_v2,
+                    AlertDescription.internal_error))
+                {
+                    securityParameters.statusRequestVersion = 2;
+                }
+                else if (TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request,
+                    AlertDescription.internal_error))
+                {
+                    securityParameters.statusRequestVersion = 1;
+                }
+            }
 
             this.expectSessionTicket = !resumedSession
                 && TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsProtocol.EXT_SessionTicket,
@@ -581,11 +588,11 @@ public class TlsServerProtocol
                     // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
                     if (null == serverCertificate || serverCertificate.isEmpty())
                     {
-                        this.allowCertificateStatus = false;
+                        securityParameters.statusRequestVersion = 0;
                     }
                 }
 
-                if (this.allowCertificateStatus)
+                if (securityParameters.getStatusRequestVersion() > 0)
                 {
                     CertificateStatus certificateStatus = tlsServer.getCertificateStatus();
                     if (certificateStatus != null)
@@ -1154,6 +1161,7 @@ public class TlsServerProtocol
         throws IOException
     {
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate_status);
+        // TODO[tls13] Ensure this cannot happen for (D)TLS1.3+
         certificateStatus.encode(message);
         message.send(this);
     }
