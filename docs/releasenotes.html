@@ -27,6 +27,12 @@ Release: 1.66<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, TBD.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>EdDSA verifiers now reset correctly after rejecting overly long signatures.</li>
+<li>BCJSSE: SSLSession.getPeerCertificateChain could throw NullPointerException. This has been fixed.</li>
+<li>qTESLA-I verifier would reject some valid signatures. This has been fixed.</li>
+<li>qTESLA verifiers now reject overly long signatures.</li>
+<li>PGP regression caused failure to preserve existing version header when headers were reset. This has now been fixed.</li>
+<li>PKIXNameConstraintValidator had a bad cast preventing use of multiple OtherName constraints. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
