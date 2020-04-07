@@ -118,6 +118,7 @@ public class TrustedAuthority
             byte[] derEncoding = TlsUtils.readOpaque16(input, 1);
             ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
             identifier = X500Name.getInstance(asn1);
+            break;
         }
         default:
             throw new TlsFatalAlert(AlertDescription.decode_error);
