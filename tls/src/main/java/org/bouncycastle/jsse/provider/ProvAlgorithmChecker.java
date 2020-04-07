@@ -172,7 +172,7 @@ class ProvAlgorithmChecker
 
         for (int i = taPos - 1; i >= 0; --i)
         {
-            algorithmChecker.check(chain[i]);
+            algorithmChecker.check(chain[i], Collections.<String> emptySet());
         }
 
         X509Certificate eeCert = chain[0];
