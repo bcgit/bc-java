@@ -73,6 +73,25 @@ public class SignatureScheme
         }
     }
 
+    /**
+     * For TLS 1.3+ usage, some signature schemes are constrained to use a particular
+     * ({@link NamedGroup}. Not relevant for TLS 1.2 and below.
+     */
+    public static int getNamedGroup(int signatureScheme)
+    {
+        switch (signatureScheme)
+        {
+        case ecdsa_secp256r1_sha256:
+            return NamedGroup.secp256r1;
+        case ecdsa_secp384r1_sha384:
+            return NamedGroup.secp384r1;
+        case ecdsa_secp521r1_sha512:
+            return NamedGroup.secp521r1;
+        default:
+            return -1;
+        }
+    }
+
     public static short getRSAPSSHashAlgorithm(int signatureScheme)
     {
         switch (signatureScheme)
