@@ -168,6 +168,11 @@ public abstract class AbstractTlsClient
         return null;
     }
 
+    protected Vector getTrustedCAIndication()
+    {
+        return null;
+    }
+
     public void init(TlsClientContext context)
     {
         this.context = context;
@@ -257,6 +262,12 @@ public abstract class AbstractTlsClient
             if (statusRequestV2 != null)
             {
                 TlsExtensionsUtils.addStatusRequestV2Extension(clientExtensions, statusRequestV2);
+            }
+
+            Vector trustedCAKeys = getTrustedCAIndication();
+            if (trustedCAKeys != null)
+            {
+                TlsExtensionsUtils.addTrustedCAKeysExtensionClient(clientExtensions, trustedCAKeys);
             }
         }
 
