@@ -7,9 +7,8 @@ import org.bouncycastle.util.Pack;
 
 class QTesla3p
 {
-
     private static final int PARAM_N = 2048;
-    private static final double PARAM_SIGMA = 8.5;
+//    private static final double PARAM_SIGMA = 8.5;
     private static final int PARAM_Q = 856145921;
     private static final int PARAM_Q_LOG = 30;
     private static final long PARAM_QINV = 587710463;
@@ -17,9 +16,9 @@ class QTesla3p
     private static final int PARAM_BARR_DIV = 32;
     private static final int PARAM_B = 2097151;
     private static final int PARAM_B_BITS = 21;
-    private static final int PARAM_S_BITS = 8;
+//    private static final int PARAM_S_BITS = 8;
     private static final int PARAM_K = 5;
-    private static final double PARAM_SIGMA_E = PARAM_SIGMA;
+//    private static final double PARAM_SIGMA_E = PARAM_SIGMA;
     private static final int PARAM_H = 40;
     private static final int PARAM_D = 24;
     private static final int PARAM_GEN_A = 180;
@@ -28,31 +27,26 @@ class QTesla3p
     private static final int PARAM_KEYGEN_BOUND_S = 901;
     private static final int PARAM_S = PARAM_KEYGEN_BOUND_S;
     private static final int PARAM_R2_INVN = 513161157;
-    private static final int PARAM_R = 14237691;
-
+//    private static final int PARAM_R = 14237691;
 
     private static final int CRYPTO_RANDOMBYTES = 32;
     private static final int CRYPTO_SEEDBYTES = 32;
     private static final int CRYPTO_C_BYTES = 32;
-    private static final int HM_BYTES = 64;
+    private static final int HM_BYTES = 40;
 
-    private static final int RADIX = 32;
+//    private static final int RADIX = 32;
     private static final int RADIX32 = 32;
 
 
     static final int CRYPTO_BYTES = ((PARAM_N * (PARAM_B_BITS + 1) + 7) / 8 + CRYPTO_C_BYTES);
     // Contains polynomial s and e, and seeds seed_a and seed_y
-    static final int CRYPTO_SECRETKEYBYTES = (1 * PARAM_N + 1 * PARAM_N * PARAM_K + 2 * CRYPTO_SEEDBYTES);
+    static final int CRYPTO_SECRETKEYBYTES = (1 * PARAM_N + 1 * PARAM_N * PARAM_K + 2 * CRYPTO_SEEDBYTES + HM_BYTES);
 
     // Contains seed_a and polynomials t
     static final int CRYPTO_PUBLICKEYBYTES = ((PARAM_Q_LOG * PARAM_N * PARAM_K + 7) / 8 + CRYPTO_SEEDBYTES);
 
-
-    static int generateKeyPair(
-
-        byte[] publicKey, byte[] privateKey, SecureRandom secureRandom)
+    static int generateKeyPair(byte[] publicKey, byte[] privateKey, SecureRandom secureRandom)
     {
-
         /* Initialize Domain Separator for Error Polynomial and Secret Polynomial */
         int nonce = 0;
 
@@ -69,16 +63,11 @@ class QTesla3p
         long[] s_ntt = new long[PARAM_N];
 
         /* Get randomnessExtended <- seedErrorPolynomial, seedSecretPolynomial, seedA, seedY */
-        // this.rng.randomByte (randomness, (short) 0, Polynomial.RANDOM);
         secureRandom.nextBytes(randomness);
 
-
-        HashUtils.secureHashAlgorithmKECCAK256(randomnessExtended, 0, (PARAM_K + 3) * CRYPTO_SEEDBYTES, randomness, 0, CRYPTO_RANDOMBYTES);
-
-
-
-
-
+        HashUtils.secureHashAlgorithmKECCAK256(
+            randomnessExtended, 0, (PARAM_K + 3) * CRYPTO_SEEDBYTES,
+            randomness, 0, CRYPTO_RANDOMBYTES);
 
         /*
          * Sample the Error Polynomial Fulfilling the Criteria
@@ -95,7 +84,6 @@ class QTesla3p
             while (checkPolynomial(errorPolynomial, k * PARAM_N, PARAM_KEYGEN_BOUND_E));
         }
 
-
         /*
          * Sample the Secret Polynomial Fulfilling the Criteria
          * Choose Secret Polynomial in R with Entries from D_SIGMA
@@ -103,17 +91,12 @@ class QTesla3p
          */
         do
         {
-
             Gaussian.sample_gauss_poly(++nonce, randomnessExtended, PARAM_K * CRYPTO_SEEDBYTES, secretPolynomial, 0);
-
-            //Sample.polynomialGaussSamplerI(secretPolynomial, 0, randomnessExtended, Polynomial.SEED, ++nonce);
         }
         while (checkPolynomial(secretPolynomial, 0, PARAM_KEYGEN_BOUND_S));
 
-
         QTesla3PPolynomial.poly_uniform(A, randomnessExtended, (PARAM_K + 1) * CRYPTO_SEEDBYTES);
         QTesla3PPolynomial.poly_ntt(s_ntt, secretPolynomial);
-
 
         for (int k = 0; k < PARAM_K; k++)
         {
@@ -121,16 +104,12 @@ class QTesla3p
             QTesla3PPolynomial.poly_add_correct(T, k * PARAM_N, T, k * PARAM_N, errorPolynomial, k * PARAM_N);
         }
 
-
         /* Pack Public and Private Keys */
-
-        encodePrivateKey(privateKey, secretPolynomial, errorPolynomial, randomnessExtended, (PARAM_K + 1) * CRYPTO_SEEDBYTES);
         encodePublicKey(publicKey, T, randomnessExtended, (PARAM_K + 1) * CRYPTO_SEEDBYTES);
+        encodePrivateKey(privateKey, secretPolynomial, errorPolynomial, randomnessExtended, (PARAM_K + 1) * CRYPTO_SEEDBYTES, publicKey);
 
         return 0;
-
     }
-
 
     static int generateSignature(
         byte[] signature,
@@ -139,7 +118,7 @@ class QTesla3p
     {
         byte[] c = new byte[CRYPTO_C_BYTES];
         byte[] randomness = new byte[CRYPTO_SEEDBYTES];
-        byte[] randomness_input = new byte[CRYPTO_RANDOMBYTES + CRYPTO_SEEDBYTES + HM_BYTES];
+        byte[] randomness_input = new byte[CRYPTO_SEEDBYTES + CRYPTO_RANDOMBYTES + 2 * HM_BYTES];
         int[] pos_list = new int[PARAM_H];
         short[] sign_list = new short[PARAM_H];
         long[] y = new long[PARAM_N];
@@ -156,25 +135,25 @@ class QTesla3p
         int nonce = 0;  // Initialize domain separator for sampling y
         boolean rsp = false;
 
-        //  randombytes(randomness_input + CRYPTO_RANDOMBYTES, CRYPTO_RANDOMBYTES);
-        byte[] temporaryRandomnessInput = new byte[CRYPTO_RANDOMBYTES];
-        secureRandom.nextBytes(temporaryRandomnessInput);
-        System.arraycopy(temporaryRandomnessInput, 0, randomness_input, CRYPTO_RANDOMBYTES, CRYPTO_RANDOMBYTES);
-        // --
+        System.arraycopy(privateKey, CRYPTO_SECRETKEYBYTES - HM_BYTES - CRYPTO_SEEDBYTES, randomness_input, 0, CRYPTO_SEEDBYTES);
 
-
-        //  memcpy(randomness_input, &sk[CRYPTO_SECRETKEYBYTES - CRYPTO_SEEDBYTES], CRYPTO_SEEDBYTES);
-        System.arraycopy(privateKey, CRYPTO_SECRETKEYBYTES - CRYPTO_SEEDBYTES, randomness_input, 0, CRYPTO_SEEDBYTES);
-        // --
+        {
+            byte[] tmp = new byte[CRYPTO_RANDOMBYTES];
+            secureRandom.nextBytes(tmp);
+            System.arraycopy(tmp, 0, randomness_input, CRYPTO_SEEDBYTES, CRYPTO_RANDOMBYTES);
+        }
 
         HashUtils.secureHashAlgorithmKECCAK256(
-            randomness_input, CRYPTO_RANDOMBYTES + CRYPTO_SEEDBYTES, HM_BYTES, message, 0, messageLength);
+            randomness_input, CRYPTO_SEEDBYTES + CRYPTO_RANDOMBYTES, HM_BYTES,
+            message, 0, messageLength);
 
         HashUtils.secureHashAlgorithmKECCAK256(
-            randomness, 0, CRYPTO_SEEDBYTES, randomness_input, 0, CRYPTO_RANDOMBYTES + CRYPTO_SEEDBYTES + HM_BYTES);
+            randomness, 0, CRYPTO_SEEDBYTES,
+            randomness_input, 0, randomness_input.length - HM_BYTES);
 
+        System.arraycopy(privateKey, CRYPTO_SECRETKEYBYTES - HM_BYTES, randomness_input, randomness_input.length - HM_BYTES, HM_BYTES);
 
-        QTesla3PPolynomial.poly_uniform(a, privateKey, CRYPTO_SECRETKEYBYTES - 2 * CRYPTO_SEEDBYTES);
+        QTesla3PPolynomial.poly_uniform(a, privateKey, CRYPTO_SECRETKEYBYTES - HM_BYTES - 2 * CRYPTO_SEEDBYTES);
 
         while (true)
         {
@@ -186,7 +165,7 @@ class QTesla3p
                 QTesla3PPolynomial.poly_mul(v, k * PARAM_N, a, k * PARAM_N, y_ntt);
             }
 
-            hashFunction(c, 0, v, randomness_input, CRYPTO_RANDOMBYTES + CRYPTO_SEEDBYTES);
+            hashFunction(c, 0, v, randomness_input, CRYPTO_SEEDBYTES + CRYPTO_RANDOMBYTES);
             encodeC(pos_list, sign_list, c, 0);
 
             QTesla3PPolynomial.sparse_mul8(Sc, privateKey, pos_list, sign_list);
@@ -213,29 +192,25 @@ class QTesla3p
                 continue;
             }
 
-
             encodeSignature(signature, 0, c, 0, z);
             return 0;
-
         }
 
         // return 0;
     }
-
 
     static int verifying(
         byte[] message,
         final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey)
     {
-
-        byte c[] = new byte[CRYPTO_C_BYTES];
-        byte c_sig[] = new byte[CRYPTO_C_BYTES];
-        byte seed[] = new byte[CRYPTO_SEEDBYTES];
-        byte hm[] = new byte[HM_BYTES];
-        int pos_list[] = new int[PARAM_H];
-        short sign_list[] = new short[PARAM_H];
-        int pk_t[] = new int[PARAM_N * PARAM_K];
+        byte[] c = new byte[CRYPTO_C_BYTES];
+        byte[] c_sig = new byte[CRYPTO_C_BYTES];
+        byte[] seed = new byte[CRYPTO_SEEDBYTES];
+        byte[] hm = new byte[2 * HM_BYTES];
+        int[] pos_list = new int[PARAM_H];
+        short[] sign_list = new short[PARAM_H];
+        int[] pk_t = new int[PARAM_N * PARAM_K];
         long[] w = new long[PARAM_N * PARAM_K];
         long[] a = new long[PARAM_N * PARAM_K];
         long[] Tc = new long[PARAM_N * PARAM_K];
@@ -245,20 +220,26 @@ class QTesla3p
 
         int k = 0;
 
-        if (signatureLength < CRYPTO_BYTES)
+        if (signatureLength != CRYPTO_BYTES)
         {
             return -1;
         }
 
         decodeSignature(c, z, signature, signatureOffset);
-
         if (testZ(z))
         {
             return -2;
         }
-
-
         decodePublicKey(pk_t, seed, 0, publicKey);
+
+        // Get H(m) and hash_pk^M
+        HashUtils.secureHashAlgorithmKECCAK256(
+            hm, 0, HM_BYTES,
+            message, 0, message.length);
+        HashUtils.secureHashAlgorithmKECCAK256(
+            hm, HM_BYTES, HM_BYTES,
+            publicKey, 0, CRYPTO_PUBLICKEYBYTES - CRYPTO_SEEDBYTES);
+
         QTesla3PPolynomial.poly_uniform(a, seed, 0);
         encodeC(pos_list, sign_list, c, 0);
         QTesla3PPolynomial.poly_ntt(z_ntt, z);
@@ -270,9 +251,6 @@ class QTesla3p
             QTesla3PPolynomial.poly_sub(w, k * PARAM_N, w, k * PARAM_N, Tc, k * PARAM_N);
         }
 
-        HashUtils.secureHashAlgorithmKECCAK256(
-            hm, 0, HM_BYTES, message, 0, message.length
-        );
         hashFunction(c_sig, 0, w, hm, 0);
 
         if (!memoryEqual(c, 0, c_sig, 0, CRYPTO_C_BYTES))
@@ -283,10 +261,9 @@ class QTesla3p
         return 0;
     }
 
-
-    static void encodePrivateKey(byte[] privateKey, final long[] secretPolynomial, final long[] errorPolynomial, final byte[] seed, int seedOffset)
+    static void encodePrivateKey(byte[] privateKey, final long[] secretPolynomial, final long[] errorPolynomial,
+        final byte[] seed, int seedOffset, byte[] publicKey)
     {
-
         int i, k = 0;
         int skPtr = 0;
 
@@ -294,27 +271,32 @@ class QTesla3p
         {
             privateKey[skPtr + i] = (byte)secretPolynomial[i];
         }
-
         skPtr += PARAM_N;
+
         for (k = 0; k < PARAM_K; k++)
         {
             for (i = 0; i < PARAM_N; i++)
             {
                 privateKey[skPtr + (k * PARAM_N + i)] = (byte)errorPolynomial[k * PARAM_N + i];
-                //  System.out.printf("%d,   %x\n", skPtr + (k * PARAM_N + i), privateKey[skPtr + (k * PARAM_N + i)]);
             }
         }
+        skPtr += PARAM_K * PARAM_N;
 
-        System.arraycopy(seed, seedOffset, privateKey, skPtr + (PARAM_K * PARAM_N), CRYPTO_SEEDBYTES * 2);
+        System.arraycopy(seed, seedOffset, privateKey, skPtr, CRYPTO_SEEDBYTES * 2);
+        skPtr += CRYPTO_SEEDBYTES * 2;
 
+        /* Hash of the public key */
+        HashUtils.secureHashAlgorithmKECCAK256(
+            privateKey, skPtr, HM_BYTES,
+            publicKey, 0, CRYPTO_PUBLICKEYBYTES - CRYPTO_SEEDBYTES);
+        skPtr += HM_BYTES;
+
+//        assert CRYPTO_SECRETKEYBYTES == skPtr;
     }
-
 
     static void encodePublicKey(byte[] publicKey, final long[] T, final byte[] seedA, int seedAOffset)
     {
-
         int j = 0;
-
 
         for (int i = 0; i < (PARAM_N * PARAM_K * PARAM_Q_LOG / 32); i += 15)
         {
@@ -395,7 +377,6 @@ class QTesla3p
 
     }
 
-
     private static final int maskb1 = ((1 << (PARAM_B_BITS + 1)) - 1);
 
     static void encodeSignature(byte[] signature, int signatureOffset, byte[] C, int cOffset, long[] Z)
@@ -419,51 +400,55 @@ class QTesla3p
         }
 
         System.arraycopy(C, cOffset, signature, signatureOffset + PARAM_N * (PARAM_B_BITS + 1) / 8, CRYPTO_C_BYTES);
-
     }
-
 
     static void decodeSignature(byte[] C, long[] Z, final byte[] signature, int signatureOffset)
     {
-
         int j = 0;
         for (int i = 0; i < PARAM_N; i += 16)
         {
-            Z[i] = (at(signature, j, 0) << 10) >> 10;
-            Z[i + 1] = (at(signature, j, 0) >>> 22) | ((at(signature, j, 1) << 20) >> 10);
-            Z[i + 2] = (at(signature, j, 1) >>> 12) | ((at(signature, j, 2) << 30) >> 10);
-            Z[i + 3] = ((at(signature, j, 2) << 8) >> 10);
-            Z[i + 4] = (at(signature, j, 2) >>> 24) | ((at(signature, j, 3) << 18) >> 10);
-            Z[i + 5] = (at(signature, j, 3) >>> 14) | ((at(signature, j, 4) << 28) >> 10);
-            Z[i + 6] = ((at(signature, j, 4) << 6) >> 10);
-            Z[i + 7] = (at(signature, j, 4) >>> 26) | ((at(signature, j, 5) << 16) >> 10);
-            Z[i + 8] = (at(signature, j, 5) >>> 16) | ((at(signature, j, 6) << 26) >> 10);
-            Z[i + 9] = ((at(signature, j, 6) << 4) >> 10);
-            Z[i + 10] = (at(signature, j, 6) >>> 28) | ((at(signature, j, 7) << 14) >> 10);
-            Z[i + 11] = (at(signature, j, 7) >>> 18) | ((at(signature, j, 8) << 24) >> 10);
-            Z[i + 12] = ((at(signature, j, 8) << 2) >> 10);
-            Z[i + 13] = (at(signature, j, 8) >>> 30) | ((at(signature, j, 9) << 12) >> 10);
-            Z[i + 14] = (at(signature, j, 9) >>> 20) | ((at(signature, j, 10) << 22) >> 10);
-            Z[i + 15] = (at(signature, j, 10) >> 10);
+            int s0 = at(signature, j, 0);
+            int s1 = at(signature, j, 1);
+            int s2 = at(signature, j, 2);
+            int s3 = at(signature, j, 3);
+            int s4 = at(signature, j, 4);
+            int s5 = at(signature, j, 5);
+            int s6 = at(signature, j, 6);
+            int s7 = at(signature, j, 7);
+            int s8 = at(signature, j, 8);
+            int s9 = at(signature, j, 9);
+            int s10 = at(signature, j, 10);
 
+            Z[i] = (s0 << 10) >> 10;
+            Z[i + 1] = (s0 >>> 22) | ((s1 << 20) >> 10);
+            Z[i + 2] = (s1 >>> 12) | ((s2 << 30) >> 10);
+            Z[i + 3] = ((s2 << 8) >> 10);
+            Z[i + 4] = (s2 >>> 24) | ((s3 << 18) >> 10);
+            Z[i + 5] = (s3 >>> 14) | ((s4 << 28) >> 10);
+            Z[i + 6] = ((s4 << 6) >> 10);
+            Z[i + 7] = (s4 >>> 26) | ((s5 << 16) >> 10);
+            Z[i + 8] = (s5 >>> 16) | ((s6 << 26) >> 10);
+            Z[i + 9] = ((s6 << 4) >> 10);
+            Z[i + 10] = (s6 >>> 28) | ((s7 << 14) >> 10);
+            Z[i + 11] = (s7 >>> 18) | ((s8 << 24) >> 10);
+            Z[i + 12] = ((s8 << 2) >> 10);
+            Z[i + 13] = (s8 >>> 30) | ((s9 << 12) >> 10);
+            Z[i + 14] = (s9 >>> 20) | ((s10 << 22) >> 10);
+            Z[i + 15] = (s10 >> 10);
             j += 11;
         }
         System.arraycopy(signature, signatureOffset + PARAM_N * (PARAM_B_BITS + 1) / 8, C, 0, CRYPTO_C_BYTES);
-
-
     }
-
 
     static void encodeC(int[] positionList, short[] signList, byte[] output, int outputOffset)
     {
-
         int count = 0;
         int position;
         short domainSeparator = 0;
         short[] C = new short[PARAM_N];
         byte[] randomness = new byte[HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE];
 
-        /* Use the Hash Value as Key to Generate Some Randomness */
+        // Enc: the XOF is instantiated with cSHAKE128 (see Algorithm 14).
         HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
             randomness, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE,
             domainSeparator++,
@@ -478,10 +463,9 @@ class QTesla3p
          */
         for (int i = 0; i < PARAM_H; )
         {
-
             if (count > HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE - 3)
             {
-
+                // Enc: the XOF is instantiated with cSHAKE128 (see Algorithm 14).
                 HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
                     randomness, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE,
                     domainSeparator++,
@@ -489,7 +473,6 @@ class QTesla3p
                 );
 
                 count = 0;
-
             }
 
             position = (randomness[count] << 8) | (randomness[count + 1] & 0xFF);
@@ -500,40 +483,29 @@ class QTesla3p
              */
             if (C[position] == 0)
             {
-
                 if ((randomness[count + 2] & 1) == 1)
                 {
-
                     C[position] = -1;
-
                 }
                 else
                 {
-
                     C[position] = 1;
-
                 }
 
                 positionList[i] = position;
                 signList[i] = C[position];
                 i++;
-
             }
 
             count += 3;
-
         }
-
     }
 
-
-    private static void hashFunction(byte[] output, int outputOffset, long[] v, final byte[] message, int messageOffset) //, int n, int d, int q)
+    private static void hashFunction(byte[] output, int outputOff, long[] v, byte[] hm, int hmOff)
     {
+        int mask, cL;
 
-        int mask;
-        int cL;
-
-        byte[] T = new byte[PARAM_K * PARAM_N + HM_BYTES];
+        byte[] T = new byte[PARAM_K * PARAM_N + 2 * HM_BYTES];
 
         for (int k = 0; k < PARAM_K; k++)
         {
@@ -552,11 +524,12 @@ class QTesla3p
                 T[index++] = (byte)((temp - cL) >> PARAM_D);
             }
         }
-        System.arraycopy(message, messageOffset, T, PARAM_N * PARAM_K, HM_BYTES);
-        HashUtils.secureHashAlgorithmKECCAK256(output, outputOffset, CRYPTO_C_BYTES, T, 0, PARAM_K * PARAM_N + HM_BYTES);
+        System.arraycopy(hm, hmOff, T, PARAM_K * PARAM_N, 2 * HM_BYTES);
 
+        HashUtils.secureHashAlgorithmKECCAK256(
+            output, outputOff, CRYPTO_C_BYTES,
+            T, 0, T.length);
     }
-
 
     static int lE24BitToInt(byte[] bs, int off)
     {
@@ -1178,7 +1151,7 @@ class QTesla3p
             byte[] buf = new byte[HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * PARAM_GEN_A];
             short dmsp = 0;
 
-
+            // GenA: the XOF is instantiated with cSHAKE128 (see Algorithm 10).
             HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
                 buf, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * PARAM_GEN_A,
                 dmsp++,
@@ -1192,6 +1165,7 @@ class QTesla3p
                 {
                     nblocks = 1;
 
+                    // GenA: the XOF is instantiated with cSHAKE128 (see Algorithm 10).
                     HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
                         buf, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * PARAM_GEN_A,
                         dmsp++,
