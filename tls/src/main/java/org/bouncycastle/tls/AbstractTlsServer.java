@@ -28,6 +28,7 @@ public abstract class AbstractTlsServer
     protected boolean clientSentECPointFormats;
     protected CertificateStatusRequest certificateStatusRequest;
     protected Vector statusRequestV2;
+    protected Vector trustedCAKeys;
 
     protected int selectedCipherSuite;
     protected Vector clientProtocolNames;
@@ -55,6 +56,11 @@ public abstract class AbstractTlsServer
     }
 
     protected boolean allowTruncatedHMac()
+    {
+        return false;
+    }
+
+    protected boolean allowTrustedCAIndication()
     {
         return false;
     }
@@ -334,8 +340,10 @@ public abstract class AbstractTlsServer
             // We only support uncompressed format, this is just to validate the extension, and note its presence.
             this.clientSentECPointFormats = (null != TlsExtensionsUtils.getSupportedPointFormatsExtension(clientExtensions));
 
+            // TODO[tls13] These three extensions need review
             this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
             this.statusRequestV2 = TlsExtensionsUtils.getStatusRequestV2Extension(clientExtensions);
+            this.trustedCAKeys = TlsExtensionsUtils.getTrustedCAKeysExtensionClient(clientExtensions);
         }
     }
 
@@ -464,6 +472,11 @@ public abstract class AbstractTlsServer
              * the extended server hello.
              */
             TlsExtensionsUtils.addEmptyExtensionData(checkServerExtensions(), TlsExtensionsUtils.EXT_status_request);
+        }
+
+        if (null != this.trustedCAKeys && allowTrustedCAIndication())
+        {
+            TlsExtensionsUtils.addTrustedCAKeysExtensionServer(checkServerExtensions());
         }
 
         return serverExtensions;
