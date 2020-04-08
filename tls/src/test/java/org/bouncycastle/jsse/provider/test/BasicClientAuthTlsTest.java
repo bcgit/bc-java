@@ -7,7 +7,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
 
@@ -32,14 +31,7 @@ public class BasicClientAuthTlsTest
 {
     protected void setUp()
     {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null)
-        {
-            Security.addProvider(new BouncyCastleJsseProvider());
-        }
+        TestUtils.setupProvidersLowPriority();
     }
 
     private static final String HOST = "localhost";
