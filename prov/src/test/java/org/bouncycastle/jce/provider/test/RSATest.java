@@ -641,6 +641,11 @@ public class RSATest
             fail("private key hashCode check failed");
         }
 
+        if (!Arrays.areEqual(privKey.getEncoded(), crtKey.getEncoded()))
+        {
+            fail("encoding does not match");
+        }
+
         RSAPublicKey copyKey = (RSAPublicKey)keyFact.translateKey(pubKey);
         
         if (!pubKey.equals(copyKey))
@@ -752,6 +757,10 @@ public class RSATest
         privateKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
 
         isTrue("RSASSA-PSS".equals(privateKey.getAlgorithm()));
+
+        privateKey = (PrivateKey)serializeDeserialize(kp.getPrivate());
+
+        isTrue(Arrays.areEqual(kp.getPrivate().getEncoded(), privateKey.getEncoded()));
 
         SubjectPublicKeyInfo subKey = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
 
