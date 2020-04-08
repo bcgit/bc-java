@@ -159,14 +159,14 @@ class ProvSSLEngine
     public ProvX509Key chooseClientKey(String[] keyTypes, Principal[] issuers)
     {
         X509ExtendedKeyManager x509KeyManager = getContextData().getX509KeyManager();
-        String alias = x509KeyManager.chooseEngineClientAlias(keyTypes, issuers, this);
+        String alias = x509KeyManager.chooseEngineClientAlias(keyTypes, JsseUtils.clone(issuers), this);
         return ProvX509Key.from(x509KeyManager, alias);
     }
 
     public ProvX509Key chooseServerKey(String keyType, Principal[] issuers)
     {
         X509ExtendedKeyManager x509KeyManager = getContextData().getX509KeyManager();
-        String alias = x509KeyManager.chooseEngineServerAlias(keyType, issuers, this);
+        String alias = x509KeyManager.chooseEngineServerAlias(keyType, JsseUtils.clone(issuers), this);
         return ProvX509Key.from(x509KeyManager, alias);
     }
 
