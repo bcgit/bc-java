@@ -144,7 +144,16 @@ public class BCRSAPrivateKey
         throws IOException, ClassNotFoundException
     {
         in.defaultReadObject();
-        
+
+        try
+        {
+            algorithmIdentifier = AlgorithmIdentifier.getInstance(in.readObject());
+        }
+        catch (Exception e)
+        {
+            algorithmIdentifier = BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER;
+        }
+
         this.attrCarrier = new PKCS12BagAttributeCarrierImpl();
         this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
     }
@@ -154,6 +163,11 @@ public class BCRSAPrivateKey
         throws IOException
     {
         out.defaultWriteObject();
+
+        if (!algorithmIdentifier.equals(BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER))
+        {
+            out.writeObject(algorithmIdentifier.getEncoded());
+        }
     }
 
     public String toString()
