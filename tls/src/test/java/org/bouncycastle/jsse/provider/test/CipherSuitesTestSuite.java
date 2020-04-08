@@ -2,14 +2,11 @@ package org.bouncycastle.jsse.provider.test;
 
 import java.security.KeyPair;
 import java.security.KeyStore;
-import java.security.Provider;
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 import junit.framework.Test;
@@ -26,18 +23,7 @@ public class CipherSuitesTestSuite
     public static Test suite()
         throws Exception
     {
-        String javaVersion = System.getProperty("java.version");
-        boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
-
-        Provider bc = new BouncyCastleProvider();
-        Provider bcjsse = oldJDK ? new BouncyCastleJsseProvider(bc) : new BouncyCastleJsseProvider();
-
-        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
-        Security.insertProviderAt(bc, 1);
-
-        Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
-        Security.insertProviderAt(bcjsse, 2);
-
+        TestUtils.setupProvidersHighPriority();
 
         CipherSuitesTestSuite testSuite = new CipherSuitesTestSuite();
 
