@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.DHUPrivateParameters;
 import org.bouncycastle.crypto.params.DHUPublicParameters;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -41,8 +40,10 @@ public class DHUnifiedAgreement
 
         BigInteger eComp = eAgree.calculateAgreement(pubParams.getEphemeralPublicKey());
 
-        return Arrays.concatenate(
-            BigIntegers.asUnsignedByteArray(this.getFieldSize(), eComp),
-            BigIntegers.asUnsignedByteArray(this.getFieldSize(), sComp));
+        int fieldSize = getFieldSize();
+        byte[] result = new byte[fieldSize * 2];
+        BigIntegers.asUnsignedByteArray(eComp, result, 0, fieldSize);
+        BigIntegers.asUnsignedByteArray(sComp, result, fieldSize, fieldSize);
+        return result;
     }
 }
