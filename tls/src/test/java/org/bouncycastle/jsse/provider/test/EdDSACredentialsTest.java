@@ -5,7 +5,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
 
@@ -18,9 +17,10 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+
+import junit.framework.TestCase;
 
 public class EdDSACredentialsTest
     extends TestCase
@@ -30,14 +30,7 @@ public class EdDSACredentialsTest
 
     protected void setUp()
     {
-        if (Security.getProvider(PROV_NAME_BC) == null)
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-        if (Security.getProvider(PROV_NAME_BCJSSE) == null)
-        {
-            Security.addProvider(new BouncyCastleJsseProvider());
-        }
+        TestUtils.setupProvidersLowPriority();
     }
 
     private static final String HOST = "localhost";

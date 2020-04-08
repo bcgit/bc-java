@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -16,7 +15,6 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 /**
@@ -28,11 +26,7 @@ public class BCJSSEClientTest
     public static void main(String[] args)
         throws Exception
     {
-        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
-        Security.insertProviderAt(new BouncyCastleProvider(), 1);
-
-        Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
-        Security.insertProviderAt(new BouncyCastleJsseProvider(), 2);
+        TestUtils.setupProvidersHighPriority();
 
         /*
          * TEST CODE ONLY. If writing your own code based on this test case, you should configure
