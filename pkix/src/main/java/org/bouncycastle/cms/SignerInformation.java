@@ -94,7 +94,7 @@ public class SignerInformation
     /**
      * Protected constructor. In some cases clients have their own idea about how to encode
      * the signed attributes and calculate the signature. This constructor is to allow developers
-     * to deal with that by extending off the class and overridng methods like getSignedAttributes().
+     * to deal with that by extending off the class and overriding methods like getSignedAttributes().
      *
      * @param baseInfo the SignerInformation to base this one on.
      */
