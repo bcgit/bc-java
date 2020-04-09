@@ -246,7 +246,8 @@ class SignatureSchemeInfo
     }
 
     private static void addSignatureScheme(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss,
-        int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm)
+        int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm, boolean supported13,
+        boolean supportedCerts13)
     {
         boolean enabled = crypto.hasSignatureScheme(signatureScheme);
 
@@ -265,7 +266,7 @@ class SignatureSchemeInfo
         }
 
         SignatureSchemeInfo signatureSchemeInfo = new SignatureSchemeInfo(signatureScheme, name, jcaSignatureAlgorithm,
-            keyAlgorithm, algorithmParameters, enabled);
+            keyAlgorithm, algorithmParameters, supported13, supportedCerts13, enabled);
 
         if (null != ss.put(signatureScheme, signatureSchemeInfo))
         {
@@ -278,21 +279,21 @@ class SignatureSchemeInfo
     {
         String name = SignatureScheme.getName(signatureScheme);
 
-        addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm);
+        addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, true, true);
     }
 
     private static void addSignatureSchemeHistorical(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String name, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
-        // TODO[tls13] Historical schemes can no longer be used
-        addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm);
+        addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false, false);
     }
 
     private static void addSignatureSchemeLegacy(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String jcaSignatureAlgorithm, String keyAlgorithm)
     {
-        // TODO[tls13] Legacy schemes can still be used for certificate signatures only
-        addSignatureScheme(crypto, ss, signatureScheme, jcaSignatureAlgorithm, keyAlgorithm);
+        String name = SignatureScheme.getName(signatureScheme);
+
+        addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false, true);
     }
 
     private final int signatureScheme;
@@ -300,10 +301,12 @@ class SignatureSchemeInfo
     private final String jcaSignatureAlgorithm;
     private final String keyAlgorithm;
     private final AlgorithmParameters algorithmParameters;
+    private final boolean supported13;
+    private final boolean supportedCerts13;
     private final boolean enabled;
 
     SignatureSchemeInfo(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm,
-        AlgorithmParameters algorithmParameters, boolean enabled)
+        AlgorithmParameters algorithmParameters, boolean supported13, boolean supportedCerts13, boolean enabled)
     {
         if (!TlsUtils.isValidUint16(signatureScheme))
         {
@@ -315,6 +318,8 @@ class SignatureSchemeInfo
         this.jcaSignatureAlgorithm = jcaSignatureAlgorithm;
         this.keyAlgorithm = keyAlgorithm;
         this.algorithmParameters = algorithmParameters;
+        this.supported13 = supported13;
+        this.supportedCerts13 = supportedCerts13;
         this.enabled = enabled;
     }
 
@@ -381,6 +386,16 @@ class SignatureSchemeInfo
             && algorithmConstraints.permits(primitives, keyAlgorithm, null)
             && algorithmConstraints.permits(primitives, jcaSignatureAlgorithm, algorithmParameters);
             // TODO[tls13] Some schemes have a specific NamedGroup, check permission if TLS 1.3+
+    }
+
+    boolean isSupported13()
+    {
+        return supported13;
+    }
+
+    boolean isSupportedCerts13()
+    {
+        return supportedCerts13;
     }
 
     @Override
