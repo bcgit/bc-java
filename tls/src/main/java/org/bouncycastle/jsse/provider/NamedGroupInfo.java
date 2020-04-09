@@ -42,8 +42,7 @@ class NamedGroupInfo
 
         final boolean disableFFDHE = !PropertyUtils.getBooleanSystemProperty("jsse.enableFFDHE", true);
 
-        // TODO[tls13] Historical curves
-        addNamedGroups(isFipsContext, crypto, ng, "EC", disableChar2,
+        addNamedGroups(isFipsContext, crypto, ng, "EC", false, disableChar2,
             NamedGroup.sect163k1,
             NamedGroup.sect163r1,
             NamedGroup.sect163r2,
@@ -59,8 +58,7 @@ class NamedGroupInfo
             NamedGroup.sect571k1,
             NamedGroup.sect571r1);
 
-        // TODO[tls13] Historical curves
-        addNamedGroups(isFipsContext, crypto, ng, "EC", false,
+        addNamedGroups(isFipsContext, crypto, ng, "EC", false, false,
             NamedGroup.secp160k1,
             NamedGroup.secp160r1,
             NamedGroup.secp160r2,
@@ -68,21 +66,24 @@ class NamedGroupInfo
             NamedGroup.secp192r1,
             NamedGroup.secp224k1,
             NamedGroup.secp224r1,
-            NamedGroup.secp256k1,
-            NamedGroup.brainpoolP256r1,
-            NamedGroup.brainpoolP384r1,
-            NamedGroup.brainpoolP512r1);
+            NamedGroup.secp256k1);
 
-        addNamedGroups(isFipsContext, crypto, ng, "EC", false,
+        addNamedGroups(isFipsContext, crypto, ng, "EC", true, false,
             NamedGroup.secp256r1,
             NamedGroup.secp384r1,
             NamedGroup.secp521r1);
 
-        addNamedGroups(isFipsContext, crypto, ng, "XDH", false,
+        // TODO[tls13] Probably someone is going to want these enabled in TLSv13, despite RFC 8446
+        addNamedGroups(isFipsContext, crypto, ng, "EC", false, false,
+            NamedGroup.brainpoolP256r1,
+            NamedGroup.brainpoolP384r1,
+            NamedGroup.brainpoolP512r1);
+
+        addNamedGroups(isFipsContext, crypto, ng, "XDH", true, false,
             NamedGroup.x25519,
             NamedGroup.x448);
 
-        addNamedGroups(isFipsContext, crypto, ng, "DiffieHellman", disableFFDHE,
+        addNamedGroups(isFipsContext, crypto, ng, "DiffieHellman", true, disableFFDHE,
             NamedGroup.ffdhe2048,
             NamedGroup.ffdhe3072,
             NamedGroup.ffdhe4096,
@@ -146,7 +147,7 @@ class NamedGroupInfo
     }
 
     private static void addNamedGroup(boolean isFipsContext, JcaTlsCrypto crypto, Map<Integer, NamedGroupInfo> ng,
-        int namedGroup, String jcaAlgorithm, boolean disable)
+        int namedGroup, String jcaAlgorithm, boolean supported13, boolean disable)
     {
         if (isFipsContext && !FipsUtils.isFipsNamedGroup(namedGroup))
         {
@@ -169,7 +170,8 @@ class NamedGroupInfo
             }
         }
 
-        NamedGroupInfo namedGroupInfo = new NamedGroupInfo(namedGroup, jcaAlgorithm, algorithmParameters, enabled);
+        NamedGroupInfo namedGroupInfo = new NamedGroupInfo(namedGroup, jcaAlgorithm, algorithmParameters, supported13,
+            enabled);
 
         if (null != ng.put(namedGroup, namedGroupInfo))
         {
@@ -178,20 +180,22 @@ class NamedGroupInfo
     }
 
     private static void addNamedGroups(boolean isFipsContext, JcaTlsCrypto crypto, Map<Integer, NamedGroupInfo> ng,
-        String jcaAlgorithm, boolean disable, int... namedGroups)
+        String jcaAlgorithm, boolean supported13, boolean disable, int... namedGroups)
     {
         for (int namedGroup : namedGroups)
         {
-            addNamedGroup(isFipsContext, crypto, ng, namedGroup, jcaAlgorithm, disable);
+            addNamedGroup(isFipsContext, crypto, ng, namedGroup, jcaAlgorithm, supported13, disable);
         }
     }
 
     private final int namedGroup;
     private final String jcaAlgorithm;
     private final AlgorithmParameters algorithmParameters;
+    private final boolean supported13;
     private final boolean enabled;
 
-    NamedGroupInfo(int namedGroup, String jcaAlgorithm, AlgorithmParameters algorithmParameters, boolean enabled)
+    NamedGroupInfo(int namedGroup, String jcaAlgorithm, AlgorithmParameters algorithmParameters, boolean supported13,
+        boolean enabled)
     {
         if (!TlsUtils.isValidUint16(namedGroup))
         {
@@ -201,6 +205,7 @@ class NamedGroupInfo
         this.namedGroup = namedGroup;
         this.jcaAlgorithm = jcaAlgorithm;
         this.algorithmParameters = algorithmParameters;
+        this.supported13 = supported13;
         this.enabled = enabled;
     }
 
@@ -235,6 +240,11 @@ class NamedGroupInfo
 
         return algorithmConstraints.permits(primitives, getName(), null)
             && algorithmConstraints.permits(primitives, jcaAlgorithm, algorithmParameters);
+    }
+
+    boolean isSupported13()
+    {
+        return supported13;
     }
 
     @Override
