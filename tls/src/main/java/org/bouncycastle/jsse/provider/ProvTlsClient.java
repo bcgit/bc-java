@@ -169,16 +169,14 @@ class ProvTlsClient
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithms()
     {
-        ContextData contextData = manager.getContextData();
-
-        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveSignatureSchemes(sslParameters,
+        List<SignatureSchemeInfo> signatureSchemes = manager.getContextData().getActiveSignatureSchemes(sslParameters,
             getProtocolVersions());
 
         // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate this 
         jsseSecurityParameters.localSigSchemes = signatureSchemes;
         jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
 
-        return contextData.getSignatureAndHashAlgorithms(signatureSchemes);
+        return SignatureSchemeInfo.getSignatureAndHashAlgorithms(signatureSchemes);
     }
 
     @Override
