@@ -470,7 +470,12 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        securityParameters.clientRandom = TlsProtocol.createRandomBlock(state.client.shouldUseGMTUnixTime(), state.clientContext);
+        {
+            boolean useGMTUnixTime = ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(client_version)
+                && state.client.shouldUseGMTUnixTime();
+
+            securityParameters.clientRandom = TlsProtocol.createRandomBlock(useGMTUnixTime, state.clientContext);
+        }
 
         // Cipher Suites (and SCSV)
         {

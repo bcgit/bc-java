@@ -11,6 +11,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
@@ -21,6 +22,7 @@ import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.CertificateStatusRequestItemV2;
 import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.IdentifierType;
 import org.bouncycastle.tls.OCSPStatusRequest;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -35,6 +37,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.TrustedAuthority;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.IPAddress;
@@ -49,6 +52,9 @@ class ProvTlsClient
     private static final boolean provEnableSNIExtension = PropertyUtils.getBooleanSystemProperty("jsse.enableSNIExtension", true);
     private static final boolean provClientEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
         "jdk.tls.client.enableStatusRequestExtension", true);
+
+    private static final boolean provClientEnableTrustedCAKeys = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableTrustedCAKeysExtension", false);
 
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
@@ -163,16 +169,14 @@ class ProvTlsClient
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithms()
     {
-        ContextData contextData = manager.getContextData();
-
-        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveSignatureSchemes(sslParameters,
+        List<SignatureSchemeInfo> signatureSchemes = manager.getContextData().getActiveSignatureSchemes(sslParameters,
             getProtocolVersions());
 
         // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate this 
         jsseSecurityParameters.localSigSchemes = signatureSchemes;
         jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
 
-        return contextData.getSignatureAndHashAlgorithms(signatureSchemes);
+        return SignatureSchemeInfo.getSignatureAndHashAlgorithms(signatureSchemes);
     }
 
     @Override
@@ -185,6 +189,28 @@ class ProvTlsClient
     protected ProtocolVersion[] getSupportedVersions()
     {
         return manager.getContextData().getContext().getActiveProtocolVersions(sslParameters);
+    }
+
+    @Override
+    protected Vector<TrustedAuthority> getTrustedCAIndication()
+    {
+        if (provClientEnableTrustedCAKeys)
+        {
+            Vector<X500Name> certificateAuthorities = JsseUtils
+                .getCertificateAuthorities(manager.getContextData().getX509TrustManager());
+
+            if (null != certificateAuthorities)
+            {
+                Vector<TrustedAuthority> trustedCAKeys = new Vector<TrustedAuthority>(certificateAuthorities.size());
+                for (X500Name certificateAuthority : certificateAuthorities)
+                {
+                    trustedCAKeys.add(new TrustedAuthority(IdentifierType.x509_name, certificateAuthority));
+                }
+                return trustedCAKeys;
+            }
+        }
+
+        return null;
     }
 
     @Override
