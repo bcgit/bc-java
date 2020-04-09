@@ -562,7 +562,9 @@ class ProvX509KeyManager
                 return true;
             }
         }
-        return false;
+        X509Certificate eeCert = chain[0];
+        return eeCert.getBasicConstraints() >= 0
+            && uniqueIssuers.contains(eeCert.getSubjectX500Principal());
     }
 
     private static boolean isSuitableEECert(X509Certificate eeCert, List<String> keyTypes,

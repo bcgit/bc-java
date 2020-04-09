@@ -1,7 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
@@ -27,6 +26,7 @@ import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCStandardConstants;
+import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.AlertDescription;
@@ -35,6 +35,7 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateStatus;
 import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.ClientCertificateType;
+import org.bouncycastle.tls.IdentifierType;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -47,6 +48,7 @@ import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.TrustedAuthority;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
@@ -239,6 +241,30 @@ abstract class JsseUtils
         }
     }
 
+    static Vector<X500Name> getCertificateAuthorities(BCX509ExtendedTrustManager x509TrustManager)
+    {
+        Set<X500Principal> caSubjects = new HashSet<X500Principal>();
+        for (X509Certificate caCert : x509TrustManager.getAcceptedIssuers())
+        {
+            if (caCert.getBasicConstraints() >= 0)
+            {
+                caSubjects.add(caCert.getSubjectX500Principal());
+            }
+        }
+
+        if (caSubjects.isEmpty())
+        {
+            return null;
+        }
+
+        Vector<X500Name> certificateAuthorities = new Vector<X500Name>(caSubjects.size());
+        for (X500Principal caSubject : caSubjects)
+        {
+            certificateAuthorities.add(X500Name.getInstance(caSubject.getEncoded()));
+        }
+        return certificateAuthorities;
+    }
+
     static Certificate getCertificateMessage(JcaTlsCrypto crypto, X509Certificate[] chain)
     {
         if (chain == null || chain.length < 1)
@@ -382,6 +408,29 @@ abstract class JsseUtils
         return null;
     }
 
+    static X500Principal[] getTrustedIssuers(Vector<TrustedAuthority> trustedCAKeys) throws IOException
+    {
+        if (null == trustedCAKeys || trustedCAKeys.isEmpty())
+        {
+            return null;
+        }
+
+        int count = trustedCAKeys.size();
+        X500Principal[] principals = new X500Principal[count];
+        for (int i = 0; i < count; ++i)
+        {
+            TrustedAuthority trustedAuthority = (TrustedAuthority)trustedCAKeys.get(i);
+            if (IdentifierType.x509_name != trustedAuthority.getIdentifierType())
+            {
+                // TODO We currently only support the trusted_ca_keys extension if EVERY entry is an x509_name
+                return null;
+            }
+
+            principals[i] = toX500Principal(trustedAuthority.getX509Name());
+        }
+        return principals;
+    }
+
     static X509Certificate getX509Certificate(JcaTlsCrypto crypto, TlsCertificate tlsCertificate) throws IOException
     {
         return JcaTlsCertificate.convert(crypto, tlsCertificate).getX509Certificate();
@@ -516,9 +565,14 @@ abstract class JsseUtils
         }
     }
 
+    static X500Principal toX500Principal(X500Name name) throws IOException
+    {
+        return null == name ? null : new X500Principal(name.getEncoded(ASN1Encoding.DER));
+    }
+
     static X500Principal[] toX500Principals(Vector<X500Name> names) throws IOException
     {
-        if (null == names || names.isEmpty())
+        if (null == names)
         {
             return null;
         }
@@ -528,52 +582,14 @@ abstract class JsseUtils
         int count = names.size();
         for (int i = 0; i < count; ++i)
         {
-            X500Name name = names.elementAt(i);
-            if (null != name)
+            X500Principal principal = toX500Principal(names.get(i));
+            if (null != principal)
             {
-                principals.add(new X500Principal(name.getEncoded(ASN1Encoding.DER)));
+                principals.add(principal);
             }
         }
 
         return principals.toArray(new X500Principal[0]);
-    }
-
-    static X500Name toX500Name(Principal principal)
-    {
-        if (principal == null)
-        {
-            return null;
-        }
-        else if (principal instanceof X500Principal)
-        {
-            return X500Name.getInstance(((X500Principal)principal).getEncoded());
-        }
-        else
-        {
-            // TODO[jsse] Should we really be trying to support these?
-            return new X500Name(principal.getName());       // hope for the best
-        }
-    }
-
-    static Set<X500Name> toX500Names(Principal[] principals)
-    {
-        if (principals == null || principals.length == 0)
-        {
-            return Collections.emptySet();
-        }
-
-        Set<X500Name> names = new HashSet<X500Name>(principals.length);
-
-        for (int i = 0; i != principals.length; i++)
-        {
-            X500Name name = toX500Name(principals[i]);
-            if (name != null)
-            {
-                names.add(name);
-            }
-        }
-
-        return names;
     }
 
     static BCSNIServerName convertSNIServerName(ServerName serverName)
