@@ -235,6 +235,13 @@ public class SerialisationTest
 
         testSerialisation(kp.getPublic());
         testSerialisation(kp.getPrivate());
+
+        kpGen = KeyPairGenerator.getInstance("RSASSA-PSS", "BC");
+
+        kp = kpGen.generateKeyPair();
+
+        testSerialisation(kp.getPublic());
+        testSerialisation(kp.getPrivate());
     }
 
     private void elGamalTest()
