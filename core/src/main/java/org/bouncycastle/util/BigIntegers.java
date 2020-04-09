@@ -19,7 +19,7 @@ public final class BigIntegers
     /**
      * Return the passed in value as an unsigned byte array.
      * 
-     * @param value value to be converted.
+     * @param value the value to be converted.
      * @return a byte array without a leading zero byte if present in the signed encoding.
      */
     public static byte[] asUnsignedByteArray(
@@ -40,10 +40,14 @@ public final class BigIntegers
     }
 
     /**
-     * Return the passed in value as an unsigned byte array.
+     * Return the passed in value as an unsigned byte array of the specified length, padded with
+     * leading zeros as necessary..
      *
-     * @param value value to be converted.
-     * @return a byte array without a leading zero byte if present in the signed encoding.
+     * @param length
+     *            the fixed length of the result
+     * @param value
+     *            the value to be converted.
+     * @return a byte array padded to a fixed length with leading zeros.
      */
     public static byte[] asUnsignedByteArray(int length, BigInteger value)
     {
@@ -64,6 +68,41 @@ public final class BigIntegers
         byte[] tmp = new byte[length];
         System.arraycopy(bytes, start, tmp, tmp.length - count, count);
         return tmp;
+    }
+
+    /**
+     * Write the passed in value as unsigned bytes to the specified buffer range, padded with
+     * leading zeros as necessary.
+     *
+     * @param value
+     *            the value to be converted.
+     * @param buf
+     *            the buffer to which the value is written.
+     * @param off
+     *            the start offset in array <code>buf</code> at which the data is written.
+     * @param len
+     *            the fixed length of data written (possibly padded with leading zeros).
+     */
+    public static void asUnsignedByteArray(BigInteger value, byte[] buf, int off, int len)
+    {
+        byte[] bytes = value.toByteArray();
+        if (bytes.length == len)
+        {
+            System.arraycopy(bytes, 0, buf, off, len);
+            return;
+        }
+
+        int start = bytes[0] == 0 ? 1 : 0;
+        int count = bytes.length - start;
+
+        if (count > len)
+        {
+            throw new IllegalArgumentException("standard length exceeded for value");
+        }
+
+        int padLen = len - count;
+        Arrays.fill(buf,  off, off + padLen, (byte)0x00);
+        System.arraycopy(bytes, start, buf, off + padLen, count);
     }
 
     /**
