@@ -122,7 +122,7 @@ public class SignatureScheme
 
     public static String getText(int signatureScheme)
     {
-        return getName(signatureScheme) + "(" + signatureScheme + ")";
+        return getName(signatureScheme) + "(0x" + Integer.toHexString(signatureScheme) + ")";
     }
 
     public static boolean isPrivate(int signatureScheme)
