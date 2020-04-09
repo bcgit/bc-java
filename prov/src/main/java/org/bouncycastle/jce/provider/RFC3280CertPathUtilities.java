@@ -1554,11 +1554,8 @@ class RFC3280CertPathUtilities
             {
                 Date validDate = CertPathValidatorUtilities.getValidCertDateFromValidityModel(paramsPKIX, certPath, index);
 
-                if (revocationChecker instanceof PKIXCertRevocationChecker)
-                {
-                    ((PKIXCertRevocationChecker)revocationChecker).initialize(
+                revocationChecker.initialize(
                         new PKIXCertRevocationCheckerParameters(paramsPKIX, validDate, certPath, index, sign, workingPublicKey));
-                }
 
                 revocationChecker.check(cert);
             }
