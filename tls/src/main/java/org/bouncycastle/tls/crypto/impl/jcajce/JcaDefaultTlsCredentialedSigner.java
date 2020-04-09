@@ -1,6 +1,8 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
+import java.io.IOException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 
@@ -17,7 +19,17 @@ import org.bouncycastle.tls.crypto.TlsSigner;
 public class JcaDefaultTlsCredentialedSigner
     extends DefaultTlsCredentialedSigner
 {
-    private static TlsSigner makeSigner(JcaTlsCrypto crypto, PrivateKey privateKey,
+    private static JcaTlsCertificate getEndEntity(JcaTlsCrypto crypto, Certificate certificate) throws IOException
+    {
+        if (certificate == null || certificate.isEmpty())
+        {
+            throw new IllegalArgumentException("No certificate");
+        }
+
+        return JcaTlsCertificate.convert(crypto, certificate.getCertificateAt(0));
+    }
+
+    private static TlsSigner makeSigner(JcaTlsCrypto crypto, PrivateKey privateKey, Certificate certificate,
         SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         String algorithm = privateKey.getAlgorithm();
@@ -44,7 +56,17 @@ public class JcaDefaultTlsCredentialedSigner
                 }
             }
 
-            signer = new JcaTlsRSASigner(crypto, privateKey);
+            PublicKey publicKey;
+            try
+            {
+                publicKey = getEndEntity(crypto, certificate).getPubKeyRSA();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            signer = new JcaTlsRSASigner(crypto, privateKey, publicKey);
         }
         else if (privateKey instanceof DSAPrivateKey
             || "DSA".equalsIgnoreCase(algorithm))
@@ -74,7 +96,7 @@ public class JcaDefaultTlsCredentialedSigner
     public JcaDefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, JcaTlsCrypto crypto, PrivateKey privateKey,
         Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        super(cryptoParams, makeSigner(crypto, privateKey, signatureAndHashAlgorithm), certificate,
+        super(cryptoParams, makeSigner(crypto, privateKey, certificate, signatureAndHashAlgorithm), certificate,
             signatureAndHashAlgorithm);
     }
 }
