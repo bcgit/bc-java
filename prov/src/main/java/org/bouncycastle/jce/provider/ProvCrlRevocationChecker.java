@@ -3,7 +3,6 @@ package org.bouncycastle.jce.provider;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Set;
 
 import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
@@ -33,16 +32,6 @@ class ProvCrlRevocationChecker
         {
             throw new CertPathValidatorException("forward checking not supported");
         }
-    }
-
-    public boolean isForwardCheckingSupported()
-    {
-        return false;
-    }
-
-    public Set<String> getSupportedExtensions()
-    {
-        return null;
     }
 
     public void check(Certificate certificate)
