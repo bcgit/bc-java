@@ -57,8 +57,7 @@ class SignatureSchemeInfo
         historical_rsa_md5,
     };
 
-    static Map<Integer, SignatureSchemeInfo> createSignatureSchemesMap(ProvSSLContextSpi context,
-        JcaTlsCrypto crypto)
+    static Map<Integer, SignatureSchemeInfo> createSignatureSchemeMap(ProvSSLContextSpi context, JcaTlsCrypto crypto)
     {
         Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
 
@@ -118,7 +117,7 @@ class SignatureSchemeInfo
         return Collections.unmodifiableMap(ss);
     }
 
-    static List<SignatureSchemeInfo> getActiveSignatureSchemes(Map<Integer, SignatureSchemeInfo> signatureSchemesMap,
+    static List<SignatureSchemeInfo> getActiveSignatureSchemes(Map<Integer, SignatureSchemeInfo> signatureSchemeMap,
         ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
     {
         // TODO[tls13] SignatureSchemeInfo instances need to know their valid versions for sigAlgs/sigAlgsCert
@@ -133,7 +132,7 @@ class SignatureSchemeInfo
         ArrayList<SignatureSchemeInfo> result = new ArrayList<SignatureSchemeInfo>(count);
         for (int i = 0; i < count; ++i)
         {
-            SignatureSchemeInfo signatureSchemeInfo = signatureSchemesMap.get(DEFAULT_ACTIVE[i]);
+            SignatureSchemeInfo signatureSchemeInfo = signatureSchemeMap.get(DEFAULT_ACTIVE[i]);
             if (null != signatureSchemeInfo
                 && signatureSchemeInfo.isActive(algorithmConstraints))
             {
@@ -214,7 +213,7 @@ class SignatureSchemeInfo
         return ((hashAlgorithm & 0xFF) << 8) | (signatureAlgorithm & 0xFF);
     }
 
-    static List<SignatureSchemeInfo> getSignatureSchemes(Map<Integer, SignatureSchemeInfo> signatureSchemesMap,
+    static List<SignatureSchemeInfo> getSignatureSchemes(Map<Integer, SignatureSchemeInfo> signatureSchemeMap,
         Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
     {
         if (null == sigAndHashAlgs || sigAndHashAlgs.isEmpty())
@@ -231,7 +230,7 @@ class SignatureSchemeInfo
             {
                 int signatureScheme = SignatureSchemeInfo.getSignatureScheme(sigAndHashAlg);
 
-                SignatureSchemeInfo signatureSchemeInfo = signatureSchemesMap.get(signatureScheme);
+                SignatureSchemeInfo signatureSchemeInfo = signatureSchemeMap.get(signatureScheme);
                 if (null != signatureSchemeInfo)
                 {
                     result.add(signatureSchemeInfo);
@@ -257,7 +256,7 @@ class SignatureSchemeInfo
             // TODO[jsse] Consider also fetching 'jcaSignatureAlgorithm' and 'keyAlgorithm'
             try
             {
-                algorithmParameters = crypto.getSignatureAlgorithmParameters(signatureScheme);
+                algorithmParameters = crypto.getSignatureSchemeAlgorithmParameters(signatureScheme);
             }
             catch (GeneralSecurityException e)
             {

@@ -358,7 +358,17 @@ public class JcaTlsCrypto
         };
     }
 
-    public AlgorithmParameters getSignatureAlgorithmParameters(int signatureScheme)
+    public AlgorithmParameters getNamedGroupAlgorithmParameters(int namedGroup) throws GeneralSecurityException
+    {
+        // TODO Return AlgorithmParameters to check against disabled algorithms
+        switch (namedGroup)
+        {
+        default:
+            return null;
+        }
+    }
+
+    public AlgorithmParameters getSignatureSchemeAlgorithmParameters(int signatureScheme)
         throws GeneralSecurityException
     {
         switch (signatureScheme)
