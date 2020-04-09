@@ -1,5 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
+import java.io.IOException;
+
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -19,12 +21,24 @@ import org.bouncycastle.tls.crypto.TlsSigner;
 public class BcDefaultTlsCredentialedSigner
     extends DefaultTlsCredentialedSigner
 {
-    private static TlsSigner makeSigner(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey,
+    private static BcTlsCertificate getEndEntity(BcTlsCrypto crypto, Certificate certificate) throws IOException
+    {
+        if (certificate == null || certificate.isEmpty())
+        {
+            throw new IllegalArgumentException("No certificate");
+        }
+
+        return BcTlsCertificate.convert(crypto, certificate.getCertificateAt(0));
+    }
+
+    private static TlsSigner makeSigner(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate,
         SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         TlsSigner signer;
         if (privateKey instanceof RSAKeyParameters)
         {
+            RSAKeyParameters privKeyRSA = (RSAKeyParameters)privateKey;
+
             if (signatureAndHashAlgorithm != null)
             {
                 short signatureAlgorithm = signatureAndHashAlgorithm.getSignature();
@@ -36,11 +50,21 @@ public class BcDefaultTlsCredentialedSigner
                 case SignatureAlgorithm.rsa_pss_rsae_sha256:
                 case SignatureAlgorithm.rsa_pss_rsae_sha384:
                 case SignatureAlgorithm.rsa_pss_rsae_sha512:
-                    return new BcTlsRSAPSSSigner(crypto, (RSAKeyParameters)privateKey, signatureAlgorithm);
+                    return new BcTlsRSAPSSSigner(crypto, privKeyRSA, signatureAlgorithm);
                 }
             }
 
-            signer = new BcTlsRSASigner(crypto, (RSAKeyParameters)privateKey);
+            RSAKeyParameters pubKeyRSA;
+            try
+            {
+                pubKeyRSA = getEndEntity(crypto, certificate).getPubKeyRSA();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            signer = new BcTlsRSASigner(crypto, privKeyRSA, pubKeyRSA);
         }
         else if (privateKey instanceof DSAPrivateKeyParameters)
         {
@@ -69,7 +93,7 @@ public class BcDefaultTlsCredentialedSigner
     public BcDefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, BcTlsCrypto crypto,
         AsymmetricKeyParameter privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        super(cryptoParams, makeSigner(crypto, privateKey, signatureAndHashAlgorithm), certificate,
+        super(cryptoParams, makeSigner(crypto, privateKey, certificate, signatureAndHashAlgorithm), certificate,
             signatureAndHashAlgorithm);
     }
 }
