@@ -12,10 +12,12 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 public class BCRSAPrivateKey
@@ -164,9 +166,14 @@ public class BCRSAPrivateKey
     {
         out.defaultWriteObject();
 
-        if (!algorithmIdentifier.equals(BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER))
+        if (!Properties.isOverrideSet("org.bouncycastle.rsa.do_not_serialize_algorithm"))
         {
-            out.writeObject(algorithmIdentifier.getEncoded());
+            // we'll specifically encode RSA-PSS and RSA-OAEP.
+            if (!algorithmIdentifier.getAlgorithm().equals(PKCSObjectIdentifiers.rsaEncryption)
+                && !algorithmIdentifier.getAlgorithm().equals(X509ObjectIdentifiers.id_ea_rsa))
+            {
+                out.writeObject(algorithmIdentifier.getEncoded());
+            }
         }
     }
 
