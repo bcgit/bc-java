@@ -206,7 +206,14 @@ public class KeyManagerFactoryTest
         SSLUtils.startServer(ks, PASSWORD, trustStore, false, 8886);
 
         /*
-         * For this variation we add the server's certificate to the client's trust store directly, instead of the root (TA).
+         * For this variation we add the server's certificate to the client's trust store directly,
+         * instead of the root (TA).
+         * 
+         * NOTE: For TLS 1.3 with certificate_authorities in ClientHello, or earlier versions with
+         * trusted_ca_keys in ClientHello, this test only works when a) there are no actual CA
+         * certificates in the client trust store, AND/OR b) the server is willing to (eventually)
+         * select a certificate whose issuer is not mentioned in those extensions (or e.g.
+         * trusted_ca_keys not enabled/supported).
          */
         trustStore = KeyStore.getInstance("JKS");
         trustStore.load(null, PASSWORD);
