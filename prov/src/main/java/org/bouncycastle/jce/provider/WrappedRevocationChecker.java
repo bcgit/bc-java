@@ -17,13 +17,11 @@ class WrappedRevocationChecker
         this.checker = checker;
     }
 
-    @Override
     public void initialize(PKIXCertRevocationCheckerParameters params)
     {
          // ignore.
     }
 
-    @Override
     public void check(Certificate cert)
         throws CertPathValidatorException
     {
