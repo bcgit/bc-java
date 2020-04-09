@@ -1348,7 +1348,12 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), tlsClientContext);
+        {
+            boolean useGMTUnixTime = ProtocolVersion.TLSv12.isEqualOrLaterVersionOf(client_version)
+                && tlsClient.shouldUseGMTUnixTime();
+
+            securityParameters.clientRandom = createRandomBlock(useGMTUnixTime, tlsClientContext);
+        }
 
         if (securityParameters.isRenegotiating())
         {
