@@ -92,6 +92,11 @@ abstract class JsseUtils
         return provTlsAllowLegacyResumption;
     }
 
+    static <T> T[] clone(T[] ts)
+    {
+        return null == ts ? null : ts.clone();
+    }
+
     static boolean contains(String[] values, String value)
     {
         for (int i = 0; i < values.length; ++i)

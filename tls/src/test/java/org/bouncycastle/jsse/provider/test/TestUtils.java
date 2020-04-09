@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -61,6 +62,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLSocket;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 /**
  * Test Utils
@@ -97,6 +99,77 @@ class TestUtils
             throw new IllegalArgumentException();
         }
         return algID;
+    }
+
+    public static void setupProviders(boolean bcPriority, boolean bcjssePriority)
+    {
+        String javaVersion = System.getProperty("java.version");
+        boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
+
+        BouncyCastleProvider bc = (BouncyCastleProvider)Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
+        BouncyCastleJsseProvider bcjsse = (BouncyCastleJsseProvider)Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+
+        if (bc == null)
+        {
+            bc = new BouncyCastleProvider();
+        }
+        else
+        {
+            Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
+        }
+
+        if (bcjsse == null)
+        {
+            bcjsse = oldJDK ? new BouncyCastleJsseProvider(bc) : new BouncyCastleJsseProvider();
+        }
+        else
+        {
+            Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+        }
+
+        if (bcPriority)
+        {
+            Security.insertProviderAt(bc, 1);
+        }
+        else
+        {
+            Security.addProvider(bc);
+        }
+
+        if (bcjssePriority)
+        {
+            Security.insertProviderAt(bcjsse, bcPriority ? 2 : 1);
+        }
+        else
+        {
+            Security.addProvider(bcjsse);
+        }
+    }
+
+    public static void setupProvidersHighPriority()
+    {
+        Provider[] providers = Security.getProviders();
+        if (providers.length >= 2
+            && providers[0] instanceof BouncyCastleProvider
+            && providers[1] instanceof BouncyCastleJsseProvider)
+        {
+            return;
+        }
+
+        setupProviders(true, true);
+    }
+
+    public static void setupProvidersLowPriority()
+    {
+        Provider[] providers = Security.getProviders();
+        if (providers.length >= 2
+            && providers[providers.length - 2] instanceof BouncyCastleProvider
+            && providers[providers.length - 1] instanceof BouncyCastleJsseProvider)
+        {
+            return;
+        }
+
+        setupProviders(false, false);
     }
 
     public static X509Certificate createSelfSignedCert(String dn, String sigName, KeyPair keyPair)
@@ -339,7 +412,7 @@ class TestUtils
             new GeneralNames(new GeneralName(caCertLw.getIssuer())),
             caCertLw.getSerialNumber().getValue()));
         extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(getDigest(entityKey.getEncoded())));
-        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
         extGen.addExtension(Extension.keyUsage, true, new KeyUsage(keyUsage));
 
         if (entityKey.getAlgorithm().equals("RSA"))
