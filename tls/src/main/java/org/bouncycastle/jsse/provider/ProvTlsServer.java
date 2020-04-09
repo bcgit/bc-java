@@ -283,7 +283,7 @@ class ProvTlsServer
             jsseSecurityParameters.localSigSchemes = signatureSchemes;
             jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
 
-            serverSigAlgs = contextData.getSignatureAndHashAlgorithms(signatureSchemes);
+            serverSigAlgs = SignatureSchemeInfo.getSignatureAndHashAlgorithms(signatureSchemes);
         }
 
         Vector<X500Name> certificateAuthorities = JsseUtils
