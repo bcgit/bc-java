@@ -196,6 +196,14 @@ class ProvTrustManagerFactorySpi
         }
     }
 
+    private static void collectTrustAnchor(Set<TrustAnchor> trustAnchors, Certificate certificate)
+    {
+        if (certificate instanceof X509Certificate)
+        {
+            trustAnchors.add(new TrustAnchor((X509Certificate)certificate, null));
+        }
+    }
+
     private static KeyStore createTrustStore(String defaultType)
         throws NoSuchProviderException, KeyStoreException
     {
@@ -214,20 +222,24 @@ class ProvTrustManagerFactorySpi
             return Collections.emptySet();
         }
 
-        Set<TrustAnchor> anchors = new HashSet<TrustAnchor>(trustStore.size());
+        Set<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
         for (Enumeration<String> en = trustStore.aliases(); en.hasMoreElements();)
         {
             String alias = (String)en.nextElement();
             if (trustStore.isCertificateEntry(alias))
             {
-                Certificate cert = trustStore.getCertificate(alias);
-                if (cert instanceof X509Certificate)
+                collectTrustAnchor(trustAnchors, trustStore.getCertificate(alias));
+            }
+            else if (trustStore.isKeyEntry(alias))
+            {
+                Certificate[] chain = trustStore.getCertificateChain(alias);
+                if (null != chain && chain.length > 0)
                 {
-                    anchors.add(new TrustAnchor((X509Certificate)cert, null));
-                }
+                    collectTrustAnchor(trustAnchors, chain[0]);
+                }                
             }
         }
-        return anchors;
+        return trustAnchors;
     }
 
     private static String getTrustStoreType(String defaultType)

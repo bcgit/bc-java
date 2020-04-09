@@ -1,21 +1,16 @@
 package org.bouncycastle.jsse.provider.test;
 
-
-import java.security.Security;
-
-import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+
+import junit.framework.TestCase;
 
 public class ConfigTest
     extends TestCase
 {
     protected void setUp()
     {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
+        TestUtils.setupProvidersLowPriority();
     }
 
     public void testWithString()

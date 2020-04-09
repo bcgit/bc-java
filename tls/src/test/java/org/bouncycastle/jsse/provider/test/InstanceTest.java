@@ -1,20 +1,19 @@
 package org.bouncycastle.jsse.provider.test;
 
-import java.security.Security;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-import junit.framework.TestCase;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+
+import junit.framework.TestCase;
 
 public class InstanceTest
     extends TestCase
 {
     protected void setUp()
     {
-        Security.addProvider(new BouncyCastleJsseProvider());
+        TestUtils.setupProvidersLowPriority();
     }
 
     public void testKeyManager()
