@@ -20,7 +20,8 @@ final class ContextData
     private final ProvSSLSessionContext clientSessionContext;
     private final ProvSSLSessionContext serverSessionContext;
 
-    private final Map<Integer, SignatureSchemeInfo> signatureSchemesMap;
+    private final Map<Integer, NamedGroupInfo> namedGroupMap;
+    private final Map<Integer, SignatureSchemeInfo> signatureSchemeMap;
 
     ContextData(ProvSSLContextSpi context, JcaTlsCrypto crypto, X509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager)
@@ -32,14 +33,19 @@ final class ContextData
         this.clientSessionContext = new ProvSSLSessionContext(this);
         this.serverSessionContext = new ProvSSLSessionContext(this);
 
-        this.signatureSchemesMap = SignatureSchemeInfo.createSignatureSchemesMap(context, crypto);
+        this.namedGroupMap = NamedGroupInfo.createNamedGroupMap(context, crypto);
+        this.signatureSchemeMap = SignatureSchemeInfo.createSignatureSchemeMap(context, crypto);
+    }
+
+    List<NamedGroupInfo> getActiveNamedGroups(ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
+    {
+        return NamedGroupInfo.getActiveNamedGroups(namedGroupMap, sslParameters, activeProtocolVersions);
     }
 
     List<SignatureSchemeInfo> getActiveSignatureSchemes(ProvSSLParameters sslParameters,
         ProtocolVersion[] activeProtocolVersions)
     {
-        return SignatureSchemeInfo.getActiveSignatureSchemes(signatureSchemesMap, sslParameters,
-            activeProtocolVersions);
+        return SignatureSchemeInfo.getActiveSignatureSchemes(signatureSchemeMap, sslParameters, activeProtocolVersions);
     }
 
     ProvSSLContextSpi getContext()
@@ -62,9 +68,14 @@ final class ContextData
         return serverSessionContext;
     }
 
+    List<NamedGroupInfo> getNamedGroups(int[] namedGroups)
+    {
+        return NamedGroupInfo.getNamedGroups(namedGroupMap, namedGroups);
+    }
+
     List<SignatureSchemeInfo> getSignatureSchemes(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
     {
-        return SignatureSchemeInfo.getSignatureSchemes(signatureSchemesMap, sigAndHashAlgs);
+        return SignatureSchemeInfo.getSignatureSchemes(signatureSchemeMap, sigAndHashAlgs);
     }
 
     X509ExtendedKeyManager getX509KeyManager()
