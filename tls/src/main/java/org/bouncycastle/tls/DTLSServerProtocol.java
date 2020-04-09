@@ -404,10 +404,16 @@ public class DTLSServerProtocol
             TlsUtils.negotiatedVersion(context);
         }
 
-        securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), context);
-        if (!server_version.equals(ProtocolVersion.getLatestDTLS(state.server.getProtocolVersions())))
         {
-            TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
+            boolean useGMTUnixTime = ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(server_version)
+                && state.server.shouldUseGMTUnixTime();
+
+            securityParameters.serverRandom = TlsProtocol.createRandomBlock(useGMTUnixTime, context);
+
+            if (!server_version.equals(ProtocolVersion.getLatestDTLS(state.server.getProtocolVersions())))
+            {
+                TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
+            }
         }
 
         {
