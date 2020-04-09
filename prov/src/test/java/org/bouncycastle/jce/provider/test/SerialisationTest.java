@@ -1,9 +1,16 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
+import java.security.Security;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
@@ -14,6 +21,7 @@ import javax.crypto.interfaces.DHPublicKey;
 
 import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
 import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -160,7 +168,7 @@ public class SerialisationTest
     }
 
     private void rsaTest()
-        throws IOException, ClassNotFoundException
+        throws Exception
     {
         RSAPublicKey pub = (RSAPublicKey)readObject(rsaPub);
 
@@ -173,6 +181,8 @@ public class SerialisationTest
             fail("public key exponent mismatch");
         }
 
+        isTrue(null != pub.getEncoded());
+
         RSAPublicKey pub2 = (RSAPublicKey)readObject(rsaPub2);
 
         if (!mod.equals(pub2.getModulus()))
@@ -183,6 +193,8 @@ public class SerialisationTest
         {
             fail("public key 2 exponent mismatch");
         }
+
+        isTrue(null != pub.getEncoded());
 
         RSAPrivateCrtKey priv = (RSAPrivateCrtKey)readObject(rsaPriv);
 
@@ -214,10 +226,19 @@ public class SerialisationTest
         {
             fail("private key crt exponent mismatch");
         }
+
+        isTrue(null != priv.getEncoded());
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        testSerialisation(kp.getPublic());
+        testSerialisation(kp.getPrivate());
     }
 
     private void elGamalTest()
-        throws IOException, ClassNotFoundException
+        throws Exception
     {
         ElGamalPublicKey pub = (ElGamalPublicKey)readObject(elGamalPub);
 
@@ -251,7 +272,7 @@ public class SerialisationTest
     }
 
     private void dhTest()
-        throws IOException, ClassNotFoundException
+        throws Exception
     {
         DHPublicKey pub = (DHPublicKey)readObject(dhPub);
 
@@ -290,10 +311,19 @@ public class SerialisationTest
         {
             fail("dh private key l mismatch");
         }
+
+        isTrue(null != priv.getEncoded());
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DH", "BC");
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        testDhSerialisation(kp.getPublic());
+        testDhSerialisation(kp.getPrivate());
     }
 
     private void dsaTest()
-        throws IOException, ClassNotFoundException
+        throws Exception
     {
         DSAPublicKey pub = (DSAPublicKey)readObject(dsaPub);
 
@@ -324,6 +354,15 @@ public class SerialisationTest
         {
             fail("dsa private key p mismatch");
         }
+
+        isTrue(null != priv.getEncoded());
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DSA", "BC");
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        testSerialisation(kp.getPublic());
+        testSerialisation(kp.getPrivate());
     }
 
     private Object readObject(byte[] key)
@@ -334,9 +373,40 @@ public class SerialisationTest
         return oIn.readObject();
     }
 
+    private void testDhSerialisation(Key key)
+        throws Exception
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(key);
+
+        Key sKey = (Key)readObject(bOut.toByteArray());
+
+        // Diffie-Hellman keys drop the Q parameter on serialisation, perhaps this should change...
+        isTrue("alg mismatch: " + sKey.getAlgorithm(), key.getAlgorithm().equals(sKey.getAlgorithm()));
+//        isTrue("encoding mismatch: " + sKey.getAlgorithm() + " public: " + (sKey instanceof PublicKey), areEqual(key.getEncoded(), sKey.getEncoded()));
+    }
+
+    private void testSerialisation(Key key)
+        throws Exception
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(key);
+
+        Key sKey = (Key)readObject(bOut.toByteArray());
+
+        isTrue("alg mismatch: " + sKey.getAlgorithm(), key.getAlgorithm().equals(sKey.getAlgorithm()));
+        isTrue("encoding mismatch: " + sKey.getAlgorithm() + " public: " + (sKey instanceof PublicKey), areEqual(key.getEncoded(), sKey.getEncoded()));
+    }
+    
     public static void main(
         String[]    args)
     {
+        Security.addProvider(new BouncyCastleProvider());
+        
         runTest(new SerialisationTest());
     }
 }
