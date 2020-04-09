@@ -11,6 +11,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.PKIXCertPathValidatorResult;
 import java.security.cert.PKIXParameters;
+import java.security.cert.PKIXRevocationChecker;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.TBSCertificate;
+import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
@@ -37,20 +39,25 @@ import org.bouncycastle.x509.ExtendedPKIXParameters;
  * CertPathValidatorSpi implementation for X.509 Certificate validation � la RFC
  * 3280.
  */
-public class PKIXCertPathValidatorSpi
+public class PKIXCertPathValidatorSpi_8
         extends CertPathValidatorSpi
 {
     private final JcaJceHelper helper = new BCJcaJceHelper();
     private final boolean isForCRLCheck;
 
-    public PKIXCertPathValidatorSpi()
+    public PKIXCertPathValidatorSpi_8()
     {
         this(false);
     }
 
-    public PKIXCertPathValidatorSpi(boolean isForCRLCheck)
+    public PKIXCertPathValidatorSpi_8(boolean isForCRLCheck)
     {
         this.isForCRLCheck = isForCRLCheck;
+    }
+
+    public PKIXCertPathChecker engineGetRevocationChecker()
+    {
+        return new ProvRevocationChecker(helper);
     }
 
     public CertPathValidatorResult engineValidate(
@@ -142,10 +149,39 @@ public class PKIXCertPathValidatorSpi
         // RFC 5280 - CRLs must originate from the same trust anchor as the target certificate.
         paramsPKIX = new PKIXExtendedParameters.Builder(paramsPKIX).setTrustAnchor(trust).build();
 
+        PKIXCertRevocationChecker revocationChecker = null;
+        List pathCheckers = new ArrayList();
+        Iterator certIter = paramsPKIX.getCertPathCheckers().iterator();
+        while (certIter.hasNext())
+        {
+            PKIXCertPathChecker checker = (PKIXCertPathChecker)certIter.next();
+
+            checker.init(false);
+
+            if (checker instanceof PKIXRevocationChecker)
+            {
+                if (revocationChecker != null)
+                {
+                    throw new CertPathValidatorException("only one PKIXRevocationChecker allowed");
+                }
+                revocationChecker = (checker instanceof PKIXCertRevocationChecker)
+                    ? (PKIXCertRevocationChecker)checker : new WrappedRevocationChecker(checker);
+            }
+            else
+            {
+                pathCheckers.add(checker);
+            }
+        }
+
+        if (paramsPKIX.isRevocationEnabled() && revocationChecker == null)
+        {
+            revocationChecker = new ProvRevocationChecker(helper);
+        }
+
         //
         // (e), (f), (g) are part of the paramsPKIX object.
         //
-        Iterator certIter;
+
         int index = 0;
         int i;
         // Certificate for each interation of the validation loop
@@ -277,12 +313,7 @@ public class PKIXCertPathValidatorSpi
         // 
         // initialize CertPathChecker's
         //
-        List pathCheckers = paramsPKIX.getCertPathCheckers();
-        certIter = pathCheckers.iterator();
-        while (certIter.hasNext())
-        {
-            ((PKIXCertPathChecker) certIter.next()).init(false);
-        }
+
 
         X509Certificate cert = null;
 
@@ -317,7 +348,7 @@ public class PKIXCertPathValidatorSpi
             // 6.1.3
             //
 
-            RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, new ProvCrlRevocationChecker(helper), index, workingPublicKey,
+            RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, revocationChecker, index, workingPublicKey,
                 verificationAlreadyPerformed, workingIssuerName, sign);
 
             RFC3280CertPathUtilities.processCertBC(certPath, index, nameConstraintValidator, isForCRLCheck);
