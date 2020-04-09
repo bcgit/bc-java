@@ -180,11 +180,16 @@ public class TlsServerProtocol
          * 'message_hash' message having Hash(ClientHello) as the message body.
          */
 
-
-        securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
-        if (!server_version.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
         {
-            TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
+            boolean useGMTUnixTime = ProtocolVersion.TLSv12.isEqualOrLaterVersionOf(server_version)
+                && tlsServer.shouldUseGMTUnixTime();
+
+            securityParameters.serverRandom = createRandomBlock(useGMTUnixTime, tlsServerContext);
+
+            if (!server_version.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
+            {
+                TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
+            }
         }
 
         {
