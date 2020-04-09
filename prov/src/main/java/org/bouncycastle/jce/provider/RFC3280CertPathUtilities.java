@@ -6,6 +6,7 @@ import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertPathBuilderSpi;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -54,9 +55,12 @@ import org.bouncycastle.asn1.x509.NameConstraints;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.jcajce.PKIXCRLStore;
 import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
+import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
+import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Arrays;
@@ -64,6 +68,8 @@ import org.bouncycastle.util.Arrays;
 class RFC3280CertPathUtilities
 {
     private static final PKIXCRLUtil CRL_UTIL = new PKIXCRLUtil();
+
+    private static final Class revChkClass = ClassUtil.loadClass(RFC3280CertPathUtilities.class, "java.security.cert.PKIXRevocationChecker");
 
     /**
      * If the complete CRL includes an issuing distribution point (IDP) CRL
@@ -502,7 +508,8 @@ class RFC3280CertPathUtilities
             }
             try
             {
-                PKIXCertPathBuilderSpi builder = new PKIXCertPathBuilderSpi(true);
+                CertPathBuilderSpi builder = (revChkClass != null)
+                                ? new PKIXCertPathBuilderSpi_8(true) : new PKIXCertPathBuilderSpi(true);
                 X509CertSelector tmpCertSelector = new X509CertSelector();
                 tmpCertSelector.setCertificate(signingCert);
 
@@ -1489,13 +1496,13 @@ class RFC3280CertPathUtilities
     protected static void processCertA(
         CertPath certPath,
         PKIXExtendedParameters paramsPKIX,
+        PKIXCertRevocationChecker revocationChecker,
         int index,
         PublicKey workingPublicKey,
         boolean verificationAlreadyPerformed,
         X500Name workingIssuerName,
-        X509Certificate sign,
-        JcaJceHelper helper)
-        throws ExtCertPathValidatorException
+        X509Certificate sign)
+        throws CertPathValidatorException
     {
         List certs = certPath.getCertificates();
         X509Certificate cert = (X509Certificate)certs.get(index);
@@ -1540,12 +1547,20 @@ class RFC3280CertPathUtilities
         //
         // (a) (3)
         //
-        if (paramsPKIX.isRevocationEnabled())
+        if (revocationChecker != null)
         {
+
             try
             {
-                checkCRLs(paramsPKIX, cert, CertPathValidatorUtilities.getValidCertDateFromValidityModel(paramsPKIX,
-                    certPath, index), sign, workingPublicKey, certs, helper);
+                Date validDate = CertPathValidatorUtilities.getValidCertDateFromValidityModel(paramsPKIX, certPath, index);
+
+                if (revocationChecker instanceof PKIXCertRevocationChecker)
+                {
+                    ((PKIXCertRevocationChecker)revocationChecker).initialize(
+                        new PKIXCertRevocationCheckerParameters(paramsPKIX, validDate, certPath, index, sign, workingPublicKey));
+                }
+
+                revocationChecker.check(cert);
             }
             catch (AnnotatedException e)
             {
