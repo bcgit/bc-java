@@ -100,7 +100,7 @@ abstract class SupportedGroups
         for (int namedGroup : namedGroups)
         {
             if ((roleDH && NamedGroup.refersToASpecificFiniteField(namedGroup))
-                || (roleECDH && NamedGroup.refersToASpecificCurve(namedGroup))
+                || (roleECDH && NamedGroup.refersToAnECDHCurve(namedGroup))
                 || (roleECDSA && NamedGroup.refersToAnECDSACurve(namedGroup)))
             {
                 if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))

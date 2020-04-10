@@ -55,14 +55,9 @@ public class BcTlsECDomain implements TlsECDomain
             return null;
         }
 
-        String curveName = NamedGroup.getName(namedGroup);
-        if (curveName == null)
-        {
-            return null;
-        }
-
         // Parameters are lazily created the first time a particular curve is accessed
 
+        String curveName = NamedGroup.getName(namedGroup);
         X9ECParameters ecP = CustomNamedCurves.getByName(curveName);
         if (ecP == null)
         {
