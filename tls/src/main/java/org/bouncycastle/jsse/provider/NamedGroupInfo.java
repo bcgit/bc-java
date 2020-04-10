@@ -189,6 +189,7 @@ class NamedGroupInfo
     }
 
     private final int namedGroup;
+    private final String name;
     private final String jcaAlgorithm;
     private final AlgorithmParameters algorithmParameters;
     private final boolean supported13;
@@ -203,6 +204,7 @@ class NamedGroupInfo
         }
 
         this.namedGroup = namedGroup;
+        this.name = NamedGroup.getName(namedGroup);
         this.jcaAlgorithm = jcaAlgorithm;
         this.algorithmParameters = algorithmParameters;
         this.supported13 = supported13;
@@ -211,7 +213,7 @@ class NamedGroupInfo
 
     String getName()
     {
-        return NamedGroup.getName(namedGroup);
+        return name;
     }
 
     int getNamedGroup()
@@ -238,7 +240,7 @@ class NamedGroupInfo
     {
         Set<BCCryptoPrimitive> primitives = JsseUtils.KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC;
 
-        return algorithmConstraints.permits(primitives, getName(), null)
+        return algorithmConstraints.permits(primitives, name, null)
             && algorithmConstraints.permits(primitives, jcaAlgorithm, algorithmParameters);
     }
 
