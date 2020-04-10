@@ -6,14 +6,19 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.tls.NamedGroup;
+import org.bouncycastle.tls.SignatureScheme;
 
 abstract class FipsUtils
 {
-    // This can only be set to true if the underlying provider is able to assert it is compliant with FIPS IG A.5
-    // and a mechanism has been integrated into this API accordingly to ensure that is the case.
+    /*
+     * This can only be set to true if the underlying provider is able to assert it is compliant with
+     * FIPS IG A.5 and a mechanism has been integrated into this API accordingly to ensure that is the
+     * case.
+     */
     private static final boolean provAllowGCMCiphers = false;
 
-    private static final boolean provAllowRSAKeyExchange = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", true);
+    private static final boolean provAllowRSAKeyExchange = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", true);
 
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
     private static final Set<String> FIPS_SUPPORTED_PROTOCOLS = createFipsSupportedProtocols();
@@ -177,11 +182,6 @@ abstract class FipsUtils
         return cipherSuite != null && FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
     }
 
-    static boolean isFipsProtocol(String protocol)
-    {
-        return protocol != null && FIPS_SUPPORTED_PROTOCOLS.contains(protocol);
-    }
-
     static boolean isFipsNamedGroup(int namedGroup)
     {
         /*
@@ -200,9 +200,48 @@ abstract class FipsUtils
         case NamedGroup.ffdhe8192:
             return true;
 
+        case NamedGroup.x25519:
+        case NamedGroup.x448:
         default:
             return false;
         }
+    }
+
+    static boolean isFipsProtocol(String protocol)
+    {
+        return protocol != null && FIPS_SUPPORTED_PROTOCOLS.contains(protocol);
+    }
+
+    static boolean isFipsSignatureScheme(int signatureScheme)
+    {
+    	switch (signatureScheme)
+    	{
+        case SignatureSchemeInfo.historical_dsa_sha1:
+        case SignatureSchemeInfo.historical_dsa_sha224:
+        case SignatureSchemeInfo.historical_dsa_sha256:
+        case SignatureScheme.ecdsa_sha1:
+        case SignatureSchemeInfo.historical_ecdsa_sha224:
+    	case SignatureScheme.ecdsa_secp256r1_sha256:
+    	case SignatureScheme.ecdsa_secp384r1_sha384:
+    	case SignatureScheme.ecdsa_secp521r1_sha512:
+        case SignatureScheme.rsa_pkcs1_sha1:
+        case SignatureSchemeInfo.historical_rsa_pkcs1_sha224:
+    	case SignatureScheme.rsa_pkcs1_sha256:
+    	case SignatureScheme.rsa_pkcs1_sha384:
+    	case SignatureScheme.rsa_pkcs1_sha512:
+        case SignatureScheme.rsa_pss_pss_sha256:
+        case SignatureScheme.rsa_pss_pss_sha384:
+        case SignatureScheme.rsa_pss_pss_sha512:
+        case SignatureScheme.rsa_pss_rsae_sha256:
+        case SignatureScheme.rsa_pss_rsae_sha384:
+        case SignatureScheme.rsa_pss_rsae_sha512:
+    	    return true;
+
+    	case SignatureScheme.ed25519:
+    	case SignatureScheme.ed448:
+    	default:
+    		return false;
+    	}
     }
 
     static void removeNonFipsCipherSuites(Collection<String> cipherSuites)
