@@ -360,12 +360,29 @@ public class JcaTlsCrypto
 
     public AlgorithmParameters getNamedGroupAlgorithmParameters(int namedGroup) throws GeneralSecurityException
     {
-        // TODO Return AlgorithmParameters to check against disabled algorithms
-        switch (namedGroup)
+        if (NamedGroup.refersToAnXDHCurve(namedGroup))
         {
-        default:
+            switch (namedGroup)
+            {
+            case NamedGroup.x25519:
+                // TODO Return AlgorithmParameters to check against disabled algorithms
+                return null;
+            case NamedGroup.x448:
+                // TODO Return AlgorithmParameters to check against disabled algorithms
+                return null;
+            }
+        }
+        else if (NamedGroup.refersToAnECDSACurve(namedGroup))
+        {
+            return ECUtil.getAlgorithmParameters(this, NamedGroup.getName(namedGroup));
+        }
+        else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
+        {
+            // TODO Return AlgorithmParameters to check against disabled algorithms
             return null;
         }
+
+        throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }
 
     public AlgorithmParameters getSignatureSchemeAlgorithmParameters(int signatureScheme)
@@ -429,105 +446,25 @@ public class JcaTlsCrypto
             }
         }
 
-        boolean result = true;
-        try
+        Boolean supported = isSupportedEncryptionAlgorithm(encryptionAlgorithm);
+        if (null == supported)
         {
-            switch (encryptionAlgorithm)
-            {
-            case EncryptionAlgorithm.CHACHA20_POLY1305:
-            {
-                helper.createCipher("ChaCha7539");
-                helper.createMac("Poly1305");
-                break;
-            }
-            case EncryptionAlgorithm._3DES_EDE_CBC:
-            {
-                helper.createCipher("DESede/CBC/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.AES_128_CBC:
-            case EncryptionAlgorithm.AES_256_CBC:
-            {
-                helper.createCipher("AES/CBC/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.AES_128_CCM:
-            case EncryptionAlgorithm.AES_128_CCM_8:
-            case EncryptionAlgorithm.AES_256_CCM:
-            case EncryptionAlgorithm.AES_256_CCM_8:
-            {
-                helper.createCipher("AES/CCM/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.AES_128_GCM:
-            case EncryptionAlgorithm.AES_256_GCM:
-            {
-                helper.createCipher("AES/GCM/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.ARIA_128_CBC:
-            case EncryptionAlgorithm.ARIA_256_CBC:
-            {
-                helper.createCipher("ARIA/CBC/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.ARIA_128_GCM:
-            case EncryptionAlgorithm.ARIA_256_GCM:
-            {
-                helper.createCipher("ARIA/GCM/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.CAMELLIA_128_CBC:
-            case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            {
-                helper.createCipher("Camellia/CBC/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.CAMELLIA_128_GCM:
-            case EncryptionAlgorithm.CAMELLIA_256_GCM:
-            {
-                helper.createCipher("Camellia/GCM/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.SEED_CBC:
-            {
-                helper.createCipher("SEED/CBC/NoPadding");
-                break;
-            }
-            case EncryptionAlgorithm.NULL:
-            {
-                break;
-            }
-
-            case EncryptionAlgorithm.DES40_CBC:
-            case EncryptionAlgorithm.DES_CBC:
-            case EncryptionAlgorithm.IDEA_CBC:
-            case EncryptionAlgorithm.RC2_CBC_40:
-            case EncryptionAlgorithm.RC4_128:
-            case EncryptionAlgorithm.RC4_40:
-            {
-                result = false;
-                break;
-            }
-
-            default:
-            {
-                // Limit the cache to known algorithms
-                return false;
-            }
-            }
-        }
-        catch (GeneralSecurityException e)
-        {
-            result = false;
+            return false;
         }
 
         synchronized (supportedEncryptionAlgorithms)
         {
-            supportedEncryptionAlgorithms.put(key, Boolean.valueOf(result));
+            Boolean cached = (Boolean)supportedEncryptionAlgorithms.put(key, supported);
+
+            // Unlikely, but we want a consistent result
+            if (null != cached && supported != cached)
+            {
+                supportedEncryptionAlgorithms.put(key, cached);
+                supported = cached;
+            }
         }
 
-        return result;
+        return supported.booleanValue();
     }
 
     public boolean hasHashAlgorithm(short hashAlgorithm)
@@ -544,72 +481,35 @@ public class JcaTlsCrypto
 
     public boolean hasNamedGroup(int namedGroup)
     {
-        // TODO[tls] Actually check for DH support for the individual groups
-        if (NamedGroup.refersToASpecificFiniteField(namedGroup))
-        {
-            return true;
-        }
-
-        if (!NamedGroup.refersToASpecificCurve(namedGroup))
-        {
-            return false;
-        }
-
-        String groupName = NamedGroup.getName(namedGroup);
-        if (groupName == null)
-        {
-            return false;
-        }
-
         final Integer key = Integers.valueOf(namedGroup);
         synchronized (supportedNamedGroups)
         {
             Boolean cached = (Boolean)supportedNamedGroups.get(key);
-            if (cached != null)
+            if (null != cached)
             {
                 return cached.booleanValue();
             }
         }
 
-        boolean result = true;
-        try
+        Boolean supported = isSupportedNamedGroup(namedGroup);
+        if (null == supported)
         {
-            switch (namedGroup)
-            {
-            case NamedGroup.x25519:
-            {
-//                helper.createAlgorithmParameters("X25519");
-                helper.createKeyAgreement("X25519");
-                helper.createKeyFactory("X25519");
-                helper.createKeyPairGenerator("X25519");
-                break;
-            }
-            case NamedGroup.x448:
-            {
-//                helper.createAlgorithmParameters("X448");
-                helper.createKeyAgreement("X448");
-                helper.createKeyFactory("X448");
-                helper.createKeyPairGenerator("X448");
-                break;
-            }
-            default:
-            {
-                result &= isCurveSupported(groupName);
-                break;
-            }
-            }
-        }
-        catch (GeneralSecurityException e)
-        {
-            result = false;
+            return false;
         }
 
         synchronized (supportedNamedGroups)
         {
-            supportedNamedGroups.put(key, Boolean.valueOf(result));
+            Boolean cached = (Boolean)supportedNamedGroups.put(key, supported);
+
+            // Unlikely, but we want a consistent result
+            if (null != cached && supported != cached)
+            {
+                supportedNamedGroups.put(key, cached);
+                supported = cached;
+            }
         }
 
-        return result;
+        return supported.booleanValue();
     }
 
     public boolean hasRSAEncryption()
@@ -624,22 +524,30 @@ public class JcaTlsCrypto
             }
         }
 
-        boolean result = true;
+        Boolean supported;
         try
         {
             createRSAEncryptionCipher();
+            supported = Boolean.TRUE;
         }
         catch (GeneralSecurityException e)
         {
-            result = false;
+            supported = Boolean.FALSE;
         }
 
         synchronized (supportedOther)
         {
-            supportedOther.put(key, Boolean.valueOf(result));
+            Boolean cached = (Boolean)supportedOther.put(key, supported);
+
+            // Unlikely, but we want a consistent result
+            if (null != cached && supported != cached)
+            {
+                supportedOther.put(key, cached);
+                supported = cached;
+            }
         }
 
-        return result;
+        return supported.booleanValue();
     }
 
     public boolean hasSignatureAlgorithm(short signatureAlgorithm)
@@ -981,9 +889,138 @@ public class JcaTlsCrypto
         }
     }
 
-    protected boolean isCurveSupported(String curveName)
+    protected Boolean isSupportedEncryptionAlgorithm(int encryptionAlgorithm)
     {
-        return ECUtil.isCurveSupported(curveName, this.getHelper());
+        try
+        {
+            switch (encryptionAlgorithm)
+            {
+            case EncryptionAlgorithm.CHACHA20_POLY1305:
+            {
+                helper.createCipher("ChaCha7539");
+                helper.createMac("Poly1305");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm._3DES_EDE_CBC:
+            {
+                helper.createCipher("DESede/CBC/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.AES_128_CBC:
+            case EncryptionAlgorithm.AES_256_CBC:
+            {
+                helper.createCipher("AES/CBC/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.AES_128_CCM:
+            case EncryptionAlgorithm.AES_128_CCM_8:
+            case EncryptionAlgorithm.AES_256_CCM:
+            case EncryptionAlgorithm.AES_256_CCM_8:
+            {
+                helper.createCipher("AES/CCM/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.AES_128_GCM:
+            case EncryptionAlgorithm.AES_256_GCM:
+            {
+                helper.createCipher("AES/GCM/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.ARIA_128_CBC:
+            case EncryptionAlgorithm.ARIA_256_CBC:
+            {
+                helper.createCipher("ARIA/CBC/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.ARIA_128_GCM:
+            case EncryptionAlgorithm.ARIA_256_GCM:
+            {
+                helper.createCipher("ARIA/GCM/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.CAMELLIA_128_CBC:
+            case EncryptionAlgorithm.CAMELLIA_256_CBC:
+            {
+                helper.createCipher("Camellia/CBC/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.CAMELLIA_128_GCM:
+            case EncryptionAlgorithm.CAMELLIA_256_GCM:
+            {
+                helper.createCipher("Camellia/GCM/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.SEED_CBC:
+            {
+                helper.createCipher("SEED/CBC/NoPadding");
+                return Boolean.TRUE;
+            }
+            case EncryptionAlgorithm.NULL:
+            {
+                return Boolean.TRUE;
+            }
+
+            case EncryptionAlgorithm.DES40_CBC:
+            case EncryptionAlgorithm.DES_CBC:
+            case EncryptionAlgorithm.IDEA_CBC:
+            case EncryptionAlgorithm.RC2_CBC_40:
+            case EncryptionAlgorithm.RC4_128:
+            case EncryptionAlgorithm.RC4_40:
+            {
+                return Boolean.FALSE;
+            }
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            return Boolean.FALSE;
+        }
+
+        return null;
+    }
+
+    protected Boolean isSupportedNamedGroup(int namedGroup)
+    {
+        try
+        {
+            if (NamedGroup.refersToAnXDHCurve(namedGroup))
+            {
+                switch (namedGroup)
+                {
+                case NamedGroup.x25519:
+                {
+//                    helper.createAlgorithmParameters("X25519");
+                    helper.createKeyAgreement("X25519");
+                    helper.createKeyFactory("X25519");
+                    helper.createKeyPairGenerator("X25519");
+                    return Boolean.TRUE;
+                }
+                case NamedGroup.x448:
+                {
+//                    helper.createAlgorithmParameters("X448");
+                    helper.createKeyAgreement("X448");
+                    helper.createKeyFactory("X448");
+                    helper.createKeyPairGenerator("X448");
+                    return Boolean.TRUE;
+                }
+                }
+            }
+            else if (NamedGroup.refersToAnECDSACurve(namedGroup))
+            {
+                Boolean.valueOf(ECUtil.isCurveSupported(this, NamedGroup.getName(namedGroup)));
+            }
+            else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
+            {
+                // TODO[tls] Actually check for DH support for the individual groups
+                return Boolean.TRUE;
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            return Boolean.FALSE;
+        }
+
+        return null;
     }
 
     public JcaJceHelper getHelper()
