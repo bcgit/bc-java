@@ -298,7 +298,12 @@ public class NamedGroup
 
     public static boolean refersToAnECDSACurve(int namedGroup)
     {
-        return namedGroup >= sect163k1 && namedGroup < x25519;
+        return namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1;
+    }
+
+    public static boolean refersToAnXDHCurve(int namedGroup)
+    {
+        return namedGroup >= x25519 && namedGroup <= x448;
     }
 
     public static boolean refersToASpecificCurve(int namedGroup)
