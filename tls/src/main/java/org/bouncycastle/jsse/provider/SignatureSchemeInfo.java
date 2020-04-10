@@ -21,8 +21,8 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class SignatureSchemeInfo
 {
-    static final int historical_rsa_md5 = 0x0101;
-    static final int historical_rsa_sha224 = 0x0301;
+    static final int historical_rsa_pkcs1_md5 = 0x0101;
+    static final int historical_rsa_pkcs1_sha224 = 0x0301;
 
     static final int historical_dsa_sha1 = 0x0202;
     static final int historical_dsa_sha224 = 0x0302;
@@ -49,43 +49,47 @@ class SignatureSchemeInfo
         SignatureScheme.rsa_pkcs1_sha512,
         historical_dsa_sha256,
         historical_ecdsa_sha224,
-        historical_rsa_sha224,
+        historical_rsa_pkcs1_sha224,
         historical_dsa_sha224,
         SignatureScheme.ecdsa_sha1,
         SignatureScheme.rsa_pkcs1_sha1,
         historical_dsa_sha1,
-        historical_rsa_md5,
+        historical_rsa_pkcs1_md5,
     };
 
     static Map<Integer, SignatureSchemeInfo> createSignatureSchemeMap(ProvSSLContextSpi context, JcaTlsCrypto crypto)
     {
         Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
 
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pkcs1_sha256, "SHA256withRSA", "RSA");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pkcs1_sha384, "SHA384withRSA", "RSA");
-        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA", "RSA");
+        final boolean isFipsContext = context.isFips();
+
+        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pkcs1_sha256, "SHA256withRSA", "RSA");
+        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pkcs1_sha384, "SHA384withRSA", "RSA");
+        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA", "RSA");
 
         // TODO[tls13] Constrain to the specific NamedGroup (only) for TLS 1.3+
-        addSignatureScheme(crypto, ss, SignatureScheme.ecdsa_secp256r1_sha256, "SHA256withECDSA", "EC");
-        addSignatureScheme(crypto, ss, SignatureScheme.ecdsa_secp384r1_sha384, "SHA384withECDSA", "EC");
-        addSignatureScheme(crypto, ss, SignatureScheme.ecdsa_secp521r1_sha512, "SHA512withECDSA", "EC");
+        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ecdsa_secp256r1_sha256, "SHA256withECDSA", "EC");
+        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ecdsa_secp384r1_sha384, "SHA384withECDSA", "EC");
+        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ecdsa_secp521r1_sha512, "SHA512withECDSA", "EC");
 
         // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
-//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha256, "SHA256withRSAandMGF1", "RSA");
-//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1", "RSA");
-//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1", "RSA");
+//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_rsae_sha256, "SHA256withRSAandMGF1",
+//            "RSA");
+//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1",
+//            "RSA");
+//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1",
+//            "RSA");
 
-        // TODO[jsse] Preferably add FipsUtils.removeNonFipsSignatureSchemes or similar
-        if (!context.isFips())
-        {
-            addSignatureScheme(crypto, ss, SignatureScheme.ed25519, "Ed25519", "Ed25519");
-            addSignatureScheme(crypto, ss, SignatureScheme.ed448, "Ed448", "Ed448");
-        }
+        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ed25519, "Ed25519", "Ed25519");
+        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ed448, "Ed448", "Ed448");
 
         // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
-//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1", "RSASSA-PSS");
-//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha384, "SHA384withRSAandMGF1", "RSASSA-PSS");
-//        addSignatureScheme(crypto, ss, SignatureScheme.rsa_pss_pss_sha512, "SHA512withRSAandMGF1", "RSASSA-PSS");
+//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1",
+//            "RSASSA-PSS");
+//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_pss_sha384, "SHA384withRSAandMGF1",
+//            "RSASSA-PSS");
+//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_pss_sha512, "SHA512withRSAandMGF1",
+//            "RSASSA-PSS");
 
         /*
          * Legacy algorithms: "These values refer solely to signatures which appear in certificates
@@ -93,26 +97,26 @@ class SignatureSchemeInfo
          * although they MAY appear in "signature_algorithms" and "signature_algorithms_cert" for
          * backward compatibility with TLS 1.2."
          */
-        addSignatureSchemeLegacy(crypto, ss, SignatureScheme.rsa_pkcs1_sha1, "SHA1withRSA", "RSA");
-        addSignatureSchemeLegacy(crypto, ss, SignatureScheme.ecdsa_sha1, "SHA1withECDSA", "EC");
+        addSignatureSchemeLegacy(isFipsContext, crypto, ss, SignatureScheme.rsa_pkcs1_sha1, "SHA1withRSA", "RSA");
+        addSignatureSchemeLegacy(isFipsContext, crypto, ss, SignatureScheme.ecdsa_sha1, "SHA1withECDSA", "EC");
 
         /*
          * Historical algorithms (for SignatureAndHashAlgorithm values): TLS 1.2 and earlier only.
          */
-        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_rsa_md5, "rsa_md5", "MD5withRSA",
-            "RSA");
-        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_rsa_sha224, "rsa_sha224",
-            "SHA224withRSA", "RSA");
+        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_rsa_pkcs1_md5,
+            "rsa_pkcs1_md5", "MD5withRSA", "RSA");
+        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_rsa_pkcs1_sha224,
+            "rsa_pkcs1_sha224", "SHA224withRSA", "RSA");
 
-        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_dsa_sha1, "dsa_sha1", "SHA1withDSA",
-            "DSA");
-        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_dsa_sha224, "dsa_sha224",
+        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_dsa_sha1, "dsa_sha1",
+            "SHA1withDSA", "DSA");
+        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_dsa_sha224, "dsa_sha224",
             "SHA224withDSA", "DSA");
-        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_dsa_sha256, "dsa_sha256",
+        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_dsa_sha256, "dsa_sha256",
             "SHA256withDSA", "DSA");
 
-        addSignatureSchemeHistorical(crypto, ss, SignatureSchemeInfo.historical_ecdsa_sha224, "ecdsa_sha224",
-            "SHA224withECDSA", "EC");
+        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_ecdsa_sha224,
+            "ecdsa_sha224", "SHA224withECDSA", "EC");
 
         return Collections.unmodifiableMap(ss);
     }
@@ -245,10 +249,16 @@ class SignatureSchemeInfo
         return Collections.unmodifiableList(result);
     }
 
-    private static void addSignatureScheme(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss,
-        int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm, boolean supported13,
-        boolean supportedCerts13)
+    private static void addSignatureScheme(boolean isFipsContext, JcaTlsCrypto crypto,
+        Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String name, String jcaSignatureAlgorithm,
+        String keyAlgorithm, boolean supported13, boolean supportedCerts13)
     {
+        if (isFipsContext && !FipsUtils.isFipsSignatureScheme(signatureScheme))
+        {
+            // Non-FIPS schemes are currently not even entered into the map
+            return;
+        }
+
         boolean enabled = crypto.hasSignatureScheme(signatureScheme);
 
         AlgorithmParameters algorithmParameters = null;
@@ -274,26 +284,30 @@ class SignatureSchemeInfo
         }
     }
 
-    private static void addSignatureScheme(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
-        String jcaSignatureAlgorithm, String keyAlgorithm)
+    private static void addSignatureScheme(boolean isFipsContext, JcaTlsCrypto crypto,
+        Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
         String name = SignatureScheme.getName(signatureScheme);
 
-        addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, true, true);
+        addSignatureScheme(isFipsContext, crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, true,
+            true);
     }
 
-    private static void addSignatureSchemeHistorical(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
-        String name, String jcaSignatureAlgorithm, String keyAlgorithm)
+    private static void addSignatureSchemeHistorical(boolean isFipsContext, JcaTlsCrypto crypto,
+        Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String name, String jcaSignatureAlgorithm,
+        String keyAlgorithm)
     {
-        addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false, false);
+        addSignatureScheme(isFipsContext, crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false,
+            false);
     }
 
-    private static void addSignatureSchemeLegacy(JcaTlsCrypto crypto, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
-        String jcaSignatureAlgorithm, String keyAlgorithm)
+    private static void addSignatureSchemeLegacy(boolean isFipsContext, JcaTlsCrypto crypto,
+        Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
         String name = SignatureScheme.getName(signatureScheme);
 
-        addSignatureScheme(crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false, true);
+        addSignatureScheme(isFipsContext, crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false,
+            true);
     }
 
     private final int signatureScheme;
