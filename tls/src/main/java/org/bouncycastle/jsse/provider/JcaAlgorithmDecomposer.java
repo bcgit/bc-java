@@ -1,5 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -13,6 +14,11 @@ class JcaAlgorithmDecomposer
 
     public Set<String> decompose(String algorithm)
     {
+        if (algorithm.indexOf('/') < 0)
+        {
+            return Collections.emptySet();
+        }
+
         Set<String> result = new HashSet<String>();
 
         for (String section : algorithm.split("/"))
@@ -29,16 +35,11 @@ class JcaAlgorithmDecomposer
             }
         }
 
-        result.remove(algorithm);
-
-        if (!result.isEmpty())
-        {
-            ensureBothIfEither(result, "SHA1", "SHA-1");
-            ensureBothIfEither(result, "SHA224", "SHA-224");
-            ensureBothIfEither(result, "SHA256", "SHA-256");
-            ensureBothIfEither(result, "SHA384", "SHA-384");
-            ensureBothIfEither(result, "SHA512", "SHA-512");
-        }
+        ensureBothIfEither(result, "SHA1", "SHA-1");
+        ensureBothIfEither(result, "SHA224", "SHA-224");
+        ensureBothIfEither(result, "SHA256", "SHA-256");
+        ensureBothIfEither(result, "SHA384", "SHA-384");
+        ensureBothIfEither(result, "SHA512", "SHA-512");
 
         return result;
     }
