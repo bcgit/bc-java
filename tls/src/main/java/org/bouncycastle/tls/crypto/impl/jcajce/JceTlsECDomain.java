@@ -30,17 +30,29 @@ public class JceTlsECDomain
 {
     protected final JcaTlsCrypto crypto;
     protected final TlsECConfig ecConfig;
-
-    protected ECGenParameterSpec ecGenSpec;
-    protected ECParameterSpec ecSpec;
-    protected ECCurve ecCurve;
+    protected final ECGenParameterSpec ecGenSpec;
+    protected final ECParameterSpec ecSpec;
+    protected final ECCurve ecCurve;
 
     public JceTlsECDomain(JcaTlsCrypto crypto, TlsECConfig ecConfig)
     {
-        this.crypto = crypto;
-        this.ecConfig = ecConfig;
+        int namedGroup = ecConfig.getNamedGroup();
+        if (NamedGroup.refersToAnECDSACurve(namedGroup))
+        {
+            ECGenParameterSpec genSpec = new ECGenParameterSpec(NamedGroup.getName(namedGroup));
+            ECParameterSpec spec = ECUtil.getECParameterSpec(crypto, genSpec);
+            if (null != spec)
+            {
+                this.crypto = crypto;
+                this.ecConfig = ecConfig;
+                this.ecGenSpec = genSpec;
+                this.ecSpec =  spec;
+                this.ecCurve = ECUtil.convertCurve(spec.getCurve(), spec.getOrder(), spec.getCofactor()); 
+                return;
+            }
+        }
 
-        init(ecConfig.getNamedGroup());
+        throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }
 
     public JceTlsSecret calculateECDHAgreement(ECPrivateKey privateKey, ECPublicKey publicKey)
@@ -96,14 +108,12 @@ public class JceTlsECDomain
         }
     }
 
-    public byte[] encodePoint(ECPoint point)
-        throws IOException
+    public byte[] encodePoint(ECPoint point) throws IOException
     {
         return point.getEncoded(false);
     }
 
-    public byte[] encodePublicKey(ECPublicKey publicKey)
-        throws IOException
+    public byte[] encodePublicKey(ECPublicKey publicKey) throws IOException
     {
         java.security.spec.ECPoint w = publicKey.getW();
 
@@ -122,27 +132,5 @@ public class JceTlsECDomain
         {
             throw Exceptions.illegalStateException("unable to create key pair: " + e.getMessage(), e);
         }
-    }
-
-    private void init(int namedGroup)
-    {
-        this.ecGenSpec = null;
-        this.ecSpec = null;
-        this.ecCurve = null;
-
-        if (NamedGroup.refersToAnECDSACurve(namedGroup))
-        {
-            ECGenParameterSpec genSpec = new ECGenParameterSpec(NamedGroup.getName(namedGroup));
-            ECParameterSpec spec = ECUtil.getECParameterSpec(crypto, ecGenSpec);
-            if (null != spec)
-            {
-                this.ecGenSpec = genSpec;
-                this.ecSpec =  spec;
-                this.ecCurve = ECUtil.convertCurve(spec.getCurve(), spec.getOrder(), spec.getCofactor()); 
-                return;
-            }
-        }
-
-        throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }
 }
