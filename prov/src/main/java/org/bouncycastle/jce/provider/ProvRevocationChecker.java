@@ -465,6 +465,7 @@ class ProvRevocationChecker
             throw new CertPathValidatorException("OCSP response failure: " + e.getMessage(), e, parameters.getCertPath(), parameters.getIndex());
         }
     }
+
     private org.bouncycastle.asn1.x509.Certificate extractCert()
         throws CertPathValidatorException
     {
