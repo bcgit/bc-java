@@ -20,6 +20,11 @@ class ProvCrlRevocationChecker
         this.helper = helper;
     }
 
+    public void setParameter(String name, Object value)
+    {
+
+    }
+
     public void initialize(PKIXCertRevocationCheckerParameters params)
     {
         this.params = params;

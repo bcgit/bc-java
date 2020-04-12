@@ -17,6 +17,11 @@ class WrappedRevocationChecker
         this.checker = checker;
     }
 
+    public void setParameter(String name, Object value)
+    {
+         // ignore.
+    }
+
     public void initialize(PKIXCertRevocationCheckerParameters params)
     {
          // ignore.

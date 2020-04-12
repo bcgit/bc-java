@@ -12,12 +12,10 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
-import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 public class BCRSAPrivateKey
@@ -29,6 +27,7 @@ public class BCRSAPrivateKey
 
     protected BigInteger modulus;
     protected BigInteger privateExponent;
+    private byte[]       algorithmIdentifierEnc = getEncoding(BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER);
 
     protected transient AlgorithmIdentifier algorithmIdentifier = BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER;
     protected transient RSAKeyParameters rsaPrivateKey;
@@ -37,6 +36,18 @@ public class BCRSAPrivateKey
     BCRSAPrivateKey(
         RSAKeyParameters key)
     {
+        this.modulus = key.getModulus();
+        this.privateExponent = key.getExponent();
+        this.rsaPrivateKey = key;
+    }
+
+    BCRSAPrivateKey(
+        AlgorithmIdentifier algID,
+        RSAKeyParameters key)
+    {
+        this.algorithmIdentifier = algID;
+        this.algorithmIdentifierEnc = getEncoding(algID);
+        
         this.modulus = key.getModulus();
         this.privateExponent = key.getExponent();
         this.rsaPrivateKey = key;
@@ -61,6 +72,8 @@ public class BCRSAPrivateKey
     BCRSAPrivateKey(AlgorithmIdentifier algID, org.bouncycastle.asn1.pkcs.RSAPrivateKey key)
     {
         this.algorithmIdentifier = algID;
+        this.algorithmIdentifierEnc = getEncoding(algID);
+
         this.modulus = key.getModulus();
         this.privateExponent = key.getPrivateExponent();
         this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
@@ -147,14 +160,12 @@ public class BCRSAPrivateKey
     {
         in.defaultReadObject();
 
-        try
+        if (algorithmIdentifierEnc == null)
         {
-            algorithmIdentifier = AlgorithmIdentifier.getInstance(in.readObject());
+            algorithmIdentifierEnc = getEncoding(BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER);
         }
-        catch (Exception e)
-        {
-            algorithmIdentifier = BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER;
-        }
+
+        this.algorithmIdentifier = AlgorithmIdentifier.getInstance(algorithmIdentifierEnc);
 
         this.attrCarrier = new PKCS12BagAttributeCarrierImpl();
         this.rsaPrivateKey = new RSAKeyParameters(true, modulus, privateExponent);
@@ -165,16 +176,6 @@ public class BCRSAPrivateKey
         throws IOException
     {
         out.defaultWriteObject();
-
-        if (!Properties.isOverrideSet("org.bouncycastle.rsa.do_not_serialize_algorithm"))
-        {
-            // we'll specifically encode RSA-PSS and RSA-OAEP.
-            if (!algorithmIdentifier.getAlgorithm().equals(PKCSObjectIdentifiers.rsaEncryption)
-                && !algorithmIdentifier.getAlgorithm().equals(X509ObjectIdentifiers.id_ea_rsa))
-            {
-                out.writeObject(algorithmIdentifier.getEncoded());
-            }
-        }
     }
 
     public String toString()
@@ -187,5 +188,17 @@ public class BCRSAPrivateKey
         buf.append("            modulus: ").append(this.getModulus().toString(16)).append(nl);
 
         return buf.toString();
+    }
+
+    private static byte[] getEncoding(AlgorithmIdentifier algorithmIdentifier)
+    {
+        try
+        {
+            return algorithmIdentifier.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
     }
 }
