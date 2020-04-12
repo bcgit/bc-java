@@ -53,9 +53,8 @@ public class BCRSAPrivateCrtKey
         AlgorithmIdentifier algorithmIdentifier,
         RSAPrivateCrtKeyParameters key)
     {
-        super(key);
-
-        this.algorithmIdentifier = algorithmIdentifier;
+        super(algorithmIdentifier, key);
+        
         this.publicExponent = key.getPublicExponent();
         this.primeP = key.getP();
         this.primeQ = key.getQ();
@@ -115,8 +114,7 @@ public class BCRSAPrivateCrtKey
         PrivateKeyInfo info)
         throws IOException
     {
-        this(RSAPrivateKey.getInstance(info.parsePrivateKey()));
-        this.algorithmIdentifier = info.getPrivateKeyAlgorithm();
+        this(info.getPrivateKeyAlgorithm(), RSAPrivateKey.getInstance(info.parsePrivateKey()));
     }
 
     /**
@@ -125,7 +123,14 @@ public class BCRSAPrivateCrtKey
     BCRSAPrivateCrtKey(
         RSAPrivateKey key)
     {
-        super(new RSAPrivateCrtKeyParameters(key.getModulus(),
+        this(BCRSAPublicKey.DEFAULT_ALGORITHM_IDENTIFIER, key);
+    }
+
+    BCRSAPrivateCrtKey(
+        AlgorithmIdentifier algorithmIdentifier,
+        RSAPrivateKey key)
+    {
+        super(algorithmIdentifier, new RSAPrivateCrtKeyParameters(key.getModulus(),
                                 key.getPublicExponent(), key.getPrivateExponent(),
                                 key.getPrime1(), key.getPrime2(), key.getExponent1(), key.getExponent2(), key.getCoefficient()));
 
