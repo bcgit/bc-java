@@ -224,29 +224,11 @@ public class PKIXRevocationTest
 
         final byte[] nonce = new DEROctetString(Hex.decode("DEADBEEF")).getEncoded();
 
-        rv.setOcspExtensions(Collections.singletonList(new java.security.cert.Extension()
-        {
-            public String getId()
-            {
-                return OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId();
-            }
+        List<java.security.cert.Extension> extensions = new ArrayList<java.security.cert.Extension>();
 
-            public boolean isCritical()
-            {
-                return false;
-            }
-
-            public byte[] getValue()
-            {
-                return nonce;
-            }
-
-            public void encode(OutputStream outputStream)
-                throws IOException
-            {
-                outputStream.write(new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, nonce).getEncoded());
-            }
-        }));
+        extensions.add(new NonceExtension(nonce));
+        
+        rv.setOcspExtensions(extensions);
 
         param = new PKIXParameters(trust);
 
@@ -389,6 +371,38 @@ public class PKIXRevocationTest
         OCSPRespBuilder rGen = new OCSPRespBuilder();
 
         return rGen.build(OCSPRespBuilder.UNAUTHORIZED, resp).getEncoded();
+    }
+
+    private class NonceExtension
+        implements java.security.cert.Extension
+    {
+        private final byte[] nonce;
+
+        NonceExtension(byte[] nonce)
+        {
+            this.nonce = nonce;
+        }
+
+        public String getId()
+        {
+            return OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId();
+        }
+
+        public boolean isCritical()
+        {
+            return false;
+        }
+
+        public byte[] getValue()
+        {
+            return nonce;
+        }
+
+        public void encode(OutputStream outputStream)
+            throws IOException
+        {
+            outputStream.write(new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, nonce).getEncoded());
+        }
     }
 
     private class OCSPResponderTask
