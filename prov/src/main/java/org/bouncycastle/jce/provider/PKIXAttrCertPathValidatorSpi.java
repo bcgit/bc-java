@@ -1,8 +1,6 @@
 package org.bouncycastle.jce.provider;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.security.Provider;
-import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertPathValidatorException;

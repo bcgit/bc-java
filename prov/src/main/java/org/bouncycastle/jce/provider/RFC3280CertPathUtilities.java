@@ -1774,6 +1774,7 @@ class RFC3280CertPathUtilities
      *                            or some error occurs.
      */
     private static void checkCRL(
+        PKIXCertRevocationCheckerParameters params,
         DistributionPoint dp,
         PKIXExtendedParameters paramsPKIX,
         X509Certificate cert,
@@ -1800,7 +1801,7 @@ class RFC3280CertPathUtilities
          * getAdditionalStore()
          */
 
-        Set crls = CertPathValidatorUtilities.getCompleteCRLs(dp, cert, currentDate, paramsPKIX);
+        Set crls = CertPathValidatorUtilities.getCompleteCRLs(params, dp, cert, currentDate, paramsPKIX);
         boolean validCrlFound = false;
         AnnotatedException lastException = null;
         Iterator crl_iter = crls.iterator();
@@ -1953,6 +1954,7 @@ class RFC3280CertPathUtilities
      *                            or some error occurs.
      */
     protected static void checkCRLs(
+        PKIXCertRevocationCheckerParameters params,
         PKIXExtendedParameters paramsPKIX,
         X509Certificate cert,
         Date validDate,
@@ -2011,7 +2013,7 @@ class RFC3280CertPathUtilities
                 {
                     try
                     {
-                        checkCRL(dps[i], finalParams, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
+                        checkCRL(params, dps[i], finalParams, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
@@ -2049,7 +2051,7 @@ class RFC3280CertPathUtilities
                 DistributionPoint dp = new DistributionPoint(new DistributionPointName(0, new GeneralNames(
                     new GeneralName(GeneralName.directoryName, issuer))), null, null);
                 PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters)paramsPKIX.clone();
-                checkCRL(dp, paramsPKIXClone, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask,
+                checkCRL(params, dp, paramsPKIXClone, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask,
                     certPathCerts, helper);
                 validCrlFound = true;
             }
