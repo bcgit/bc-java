@@ -3131,6 +3131,14 @@ public class TlsUtils
                 addToSet(result, NamedGroupRole.ecdsa);
                 break;
             }
+
+            case KeyExchangeAlgorithm.NULL:
+            {
+                // TODO[tls13] We're conservatively adding both here, though maybe only one is needed
+                addToSet(result, NamedGroupRole.dh);
+                addToSet(result, NamedGroupRole.ecdh);
+                break;
+            }
             }
         }
         return result;
