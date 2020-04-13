@@ -1093,7 +1093,7 @@ class CertPathValidatorUtilities
      */
     protected static Set getCompleteCRLs(DistributionPoint dp, Object cert,
                                          Date currentDate, PKIXExtendedParameters paramsPKIX)
-        throws AnnotatedException
+        throws AnnotatedException, RecoverableCertPathValidatorException
     {
         X509CRLSelector baseCrlSelect = new X509CRLSelector();
 
@@ -1350,7 +1350,7 @@ class CertPathValidatorUtilities
     }
 
     static void checkCRLsNotEmpty(Set crls, Object cert)
-        throws AnnotatedException
+        throws RecoverableCertPathValidatorException
     {
         if (crls.isEmpty())
         {
@@ -1358,13 +1358,13 @@ class CertPathValidatorUtilities
             {
                 X509AttributeCertificate aCert = (X509AttributeCertificate)cert;
 
-                throw new AnnotatedException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"");
+                throw new RecoverableCertPathValidatorException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"");
             }
             else
             {
                 X509Certificate xCert = (X509Certificate)cert;
 
-                throw new AnnotatedException("No CRLs found for issuer \"" + RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal(xCert)) + "\"");
+                throw new RecoverableCertPathValidatorException("No CRLs found for issuer \"" + RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal(xCert)) + "\"");
             }
         }
     }

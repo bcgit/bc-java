@@ -129,7 +129,7 @@ public class PKIXRevocationTest
         try
         {
             cpv.validate(certPath, param);
-            fail("no exception");
+            fail("no exception ca check");
         }
         catch (CertPathValidatorException e)
         {
@@ -227,7 +227,7 @@ public class PKIXRevocationTest
         List<java.security.cert.Extension> extensions = new ArrayList<java.security.cert.Extension>();
 
         extensions.add(new NonceExtension(nonce));
-        
+
         rv.setOcspExtensions(extensions);
 
         param = new PKIXParameters(trust);
