@@ -1154,7 +1154,8 @@ public class TlsUtils
 
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion version)
     {
-        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
+        return null != version
+            && ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
     }
 
     public static short getLegacyClientCertType(short signatureAlgorithm)
