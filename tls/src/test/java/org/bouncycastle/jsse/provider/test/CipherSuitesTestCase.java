@@ -39,6 +39,11 @@ public class CipherSuitesTestCase extends TestCase
         this.config = config;
     }
 
+    protected void setUp()
+    {
+        TestUtils.setupProvidersHighPriority();
+    }
+
     public void testDummy()
     {
         // Avoid "No tests found" warning from junit
