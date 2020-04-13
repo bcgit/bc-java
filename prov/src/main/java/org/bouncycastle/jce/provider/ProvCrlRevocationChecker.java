@@ -7,7 +7,6 @@ import java.security.cert.X509Certificate;
 import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 
 class ProvCrlRevocationChecker
     implements PKIXCertRevocationChecker
@@ -54,7 +53,7 @@ class ProvCrlRevocationChecker
             {
                 cause = e.getCause();
             }
-            throw new ExtCertPathValidatorException(e.getMessage(), cause, params.getCertPath(), params.getIndex());
+            throw new CertPathValidatorException(e.getMessage(), cause, params.getCertPath(), params.getIndex());
         }
     }
 }
