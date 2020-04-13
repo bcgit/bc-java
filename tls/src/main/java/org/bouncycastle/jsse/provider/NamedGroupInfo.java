@@ -1,7 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
 import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -160,11 +159,12 @@ class NamedGroupInfo
         AlgorithmParameters algorithmParameters = null;
         if (enabled)
         {
+            // TODO[jsse] Consider also fetching 'jcaAlgorithm'
             try
             {
                 algorithmParameters = crypto.getNamedGroupAlgorithmParameters(namedGroup);
             }
-            catch (GeneralSecurityException e)
+            catch (Exception e)
             {
                 enabled = false;
             }
