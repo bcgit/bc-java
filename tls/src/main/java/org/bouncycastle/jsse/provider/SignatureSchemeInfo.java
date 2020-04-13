@@ -1,7 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
 import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -269,7 +268,7 @@ class SignatureSchemeInfo
             {
                 algorithmParameters = crypto.getSignatureSchemeAlgorithmParameters(signatureScheme);
             }
-            catch (GeneralSecurityException e)
+            catch (Exception e)
             {
                 enabled = false;
             }
