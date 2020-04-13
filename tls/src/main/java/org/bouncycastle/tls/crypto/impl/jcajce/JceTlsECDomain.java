@@ -8,7 +8,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
 
@@ -30,7 +29,6 @@ public class JceTlsECDomain
 {
     protected final JcaTlsCrypto crypto;
     protected final TlsECConfig ecConfig;
-    protected final ECGenParameterSpec ecGenSpec;
     protected final ECParameterSpec ecSpec;
     protected final ECCurve ecCurve;
 
@@ -39,13 +37,11 @@ public class JceTlsECDomain
         int namedGroup = ecConfig.getNamedGroup();
         if (NamedGroup.refersToAnECDSACurve(namedGroup))
         {
-            ECGenParameterSpec genSpec = new ECGenParameterSpec(NamedGroup.getName(namedGroup));
-            ECParameterSpec spec = ECUtil.getECParameterSpec(crypto, genSpec);
+            ECParameterSpec spec = ECUtil.getECParameterSpec(crypto, NamedGroup.getName(namedGroup));
             if (null != spec)
             {
                 this.crypto = crypto;
                 this.ecConfig = ecConfig;
-                this.ecGenSpec = genSpec;
                 this.ecSpec =  spec;
                 this.ecCurve = ECUtil.convertCurve(spec.getCurve(), spec.getOrder(), spec.getCofactor()); 
                 return;
@@ -125,7 +121,7 @@ public class JceTlsECDomain
         try
         {
             KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("EC");
-            keyPairGenerator.initialize(ecGenSpec, crypto.getSecureRandom());
+            keyPairGenerator.initialize(ecSpec, crypto.getSecureRandom());
             return keyPairGenerator.generateKeyPair();
         }
         catch (GeneralSecurityException e)
