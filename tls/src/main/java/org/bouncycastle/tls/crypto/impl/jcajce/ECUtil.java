@@ -7,6 +7,7 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.ECPrivateKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECField;
 import java.security.spec.ECFieldF2m;
 import java.security.spec.ECFieldFp;
@@ -99,17 +100,22 @@ class ECUtil
         return res;
     }
 
+    static AlgorithmParameterSpec createInitSpec(String curveName)
+    {
+        return new ECGenParameterSpec(curveName);
+    }
+
     static AlgorithmParameters getAlgorithmParameters(JcaTlsCrypto crypto, String curveName)
     {
         return getAlgorithmParameters(crypto, new ECGenParameterSpec(curveName));
     }
 
-    static AlgorithmParameters getAlgorithmParameters(JcaTlsCrypto crypto, ECGenParameterSpec ecGenSpec)
+    static AlgorithmParameters getAlgorithmParameters(JcaTlsCrypto crypto, AlgorithmParameterSpec initSpec)
     {
         try
         {
             AlgorithmParameters ecAlgParams = crypto.getHelper().createAlgorithmParameters("EC");
-            ecAlgParams.init(ecGenSpec);
+            ecAlgParams.init(initSpec);
 
             ECParameterSpec ecSpec = ecAlgParams.getParameterSpec(ECParameterSpec.class);
             if (null != ecSpec)
@@ -124,13 +130,18 @@ class ECUtil
         return null;
     }
 
-    static ECParameterSpec getECParameterSpec(JcaTlsCrypto crypto, ECGenParameterSpec ecGenSpec)
+    static ECParameterSpec getECParameterSpec(JcaTlsCrypto crypto, String curveName)
+    {
+        return getECParameterSpec(crypto, createInitSpec(curveName));
+    }
+
+    static ECParameterSpec getECParameterSpec(JcaTlsCrypto crypto, AlgorithmParameterSpec initSpec)
     {
         // Try the "modern" way
         try
         {
             AlgorithmParameters ecAlgParams = crypto.getHelper().createAlgorithmParameters("EC");
-            ecAlgParams.init(ecGenSpec);
+            ecAlgParams.init(initSpec);
 
             ECParameterSpec ecSpec = ecAlgParams.getParameterSpec(ECParameterSpec.class);
             if (null != ecSpec)
@@ -145,13 +156,13 @@ class ECUtil
         /*
          * Try a more round about way (the IBM JCE is an example of this).
          * 
-         * NOTE: For these providers, we will be able to provide an AlgorithmParameters object to
-         * BCJSSE for use with AlgorithmConstraints checks, so curve constraints will not work.
+         * NOTE: For these providers, we will not be able to provide an AlgorithmParameters object
+         * to BCJSSE for use with AlgorithmConstraints checks, so curve constraints will not work.
          */
         try
         {
             KeyPairGenerator kpGen = crypto.getHelper().createKeyPairGenerator("EC");
-            kpGen.initialize(ecGenSpec, crypto.getSecureRandom());
+            kpGen.initialize(initSpec, crypto.getSecureRandom());
             KeyPair kp = kpGen.generateKeyPair();
             return ((ECKey)kp.getPrivate()).getParams();
         }
@@ -172,8 +183,8 @@ class ECUtil
         return isCurveSupported(crypto, new ECGenParameterSpec(curveName));
     }
 
-    static boolean isCurveSupported(JcaTlsCrypto crypto, ECGenParameterSpec ecGenSpec)
+    static boolean isCurveSupported(JcaTlsCrypto crypto, ECGenParameterSpec initSpec)
     {
-        return null != getECParameterSpec(crypto, ecGenSpec);
+        return null != getECParameterSpec(crypto, initSpec);
     }
 }
