@@ -988,29 +988,34 @@ public class JcaTlsCrypto
         {
             if (NamedGroup.refersToAnXDHCurve(namedGroup))
             {
+                /*
+                 * NOTE: We don't check for AlgorithmParameters support because even the SunEC
+                 * provider doesn't support them. We skip checking KeyFactory and KeyPairGenerator
+                 * for performance reasons (and this is consistent with SunJSSE behaviour).
+                 */
                 switch (namedGroup)
                 {
                 case NamedGroup.x25519:
                 {
 //                    helper.createAlgorithmParameters("X25519");
                     helper.createKeyAgreement("X25519");
-                    helper.createKeyFactory("X25519");
-                    helper.createKeyPairGenerator("X25519");
+//                    helper.createKeyFactory("X25519");
+//                    helper.createKeyPairGenerator("X25519");
                     return Boolean.TRUE;
                 }
                 case NamedGroup.x448:
                 {
 //                    helper.createAlgorithmParameters("X448");
                     helper.createKeyAgreement("X448");
-                    helper.createKeyFactory("X448");
-                    helper.createKeyPairGenerator("X448");
+//                    helper.createKeyFactory("X448");
+//                    helper.createKeyPairGenerator("X448");
                     return Boolean.TRUE;
                 }
                 }
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))
             {
-                Boolean.valueOf(ECUtil.isCurveSupported(this, NamedGroup.getName(namedGroup)));
+                return Boolean.valueOf(ECUtil.isCurveSupported(this, NamedGroup.getName(namedGroup)));
             }
             else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
             {
@@ -1023,6 +1028,7 @@ public class JcaTlsCrypto
             return Boolean.FALSE;
         }
 
+        // 'null' means we don't even recognize the NamedGroup
         return null;
     }
 
