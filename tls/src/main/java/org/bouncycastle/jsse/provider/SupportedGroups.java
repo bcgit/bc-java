@@ -21,18 +21,46 @@ abstract class SupportedGroups
 
     private static final int[] provJdkTlsNamedGroups = getJdkTlsNamedGroups(provDisableChar2, provDisableFFDHE);
 
-    /*
-     * IMPORTANT: This list is currently assumed by the code to not contain any char-2 curves.
-     */
-    private static final int[] defaultClientNamedGroups = new int[]{
-        NamedGroup.x25519,
-        NamedGroup.secp256r1,
-        NamedGroup.secp384r1,
-        NamedGroup.secp521r1,
-        NamedGroup.ffdhe2048,
-        NamedGroup.ffdhe3072,
-        NamedGroup.ffdhe4096,
-    };
+    private static final int[] clientNamedGroups = getClientNamedGroups(provJdkTlsNamedGroups, provDisableChar2, provDisableFFDHE,
+        new int[] {
+            NamedGroup.x25519,
+            NamedGroup.secp256r1,
+            NamedGroup.secp384r1,
+            NamedGroup.secp521r1,
+            NamedGroup.ffdhe2048,
+            NamedGroup.ffdhe3072,
+            NamedGroup.ffdhe4096,
+        });
+
+    private static int[] getClientNamedGroups(int[] userNamedGroups, boolean disableChar2, boolean disableFFDHE,
+        int[] defaultNamedGroups)
+    {
+        if (null != userNamedGroups)
+        {
+            return userNamedGroups;
+        }
+
+        int[] result = new int[defaultNamedGroups.length];
+        int count = 0;
+        for (int namedGroup : defaultNamedGroups)
+        {
+            if (NamedGroup.refersToASpecificGroup(namedGroup)
+                && !(disableChar2 && NamedGroup.isChar2Curve(namedGroup))
+                && !(disableFFDHE && NamedGroup.refersToASpecificFiniteField(namedGroup)))
+            {
+                result[count++] = namedGroup;
+            }
+        }
+        if (count < result.length)
+        {
+            result = Arrays.copyOf(result, count);
+        }
+        if (result.length < 1)
+        {
+            LOG.severe("Default named groups contained no usable NamedGroup values");
+        }
+        return result;
+    }
 
     private static int getDefaultDH(int minimumFiniteFieldBits)
     {
@@ -44,6 +72,7 @@ abstract class SupportedGroups
             :  -1;
     }
 
+    // NOTE: Assumed to never return a char-2 curve.
     private static int getDefaultECDH(int minimumCurveBits)
     {
         return minimumCurveBits <= 256 ? NamedGroup.secp256r1
@@ -96,14 +125,12 @@ abstract class SupportedGroups
     static Vector<Integer> getClientSupportedGroups(JcaTlsCrypto crypto, boolean isFips,
         Vector<Integer> namedGroupRoles)
     {
-        int[] namedGroups = provJdkTlsNamedGroups != null ? provJdkTlsNamedGroups : defaultClientNamedGroups;
-
         boolean roleDH = namedGroupRoles.contains(NamedGroupRole.dh);
         boolean roleECDH = namedGroupRoles.contains(NamedGroupRole.ecdh);
         boolean roleECDSA = namedGroupRoles.contains(NamedGroupRole.ecdsa);
 
         Vector<Integer> result = new Vector<Integer>();
-        for (int namedGroup : namedGroups)
+        for (int namedGroup : clientNamedGroups)
         {
             if ((roleDH && NamedGroup.refersToASpecificFiniteField(namedGroup))
                 || (roleECDH && NamedGroup.refersToAnECDHCurve(namedGroup))
@@ -124,15 +151,24 @@ abstract class SupportedGroups
     static int getServerDefaultDH(boolean isFips, int minimumFiniteFieldBits)
     {
         /*
-         * If supported groups wasn't explicitly configured, servers support all available finite fields.
+         * If supported groups wasn't explicitly configured, servers support all available finite
+         * fields (modulo 'provDisableFFDHE').
          */
         int[] serverSupportedGroups = provJdkTlsNamedGroups;
 
         if (serverSupportedGroups == null)
         {
-            return isFips
-                ?   FipsUtils.getFipsDefaultDH(minimumFiniteFieldBits)
-                :   getDefaultDH(minimumFiniteFieldBits);
+            if (provDisableFFDHE)
+            {
+                return -1;
+            }
+
+            if (isFips)
+            {
+                return FipsUtils.getFipsDefaultDH(minimumFiniteFieldBits);
+            }
+
+            return getDefaultDH(minimumFiniteFieldBits);
         }
 
         for (int namedGroup : serverSupportedGroups)
@@ -153,7 +189,7 @@ abstract class SupportedGroups
     {
         /*
          * If supported groups wasn't explicitly configured, servers support all available curves
-         * (modulo 'provDisableF2m').
+         * (modulo 'provDisableChar2').
          */
         int[] serverSupportedGroups = provJdkTlsNamedGroups;
 
@@ -193,14 +229,17 @@ abstract class SupportedGroups
         {
             if (serverSupportedGroups == null)
             {
-                /*
-                 * RFC 4492 4. A client that proposes ECC cipher suites may choose not to include these
-                 * extensions. In this case, the server is free to choose any one of the elliptic curves
-                 * or point formats [...].
-                 */
-                return isFips           ?   FipsUtils.getFipsMaximumCurveBits()
-                    :  provDisableChar2 ?   NamedGroup.getMaximumPrimeCurveBits()
-                    :                       NamedGroup.getMaximumCurveBits();
+                if (isFips)
+                {
+                    return FipsUtils.getFipsMaximumCurveBits();
+                }
+
+                if (provDisableChar2)
+                {
+                    return NamedGroup.getMaximumPrimeCurveBits();
+                }
+
+                return NamedGroup.getMaximumCurveBits();
             }
 
             int maxBits = 0;
@@ -250,9 +289,17 @@ abstract class SupportedGroups
         {
             if (serverSupportedGroups == null)
             {
-                return isFips
-                    ?  FipsUtils.getFipsMaximumFiniteFieldBits()
-                    :  NamedGroup.getMaximumFiniteFieldBits();
+                if (provDisableFFDHE)
+                {
+                    return -1;
+                }
+
+                if (isFips)
+                {
+                    return FipsUtils.getFipsMaximumFiniteFieldBits();
+                }
+
+                return NamedGroup.getMaximumFiniteFieldBits();
             }
 
             int maxBits = 0;
@@ -273,6 +320,11 @@ abstract class SupportedGroups
             for (int i = 0; i < clientSupportedGroups.length; ++i)
             {
                 int namedGroup = clientSupportedGroups[i];
+
+                if (provDisableFFDHE && NamedGroup.refersToASpecificFiniteField(namedGroup))
+                {
+                    continue;
+                }
 
                 if (serverSupportedGroups == null || Arrays.contains(serverSupportedGroups, namedGroup))
                 {
@@ -325,6 +377,11 @@ abstract class SupportedGroups
     static int getServerSelectedFiniteField(JcaTlsCrypto crypto, boolean isFips, int minimumFiniteFieldBits,
         int[] clientSupportedGroups)
     {
+        if (provDisableFFDHE)
+        {
+            return -1;
+        }
+
         /*
          * If supported groups wasn't explicitly configured, servers support all available finite fields.
          */
