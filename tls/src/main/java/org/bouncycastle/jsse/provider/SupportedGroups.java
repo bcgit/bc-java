@@ -16,8 +16,10 @@ abstract class SupportedGroups
     private static final String PROPERTY_NAMED_GROUPS = "jdk.tls.namedGroups";
 
     private static final boolean provDisableChar2 = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false)
-        || PropertyUtils.getBooleanSystemProperty("org.bouncycastle.ec.disable_f2m", false);
-    private static final int[] provJdkTlsNamedGroups = getJdkTlsNamedGroups(provDisableChar2);
+                                                 || PropertyUtils.getBooleanSystemProperty("org.bouncycastle.ec.disable_f2m", false);
+    private static final boolean provDisableFFDHE = !PropertyUtils.getBooleanSystemProperty("jsse.enableFFDHE", true);
+
+    private static final int[] provJdkTlsNamedGroups = getJdkTlsNamedGroups(provDisableChar2, provDisableFFDHE);
 
     /*
      * IMPORTANT: This list is currently assumed by the code to not contain any char-2 curves.
@@ -50,7 +52,7 @@ abstract class SupportedGroups
             :  -1;
     }
 
-    private static int[] getJdkTlsNamedGroups(boolean provDisableChar2)
+    private static int[] getJdkTlsNamedGroups(boolean disableChar2, boolean disableFFDHE)
     {
         String[] names = PropertyUtils.getStringArraySystemProperty(PROPERTY_NAMED_GROUPS);
         if (null == names)
@@ -67,9 +69,13 @@ abstract class SupportedGroups
             {
                 LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains unrecognised NamedGroup: " + name);
             }
-            else if (provDisableChar2 && NamedGroup.isChar2Curve(namedGroup))
+            else if (disableChar2 && NamedGroup.isChar2Curve(namedGroup))
             {
                 LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains disabled characteristic-2 curve: " + name);
+            }
+            else if (disableFFDHE && NamedGroup.refersToASpecificFiniteField(namedGroup))
+            {
+                LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains disabled finite-field group: " + name);
             }
             else
             {
