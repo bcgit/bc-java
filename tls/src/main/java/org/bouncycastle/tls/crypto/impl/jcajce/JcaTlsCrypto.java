@@ -28,6 +28,7 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.SRP6Group;
@@ -364,11 +365,14 @@ public class JcaTlsCrypto
         {
             switch (namedGroup)
             {
+            /*
+             * TODO Return AlgorithmParameters to check against disabled algorithms
+             * 
+             * NOTE: The JDK doesn't even support AlgorithmParameters for XDH, so SunJSSE also winds
+             * up using null AlgorithmParameters when checking algorithm constraints.
+             */
             case NamedGroup.x25519:
-                // TODO Return AlgorithmParameters to check against disabled algorithms
-                return null;
             case NamedGroup.x448:
-                // TODO Return AlgorithmParameters to check against disabled algorithms
                 return null;
             }
         }
@@ -378,8 +382,7 @@ public class JcaTlsCrypto
         }
         else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
         {
-            // TODO Return AlgorithmParameters to check against disabled algorithms
-            return null;
+            return DHUtil.getAlgorithmParameters(this, TlsDHUtils.getNamedDHGroup(namedGroup));
         }
 
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
