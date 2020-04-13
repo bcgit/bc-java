@@ -144,6 +144,10 @@ class ProvRevocationChecker
                 {
                     ocspChecker.check(certificate);
                 }
+                else
+                {
+                    throw e;
+                }
             }
         }
         else
@@ -157,6 +161,10 @@ class ProvRevocationChecker
                 if (!hasOption(Option.NO_FALLBACK))
                 {
                     crlChecker.check(certificate);
+                }
+                else
+                {
+                    throw e;
                 }
             }
         }
