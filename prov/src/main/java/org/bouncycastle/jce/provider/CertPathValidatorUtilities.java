@@ -66,6 +66,7 @@ import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.PKIXCRLStore;
 import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
+import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.PKIXCertStore;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
@@ -1091,7 +1092,7 @@ class CertPathValidatorUtilities
      * @throws AnnotatedException if an exception occurs while picking the CRLs
      * or no CRLs are found.
      */
-    protected static Set getCompleteCRLs(DistributionPoint dp, Object cert,
+    protected static Set getCompleteCRLs(PKIXCertRevocationCheckerParameters params, DistributionPoint dp, Object cert,
                                          Date currentDate, PKIXExtendedParameters paramsPKIX)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
@@ -1127,7 +1128,7 @@ class CertPathValidatorUtilities
 
         Set crls = CRL_UTIL.findCRLs(crlSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
 
-        checkCRLsNotEmpty(crls, cert);
+        checkCRLsNotEmpty(params, crls, cert);
 
         return crls;
     }
@@ -1349,7 +1350,7 @@ class CertPathValidatorUtilities
         }
     }
 
-    static void checkCRLsNotEmpty(Set crls, Object cert)
+    static void checkCRLsNotEmpty(PKIXCertRevocationCheckerParameters params, Set crls, Object cert)
         throws RecoverableCertPathValidatorException
     {
         if (crls.isEmpty())
@@ -1358,13 +1359,15 @@ class CertPathValidatorUtilities
             {
                 X509AttributeCertificate aCert = (X509AttributeCertificate)cert;
 
-                throw new RecoverableCertPathValidatorException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"");
+                throw new RecoverableCertPathValidatorException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"", null,
+                                params.getCertPath(), params.getIndex());
             }
             else
             {
                 X509Certificate xCert = (X509Certificate)cert;
 
-                throw new RecoverableCertPathValidatorException("No CRLs found for issuer \"" + RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal(xCert)) + "\"");
+                throw new RecoverableCertPathValidatorException("No CRLs found for issuer \"" + RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal(xCert)) + "\"", null,
+                    params.getCertPath(), params.getIndex());
             }
         }
     }

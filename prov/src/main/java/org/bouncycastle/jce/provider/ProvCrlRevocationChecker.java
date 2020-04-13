@@ -43,7 +43,7 @@ class ProvCrlRevocationChecker
     {
         try
         {
-            RFC3280CertPathUtilities.checkCRLs(
+            RFC3280CertPathUtilities.checkCRLs(params,
                 params.getParamsPKIX(), (X509Certificate)certificate, params.getValidDate(), params.getSigningCert(), params.getWorkingPublicKey(), params.getCertPath().getCertificates(), helper);
         }
         catch (AnnotatedException e)
