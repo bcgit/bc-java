@@ -159,6 +159,7 @@ abstract class FipsUtils
             :  -1;
     }
 
+    // NOTE: Assumed to never return a char-2 curve.
     static int getFipsDefaultECDH(int minimumCurveBits)
     {
         return minimumCurveBits <= 256 ? NamedGroup.secp256r1
