@@ -572,7 +572,8 @@ class RFC3281CertPathUtilities
     private static void checkCRL(DistributionPoint dp,
         X509AttributeCertificate attrCert, PKIXExtendedParameters paramsPKIX,
         Date validDate, X509Certificate issuerCert, CertStatus certStatus,
-        ReasonsMask reasonMask, List certPathCerts, JcaJceHelper helper) throws AnnotatedException
+        ReasonsMask reasonMask, List certPathCerts, JcaJceHelper helper)
+        throws AnnotatedException, RecoverableCertPathValidatorException
     {
 
         /*

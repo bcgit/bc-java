@@ -1784,7 +1784,7 @@ class RFC3280CertPathUtilities
         ReasonsMask reasonMask,
         List certPathCerts,
         JcaJceHelper helper)
-        throws AnnotatedException
+        throws AnnotatedException, RecoverableCertPathValidatorException
     {
         Date currentDate = new Date(System.currentTimeMillis());
         if (validDate.getTime() > currentDate.getTime())
@@ -1960,7 +1960,7 @@ class RFC3280CertPathUtilities
         PublicKey workingPublicKey,
         List certPathCerts,
         JcaJceHelper helper)
-        throws AnnotatedException
+        throws AnnotatedException, RecoverableCertPathValidatorException
     {
         AnnotatedException lastException = null;
         CRLDistPoint crldp = null;
