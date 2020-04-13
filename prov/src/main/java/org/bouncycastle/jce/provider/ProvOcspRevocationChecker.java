@@ -402,6 +402,11 @@ class ProvOcspRevocationChecker
                     "no OCSP response found for certificate", null, parameters.getCertPath(), parameters.getIndex());
             }
         }
+        else
+        {
+            throw new RecoverableCertPathValidatorException(
+                    "no OCSP response found for any certificate", null, parameters.getCertPath(), parameters.getIndex());
+        }
     }
 
     private boolean validatedOcspResponse(BasicOCSPResponse basicResp, byte[] nonce)
