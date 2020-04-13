@@ -10,9 +10,4 @@ class RecoverableCertPathValidatorException
     {
         super(msg, cause, certPath, index);
     }
-
-    public RecoverableCertPathValidatorException(String msg)
-    {
-        super(msg);
-    }
 }

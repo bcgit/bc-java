@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.TargetInformation;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jcajce.PKIXCRLStore;
+import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
@@ -124,7 +125,8 @@ class RFC3281CertPathUtilities
      * @throws CertPathValidatorException if the certificate is revoked or the
      *             status cannot be checked or some error occurs.
      */
-    protected static void checkCRLs(X509AttributeCertificate attrCert,
+    protected static void checkCRLs(
+        X509AttributeCertificate attrCert,
         PKIXExtendedParameters paramsPKIX, X509Certificate issuerCert,
         Date validDate, List certPathCerts, JcaJceHelper helper) throws CertPathValidatorException
     {
@@ -195,7 +197,8 @@ class RFC3281CertPathUtilities
                             PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters)paramsPKIX
                                     .clone();
 
-                            checkCRL(dps[i], attrCert, paramsPKIXClone,
+                            checkCRL(
+                                dps[i], attrCert, paramsPKIXClone,
                                 validDate, issuerCert, certStatus, reasonsMask,
                                 certPathCerts, helper);
                             validCrlFound = true;
@@ -241,6 +244,7 @@ class RFC3281CertPathUtilities
                                     issuer))), null, null);
                         PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters) paramsPKIX
                             .clone();
+ 
                         checkCRL(dp, attrCert, paramsPKIXClone, validDate,
                             issuerCert, certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
@@ -570,9 +574,9 @@ class RFC3281CertPathUtilities
      *             cannot be checked or some error occurs.
      */
     private static void checkCRL(DistributionPoint dp,
-        X509AttributeCertificate attrCert, PKIXExtendedParameters paramsPKIX,
-        Date validDate, X509Certificate issuerCert, CertStatus certStatus,
-        ReasonsMask reasonMask, List certPathCerts, JcaJceHelper helper)
+                                 X509AttributeCertificate attrCert, PKIXExtendedParameters paramsPKIX,
+                                 Date validDate, X509Certificate issuerCert, CertStatus certStatus,
+                                 ReasonsMask reasonMask, List certPathCerts, JcaJceHelper helper)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
 
@@ -601,7 +605,8 @@ class RFC3281CertPathUtilities
          * getAdditionalStore()
          */
 
-        Set crls = CertPathValidatorUtilities.getCompleteCRLs(dp, attrCert,
+        PKIXCertRevocationCheckerParameters params = new PKIXCertRevocationCheckerParameters(paramsPKIX, validDate, null, -1, issuerCert, null);
+        Set crls = CertPathValidatorUtilities.getCompleteCRLs(params, dp, attrCert,
             currentDate, paramsPKIX);
         boolean validCrlFound = false;
         AnnotatedException lastException = null;

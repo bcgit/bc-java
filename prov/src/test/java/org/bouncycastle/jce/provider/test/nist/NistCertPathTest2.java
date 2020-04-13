@@ -4358,7 +4358,7 @@ public class NistCertPathTest2
             .withEndEntity("Invalid cRLIssuer Test35 EE")
             .withCrls("indirectCRL CA5 CRL")
             .withCACert("indirectCRL CA5 Cert")
-            .doExceptionTest(0, "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+            .doExceptionTest(0, "No CRLs found for issuer \"ou=indirectCRL CA5,o=Test Certificates,c=US\"");
     }
 
     /**
