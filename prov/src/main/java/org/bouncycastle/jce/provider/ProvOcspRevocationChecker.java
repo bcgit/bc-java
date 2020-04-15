@@ -481,7 +481,7 @@ class ProvOcspRevocationChecker
 
             if (sigCert != null)
             {
-                sig.initVerify(sigCert);
+                sig.initVerify(sigCert.getPublicKey());
             }
             else
             {
