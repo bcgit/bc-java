@@ -291,12 +291,62 @@ public class PKIXRevocationTest
         ocspResponder.start();
 
         cpv.validate(certPath, param);
+
+        // EE Only, CA using responder URL
+        ca = OCSPTestUtil.makeCertificateWithOCSP(caKp, "CN=CA", rootKp, root, true, "http://localhost:" + TEST_OCSP_RESPONDER_PORT + "/");
+        ee = OCSPTestUtil.makeCertificate(eeKp, "CN=EE", caKp, ca, false);
+
+        eeResp = getOcspResponseName(ocspKp, digCalcProv, ca, ee);
+        caResp = getOcspResponse(ocspKp, digCalcProv, root, ca);
+
+        list = new ArrayList();
+        list.add(ee);
+        list.add(ca);
+
+        certPath = cf.generateCertPath(list);
+        cpv = CertPathValidator.getInstance("PKIX", "BC");
+
+        rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+
+        responses = new HashMap();
+
+        responses.put(ee, eeResp);
+
+        rv.setOcspResponses(responses);
+
+        rv.setOcspResponderCert(ocsp);
+
+        ocspResponder = new Thread(new OCSPResponderTask(caResp));
+
+        ocspResponder.setDaemon(true);
+        ocspResponder.start();
+
+        param = new PKIXParameters(trust);
+
+        param.addCertPathChecker(rv);
+
+        cpv.validate(certPath, param);
     }
 
     private byte[] getOcspResponse(KeyPair ocspKp, DigestCalculatorProvider digCalcProv, X509Certificate issuerCert, X509Certificate cert)
         throws Exception
     {
         BasicOCSPRespBuilder respGen = new JcaBasicOCSPRespBuilder(ocspKp.getPublic(), digCalcProv.get(RespID.HASH_SHA1));
+
+        CertificateID eeID = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), new JcaX509CertificateHolder(issuerCert), cert.getSerialNumber());
+
+        respGen.addResponse(eeID, CertificateStatus.GOOD);
+
+        BasicOCSPResp resp = respGen.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(ocspKp.getPrivate()), null, new Date());
+        OCSPRespBuilder rGen = new OCSPRespBuilder();
+
+        return rGen.build(OCSPRespBuilder.SUCCESSFUL, resp).getEncoded();
+    }
+
+    private byte[] getOcspResponseName(KeyPair ocspKp, DigestCalculatorProvider digCalcProv, X509Certificate issuerCert, X509Certificate cert)
+        throws Exception
+    {
+        BasicOCSPRespBuilder respGen = new JcaBasicOCSPRespBuilder(issuerCert.getSubjectX500Principal());
 
         CertificateID eeID = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), new JcaX509CertificateHolder(issuerCert), cert.getSerialNumber());
 

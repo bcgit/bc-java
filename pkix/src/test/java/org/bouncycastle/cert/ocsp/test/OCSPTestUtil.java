@@ -13,10 +13,13 @@ import java.util.Date;
 import javax.crypto.KeyGenerator;
 
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AccessDescription;
+import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -117,6 +120,35 @@ public class OCSPTestUtil
 
         certGen.addExtension(
             Extension.basicConstraints, false, new BasicConstraints(_ca));
+
+        return new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+    }
+
+    public static X509Certificate makeCertificateWithOCSP(KeyPair _subKP, String _subDN, KeyPair _issKP, X509Certificate _issCert, boolean _ca, String uri)
+        throws Exception
+    {
+        org.bouncycastle.asn1.x509.Certificate cert =  org.bouncycastle.asn1.x509.Certificate.getInstance(_issCert.getEncoded());
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(_issKP.getPrivate());
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            cert.getSubject(), allocateSerialNumber(),
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000),
+            new X500Name(_subDN), _subKP.getPublic());
+
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+
+        certGen.addExtension(
+            Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(_issCert));
+
+        certGen.addExtension(
+            Extension.subjectKeyIdentifier, false, extUtils.createSubjectKeyIdentifier(_subKP.getPublic()));
+
+        certGen.addExtension(
+            Extension.basicConstraints, false, new BasicConstraints(_ca));
+
+        certGen.addExtension(
+            Extension.authorityInfoAccess, false, new AuthorityInformationAccess(new AccessDescription(AccessDescription.id_ad_ocsp,
+                                                        new GeneralName(GeneralName.uniformResourceIdentifier, uri))));
 
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
     }
