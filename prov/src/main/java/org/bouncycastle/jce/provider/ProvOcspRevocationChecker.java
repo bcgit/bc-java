@@ -11,6 +11,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
@@ -30,6 +33,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -45,6 +49,7 @@ import org.bouncycastle.asn1.ocsp.OCSPRequest;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
 import org.bouncycastle.asn1.ocsp.Request;
+import org.bouncycastle.asn1.ocsp.ResponderID;
 import org.bouncycastle.asn1.ocsp.ResponseBytes;
 import org.bouncycastle.asn1.ocsp.ResponseData;
 import org.bouncycastle.asn1.ocsp.RevokedInfo;
@@ -54,10 +59,16 @@ import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStrictStyle;
+import org.bouncycastle.asn1.x509.AccessDescription;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
@@ -175,16 +186,23 @@ class ProvOcspRevocationChecker
         Map<X509Certificate, byte[]> ocspResponses = parent.getOcspResponses();
         URI ocspUri = parent.getOcspResponder();
 
-        if (ocspUri == null && this.ocspURL != null)
+        if (ocspUri == null)
         {
-            try
+            if (this.ocspURL != null)
             {
-                ocspUri = new URI(this.ocspURL);
+                try
+                {
+                    ocspUri = new URI(this.ocspURL);
+                }
+                catch (URISyntaxException e)
+                {
+                    throw new CertPathValidatorException("configuration error: " + e.getMessage(),
+                        e, parameters.getCertPath(), parameters.getIndex());
+                }
             }
-            catch (URISyntaxException e)
+            else
             {
-                throw new CertPathValidatorException("configuration error: " + e.getMessage(),
-                                                    e, parameters.getCertPath(), parameters.getIndex());
+                ocspUri = getOcspResponderURI(cert);
             }
         }
 
@@ -409,6 +427,43 @@ class ProvOcspRevocationChecker
         }
     }
 
+    static URI getOcspResponderURI(X509Certificate cert)
+    {
+        byte[] extValue = cert.getExtensionValue(org.bouncycastle.asn1.x509.Extension.authorityInfoAccess.getId());
+        if (extValue == null)
+        {
+            return null;
+        }
+        else
+        {
+            AuthorityInformationAccess aiAccess = AuthorityInformationAccess.getInstance(
+                ASN1OctetString.getInstance(extValue).getOctets());
+
+            AccessDescription[] descriptions = aiAccess.getAccessDescriptions();
+            for (int i = 0; i != descriptions.length; i++)
+            {
+                AccessDescription aDesc = descriptions[i];
+                if (AccessDescription.id_ad_ocsp.equals(aDesc.getAccessMethod()))
+                {
+                    GeneralName name = aDesc.getAccessLocation();
+                    if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
+                    {
+                        try
+                        {
+                            return new URI(((ASN1String)name.getName()).getString());
+                        }
+                        catch (URISyntaxException e)
+                        {
+                            // ignore...
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+    }
+
     private boolean validatedOcspResponse(BasicOCSPResponse basicResp, byte[] nonce)
         throws CertPathValidatorException
     {
@@ -418,7 +473,7 @@ class ProvOcspRevocationChecker
 
             Signature sig = helper.createSignature(getSignatureName(basicResp.getSignatureAlgorithm()));
 
-            X509Certificate sigCert = parent.getOcspResponderCert();
+            X509Certificate sigCert = getSignerCert(basicResp);
             if (sigCert == null && certs == null)
             {
                 throw new CertPathValidatorException("OCSP responder certificate not found");
@@ -486,6 +541,66 @@ class ProvOcspRevocationChecker
         {
             throw new CertPathValidatorException("OCSP response failure: " + e.getMessage(), e, parameters.getCertPath(), parameters.getIndex());
         }
+    }
+
+    private X509Certificate getSignerCert(BasicOCSPResponse basicResp)
+        throws NoSuchProviderException, NoSuchAlgorithmException
+    {
+        ResponderID responderID = basicResp.getTbsResponseData().getResponderID();
+        X500Name name = responderID.getName();
+        if (name != null)
+        {
+            X509Certificate sigCert = parent.getOcspResponderCert();
+
+            if (sigCert != null)
+            {
+                if (name.equals(X500Name.getInstance(BCStrictStyle.INSTANCE, sigCert.getSubjectX500Principal().getEncoded())))
+                {
+                    return sigCert;
+                }
+            }
+
+            sigCert = parameters.getSigningCert();
+            if (sigCert != null)
+            {
+                if (name.equals(X500Name.getInstance(BCStrictStyle.INSTANCE, sigCert.getSubjectX500Principal().getEncoded())))
+                {
+                    return sigCert;
+                }
+            }
+        }
+        else
+        {
+            byte[] keyHash = responderID.getKeyHash();
+            MessageDigest digest = helper.createMessageDigest("SHA1");
+            X509Certificate sigCert = parent.getOcspResponderCert();
+
+            if (sigCert != null)
+            {
+                if (Arrays.areEqual(keyHash, calcKeyHash(digest, sigCert.getPublicKey())))
+                {
+                    return sigCert;
+                }
+            }
+
+            sigCert = parameters.getSigningCert();
+            if (sigCert != null)
+            {
+                if (Arrays.areEqual(keyHash, calcKeyHash(digest, sigCert.getPublicKey())))
+                {
+                    return sigCert;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private byte[] calcKeyHash(MessageDigest digest, PublicKey key)
+    {
+        SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(key.getEncoded());
+
+        return digest.digest(info.getPublicKeyData().getBytes());
     }
 
     private org.bouncycastle.asn1.x509.Certificate extractCert()
