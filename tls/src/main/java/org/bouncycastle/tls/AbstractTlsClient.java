@@ -320,6 +320,13 @@ public abstract class AbstractTlsClient
 
     public Vector getEarlyKeyShareGroups()
     {
+        /*
+         * RFC 8446 4.2.8. Each KeyShareEntry value MUST correspond to a group offered in the
+         * "supported_groups" extension and MUST appear in the same order. However, the values MAY
+         * be a non-contiguous subset of the "supported_groups" extension and MAY omit the most
+         * preferred groups.
+         */
+
         if (null == supportedGroups || supportedGroups.isEmpty())
         {
             return null;
