@@ -4073,7 +4073,13 @@ public class TlsUtils
     static Hashtable addEarlyKeySharesToClientHello(TlsContext context, TlsClient client, Hashtable clientExtensions)
         throws IOException
     {
-        if (!isTLSv13(context.getClientVersion()))
+        /*
+         * RFC 8446 9.2. If containing a "supported_groups" extension, it MUST also contain a
+         * "key_share" extension, and vice versa. An empty KeyShare.client_shares vector is
+         * permitted.
+         */
+        if (!isTLSv13(context.getClientVersion())
+            || !clientExtensions.containsKey(TlsExtensionsUtils.EXT_supported_groups))
         {
             return null;
         }
