@@ -547,7 +547,7 @@ class ProvOcspRevocationChecker
         throws NoSuchProviderException, NoSuchAlgorithmException
     {
         ResponderID responderID = basicResp.getTbsResponseData().getResponderID();
-        X500Name name = responderID.getName();
+        X500Name name = X500Name.getInstance(BCStrictStyle.INSTANCE, responderID.getName());
         if (name != null)
         {
             X509Certificate sigCert = parent.getOcspResponderCert();
