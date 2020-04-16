@@ -171,6 +171,12 @@ class ProvOcspRevocationChecker
     public void check(Certificate certificate)
         throws CertPathValidatorException
     {
+        if (!isEnabledOCSP)
+        {
+            throw new RecoverableCertPathValidatorException("OCSP disabled by \"ocsp.enable\" setting",
+                                null, parameters.getCertPath(), parameters.getIndex());
+        }
+        
         X509Certificate cert = (X509Certificate)certificate;
         Map<X509Certificate, byte[]> ocspResponses = parent.getOcspResponses();
         URI ocspUri = parent.getOcspResponder();
