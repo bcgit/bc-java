@@ -201,7 +201,7 @@ class OcspCache
                 {
                     responseMap = new HashMap<CertID, OCSPResponse>();
                     responseMap.put(certID, response);
-                    cache.put(ocspResponder, new WeakReference<>(responseMap));
+                    cache.put(ocspResponder, new WeakReference<Map<CertID, OCSPResponse>>(responseMap));
                 }
 
                 return response;
