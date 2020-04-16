@@ -12,7 +12,6 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.X509CRL;
-import java.security.cert.X509CRLSelector;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
@@ -54,7 +53,6 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.NameConstraints;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.jcajce.PKIXCRLStore;
-import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
 import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
@@ -634,119 +632,6 @@ class RFC3280CertPathUtilities
         }
         return null;
     }
-
-    protected static Set processCRLA1i(
-        Date currentDate,
-        PKIXExtendedParameters paramsPKIX,
-        X509Certificate cert,
-        X509CRL crl)
-        throws AnnotatedException
-    {
-        Set set = new HashSet();
-        if (paramsPKIX.isUseDeltasEnabled())
-        {
-            CRLDistPoint freshestCRL = null;
-            try
-            {
-                freshestCRL = CRLDistPoint
-                    .getInstance(CertPathValidatorUtilities.getExtensionValue(cert, FRESHEST_CRL));
-            }
-            catch (AnnotatedException e)
-            {
-                throw new AnnotatedException("Freshest CRL extension could not be decoded from certificate.", e);
-            }
-            if (freshestCRL == null)
-            {
-                try
-                {
-                    freshestCRL = CRLDistPoint.getInstance(CertPathValidatorUtilities.getExtensionValue(crl,
-                        FRESHEST_CRL));
-                }
-                catch (AnnotatedException e)
-                {
-                    throw new AnnotatedException("Freshest CRL extension could not be decoded from CRL.", e);
-                }
-            }
-            if (freshestCRL != null)
-            {
-                List crlStores = new ArrayList();
-
-                crlStores.addAll(paramsPKIX.getCRLStores());
-
-                try
-                {
-                    crlStores.addAll(CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(freshestCRL, paramsPKIX.getNamedCRLStoreMap()));
-                }
-                catch (AnnotatedException e)
-                {
-                    throw new AnnotatedException(
-                        "No new delta CRL locations could be added from Freshest CRL extension.", e);
-                }
-
-                // get delta CRL(s)
-                try
-                {
-                    set.addAll(CertPathValidatorUtilities.getDeltaCRLs(currentDate, crl, paramsPKIX.getCertStores(), crlStores));
-                }
-                catch (AnnotatedException e)
-                {
-                    throw new AnnotatedException("Exception obtaining delta CRLs.", e);
-                }
-            }
-        }
-        return set;
-    }
-
-    protected static Set[] processCRLA1ii(
-        Date currentDate,
-        PKIXExtendedParameters paramsPKIX,
-        X509Certificate cert,
-        X509CRL crl)
-        throws AnnotatedException
-    {
-        Set deltaSet = new HashSet();
-        X509CRLSelector crlselect = new X509CRLSelector();
-        crlselect.setCertificateChecking(cert);
-
-        try
-        {
-            crlselect.addIssuerName(PrincipalUtils.getIssuerPrincipal(crl).getEncoded());
-        }
-        catch (Exception e)
-        {
-            throw new AnnotatedException("Cannot extract issuer from CRL." + e, e);
-        }
-
-        PKIXCRLStoreSelector extSelect = new PKIXCRLStoreSelector.Builder(crlselect).setCompleteCRLEnabled(true).build();
-
-        Date validityDate = currentDate;
-
-        if (paramsPKIX.getDate() != null)
-        {
-            validityDate = paramsPKIX.getDate();
-        }
-
-        Set completeSet = CRL_UTIL.findCRLs(extSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
-
-        if (paramsPKIX.isUseDeltasEnabled())
-        {
-            // get delta CRL(s)
-            try
-            {
-                deltaSet.addAll(CertPathValidatorUtilities.getDeltaCRLs(validityDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores()));
-            }
-            catch (AnnotatedException e)
-            {
-                throw new AnnotatedException("Exception obtaining delta CRLs.", e);
-            }
-        }
-        return new Set[]
-            {
-                completeSet,
-                deltaSet};
-    }
-
-
 
     /**
      * If use-deltas is set, verify the issuer and scope of the delta CRL.
@@ -1844,7 +1729,7 @@ class RFC3280CertPathUtilities
                 if (paramsPKIX.isUseDeltasEnabled())
                 {
                     // get delta CRLs
-                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(validityDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
+                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(validityDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores(), helper);
                     // we only want one valid delta CRL
                     // (h)
                     deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs, key);
@@ -1979,7 +1864,7 @@ class RFC3280CertPathUtilities
         PKIXExtendedParameters.Builder paramsBldr = new PKIXExtendedParameters.Builder(paramsPKIX);
         try
         {
-            List extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap());
+            List extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap(), validDate, helper);
             for (Iterator it = extras.iterator(); it.hasNext();)
             {
                 paramsBldr.addCRLStore((PKIXCRLStore)it.next());

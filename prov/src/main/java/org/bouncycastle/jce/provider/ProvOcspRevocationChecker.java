@@ -2,13 +2,8 @@ package org.bouncycastle.jce.provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -36,7 +30,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
@@ -45,16 +38,13 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
-import org.bouncycastle.asn1.ocsp.OCSPRequest;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
-import org.bouncycastle.asn1.ocsp.Request;
 import org.bouncycastle.asn1.ocsp.ResponderID;
 import org.bouncycastle.asn1.ocsp.ResponseBytes;
 import org.bouncycastle.asn1.ocsp.ResponseData;
 import org.bouncycastle.asn1.ocsp.RevokedInfo;
 import org.bouncycastle.asn1.ocsp.SingleResponse;
-import org.bouncycastle.asn1.ocsp.TBSRequest;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
@@ -77,7 +67,6 @@ import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
-import org.bouncycastle.util.io.Streams;
 
 class ProvOcspRevocationChecker
     implements PKIXCertRevocationChecker
@@ -210,106 +199,22 @@ class ProvOcspRevocationChecker
         boolean preValidated = false;
         if (ocspResponses.get(cert) == null && ocspUri != null)
         {
-            URL ocspUrl;
-            try
-            {
-                ocspUrl = ocspUri.toURL();
-            }
-            catch (MalformedURLException e)
-            {
-                throw new CertPathValidatorException("configuration error: " + e.getMessage(),
-                                                                    e, parameters.getCertPath(), parameters.getIndex());
-            }
-
             org.bouncycastle.asn1.x509.Certificate issuer = extractCert();
 
             // TODO: configure hash algorithm
             CertID id = createCertID(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), issuer, new ASN1Integer(cert.getSerialNumber()));
 
-            //
-            // basic request generation
-            //
-            ASN1EncodableVector requests = new ASN1EncodableVector();
-
-            requests.add(new Request(id, null));
-
-            List exts = parent.getOcspExtensions();
-            ASN1EncodableVector requestExtensions = new ASN1EncodableVector();
-
-            for (int i = 0; i != exts.size(); i++)
-            {
-                Extension ext = (Extension)exts.get(i);
-                byte[]    value = ext.getValue();
-
-                if (OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId().equals(ext.getId()))
-                {
-                    nonce = value;
-                }
-
-                requestExtensions.add(new org.bouncycastle.asn1.x509.Extension(
-                    new ASN1ObjectIdentifier(ext.getId()), ext.isCritical(), value));
-            }
-
-            // TODO: configure originator
-            TBSRequest tbsReq = new TBSRequest(null, new DERSequence(requests),
-                                        Extensions.getInstance(new DERSequence(requestExtensions)));
-
-            org.bouncycastle.asn1.ocsp.Signature signature = null;
+            OCSPResponse response = OcspCache.getOcspResponse(id, parameters, ocspUri, parent.getOcspResponderCert(), parent.getOcspExtensions(), helper);
 
             try
             {
-                byte[] request = new OCSPRequest(tbsReq, signature).getEncoded();
-
-                HttpURLConnection ocspCon = (HttpURLConnection)ocspUrl.openConnection();
-                ocspCon.setConnectTimeout(DEFAULT_OCSP_TIMEOUT);
-                ocspCon.setReadTimeout(DEFAULT_OCSP_TIMEOUT);
-                ocspCon.setDoOutput(true);
-                ocspCon.setDoInput(true);
-                ocspCon.setRequestMethod("POST");
-                ocspCon.setRequestProperty("Content-type", "application/ocsp-request");
-                ocspCon.setRequestProperty("Content-length", String.valueOf(request.length));
-
-                OutputStream reqOut = ocspCon.getOutputStream();
-                reqOut.write(request);
-                reqOut.flush();
-
-                InputStream reqIn = ocspCon.getInputStream();
-                int contentLength = ocspCon.getContentLength();
-                if (contentLength < 0)
-                {
-                    // TODO: make configurable
-                    contentLength = DEFAULT_OCSP_MAX_RESPONSE_SIZE;
-                }
-                OCSPResponse response = OCSPResponse.getInstance(Streams.readAllLimited(reqIn, contentLength));
-
-                if (OCSPResponseStatus.SUCCESSFUL == response.getResponseStatus().getValue().intValueExact())
-                {
-                    ResponseBytes respBytes = ResponseBytes.getInstance(response.getResponseBytes());
-
-                    if (respBytes.getResponseType().equals(OCSPObjectIdentifiers.id_pkix_ocsp_basic))
-                    {
-                        BasicOCSPResponse basicResp = BasicOCSPResponse.getInstance(respBytes.getResponse().getOctets());
-
-                        preValidated = validatedOcspResponse(basicResp, nonce);
-                    }
-
-                    if (!preValidated)
-                    {
-                        throw new CertPathValidatorException("OCSP response failed to validate");
-                    }
-
-                    ocspResponses.put(cert, response.getEncoded());
-                }
-                else
-                {
-                    throw new CertPathValidatorException(
-                        "OCSP responder failed: " + response.getResponseStatus().getValue(),
-                                              null, parameters.getCertPath(), parameters.getIndex());
-                }
+                ocspResponses.put(cert, response.getEncoded());
+                preValidated = true;
             }
             catch (IOException e)
             {
-                throw new RecoverableCertPathValidatorException("cannot talk to OCSP responder: " + e.getMessage(), e, parameters.getCertPath(), parameters.getIndex());
+                throw new CertPathValidatorException(
+                          "unable to encode OCSP response", e, parameters.getCertPath(), parameters.getIndex());
             }
         }
         else
@@ -318,7 +223,7 @@ class ProvOcspRevocationChecker
             for (int i = 0; i != exts.size(); i++)
             {
                 Extension ext = (Extension)exts.get(i);
-                byte[]    value = ext.getValue();
+                byte[] value = ext.getValue();
 
                 if (OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId().equals(ext.getId()))
                 {
@@ -344,7 +249,7 @@ class ProvOcspRevocationChecker
                         {
                             BasicOCSPResponse basicResp = BasicOCSPResponse.getInstance(respBytes.getResponse().getOctets());
 
-                            if (preValidated || validatedOcspResponse(basicResp, nonce))
+                            if (preValidated || validatedOcspResponse(basicResp, parameters, nonce, parent.getOcspResponderCert(), helper))
                             {
                                 ResponseData responseData = ResponseData.getInstance(basicResp.getTbsResponseData());
 
@@ -357,10 +262,6 @@ class ProvOcspRevocationChecker
 
                                     if (serialNumber.equals(resp.getCertID().getSerialNumber()))
                                     {
-                                        if (parameters.getValidDate().before(resp.getThisUpdate().getDate()))
-                                        {
-                                            throw new ExtCertPathValidatorException("OCSP response date out of range");
-                                        }
                                         ASN1GeneralizedTime nextUp = resp.getNextUpdate();
                                         if (nextUp != null && parameters.getValidDate().after(nextUp.getDate()))
                                         {
@@ -410,7 +311,7 @@ class ProvOcspRevocationChecker
                 {
                     throw new CertPathValidatorException(
                         "OCSP response failed: " + ocspResponse.getResponseStatus().getValue(),
-                                              null, parameters.getCertPath(), parameters.getIndex());
+                        null, parameters.getCertPath(), parameters.getIndex());
                 }
             }
             else
@@ -423,7 +324,7 @@ class ProvOcspRevocationChecker
         else
         {
             throw new RecoverableCertPathValidatorException(
-                    "no OCSP response found for any certificate", null, parameters.getCertPath(), parameters.getIndex());
+                "no OCSP response found for any certificate", null, parameters.getCertPath(), parameters.getIndex());
         }
     }
 
@@ -464,7 +365,7 @@ class ProvOcspRevocationChecker
         }
     }
 
-    private boolean validatedOcspResponse(BasicOCSPResponse basicResp, byte[] nonce)
+    static boolean validatedOcspResponse(BasicOCSPResponse basicResp, PKIXCertRevocationCheckerParameters parameters, byte[] nonce, X509Certificate responderCert, JcaJceHelper helper)
         throws CertPathValidatorException
     {
         try
@@ -473,7 +374,7 @@ class ProvOcspRevocationChecker
 
             Signature sig = helper.createSignature(getSignatureName(basicResp.getSignatureAlgorithm()));
 
-            X509Certificate sigCert = getSignerCert(basicResp);
+            X509Certificate sigCert = getSignerCert(basicResp, parameters.getSigningCert(), responderCert, helper);
             if (sigCert == null && certs == null)
             {
                 throw new CertPathValidatorException("OCSP responder certificate not found");
@@ -494,6 +395,13 @@ class ProvOcspRevocationChecker
 
                 // check cert valid
                 ocspCert.checkValidity(parameters.getValidDate());
+
+                // check ID
+                if (!responderMatches(basicResp.getTbsResponseData().getResponderID(), ocspCert, helper))
+                {
+                    throw new CertPathValidatorException("responder certificate does not match responderID", null,
+                        parameters.getCertPath(), parameters.getIndex());
+                }
 
                 // TODO: RFC 6960 allows for a "no check" extension - where present it means the CA says the cert
                 // will remain valid for it's lifetime. If any caching is added here that should be taken into account.
@@ -543,27 +451,29 @@ class ProvOcspRevocationChecker
         }
     }
 
-    private X509Certificate getSignerCert(BasicOCSPResponse basicResp)
+    private static X509Certificate getSignerCert(BasicOCSPResponse basicResp, X509Certificate signingCert, X509Certificate responderCert, JcaJceHelper helper)
         throws NoSuchProviderException, NoSuchAlgorithmException
     {
         ResponderID responderID = basicResp.getTbsResponseData().getResponderID();
-        X500Name name = X500Name.getInstance(BCStrictStyle.INSTANCE, responderID.getName());
-        if (name != null)
+
+        byte[] keyHash = responderID.getKeyHash();
+        if (keyHash != null)
         {
-            X509Certificate sigCert = parent.getOcspResponderCert();
+            MessageDigest digest = helper.createMessageDigest("SHA1");
+            X509Certificate sigCert = responderCert;
 
             if (sigCert != null)
             {
-                if (name.equals(X500Name.getInstance(BCStrictStyle.INSTANCE, sigCert.getSubjectX500Principal().getEncoded())))
+                if (Arrays.areEqual(keyHash, calcKeyHash(digest, sigCert.getPublicKey())))
                 {
                     return sigCert;
                 }
             }
 
-            sigCert = parameters.getSigningCert();
+            sigCert = signingCert;
             if (sigCert != null)
             {
-                if (name.equals(X500Name.getInstance(BCStrictStyle.INSTANCE, sigCert.getSubjectX500Principal().getEncoded())))
+                if (Arrays.areEqual(keyHash, calcKeyHash(digest, sigCert.getPublicKey())))
                 {
                     return sigCert;
                 }
@@ -571,22 +481,21 @@ class ProvOcspRevocationChecker
         }
         else
         {
-            byte[] keyHash = responderID.getKeyHash();
-            MessageDigest digest = helper.createMessageDigest("SHA1");
-            X509Certificate sigCert = parent.getOcspResponderCert();
+            X500Name name = X500Name.getInstance(BCStrictStyle.INSTANCE, responderID.getName());
+            X509Certificate sigCert = responderCert;
 
             if (sigCert != null)
             {
-                if (Arrays.areEqual(keyHash, calcKeyHash(digest, sigCert.getPublicKey())))
+                if (name.equals(X500Name.getInstance(BCStrictStyle.INSTANCE, sigCert.getSubjectX500Principal().getEncoded())))
                 {
                     return sigCert;
                 }
             }
 
-            sigCert = parameters.getSigningCert();
+            sigCert = signingCert;
             if (sigCert != null)
             {
-                if (Arrays.areEqual(keyHash, calcKeyHash(digest, sigCert.getPublicKey())))
+                if (name.equals(X500Name.getInstance(BCStrictStyle.INSTANCE, sigCert.getSubjectX500Principal().getEncoded())))
                 {
                     return sigCert;
                 }
@@ -596,7 +505,25 @@ class ProvOcspRevocationChecker
         return null;
     }
 
-    private byte[] calcKeyHash(MessageDigest digest, PublicKey key)
+    private static boolean responderMatches(ResponderID responderID, X509Certificate certificate, JcaJceHelper helper)
+        throws NoSuchProviderException, NoSuchAlgorithmException
+    {
+        byte[] keyHash = responderID.getKeyHash();
+        if (keyHash != null)
+        {
+            MessageDigest digest = helper.createMessageDigest("SHA1");
+
+            return Arrays.areEqual(keyHash, calcKeyHash(digest, certificate.getPublicKey()));
+        }
+        else
+        {
+            X500Name name = X500Name.getInstance(BCStrictStyle.INSTANCE, responderID.getName());
+
+            return name.equals(X500Name.getInstance(BCStrictStyle.INSTANCE, certificate.getSubjectX500Principal().getEncoded()));
+        }
+    }
+
+    private static byte[] calcKeyHash(MessageDigest digest, PublicKey key)
     {
         SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(key.getEncoded());
 
@@ -632,7 +559,7 @@ class ProvOcspRevocationChecker
             ASN1OctetString issuerNameHash = new DEROctetString(digest.digest(issuer.getSubject().getEncoded(ASN1Encoding.DER)));
 
             ASN1OctetString issuerKeyHash = new DEROctetString(digest.digest(
-                                                    issuer.getSubjectPublicKeyInfo().getPublicKeyData().getBytes()));
+                issuer.getSubjectPublicKeyInfo().getPublicKeyData().getBytes()));
 
             return new CertID(digestAlg, issuerNameHash, issuerKeyHash, serialNumber);
         }

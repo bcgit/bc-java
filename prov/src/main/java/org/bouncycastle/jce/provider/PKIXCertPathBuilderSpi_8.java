@@ -189,23 +189,24 @@ public class PKIXCertPathBuilderSpi_8
 
         tbvPath.add(tbvCert);
 
-        CertificateFactory cFact;
-        PKIXCertPathValidatorSpi_8 validator;
         CertPathBuilderResult builderResult = null;
 
         try
         {
-            cFact = new CertificateFactory();
-            validator = new PKIXCertPathValidatorSpi_8(isForCRLCheck);
-        }
-        catch (Exception e)
-        {
-            // cannot happen
-            throw new RuntimeException("Exception creating support classes.");
-        }
+            CertificateFactory cFact;
+            PKIXCertPathValidatorSpi_8 validator;
 
-        try
-        {
+            try
+            {
+                cFact = new CertificateFactory();
+                validator = new PKIXCertPathValidatorSpi_8(isForCRLCheck);
+            }
+            catch (Exception e)
+            {
+                // cannot happen
+                throw new RuntimeException("Exception creating support classes.");
+            }
+
             // check whether the issuer of <tbvCert> is a TrustAnchor
             if (CertPathValidatorUtilities.isIssuerTrustAnchor(tbvCert, pkixParams.getBaseParameters().getTrustAnchors(),
                 pkixParams.getBaseParameters().getSigProvider()))

@@ -9,6 +9,8 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
 import java.security.Security;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,6 +47,7 @@ import org.bouncycastle.util.Strings;
 public class DRBG
 {
     private static final String PREFIX = DRBG.class.getName();
+    private static final Executor rngThread = Executors.newFixedThreadPool(1);
 
     // {"Provider class name","SecureRandomSpi class name"}
     private static final String[][] initialEntropySourceNames = new String[][]
@@ -455,9 +458,7 @@ public class DRBG
 
                 if (!scheduled.getAndSet(true))
                 {
-                    Thread gathererThread = new Thread(new EntropyGatherer(byteLength));
-                    gathererThread.setDaemon(true);
-                    gathererThread.start();
+                    rngThread.execute(new EntropyGatherer(byteLength));
                 }
 
                 return seed;
