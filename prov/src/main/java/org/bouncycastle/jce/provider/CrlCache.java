@@ -94,7 +94,7 @@ class CrlCache
     private static Collection getCrlsFromLDAP(CertificateFactory certFact, URI distributionPoint)
         throws IOException, CRLException
     {
-        Map<String, String> env = new Hashtable<>();
+        Map<String, String> env = new Hashtable<String, String>();
 
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, distributionPoint.toString());
