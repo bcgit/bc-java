@@ -84,9 +84,9 @@ class CrlCache
             crls = getCrls(certFact, distributionPoint);
         }
 
-        LocalCRLStore localCRLStore = new LocalCRLStore(new CollectionStore<>(crls));
+        LocalCRLStore localCRLStore = new LocalCRLStore(new CollectionStore<CRL>(crls));
 
-        cache.put(distributionPoint, new WeakReference<>(localCRLStore));
+        cache.put(distributionPoint, new WeakReference<PKIXCRLStore>(localCRLStore));
 
         return localCRLStore;
     }
