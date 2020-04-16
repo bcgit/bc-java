@@ -3,6 +3,7 @@ package org.bouncycastle.cert.ocsp.test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -33,6 +34,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.BasicOCSPRespBuilder;
@@ -43,6 +45,7 @@ import org.bouncycastle.cert.ocsp.RespID;
 import org.bouncycastle.cert.ocsp.RevokedStatus;
 import org.bouncycastle.cert.ocsp.jcajce.JcaBasicOCSPRespBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
@@ -105,11 +108,11 @@ public class PKIXRevocationTest
         rv.setOcspResponderCert(ocsp);
 
         rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.ONLY_END_ENTITY));
-        
+
         PKIXParameters param = new PKIXParameters(trust);
 
         param.addCertPathChecker(rv);
-        
+
         cpv.validate(certPath, param);
 
         // CA and EE
@@ -234,7 +237,7 @@ public class PKIXRevocationTest
 
         param.addCertPathChecker(rv);
 
-        Thread ocspResponder = new Thread(new OCSPResponderTask(getOcspResponse(ocspKp, digCalcProv, ca, ee, nonce)));
+        Thread ocspResponder = new Thread(new OCSPResponderTask(TEST_OCSP_RESPONDER_PORT, getOcspResponse(ocspKp, digCalcProv, ca, ee, nonce)));
 
         ocspResponder.setDaemon(true);
         ocspResponder.start();
@@ -247,15 +250,17 @@ public class PKIXRevocationTest
         cpv = CertPathValidator.getInstance("PKIX", BC);
 
         rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
-
-        rv.setOcspResponder(new URI("http://localhost:" + TEST_OCSP_RESPONDER_PORT + "/"));
+        // need to avoid cache.
+        rv.setOcspResponder(new URI("http://localhost:" + (TEST_OCSP_RESPONDER_PORT + 1) + "/"));
         rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.ONLY_END_ENTITY));
 
         param = new PKIXParameters(trust);
 
         param.addCertPathChecker(rv);
 
-        ocspResponder = new Thread(new OCSPResponderTask(getOcspResponse(ocspKp, ocsp, digCalcProv, ca, ee)));
+        ocspResponder = new Thread(new OCSPResponderTask(
+            TEST_OCSP_RESPONDER_PORT + 1,
+            getOcspResponse(ocspKp, ocsp, digCalcProv, ca, ee)));
 
         ocspResponder.setDaemon(true);
         ocspResponder.start();
@@ -278,14 +283,16 @@ public class PKIXRevocationTest
 
         rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
 
-        rv.setOcspResponder(new URI("http://localhost:" + TEST_OCSP_RESPONDER_PORT + "/"));
+        rv.setOcspResponder(new URI("http://localhost:" + (TEST_OCSP_RESPONDER_PORT + 2) + "/"));
         rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.ONLY_END_ENTITY));
 
         param = new PKIXParameters(trust);
 
         param.addCertPathChecker(rv);
 
-        ocspResponder = new Thread(new OCSPResponderTask(getOcspResponse(ocspKp, ocsp, digCalcProv, ca, ee)));
+        ocspResponder = new Thread(new OCSPResponderTask(
+            TEST_OCSP_RESPONDER_PORT + 2,
+            getOcspResponse(ocspKp, ocsp, digCalcProv, ca, ee)));
 
         ocspResponder.setDaemon(true);
         ocspResponder.start();
@@ -296,7 +303,7 @@ public class PKIXRevocationTest
         ca = OCSPTestUtil.makeCertificateWithOCSP(caKp, "CN=CA", rootKp, root, true, "http://localhost:" + TEST_OCSP_RESPONDER_PORT + "/");
         ee = OCSPTestUtil.makeCertificate(eeKp, "CN=EE", caKp, ca, false);
 
-        eeResp = getOcspResponseName(ocspKp, digCalcProv, ca, ee);
+        eeResp = getOcspResponseName(caKp, digCalcProv, ca, ee);
         caResp = getOcspResponse(ocspKp, digCalcProv, root, ca);
 
         list = new ArrayList();
@@ -316,7 +323,7 @@ public class PKIXRevocationTest
 
         rv.setOcspResponderCert(ocsp);
 
-        ocspResponder = new Thread(new OCSPResponderTask(caResp));
+        ocspResponder = new Thread(new OCSPResponderTask(TEST_OCSP_RESPONDER_PORT, caResp));
 
         ocspResponder.setDaemon(true);
         ocspResponder.start();
@@ -326,6 +333,117 @@ public class PKIXRevocationTest
         param.addCertPathChecker(rv);
 
         cpv.validate(certPath, param);
+
+        ocspCertChainTest();
+        dispPointCertChainTest();
+    }
+
+    private void ocspCertChainTest()
+        throws Exception
+    {
+        PEMParser parser = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("ee.pem")));
+
+        X509CertificateHolder c1 = (X509CertificateHolder)parser.readObject();
+
+        parser = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("ca.pem")));
+
+        X509CertificateHolder c2 = (X509CertificateHolder)parser.readObject();
+
+        parser = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("ta.pem")));
+
+        X509CertificateHolder c3 = (X509CertificateHolder)parser.readObject();
+
+        JcaX509CertificateConverter conv = new JcaX509CertificateConverter().setProvider("BC");
+
+        List t = new ArrayList();
+
+        t.add(conv.getCertificate(c1));
+        t.add(conv.getCertificate(c2));
+
+        System.setProperty("org.bouncycastle.x509.enableCRLDP", "true");
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+
+        CertPath certPath = cf.generateCertPath(t);
+
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(conv.getCertificate(c3), null));
+
+        // EE Only
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX", BC);
+
+        PKIXRevocationChecker rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+
+        rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.NO_FALLBACK));
+
+        PKIXParameters param = new PKIXParameters(trust);
+
+        param.addCertPathChecker(rv);
+
+        cpv.validate(certPath, param);
+    }
+
+    private void dispPointCertChainTest()
+        throws Exception
+    {
+        PEMParser parser = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("ee.pem")));
+
+        X509CertificateHolder c1 = (X509CertificateHolder)parser.readObject();
+
+        parser = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("ca.pem")));
+
+        X509CertificateHolder c2 = (X509CertificateHolder)parser.readObject();
+
+        parser = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("ta.pem")));
+
+        X509CertificateHolder c3 = (X509CertificateHolder)parser.readObject();
+
+        JcaX509CertificateConverter conv = new JcaX509CertificateConverter().setProvider("BC");
+
+        List t = new ArrayList();
+
+        t.add(conv.getCertificate(c1));
+        t.add(conv.getCertificate(c2));
+
+        System.setProperty("org.bouncycastle.x509.enableCRLDP", "true");
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+
+        CertPath certPath = cf.generateCertPath(t);
+
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(conv.getCertificate(c3), null));
+
+        // EE and CA
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX", BC);
+
+        PKIXRevocationChecker rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+
+        rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.PREFER_CRLS));
+
+        PKIXParameters param = new PKIXParameters(trust);
+
+        param.addCertPathChecker(rv);
+
+        cpv.validate(certPath, param);
+
+        // exercise cache
+        certPath = cf.generateCertPath(t);
+
+        trust = new HashSet();
+        trust.add(new TrustAnchor(conv.getCertificate(c3), null));
+
+        // EE and CA
+        cpv = CertPathValidator.getInstance("PKIX", BC);
+
+        rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+
+        rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.PREFER_CRLS));
+
+        param = new PKIXParameters(trust);
+
+        param.addCertPathChecker(rv);
+
+        cpv.validate(certPath, param);
+        System.setProperty("org.bouncycastle.x509.enableCRLDP", "");
     }
 
     private byte[] getOcspResponse(KeyPair ocspKp, DigestCalculatorProvider digCalcProv, X509Certificate issuerCert, X509Certificate cert)
@@ -459,9 +577,11 @@ public class PKIXRevocationTest
         implements Runnable
     {
         private final byte[] resp;
+        private final int portNo;
 
-        OCSPResponderTask(byte[] resp)
+        OCSPResponderTask(int portNo, byte[] resp)
         {
+            this.portNo = portNo;
             this.resp = resp;
         }
 
@@ -469,7 +589,7 @@ public class PKIXRevocationTest
         {
             try
             {
-                ServerSocket ss = new ServerSocket(TEST_OCSP_RESPONDER_PORT);
+                ServerSocket ss = new ServerSocket(portNo);
                 Socket s = ss.accept();
 
                 InputStream sIn = s.getInputStream();
@@ -517,6 +637,7 @@ public class PKIXRevocationTest
     }
     public static void main(
         String[] args)
+        throws Exception
     {
         Security.addProvider(new BouncyCastleProvider());
 

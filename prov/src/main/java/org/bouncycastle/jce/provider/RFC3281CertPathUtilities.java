@@ -152,7 +152,7 @@ class RFC3281CertPathUtilities
 
                 try
                 {
-                    crlStores.addAll(CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap()));
+                    crlStores.addAll(CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap(), validDate, helper));
                 }
                 catch (AnnotatedException e)
                 {
@@ -645,7 +645,7 @@ class RFC3281CertPathUtilities
                 if (paramsPKIX.isUseDeltasEnabled())
                 {
                     // get delta CRLs
-                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(currentDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
+                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(currentDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores(), helper);
                     // we only want one valid delta CRL
                     // (h)
                     deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs,
