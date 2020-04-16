@@ -171,12 +171,6 @@ class ProvOcspRevocationChecker
     public void check(Certificate certificate)
         throws CertPathValidatorException
     {
-        if (!isEnabledOCSP)
-        {
-            throw new RecoverableCertPathValidatorException("OCSP disabled by \"ocsp.enable\" setting",
-                                null, parameters.getCertPath(), parameters.getIndex());
-        }
-        
         X509Certificate cert = (X509Certificate)certificate;
         Map<X509Certificate, byte[]> ocspResponses = parent.getOcspResponses();
         URI ocspUri = parent.getOcspResponder();
@@ -205,6 +199,15 @@ class ProvOcspRevocationChecker
         boolean preValidated = false;
         if (ocspResponses.get(cert) == null && ocspUri != null)
         {
+            // if we're here we need to make a network access, if we haven't been given a URL explicitly block it.
+            if (ocspURL == null
+                && parent.getOcspResponder() == null
+                && !isEnabledOCSP)
+            {
+                throw new RecoverableCertPathValidatorException("OCSP disabled by \"ocsp.enable\" setting",
+                                    null, parameters.getCertPath(), parameters.getIndex());
+            }
+
             org.bouncycastle.asn1.x509.Certificate issuer = extractCert();
 
             // TODO: configure hash algorithm
