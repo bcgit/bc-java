@@ -1,5 +1,6 @@
 package org.bouncycastle.jce.provider;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -13,10 +14,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 
 import org.bouncycastle.jcajce.PKIXCRLStore;
 import org.bouncycastle.util.CollectionStore;
@@ -63,6 +72,59 @@ class CrlCache
             }
         }
 
+        Collection crls;
+
+        if (distributionPoint.getScheme().equals("ldap"))
+        {
+            crls = getCrlsFromLDAP(certFact, distributionPoint);
+        }
+        else
+        {
+            // http, https, ftp
+            crls = getCrls(certFact, distributionPoint);
+        }
+
+        LocalCRLStore localCRLStore = new LocalCRLStore(new CollectionStore<>(crls));
+
+        cache.put(distributionPoint, new WeakReference<>(localCRLStore));
+
+        return localCRLStore;
+    }
+
+    private static Collection getCrlsFromLDAP(CertificateFactory certFact, URI distributionPoint)
+        throws IOException, CRLException
+    {
+        Map<String, String> env = new Hashtable<>();
+
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(Context.PROVIDER_URL, distributionPoint.toString());
+
+        byte[] val = null;
+        try
+        {
+            DirContext ctx = new InitialDirContext((Hashtable)env);
+            Attributes avals = ctx.getAttributes("");
+            Attribute aval = avals.get("certificateRevocationList;binary");
+            val = (byte[])aval.get();
+        }
+        catch (NamingException e)
+        {
+            throw new CRLException("issue connecting to: " + distributionPoint.toString(), e);
+        }
+
+        if ((val == null) || (val.length == 0))
+        {
+            throw new CRLException("no CRL returned from: " + distributionPoint);
+        }
+        else
+        {
+            return certFact.generateCRLs(new ByteArrayInputStream(val));
+        }
+    }
+
+    private static Collection getCrls(CertificateFactory certFact, URI distributionPoint)
+        throws IOException, CRLException
+    {
         HttpURLConnection crlCon = (HttpURLConnection)distributionPoint.toURL().openConnection();
         crlCon.setConnectTimeout(DEFAULT_TIMEOUT);
         crlCon.setReadTimeout(DEFAULT_TIMEOUT);
@@ -73,11 +135,7 @@ class CrlCache
 
         crlIn.close();
 
-        LocalCRLStore localCRLStore = new LocalCRLStore(new CollectionStore<>(crls));
-
-        cache.put(distributionPoint, new WeakReference<>(localCRLStore));
-
-        return localCRLStore;
+        return crls;
     }
 
     private static class LocalCRLStore<T extends CRL>
