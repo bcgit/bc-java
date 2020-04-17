@@ -1098,7 +1098,7 @@ class RFC3280CertPathUtilities
 
             try
             {
-                dns = ASN1Sequence.getInstance(principal.getEncoded());
+                dns = ASN1Sequence.getInstance(principal);
             }
             catch (Exception e)
             {
