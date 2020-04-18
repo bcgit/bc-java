@@ -174,7 +174,7 @@ abstract class ProvSSLSocketBase
                         }
                     }, accessControlContext);
                 }
-            }            
+            }
         };
 
         SSLSocketUtil.handshakeCompleted(notifyRunnable);

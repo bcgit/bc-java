@@ -215,34 +215,34 @@ abstract class FipsUtils
 
     static boolean isFipsSignatureScheme(int signatureScheme)
     {
-    	switch (signatureScheme)
-    	{
+        switch (signatureScheme)
+        {
         case SignatureSchemeInfo.historical_dsa_sha1:
         case SignatureSchemeInfo.historical_dsa_sha224:
         case SignatureSchemeInfo.historical_dsa_sha256:
         case SignatureScheme.ecdsa_sha1:
         case SignatureSchemeInfo.historical_ecdsa_sha224:
-    	case SignatureScheme.ecdsa_secp256r1_sha256:
-    	case SignatureScheme.ecdsa_secp384r1_sha384:
-    	case SignatureScheme.ecdsa_secp521r1_sha512:
+        case SignatureScheme.ecdsa_secp256r1_sha256:
+        case SignatureScheme.ecdsa_secp384r1_sha384:
+        case SignatureScheme.ecdsa_secp521r1_sha512:
         case SignatureScheme.rsa_pkcs1_sha1:
         case SignatureSchemeInfo.historical_rsa_pkcs1_sha224:
-    	case SignatureScheme.rsa_pkcs1_sha256:
-    	case SignatureScheme.rsa_pkcs1_sha384:
-    	case SignatureScheme.rsa_pkcs1_sha512:
+        case SignatureScheme.rsa_pkcs1_sha256:
+        case SignatureScheme.rsa_pkcs1_sha384:
+        case SignatureScheme.rsa_pkcs1_sha512:
         case SignatureScheme.rsa_pss_pss_sha256:
         case SignatureScheme.rsa_pss_pss_sha384:
         case SignatureScheme.rsa_pss_pss_sha512:
         case SignatureScheme.rsa_pss_rsae_sha256:
         case SignatureScheme.rsa_pss_rsae_sha384:
         case SignatureScheme.rsa_pss_rsae_sha512:
-    	    return true;
+            return true;
 
-    	case SignatureScheme.ed25519:
-    	case SignatureScheme.ed448:
-    	default:
-    		return false;
-    	}
+        case SignatureScheme.ed25519:
+        case SignatureScheme.ed448:
+        default:
+            return false;
+        }
     }
 
     static void removeNonFipsCipherSuites(Collection<String> cipherSuites)
