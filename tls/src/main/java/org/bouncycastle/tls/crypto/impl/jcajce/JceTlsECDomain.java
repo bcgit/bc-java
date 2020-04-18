@@ -43,7 +43,7 @@ public class JceTlsECDomain
                 this.crypto = crypto;
                 this.ecConfig = ecConfig;
                 this.ecSpec =  spec;
-                this.ecCurve = ECUtil.convertCurve(spec.getCurve(), spec.getOrder(), spec.getCofactor()); 
+                this.ecCurve = ECUtil.convertCurve(spec.getCurve(), spec.getOrder(), spec.getCofactor());
                 return;
             }
         }

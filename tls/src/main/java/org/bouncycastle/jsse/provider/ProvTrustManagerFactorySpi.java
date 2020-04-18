@@ -236,7 +236,7 @@ class ProvTrustManagerFactorySpi
                 if (null != chain && chain.length > 0)
                 {
                     collectTrustAnchor(trustAnchors, chain[0]);
-                }                
+                }
             }
         }
         return trustAnchors;
