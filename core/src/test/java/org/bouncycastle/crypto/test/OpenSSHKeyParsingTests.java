@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
@@ -58,6 +59,101 @@ public class OpenSSHKeyParsingTests
         signer.init(false, pubSpec);
 
         isTrue("DSA test", signer.verifySignature(originalMessage, rs[0], rs[1]));
+
+    }
+
+
+    public void testECDSA_curvesFromSSHKeyGen()
+        throws Exception
+    {
+
+        String[][] pairs = new String[][]{
+            {
+                "AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBBbxKE+/DXstQZmwH7Wso8SUt8LvYoMQpxN/7INC0lMn7mNCbxJcSOCfucBuWOrdoFyFZUkGli2mzKj3hJlcPiI=",
+                "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+                    "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS\n" +
+                    "1zaGEyLW5pc3RwMjU2AAAACG5pc3RwMjU2AAAAQQQW8ShPvw17LUGZsB+1rKPElLfC72KD\n" +
+                    "EKcTf+yDQtJTJ+5jQm8SXEjgn7nAbljq3aBchWVJBpYtpsyo94SZXD4iAAAAuKFclDShXJ\n" +
+                    "Q0AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBBbxKE+/DXstQZmw\n" +
+                    "H7Wso8SUt8LvYoMQpxN/7INC0lMn7mNCbxJcSOCfucBuWOrdoFyFZUkGli2mzKj3hJlcPi\n" +
+                    "IAAAAhAP4L/ciGBDF4HoQSvMaKM8svW4Ss0uYi7HkZ1sn/zCe0AAAAHW1lZ2Fud29vZHNA\n" +
+                    "dHljaGUtMzI2NS5nYXRld2F5AQI=\n" +
+                    "-----END OPENSSH PRIVATE KEY-----\n"
+            },
+            {
+                "AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBOT0Cc/zauJsOWo/0P0sMNeyFI5Enz3+lKJtjWXQD7DpFgZmG5Ise8IXR5/ot7fo0kWlYQrye/uSmNmWBuDvOpBCHOnyR6Kaej36qoOO/gwbH+mezSYXSxCTA9Qb8VzxLA==",
+                "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+                    "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAiAAAABNlY2RzYS\n" +
+                    "1zaGEyLW5pc3RwMzg0AAAACG5pc3RwMzg0AAAAYQTk9AnP82ribDlqP9D9LDDXshSORJ89\n" +
+                    "/pSibY1l0A+w6RYGZhuSLHvCF0ef6Le36NJFpWEK8nv7kpjZlgbg7zqQQhzp8keimno9+q\n" +
+                    "qDjv4MGx/pns0mF0sQkwPUG/Fc8SwAAADorZ3naK2d52gAAAATZWNkc2Etc2hhMi1uaXN0\n" +
+                    "cDM4NAAAAAhuaXN0cDM4NAAAAGEE5PQJz/Nq4mw5aj/Q/Sww17IUjkSfPf6Uom2NZdAPsO\n" +
+                    "kWBmYbkix7whdHn+i3t+jSRaVhCvJ7+5KY2ZYG4O86kEIc6fJHopp6Pfqqg47+DBsf6Z7N\n" +
+                    "JhdLEJMD1BvxXPEsAAAAMQDLno+rINnY7/Ht1WmSGZYJ3EMPtysbxuBnQFEL4USa3kyAb1\n" +
+                    "QMR6+jtqraKtE7kLwAAAAdbWVnYW53b29kc0B0eWNoZS0zMjY1LmdhdGV3YXkBAg==\n" +
+                    "-----END OPENSSH PRIVATE KEY-----\n"
+            },
+            {
+                "AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBADXE/q1WSR002vRI+tiPLpdRjzeymSk+RjD7ZIC9CndqLmI0rhTMh5xReAzved12BH9lQJIGIw4YoIQDudsMbRUsQEjFvbFzSXLJBYWdZf8Voa/97/R9w/i8bKUMUPP0disypZlGdQn5+XvzHG6bhX2Qr9aJacGFZoVHugF/M8QyC+GyA==",
+                "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+                    "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS\n" +
+                    "1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQA1xP6tVkkdNNr0SPrYjy6XUY83spk\n" +
+                    "pPkYw+2SAvQp3ai5iNK4UzIecUXgM73nddgR/ZUCSBiMOGKCEA7nbDG0VLEBIxb2xc0lyy\n" +
+                    "QWFnWX/FaGv/e/0fcP4vGylDFDz9HYrMqWZRnUJ+fl78xxum4V9kK/WiWnBhWaFR7oBfzP\n" +
+                    "EMgvhsgAAAEgs+rbdbPq23UAAAATZWNkc2Etc2hhMi1uaXN0cDUyMQAAAAhuaXN0cDUyMQ\n" +
+                    "AAAIUEANcT+rVZJHTTa9Ej62I8ul1GPN7KZKT5GMPtkgL0Kd2ouYjSuFMyHnFF4DO953XY\n" +
+                    "Ef2VAkgYjDhighAO52wxtFSxASMW9sXNJcskFhZ1l/xWhr/3v9H3D+LxspQxQ8/R2KzKlm\n" +
+                    "UZ1Cfn5e/McbpuFfZCv1olpwYVmhUe6AX8zxDIL4bIAAAAQgCM8ojULpNk3UhBZhPfK+Tw\n" +
+                    "QjT9MHU0OTi4twvKPAE0vOLQ/C1g9AMlspyKxS2NKx2gxxXISowFGNL6Jkx9198ElQAAAB\n" +
+                    "1tZWdhbndvb2RzQHR5Y2hlLTMyNjUuZ2F0ZXdheQECAwQF\n" +
+                    "-----END OPENSSH PRIVATE KEY-----\n"
+            }
+        };
+
+
+        for (String[] pair : pairs)
+        {
+
+
+            CipherParameters pubSpec = OpenSSHPublicKeyUtil.parsePublicKey(
+                Base64.decode(pair[0]));
+
+            CipherParameters privSpec = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(
+                new PemReader(
+                    new StringReader(pair[1])).readPemObject().getContent());
+
+            ECDSASigner signer = new ECDSASigner();
+            signer.init(true, privSpec);
+
+            byte[] originalMessage = new byte[10];
+            secureRandom.nextBytes(originalMessage);
+
+            BigInteger[] rs = signer.generateSignature(originalMessage);
+
+            signer.init(false, pubSpec);
+
+            isTrue("ECDSA test", signer.verifySignature(originalMessage, rs[0], rs[1]));
+
+            //
+            // Test encode
+            //
+
+
+            CipherParameters recoveredPubKey = OpenSSHPublicKeyUtil.parsePublicKey(OpenSSHPublicKeyUtil.encodePublicKey((AsymmetricKeyParameter)pubSpec));
+            CipherParameters recoveredPrivateKey = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(OpenSSHPrivateKeyUtil.encodePrivateKey((AsymmetricKeyParameter)privSpec));
+
+            signer = new ECDSASigner();
+            signer.init(true, privSpec);
+
+            originalMessage = new byte[10];
+            secureRandom.nextBytes(originalMessage);
+
+            rs = signer.generateSignature(originalMessage);
+
+            signer.init(false, pubSpec);
+
+            isTrue("ECDSA test post encoded / decode", signer.verifySignature(originalMessage, rs[0], rs[1]));
+        }
 
     }
 
@@ -185,6 +281,7 @@ public class OpenSSHKeyParsingTests
     public void performTest()
         throws Exception
     {
+        testECDSA_curvesFromSSHKeyGen();
         testDSA();
         testECDSA();
         testRSA();
