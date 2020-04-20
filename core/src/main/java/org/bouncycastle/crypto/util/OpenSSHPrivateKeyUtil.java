@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
@@ -156,7 +157,7 @@ public class OpenSSHPrivateKeyUtil
     {
         AsymmetricKeyParameter result = null;
 
-        if  (blob[0] == 0x30)
+        if (blob[0] == 0x30)
         {
             ASN1Sequence sequence = ASN1Sequence.getInstance(blob);
 
@@ -254,21 +255,47 @@ public class OpenSSHPrivateKeyUtil
             }
 
             String keyType = pkIn.readString();
-            if (!"ssh-ed25519".equals(keyType))
+
+            if ("ssh-ed25519".equals(keyType))
             {
-                throw new IllegalStateException("can not parse private key of type " + keyType);
+                // Public key
+                pkIn.readBlock();
+                // Private key value..
+                byte[] edPrivateKey = pkIn.readBlock();
+                if (edPrivateKey.length != Ed25519PrivateKeyParameters.KEY_SIZE + Ed25519PublicKeyParameters.KEY_SIZE)
+                {
+                    throw new IllegalStateException("private key value of wrong length");
+                }
+
+                result = new Ed25519PrivateKeyParameters(edPrivateKey, 0);
+            }
+            else if (keyType.startsWith("ecdsa"))
+            {
+
+                ASN1ObjectIdentifier oid = SSHNamedCurves.getByName(Strings.fromByteArray(pkIn.readBlock()));
+                if (oid == null)
+                {
+                    throw new IllegalStateException("OID not found for: " + keyType);
+                }
+
+                X9ECParameters curveParams = NISTNamedCurves.getByOID(oid);
+                if (curveParams == null)
+                {
+                    throw new IllegalStateException("Curve not found for: " + oid);
+                }
+
+                // Skip public key.
+                pkIn.readBlock();
+                byte[] privKey = pkIn.readBlock();
+
+                result = new ECPrivateKeyParameters(new BigInteger(1, privKey),
+                    new ECNamedDomainParameters(oid,
+                        curveParams.getCurve(),
+                        curveParams.getG(),
+                        curveParams.getN(),
+                        curveParams.getH(), curveParams.getSeed()));
             }
 
-            // Skip public key
-            pkIn.skipBlock();
-
-            byte[] edPrivateKey = pkIn.readBlock();
-            if (edPrivateKey.length != Ed25519PrivateKeyParameters.KEY_SIZE + Ed25519PublicKeyParameters.KEY_SIZE)
-            {
-                throw new IllegalStateException("private key value of wrong length");
-            }
-
-            result = new Ed25519PrivateKeyParameters(edPrivateKey, 0);
 
             // Comment for private key
             pkIn.skipBlock();
