@@ -455,6 +455,7 @@ public class DRBG
 
                 if (!scheduled.getAndSet(true))
                 {
+                    // don't try to be clever here - things change in Java 11!
                     Thread gatherer = new Thread(new EntropyGatherer(byteLength));
                     gatherer.setDaemon(true);
                     gatherer.start();
