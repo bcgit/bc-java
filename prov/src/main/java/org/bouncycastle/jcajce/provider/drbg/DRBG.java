@@ -9,8 +9,6 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
 import java.security.Security;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -370,8 +368,6 @@ public class DRBG
     private static class HybridSecureRandom
         extends SecureRandom
     {
-        private final ExecutorService rngThread = Executors.newFixedThreadPool(1);
-
         private final AtomicBoolean seedAvailable = new AtomicBoolean(false);
         private final AtomicInteger samples = new AtomicInteger(0);
         private final SecureRandom baseRandom = createInitialEntropySource();
@@ -427,11 +423,6 @@ public class DRBG
             return data;
         }
 
-        public void finalize()
-        {
-            rngThread.shutdown();
-        }
-
         private class SignallingEntropySource
             implements EntropySource
         {
@@ -464,7 +455,9 @@ public class DRBG
 
                 if (!scheduled.getAndSet(true))
                 {
-                    rngThread.execute(new EntropyGatherer(byteLength));
+                    Thread gatherer = new Thread(new EntropyGatherer(byteLength));
+                    gatherer.setDaemon(true);
+                    gatherer.start();
                 }
 
                 return seed;
