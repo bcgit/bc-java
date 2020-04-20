@@ -3,17 +3,16 @@ package org.bouncycastle.crypto.util;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
-import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
 
 /**
@@ -81,12 +80,14 @@ public class OpenSSHPublicKeyUtil
         {
             SSHBuilder builder = new SSHBuilder();
 
-            String name = null;
-            if (((ECPublicKeyParameters)cipherParameters).getParameters().getCurve() instanceof SecP256R1Curve)
-            {
-                name = "nistp256";
-            }
-            else
+            //
+            // checked for named curve parameters..
+            //
+
+
+            String name = SSHNamedCurves.getNameForParameters(((ECPublicKeyParameters)cipherParameters).getParameters());
+
+            if (name == null)
             {
                 throw new IllegalArgumentException("unable to derive ssh curve name for " + ((ECPublicKeyParameters)cipherParameters).getParameters().getCurve().getClass().getName());
             }
@@ -149,35 +150,28 @@ public class OpenSSHPublicKeyUtil
         else if (magic.startsWith(ECDSA))
         {
             String curveName = buffer.readString();
-            String nameToFind = curveName;
 
-            if (curveName.startsWith("nist"))
-            {
-                //
-                // NIST names like P-256 are encoded in SSH as nistp256
-                //
-
-                nameToFind = curveName.substring(4);
-                nameToFind = nameToFind.substring(0, 1) + "-" + nameToFind.substring(1);
-            }
-
-            X9ECParameters x9ECParameters = ECNamedCurveTable.getByName(nameToFind);
+            ASN1ObjectIdentifier oid = SSHNamedCurves.getByName(curveName);
+            X9ECParameters x9ECParameters = SSHNamedCurves.getParameters(oid);
 
             if (x9ECParameters == null)
             {
-                throw new IllegalStateException("unable to find curve for " + magic + " using curve name " + nameToFind);
+                throw new IllegalStateException("unable to find curve for " + magic + " using curve name " + curveName);
             }
-
-            //
-            // Extract name of digest from magic string value;
-            //
-            //String digest = magic.split("-")[1];
 
             ECCurve curve = x9ECParameters.getCurve();
 
             byte[] pointRaw = buffer.readBlock();
 
-            result = new ECPublicKeyParameters(curve.decodePoint(pointRaw), new ECDomainParameters(curve, x9ECParameters.getG(), x9ECParameters.getN(), x9ECParameters.getH(), x9ECParameters.getSeed()));
+            result = new ECPublicKeyParameters(
+                curve.decodePoint(pointRaw),
+                new ECNamedDomainParameters(
+                    oid,
+                    curve,
+                    x9ECParameters.getG(),
+                    x9ECParameters.getN(),
+                    x9ECParameters.getH(),
+                    x9ECParameters.getSeed()));
         }
         else if (ED_25519.equals(magic))
         {
