@@ -102,6 +102,12 @@ public interface MiscObjectIdentifiers
     ASN1ObjectIdentifier cast5CBC = entrust.branch("66.10");
 
     //
+    // HMAC-SHA1       hMAC-SHA1 OBJECT IDENTIFIER ::= { iso(1) identified-organization(3)
+    //       dod(6) internet(1) security(5) mechanisms(5) 8 1 2 }
+    //
+    ASN1ObjectIdentifier hMAC_SHA1 = new ASN1ObjectIdentifier("1.3.6.1.5.5.8.1.2");
+
+    //
     // Ascom
     //
     ASN1ObjectIdentifier as_sys_sec_alg_ideaCBC = new ASN1ObjectIdentifier("1.3.6.1.4.1.188.7.1.1.2");
