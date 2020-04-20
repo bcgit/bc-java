@@ -9,7 +9,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
 import java.security.Security;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,7 +47,6 @@ import org.bouncycastle.util.Strings;
 public class DRBG
 {
     private static final String PREFIX = DRBG.class.getName();
-    private static final Executor rngThread = Executors.newFixedThreadPool(1);
 
     // {"Provider class name","SecureRandomSpi class name"}
     private static final String[][] initialEntropySourceNames = new String[][]
@@ -371,6 +370,8 @@ public class DRBG
     private static class HybridSecureRandom
         extends SecureRandom
     {
+        private final ExecutorService rngThread = Executors.newFixedThreadPool(1);
+
         private final AtomicBoolean seedAvailable = new AtomicBoolean(false);
         private final AtomicInteger samples = new AtomicInteger(0);
         private final SecureRandom baseRandom = createInitialEntropySource();
@@ -424,6 +425,11 @@ public class DRBG
             drbg.nextBytes(data);
 
             return data;
+        }
+
+        public void finalize()
+        {
+            rngThread.shutdown();
         }
 
         private class SignallingEntropySource
