@@ -204,6 +204,7 @@ public class HttpResponder
         this.response = response;
         Thread t = new Thread(this);
         t.setPriority(Thread.MIN_PRIORITY);
+        t.setDaemon(true);
         t.start();
         ready.await(5, TimeUnit.SECONDS);
         return port;

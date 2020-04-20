@@ -6,9 +6,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.Callable;
 
-import org.bouncycastle.util.Strings;
-
 import junit.framework.Assert;
+import org.bouncycastle.util.Strings;
 
 class TestProtocolUtil
 {
@@ -52,11 +51,13 @@ class TestProtocolUtil
     {
         TestProtocolUtil.Task serverTask = new TestProtocolUtil.Task(server);
         Thread serverThread = new Thread(serverTask);
+        serverThread.setDaemon(true);
         serverThread.start();
         server.await();
 
         TestProtocolUtil.Task clientTask = new TestProtocolUtil.Task(client);
         Thread clientThread = new Thread(clientTask);
+        clientThread.setDaemon(true);
         clientThread.start();
         client.await();
 

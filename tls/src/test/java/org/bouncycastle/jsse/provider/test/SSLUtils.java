@@ -99,7 +99,9 @@ class SSLUtils
             }
         };
 
-        new Thread(serverTask).start();
+        Thread t = new Thread(serverTask);
+        t.setDaemon(true);
+        t.start();
 
         try
         {
