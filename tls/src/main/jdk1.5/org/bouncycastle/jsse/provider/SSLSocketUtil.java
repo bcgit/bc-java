@@ -82,9 +82,8 @@ abstract class SSLSocketUtil
     {
         String name = "BCJSSE-HandshakeCompleted-" + (threadNumber.getAndIncrement() & 0x7FFFFFFF);
 
-        Thread t = new Thread(notifyRunnable, name);
-        t.setDaemon(true);
-        t.start();
+        // Can't be a daemon thread
+        new Thread(notifyRunnable, name).start();
     }
 
     static BCExtendedSSLSession importHandshakeSession(SSLSocket sslSocket)
