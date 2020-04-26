@@ -1,7 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import javax.net.ssl.X509ExtendedKeyManager;
@@ -19,9 +18,8 @@ final class ContextData
     private final BCX509ExtendedTrustManager x509TrustManager;
     private final ProvSSLSessionContext clientSessionContext;
     private final ProvSSLSessionContext serverSessionContext;
-
-    private final Map<Integer, NamedGroupInfo> namedGroupMap;
-    private final Map<Integer, SignatureSchemeInfo> signatureSchemeMap;
+    private final NamedGroupInfo.PerContext namedGroups;
+    private final SignatureSchemeInfo.PerContext signatureSchemes;
 
     ContextData(ProvSSLContextSpi context, JcaTlsCrypto crypto, X509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager)
@@ -32,20 +30,20 @@ final class ContextData
         this.x509TrustManager = x509TrustManager;
         this.clientSessionContext = new ProvSSLSessionContext(this);
         this.serverSessionContext = new ProvSSLSessionContext(this);
-
-        this.namedGroupMap = NamedGroupInfo.createNamedGroupMap(context, crypto);
-        this.signatureSchemeMap = SignatureSchemeInfo.createSignatureSchemeMap(context, crypto);
+        this.namedGroups = NamedGroupInfo.createPerContext(context.isFips(), crypto);
+        this.signatureSchemes = SignatureSchemeInfo.createPerContext(context.isFips(), crypto, namedGroups);
     }
 
-    List<NamedGroupInfo> getActiveNamedGroups(ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
+    NamedGroupInfo.PerConnection getNamedGroups(ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
     {
-        return NamedGroupInfo.getActiveNamedGroups(namedGroupMap, sslParameters, activeProtocolVersions);
+        return NamedGroupInfo.createPerConnection(namedGroups, sslParameters, activeProtocolVersions);
     }
 
-    List<SignatureSchemeInfo> getActiveSignatureSchemes(ProvSSLParameters sslParameters,
-        ProtocolVersion[] activeProtocolVersions)
+    List<SignatureSchemeInfo> getActiveCertsSignatureSchemes(ProvSSLParameters sslParameters,
+        ProtocolVersion[] activeProtocolVersions, NamedGroupInfo.PerConnection namedGroups)
     {
-        return SignatureSchemeInfo.getActiveSignatureSchemes(signatureSchemeMap, sslParameters, activeProtocolVersions);
+        return SignatureSchemeInfo.getActiveCertsSignatureSchemes(signatureSchemes, sslParameters,
+            activeProtocolVersions, namedGroups);
     }
 
     ProvSSLContextSpi getContext()
@@ -68,14 +66,9 @@ final class ContextData
         return serverSessionContext;
     }
 
-    List<NamedGroupInfo> getNamedGroups(int[] namedGroups)
-    {
-        return NamedGroupInfo.getNamedGroups(namedGroupMap, namedGroups);
-    }
-
     List<SignatureSchemeInfo> getSignatureSchemes(Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
     {
-        return SignatureSchemeInfo.getSignatureSchemes(signatureSchemeMap, sigAndHashAlgs);
+        return SignatureSchemeInfo.getSignatureSchemes(signatureSchemes, sigAndHashAlgs);
     }
 
     X509ExtendedKeyManager getX509KeyManager()
