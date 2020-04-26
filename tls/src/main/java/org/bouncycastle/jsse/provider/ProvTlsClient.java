@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIServerName;
-import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
@@ -111,11 +110,11 @@ class ProvTlsClient
     @Override
     protected Vector<Integer> getSupportedGroups(@SuppressWarnings("rawtypes") Vector namedGroupRolesRaw)
     {
-        @SuppressWarnings("unchecked")
-        Vector<Integer> namedGroupRoles = namedGroupRolesRaw;
+        // NOTE: Ignore roles; BCJSSE determines supported groups BEFORE signature schemes and cipher suites  
+//        @SuppressWarnings("unchecked")
+//        Vector<Integer> namedGroupRoles = namedGroupRolesRaw;
 
-        return SupportedGroups.getClientSupportedGroups(getCrypto(), manager.getContextData().getContext().isFips(),
-            namedGroupRoles);
+        return NamedGroupInfo.getSupportedGroupsLocal(jsseSecurityParameters.namedGroups);
     }
 
     @Override
@@ -169,19 +168,28 @@ class ProvTlsClient
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithms()
     {
-        List<SignatureSchemeInfo> signatureSchemes = manager.getContextData().getActiveSignatureSchemes(sslParameters,
-            getProtocolVersions());
+        ContextData contextData = manager.getContextData();
+        ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
 
-        // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate this 
+        jsseSecurityParameters.namedGroups = contextData.getNamedGroups(sslParameters, activeProtocolVersions);
+
+        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveCertsSignatureSchemes(sslParameters,
+            activeProtocolVersions, jsseSecurityParameters.namedGroups);
+
         jsseSecurityParameters.localSigSchemes = signatureSchemes;
         jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
 
-        return SignatureSchemeInfo.getSignatureAndHashAlgorithms(signatureSchemes);
+        return SignatureSchemeInfo.getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemes);
     }
 
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithmsCert()
     {
+//        if (jsseSecurityParameters.localSigSchemes != jsseSecurityParameters.localSigSchemesCert)
+//        {
+//            return SignatureSchemeInfo.getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemesCert);
+//        }
+
         return null;
     }
 
@@ -248,7 +256,11 @@ class ProvTlsClient
                     Vector<SignatureAndHashAlgorithm> serverSigAlgsCert = (Vector<SignatureAndHashAlgorithm>)
                         securityParameters.getServerSigAlgsCert();
 
-                    // TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate these conversions 
+                    /*
+                     * TODO[tls13] Legacy schemes (cert-only for TLS 1.3) complicate these conversions. Consider which
+                     * (if any) of these should be constrained by locally enabled schemes (especially once
+                     * jdk.tls.signatureSchemes support added).
+                     */
                     jsseSecurityParameters.peerSigSchemes = contextData.getSignatureSchemes(serverSigAlgs);
                     jsseSecurityParameters.peerSigSchemesCert = (serverSigAlgs == serverSigAlgsCert)
                         ?   jsseSecurityParameters.peerSigSchemes
@@ -501,7 +513,7 @@ class ProvTlsClient
          * with some hash/signature algorithm pair in supported_signature_algorithms.
          */
 
-        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+        boolean post13Active = TlsUtils.isTLSv13(context);
         Set<String> keyManagerMissCache = new HashSet<String>();
 
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
@@ -522,7 +534,8 @@ class ProvTlsClient
                 }
             }
 
-            if (!signatureSchemeInfo.isActive(algorithmConstraints))
+            if (!jsseSecurityParameters.localSigSchemes.contains(signatureSchemeInfo)
+                || (post13Active && !signatureSchemeInfo.isSupported13()))
             {
                 continue;
             }
