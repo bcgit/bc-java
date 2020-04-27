@@ -149,35 +149,6 @@ abstract class FipsUtils
         return Collections.unmodifiableSet(ps);
     }
 
-    static int getFipsDefaultDH(int minimumFiniteFieldBits)
-    {
-        return minimumFiniteFieldBits <= 2048 ? NamedGroup.ffdhe2048
-            :  minimumFiniteFieldBits <= 3072 ? NamedGroup.ffdhe3072
-            :  minimumFiniteFieldBits <= 4096 ? NamedGroup.ffdhe4096
-            :  minimumFiniteFieldBits <= 6144 ? NamedGroup.ffdhe6144
-            :  minimumFiniteFieldBits <= 8192 ? NamedGroup.ffdhe8192
-            :  -1;
-    }
-
-    // NOTE: Assumed to never return a char-2 curve.
-    static int getFipsDefaultECDH(int minimumCurveBits)
-    {
-        return minimumCurveBits <= 256 ? NamedGroup.secp256r1
-            :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
-            :  minimumCurveBits <= 521 ? NamedGroup.secp521r1
-            :  -1;
-    }
-
-    static int getFipsMaximumCurveBits()
-    {
-        return 521;
-    }
-
-    static int getFipsMaximumFiniteFieldBits()
-    {
-        return 8192;
-    }
-
     static boolean isFipsCipherSuite(String cipherSuite)
     {
         return cipherSuite != null && FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
@@ -226,7 +197,7 @@ abstract class FipsUtils
         case SignatureScheme.ecdsa_secp384r1_sha384:
         case SignatureScheme.ecdsa_secp521r1_sha512:
         case SignatureScheme.rsa_pkcs1_sha1:
-        case SignatureSchemeInfo.historical_rsa_pkcs1_sha224:
+        case SignatureSchemeInfo.historical_rsa_sha224:
         case SignatureScheme.rsa_pkcs1_sha256:
         case SignatureScheme.rsa_pkcs1_sha384:
         case SignatureScheme.rsa_pkcs1_sha512:
