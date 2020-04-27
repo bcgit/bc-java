@@ -247,35 +247,51 @@ class ProvTlsServer
         }
 
         final ContextData contextData = manager.getContextData();
-
-        // TODO[jsse] These should really be based on TlsCrypto support
-        short[] certificateTypes = new short[]{ ClientCertificateType.ecdsa_sign,
-            ClientCertificateType.rsa_sign, ClientCertificateType.dss_sign };
+        final ProtocolVersion negotiatedVersion = context.getServerVersion();
 
         // TODO[jsse] May want this selection to depend on the peer's supported_groups (create alternate method)?
         List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveCertsSignatureSchemes(sslParameters,
-            new ProtocolVersion[]{ context.getServerVersion() }, jsseSecurityParameters.namedGroups);
+            new ProtocolVersion[]{ negotiatedVersion }, jsseSecurityParameters.namedGroups);
 
+        // TODO[tls13] From TLS 1.3 these are allowed to be different (no JSSE API to configure this though)
         jsseSecurityParameters.localSigSchemes = signatureSchemes;
         jsseSecurityParameters.localSigSchemesCert = signatureSchemes;
 
         Vector<SignatureAndHashAlgorithm> serverSigAlgs = SignatureSchemeInfo
             .getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemes);
 
-        // TODO[tls13] CertificateRequest can contain distinct serverSigAlgsCert
-//        if (jsseSecurityParameters.localSigSchemes != jsseSecurityParameters.localSigSchemesCert)
-//        {
-//            SignatureSchemeInfo.getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemesCert);
-//        }
-
         Vector<X500Name> certificateAuthorities = JsseUtils
             .getCertificateAuthorities(contextData.getX509TrustManager());
 
-        /*
-         * TODO[tls13] RFC 8446 4.4.2.1. A server MAY request that a client present an OCSP response
-         * with its certificate by sending an empty "status_request" extension in its
-         * CertificateRequest message.
-         */
+        if (TlsUtils.isTLSv13(negotiatedVersion))
+        {
+            /*
+             * TODO[tls13] RFC 8446 4.4.2.1. A server MAY request that a client present an OCSP response
+             * with its certificate by sending an empty "status_request" extension in its
+             * CertificateRequest message.
+             */
+
+            /*
+             * RFC 8446 4.3.2. This field SHALL be zero length unless used for the post-handshake
+             * authentication exchanges [..].
+             */
+            byte[] certificateRequestContext = TlsUtils.EMPTY_BYTES;
+
+            Vector<SignatureAndHashAlgorithm> serverSigAlgsCert = null;
+            if (jsseSecurityParameters.localSigSchemes != jsseSecurityParameters.localSigSchemesCert)
+            {
+                serverSigAlgsCert = SignatureSchemeInfo
+                    .getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemesCert);
+            }
+
+            return new CertificateRequest(certificateRequestContext, serverSigAlgs, serverSigAlgsCert,
+                certificateAuthorities);
+        }
+
+        // TODO[jsse] These should really be based on TlsCrypto support
+        short[] certificateTypes = new short[]{ ClientCertificateType.ecdsa_sign,
+            ClientCertificateType.rsa_sign, ClientCertificateType.dss_sign };
+
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
 

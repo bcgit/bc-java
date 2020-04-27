@@ -24,27 +24,52 @@ import org.bouncycastle.asn1.x500.X500Name;
  */
 public class CertificateRequest
 {
-    protected short[] certificateTypes;
-    protected Vector supportedSignatureAlgorithms;
-    protected Vector certificateAuthorities;
+    protected final byte[] certificateRequestContext;
+    protected final short[] certificateTypes;
+    protected final Vector supportedSignatureAlgorithms;
+    protected final Vector supportedSignatureAlgorithmsCert;
+    protected final Vector certificateAuthorities;
 
     /**
      * @param certificateTypes       see {@link ClientCertificateType} for valid constants.
      * @param certificateAuthorities a {@link Vector} of {@link X500Name}.
      */
-    public CertificateRequest(short[] certificateTypes, Vector supportedSignatureAlgorithms, Vector certificateAuthorities)
+    public CertificateRequest(short[] certificateTypes, Vector supportedSignatureAlgorithms,
+        Vector certificateAuthorities)
     {
-        if (certificateTypes == null)
+        this(null, certificateTypes, supportedSignatureAlgorithms, null, certificateAuthorities);
+    }
+
+    public CertificateRequest(byte[] certificateRequestContext, Vector supportedSignatureAlgorithms,
+        Vector supportedSignatureAlgorithmsCert, Vector certificateAuthorities)
+    {
+        /*
+         * TODO[tls13] Removed certificateTypes, added certificate_request_context, added extensions
+         * (required: signature_algorithms, optional: status_request, signed_certificate_timestamp,
+         * certificate_authorities, oid_filters, signature_algorithms_cert)
+         */
+
+        this(certificateRequestContext, null, supportedSignatureAlgorithms, supportedSignatureAlgorithmsCert,
+            certificateAuthorities);
+    }
+
+    private CertificateRequest(byte[] certificateRequestContext, short[] certificateTypes, Vector supportedSignatureAlgorithms,
+        Vector supportedSignatureAlgorithmsCert, Vector certificateAuthorities)
+    {
+        if (null != certificateRequestContext && !TlsUtils.isValidUint8(certificateRequestContext.length))
         {
-            throw new IllegalArgumentException("'certificateTypes' cannot be null");
+            throw new IllegalArgumentException("'certificateRequestContext' cannot be longer than 255");
         }
-        if (certificateTypes.length < 1 || !TlsUtils.isValidUint8(certificateTypes.length))
+        if (null != certificateTypes
+            && (certificateTypes.length < 1 || !TlsUtils.isValidUint8(certificateTypes.length)))
         {
             throw new IllegalArgumentException("'certificateTypes' should have length from 1 to 255");
         }
 
+        this.certificateRequestContext = certificateRequestContext;
         this.certificateTypes = certificateTypes;
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
+        this.supportedSignatureAlgorithmsCert = supportedSignatureAlgorithmsCert;
         this.certificateAuthorities = certificateAuthorities;
     }
 
@@ -66,6 +91,15 @@ public class CertificateRequest
     }
 
     /**
+     * @return an optional {@link Vector} of {@link SignatureAndHashAlgorithm}. May be non-null from
+     *         TLS 1.3 onwards.
+     */
+    public Vector getSupportedSignatureAlgorithmsCert()
+    {
+        return supportedSignatureAlgorithmsCert;
+    }
+
+    /**
      * @return a {@link Vector} of {@link X500Name}
      */
     public Vector getCertificateAuthorities()
@@ -79,12 +113,32 @@ public class CertificateRequest
      * @param output the {@link OutputStream} to encode to.
      * @throws IOException
      */
-    public void encode(OutputStream output)
+    public void encode(TlsContext context, OutputStream output)
         throws IOException
     {
+        final ProtocolVersion negotiatedVersion = context.getServerVersion();
+        final boolean isTLSv12 = TlsUtils.isTLSv12(negotiatedVersion);
+        final boolean isTLSv13 = TlsUtils.isTLSv13(negotiatedVersion);
+
+        if (isTLSv13 != (null != certificateRequestContext) ||
+            isTLSv13 != (null == certificateTypes) ||
+            isTLSv12 != (null != supportedSignatureAlgorithms) ||
+            !isTLSv13 && (null != supportedSignatureAlgorithmsCert))
+        {
+            throw new IllegalStateException();
+        }
+
+        if (isTLSv13)
+        {
+            TlsUtils.writeOpaque8(certificateRequestContext, output);
+
+            // TODO[tls13]
+            throw new UnsupportedOperationException();
+        }
+
         TlsUtils.writeUint8ArrayWithUint8Length(certificateTypes, output);
 
-        if (supportedSignatureAlgorithms != null)
+        if (isTLSv12)
         {
             // TODO Check whether SignatureAlgorithm.anonymous is allowed here
             TlsUtils.encodeSupportedSignatureAlgorithms(supportedSignatureAlgorithms, output);
@@ -131,6 +185,20 @@ public class CertificateRequest
     public static CertificateRequest parse(TlsContext context, InputStream input)
         throws IOException
     {
+        final ProtocolVersion negotiatedVersion = context.getServerVersion();
+        final boolean isTLSv13 = TlsUtils.isTLSv13(negotiatedVersion);
+
+        if (isTLSv13)
+        {
+            // TODO[tls13] Check here that this is empty for handshake CertificateRequest?
+            byte[] certificateRequestContext = TlsUtils.readOpaque8(input);
+
+            // TODO[tls13]
+            throw new UnsupportedOperationException();
+        }
+
+        final boolean isTLSv12 = TlsUtils.isTLSv12(negotiatedVersion);
+
         int numTypes = TlsUtils.readUint8(input);
         if (numTypes < 1)
         {
@@ -144,7 +212,7 @@ public class CertificateRequest
         }
 
         Vector supportedSignatureAlgorithms = null;
-        if (TlsUtils.isTLSv12(context))
+        if (isTLSv12)
         {
             supportedSignatureAlgorithms = TlsUtils.parseSupportedSignatureAlgorithms(input);
         }
