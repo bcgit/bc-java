@@ -275,7 +275,6 @@ class ProvTlsClient
                 @SuppressWarnings("unchecked")
                 Principal[] issuers = JsseUtils.toX500Principals(certificateRequest.getCertificateAuthorities());
 
-                // TODO[tls13] Should be null from TLS 1.3
                 short[] certificateTypes = certificateRequest.getCertificateTypes();
 
                 if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(securityParameters.getNegotiatedVersion()))
@@ -513,8 +512,13 @@ class ProvTlsClient
          * with some hash/signature algorithm pair in supported_signature_algorithms.
          */
 
-        boolean post13Active = TlsUtils.isTLSv13(context);
+        final boolean isTLSv13 = TlsUtils.isTLSv13(context);
         Set<String> keyManagerMissCache = new HashSet<String>();
+
+        if (isTLSv13 != (null == certificateTypes))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
@@ -535,7 +539,7 @@ class ProvTlsClient
             }
 
             if (!jsseSecurityParameters.localSigSchemes.contains(signatureSchemeInfo)
-                || (post13Active && !signatureSchemeInfo.isSupported13()))
+                || (isTLSv13 && !signatureSchemeInfo.isSupported13()))
             {
                 continue;
             }
