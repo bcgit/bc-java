@@ -8,6 +8,8 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
@@ -82,6 +84,25 @@ public abstract class TlsCryptoTest
         this.crypto = crypto;
     }
 
+    public void testDHDomain() throws Exception
+    {
+        if (!crypto.hasDHAgreement())
+        {
+            return;
+        }
+
+        for (int namedGroup = 256; namedGroup < 512; ++namedGroup)
+        {
+            if (!NamedGroup.refersToASpecificFiniteField(namedGroup) || !crypto.hasNamedGroup(namedGroup))
+            {
+                continue;
+            }
+
+            implTestDHDomain(new TlsDHConfig(namedGroup, false));
+            implTestDHDomain(new TlsDHConfig(namedGroup, true));
+        }
+    }
+
     public void testECDomain() throws Exception
     {
         if (!crypto.hasECDHAgreement())
@@ -96,24 +117,7 @@ public abstract class TlsCryptoTest
                 continue;
             }
 
-            TlsECDomain d = crypto.createECDomain(new TlsECConfig(namedGroup));
-
-            for (int i = 0; i < 10; ++i)
-            {
-                TlsAgreement aA = d.createECDH();
-                TlsAgreement aB = d.createECDH();
-
-                byte[] pA = aA.generateEphemeral();
-                byte[] pB = aB.generateEphemeral();
-
-                aA.receivePeerValue(pB);
-                aB.receivePeerValue(pA);
-
-                TlsSecret sA = aA.calculateSecret();
-                TlsSecret sB = aB.calculateSecret();
-
-                assertArrayEquals(extract(sA), extract(sB));
-            }
+            implTestECDomain(new TlsECConfig(namedGroup));
         }
     }
 
@@ -340,5 +344,51 @@ public abstract class TlsCryptoTest
     private static byte[] hex(String s)
     {
         return Hex.decode(s.replaceAll(" ", ""));
+    }
+
+    private void implTestAgreement(TlsAgreement aA, TlsAgreement aB) throws IOException
+    {
+        byte[] pA = aA.generateEphemeral();
+        byte[] pB = aB.generateEphemeral();
+
+        aA.receivePeerValue(pB);
+        aB.receivePeerValue(pA);
+
+        TlsSecret sA = aA.calculateSecret();
+        TlsSecret sB = aB.calculateSecret();
+
+        assertArrayEquals(extract(sA), extract(sB));
+    }
+
+    private void implTestDHDomain(TlsDHConfig dhConfig) throws IOException
+    {
+        int bits = NamedGroup.getFiniteFieldBits(dhConfig.getNamedGroup());
+        int rounds = Math.max(2, 11 - (bits >>> 10));
+
+        TlsDHDomain d = crypto.createDHDomain(dhConfig);
+
+        for (int i = 0; i < rounds; ++i)
+        {
+            TlsAgreement aA = d.createDH();
+            TlsAgreement aB = d.createDH();
+
+            implTestAgreement(aA, aB);
+        }
+    }
+
+    private void implTestECDomain(TlsECConfig ecConfig) throws IOException
+    {
+        int bits = NamedGroup.getCurveBits(ecConfig.getNamedGroup());
+        int rounds = Math.max(2, 12 - (bits >>> 6));
+
+        TlsECDomain d = crypto.createECDomain(ecConfig);
+
+        for (int i = 0; i < rounds; ++i)
+        {
+            TlsAgreement aA = d.createECDH();
+            TlsAgreement aB = d.createECDH();
+
+            implTestAgreement(aA, aB);
+        }
     }
 }
