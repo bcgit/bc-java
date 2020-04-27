@@ -17,11 +17,14 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
+import org.bouncycastle.util.Integers;
 
 class SignatureSchemeInfo
 {
-    static final int historical_rsa_pkcs1_md5 = 0x0101;
-    static final int historical_rsa_pkcs1_sha224 = 0x0301;
+//    private static final Logger LOG = Logger.getLogger(SignatureSchemeInfo.class.getName());
+
+    static final int historical_rsa_md5 = 0x0101;
+    static final int historical_rsa_sha224 = 0x0301;
 
     static final int historical_dsa_sha1 = 0x0202;
     static final int historical_dsa_sha224 = 0x0302;
@@ -31,7 +34,7 @@ class SignatureSchemeInfo
 
     // TODO Support jdk.tls.signatureSchemes, a mooted feature in SunJSSE (see JDK-8229720)
     // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
-    private static final int[] DEFAULT_ACTIVE = {
+    private static final int[] DEFAULT_CANDIDATES = {
         SignatureScheme.ed25519,
         SignatureScheme.ed448,
         SignatureScheme.ecdsa_secp256r1_sha256,
@@ -48,103 +51,65 @@ class SignatureSchemeInfo
         SignatureScheme.rsa_pkcs1_sha512,
         historical_dsa_sha256,
         historical_ecdsa_sha224,
-        historical_rsa_pkcs1_sha224,
+        historical_rsa_sha224,
         historical_dsa_sha224,
         SignatureScheme.ecdsa_sha1,
         SignatureScheme.rsa_pkcs1_sha1,
         historical_dsa_sha1,
-        historical_rsa_pkcs1_md5,
+        historical_rsa_md5,
     };
 
-    static Map<Integer, SignatureSchemeInfo> createSignatureSchemeMap(ProvSSLContextSpi context, JcaTlsCrypto crypto)
+    static class PerContext
     {
-        Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
+        private final Map<Integer, SignatureSchemeInfo> index;
+        private final int[] candidates;
 
-        final boolean isFipsContext = context.isFips();
-
-        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pkcs1_sha256, "SHA256withRSA", "RSA");
-        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pkcs1_sha384, "SHA384withRSA", "RSA");
-        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA", "RSA");
-
-        // TODO[tls13] Constrain to the specific NamedGroup (only) for TLS 1.3+
-        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ecdsa_secp256r1_sha256, "SHA256withECDSA", "EC");
-        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ecdsa_secp384r1_sha384, "SHA384withECDSA", "EC");
-        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ecdsa_secp521r1_sha512, "SHA512withECDSA", "EC");
-
-        // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
-//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_rsae_sha256, "SHA256withRSAandMGF1",
-//            "RSA");
-//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1",
-//            "RSA");
-//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1",
-//            "RSA");
-
-        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ed25519, "Ed25519", "Ed25519");
-        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.ed448, "Ed448", "Ed448");
-
-        // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
-//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1",
-//            "RSASSA-PSS");
-//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_pss_sha384, "SHA384withRSAandMGF1",
-//            "RSASSA-PSS");
-//        addSignatureScheme(isFipsContext, crypto, ss, SignatureScheme.rsa_pss_pss_sha512, "SHA512withRSAandMGF1",
-//            "RSASSA-PSS");
-
-        /*
-         * Legacy algorithms: "These values refer solely to signatures which appear in certificates
-         * (see Section 4.4.2.2) and are not defined for use in signed TLS handshake messages,
-         * although they MAY appear in "signature_algorithms" and "signature_algorithms_cert" for
-         * backward compatibility with TLS 1.2."
-         */
-        addSignatureSchemeLegacy(isFipsContext, crypto, ss, SignatureScheme.rsa_pkcs1_sha1, "SHA1withRSA", "RSA");
-        addSignatureSchemeLegacy(isFipsContext, crypto, ss, SignatureScheme.ecdsa_sha1, "SHA1withECDSA", "EC");
-
-        /*
-         * Historical algorithms (for SignatureAndHashAlgorithm values): TLS 1.2 and earlier only.
-         */
-        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_rsa_pkcs1_md5,
-            "rsa_pkcs1_md5", "MD5withRSA", "RSA");
-        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_rsa_pkcs1_sha224,
-            "rsa_pkcs1_sha224", "SHA224withRSA", "RSA");
-
-        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_dsa_sha1, "dsa_sha1",
-            "SHA1withDSA", "DSA");
-        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_dsa_sha224, "dsa_sha224",
-            "SHA224withDSA", "DSA");
-        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_dsa_sha256, "dsa_sha256",
-            "SHA256withDSA", "DSA");
-
-        addSignatureSchemeHistorical(isFipsContext, crypto, ss, SignatureSchemeInfo.historical_ecdsa_sha224,
-            "ecdsa_sha224", "SHA224withECDSA", "EC");
-
-        return Collections.unmodifiableMap(ss);
+        PerContext(Map<Integer, SignatureSchemeInfo> index, int[] candidates)
+        {
+            this.index = index;
+            this.candidates = candidates;
+        }
     }
 
-    static List<SignatureSchemeInfo> getActiveSignatureSchemes(Map<Integer, SignatureSchemeInfo> signatureSchemeMap,
-        ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
+    static PerContext createPerContext(boolean isFipsContext, JcaTlsCrypto crypto, NamedGroupInfo.PerContext namedGroups)
     {
-        // TODO[tls13] SignatureSchemeInfo instances need to know their valid versions for sigAlgs/sigAlgsCert
-        if (!ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv12))
+        Map<Integer, SignatureSchemeInfo> index = createIndex(isFipsContext, crypto, namedGroups);
+        int[] candidates = createCandidates(index);
+
+        return new PerContext(index, candidates);
+    }
+
+    static List<SignatureSchemeInfo> getActiveCertsSignatureSchemes(PerContext perContext, ProvSSLParameters sslParameters,
+        ProtocolVersion[] activeProtocolVersions, NamedGroupInfo.PerConnection namedGroups)
+    {
+        ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
+        if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(latest))
         {
             return null;
         }
 
-        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+        ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
 
-        int count = DEFAULT_ACTIVE.length;
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+        boolean post13Active = TlsUtils.isTLSv13(latest);
+        boolean pre13Active = !TlsUtils.isTLSv13(earliest);
+
+        int count = perContext.candidates.length;
         ArrayList<SignatureSchemeInfo> result = new ArrayList<SignatureSchemeInfo>(count);
         for (int i = 0; i < count; ++i)
         {
-            SignatureSchemeInfo signatureSchemeInfo = signatureSchemeMap.get(DEFAULT_ACTIVE[i]);
+            Integer candidate = Integers.valueOf(perContext.candidates[i]);
+            SignatureSchemeInfo signatureSchemeInfo = perContext.index.get(candidate);
+
             if (null != signatureSchemeInfo
-                && signatureSchemeInfo.isActive(algorithmConstraints))
+                && signatureSchemeInfo.isActiveCerts(algorithmConstraints, pre13Active, post13Active, namedGroups))
             {
                 result.add(signatureSchemeInfo);
             }
         }
         if (result.isEmpty())
         {
-            return null;
+            return Collections.emptyList();
         }
         result.trimToSize();
         return Collections.unmodifiableList(result);
@@ -180,6 +145,7 @@ class SignatureSchemeInfo
 
     static Vector<SignatureAndHashAlgorithm> getSignatureAndHashAlgorithms(List<SignatureSchemeInfo> signatureSchemeInfos)
     {
+        // TODO[tls13] Actually should return empty for empty?
         if (null == signatureSchemeInfos || signatureSchemeInfos.isEmpty())
         {
             return null;
@@ -198,6 +164,7 @@ class SignatureSchemeInfo
         }
         if (result.isEmpty())
         {
+            // TODO[tls13] Actually should return empty for empty?
             return null;
         }
         result.trimToSize();
@@ -216,7 +183,7 @@ class SignatureSchemeInfo
         return ((hashAlgorithm & 0xFF) << 8) | (signatureAlgorithm & 0xFF);
     }
 
-    static List<SignatureSchemeInfo> getSignatureSchemes(Map<Integer, SignatureSchemeInfo> signatureSchemeMap,
+    static List<SignatureSchemeInfo> getSignatureSchemes(PerContext perContext,
         Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
     {
         if (null == sigAndHashAlgs || sigAndHashAlgs.isEmpty())
@@ -233,7 +200,7 @@ class SignatureSchemeInfo
             {
                 int signatureScheme = SignatureSchemeInfo.getSignatureScheme(sigAndHashAlg);
 
-                SignatureSchemeInfo signatureSchemeInfo = signatureSchemeMap.get(signatureScheme);
+                SignatureSchemeInfo signatureSchemeInfo = perContext.index.get(signatureScheme);
                 if (null != signatureSchemeInfo)
                 {
                     result.add(signatureSchemeInfo);
@@ -248,14 +215,27 @@ class SignatureSchemeInfo
         return Collections.unmodifiableList(result);
     }
 
-    private static void addSignatureScheme(boolean isFipsContext, JcaTlsCrypto crypto,
+    private static void addSignatureScheme(boolean isFipsContext, JcaTlsCrypto crypto, NamedGroupInfo.PerContext ng,
         Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String name, String jcaSignatureAlgorithm,
         String keyAlgorithm, boolean supported13, boolean supportedCerts13)
     {
         if (isFipsContext && !FipsUtils.isFipsSignatureScheme(signatureScheme))
         {
-            // Non-FIPS schemes are currently not even entered into the map
+            // In FIPS mode, non-FIPS schemes are currently not even entered into the map
             return;
+        }
+
+        NamedGroupInfo namedGroupInfo = null;
+
+        int namedGroup = SignatureScheme.getNamedGroup(signatureScheme);
+        if (namedGroup >= 0)
+        {
+            namedGroupInfo = NamedGroupInfo.getNamedGroup(ng, namedGroup);
+            if (null == namedGroupInfo || !namedGroupInfo.isEnabled())
+            {
+                supported13 = false;
+                supportedCerts13 = false;
+            }
         }
 
         boolean enabled = crypto.hasSignatureScheme(signatureScheme);
@@ -275,7 +255,7 @@ class SignatureSchemeInfo
         }
 
         SignatureSchemeInfo signatureSchemeInfo = new SignatureSchemeInfo(signatureScheme, name, jcaSignatureAlgorithm,
-            keyAlgorithm, algorithmParameters, supported13, supportedCerts13, enabled);
+            keyAlgorithm, algorithmParameters, supported13, supportedCerts13, namedGroupInfo, enabled);
 
         if (null != ss.put(signatureScheme, signatureSchemeInfo))
         {
@@ -283,30 +263,117 @@ class SignatureSchemeInfo
         }
     }
 
-    private static void addSignatureScheme(boolean isFipsContext, JcaTlsCrypto crypto,
+    private static void addSignatureScheme(boolean isFipsContext, JcaTlsCrypto crypto, NamedGroupInfo.PerContext ng,
         Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm)
     {
         String name = SignatureScheme.getName(signatureScheme);
 
-        addSignatureScheme(isFipsContext, crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, true,
-            true);
+        addSignatureScheme(isFipsContext, crypto, ng, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm,
+            true, true);
     }
 
     private static void addSignatureSchemeHistorical(boolean isFipsContext, JcaTlsCrypto crypto,
-        Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String name, String jcaSignatureAlgorithm,
-        String keyAlgorithm)
+        NamedGroupInfo.PerContext ng, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String name,
+        String jcaSignatureAlgorithm, String keyAlgorithm)
     {
-        addSignatureScheme(isFipsContext, crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false,
-            false);
+        addSignatureScheme(isFipsContext, crypto, ng, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm,
+            false, false);
     }
 
     private static void addSignatureSchemeLegacy(boolean isFipsContext, JcaTlsCrypto crypto,
-        Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm)
+        NamedGroupInfo.PerContext ng, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
+        String jcaSignatureAlgorithm, String keyAlgorithm)
     {
         String name = SignatureScheme.getName(signatureScheme);
 
-        addSignatureScheme(isFipsContext, crypto, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm, false,
-            true);
+        addSignatureScheme(isFipsContext, crypto, ng, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm,
+            false, true);
+    }
+
+    private static Map<Integer, SignatureSchemeInfo> createIndex(boolean isFipsContext, JcaTlsCrypto crypto,
+        NamedGroupInfo.PerContext ng)
+    {
+        Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
+
+        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha256, "SHA256withRSA", "RSA");
+        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha384, "SHA384withRSA", "RSA");
+        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA", "RSA");
+
+        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.ecdsa_secp256r1_sha256, "SHA256withECDSA",
+            "EC");
+        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.ecdsa_secp384r1_sha384, "SHA384withECDSA",
+            "EC");
+        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.ecdsa_secp521r1_sha512, "SHA512withECDSA",
+            "EC");
+
+        // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
+//        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pss_rsae_sha256, "SHA256withRSAandMGF1",
+//            "RSA");
+//        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pss_rsae_sha384, "SHA384withRSAandMGF1",
+//            "RSA");
+//        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pss_rsae_sha512, "SHA512withRSAandMGF1",
+//            "RSA");
+
+        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.ed25519, "Ed25519", "Ed25519");
+        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.ed448, "Ed448", "Ed448");
+
+        // NOTE: SunJSSE is using "RSASSA-PSS" as 'jcaSignatureAlgorithm' for all these
+//        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pss_pss_sha256, "SHA256withRSAandMGF1",
+//            "RSASSA-PSS");
+//        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pss_pss_sha384, "SHA384withRSAandMGF1",
+//            "RSASSA-PSS");
+//        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pss_pss_sha512, "SHA512withRSAandMGF1",
+//            "RSASSA-PSS");
+
+        /*
+         * Legacy algorithms: "These values refer solely to signatures which appear in certificates
+         * (see Section 4.4.2.2) and are not defined for use in signed TLS handshake messages,
+         * although they MAY appear in "signature_algorithms" and "signature_algorithms_cert" for
+         * backward compatibility with TLS 1.2."
+         */
+        addSignatureSchemeLegacy(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha1, "SHA1withRSA", "RSA");
+        addSignatureSchemeLegacy(isFipsContext, crypto, ng, ss, SignatureScheme.ecdsa_sha1, "SHA1withECDSA", "EC");
+
+        /*
+         * Historical algorithms (for SignatureAndHashAlgorithm values): TLS 1.2 and earlier only.
+         */
+        addSignatureSchemeHistorical(isFipsContext, crypto, ng, ss, SignatureSchemeInfo.historical_rsa_md5,
+            "rsa_md5", "MD5withRSA", "RSA");
+        addSignatureSchemeHistorical(isFipsContext, crypto, ng, ss, SignatureSchemeInfo.historical_rsa_sha224,
+            "rsa_sha224", "SHA224withRSA", "RSA");
+
+        addSignatureSchemeHistorical(isFipsContext, crypto, ng, ss, SignatureSchemeInfo.historical_dsa_sha1, "dsa_sha1",
+            "SHA1withDSA", "DSA");
+        addSignatureSchemeHistorical(isFipsContext, crypto, ng, ss, SignatureSchemeInfo.historical_dsa_sha224,
+            "dsa_sha224", "SHA224withDSA", "DSA");
+        addSignatureSchemeHistorical(isFipsContext, crypto, ng, ss, SignatureSchemeInfo.historical_dsa_sha256,
+            "dsa_sha256", "SHA256withDSA", "DSA");
+
+        addSignatureSchemeHistorical(isFipsContext, crypto, ng, ss, SignatureSchemeInfo.historical_ecdsa_sha224,
+            "ecdsa_sha224", "SHA224withECDSA", "EC");
+
+        return ss;
+    }
+
+    private static int[] createCandidates(Map<Integer, SignatureSchemeInfo> index)
+    {
+        return DEFAULT_CANDIDATES;
+    }
+
+    private static boolean isECDSA(int signatureScheme)
+    {
+        switch (signatureScheme)
+        {
+        case SignatureScheme.ecdsa_sha1:
+        case historical_ecdsa_sha224:
+        case SignatureScheme.ecdsa_secp256r1_sha256:
+        case SignatureScheme.ecdsa_secp384r1_sha384:
+        case SignatureScheme.ecdsa_secp521r1_sha512:
+            return true;
+
+        default:
+            return false;
+        }
     }
 
     private final int signatureScheme;
@@ -316,12 +383,18 @@ class SignatureSchemeInfo
     private final AlgorithmParameters algorithmParameters;
     private final boolean supported13;
     private final boolean supportedCerts13;
+    private final NamedGroupInfo namedGroupInfo;
     private final boolean enabled;
 
     SignatureSchemeInfo(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm,
-        AlgorithmParameters algorithmParameters, boolean supported13, boolean supportedCerts13, boolean enabled)
+        AlgorithmParameters algorithmParameters, boolean supported13, boolean supportedCerts13,
+        NamedGroupInfo namedGroupInfo, boolean enabled)
     {
         if (!TlsUtils.isValidUint16(signatureScheme))
+        {
+            throw new IllegalArgumentException();
+        }
+        if (!supportedCerts13 && (supported13 || null != namedGroupInfo))
         {
             throw new IllegalArgumentException();
         }
@@ -333,6 +406,7 @@ class SignatureSchemeInfo
         this.algorithmParameters = algorithmParameters;
         this.supported13 = supported13;
         this.supportedCerts13 = supportedCerts13;
+        this.namedGroupInfo = namedGroupInfo;
         this.enabled = enabled;
     }
 
@@ -356,9 +430,9 @@ class SignatureSchemeInfo
         return name;
     }
 
-    int getNamedGroup()
+    NamedGroupInfo getNamedGroupInfo()
     {
-        return SignatureScheme.getNamedGroup(signatureScheme);
+        return namedGroupInfo;
     }
 
     short getSignatureAlgorithm()
@@ -376,29 +450,25 @@ class SignatureSchemeInfo
         return signatureScheme;
     }
 
-    boolean isActive(BCAlgorithmConstraints algorithmConstraints)
+    boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean pre13Active, boolean post13Active,
+        NamedGroupInfo.PerConnection namedGroupInfos)
     {
-        /*
-         * TODO[tls13] Exclude based on per-instance valid protocol version ranges. Presumably
-         * callers of this method want to exclude historical/legacy schemes from TLS 1.3.
-         */
         return enabled
+            && isNamedGroupOK(pre13Active, post13Active && supported13, namedGroupInfos)
+            && isPermittedBy(algorithmConstraints);
+    }
+
+    boolean isActiveCerts(BCAlgorithmConstraints algorithmConstraints, boolean pre13Active, boolean post13Active,
+        NamedGroupInfo.PerConnection namedGroupInfos)
+    {
+        return enabled
+            && isNamedGroupOK(pre13Active, post13Active && supportedCerts13, namedGroupInfos)
             && isPermittedBy(algorithmConstraints);
     }
 
     boolean isEnabled()
     {
         return enabled;
-    }
-
-    boolean isPermittedBy(BCAlgorithmConstraints algorithmConstraints)
-    {
-        Set<BCCryptoPrimitive> primitives = JsseUtils.SIGNATURE_CRYPTO_PRIMITIVES_BC;
-
-        return algorithmConstraints.permits(primitives, name, null)
-            && algorithmConstraints.permits(primitives, keyAlgorithm, null)
-            && algorithmConstraints.permits(primitives, jcaSignatureAlgorithm, algorithmParameters);
-            // TODO[tls13] Some schemes have a specific NamedGroup, check permission if TLS 1.3+
     }
 
     boolean isSupported13()
@@ -415,5 +485,28 @@ class SignatureSchemeInfo
     public String toString()
     {
         return name + "(0x" + Integer.toHexString(signatureScheme) + ")";
+    }
+
+    private boolean isNamedGroupOK(boolean pre13Allowed, boolean post13Allowed, NamedGroupInfo.PerConnection namedGroupInfos)
+    {
+        if (null != namedGroupInfo)
+        {
+                   // TODO[tls13] NOTE: a "restricted group" scheme actually supporting TLS 1.3 usage 
+            return (post13Allowed && NamedGroupInfo.hasLocal(namedGroupInfos, namedGroupInfo.getNamedGroup()))
+                   // TODO[tls13] NOTE: this can result in a "restricted group" scheme being active, but not actually supporting TLS 1.3 
+                || (pre13Allowed && NamedGroupInfo.hasAnyECDSALocal(namedGroupInfos));
+        }
+
+        return (post13Allowed || pre13Allowed)
+            && (!isECDSA(signatureScheme) || NamedGroupInfo.hasAnyECDSALocal(namedGroupInfos));
+    }
+
+    private boolean isPermittedBy(BCAlgorithmConstraints algorithmConstraints)
+    {
+        Set<BCCryptoPrimitive> primitives = JsseUtils.SIGNATURE_CRYPTO_PRIMITIVES_BC;
+
+        return algorithmConstraints.permits(primitives, name, null)
+            && algorithmConstraints.permits(primitives, keyAlgorithm, null)
+            && algorithmConstraints.permits(primitives, jcaSignatureAlgorithm, algorithmParameters);
     }
 }
