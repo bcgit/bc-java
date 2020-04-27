@@ -359,7 +359,7 @@ public class DTLSServerProtocol
         throws IOException
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        certificateRequest.encode(buf);
+        certificateRequest.encode(state.serverContext, buf);
         return buf.toByteArray();
     }
 

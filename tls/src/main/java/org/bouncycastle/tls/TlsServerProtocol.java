@@ -1158,7 +1158,7 @@ public class TlsServerProtocol
         throws IOException
     {
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate_request);
-        certificateRequest.encode(message);
+        certificateRequest.encode(tlsServerContext, message);
         message.send(this);
     }
 

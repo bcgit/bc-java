@@ -294,7 +294,6 @@ class NamedGroupInfo
             NamedGroup.secp384r1,
             NamedGroup.secp521r1);
 
-        // TODO[tls13] Probably someone is going to want these enabled in TLSv13, despite RFC 8446
         addNamedGroups(isFipsContext, crypto, ng, "EC", false, false,
             NamedGroup.brainpoolP256r1,
             NamedGroup.brainpoolP384r1,
