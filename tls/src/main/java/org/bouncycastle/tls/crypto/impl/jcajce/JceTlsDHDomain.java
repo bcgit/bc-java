@@ -6,12 +6,12 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.spec.KeySpec;
 import java.util.Arrays;
 
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
-import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsDHUtils;
@@ -123,10 +123,10 @@ public class JceTlsDHDomain
         try
         {
             BigInteger y = decodeParameter(encoding);
+            KeySpec publicKeySpec = DHUtil.createPublicKeySpec(y, dhSpec);
 
             KeyFactory keyFactory = crypto.getHelper().createKeyFactory("DiffieHellman");
-
-            return (DHPublicKey)keyFactory.generatePublic(new DHPublicKeySpec(y, dhSpec.getP(), dhSpec.getG()));
+            return (DHPublicKey)keyFactory.generatePublic(publicKeySpec);
         }
         catch (IOException e)
         {
