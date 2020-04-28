@@ -20,6 +20,12 @@ public class DefaultTlsDHGroupVerifier
 
     static
     {
+        /*
+         * These 10 standard groups are those specified in NIST SP 800-56A Rev. 3 Appendix D. Make
+         * sure to consider the impact on BCJSSE's FIPS mode and/or usage with the BCFIPS provider
+         * before modifying this list.
+         */
+
         addDefaultGroup(DHStandardGroups.rfc3526_2048);
         addDefaultGroup(DHStandardGroups.rfc3526_3072);
         addDefaultGroup(DHStandardGroups.rfc3526_4096);

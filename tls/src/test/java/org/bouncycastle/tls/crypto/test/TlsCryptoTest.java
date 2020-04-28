@@ -2,9 +2,12 @@ package org.bouncycastle.tls.crypto.test;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.DefaultTlsDHGroupVerifier;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
@@ -101,6 +104,21 @@ public abstract class TlsCryptoTest
             implTestDHDomain(new TlsDHConfig(namedGroup, false));
             implTestDHDomain(new TlsDHConfig(namedGroup, true));
         }
+
+        new DefaultTlsDHGroupVerifier() {{
+            for (int i = 0; i < DEFAULT_GROUPS.size(); ++i)
+            {
+                DHGroup dhGroup = (DHGroup)DEFAULT_GROUPS.elementAt(i);
+                int namedGroup = TlsDHUtils.getNamedGroupForDHParameters(dhGroup.getP(), dhGroup.getG());
+                if (NamedGroup.refersToASpecificFiniteField(namedGroup))
+                {
+                    // Already tested the named groups
+                    continue;
+                }
+
+                implTestDHDomain(new TlsDHConfig(dhGroup));
+            }
+        }};
     }
 
     public void testECDomain() throws Exception
@@ -362,7 +380,11 @@ public abstract class TlsCryptoTest
 
     private void implTestDHDomain(TlsDHConfig dhConfig) throws IOException
     {
-        int bits = NamedGroup.getFiniteFieldBits(dhConfig.getNamedGroup());
+        int namedGroup = dhConfig.getNamedGroup();
+        int bits = namedGroup >= 0
+            ?   NamedGroup.getFiniteFieldBits(namedGroup)
+            :   dhConfig.getExplicitGroup().getP().bitLength();
+
         int rounds = Math.max(2, 11 - (bits >>> 10));
 
         TlsDHDomain d = crypto.createDHDomain(dhConfig);
