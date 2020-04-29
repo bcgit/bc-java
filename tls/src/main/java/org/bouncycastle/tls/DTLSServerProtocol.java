@@ -359,7 +359,7 @@ public class DTLSServerProtocol
         throws IOException
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        certificateRequest.encode(buf);
+        certificateRequest.encode(state.serverContext, buf);
         return buf.toByteArray();
     }
 
@@ -388,7 +388,7 @@ public class DTLSServerProtocol
 
         ProtocolVersion server_version = state.server.getServerVersion();
         {
-            if (!ProtocolVersion.isSupportedDTLSVersion(server_version)
+            if (!ProtocolVersion.isSupportedDTLSVersionServer(server_version)
                 || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -470,7 +470,16 @@ public class DTLSServerProtocol
         /*
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
+         * 
+         * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
+         * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
+         * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
          */
+        if (TlsUtils.isTLSv13(server_version))
+        {
+            securityParameters.extendedMasterSecret = true;
+        }
+        else
         {
             securityParameters.extendedMasterSecret = state.offeredExtendedMasterSecret
                 && state.server.shouldUseExtendedMasterSecret();
@@ -674,7 +683,7 @@ public class DTLSServerProtocol
             client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
         }
 
-        if (!ProtocolVersion.EARLIEST_SUPPORTED_DTLS.isEqualOrEarlierVersionOf(client_version))
+        if (!ProtocolVersion.SERVER_EARLIEST_SUPPORTED_DTLS.isEqualOrEarlierVersionOf(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.protocol_version);
         }

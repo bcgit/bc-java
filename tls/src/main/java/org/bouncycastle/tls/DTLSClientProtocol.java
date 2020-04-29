@@ -415,7 +415,7 @@ public class DTLSClientProtocol
         context.setClientSupportedVersions(state.client.getProtocolVersions());
 
         ProtocolVersion client_version = ProtocolVersion.getLatestDTLS(context.getClientSupportedVersions());
-        if (!ProtocolVersion.isSupportedDTLSVersion(client_version))
+        if (!ProtocolVersion.isSupportedDTLSVersionClient(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -461,11 +461,13 @@ public class DTLSClientProtocol
 
         state.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(state.clientContext, state.client, state.clientExtensions);
 
-        if (state.client.shouldUseExtendedMasterSecret())
+        if (TlsUtils.isExtendedMasterSecretOptionalDTLS(context.getClientSupportedVersions())
+            && state.client.shouldUseExtendedMasterSecret())
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
         }
-        else if (state.client.requiresExtendedMasterSecret())
+        else if (!TlsUtils.isTLSv13(client_version)
+            && state.client.requiresExtendedMasterSecret())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -706,15 +708,23 @@ public class DTLSClientProtocol
         /*
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
+         * 
+         * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
+         * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
+         * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
          */
+        if (TlsUtils.isTLSv13(server_version))
+        {
+            securityParameters.extendedMasterSecret = true;
+        }
+        else
         {
             final boolean acceptedExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(
                 state.serverExtensions);
 
             if (acceptedExtendedMasterSecret)
             {
-                if (server_version.isSSL()
-                    || (!state.resumedSession && !state.client.shouldUseExtendedMasterSecret()))
+                if (!state.resumedSession && !state.client.shouldUseExtendedMasterSecret())
                 {
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
@@ -943,7 +953,7 @@ public class DTLSClientProtocol
             return;
         }
 
-        if (!ProtocolVersion.isSupportedDTLSVersion(server_version)
+        if (!ProtocolVersion.isSupportedDTLSVersionClient(server_version)
             || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);

@@ -18,6 +18,22 @@ public class Integers
         return n;
     }
 
+    public static int numberOfTrailingZeros(int i)
+    {
+        if (i == 0)
+        {
+            return 32;
+        }
+
+        int count = 0;
+        while ((i & 1) == 0)
+        {
+            i >>>= 1;
+            ++count;
+        }
+        return count;
+    }
+
     public static int rotateLeft(int i, int distance)
     {
         return (i << distance) ^ (i >>> -distance);
