@@ -1063,7 +1063,16 @@ public class TlsClientProtocol
         /*
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
+         * 
+         * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
+         * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
+         * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
          */
+        if (TlsUtils.isTLSv13(server_version))
+        {
+            securityParameters.extendedMasterSecret = true;
+        }
+        else
         {
             final boolean acceptedExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(
                 serverExtensions);
@@ -1339,11 +1348,13 @@ public class TlsClientProtocol
 
         this.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
-        if (!client_version.isSSL() && tlsClient.shouldUseExtendedMasterSecret())
+        if (TlsUtils.isExtendedMasterSecretOptionalTLS(tlsClientContext.getClientSupportedVersions())
+            && tlsClient.shouldUseExtendedMasterSecret())
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
         }
-        else if (tlsClient.requiresExtendedMasterSecret())
+        else if (!TlsUtils.isTLSv13(client_version)
+            && tlsClient.requiresExtendedMasterSecret())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

@@ -1152,6 +1152,19 @@ public class TlsUtils
         return new TlsSessionImpl(sessionID, sessionParameters);
     }
 
+    static boolean isExtendedMasterSecretOptionalDTLS(ProtocolVersion[] activeProtocolVersions)
+    {
+        return ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.DTLSv12)
+            || ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.DTLSv10);
+    }
+
+    static boolean isExtendedMasterSecretOptionalTLS(ProtocolVersion[] activeProtocolVersions)
+    {
+        return ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv12)
+            || ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv11)
+            || ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv10);
+    }
+
     public static boolean isNullOrEmpty(byte[] array)
     {
         return null == array || array.length < 1;
