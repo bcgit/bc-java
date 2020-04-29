@@ -846,7 +846,7 @@ public class TlsClientProtocol
             server_version = supported_version;
         }
 
-        if (!ProtocolVersion.isSupportedTLSVersion(server_version))
+        if (!ProtocolVersion.isSupportedTLSVersionClient(server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -1288,7 +1288,7 @@ public class TlsClientProtocol
 
             client_version = ProtocolVersion.getLatestTLS(tlsClientContext.getClientSupportedVersions());
 
-            if (!ProtocolVersion.isSupportedTLSVersion(client_version))
+            if (!ProtocolVersion.isSupportedTLSVersionClient(client_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
