@@ -150,7 +150,7 @@ public class TlsServerProtocol
         {
             server_version = tlsServer.getServerVersion();
 
-            if (!ProtocolVersion.isSupportedTLSVersion(server_version)
+            if (!ProtocolVersion.isSupportedTLSVersionServer(server_version)
                 || !ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -968,7 +968,7 @@ public class TlsServerProtocol
             client_version = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
-        if (!ProtocolVersion.EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(client_version))
+        if (!ProtocolVersion.SERVER_EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.protocol_version);
         }
