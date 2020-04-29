@@ -10,6 +10,11 @@ public class Integers
         return Integer.numberOfLeadingZeros(i);
     }
 
+    public static int numberOfTrailingZeros(int i)
+    {
+        return Integer.numberOfTrailingZeros(i);
+    }
+
     public static int rotateLeft(int i, int distance)
     {
         return Integer.rotateLeft(i, distance);
