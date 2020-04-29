@@ -27,6 +27,7 @@ import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
+import org.bouncycastle.jcajce.spec.DHExtendedPrivateKeySpec;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 
 
@@ -58,7 +59,14 @@ public class BCDHPrivateKey
         DHPrivateKeySpec spec)
     {
         this.x = spec.getX();
-        this.dhSpec = new DHParameterSpec(spec.getP(), spec.getG());
+        if (spec instanceof DHExtendedPrivateKeySpec)
+        {
+            this.dhSpec = ((DHExtendedPrivateKeySpec)spec).getParams();
+        }
+        else
+        {
+            this.dhSpec = new DHParameterSpec(spec.getP(), spec.getG());
+        }
     }
 
     public BCDHPrivateKey(
