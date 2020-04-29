@@ -2,6 +2,8 @@ package org.bouncycastle.math.raw;
 
 import java.util.Random;
 
+import org.bouncycastle.util.Integers;
+
 public abstract class Mod
 {
     public static int inverse32(int d)
@@ -153,7 +155,7 @@ public abstract class Mod
         }
 
         {
-            int zeroes = getTrailingZeroes(u[0]);
+            int zeroes = Integers.numberOfTrailingZeros(u[0]);
             if (zeroes > 0)
             {
                 Nat.shiftDownBits(uLen, u, zeroes, 0);
@@ -178,20 +180,7 @@ public abstract class Mod
 //            assert xc == 0 || xc == 1;
             Nat.shiftDownBit(len, x, xc);
         }
-        
+
         return xc;
-    }
-
-    private static int getTrailingZeroes(int x)
-    {
-//        assert x != 0;
-
-        int count = 0;
-        while ((x & 1) == 0)
-        {
-            x >>>= 1;
-            ++count;
-        }
-        return count;
     }
 }

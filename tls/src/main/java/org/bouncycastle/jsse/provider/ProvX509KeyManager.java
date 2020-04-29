@@ -492,7 +492,7 @@ class ProvX509KeyManager
     {
         if (null != keyTypes && keyTypes.length > 0)
         {
-            List<String> result = new ArrayList<String>(keyTypes.length);
+            ArrayList<String> result = new ArrayList<String>(keyTypes.length);
             for (String keyType : keyTypes)
             {
                 if (null != keyType)
@@ -500,7 +500,10 @@ class ProvX509KeyManager
                     result.add(keyType.toUpperCase(Locale.ENGLISH));
                 }
             }
-            return result;
+            if (!result.isEmpty())
+            {
+                return Collections.unmodifiableList(result);
+            }
         }
         return Collections.emptyList();
     }
