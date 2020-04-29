@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
+import org.bouncycastle.jcajce.spec.DHExtendedPublicKeySpec;
 
 public class BCDHPublicKey
     implements DHPublicKey
@@ -40,7 +41,14 @@ public class BCDHPublicKey
         DHPublicKeySpec spec)
     {
         this.y = spec.getY();
-        this.dhSpec = new DHParameterSpec(spec.getP(), spec.getG());
+        if (spec instanceof DHExtendedPublicKeySpec)
+        {
+            this.dhSpec = ((DHExtendedPublicKeySpec)spec).getParams();
+        }
+        else
+        {
+            this.dhSpec = new DHParameterSpec(spec.getP(), spec.getG());
+        }
         this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(spec.getP(), spec.getG()));
     }
 
