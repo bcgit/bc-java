@@ -608,6 +608,12 @@ public abstract class TlsProtocol
                  * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
                  * RFC 8446 for "change_cipher_spec" for details.
                  */
+                ProtocolVersion negotiatedVersion = getContext().getServerVersion();
+                if (null != negotiatedVersion && TlsUtils.isTLSv13(negotiatedVersion))
+                {
+                    break;
+                }
+
                 checkReceivedChangeCipherSpec(HandshakeType.finished == type);
                 break;
             }
@@ -683,6 +689,16 @@ public abstract class TlsProtocol
     private void processChangeCipherSpec(byte[] buf, int off, int len)
         throws IOException
     {
+        /*
+         * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
+         * RFC 8446 for "change_cipher_spec" for details.
+         */
+        ProtocolVersion negotiatedVersion = getContext().getServerVersion();
+        if (null != negotiatedVersion && TlsUtils.isTLSv13(negotiatedVersion))
+        {
+            return;
+        }
+
         for (int i = 0; i < len; ++i)
         {
             short message = TlsUtils.readUint8(buf, off + i);
