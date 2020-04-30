@@ -157,6 +157,15 @@ class RecordStream
 
         checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
 
+        /*
+         * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
+         * RFC 8446 for "change_cipher_spec" for details.
+         */
+        if (readCipher.usesOpaqueRecordType() && ContentType.change_cipher_spec == recordType)
+        {
+            return true;
+        }
+
         TlsDecodeResult decoded = decodeAndVerify(recordType, recordVersion, input,
             inputOff + RecordFormat.FRAGMENT_OFFSET, length);
 
@@ -187,6 +196,15 @@ class RecordStream
         TlsDecodeResult decoded;
         try
         {
+            /*
+             * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
+             * RFC 8446 for "change_cipher_spec" for details.
+             */
+            if (readCipher.usesOpaqueRecordType() && ContentType.change_cipher_spec == recordType)
+            {
+                return true;
+            }
+
             decoded = decodeAndVerify(recordType, recordVersion, inputRecord.buf, RecordFormat.FRAGMENT_OFFSET, length);
         }
         finally
@@ -314,7 +332,14 @@ class RecordStream
     {
         if (readCipher.usesOpaqueRecordType())
         {
-            if (ContentType.application_data != recordType)
+            if (ContentType.change_cipher_spec == recordType)
+            {
+                /*
+                 * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
+                 * RFC 8446 for "change_cipher_spec" for details.
+                 */
+            }
+            else if (ContentType.application_data != recordType)
             {
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
