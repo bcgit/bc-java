@@ -6,9 +6,9 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
 
 import javax.crypto.spec.DHParameterSpec;
-import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
+import org.bouncycastle.jcajce.spec.DHExtendedPublicKeySpec;
 import org.bouncycastle.tls.crypto.DHGroup;
 
 class DHUtil
@@ -21,13 +21,8 @@ class DHUtil
 
     static KeySpec createPublicKeySpec(BigInteger y, DHParameterSpec dhSpec)
     {
-        BigInteger P = dhSpec.getP(), G = dhSpec.getG();
-
-        @SuppressWarnings("unused")
-        BigInteger Q = getQ(dhSpec);
-
-        // TODO Need a way to pass Q here (when available)
-        return new DHPublicKeySpec(y, P, G);
+        // NOTE: A BC-specific spec, so other providers probably won't see Q 
+        return new DHExtendedPublicKeySpec(y, dhSpec);
     }
 
     static AlgorithmParameters getAlgorithmParameters(JcaTlsCrypto crypto, DHGroup dhGroup)
