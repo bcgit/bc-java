@@ -151,7 +151,7 @@ public class JcaTlsCrypto
         return new JcaTlsCertificate(this, encoding);
     }
 
-    protected TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         try

@@ -2,12 +2,8 @@ package org.bouncycastle.tls.crypto.impl;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.EncryptionAlgorithm;
-import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -34,20 +30,6 @@ public abstract class AbstractTlsCrypto
 
         throw new IllegalArgumentException("unrecognized TlsSecret - cannot copy data: " + secret.getClass().getName());
     }
-
-    /**
-     * Create a cipher for the specified encryption and MAC algorithms.
-     * <p>
-     * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values.
-     * </p>
-     * @param cryptoParams context specific parameters.
-     * @param encryptionAlgorithm the encryption algorithm to be employed by the cipher.
-     * @param macAlgorithm the MAC algorithm to be employed by the cipher.
-     * @return a {@link TlsCipher} implementing the encryption and MAC algorithm.
-     * @throws IOException
-     */
-    protected abstract TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
-            throws IOException;
 
     /**
      * Return an encryptor based on the public key in certificate.
