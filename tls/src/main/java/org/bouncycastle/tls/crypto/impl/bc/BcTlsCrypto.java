@@ -110,7 +110,7 @@ public class BcTlsCrypto
         return new BcTlsCertificate(this, encoding);
     }
 
-    protected TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         switch (encryptionAlgorithm)

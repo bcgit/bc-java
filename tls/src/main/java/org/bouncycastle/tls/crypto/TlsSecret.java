@@ -2,9 +2,7 @@ package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.MACAlgorithm;
 
 /**
  * Interface supporting the generation of key material and other SSL/TLS secret values from PRFs.
@@ -21,19 +19,6 @@ public interface TlsSecret
      * @return the new secret.
      */
     TlsSecret deriveUsingPRF(int prfAlgorithm, String label, byte[] seed, int length);
-
-    /**
-     * Create a cipher suite that matches the passed in encryption algorithm and mac algorithm.
-     * <p>
-     * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values.
-     * </p>
-     * @param cryptoParams context specific parameters.
-     * @param encryptionAlgorithm the encryption algorithm to be employed by the cipher suite.
-     * @param macAlgorithm  the MAC algorithm to be employed by the cipher suite.
-     * @return a TlsCipherSuite supporting the encryption and mac algorithm.
-     * @throws IOException
-     */
-    TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm) throws IOException;
 
     /**
      * Destroy the internal state of the secret. After this call, any attempt to use the
