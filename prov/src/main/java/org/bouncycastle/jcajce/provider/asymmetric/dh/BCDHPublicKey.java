@@ -48,8 +48,18 @@ public class BCDHPublicKey
         else
         {
             this.dhSpec = new DHParameterSpec(spec.getP(), spec.getG());
+
         }
-        this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(spec.getP(), spec.getG()));
+
+        if (dhSpec instanceof DHDomainParameterSpec)
+        {
+            DHDomainParameterSpec dhSp = (DHDomainParameterSpec)dhSpec;
+            this.dhPublicKey = new DHPublicKeyParameters(y, dhSp.getDomainParameters());
+        }
+        else
+        {
+            this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(spec.getP(), spec.getG()));
+        }
     }
 
     BCDHPublicKey(
