@@ -448,6 +448,14 @@ public abstract class TlsProtocol
             this.connection_state = CS_END;
 
             AbstractTlsContext context = getContextAdmin();
+            SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+            // Sanity check that Finished messages were exchanged
+            if (null == securityParameters.getLocalVerifyData()
+                || null == securityParameters.getPeerVerifyData())
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
 
             // TODO Prefer to set to null, but would need guards elsewhere
             this.handshakeHash = new DeferredHash(context);
@@ -473,8 +481,6 @@ public abstract class TlsProtocol
 
             if (this.sessionParameters == null)
             {
-                SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-
                 this.sessionMasterSecret = securityParameters.getMasterSecret();
 
                 this.sessionParameters = new SessionParameters.Builder()
