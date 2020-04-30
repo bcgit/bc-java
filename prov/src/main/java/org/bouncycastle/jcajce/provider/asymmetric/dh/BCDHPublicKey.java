@@ -67,7 +67,15 @@ public class BCDHPublicKey
     {
         this.y = key.getY();
         this.dhSpec = key.getParams();
-        this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(dhSpec.getP(), dhSpec.getG()));
+        if (dhSpec instanceof DHDomainParameterSpec)
+        {
+            DHDomainParameterSpec dhSp = (DHDomainParameterSpec)dhSpec;
+            this.dhPublicKey = new DHPublicKeyParameters(y, dhSp.getDomainParameters());
+        }
+        else
+        {
+            this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(dhSpec.getP(), dhSpec.getG()));
+        }
     }
 
     BCDHPublicKey(
@@ -123,12 +131,14 @@ public class BCDHPublicKey
             if (params.getL() != null)
             {
                 this.dhSpec = new DHParameterSpec(params.getP(), params.getG(), params.getL().intValue());
+                this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(dhSpec.getP(), dhSpec.getG(), BigInteger.valueOf(dhSpec.getL())));
             }
             else
             {
                 this.dhSpec = new DHParameterSpec(params.getP(), params.getG());
+                this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(dhSpec.getP(), dhSpec.getG()));
             }
-            this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(dhSpec.getP(), dhSpec.getG()));
+
         }
         else if (id.equals(X9ObjectIdentifiers.dhpublicnumber))
         {
