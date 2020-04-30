@@ -3672,8 +3672,7 @@ public class TlsUtils
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        TlsSecret masterSecret = context.getSecurityParametersHandshake().getMasterSecret();
-        return masterSecret.createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
+        return context.getCrypto().createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
     static void checkSigAlgOfClientCerts(TlsContext context, Certificate clientCertificate,
