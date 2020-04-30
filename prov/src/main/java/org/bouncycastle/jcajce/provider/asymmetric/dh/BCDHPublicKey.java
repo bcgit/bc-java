@@ -131,7 +131,7 @@ public class BCDHPublicKey
             if (params.getL() != null)
             {
                 this.dhSpec = new DHParameterSpec(params.getP(), params.getG(), params.getL().intValue());
-                this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(dhSpec.getP(), dhSpec.getG(), BigInteger.valueOf(dhSpec.getL())));
+                this.dhPublicKey = new DHPublicKeyParameters(y, new DHParameters(dhSpec.getP(), dhSpec.getG(), null, dhSpec.getL()));
             }
             else
             {
