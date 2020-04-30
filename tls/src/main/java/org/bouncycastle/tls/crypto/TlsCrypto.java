@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
@@ -139,6 +140,20 @@ public interface TlsCrypto
      * @throws IOException if there is an issue on decoding or constructing the certificate.
      */
     TlsCertificate createCertificate(byte[] encoding) throws IOException;
+
+    /**
+     * Create a cipher for the specified encryption and MAC algorithms.
+     * <p>
+     * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values.
+     * </p>
+     * @param cryptoParams context specific parameters.
+     * @param encryptionAlgorithm the encryption algorithm to be employed by the cipher.
+     * @param macAlgorithm the MAC algorithm to be employed by the cipher.
+     * @return a {@link TlsCipher} implementing the encryption and MAC algorithm.
+     * @throws IOException
+     */
+    TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
+        throws IOException;
 
     /**
      * Create an domain object supporting the domain parameters described in dhConfig.
