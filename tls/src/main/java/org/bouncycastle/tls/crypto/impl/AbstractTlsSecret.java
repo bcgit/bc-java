@@ -3,9 +3,7 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
@@ -39,12 +37,6 @@ public abstract class AbstractTlsSecret
     }
 
     protected abstract AbstractTlsCrypto getCrypto();
-
-    public TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
-        throws IOException
-    {
-        return getCrypto().createCipher(cryptoParams, encryptionAlgorithm, macAlgorithm);
-    }
 
     public synchronized void destroy()
     {
