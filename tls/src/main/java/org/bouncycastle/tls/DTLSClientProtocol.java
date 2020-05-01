@@ -342,7 +342,7 @@ public class DTLSClientProtocol
         {
             if (credentialedSigner != null)
             {
-                DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(state.clientContext,
+                DigitallySigned certificateVerify = TlsUtils.generateCertificateVerifyClient(state.clientContext,
                     credentialedSigner, streamSigner, handshake.getHandshakeHash());
                 byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
                 handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
