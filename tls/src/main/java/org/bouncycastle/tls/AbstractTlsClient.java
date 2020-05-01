@@ -358,6 +358,8 @@ public abstract class AbstractTlsClient
     public void processServerExtensions(Hashtable serverExtensions)
         throws IOException
     {
+        // TODO[tls13] Adapt for when TLS 1.3 is negotiated
+
         /*
          * TlsProtocol implementation validates that any server extensions received correspond to
          * client extensions sent. By default, we don't send any, and this method is not called.
