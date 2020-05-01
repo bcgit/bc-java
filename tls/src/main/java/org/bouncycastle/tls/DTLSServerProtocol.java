@@ -312,7 +312,8 @@ public class DTLSServerProtocol
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        securityParameters.peerVerifyData = createVerifyData(state.serverContext, handshake, false);
+        securityParameters.peerVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
+            handshake.getHandshakeHash(), false);
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), securityParameters.getPeerVerifyData());
 
         if (state.expectSessionTicket)
@@ -323,7 +324,8 @@ public class DTLSServerProtocol
         }
 
         // NOTE: Calculated exclusive of the Finished message itself
-        securityParameters.localVerifyData = createVerifyData(state.serverContext, handshake, true);
+        securityParameters.localVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
+            handshake.getHandshakeHash(), true);
         handshake.sendMessage(HandshakeType.finished, securityParameters.getLocalVerifyData());
 
         handshake.finish();
@@ -624,11 +626,11 @@ public class DTLSServerProtocol
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         TlsServerContextImpl context = state.serverContext;
-        DigitallySigned clientCertificateVerify = DigitallySigned.parse(context, buf);
+        DigitallySigned certificateVerify = DigitallySigned.parse(context, buf);
 
         TlsProtocol.assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerify(context, state.certificateRequest, clientCertificateVerify, handshakeHash);
+        TlsUtils.verifyCertificateVerifyClient(context, state.certificateRequest, certificateVerify, handshakeHash);
     }
 
     protected void processClientHello(ServerHandshakeState state, byte[] body)
