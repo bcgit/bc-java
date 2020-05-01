@@ -65,7 +65,9 @@ class DeferredHash
 
     public void notifyPRFDetermined()
     {
-        int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        int prfAlgorithm = securityParameters.getPrfAlgorithm();
         switch (prfAlgorithm)
         {
         case PRFAlgorithm.ssl_prf_legacy:
@@ -78,6 +80,10 @@ class DeferredHash
         default:
         {
             checkTrackingHash(Shorts.valueOf(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)));
+            if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
+            {
+                sealHashAlgorithms();
+            }
             break;
         }
         }
@@ -95,11 +101,13 @@ class DeferredHash
 
     public void sealHashAlgorithms()
     {
-        if (!sealed)
+        if (sealed)
         {
-            sealed = true;
-            checkStopBuffering();
+            throw new IllegalStateException("Already sealed");
         }
+
+        this.sealed = true;
+        checkStopBuffering();
     }
 
     public TlsHandshakeHash stopTracking()
