@@ -18,6 +18,7 @@ public class TlsServerProtocol
     protected TlsKeyExchange keyExchange = null;
     protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
+    protected byte[] serverFinishedTranscriptHash = null;
     protected boolean offeredExtendedMasterSecret;
 
     /**
@@ -434,7 +435,20 @@ public class TlsServerProtocol
                  * CertificateVerify, Finished
                  */
 
-                this.connection_state = CS_SERVER_FINISHED; 
+                this.connection_state = CS_SERVER_HELLO;
+
+                byte[] serverHelloTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
+
+                TlsUtils.establish13TrafficSecretsHandshake(tlsServerContext, serverHelloTranscriptHash, recordStream);
+
+                this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
+                this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
+                this.connection_state = CS_SERVER_CERTIFICATE;
+                this.connection_state = CS_SERVER_CERTIFICATE_VERIFY;
+                this.connection_state = CS_SERVER_FINISHED;
+
+                this.serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
+
                 break;
             }
             default:
@@ -460,6 +474,9 @@ public class TlsServerProtocol
             {
                 receive13ClientFinished(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
+
+                TlsUtils.establish13TrafficSecretsApplication(tlsServerContext, serverFinishedTranscriptHash,
+                    recordStream);
 
                 completeHandshake();
                 break;

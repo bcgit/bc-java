@@ -272,13 +272,37 @@ public class TlsClientProtocol
                 buf.updateHash(handshakeHash);
                 this.connection_state = CS_SERVER_FINISHED;
 
-                /*
-                 * TODO[tls13] Send client authentication block: Certificate*, CertificateVerify*, Finished
-                 */
+                byte[] serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
 
-                this.connection_state = CS_CLIENT_CERTIFICATE;
-                this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
+                if (null != certificateRequest)
+                {
+                    TlsCredentialedSigner clientCredentials = TlsUtils.establish13ClientCredentials(authentication,
+                        certificateRequest);
+
+                    Certificate clientCertificate = null;
+                    if (null != clientCredentials)
+                    {
+                        clientCertificate = clientCredentials.getCertificate();
+                    }
+
+                    send13CertificateMessage(clientCertificate, null);
+                    this.connection_state = CS_CLIENT_CERTIFICATE;
+
+                    if (null != clientCredentials)
+                    {
+                        TlsStreamSigner streamSigner = clientCredentials.getStreamSigner();
+                        DigitallySigned certificateVerify = TlsUtils.generateCertificateVerifyClient(tlsClientContext,
+                            clientCredentials, streamSigner, handshakeHash);
+                        send13CertificateVerifyMessage(certificateVerify);
+                        this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
+                    }
+                }
+
+                send13FinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;
+
+                TlsUtils.establish13TrafficSecretsApplication(tlsClientContext, serverFinishedTranscriptHash,
+                    recordStream);
 
                 completeHandshake();
                 break;
@@ -365,7 +389,7 @@ public class TlsClientProtocol
     protected void handleHandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException
     {
-        final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
+        final SecurityParameters securityParameters = tlsClientContext.getSecurityParameters();
 
         if (connection_state > CS_CLIENT_HELLO
             && TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
@@ -612,9 +636,8 @@ public class TlsClientProtocol
                     }
 
                     sendCertificateMessage(clientCertificate, null);
+                    this.connection_state = CS_CLIENT_CERTIFICATE;
                 }
-
-                this.connection_state = CS_CLIENT_CERTIFICATE;
 
                 boolean forceBuffering = streamSigner != null;
                 TlsUtils.sealHandshakeHash(tlsClientContext, handshakeHash, forceBuffering);
@@ -646,7 +669,7 @@ public class TlsClientProtocol
 
                 if (credentialedSigner != null)
                 {
-                    DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(tlsClientContext,
+                    DigitallySigned certificateVerify = TlsUtils.generateCertificateVerifyClient(tlsClientContext,
                         credentialedSigner, streamSigner, handshakeHash);
                     sendCertificateVerifyMessage(certificateVerify);
                     this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
@@ -932,7 +955,9 @@ public class TlsClientProtocol
 
     protected void process13ServerHelloCoda(ServerHello serverHello, boolean afterHelloRetryRequest) throws IOException
     {
-        TlsUtils.establish13TrafficSecretsHandshake(tlsClientContext, handshakeHash, recordStream);
+        byte[] serverHelloTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
+
+        TlsUtils.establish13TrafficSecretsHandshake(tlsClientContext, serverHelloTranscriptHash, recordStream);
     }
 
     protected void processServerHelloMessage(ServerHello serverHello)
@@ -1327,8 +1352,22 @@ public class TlsClientProtocol
     protected void receive13NewSessionTicket(ByteArrayInputStream buf)
         throws IOException
     {
-        // TODO[tls13]
-        throw new TlsFatalAlert(AlertDescription.internal_error);
+        // TODO[tls13] Do something more than just ignore them
+
+//        struct {
+//            uint32 ticket_lifetime;
+//            uint32 ticket_age_add;
+//            opaque ticket_nonce<0..255>;
+//            opaque ticket<1..2^16-1>;
+//            Extension extensions<0..2^16-2>;
+//        } NewSessionTicket;
+
+        TlsUtils.readUint32(buf);
+        TlsUtils.readUint32(buf);
+        TlsUtils.readOpaque8(buf);
+        TlsUtils.readOpaque16(buf);
+        TlsUtils.readOpaque16(buf);
+        assertEmpty(buf);
     }
 
     protected void receive13ServerCertificate(ByteArrayInputStream buf)

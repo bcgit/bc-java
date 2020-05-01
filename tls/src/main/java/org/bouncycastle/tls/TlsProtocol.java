@@ -1371,9 +1371,9 @@ public abstract class TlsProtocol
 
         securityParameters.peerVerifyData = expected_verify_data;
 
-        if (isServerContext ^ resumedSession)
+        if (!resumedSession || securityParameters.isExtendedMasterSecret())
         {
-            if (!resumedSession || securityParameters.isExtendedMasterSecret())
+            if (null == securityParameters.getLocalVerifyData())
             {
                 securityParameters.tlsUnique = expected_verify_data;
             }
@@ -1437,6 +1437,36 @@ public abstract class TlsProtocol
         securityParameters.localCertificate = certificate;
     }
 
+    protected void send13CertificateMessage(Certificate certificate, OutputStream endPointHash)
+        throws IOException
+    {
+        TlsContext context = getContext();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        if (null != securityParameters.getLocalCertificate())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (null == certificate)
+        {
+            certificate = Certificate.EMPTY_CHAIN_TLS13;
+        }
+
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate);
+        certificate.encode(context, message, endPointHash);
+        message.send(this);
+
+        securityParameters.localCertificate = certificate;
+    }
+
+    protected void send13CertificateVerifyMessage(DigitallySigned certificateVerify)
+        throws IOException
+    {
+        HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate_verify);
+        certificateVerify.encode(message);
+        message.send(this);
+    }
+
     protected void sendChangeCipherSpecMessage()
         throws IOException
     {
@@ -1456,12 +1486,31 @@ public abstract class TlsProtocol
 
         securityParameters.localVerifyData = verify_data;
 
-        if (!isServerContext ^ resumedSession)
+        if (!resumedSession || securityParameters.isExtendedMasterSecret())
         {
-            if (!resumedSession || securityParameters.isExtendedMasterSecret())
+            if (null == securityParameters.getPeerVerifyData())
             {
                 securityParameters.tlsUnique = verify_data;
             }
+        }
+
+        HandshakeMessageOutput.send(this, HandshakeType.finished, verify_data);
+    }
+
+    protected void send13FinishedMessage()
+        throws IOException
+    {
+        TlsContext context = getContext();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        boolean isServerContext = context.isServer();
+
+        byte[] verify_data = TlsUtils.calculateVerifyData(context, handshakeHash, isServerContext);
+
+        securityParameters.localVerifyData = verify_data;
+
+        if (null == securityParameters.getPeerVerifyData())
+        {
+            securityParameters.tlsUnique = verify_data;
         }
 
         HandshakeMessageOutput.send(this, HandshakeType.finished, verify_data);

@@ -1117,8 +1117,14 @@ public class TlsUtils
         TlsCredentialedSigner signerCredentials)
         throws IOException
     {
+        return getSignatureAndHashAlgorithm(context.getServerVersion(), signerCredentials);
+    }
+
+    static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(ProtocolVersion negotiatedVersion,
+        TlsCredentialedSigner signerCredentials) throws IOException
+    {
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-        if (isTLSv12(context))
+        if (isTLSv12(negotiatedVersion))
         {
             signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
             if (signatureAndHashAlgorithm == null)
@@ -1610,14 +1616,12 @@ public class TlsUtils
         securityParameters.masterSecret = masterSecret;
     }
 
-    private static void establish13TrafficSecrets(TlsContext context, TlsHandshakeHash handshakeHash, TlsSecret phaseSecret,
+    private static void establish13TrafficSecrets(TlsContext context, byte[] transcriptHash, TlsSecret phaseSecret,
         String clientLabel, String serverLabel, RecordStream recordStream) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         short hash = getHashAlgorithmForPRFAlgorithm(securityParameters.getPrfAlgorithm());
         int hashLen = HashAlgorithm.getOutputSize(hash);
-
-        byte[] transcriptHash = getCurrentPRFHash(handshakeHash);
 
         securityParameters.trafficSecretClient = TlsCryptoUtils.hkdfExpandLabel(phaseSecret, hash, clientLabel,
             transcriptHash, hashLen);
@@ -1629,20 +1633,22 @@ public class TlsUtils
         recordStream.sentWriteCipherSpec();
     }
 
-    static void establish13TrafficSecretsApplication(TlsContext context, TlsHandshakeHash handshakeHash,
+    static void establish13TrafficSecretsApplication(TlsContext context, byte[] serverFinishedTranscriptHash,
         RecordStream recordStream) throws IOException
     {
         TlsSecret phaseSecret = context.getSecurityParametersHandshake().getMasterSecret();
 
-        establish13TrafficSecrets(context, handshakeHash, phaseSecret, "c ap traffic", "s ap traffic", recordStream);
+        establish13TrafficSecrets(context, serverFinishedTranscriptHash, phaseSecret, "c ap traffic", "s ap traffic",
+            recordStream);
     }
 
-    static void establish13TrafficSecretsHandshake(TlsContext context, TlsHandshakeHash handshakeHash,
+    static void establish13TrafficSecretsHandshake(TlsContext context, byte[] serverHelloTranscriptHash,
         RecordStream recordStream) throws IOException
     {
         TlsSecret phaseSecret = context.getSecurityParametersHandshake().getHandshakeSecret();
 
-        establish13TrafficSecrets(context, handshakeHash, phaseSecret, "c hs traffic", "s hs traffic", recordStream);
+        establish13TrafficSecrets(context, serverHelloTranscriptHash, phaseSecret, "c hs traffic", "s hs traffic",
+            recordStream);
     }
 
     public static short getHashAlgorithmForHMACAlgorithm(int macAlgorithm)
@@ -1730,37 +1736,57 @@ public class TlsUtils
         output.close();
     }
 
-    static DigitallySigned generateCertificateVerify(TlsContext context, TlsCredentialedSigner credentialedSigner,
-        TlsStreamSigner streamSigner, TlsHandshakeHash handshakeHash) throws IOException
+    static DigitallySigned generateCertificateVerifyClient(TlsClientContext clientContext,
+        TlsCredentialedSigner credentialedSigner, TlsStreamSigner streamSigner, TlsHandshakeHash handshakeHash)
+        throws IOException
     {
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
-        SignatureAndHashAlgorithm signatureAndHashAlgorithm = getSignatureAndHashAlgorithm(
-            context, credentialedSigner);
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm = getSignatureAndHashAlgorithm(negotiatedVersion,
+            credentialedSigner);
 
         byte[] signature;
-        if (streamSigner != null)
+        if (isTLSv13(negotiatedVersion))
         {
-            handshakeHash.copyBufferTo(streamSigner.getOutputStream());
-            signature = streamSigner.getSignature();
+            // TODO[tls13] See verifyCertificateVerifyClient
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         else
         {
-            byte[] hash;
-            if (signatureAndHashAlgorithm == null)
+            if (streamSigner != null)
             {
-                hash = context.getSecurityParametersHandshake().getSessionHash();
+                handshakeHash.copyBufferTo(streamSigner.getOutputStream());
+                signature = streamSigner.getSignature();
             }
             else
             {
-                hash = handshakeHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+                byte[] hash;
+                if (signatureAndHashAlgorithm == null)
+                {
+                    hash = securityParameters.getSessionHash();
+                }
+                else
+                {
+                    hash = handshakeHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+                }
+    
+                signature = credentialedSigner.generateRawSignature(hash);
             }
-
-            signature = credentialedSigner.generateRawSignature(hash);
         }
 
         return new DigitallySigned(signatureAndHashAlgorithm, signature);
+    }
+
+    static DigitallySigned generateCertificateVerifyServer(TlsServerContext serverContext,
+        TlsCredentialedSigner credentialedSigner, TlsStreamSigner streamSigner, TlsHandshakeHash handshakeHash)
+        throws IOException
+    {
+        // TODO[tls13] See generateCertificateVerifyClient and verifyCertificateVerifyServer
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     static void verifyCertificateVerifyClient(TlsServerContext serverContext, CertificateRequest certificateRequest,
@@ -4417,6 +4443,12 @@ public class TlsUtils
         return validateCredentials(clientAuthentication.getClientCredentials(certificateRequest));
     }
 
+    static TlsCredentialedSigner establish13ClientCredentials(TlsAuthentication clientAuthentication,
+        CertificateRequest certificateRequest) throws IOException
+    {
+        return validate13Credentials(clientAuthentication.getClientCredentials(certificateRequest));
+    }
+
     static void establishClientSigAlgs(SecurityParameters securityParameters, Hashtable clientExtensions)
         throws IOException
     {
@@ -4432,6 +4464,11 @@ public class TlsUtils
     static TlsCredentials establishServerCredentials(TlsServer server) throws IOException
     {
         return validateCredentials(server.getCredentials());
+    }
+
+    static TlsCredentialedSigner establish13ServerCredentials(TlsServer server) throws IOException
+    {
+        return validate13Credentials(server.getCredentials());
     }
 
     static void establishServerSigAlgs(SecurityParameters securityParameters, CertificateRequest certificateRequest)
@@ -4461,6 +4498,19 @@ public class TlsUtils
             }
         }
         return credentials;
+    }
+
+    static TlsCredentialedSigner validate13Credentials(TlsCredentials credentials) throws IOException
+    {
+        if (null == credentials)
+        {
+            return null;
+        }
+        if (!(credentials instanceof TlsCredentialedSigner))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        return (TlsCredentialedSigner)credentials;
     }
 
     static void negotiatedCipherSuite(TlsContext context) throws IOException
