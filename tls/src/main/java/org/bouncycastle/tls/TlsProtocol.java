@@ -1659,14 +1659,20 @@ public abstract class TlsProtocol
         return supplementalData;
     }
 
-    protected static void writeExtensions(OutputStream output, Hashtable extensions)
-        throws IOException
+    protected static void writeExtensions(OutputStream output, Hashtable extensions) throws IOException
     {
         if (null == extensions || extensions.isEmpty())
         {
             return;
         }
 
+        byte[] extBytes = writeExtensionsData(extensions);
+
+        TlsUtils.writeOpaque16(extBytes, output);
+    }
+
+    protected static byte[] writeExtensionsData(Hashtable extensions) throws IOException
+    {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         /*
@@ -1676,9 +1682,7 @@ public abstract class TlsProtocol
         writeSelectedExtensions(buf, extensions, true);
         writeSelectedExtensions(buf, extensions, false);
 
-        byte[] extBytes = buf.toByteArray();
-
-        TlsUtils.writeOpaque16(extBytes, output);
+        return buf.toByteArray();
     }
 
     protected static void writeSelectedExtensions(OutputStream output, Hashtable extensions, boolean selectEmpty)
