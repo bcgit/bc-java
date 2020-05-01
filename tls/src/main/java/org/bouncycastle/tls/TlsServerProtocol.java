@@ -925,11 +925,11 @@ public class TlsServerProtocol
     protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        DigitallySigned clientCertificateVerify = DigitallySigned.parse(tlsServerContext, buf);
+        DigitallySigned certificateVerify = DigitallySigned.parse(tlsServerContext, buf);
 
         assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerify(tlsServerContext, certificateRequest, clientCertificateVerify, handshakeHash);
+        TlsUtils.verifyCertificateVerifyClient(tlsServerContext, certificateRequest, certificateVerify, handshakeHash);
 
         this.handshakeHash = handshakeHash.stopTracking();
     }
