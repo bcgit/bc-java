@@ -66,11 +66,16 @@ public class CertificateRequest
             throw new IllegalArgumentException("'certificateTypes' should have length from 1 to 255");
         }
 
-        this.certificateRequestContext = certificateRequestContext;
+        this.certificateRequestContext = TlsUtils.clone(certificateRequestContext);
         this.certificateTypes = certificateTypes;
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
         this.supportedSignatureAlgorithmsCert = supportedSignatureAlgorithmsCert;
         this.certificateAuthorities = certificateAuthorities;
+    }
+
+    public byte[] getCertificateRequestContext()
+    {
+        return TlsUtils.clone(certificateRequestContext);
     }
 
     /**

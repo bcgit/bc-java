@@ -1165,6 +1165,23 @@ public class TlsUtils
             || ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv10);
     }
 
+    public static boolean isNullOrContainsNull(Object[] array)
+    {
+        if (null == array)
+        {
+            return true;
+        }
+        int count = array.length;
+        for (int i = 0; i < count; ++i)
+        {
+            if (null == array[i])
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean isNullOrEmpty(byte[] array)
     {
         return null == array || array.length < 1;
@@ -1401,6 +1418,11 @@ public class TlsUtils
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
         return PRF(context.getSecurityParametersHandshake(), secret, asciiLabel, seed, length);
+    }
+
+    public static byte[] clone(byte[] data)
+    {
+        return null == data ? null : data.length == 0 ? EMPTY_BYTES : data.clone();
     }
 
     public static boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
@@ -3693,6 +3715,7 @@ public class TlsUtils
             }
             else if (null == serverSigAlgsCert)
             {
+                // TODO Review this (legacy) logic with RFC 4346 (7.4?.2?)
                 short[] certificateTypes = certificateRequest.getCertificateTypes();
                 for (int j = 0; j < certificateTypes.length; ++j)
                 {
@@ -3852,9 +3875,13 @@ public class TlsUtils
         Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+        boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
 
+        // TODO[tls13] An error unless we implement PSK?
         if (null == clientAuthentication)
         {
+            // TODO[tls13] No keyExchange object for TLS 1.3
+
             // There was no server certificate message; check it's OK
             keyExchange.skipServerCredentials();
             securityParameters.tlsServerEndPoint = EMPTY_BYTES;
@@ -3868,7 +3895,11 @@ public class TlsUtils
         {
             checkSigAlgOfServerCerts(clientContext, serverCertificate);
         }
-        keyExchange.processServerCertificate(serverCertificate);
+
+        if (!isTLSv13)
+        {
+            keyExchange.processServerCertificate(serverCertificate);
+        }
 
         clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
     }
@@ -4056,6 +4087,8 @@ public class TlsUtils
         Certificate serverCertificate = Certificate.parse(clientContext, buf, endPointHash);
 
         TlsProtocol.assertEmpty(buf);
+
+        // TODO[tls13] Check TLS 1.3 server certificate has zero length certificate_request_context
 
         if (serverCertificate.isEmpty())
         {
