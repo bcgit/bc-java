@@ -77,11 +77,6 @@ public abstract class DTLSProtocol
         return buf.toByteArray();
     }
 
-    protected static byte[] createVerifyData(TlsContext context, DTLSReliableHandshake handshake, boolean isServer)
-    {
-        return TlsUtils.calculateVerifyData(context, handshake.getHandshakeHash(), isServer);
-    }
-
     protected static void sendCertificateMessage(TlsContext context, DTLSReliableHandshake handshake,
         Certificate certificate, OutputStream endPointHash) throws IOException
     {

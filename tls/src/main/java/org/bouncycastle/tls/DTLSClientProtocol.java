@@ -166,11 +166,13 @@ public class DTLSClientProtocol
             recordLayer.initPendingEpoch(TlsUtils.initCipher(state.clientContext));
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
-            securityParameters.peerVerifyData = createVerifyData(state.clientContext, handshake, true);
+            securityParameters.peerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
+                handshake.getHandshakeHash(), true);
             processFinished(handshake.receiveMessageBody(HandshakeType.finished), securityParameters.getPeerVerifyData());
 
             // NOTE: Calculated exclusive of the Finished message itself
-            securityParameters.localVerifyData = createVerifyData(state.clientContext, handshake, false);
+            securityParameters.localVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
+                handshake.getHandshakeHash(), false);
             handshake.sendMessage(HandshakeType.finished, securityParameters.getLocalVerifyData());
 
             handshake.finish();
@@ -349,7 +351,8 @@ public class DTLSClientProtocol
             handshake.prepareToFinish();
         }
 
-        securityParameters.localVerifyData = createVerifyData(state.clientContext, handshake, false);
+        securityParameters.localVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
+            handshake.getHandshakeHash(), false);
         handshake.sendMessage(HandshakeType.finished, securityParameters.getLocalVerifyData());
 
         if (state.expectSessionTicket)
@@ -366,7 +369,8 @@ public class DTLSClientProtocol
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the server
-        securityParameters.peerVerifyData = createVerifyData(state.clientContext, handshake, true);
+        securityParameters.peerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
+            handshake.getHandshakeHash(), true);
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), securityParameters.getPeerVerifyData());
 
         handshake.finish();
