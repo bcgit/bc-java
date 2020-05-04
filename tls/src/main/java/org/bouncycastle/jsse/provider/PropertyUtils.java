@@ -59,9 +59,9 @@ class PropertyUtils
                 LOG.log(Level.INFO, "Found boolean system property [" + propertyName + "]: " + false);
                 return false;
             }
-            LOG.log(Level.WARNING, "Unrecognized value for boolean system property [" + propertyName + "]: " + propertyValue);
+            LOG.log(Level.FINEST, "Unrecognized value for boolean system property [" + propertyName + "]: " + propertyValue);
         }
-        LOG.log(Level.FINE, "Boolean system property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.log(Level.FINEST, "Boolean system property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 
@@ -89,7 +89,7 @@ class PropertyUtils
                 LOG.log(Level.WARNING, "Unrecognized value for integer system property [" + propertyName + "]: " + propertyValue);
             }
         }
-        LOG.log(Level.FINE, "Integer system property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.log(Level.FINEST, "Integer system property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 
@@ -101,7 +101,7 @@ class PropertyUtils
             LOG.log(Level.INFO, "Found string security property [" + propertyName + "]: " + propertyValue);
             return propertyValue;
         }
-        LOG.log(Level.WARNING, "String security property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.log(Level.FINEST, "String security property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 

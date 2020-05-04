@@ -319,7 +319,7 @@ class ProvSSLContextSpi
         {
             if (!SUPPORTED_PROTOCOL_MAP.containsKey(protocol))
             {
-                LOG.warning("'" + protocolsPropertyName + "' contains unsupported protocol: " + protocol);
+                LOG.fine("'" + protocolsPropertyName + "' contains unsupported protocol: " + protocol);
             }
             else if (!JsseUtils.contains(result, protocol))
             {

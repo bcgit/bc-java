@@ -96,7 +96,7 @@ abstract class SupportedGroups
             int namedGroup = NamedGroup.getByName(Strings.toLowerCase(name));
             if (namedGroup < 0)
             {
-                LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains unrecognised NamedGroup: " + name);
+                LOG.info("'" + PROPERTY_NAMED_GROUPS + "' contains unrecognised NamedGroup: " + name);
             }
             else if (disableChar2 && NamedGroup.isChar2Curve(namedGroup))
             {
