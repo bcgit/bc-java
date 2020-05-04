@@ -21,6 +21,8 @@ public class HSSPrivateKeyParameters
     private final long indexLimit;
     private long index = 0;
 
+    private HSSPublicKeyParameters publicKey;
+
     public HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit)
     {
         super(true);
@@ -48,6 +50,16 @@ public class HSSPrivateKeyParameters
         this.index = index;
         this.indexLimit = indexLimit;
         this.isShard = isShard;
+    }
+
+    public static HSSPrivateKeyParameters getInstance(byte[] privEnc, byte[] pubEnc)
+        throws IOException
+    {
+        HSSPrivateKeyParameters pKey = getInstance(privEnc);
+
+        pKey.publicKey = HSSPublicKeyParameters.getInstance(pubEnc);
+
+        return pKey;
     }
 
     public static HSSPrivateKeyParameters getInstance(Object src)
