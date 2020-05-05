@@ -14,6 +14,7 @@ import org.bouncycastle.util.io.Streams;
 
 public class LMSPrivateKeyParameters
     extends LMSKeyParameters
+    implements LMOtsContextBasedSigner
 {
     private static CacheKey T1 = new CacheKey(1);
     private static CacheKey[] internedKeys = new CacheKey[129];
@@ -185,6 +186,43 @@ public class LMSPrivateKeyParameters
     synchronized void incIndex()
     {
         q++;
+    }
+
+    public LMSContext generateLMSContext()
+    {
+        // Step 1.
+        LMSigParameters lmsParameter = this.getSigParameters();
+
+        // Step 2
+        int h = lmsParameter.getH();
+        int q = getIndex();
+        LMOtsPrivateKey otsPk = getNextOtsPrivateKey();
+
+        int i = 0;
+        int r = (1 << h) + q;
+        byte[][] path = new byte[h][];
+
+        while (i < h)
+        {
+            int tmp = (r / (1 << i)) ^ 1;
+
+            path[i] = this.findT(tmp);
+            i++;
+        }
+
+        return otsPk.getSignatureContext(this.getSigParameters(), path);
+    }
+
+    public byte[] generateSignature(LMSContext context)
+    {
+        try
+        {
+            return LMS.generateSign(context).getEncoded();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("unable to encode signature: " + e.getMessage(), e);
+        }
     }
 
     LMOtsPrivateKey getNextOtsPrivateKey()
