@@ -16,8 +16,12 @@ public class SecurityParameters
     final short compressionAlgorithm = CompressionMethod._null;
     short maxFragmentLength = -1;
     int prfAlgorithm = -1;
+    short prfHashAlgorithm = -1;
+    int prfHashLength = -1;
     int verifyDataLength = -1;
+    TlsSecret earlyExporterMasterSecret = null;
     TlsSecret earlySecret = null;
+    TlsSecret exporterMasterSecret = null;
     TlsSecret handshakeSecret = null;
     TlsSecret masterSecret = null;
     TlsSecret sharedSecret = null;
@@ -66,12 +70,12 @@ public class SecurityParameters
         this.serverSigAlgsCert = null;
         this.statusRequestVersion = 0;
 
+        this.earlyExporterMasterSecret = clearSecret(earlyExporterMasterSecret);
         this.earlySecret = clearSecret(earlySecret);
+        this.exporterMasterSecret = clearSecret(exporterMasterSecret);
         this.handshakeSecret = clearSecret(handshakeSecret);
         this.masterSecret = clearSecret(masterSecret);
         this.sharedSecret = clearSecret(sharedSecret);
-        this.trafficSecretClient = clearSecret(trafficSecretClient);
-        this.trafficSecretServer = clearSecret(trafficSecretServer);
     }
 
     /**
@@ -147,11 +151,32 @@ public class SecurityParameters
     }
 
     /**
-     * @return {@link PRFAlgorithm}
+     * @deprecated Use {@link #getPRFAlgorithm()} instead.
      */
     public int getPrfAlgorithm()
     {
         return prfAlgorithm;
+    }
+
+    /**
+     * @return {@link PRFAlgorithm}
+     */
+    public int getPRFAlgorithm()
+    {
+        return prfAlgorithm;
+    }
+
+    /**
+     * @return {@link HashAlgorithm} for the current {@link PRFAlgorithm}
+     */
+    public short getPRFHashAlgorithm()
+    {
+        return prfHashAlgorithm;
+    }
+
+    public int getPRFHashLength()
+    {
+        return prfHashLength;
     }
 
     public int getVerifyDataLength()
@@ -159,9 +184,19 @@ public class SecurityParameters
         return verifyDataLength;
     }
 
+    public TlsSecret getEarlyExporterMasterSecret()
+    {
+        return earlyExporterMasterSecret;
+    }
+
     public TlsSecret getEarlySecret()
     {
         return earlySecret;
+    }
+
+    public TlsSecret getExporterMasterSecret()
+    {
+        return exporterMasterSecret;
     }
 
     public TlsSecret getHandshakeSecret()

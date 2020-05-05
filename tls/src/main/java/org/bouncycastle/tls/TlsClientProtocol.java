@@ -301,8 +301,7 @@ public class TlsClientProtocol
                 send13FinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;
 
-                TlsUtils.establish13TrafficSecretsApplication(tlsClientContext, serverFinishedTranscriptHash,
-                    recordStream);
+                TlsUtils.establish13PhaseApplication(tlsClientContext, serverFinishedTranscriptHash, recordStream);
 
                 completeHandshake();
                 break;
@@ -888,14 +887,10 @@ public class TlsClientProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-            securityParameters.cipherSuite = selectedCipherSuite;
-            TlsUtils.negotiatedCipherSuite(tlsClientContext);
-            this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
 
-            securityParameters.prfAlgorithm = getPRFAlgorithm(tlsClientContext, securityParameters.getCipherSuite());
+            TlsUtils.negotiatedCipherSuite(securityParameters, selectedCipherSuite);
 
-            securityParameters.verifyDataLength = HashAlgorithm.getOutputSize(
-                TlsUtils.getHashAlgorithmForPRFAlgorithm(securityParameters.getPrfAlgorithm()));
+            tlsClient.notifySelectedCipherSuite(securityParameters.getCipherSuite());
         }
 
         {
@@ -957,7 +952,7 @@ public class TlsClientProtocol
     {
         byte[] serverHelloTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
 
-        TlsUtils.establish13TrafficSecretsHandshake(tlsClientContext, serverHelloTranscriptHash, recordStream);
+        TlsUtils.establish13PhaseHandshake(tlsClientContext, serverHelloTranscriptHash, recordStream);
     }
 
     protected void processServerHelloMessage(ServerHello serverHello)
@@ -1056,9 +1051,10 @@ public class TlsClientProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-            securityParameters.cipherSuite = selectedCipherSuite;
-            TlsUtils.negotiatedCipherSuite(tlsClientContext);
-            this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
+
+            TlsUtils.negotiatedCipherSuite(securityParameters, selectedCipherSuite);
+
+            tlsClient.notifySelectedCipherSuite(securityParameters.getCipherSuite());
         }
 
         /*
@@ -1301,15 +1297,6 @@ public class TlsClientProtocol
         {
             this.tlsClient.processServerExtensions(sessionServerExtensions);
         }
-
-        securityParameters.prfAlgorithm = getPRFAlgorithm(tlsClientContext, securityParameters.getCipherSuite());
-
-        /*
-         * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify
-         * verify_data_length has a verify_data_length equal to 12. This includes all
-         * existing cipher suites.
-         */
-        securityParameters.verifyDataLength = securityParameters.getNegotiatedVersion().isSSL() ? 36 : 12;
 
         applyMaxFragmentLengthExtension();
 
