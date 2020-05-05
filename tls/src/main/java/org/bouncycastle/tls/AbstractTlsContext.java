@@ -3,6 +3,7 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
@@ -199,21 +200,25 @@ abstract class AbstractTlsContext
         }
     }
 
-    public byte[] exportEarlyKeyingMaterial(String asciiLabel, byte[] context_value, int length)
+    public byte[] exportEarlyKeyingMaterial(String asciiLabel, byte[] context, int length)
     {
-        if (context_value != null && !TlsUtils.isValidUint16(context_value.length))
+        // TODO[tls13] Ensure early_exporter_master_secret is available suitably early!
+        SecurityParameters sp = getSecurityParametersHandshake();
+        if (null == sp)
         {
-            throw new IllegalArgumentException("'context_value' must have length less than 2^16 (or be null)");
+            throw new IllegalStateException("Export of early key material only available during handshake");
         }
 
-        // TODO[tls13]
-        TlsSecret exporter_secret = null; // early_exporter_master_secret
-
-        return exportKeyingMaterial13(exporter_secret, asciiLabel, context_value, length);
+        return exportKeyingMaterial13(checkEarlyExportSecret(sp.getEarlyExporterMasterSecret()),
+            sp.getPRFHashAlgorithm(), asciiLabel, context, length);
     }
 
-    public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
+    public byte[] exportKeyingMaterial(String asciiLabel, byte[] context, int length)
     {
+        /*
+         * TODO[tls13] Introduce a TlsExporter interface? Avoid calculating (early) exporter
+         * secret(s) unless the peer actually uses it.
+         */
         SecurityParameters sp = getSecurityParametersConnection();
         if (null == sp)
         {
@@ -227,33 +232,60 @@ abstract class AbstractTlsContext
              * key material based on the new master secret for any subsequent application-level
              * authentication. In particular, it MUST disable [RFC5705] [..].
              */
-            throw new IllegalStateException("cannot export keying material without extended_master_secret");
+            throw new IllegalStateException("Export of key material requires extended_master_secret");
         }
 
         if (TlsUtils.isTLSv13(sp.getNegotiatedVersion()))
         {
-            // TODO[tls13]
-            TlsSecret exporter_secret = null; // exporter_master_secret
-
-            return exportKeyingMaterial13(exporter_secret, asciiLabel, context_value, length);
+            return exportKeyingMaterial13(checkExportSecret(sp.getExporterMasterSecret()), sp.getPRFHashAlgorithm(),
+                asciiLabel, context, length);
         }
 
-        byte[] seed = TlsUtils.calculateExporterSeed(sp, context_value);
+        byte[] seed = TlsUtils.calculateExporterSeed(sp, context);
 
-        return TlsUtils.PRF(sp, sp.getMasterSecret(), asciiLabel, seed, length).extract();
+        return TlsUtils.PRF(sp, checkExportSecret(sp.getMasterSecret()), asciiLabel, seed, length).extract();
     }
 
-    protected byte[] exportKeyingMaterial13(TlsSecret exporter_secret, String asciiLabel, byte[] context_value, int length)
+    protected byte[] exportKeyingMaterial13(TlsSecret secret, short hashAlgorithm, String asciiLabel, byte[] context,
+        int length)
     {
-        if (context_value == null)
+        if (null == context)
         {
-            context_value = TlsUtils.EMPTY_BYTES;
+            context = TlsUtils.EMPTY_BYTES;
+        }
+        else if (!TlsUtils.isValidUint16(context.length))
+        {
+            throw new IllegalArgumentException("'context' must have length less than 2^16 (or be null)");
         }
 
-        /*
-         *  TODO[tls13]
-         *  HKDF-Expand-Label(Derive-Secret(Secret, label, ""), "exporter", Hash(context_value), key_length)
-         */
-        throw new UnsupportedOperationException();
+        try
+        {
+            return TlsCryptoUtils.hkdfExpandLabel(secret, hashAlgorithm, asciiLabel, context, length).extract();
+        }
+        catch (IOException e)
+        {
+            // Should never happen
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected TlsSecret checkEarlyExportSecret(TlsSecret secret)
+    {
+        if (null == secret)
+        {
+            // TODO[tls13] For symmetry with normal export, ideally available for notifyHandshakeBeginning() only
+//            throw new IllegalStateException("Export of early key material only available from notifyHandshakeBeginning()");
+            throw new IllegalStateException("Export of early key material not available for this handshake");
+        }
+        return secret;
+    }
+
+    protected TlsSecret checkExportSecret(TlsSecret secret)
+    {
+        if (null == secret)
+        {
+            throw new IllegalStateException("Export of key material only available from notifyHandshakeComplete()");
+        }
+        return secret;
     }
 }

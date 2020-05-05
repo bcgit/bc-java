@@ -287,36 +287,12 @@ public class TlsAEADCipher
 
     public void rekeyDecoder() throws IOException
     {
-        if (!isTLSv13)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
-        short hash = TlsUtils.getHashAlgorithmForPRFAlgorithm(securityParameters.getPrfAlgorithm());
-
-        TlsSecret decryptSecret = cryptoParams.isServer()
-            ?   securityParameters.getTrafficSecretClient()
-            :   securityParameters.getTrafficSecretServer();
-
-        setup13Cipher(decryptCipher, decryptNonce, decryptSecret, hash);
+        rekeyCipher(decryptCipher, decryptNonce, !cryptoParams.isServer());
     }
 
     public void rekeyEncoder() throws IOException
     {
-        if (!isTLSv13)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
-        short hash = TlsUtils.getHashAlgorithmForPRFAlgorithm(securityParameters.getPrfAlgorithm());
-
-        TlsSecret encryptSecret = cryptoParams.isServer()
-            ?   securityParameters.getTrafficSecretServer()
-            :   securityParameters.getTrafficSecretClient();
-
-        setup13Cipher(encryptCipher, encryptNonce, encryptSecret, hash);
+        rekeyCipher(encryptCipher, encryptNonce, cryptoParams.isServer());
     }
 
     public boolean usesOpaqueRecordType()
@@ -350,6 +326,28 @@ public class TlsAEADCipher
             TlsUtils.writeUint16(plaintextLength, additional_data, 11);
             return additional_data;
         }
+    }
+
+    protected void rekeyCipher(TlsAEADCipherImpl cipher, byte[] nonce, boolean serverSecret) throws IOException
+    {
+        if (!isTLSv13)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
+
+        TlsSecret secret = serverSecret
+            ?   securityParameters.getTrafficSecretServer()
+            :   securityParameters.getTrafficSecretClient();
+
+        // TODO[tls13] For early data, have to disable server->client
+        if (null == secret)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        setup13Cipher(cipher, nonce, secret, securityParameters.getPRFHashAlgorithm());
     }
 
     protected void setup13Cipher(TlsAEADCipherImpl cipher, byte[] nonce, TlsSecret secret, short hash)

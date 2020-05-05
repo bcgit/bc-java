@@ -688,10 +688,11 @@ public class DTLSClientProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-            securityParameters.cipherSuite = validateSelectedCipherSuite(selectedCipherSuite,
-                AlertDescription.illegal_parameter);
-            TlsUtils.negotiatedCipherSuite(state.clientContext);
-            state.client.notifySelectedCipherSuite(selectedCipherSuite);
+
+            TlsUtils.negotiatedCipherSuite(securityParameters,
+                validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.illegal_parameter));
+
+            state.client.notifySelectedCipherSuite(securityParameters.getCipherSuite());
         }
 
         /*
@@ -912,15 +913,6 @@ public class DTLSClientProtocol
         {
             state.client.processServerExtensions(sessionServerExtensions);
         }
-
-        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.clientContext,
-            securityParameters.getCipherSuite());
-
-        /*
-         * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
-         * a verify_data_length equal to 12. This includes all existing cipher suites.
-         */
-        securityParameters.verifyDataLength = 12;
     }
 
     protected void processServerKeyExchange(ClientHandshakeState state, byte[] body)
