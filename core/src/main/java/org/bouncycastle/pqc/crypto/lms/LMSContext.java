@@ -11,11 +11,11 @@ public class LMSContext
     private final LMOtsPrivateKey key;
     private final LMSigParameters sigParams;
     private final byte[][] path;
-
-    private final Digest digest;
     private final LMOtsPublicKey publicKey;
     private final Object signature;
+
     private LMSSignedPubKey[] signedPubKeys;
+    private volatile Digest digest;
 
     public LMSContext(LMOtsPrivateKey key, LMSigParameters sigParams, Digest digest, byte[] C, byte[][] path)
     {
@@ -49,6 +49,8 @@ public class LMSContext
         byte[] Q = new byte[MAX_HASH + 2];
 
         digest.doFinal(Q, 0);
+        
+        digest = null;
 
         return Q;
     }
