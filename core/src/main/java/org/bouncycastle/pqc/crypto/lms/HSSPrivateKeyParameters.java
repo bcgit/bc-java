@@ -11,8 +11,11 @@ import java.util.List;
 
 import org.bouncycastle.util.io.Streams;
 
+import static org.bouncycastle.pqc.crypto.lms.HSS.rangeTestKeys;
+
 public class HSSPrivateKeyParameters
     extends LMSKeyParameters
+    implements LMOtsContextBasedSigner
 {
     private final int l;
     private final boolean isShard;
@@ -478,5 +481,54 @@ public class HSSPrivateKeyParameters
         throws CloneNotSupportedException
     {
         return makeCopy(this);
+    }
+
+    @Override
+    public LMSContext generateLMSContext()
+    {
+        LMSSignedPubKey[] signed_pub_key;
+        LMSPrivateKeyParameters nextKey;
+        int L = this.getL();
+
+        synchronized (this)
+        {
+            rangeTestKeys(this);
+
+            List<LMSPrivateKeyParameters> keys = this.getKeys();
+            List<LMSSignature> sig = this.getSig();
+
+            nextKey = this.getKeys().get(L - 1);
+
+            // Step 2. Stand in for sig[L-1]
+            int i = 0;
+            signed_pub_key = new LMSSignedPubKey[L - 1];
+            while (i < L - 1)
+            {
+                signed_pub_key[i] = new LMSSignedPubKey(
+                    sig.get(i),
+                    keys.get(i + 1).getPublicKey());
+                i = i + 1;
+            }
+
+            //
+            // increment the index.
+            //
+            this.incIndex();
+        }
+
+        return nextKey.generateLMSContext().withSignedPublicKeys(signed_pub_key);
+    }
+
+    @Override
+    public byte[] generateSignature(LMSContext context)
+    {
+        try
+        {
+            return HSS.generateSignature(getL(), context).getEncoded();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("unable to encode signature: " + e.getMessage(), e);
+        }
     }
 }

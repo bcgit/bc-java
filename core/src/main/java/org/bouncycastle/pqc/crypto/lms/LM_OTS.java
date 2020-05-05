@@ -11,13 +11,11 @@ class LM_OTS
     private static final int ITER_K = 20;
     private static final int ITER_PREV = 23;
     private static final int ITER_J = 22;
-    private static final int SEED_RANDOMISER_INDEX = ~2;
-    private static final int SEED_LEN = 32;
-    private static final int MAX_HASH = 32;
+    static final int SEED_RANDOMISER_INDEX = ~2;
+    static final int SEED_LEN = 32;
+    static final int MAX_HASH = 32;
 
-
-
-    private static final short D_MESG = (short)0x8181;
+    static final short D_MESG = (short)0x8181;
 
 
     public static int coef(byte[] S, int i, int w)
@@ -108,51 +106,46 @@ class LM_OTS
 
     }
 
-    public static LMOtsSignature lm_ots_generate_signature(LMOtsPrivateKey privateKey, byte[] message, boolean preHashed)
+    public static LMOtsSignature lm_ots_generate_signature(LMSigParameters sigParams, LMOtsPrivateKey privateKey, byte[][] path, byte[] message, boolean preHashed)
     {
+        //
+        // Add the randomizer.
+        //
 
+        byte[] C;
+        byte[] Q = new byte[MAX_HASH + 2];
+
+        if (!preHashed)
+        {
+            LMSContext qCtx = privateKey.getSignatureContext(sigParams, path);
+
+            LmsUtils.byteArray(message, 0, message.length, qCtx);
+
+            C = qCtx.getC();
+            Q = qCtx.getQ();
+        }
+        else
+        {
+            C = new byte[SEED_LEN];
+            System.arraycopy(message, 0, Q, 0, privateKey.getParameter().getN());
+        }
+
+        return lm_ots_generate_signature(privateKey, Q, C);
+    }
+
+    public static LMOtsSignature lm_ots_generate_signature(LMOtsPrivateKey privateKey, byte[] Q, byte[] C)
+    {
         LMOtsParameters parameter = privateKey.getParameter();
 
         int n = parameter.getN();
         int p = parameter.getP();
         int w = parameter.getW();
 
-
         byte[] sigComposer = new byte[p * n];
-
-        //
-        // Add the randomizer.
-        //
-
-        byte[] C = new byte[SEED_LEN];
-
-        if (!preHashed)
-        {
-            SeedDerive derive = privateKey.getDerivationFunction();
-            derive.setJ(SEED_RANDOMISER_INDEX); // This value from reference impl.
-            derive.deriveSeed(C, false);
-        }
-
-        SeedDerive derive = privateKey.getDerivationFunction();
-
-
-        byte[] Q = new byte[MAX_HASH + 2];
 
         Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
 
-        if (!preHashed)
-        {
-            LmsUtils.byteArray(privateKey.getI(), ctx);
-            LmsUtils.u32str(privateKey.getQ(), ctx);
-            LmsUtils.u16str(D_MESG, ctx);
-            LmsUtils.byteArray(C, ctx);
-            LmsUtils.byteArray(message, 0, message.length, ctx);
-            ctx.doFinal(Q, 0);
-        }
-        else
-        {
-            System.arraycopy(message, 0, Q, 0, n);
-        }
+        SeedDerive derive = privateKey.getDerivationFunction();
 
         int cs = cksm(Q, n, parameter);
         Q[n] = (byte)((cs >>> 8) & 0xFF);
@@ -176,9 +169,7 @@ class LM_OTS
         }
 
         return new LMOtsSignature(parameter, C, sigComposer);
-
     }
-
 
     public static boolean lm_ots_validate_signature(LMOtsPublicKey publicKey, LMOtsSignature signature, byte[] message, boolean prehashed)
         throws LMSException
@@ -187,46 +178,49 @@ class LM_OTS
         {
             throw new LMSException("public key and signature ots types do not match");
         }
-        return Arrays.areEqual(lm_ots_validate_signature_calculate(publicKey.getParameter(), publicKey.getI(), publicKey.getQ(), signature, message, prehashed), publicKey.getK());
+        return Arrays.areEqual(lm_ots_validate_signature_calculate(publicKey, signature, message), publicKey.getK());
     }
 
-    public static byte[] lm_ots_validate_signature_calculate(LMOtsParameters parameter, byte[] I, int q, LMOtsSignature signature, byte[] message, boolean prehashed)
+    public static byte[] lm_ots_validate_signature_calculate(LMOtsPublicKey publicKey, LMOtsSignature signature, byte[] message)
     {
+        LMSContext ctx = publicKey.createOtsContext(signature);
 
-        byte[] C = signature.getC();
-        byte[] y = signature.getY();
+        LmsUtils.byteArray(message, ctx);
 
-        byte[] Q = new byte[MAX_HASH + 2];
-        if (prehashed)
+        return lm_ots_validate_signature_calculate(ctx);
+    }
+
+    public static byte[] lm_ots_validate_signature_calculate(LMSContext context)
+    {
+        LMOtsPublicKey publicKey = context.getPublicKey();
+        LMOtsParameters parameter = publicKey.getParameter();
+        Object sig = context.getSignature();
+        LMOtsSignature signature;
+        if (sig instanceof LMSSignature)
         {
-            System.arraycopy(message, 0, Q, 0, parameter.getN());
+            signature = ((LMSSignature)sig).getOtsSignature();
         }
         else
         {
-            Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
-            LmsUtils.byteArray(I, ctx);
-            LmsUtils.u32str(q, ctx);
-            LmsUtils.u16str(D_MESG, ctx);
-            LmsUtils.byteArray(C, ctx);
-            LmsUtils.byteArray(message, ctx);
-            ctx.doFinal(Q, 0);
+            signature = (LMOtsSignature)sig;
         }
 
         int n = parameter.getN();
         int w = parameter.getW();
         int p = parameter.getP();
-
+        byte[] Q = context.getQ();
 
         int cs = cksm(Q, n, parameter);
         Q[n] = (byte)((cs >>> 8) & 0xFF);
         Q[n + 1] = (byte)cs;
 
+        byte[] I = publicKey.getI();
+        int    q = publicKey.getQ();
 
         Digest finalContext = DigestUtil.getDigest(parameter.getDigestOID());
         LmsUtils.byteArray(I, finalContext);
         LmsUtils.u32str(q, finalContext);
         LmsUtils.u16str(D_PBLC, finalContext);
-
 
         byte[] tmp = Composer.compose()
             .bytes(I)
@@ -235,6 +229,7 @@ class LM_OTS
 
         int max_digit = (1 << w) - 1;
 
+        byte[] y = signature.getY();
 
         Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
         for (int i = 0; i < p; i++)
@@ -258,5 +253,4 @@ class LM_OTS
 
         return K;
     }
-
 }

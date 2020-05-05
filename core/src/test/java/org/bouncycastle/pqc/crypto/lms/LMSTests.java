@@ -32,7 +32,11 @@ public class LMSTests
             ms[t] = (byte)t;
         }
 
-        LMOtsSignature sig = LM_OTS.lm_ots_generate_signature(privateKey, ms, false);
+        LMSContext ctx = privateKey.getSignatureContext(null, null);
+
+        ctx.update(ms, 0, ms.length);
+
+        LMOtsSignature sig = LM_OTS.lm_ots_generate_signature(privateKey, ctx.getQ(), ctx.getC());
         assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, sig, ms, false));
 
         //  Vandalise signature

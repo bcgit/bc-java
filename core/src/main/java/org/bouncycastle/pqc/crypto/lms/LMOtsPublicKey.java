@@ -6,8 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.io.Streams;
+
+import static org.bouncycastle.pqc.crypto.lms.LM_OTS.D_MESG;
 
 class LMOtsPublicKey
     implements Encodable
@@ -22,7 +25,7 @@ class LMOtsPublicKey
     {
         this.parameter = parameter;
         this.I = i;
-        this.q = 0;
+        this.q = q;
         this.K = k;
     }
 
@@ -134,5 +137,29 @@ class LMOtsPublicKey
             .bytes(I)
             .u32str(q)
             .bytes(K).build();
+    }
+
+    LMSContext createOtsContext(LMOtsSignature signature)
+    {
+        Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
+
+        LmsUtils.byteArray(I, ctx);
+        LmsUtils.u32str(q, ctx);
+        LmsUtils.u16str(D_MESG, ctx);
+        LmsUtils.byteArray(signature.getC(), ctx);
+
+        return new LMSContext(this, signature, ctx);
+    }
+
+    LMSContext createOtsContext(LMSSignature signature)
+    {
+        Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
+
+        LmsUtils.byteArray(I, ctx);
+        LmsUtils.u32str(q, ctx);
+        LmsUtils.u16str(D_MESG, ctx);
+        LmsUtils.byteArray(signature.getOtsSignature().getC(), ctx);
+
+        return new LMSContext(this, signature, ctx);
     }
 }

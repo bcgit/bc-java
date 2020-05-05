@@ -9,6 +9,7 @@ import org.bouncycastle.util.io.Streams;
 
 public class HSSPublicKeyParameters
     extends LMSKeyParameters
+    implements LMOtsContextBasedVerifier
 {
     private final int l;
     private final LMSPublicKeyParameters lmsPublicKey;
@@ -100,5 +101,50 @@ public class HSSPublicKeyParameters
         return Composer.compose().u32str(l)
             .bytes(lmsPublicKey.getEncoded())
             .build();
+    }
+
+    public LMSContext generateLMSContext(byte[] sigEnc)
+    {
+        HSSSignature signature;
+        try
+        {
+            signature = HSSSignature.getInstance(sigEnc, getL());
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("cannot parse signature: " + e.getMessage());
+        }
+
+        LMSSignedPubKey[] signedPubKeys = signature.getSignedPubKey();
+        LMSPublicKeyParameters key = signedPubKeys[signedPubKeys.length - 1].getPublicKey();
+
+        return key.generateOtsContext(signature.getSignature()).withSignedPublicKeys(signedPubKeys);
+    }
+
+    public boolean verify(LMSContext context)
+    {
+        boolean failed = false;
+
+        LMSSignedPubKey[] sigKeys = context.getSignedPubKeys();
+
+        if (sigKeys.length != getL() - 1)
+        {
+            return false;
+        }
+
+        LMSPublicKeyParameters key = getLMSPublicKey();
+
+        for (int i = 0; i < sigKeys.length; i++)
+        {
+            LMSSignature sig = sigKeys[i].getSignature();
+            byte[] msg = sigKeys[i].getPublicKey().toByteArray();
+            if (!LMS.verifySignature(key, sig, msg))
+            {
+                failed = true;
+            }
+            key = sigKeys[i].getPublicKey();
+        }
+
+        return !failed & key.verify(context);
     }
 }

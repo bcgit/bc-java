@@ -129,25 +129,22 @@ class HSS
 
     public static HSSSignature generateSignature(HSSPrivateKeyParameters keyPair, byte[] message)
     {
+        LMSSignedPubKey[] signed_pub_key;
+        LMSPrivateKeyParameters nextKey;
+        int L = keyPair.getL();
 
         synchronized (keyPair)
         {
-
             rangeTestKeys(keyPair);
 
             List<LMSPrivateKeyParameters> keys = keyPair.getKeys();
             List<LMSSignature> sig = keyPair.getSig();
-            int L = keyPair.getL();
 
-            LMSPrivateKeyParameters nextKey = keyPair.getKeys().get(L - 1);
+            nextKey = keyPair.getKeys().get(L - 1);
 
             // Step 2. Stand in for sig[L-1]
-
-            LMSSignature signatureResult = LMS.generateSign(nextKey, message);
-
-
             int i = 0;
-            LMSSignedPubKey[] signed_pub_key = new LMSSignedPubKey[L - 1];
+            signed_pub_key = new LMSSignedPubKey[L - 1];
             while (i < L - 1)
             {
                 signed_pub_key[i] = new LMSSignedPubKey(
@@ -160,55 +157,19 @@ class HSS
             // increment the index.
             //
             keyPair.incIndex();
-
-            if (L == 1)
-            {
-                return new HSSSignature(L - 1, signed_pub_key, signatureResult);
-            }
-
-            return new HSSSignature(
-                L - 1,
-                signed_pub_key,
-                signatureResult);
         }
+
+        LMSContext context = nextKey.generateLMSContext().withSignedPublicKeys(signed_pub_key);
+
+        context.update(message, 0, message.length);
+
+        return generateSignature(L, context);
     }
 
-
-//    public static HSSSignature generateSignature(HSSPrivateKeyParameters keyPair, byte[] message)
-//    {
-//        int L = keyPair.getL();
-//
-//        //
-//        // Algorithm 8
-//        //
-//        // Step 1.
-//        LMSPrivateKeyParameters nextKey = keyPair.getNextSigningKey();
-//
-//        // Step 2. Stand in for sig[L-1]
-//
-//        LMSSignature signatureResult = LMS.generateSign(nextKey, message);
-//
-//        int i = 0;
-//        LMSSignedPubKey[] signed_pub_key = new LMSSignedPubKey[L - 1];
-//        while (i < L - 1)
-//        {
-//            signed_pub_key[i] = new LMSSignedPubKey(
-//                keyPair.getSig().get(i),
-//                keyPair.getKeys().get(i + 1).getPublicKey());
-//            i = i + 1;
-//        }
-//
-//        if (L == 1)
-//        {
-//            return new HSSSignature(L - 1, signed_pub_key, signatureResult);
-//        }
-//
-//        return new HSSSignature(
-//            L - 1,
-//            signed_pub_key,
-//            signatureResult);
-//    }
-
+    public static HSSSignature generateSignature(int L, LMSContext context)
+    {
+        return new HSSSignature(L - 1, context.getSignedPubKeys(), LMS.generateSign(context));
+    }
 
     public static boolean verifySignature(HSSPublicKeyParameters publicKey, HSSSignature signature, byte[] message)
     {
