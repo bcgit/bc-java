@@ -39,6 +39,7 @@ public class LMSTests
         LMOtsSignature sig = LM_OTS.lm_ots_generate_signature(privateKey, ctx.getQ(), ctx.getC());
         assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, sig, ms, false));
 
+
         //  Vandalise signature
         {
 
@@ -120,5 +121,41 @@ public class LMSTests
 
     }
 
+
+    public void testContextSingleUse()
+        throws Exception
+    {
+        LMOtsParameters parameter = LMOtsParameters.sha256_n32_w4;
+
+        byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
+        byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
+
+        LMOtsPrivateKey privateKey = new LMOtsPrivateKey(parameter, I, 0, seed);
+        LMOtsPublicKey publicKey = LM_OTS.lms_ots_generatePublicKey(privateKey);
+
+        byte[] ms = new byte[32];
+        for (int t = 0; t < ms.length; t++)
+        {
+            ms[t] = (byte)t;
+        }
+
+        LMSContext ctx = privateKey.getSignatureContext(null, null);
+
+        ctx.update(ms, 0, ms.length);
+
+        LMOtsSignature sig = LM_OTS.lm_ots_generate_signature(privateKey, ctx.getQ(), ctx.getC());
+        assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, sig, ms, false));
+
+        try
+        {
+            ctx.update((byte)1);
+            fail("Digest reuse after signature taken.");
+        }
+        catch (NullPointerException npe)
+        {
+            assertTrue(true);
+        }
+
+    }
 
 }
