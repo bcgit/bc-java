@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.lms;
 
+import static org.bouncycastle.pqc.crypto.lms.HSS.rangeTestKeys;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -10,8 +12,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.util.io.Streams;
-
-import static org.bouncycastle.pqc.crypto.lms.HSS.rangeTestKeys;
 
 public class HSSPrivateKeyParameters
     extends LMSKeyParameters
@@ -483,7 +483,6 @@ public class HSSPrivateKeyParameters
         return makeCopy(this);
     }
 
-    @Override
     public LMSContext generateLMSContext()
     {
         LMSSignedPubKey[] signed_pub_key;
@@ -519,7 +518,6 @@ public class HSSPrivateKeyParameters
         return nextKey.generateLMSContext().withSignedPublicKeys(signed_pub_key);
     }
 
-    @Override
     public byte[] generateSignature(LMSContext context)
     {
         try
