@@ -35,7 +35,22 @@ class LMS
 
     public static LMSSignature generateSign(LMSPrivateKeyParameters privateKey, byte[] message)
     {
+        //
+        // Get T from the public key.
+        // This may cause the public key to be generated.
+        //
+        // byte[][] T = new byte[privateKey.getMaxQ()][];
+        
+        // Step 2
+        LMSContext context = privateKey.generateLMSContext();
 
+        context.update(message, 0, message.length);
+
+        return generateSign(context);
+    }
+
+    public static LMSSignature generateSign(LMSContext context)
+    {
         //
         // Get T from the public key.
         // This may cause the public key to be generated.
@@ -43,37 +58,87 @@ class LMS
         // byte[][] T = new byte[privateKey.getMaxQ()][];
 
         // Step 1.
-        LMSigParameters lmsParameter = privateKey.getSigParameters();
+        LMOtsSignature ots_signature = LM_OTS.lm_ots_generate_signature(context.getPrivateKey(), context.getQ(), context.getC());
 
-        // Step 2
-        int h = lmsParameter.getH();
-
-        int q = privateKey.getIndex();
-        LMOtsPrivateKey otsPk = privateKey.getNextOtsPrivateKey();
-
-        // LmsPrivateKey.KeyWithQ keyWithQ = privateKey.getNextOtsPrivateKey();
-
-        LMOtsSignature ots_signature = LM_OTS.lm_ots_generate_signature(otsPk, message, false);
-
-        int i = 0;
-        int r = (1 << h) + q;
-        byte[][] path = new byte[h][];
-
-        while (i < h)
-        {
-            int tmp = (r / (1 << i)) ^ 1;
-
-            path[i] = privateKey.findT(tmp);
-            i++;
-        }
-
-        return new LMSSignature(q, ots_signature, lmsParameter, path);
+        return new LMSSignature(context.getPrivateKey().getQ(), ots_signature, context.getSigParams(), context.getPath());
     }
+
+//    public static boolean verifySignature(LMSPublicKeyParameters publicKey, LMSSignature S, byte[] message)
+//    {
+//        byte[] Tc = algorithm6a(S, publicKey.refI(), publicKey.getOtsParameters().getType(), message);
+//
+//        return publicKey.matchesT1(Tc);
+//    }
 
     public static boolean verifySignature(LMSPublicKeyParameters publicKey, LMSSignature S, byte[] message)
     {
-        byte[] Tc = algorithm6a(S, publicKey.refI(), publicKey.getOtsParameters().getType(), message);
+        LMSContext context = publicKey.generateOtsContext(S);
 
+        LmsUtils.byteArray(message, context);
+
+        return verifySignature(publicKey, context);
+    }
+
+    public static boolean verifySignature(LMSPublicKeyParameters publicKey, byte[] S, byte[] message)
+    {
+        LMSContext context = publicKey.generateLMSContext(S);
+
+        LmsUtils.byteArray(message, context);
+
+        return verifySignature(publicKey, context);
+    }
+
+    public static boolean verifySignature(LMSPublicKeyParameters publicKey, LMSContext context)
+    {
+
+
+        LMSSignature S = (LMSSignature)context.getSignature();
+                LMSigParameters lmsParameter = S.getParameter();
+                int h = lmsParameter.getH();
+                byte[][] path = S.getY();
+                byte[] Kc = LM_OTS.lm_ots_validate_signature_calculate(context);
+                // Step 4
+                // node_num = 2^h + q
+                int node_num = (1 << h) + S.getQ();
+
+                // tmp = H(I || u32str(node_num) || u16str(D_LEAF) || Kc)
+                byte[] I = publicKey.getI();
+                Digest H = DigestUtil.getDigest(lmsParameter.getDigestOID());
+                byte[] tmp = new byte[H.getDigestSize()];
+
+                H.update(I, 0, I.length);
+                LmsUtils.u32str(node_num, H);
+                LmsUtils.u16str(D_LEAF, H);
+                H.update(Kc, 0, Kc.length);
+                H.doFinal(tmp, 0);
+
+                int i = 0;
+
+                while (node_num > 1)
+                {
+                    if ((node_num & 1) == 1)
+                    {
+                        // is odd
+                        H.update(I, 0, I.length);
+                        LmsUtils.u32str(node_num / 2, H);
+                        LmsUtils.u16str(D_INTR, H);
+                        H.update(path[i], 0, path[i].length);
+                        H.update(tmp, 0, tmp.length);
+                        H.doFinal(tmp, 0);
+                    }
+                    else
+                    {
+                        H.update(I, 0, I.length);
+                        LmsUtils.u32str(node_num / 2, H);
+                        LmsUtils.u16str(D_INTR, H);
+                        H.update(tmp, 0, tmp.length);
+                        H.update(path[i], 0, path[i].length);
+                        H.doFinal(tmp, 0);
+                    }
+                    node_num = node_num / 2;
+                    i++;
+                }
+         byte[] Tc = tmp;
         return publicKey.matchesT1(Tc);
     }
 
@@ -123,9 +188,7 @@ class LMS
 //        }
 //
 //        // Step 2h
-        LMSigParameters lmsParameter = S.getParameter();
-        int m = lmsParameter.getM();
-        int h = lmsParameter.getH();
+
 //
 //
 //        // Step 2i
@@ -137,7 +200,7 @@ class LMS
 //
 //        // Step 2j
 //        int pos = (8 + n * (p + 1)) + 4;
-        byte[][] path = S.getY();
+
 //        for (int i = 0; i < h; i++)
 //        {
 //            path[i] = new byte[m];
@@ -146,14 +209,20 @@ class LMS
 //        }
 
         // Step 3
-        byte[] Kc = LM_OTS.lm_ots_validate_signature_calculate(
-            LMOtsParameters.getParametersForType(ots_typecode),
-            I,
-            q,
-            S.getOtsSignature(),
-            message, false);
+//        byte[] Kc = LM_OTS.lm_ots_validate_signature_calculate(
+//            LMOtsParameters.getParametersForType(ots_typecode),
+//            I,
+//            q,
+//            S.getOtsSignature(),
+//            message, false);
+        LMSContext ctx = new LMOtsPublicKey(LMOtsParameters.getParametersForType(ots_typecode), I, q, null).createOtsContext(S);
 
+        LmsUtils.byteArray(message, ctx);
 
+        LMSigParameters lmsParameter = S.getParameter();
+        int h = lmsParameter.getH();
+        byte[][] path = S.getY();
+        byte[] Kc = LM_OTS.lm_ots_validate_signature_calculate(ctx);
         // Step 4
         // node_num = 2^h + q
         int node_num = (1 << h) + q;

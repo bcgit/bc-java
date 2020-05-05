@@ -10,6 +10,7 @@ import org.bouncycastle.util.io.Streams;
 
 public class LMSPublicKeyParameters
     extends LMSKeyParameters
+    implements LMOtsContextBasedVerifier
 {
     private final LMSigParameters parameterSet;
     private final LMOtsParameters lmOtsType;
@@ -159,5 +160,34 @@ public class LMSPublicKeyParameters
             .bytes(I)
             .bytes(T1)
             .build();
+    }
+
+    public LMSContext generateLMSContext(byte[] signature)
+    {
+        try
+        {
+            return generateOtsContext(LMSSignature.getInstance(signature));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("cannot parse signature: " + e.getMessage());
+        }
+    }
+
+    LMSContext generateOtsContext(LMSSignature S)
+    {
+        int ots_typecode = getOtsParameters().getType();
+        if (S.getOtsSignature().getType().getType() != ots_typecode)
+        {
+            throw new IllegalArgumentException("ots type from lsm signature does not match ots" +
+                " signature type from embedded ots signature");
+        }
+
+        return new LMOtsPublicKey(LMOtsParameters.getParametersForType(ots_typecode), I,  S.getQ(), null).createOtsContext(S);
+    }
+
+    public boolean verify(LMSContext context)
+    {
+        return LMS.verifySignature(this, context);
     }
 }
