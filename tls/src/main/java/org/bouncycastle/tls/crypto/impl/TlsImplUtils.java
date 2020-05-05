@@ -68,7 +68,7 @@ public class TlsImplUtils
     public static TlsSecret PRF(SecurityParameters securityParameters, TlsSecret secret, String asciiLabel, byte[] seed,
         int length)
     {
-        return secret.deriveUsingPRF(securityParameters.getPrfAlgorithm(), asciiLabel, seed, length);
+        return secret.deriveUsingPRF(securityParameters.getPRFAlgorithm(), asciiLabel, seed, length);
     }
 
     public static TlsSecret PRF(TlsCryptoParameters cryptoParams, TlsSecret secret, String asciiLabel, byte[] seed,
