@@ -101,6 +101,7 @@ public class TlsServerProtocol
         this.keyExchange = null;
         this.serverCredentials = null;
         this.certificateRequest = null;
+        this.serverFinishedTranscriptHash = null;
         this.offeredExtendedMasterSecret = false;
     }
 
@@ -202,8 +203,8 @@ public class TlsServerProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
-            securityParameters.cipherSuite = selectedCipherSuite;
-            TlsUtils.negotiatedCipherSuite(tlsServerContext);
+
+            TlsUtils.negotiatedCipherSuite(securityParameters, selectedCipherSuite);
         }
 
         this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
@@ -335,14 +336,6 @@ public class TlsServerProtocol
                     AlertDescription.internal_error);
         }
 
-        securityParameters.prfAlgorithm = getPRFAlgorithm(tlsServerContext, securityParameters.getCipherSuite());
-
-        /*
-         * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
-         * a verify_data_length equal to 12. This includes all existing cipher suites.
-         */
-        securityParameters.verifyDataLength = securityParameters.getNegotiatedVersion().isSSL() ? 36 : 12;
-
         applyMaxFragmentLengthExtension();
 
         return new ServerHello(legacy_version, securityParameters.getServerRandom(), tlsSession.getSessionID(),
@@ -439,7 +432,7 @@ public class TlsServerProtocol
 
                 byte[] serverHelloTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
 
-                TlsUtils.establish13TrafficSecretsHandshake(tlsServerContext, serverHelloTranscriptHash, recordStream);
+                TlsUtils.establish13PhaseHandshake(tlsServerContext, serverHelloTranscriptHash, recordStream);
 
                 this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
                 this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
@@ -475,8 +468,7 @@ public class TlsServerProtocol
                 receive13ClientFinished(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
 
-                TlsUtils.establish13TrafficSecretsApplication(tlsServerContext, serverFinishedTranscriptHash,
-                    recordStream);
+                TlsUtils.establish13PhaseApplication(tlsServerContext, serverFinishedTranscriptHash, recordStream);
 
                 completeHandshake();
                 break;
