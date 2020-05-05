@@ -92,37 +92,31 @@ public class LMSContext
         return this;
     }
 
-    @Override
     public String getAlgorithmName()
     {
         return digest.getAlgorithmName();
     }
 
-    @Override
     public int getDigestSize()
     {
         return digest.getDigestSize();
     }
 
-    @Override
     public void update(byte in)
     {
         digest.update(in);
     }
 
-    @Override
     public void update(byte[] in, int inOff, int len)
     {
         digest.update(in, inOff, len);
     }
 
-    @Override
     public int doFinal(byte[] out, int outOff)
     {
         return digest.doFinal(out, outOff);
     }
 
-    @Override
     public void reset()
     {
         digest.reset();
