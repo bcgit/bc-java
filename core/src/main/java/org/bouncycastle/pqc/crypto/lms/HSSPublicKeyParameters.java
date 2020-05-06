@@ -9,7 +9,7 @@ import org.bouncycastle.util.io.Streams;
 
 public class HSSPublicKeyParameters
     extends LMSKeyParameters
-    implements LMOtsContextBasedVerifier
+    implements LMSContextBasedVerifier
 {
     private final int l;
     private final LMSPublicKeyParameters lmsPublicKey;

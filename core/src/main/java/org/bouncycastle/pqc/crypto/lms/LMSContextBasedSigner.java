@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.lms;
 
-public interface LMOtsContextBasedSigner
+public interface LMSContextBasedSigner
 {
     LMSContext generateLMSContext();
 

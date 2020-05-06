@@ -14,7 +14,7 @@ import org.bouncycastle.util.io.Streams;
 
 public class LMSPrivateKeyParameters
     extends LMSKeyParameters
-    implements LMOtsContextBasedSigner
+    implements LMSContextBasedSigner
 {
     private static CacheKey T1 = new CacheKey(1);
     private static CacheKey[] internedKeys = new CacheKey[129];

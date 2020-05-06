@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.lms;
 
-import static org.bouncycastle.pqc.crypto.lms.HSS.rangeTestKeys;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -13,9 +11,11 @@ import java.util.List;
 
 import org.bouncycastle.util.io.Streams;
 
+import static org.bouncycastle.pqc.crypto.lms.HSS.rangeTestKeys;
+
 public class HSSPrivateKeyParameters
     extends LMSKeyParameters
-    implements LMOtsContextBasedSigner
+    implements LMSContextBasedSigner
 {
     private final int l;
     private final boolean isShard;
