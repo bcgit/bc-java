@@ -390,8 +390,7 @@ public class DTLSServerProtocol
 
         ProtocolVersion server_version = state.server.getServerVersion();
         {
-            if (!ProtocolVersion.isSupportedDTLSVersionServer(server_version)
-                || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
+            if (!ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -403,7 +402,8 @@ public class DTLSServerProtocol
 //
 //            recordLayer.setWriteVersion(legacy_record_version);
             securityParameters.negotiatedVersion = server_version;
-            TlsUtils.negotiatedVersion(context);
+
+            TlsUtils.negotiatedVersionDTLSServer(context);
         }
 
         {
@@ -419,17 +419,16 @@ public class DTLSServerProtocol
         }
 
         {
-            int selectedCipherSuite = state.server.getSelectedCipherSuite();
-            if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
-                || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-                || CipherSuite.isSCSV(selectedCipherSuite)
-                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, context.getServerVersion()))
+            int cipherSuite = validateSelectedCipherSuite(state.server.getSelectedCipherSuite(),
+                AlertDescription.internal_error);
+
+            if (!TlsUtils.isValidCipherSuiteSelection(state.offeredCipherSuites, cipherSuite) ||
+                !TlsUtils.isValidVersionForCipherSuite(cipherSuite, securityParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            TlsUtils.negotiatedCipherSuite(securityParameters,
-                validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.internal_error));
+            TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
         }
 
         state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.server.getServerExtensions());

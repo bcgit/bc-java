@@ -15,6 +15,7 @@ public class TlsServerProtocol
     protected TlsServer tlsServer = null;
     TlsServerContextImpl tlsServerContext = null;
 
+    protected int[] offeredCipherSuites = null;
     protected TlsKeyExchange keyExchange = null;
     protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
@@ -97,7 +98,8 @@ public class TlsServerProtocol
     protected void cleanupHandshake()
     {
         super.cleanupHandshake();
-        
+
+        this.offeredCipherSuites = null;
         this.keyExchange = null;
         this.serverCredentials = null;
         this.certificateRequest = null;
@@ -152,8 +154,7 @@ public class TlsServerProtocol
         {
             server_version = tlsServer.getServerVersion();
 
-            if (!ProtocolVersion.isSupportedTLSVersionServer(server_version)
-                || !ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
+            if (!ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -166,7 +167,7 @@ public class TlsServerProtocol
             securityParameters.negotiatedVersion = server_version;
         }
 
-        TlsUtils.negotiatedVersion(tlsServerContext);
+        TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
 
         // TODO[tls13] At some point after here we should redirect to generate13ServerHello
 //        if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(server_version))
@@ -195,16 +196,15 @@ public class TlsServerProtocol
         }
 
         {
-            int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
-            if (!Arrays.contains(offeredCipherSuites, selectedCipherSuite)
-                || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-                || CipherSuite.isSCSV(selectedCipherSuite)
-                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, tlsServerContext.getServerVersion()))
+            int cipherSuite = tlsServer.getSelectedCipherSuite();
+
+            if (!TlsUtils.isValidCipherSuiteSelection(offeredCipherSuites, cipherSuite) ||
+                !TlsUtils.isValidVersionForCipherSuite(cipherSuite, securityParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            TlsUtils.negotiatedCipherSuite(securityParameters, selectedCipherSuite);
+            TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
         }
 
         this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());

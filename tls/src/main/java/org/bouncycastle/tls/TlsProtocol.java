@@ -148,7 +148,6 @@ public abstract class TlsProtocol
     protected SessionParameters sessionParameters = null;
     protected TlsSecret sessionMasterSecret = null;
 
-    protected int[] offeredCipherSuites = null;
     protected Hashtable clientExtensions = null;
     protected Hashtable serverExtensions = null;
 
@@ -430,7 +429,6 @@ public abstract class TlsProtocol
         this.sessionParameters = null;
         this.sessionMasterSecret = null;
 
-        this.offeredCipherSuites = null;
         this.clientExtensions = null;
         this.serverExtensions = null;
 

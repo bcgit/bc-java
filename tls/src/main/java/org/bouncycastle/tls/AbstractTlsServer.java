@@ -114,7 +114,8 @@ public abstract class AbstractTlsServer
 
     protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits, Vector sigAlgs)
     {
-        return TlsUtils.isValidCipherSuiteForVersion(cipherSuite, context.getServerVersion())
+        // TODO[tls13] The version check should be separated out (eventually select ciphersuite before version)
+        return TlsUtils.isValidVersionForCipherSuite(cipherSuite, context.getServerVersion())
             && availCurveBits >= TlsECCUtils.getMinimumCurveBits(cipherSuite)
             && availFiniteFieldBits >= TlsDHUtils.getMinimumFiniteFieldBits(cipherSuite)
             && TlsUtils.isValidCipherSuiteForSignatureAlgorithms(cipherSuite, sigAlgs);
