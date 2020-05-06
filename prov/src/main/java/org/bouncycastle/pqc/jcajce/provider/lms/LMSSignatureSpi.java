@@ -11,9 +11,9 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.pqc.crypto.lms.LMOtsContextBasedSigner;
-import org.bouncycastle.pqc.crypto.lms.LMOtsContextBasedVerifier;
 import org.bouncycastle.pqc.crypto.lms.LMSContext;
+import org.bouncycastle.pqc.crypto.lms.LMSContextBasedSigner;
+import org.bouncycastle.pqc.crypto.lms.LMSContextBasedVerifier;
 
 public class LMSSignatureSpi
     extends Signature
@@ -27,8 +27,8 @@ public class LMSSignatureSpi
     private MessageSigner signer;
     private SecureRandom random;
 
-    private LMOtsContextBasedSigner lmOtsSigner;
-    private LMOtsContextBasedVerifier lmOtsVerifier;
+    private LMSContextBasedSigner lmOtsSigner;
+    private LMSContextBasedVerifier lmOtsVerifier;
 
     protected LMSSignatureSpi(String sigName, Digest digest)
     {
@@ -45,7 +45,7 @@ public class LMSSignatureSpi
             digest = new NullDigest();
             
             digest.reset();
-            lmOtsVerifier = (LMOtsContextBasedVerifier)((BCLMSPublicKey)publicKey).getKeyParams();
+            lmOtsVerifier = (LMSContextBasedVerifier)((BCLMSPublicKey)publicKey).getKeyParams();
         }
         else
         {
@@ -65,7 +65,7 @@ public class LMSSignatureSpi
     {
         if (privateKey instanceof BCLMSPrivateKey)
         {
-            lmOtsSigner = (LMOtsContextBasedSigner)((BCLMSPrivateKey)privateKey).getKeyParams();
+            lmOtsSigner = (LMSContextBasedSigner)((BCLMSPrivateKey)privateKey).getKeyParams();
             digest = null;
         }
         else

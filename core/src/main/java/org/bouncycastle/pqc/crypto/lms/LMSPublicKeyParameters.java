@@ -10,7 +10,7 @@ import org.bouncycastle.util.io.Streams;
 
 public class LMSPublicKeyParameters
     extends LMSKeyParameters
-    implements LMOtsContextBasedVerifier
+    implements LMSContextBasedVerifier
 {
     private final LMSigParameters parameterSet;
     private final LMOtsParameters lmOtsType;
