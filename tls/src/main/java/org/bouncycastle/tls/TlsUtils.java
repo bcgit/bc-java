@@ -3712,21 +3712,29 @@ public class TlsUtils
         return false;
     }
 
+    /**
+     * @deprecated Use {@link #isValidVersionForCipherSuite(int, ProtocolVersion)} instead.
+     */
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion version)
     {
-        version = version.getEquivalentTLSVersion();
+        return isValidVersionForCipherSuite(cipherSuite, version);
+    }
 
-        ProtocolVersion minimumVersion = getMinimumVersion(cipherSuite);
-        if (minimumVersion == version)
-        {
-            return true;
-        }
-        if (!minimumVersion.isEarlierVersionOf(version))
-        {
-            return false;
-        }
-        return ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(minimumVersion)
-            || ProtocolVersion.TLSv13.isLaterVersionOf(version);
+    static boolean isValidCipherSuiteSelection(int[] offeredCipherSuites, int cipherSuite)
+    {
+        return null != offeredCipherSuites
+            && Arrays.contains(offeredCipherSuites, cipherSuite)
+            && CipherSuite.TLS_NULL_WITH_NULL_NULL != cipherSuite
+            && !CipherSuite.isSCSV(cipherSuite);
+    }
+
+    static boolean isValidKeyShareSelection(ProtocolVersion negotiatedVersion, int[] clientSupportedGroups,
+        Hashtable clientAgreements, int keyShareGroup)
+    {
+        return null != clientSupportedGroups
+            && Arrays.contains(clientSupportedGroups, keyShareGroup)
+            && !clientAgreements.containsKey(Integers.valueOf(keyShareGroup))
+            && NamedGroup.canBeNegotiated(keyShareGroup, negotiatedVersion);
     }
 
     static boolean isValidSignatureAlgorithmForCertificateVerify(short signatureAlgorithm, short[] clientCertificateTypes)
@@ -3784,6 +3792,23 @@ public class TlsUtils
         short signatureAlgorithm = SignatureScheme.getSignatureAlgorithm(signatureScheme);
 
         return isValidSignatureAlgorithmForServerKeyExchange(signatureAlgorithm, keyExchangeAlgorithm);
+    }
+
+    public static boolean isValidVersionForCipherSuite(int cipherSuite, ProtocolVersion version)
+    {
+        version = version.getEquivalentTLSVersion();
+
+        ProtocolVersion minimumVersion = getMinimumVersion(cipherSuite);
+        if (minimumVersion == version)
+        {
+            return true;
+        }
+        if (!minimumVersion.isEarlierVersionOf(version))
+        {
+            return false;
+        }
+        return ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(minimumVersion)
+            || ProtocolVersion.TLSv13.isLaterVersionOf(version);
     }
 
     public static SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(TlsContext context, Vector sigHashAlgs, short signatureAlgorithm)
@@ -4133,19 +4158,19 @@ public class TlsUtils
         }
     }
 
-    static TlsKeyExchange initKeyExchangeClient(TlsClientContext context, TlsClient client) throws IOException
+    static TlsKeyExchange initKeyExchangeClient(TlsClientContext clientContext, TlsClient client) throws IOException
     {
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         TlsKeyExchange keyExchange = createKeyExchangeClient(client, securityParameters.getKeyExchangeAlgorithm());
-        keyExchange.init(context);
+        keyExchange.init(clientContext);
         return keyExchange;
     }
 
-    static TlsKeyExchange initKeyExchangeServer(TlsServerContext context, TlsServer server) throws IOException
+    static TlsKeyExchange initKeyExchangeServer(TlsServerContext serverContext, TlsServer server) throws IOException
     {
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
         TlsKeyExchange keyExchange = createKeyExchangeServer(server, securityParameters.getKeyExchangeAlgorithm());
-        keyExchange.init(context);
+        keyExchange.init(serverContext);
         return keyExchange;
     }
 
@@ -4598,80 +4623,100 @@ public class TlsUtils
         return false;
     }
 
-    static Hashtable addEarlyKeySharesToClientHello(TlsContext context, TlsClient client, Hashtable clientExtensions)
-        throws IOException
+    static Hashtable addEarlyKeySharesToClientHello(TlsClientContext clientContext, TlsClient client,
+        Hashtable clientExtensions) throws IOException
     {
         /*
          * RFC 8446 9.2. If containing a "supported_groups" extension, it MUST also contain a
          * "key_share" extension, and vice versa. An empty KeyShare.client_shares vector is
          * permitted.
          */
-        if (!isTLSv13(context.getClientVersion())
+        if (!isTLSv13(clientContext.getClientVersion())
             || !clientExtensions.containsKey(TlsExtensionsUtils.EXT_supported_groups))
         {
             return null;
         }
 
-        Hashtable clientAgreements = new Hashtable();
-        Vector clientShares = new Vector();
+        int[] supportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
+        Vector keyShareGroups = client.getEarlyKeyShareGroups();
+        Hashtable clientAgreements = new Hashtable(3);
+        Vector clientShares = new Vector(2);
 
-        collectEarlyKeyShares(context.getCrypto(), client, clientExtensions, clientAgreements, clientShares);
+        collectKeyShares(clientContext.getCrypto(), supportedGroups, keyShareGroups, clientAgreements, clientShares);
 
         TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
 
         return clientAgreements;
     }
 
-    private static void collectEarlyKeyShares(TlsCrypto crypto, TlsClient client, Hashtable clientExtensions,
+    static Hashtable addKeyShareToClientHelloRetry(TlsClientContext clientContext, Hashtable clientExtensions,
+        int keyShareGroup) throws IOException
+    {
+        int[] supportedGroups = new int[]{ keyShareGroup };
+        Vector keyShareGroups = vectorOfOne(Integer.valueOf(keyShareGroup));
+        Hashtable clientAgreements = new Hashtable(1, 1.0f);
+        Vector clientShares = new Vector(1);
+
+        collectKeyShares(clientContext.getCrypto(), supportedGroups, keyShareGroups, clientAgreements, clientShares);
+
+        TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
+
+        if (clientAgreements.isEmpty() || clientShares.isEmpty())
+        {
+            // NOTE: Probable cause is declaring an unsupported NamedGroup in supported_groups extension 
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return clientAgreements;
+    }
+
+    private static void collectKeyShares(TlsCrypto crypto, int[] supportedGroups, Vector keyShareGroups,
         Hashtable clientAgreements, Vector clientShares) throws IOException
     {
-        Vector earlyGroups = client.getEarlyKeyShareGroups();
-        if (null == earlyGroups || earlyGroups.isEmpty())
+        if (null == supportedGroups || supportedGroups.length < 1)
+        {
+            return;
+        }
+        if (null == keyShareGroups || keyShareGroups.isEmpty())
         {
             return;
         }
 
-        int[] offeredGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
-        if (null == offeredGroups || offeredGroups.length < 1)
+        for (int i = 0; i < supportedGroups.length; ++i)
         {
-            return;
-        }
+            int supportedGroup = supportedGroups[i];
+            Integer supportedGroupElement = Integers.valueOf(supportedGroup);
 
-        for (int i = 0; i < offeredGroups.length; ++i)
-        {
-            int offeredGroup = offeredGroups[i];
-            Integer offeredGroupElement = Integers.valueOf(offeredGroup);
-
-            if (!earlyGroups.contains(offeredGroupElement)
-                || clientAgreements.containsKey(offeredGroupElement)
-                || !crypto.hasNamedGroup(offeredGroup))
+            if (!keyShareGroups.contains(supportedGroupElement)
+                || clientAgreements.containsKey(supportedGroupElement)
+                || !crypto.hasNamedGroup(supportedGroup))
             {
                 continue;
             }
 
             TlsAgreement agreement = null;
-            if (NamedGroup.refersToASpecificCurve(offeredGroup))
+            if (NamedGroup.refersToASpecificCurve(supportedGroup))
             {
                 if (crypto.hasECDHAgreement())
                 {
-                    agreement = crypto.createECDomain(new TlsECConfig(offeredGroup)).createECDH();
+                    agreement = crypto.createECDomain(new TlsECConfig(supportedGroup)).createECDH();
                 }
             }
-            else if (NamedGroup.refersToASpecificFiniteField(offeredGroup))
+            else if (NamedGroup.refersToASpecificFiniteField(supportedGroup))
             {
                 if (crypto.hasDHAgreement())
                 {
-                    agreement = crypto.createDHDomain(new TlsDHConfig(offeredGroup, true)).createDH();
+                    agreement = crypto.createDHDomain(new TlsDHConfig(supportedGroup, true)).createDH();
                 }
             }
 
             if (null != agreement)
             {
                 byte[] key_exchange = agreement.generateEphemeral();
-                KeyShareEntry clientShare = new KeyShareEntry(offeredGroup, key_exchange);
+                KeyShareEntry clientShare = new KeyShareEntry(supportedGroup, key_exchange);
 
                 clientShares.addElement(clientShare);
-                clientAgreements.put(offeredGroupElement, agreement);
+                clientAgreements.put(supportedGroupElement, agreement);
             }
         }
     }
@@ -4848,12 +4893,9 @@ public class TlsUtils
         }
     }
 
-    static void negotiatedVersion(TlsContext context) throws IOException
+    static void negotiatedVersion(SecurityParameters securityParameters) throws IOException
     {
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
-
-        if (!isSignatureAlgorithmsExtensionAllowed(negotiatedVersion))
+        if (!isSignatureAlgorithmsExtensionAllowed(securityParameters.getNegotiatedVersion()))
         {
             securityParameters.clientSigAlgs = null;
             securityParameters.clientSigAlgsCert = null;
@@ -4869,6 +4911,62 @@ public class TlsUtils
         {
             securityParameters.clientSigAlgsCert = securityParameters.getClientSigAlgs();
         }
+    }
+
+    static void negotiatedVersionDTLSClient(TlsClientContext clientContext, TlsClient client) throws IOException
+    {
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
+        if (!ProtocolVersion.isSupportedDTLSVersionClient(negotiatedVersion))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        negotiatedVersion(securityParameters);
+
+        client.notifyServerVersion(negotiatedVersion);
+    }
+
+    static void negotiatedVersionDTLSServer(TlsServerContext serverContext) throws IOException
+    {
+        SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
+        if (!ProtocolVersion.isSupportedDTLSVersionServer(negotiatedVersion))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        negotiatedVersion(securityParameters);
+    }
+
+    static void negotiatedVersionTLSClient(TlsClientContext clientContext, TlsClient client) throws IOException
+    {
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
+        if (!ProtocolVersion.isSupportedTLSVersionClient(negotiatedVersion))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        negotiatedVersion(securityParameters);
+
+        client.notifyServerVersion(negotiatedVersion);
+    }
+
+    static void negotiatedVersionTLSServer(TlsServerContext serverContext) throws IOException
+    {
+        SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
+        if (!ProtocolVersion.isSupportedTLSVersionServer(negotiatedVersion))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        negotiatedVersion(securityParameters);
     }
 
     static TlsSecret deriveSecret(SecurityParameters securityParameters, TlsSecret secret, String label,
