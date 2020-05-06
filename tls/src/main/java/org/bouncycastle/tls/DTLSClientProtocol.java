@@ -680,19 +680,17 @@ public class DTLSClientProtocol
          * ones, and is a valid selection for the negotiated version.
          */
         {
-            int selectedCipherSuite = serverHello.getCipherSuite();
-            if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
-                || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-                || CipherSuite.isSCSV(selectedCipherSuite)
-                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, state.clientContext.getServerVersion()))
+            int cipherSuite = validateSelectedCipherSuite(serverHello.getCipherSuite(),
+                AlertDescription.illegal_parameter);
+
+            if (!TlsUtils.isValidCipherSuiteSelection(state.offeredCipherSuites, cipherSuite) ||
+                !TlsUtils.isValidVersionForCipherSuite(cipherSuite, securityParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            TlsUtils.negotiatedCipherSuite(securityParameters,
-                validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.illegal_parameter));
-
-            state.client.notifySelectedCipherSuite(securityParameters.getCipherSuite());
+            TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
+            state.client.notifySelectedCipherSuite(cipherSuite);
         }
 
         /*
@@ -949,15 +947,14 @@ public class DTLSClientProtocol
             return;
         }
 
-        if (!ProtocolVersion.isSupportedDTLSVersionClient(server_version)
-            || !ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
+        if (!ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.protocol_version);
         }
 
         securityParameters.negotiatedVersion = server_version;
-        TlsUtils.negotiatedVersion(context);
-        state.client.notifyServerVersion(server_version);
+
+        TlsUtils.negotiatedVersionDTLSClient(state.clientContext, state.client);
     }
 
     protected static byte[] patchClientHelloWithCookie(byte[] clientHelloBody, byte[] cookie)
