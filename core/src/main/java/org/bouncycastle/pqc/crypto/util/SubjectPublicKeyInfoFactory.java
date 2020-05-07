@@ -78,7 +78,7 @@ public class SubjectPublicKeyInfoFactory
         {
             HSSPublicKeyParameters params = (HSSPublicKeyParameters)publicKey;
 
-            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params).build();
+            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params.getLMSPublicKey()).build();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));

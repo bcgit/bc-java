@@ -106,7 +106,7 @@ public class PrivateKeyInfoFactory
             HSSPrivateKeyParameters params = (HSSPrivateKeyParameters)privateKey;
 
             byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params).build();
-            byte[] pubEncoding = Composer.compose().u32str(params.getL()).bytes(params.getPublicKey()).build();
+            byte[] pubEncoding = Composer.compose().u32str(params.getL()).bytes(params.getPublicKey().getLMSPublicKey()).build();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
