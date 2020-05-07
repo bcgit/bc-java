@@ -613,13 +613,6 @@ public class SMIMESignedGenerator
                     }
                     else
                     {
-                        CommandMap commandMap = CommandMap.getDefaultCommandMap();
-
-                        if (commandMap instanceof MailcapCommandMap)
-                        {
-                            content.getDataHandler().setCommandMap(addCommands((MailcapCommandMap)commandMap));
-                        }
-
                         content.writeTo(signingStream);
                     }
                 }
