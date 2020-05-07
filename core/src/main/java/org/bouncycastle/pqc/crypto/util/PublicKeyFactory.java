@@ -225,7 +225,7 @@ public class PublicKeyFactory
             }
             else
             {
-                return HSSPublicKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+                return HSSPublicKeyParameters.getInstance(keyEnc);
             }
         }
     }
