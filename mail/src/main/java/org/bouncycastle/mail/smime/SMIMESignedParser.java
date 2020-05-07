@@ -12,8 +12,6 @@ import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import javax.activation.CommandMap;
-import javax.activation.MailcapCommandMap;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Part;
@@ -120,32 +118,6 @@ public class SMIMESignedParser
         catch (IOException e)
         {
             throw new MessagingException("can't extract input stream: " + e);
-        }
-    }
-    
-    static
-    {
-        CommandMap commandMap = CommandMap.getDefaultCommandMap();
-
-        if (commandMap instanceof MailcapCommandMap)
-        {
-            final MailcapCommandMap mc = (MailcapCommandMap)commandMap;
-
-            mc.addMailcap("application/pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_signature");
-            mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
-            mc.addMailcap("application/x-pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_signature");
-            mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
-            mc.addMailcap("multipart/signed;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.multipart_signed");
-
-            AccessController.doPrivileged(new PrivilegedAction()
-            {
-                public Object run()
-                {
-                    CommandMap.setDefaultCommandMap(mc);
-
-                    return null;
-                }
-            });
         }
     }
 

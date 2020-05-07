@@ -5,8 +5,6 @@ import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import javax.activation.CommandMap;
-import javax.activation.MailcapCommandMap;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
@@ -35,29 +33,6 @@ public class SMIMECompressedGenerator
     public static final String  ZLIB    = CMSCompressedDataGenerator.ZLIB;
 
     private static final String COMPRESSED_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7z\"; smime-type=compressed-data";
-
-    static
-    {
-        CommandMap commandMap = CommandMap.getDefaultCommandMap();
-
-        if (commandMap instanceof MailcapCommandMap)
-        {
-            final MailcapCommandMap mc = (MailcapCommandMap)commandMap;
-
-            mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
-            mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
-
-            AccessController.doPrivileged(new PrivilegedAction()
-            {
-                public Object run()
-                {
-                    CommandMap.setDefaultCommandMap(mc);
-
-                    return null;
-                }
-            });
-        }
-    }
 
     /**
      * generate an compressed object that contains an SMIME Compressed

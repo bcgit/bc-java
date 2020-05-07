@@ -14,8 +14,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.activation.CommandMap;
-import javax.activation.MailcapCommandMap;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.ContentType;
@@ -107,34 +105,8 @@ public class SMIMESignedGenerator
     public static final Map RFC5751_MICALGS;
     public static final Map STANDARD_MICALGS;
 
-    private static MailcapCommandMap addCommands(MailcapCommandMap mc)
-    {
-        mc.addMailcap("application/pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_signature");
-        mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
-        mc.addMailcap("application/x-pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_signature");
-        mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
-        mc.addMailcap("multipart/signed;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.multipart_signed");
-
-        return mc;
-    }
-
     static
     {
-        AccessController.doPrivileged(new PrivilegedAction()
-        {
-            public Object run()
-            {
-                CommandMap commandMap = CommandMap.getDefaultCommandMap();
-
-                if (commandMap instanceof MailcapCommandMap)
-                {
-                    CommandMap.setDefaultCommandMap(addCommands((MailcapCommandMap)commandMap));
-                }
-
-                return null;
-            }
-        });
-
         Map stdMicAlgs = new HashMap();
 
         stdMicAlgs.put(CMSAlgorithm.MD5, "md5");

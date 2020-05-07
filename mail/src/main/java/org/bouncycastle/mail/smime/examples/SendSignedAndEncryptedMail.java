@@ -13,8 +13,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 
-import javax.activation.CommandMap;
-import javax.activation.MailcapCommandMap;
 import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -59,22 +57,6 @@ public class SendSignedAndEncryptedMail
 
         try
         {
-            MailcapCommandMap mailcap = (MailcapCommandMap)CommandMap
-                    .getDefaultCommandMap();
-
-            mailcap
-                    .addMailcap("application/pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_signature");
-            mailcap
-                    .addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
-            mailcap
-                    .addMailcap("application/x-pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_signature");
-            mailcap
-                    .addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
-            mailcap
-                    .addMailcap("multipart/signed;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.multipart_signed");
-
-            CommandMap.setDefaultCommandMap(mailcap);
-
             /* Add BC */
             Security.addProvider(new BouncyCastleProvider());
 

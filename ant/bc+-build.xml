@@ -536,16 +536,25 @@
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/mail/**/*.java" />
                  <include name="org/bouncycastle/mail/**/*.properties" />
+                 <include name="META-INF/mailcap" />
                  <exclude name="**/*Test.java" />
                  <exclude name="**/*Tests.java" />
                  <exclude name="**/test/*.java" />
              </fileset>
         </copy>
 
+        <mkdir dir="${build.dir}/${mail.target}/classes" />
+        <copy todir="${build.dir}/${mail.target}/classes">
+            <fileset dir="${src.dir}">
+                <include name="META-INF/mailcap" />
+            </fileset>
+        </copy>
+
         <compile target="${mail.target}">
             <jarFileSet>
                 <include name="**/*.class"/>
                 <include name="**/*.properties"/>
+                <include name="META-INF/mailcap" />
             </jarFileSet>
             <manifestElements>
                 <attribute name="Manifest-Version" value="1.0" />
