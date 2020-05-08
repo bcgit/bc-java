@@ -33,6 +33,9 @@ public class LMSPrivateKeyParameters
     private final LMOtsParameters otsParameters;
     private final int maxQ;
     private final byte[] masterSecret;
+    private final Map<CacheKey, byte[]> tCache;
+    private final int maxCacheR;
+    private final Digest tDigest;
 
     private int q;
 
@@ -41,10 +44,7 @@ public class LMSPrivateKeyParameters
     // They also do not need to be persisted.
     //
     private LMSPublicKeyParameters publicKey;
-    private int maxCacheR;
-    private Map<CacheKey, byte[]> tCache;
 
-    private Digest tDigest;
 
     public LMSPrivateKeyParameters(LMSigParameters lmsParameter, LMOtsParameters otsParameters, int q, byte[] I, int maxQ, byte[] masterSecret)
     {
