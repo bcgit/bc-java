@@ -72,7 +72,17 @@ class ProvSSLContextSpi
 
     private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
     {
-        CipherSuiteInfo cipherSuiteInfo = CipherSuiteInfo.forCipherSuite(cipherSuite, name);
+        addCipherSuite(cs, name, cipherSuite, false);
+    }
+
+    private static void addCipherSuite13(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
+    {
+        addCipherSuite(cs, name, cipherSuite, true);
+    }
+
+    private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite, boolean isTLSv13)
+    {
+        CipherSuiteInfo cipherSuiteInfo = CipherSuiteInfo.forCipherSuite(cipherSuite, name, isTLSv13);
 
         if (null != cs.put(name, cipherSuiteInfo))
         {
@@ -131,11 +141,11 @@ class ProvSSLContextSpi
 
         if (BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED)
         {
-            addCipherSuite(cs, "TLS_AES_128_CCM_8_SHA256", CipherSuite.TLS_AES_128_CCM_8_SHA256);
-            addCipherSuite(cs, "TLS_AES_128_CCM_SHA256", CipherSuite.TLS_AES_128_CCM_SHA256);
-            addCipherSuite(cs, "TLS_AES_128_GCM_SHA256", CipherSuite.TLS_AES_128_GCM_SHA256);
-            addCipherSuite(cs, "TLS_AES_256_GCM_SHA384", CipherSuite.TLS_AES_256_GCM_SHA384);
-            addCipherSuite(cs, "TLS_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+            addCipherSuite13(cs, "TLS_AES_128_CCM_8_SHA256", CipherSuite.TLS_AES_128_CCM_8_SHA256);
+            addCipherSuite13(cs, "TLS_AES_128_CCM_SHA256", CipherSuite.TLS_AES_128_CCM_SHA256);
+            addCipherSuite13(cs, "TLS_AES_128_GCM_SHA256", CipherSuite.TLS_AES_128_GCM_SHA256);
+            addCipherSuite13(cs, "TLS_AES_256_GCM_SHA384", CipherSuite.TLS_AES_256_GCM_SHA384);
+            addCipherSuite13(cs, "TLS_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
         }
 
         addCipherSuite(cs, "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA);
@@ -430,6 +440,17 @@ class ProvSSLContextSpi
         String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
+        boolean post13Active = false;
+        boolean pre13Active = true;
+        if (BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED)
+        {
+            ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
+            ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
+
+            post13Active = TlsUtils.isTLSv13(latest);
+            pre13Active = !TlsUtils.isTLSv13(earliest);
+        }
+
         int[] candidates = new int[enabledCipherSuites.length];
 
         int count = 0;
@@ -439,6 +460,23 @@ class ProvSSLContextSpi
             if (null == candidate)
             {
                 continue;
+            }
+            if (BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED)
+            {
+                if (candidate.isTLSv13())
+                {
+                    if (!post13Active)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (!pre13Active)
+                    {
+                        continue;
+                    }
+                }
             }
             if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES_BC, enabledCipherSuite, null))
             {
@@ -454,6 +492,10 @@ class ProvSSLContextSpi
             candidates[count++] = candidate.getCipherSuite();
         }
 
+        /*
+         * TODO Move cipher suite management into CipherSuiteInfo (PerConnection/PerContext pattern
+         * like NamedGroupInfo) to avoid unnecessary repetition of these sorts of checks.
+         */
         int[] result = TlsUtils.getSupportedCipherSuites(crypto, candidates, count);
 
         if (result.length < 1)
