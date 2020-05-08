@@ -65,9 +65,10 @@ class ProvSSLContextSpi
     private static final List<String> DEFAULT_CIPHERSUITE_LIST = createDefaultCipherSuiteList(SUPPORTED_CIPHERSUITE_MAP.keySet());
     private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS = createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST);
 
-    private static final String[] DEFAULT_ENABLED_PROTOCOLS = BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED
-        ?   new String[]{ "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" }
-        :   new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" };
+//    private static final String[] DEFAULT_ENABLED_PROTOCOLS = BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED
+//        ?   new String[]{ "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" }
+//        :   new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" };
+    private static final String[] DEFAULT_ENABLED_PROTOCOLS = new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" };
 
     private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
     {
