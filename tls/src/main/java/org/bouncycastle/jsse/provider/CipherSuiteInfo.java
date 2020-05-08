@@ -14,7 +14,7 @@ import org.bouncycastle.tls.TlsUtils;
 
 class CipherSuiteInfo
 {
-    static CipherSuiteInfo forCipherSuite(int cipherSuite, String name)
+    static CipherSuiteInfo forCipherSuite(int cipherSuite, String name, boolean isTLSv13)
     {
         if (!name.startsWith("TLS_"))
         {
@@ -35,18 +35,21 @@ class CipherSuiteInfo
         decomposeHashAlgorithm(decompositionTLS, hashAlgorithm);
         decomposeMACAlgorithm(decompositionTLS, encryptionAlgorithmType, macAlgorithm);
 
-        return new CipherSuiteInfo(cipherSuite, name, Collections.unmodifiableSet(decompositionTLS),
+        return new CipherSuiteInfo(cipherSuite, name, isTLSv13, Collections.unmodifiableSet(decompositionTLS),
             Collections.unmodifiableSet(decompositionX509));
     }
 
     private final int cipherSuite;
     private final String name;
+    private final boolean isTLSv13;
     private final Set<String> decompositionTLS, decompositionX509;
 
-    private CipherSuiteInfo(int cipherSuite, String name, Set<String> decompositionTLS, Set<String> decompositionX509)
+    private CipherSuiteInfo(int cipherSuite, String name, boolean isTLSv13, Set<String> decompositionTLS,
+        Set<String> decompositionX509)
     {
         this.cipherSuite = cipherSuite;
         this.name = name;
+        this.isTLSv13 = isTLSv13;
         this.decompositionTLS = decompositionTLS;
         this.decompositionX509 = decompositionX509;
     }
@@ -69,6 +72,11 @@ class CipherSuiteInfo
     public String getName()
     {
         return name;
+    }
+
+    boolean isTLSv13()
+    {
+        return isTLSv13;
     }
 
     private static void addAll(Set<String> decomposition, String... entries)
