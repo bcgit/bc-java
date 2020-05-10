@@ -80,7 +80,8 @@ public class RegressionTest
         new PrivateKeyInfoTest(),
         new LocaleTest(),
         new LinkedCertificateTest(),
-        new DLExternalTest()
+        new DLExternalTest(),
+        new KMACParamsTest()
     };
 
     public static void main(String[] args)

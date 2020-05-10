@@ -80,23 +80,12 @@ public class SMIMEEnvelopedGenerator
 
                 if (commandMap instanceof MailcapCommandMap)
                 {
-                    CommandMap.setDefaultCommandMap(addCommands((MailcapCommandMap)commandMap));
+                    CommandMap.setDefaultCommandMap(MailcapUtil.addCommands((MailcapCommandMap)commandMap));
                 }
 
                 return null;
             }
         });
-    }
-
-    private static MailcapCommandMap addCommands(MailcapCommandMap mc)
-    {
-        mc.addMailcap("application/pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_signature");
-        mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
-        mc.addMailcap("application/x-pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_signature");
-        mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
-        mc.addMailcap("multipart/signed;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.multipart_signed");
-
-        return mc;
     }
 
     /**
@@ -224,7 +213,7 @@ public class SMIMEEnvelopedGenerator
 
                 if (commandMap instanceof MailcapCommandMap)
                 {
-                    _content.getDataHandler().setCommandMap(addCommands((MailcapCommandMap)commandMap));
+                    _content.getDataHandler().setCommandMap(MailcapUtil.addCommands((MailcapCommandMap)commandMap));
                 }
 
                 _content.writeTo(encrypted);
