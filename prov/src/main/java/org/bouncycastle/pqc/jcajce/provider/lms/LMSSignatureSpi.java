@@ -10,6 +10,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
+import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.lms.LMSContext;
 import org.bouncycastle.pqc.crypto.lms.LMSContextBasedSigner;
@@ -66,11 +67,15 @@ public class LMSSignatureSpi
         if (privateKey instanceof BCLMSPrivateKey)
         {
             lmOtsSigner = (LMSContextBasedSigner)((BCLMSPrivateKey)privateKey).getKeyParams();
+            if (lmOtsSigner.getUsagesRemaining() == 0)
+            {
+                throw new InvalidKeyException("private key exhausted");
+            }
             digest = null;
         }
         else
         {
-            throw new InvalidKeyException("unknown private key passed to XMSS");
+            throw new InvalidKeyException("unknown private key passed to LMS");
         }
     }
 
@@ -79,7 +84,7 @@ public class LMSSignatureSpi
     {
         if (digest == null)
         {
-            digest = lmOtsSigner.generateLMSContext();
+            digest = getSigner();
         }
         digest.update(b);
     }
@@ -89,9 +94,22 @@ public class LMSSignatureSpi
     {
         if (digest == null)
         {
-            digest = lmOtsSigner.generateLMSContext();
+            digest = getSigner();
         }
         digest.update(b, off, len);
+    }
+
+    private Digest getSigner()
+        throws SignatureException
+    {
+        try
+        {
+            return lmOtsSigner.generateLMSContext();
+        }
+        catch (ExhaustedPrivateKeyException e)
+        {
+            throw new SignatureException(e.getMessage(), e);
+        }
     }
 
     protected byte[] engineSign()
@@ -99,7 +117,7 @@ public class LMSSignatureSpi
     {
         if (digest == null)
         {
-            digest = lmOtsSigner.generateLMSContext();
+            digest = getSigner();
         }
 
         try
