@@ -15,8 +15,13 @@ public class LMSHSSKeyGenParameterSpec
      *
      * @param specs the LMS parameter specs for each level of the hierarchy.
      */
-    public LMSHSSKeyGenParameterSpec(LMSKeyGenParameterSpec[] specs)
+    public LMSHSSKeyGenParameterSpec(LMSKeyGenParameterSpec... specs)
     {
+        if (specs.length == 0)
+        {
+            throw new IllegalArgumentException("at least one LMSKeyGenParameterSpec required");
+        }
+
         this.specs = specs.clone();
     }
 
