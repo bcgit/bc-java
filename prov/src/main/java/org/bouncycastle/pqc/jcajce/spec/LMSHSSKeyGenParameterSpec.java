@@ -4,19 +4,18 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * ParameterSpec for keys using the LMS Hierarchical Signature System (HSS).
- * @deprecated use LMSKeyGenParameterSpec
  */
-public class LMSHSSParameterSpec
+public class LMSHSSKeyGenParameterSpec
     implements AlgorithmParameterSpec
 {
-    private final LMSParameterSpec[] specs;
+    private final LMSKeyGenParameterSpec[] specs;
 
     /**
      * Base constructor, specify the LMS parameters at each level of the hierarchy.
      *
      * @param specs the LMS parameter specs for each level of the hierarchy.
      */
-    public LMSHSSParameterSpec(LMSParameterSpec[] specs)
+    public LMSHSSKeyGenParameterSpec(LMSKeyGenParameterSpec[] specs)
     {
         this.specs = specs.clone();
     }
@@ -26,7 +25,7 @@ public class LMSHSSParameterSpec
      *
      * @return the HSS component LMS parameter specs.
      */
-    public LMSParameterSpec[] getLMSSpecs()
+    public LMSKeyGenParameterSpec[] getLMSSpecs()
     {
         return specs.clone();
     }
