@@ -21,7 +21,9 @@ import org.bouncycastle.pqc.crypto.lms.LMSParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
+import org.bouncycastle.pqc.jcajce.spec.LMSHSSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSHSSParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSParameterSpec;
 
 public class LMSKeyPairGeneratorSpi
@@ -51,7 +53,29 @@ public class LMSKeyPairGeneratorSpi
         SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
-        if (params instanceof LMSParameterSpec)
+        if (params instanceof LMSKeyGenParameterSpec)
+        {
+            LMSKeyGenParameterSpec lmsParams = (LMSKeyGenParameterSpec)params;
+
+            param = new LMSKeyGenerationParameters(new LMSParameters(lmsParams.getSigParams(), lmsParams.getOtsParams()), random);
+
+            engine = new LMSKeyPairGenerator();
+            engine.init(param);
+        }
+        else if (params instanceof LMSHSSKeyGenParameterSpec)
+        {
+            LMSKeyGenParameterSpec[] lmsParams = ((LMSHSSKeyGenParameterSpec)params).getLMSSpecs();
+            LMSParameters[] hssParams = new LMSParameters[lmsParams.length];
+            for (int i = 0; i != lmsParams.length; i++)
+            {
+                hssParams[i] = new LMSParameters(lmsParams[i].getSigParams(), lmsParams[i].getOtsParams());
+            }
+            param = new HSSKeyGenerationParameters(hssParams, random);
+
+            engine = new HSSKeyPairGenerator();
+            engine.init(param);
+        }
+        else if (params instanceof LMSParameterSpec)
         {
             LMSParameterSpec lmsParams = (LMSParameterSpec)params;
 
