@@ -16,8 +16,8 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.LMSHSSParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.LMSParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.LMSHSSKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.util.Strings;
 
 public class LMSTest
@@ -40,16 +40,16 @@ public class LMSTest
 
         trySigning(kp);
 
-        kpGen.initialize(new LMSParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+        kpGen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
 
         kp = kpGen.generateKeyPair();
 
         trySigning(kp);
 
-        kpGen.initialize(new LMSHSSParameterSpec(
-            new LMSParameterSpec[] {
-                new LMSParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1),
-                new LMSParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1)
+        kpGen.initialize(new LMSHSSKeyGenParameterSpec(
+            new LMSKeyGenParameterSpec[] {
+                new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1),
+                new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1)
             }), new SecureRandom());
 
         kp = kpGen.generateKeyPair();
@@ -81,7 +81,7 @@ public class LMSTest
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("LMS", "BCPQC");
 
-        kpGen.initialize(new LMSParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+        kpGen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
 
         KeyPair kp = kpGen.generateKeyPair();
 
@@ -111,10 +111,10 @@ public class LMSTest
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("LMS", "BCPQC");
 
-        kpGen.initialize(new LMSHSSParameterSpec(
-            new LMSParameterSpec[] {
-                new LMSParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1),
-                new LMSParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1)
+        kpGen.initialize(new LMSHSSKeyGenParameterSpec(
+            new LMSKeyGenParameterSpec[] {
+                new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1),
+                new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1)
             }), new SecureRandom());
 
         KeyPair kp = kpGen.generateKeyPair();
