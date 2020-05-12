@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -11,11 +12,26 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x500.X500Name;
 
 /**
- * Parsing and encoding of a <i>CertificateRequest</i> struct from RFC 4346.
+ * Parsing and encoding of a <i>CertificateRequest</i> struct from RFC 4346:
  * <pre>
  * struct {
  *     ClientCertificateType certificate_types&lt;1..2^8-1&gt;;
  *     DistinguishedName certificate_authorities&lt;3..2^16-1&gt;;
+ * } CertificateRequest;
+ * </pre>
+ * Updated for RFC 5246:
+ * <pre>
+ * struct {
+ *     ClientCertificateType certificate_types<1..2^8-1>;
+ *     SignatureAndHashAlgorithm supported_signature_algorithms<2^16-1>;
+ *     DistinguishedName certificate_authorities<0..2^16-1>;
+ * } CertificateRequest;
+ * </pre>
+ * Revised for RFC 8446:
+ * <pre>
+ * struct {
+ *     opaque certificate_request_context<0..2^8-1>;
+ *     Extension extensions<2..2^16-1>;
  * } CertificateRequest;
  * </pre>
  *
@@ -40,6 +56,7 @@ public class CertificateRequest
         this(null, certificateTypes, supportedSignatureAlgorithms, null, certificateAuthorities);
     }
 
+    // TODO[tls13] Prefer to manage the certificateRequestContext internally only? 
     public CertificateRequest(byte[] certificateRequestContext, Vector supportedSignatureAlgorithms,
         Vector supportedSignatureAlgorithmsCert, Vector certificateAuthorities)
     {
@@ -137,8 +154,23 @@ public class CertificateRequest
         {
             TlsUtils.writeOpaque8(certificateRequestContext, output);
 
-            // TODO[tls13]
-            throw new UnsupportedOperationException();
+            Hashtable extensions = new Hashtable();
+            TlsExtensionsUtils.addSignatureAlgorithmsExtension(extensions, supportedSignatureAlgorithms);
+
+            if (null != supportedSignatureAlgorithmsCert)
+            {
+                TlsExtensionsUtils.addSignatureAlgorithmsCertExtension(extensions, supportedSignatureAlgorithmsCert);
+            }
+
+            if (null != certificateAuthorities)
+            {
+                TlsExtensionsUtils.addCertificateAuthoritiesExtension(extensions, certificateAuthorities);
+            }
+
+            byte[] extEncoding = TlsProtocol.writeExtensionsData(extensions);
+
+            TlsUtils.writeOpaque16(extEncoding, output);
+            return;
         }
 
         TlsUtils.writeUint8ArrayWithUint8Length(certificateTypes, output);
@@ -195,26 +227,30 @@ public class CertificateRequest
 
         if (isTLSv13)
         {
-            // TODO[tls13] Check here that this is empty for handshake CertificateRequest?
             byte[] certificateRequestContext = TlsUtils.readOpaque8(input);
 
-            // TODO[tls13]
-            throw new UnsupportedOperationException();
+            /*
+             * TODO[tls13] required: signature_algorithms; optional: status_request,
+             * signed_certificate_timestamp, certificate_authorities, oid_filters,
+             * signature_algorithms_cert
+             */
+
+            byte[] extEncoding = TlsUtils.readOpaque16(input);
+
+            Hashtable extensions = TlsProtocol.readExtensionsData(extEncoding);
+
+            Vector supportedSignatureAlgorithms = TlsExtensionsUtils.getSignatureAlgorithmsExtension(extensions);
+            Vector supportedSignatureAlgorithmsCert = TlsExtensionsUtils
+                .getSignatureAlgorithmsCertExtension(extensions);
+            Vector certificateAuthorities = TlsExtensionsUtils.getCertificateAuthoritiesExtension(extensions);
+
+            return new CertificateRequest(certificateRequestContext, supportedSignatureAlgorithms,
+                supportedSignatureAlgorithmsCert, certificateAuthorities);
         }
 
         final boolean isTLSv12 = TlsUtils.isTLSv12(negotiatedVersion);
 
-        int numTypes = TlsUtils.readUint8(input);
-        if (numTypes < 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
-        short[] certificateTypes = new short[numTypes];
-        for (int i = 0; i < numTypes; ++i)
-        {
-            certificateTypes[i] = TlsUtils.readUint8(input);
-        }
+        short[] certificateTypes = TlsUtils.readUint8ArrayWithUint8Length(input, 1);
 
         Vector supportedSignatureAlgorithms = null;
         if (isTLSv12)

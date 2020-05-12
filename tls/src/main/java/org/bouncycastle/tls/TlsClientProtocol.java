@@ -217,7 +217,7 @@ public class TlsClientProtocol
             }
             case CS_SERVER_ENCRYPTED_EXTENSIONS:
             {
-                receive13CertificateRequest(buf);
+                receive13CertificateRequest(buf, false);
                 this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
                 break;
             }
@@ -293,14 +293,19 @@ public class TlsClientProtocol
                         clientCertificate = clientCredentials.getCertificate();
                     }
 
+                    if (null == clientCertificate)
+                    {
+                        // In this calling context, certificate_request_context is length 0
+                        clientCertificate = Certificate.EMPTY_CHAIN_TLS13;
+                    }
+
                     send13CertificateMessage(clientCertificate, null);
                     this.connection_state = CS_CLIENT_CERTIFICATE;
 
                     if (null != clientCredentials)
                     {
-                        TlsStreamSigner streamSigner = clientCredentials.getStreamSigner();
-                        DigitallySigned certificateVerify = TlsUtils.generateCertificateVerifyClient(tlsClientContext,
-                            clientCredentials, streamSigner, handshakeHash);
+                        DigitallySigned certificateVerify = TlsUtils.generate13CertificateVerify(tlsClientContext,
+                            clientCredentials, handshakeHash);
                         send13CertificateVerifyMessage(certificateVerify);
                         this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
                     }
@@ -442,14 +447,11 @@ public class TlsClientProtocol
             }
             case CS_SERVER_SUPPLEMENTAL_DATA:
             {
-                TlsUtils.receiveServerCertificate(tlsClientContext, buf);
-
-                this.authentication = tlsClient.getAuthentication();
-                if (null == this.authentication)
-                {
-                    throw new TlsFatalAlert(AlertDescription.internal_error);
-                }
-
+                /*
+                 * NOTE: Certificate processing (including authentication) is delayed to allow for a
+                 * possible CertificateStatus message.
+                 */
+                this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf);
                 break;
             }
             default:
@@ -470,7 +472,6 @@ public class TlsClientProtocol
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
 
-                // TODO[tls13] Ensure this cannot happen for (D)TLS1.3+
                 this.certificateStatus = CertificateStatus.parse(tlsClientContext, buf);
 
                 assertEmpty(buf);
@@ -743,20 +744,7 @@ public class TlsClientProtocol
             }
             case CS_SERVER_KEY_EXCHANGE:
             {
-                if (this.authentication == null)
-                {
-                    /*
-                     * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server
-                     * to request client identification.
-                     */
-                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
-                }
-
-                this.certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
-
-                assertEmpty(buf);
-
-                this.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, keyExchange);
+                receiveCertificateRequest(buf);
 
                 TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
 
@@ -1410,11 +1398,36 @@ public class TlsClientProtocol
         }
     }
 
-    protected void receive13CertificateRequest(ByteArrayInputStream buf)
+    protected void receive13CertificateRequest(ByteArrayInputStream buf, boolean postHandshakeAuth)
         throws IOException
     {
-        // TODO[tls13]
-        throw new TlsFatalAlert(AlertDescription.internal_error);
+        /* 
+         * RFC 8446 4.3.2. A server which is authenticating with a certificate MAY optionally
+         * request a certificate from the client.
+         */
+
+        /*
+         * TODO[tls13] Currently all handshakes are certificate-authenticated. When PSK-only becomes an option,
+         * then check here that a certificate message is expected (else fatal unexpected_message alert).
+         */
+
+        CertificateRequest certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
+
+        assertEmpty(buf);
+
+        if (postHandshakeAuth)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (certificateRequest.getCertificateRequestContext().length > 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        this.certificateRequest = certificateRequest;
+
+        TlsUtils.establishServerSigAlgs(tlsClientContext.getSecurityParametersHandshake(), certificateRequest);
     }
 
     protected void receive13EncryptedExtensions(ByteArrayInputStream buf)
@@ -1455,14 +1468,9 @@ public class TlsClientProtocol
     protected void receive13ServerCertificate(ByteArrayInputStream buf)
         throws IOException
     {
-        TlsUtils.receiveServerCertificate(tlsClientContext, buf);
+        this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf);
 
-        this.authentication = tlsClient.getAuthentication();
-        if (null == this.authentication)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
+        // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message. 
         handleServerCertificate();
     }
 
@@ -1494,6 +1502,24 @@ public class TlsClientProtocol
     {
         // TODO[tls13]
         throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected void receiveCertificateRequest(ByteArrayInputStream buf) throws IOException
+    {
+        if (null == authentication)
+        {
+            /*
+             * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server to
+             * request client identification.
+             */
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        CertificateRequest certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
+
+        assertEmpty(buf);
+
+        this.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, keyExchange);
     }
 
     protected void receiveNewSessionTicket(ByteArrayInputStream buf)
@@ -1740,6 +1766,8 @@ public class TlsClientProtocol
     protected void skip13ServerCertificate()
         throws IOException
     {
+        this.authentication = null;
+
         // TODO[tls13] May be skipped for PSK handshakes?
         throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
