@@ -246,6 +246,8 @@ class ProvTlsClient
             {
                 final ContextData contextData = manager.getContextData();
                 final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+                final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+                final boolean isTLSv13 = TlsUtils.isTLSv13(negotiatedVersion);
 
                 // Setup the peer supported signature schemes  
                 {
@@ -275,14 +277,30 @@ class ProvTlsClient
                 @SuppressWarnings("unchecked")
                 Principal[] issuers = JsseUtils.toX500Principals(certificateRequest.getCertificateAuthorities());
 
-                short[] certificateTypes = certificateRequest.getCertificateTypes();
+                byte[] certificateRequestContext = certificateRequest.getCertificateRequestContext();
+                if (isTLSv13 != (null != certificateRequestContext))
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
 
-                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(securityParameters.getNegotiatedVersion()))
+                short[] certificateTypes = certificateRequest.getCertificateTypes();
+                if (isTLSv13 != (null == certificateTypes))
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                if (isTLSv13)
+                {
+                    return chooseClientCredentials13(issuers, certificateRequestContext);
+                }
+                else if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(negotiatedVersion))
+                {
+                    return chooseClientCredentials12(issuers, certificateTypes);
+                }
+                else
                 {
                     return chooseClientCredentialsLegacy(issuers, certificateTypes);
                 }
-
-                return chooseClientCredentials(issuers, certificateTypes);
             }
 
             public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
@@ -503,7 +521,40 @@ class ProvTlsClient
         return JsseUtils.useExtendedMasterSecret();
     }
 
-    protected TlsCredentials chooseClientCredentials(Principal[] issuers, short[] certificateTypes)
+    protected TlsCredentials chooseClientCredentials13(Principal[] issuers, byte[] certificateRequestContext)
+        throws IOException
+    {
+        Set<String> keyManagerMissCache = new HashSet<String>();
+
+        for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
+        {
+            if (!signatureSchemeInfo.isSupported13() ||
+                !jsseSecurityParameters.localSigSchemes.contains(signatureSchemeInfo))
+            {
+                continue;
+            }
+
+            String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
+            if (keyManagerMissCache.contains(keyType))
+            {
+                continue;
+            }
+
+            ProvX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
+            if (null == x509Key)
+            {
+                keyManagerMissCache.add(keyType);
+                continue;
+            }
+
+            return JsseUtils.createCredentialedSigner13(context, getCrypto(), x509Key,
+                signatureSchemeInfo.getSignatureAndHashAlgorithm(), certificateRequestContext);
+        }
+
+        return null;
+    }
+
+    protected TlsCredentials chooseClientCredentials12(Principal[] issuers, short[] certificateTypes)
         throws IOException
     {
         /*
@@ -512,13 +563,7 @@ class ProvTlsClient
          * with some hash/signature algorithm pair in supported_signature_algorithms.
          */
 
-        final boolean isTLSv13 = TlsUtils.isTLSv13(context);
         Set<String> keyManagerMissCache = new HashSet<String>();
-
-        if (isTLSv13 != (null == certificateTypes))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
 
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
@@ -528,18 +573,14 @@ class ProvTlsClient
                 continue;
             }
 
-            if (null != certificateTypes)
+            short signatureAlgorithm = signatureSchemeInfo.getSignatureAlgorithm();
+            short certificateType = SignatureAlgorithm.getClientCertificateType(signatureAlgorithm);
+            if (certificateType < 0 || !Arrays.contains(certificateTypes, certificateType))
             {
-                short signatureAlgorithm = signatureSchemeInfo.getSignatureAlgorithm();
-                short certificateType = SignatureAlgorithm.getClientCertificateType(signatureAlgorithm);
-                if (certificateType < 0 || !Arrays.contains(certificateTypes, certificateType))
-                {
-                    continue;
-                }
+                continue;
             }
 
-            if (!jsseSecurityParameters.localSigSchemes.contains(signatureSchemeInfo)
-                || (isTLSv13 && !signatureSchemeInfo.isSupported13()))
+            if (!jsseSecurityParameters.localSigSchemes.contains(signatureSchemeInfo))
             {
                 continue;
             }
@@ -574,12 +615,6 @@ class ProvTlsClient
 
     protected String[] getKeyTypesLegacy(short[] certificateTypes) throws IOException
     {
-        if (null == certificateTypes || certificateTypes.length == 0)
-        {
-            // TODO[jsse] Or does this mean ANY type - or something else?
-            return null;
-        }
-
         String[] keyTypes = new String[certificateTypes.length];
         for (int i = 0; i < certificateTypes.length; ++i)
         {
