@@ -534,6 +534,7 @@
 
         <copy todir="${mail.target.src.dir}">
              <fileset dir="${src.dir}">
+                 <include name="**/mailcap"/>
                  <include name="org/bouncycastle/mail/**/*.java" />
                  <include name="org/bouncycastle/mail/**/*.properties" />
                  <exclude name="**/*Test.java" />
@@ -542,9 +543,16 @@
              </fileset>
         </copy>
 
+        <copy todir="${build.dir}/${mail.target}/classes">
+             <fileset dir="${src.dir}">
+                 <include name="**/mailcap"/>
+             </fileset>
+        </copy>
+
         <compile target="${mail.target}">
             <jarFileSet>
                 <include name="**/*.class"/>
+                <include name="**/mailcap"/>
                 <include name="**/*.properties"/>
             </jarFileSet>
             <manifestElements>
