@@ -171,8 +171,6 @@ class ProvTlsClient
         ContextData contextData = manager.getContextData();
         ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
 
-        jsseSecurityParameters.namedGroups = contextData.getNamedGroups(sslParameters, activeProtocolVersions);
-
         List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveCertsSignatureSchemes(sslParameters,
             activeProtocolVersions, jsseSecurityParameters.namedGroups);
 
@@ -394,6 +392,17 @@ class ProvTlsClient
 
             LOG.log(level, msg);
         }
+    }
+
+    @Override
+    public void notifyHandshakeBeginning() throws IOException
+    {
+        super.notifyHandshakeBeginning();
+
+        ContextData contextData = manager.getContextData();
+        ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
+
+        jsseSecurityParameters.namedGroups = contextData.getNamedGroups(sslParameters, activeProtocolVersions);
     }
 
     @Override
