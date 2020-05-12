@@ -42,7 +42,6 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Shorts;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 
@@ -2108,26 +2107,19 @@ public class TlsUtils
     {
         TlsStreamSigner streamSigner = credentialedSigner.getStreamSigner();
 
-        byte[] prefix = new byte[64];
-        Arrays.fill(prefix, (byte)0x20);
-        byte[] contextBytes = Strings.toByteArray(contextString);
-        byte[] separator = new byte[1];
+        byte[] header = getCertificateVerifyHeader(contextString);
         byte[] prfHash = getCurrentPRFHash(handshakeHash);
 
         if (null != streamSigner)
         {
             OutputStream output = streamSigner.getOutputStream();
-            output.write(prefix, 0, prefix.length);
-            output.write(contextBytes, 0, contextBytes.length);
-            output.write(separator, 0, separator.length);
+            output.write(header, 0, header.length);
             output.write(prfHash, 0, prfHash.length);
             return streamSigner.getSignature();
         }
 
         TlsHash tlsHash = crypto.createHash(hashAlgorithm);
-        tlsHash.update(prefix, 0, prefix.length);
-        tlsHash.update(contextBytes, 0, contextBytes.length);
-        tlsHash.update(separator, 0, separator.length);
+        tlsHash.update(header, 0, header.length);
         tlsHash.update(prfHash, 0, prfHash.length);
         byte[] hash = tlsHash.calculateHash();
         return credentialedSigner.generateRawSignature(hash);
@@ -2266,29 +2258,39 @@ public class TlsUtils
     {
         TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
 
-        byte[] prefix = new byte[64];
-        Arrays.fill(prefix, (byte)0x20);
-        byte[] contextBytes = Strings.toByteArray(contextString);
-        byte[] separator = new byte[1];
+        byte[] header = getCertificateVerifyHeader(contextString);
         byte[] prfHash = getCurrentPRFHash(handshakeHash);
 
         if (null != streamVerifier)
         {
             OutputStream output = streamVerifier.getOutputStream();
-            output.write(prefix, 0, prefix.length);
-            output.write(contextBytes, 0, contextBytes.length);
-            output.write(separator, 0, separator.length);
+            output.write(header, 0, header.length);
             output.write(prfHash, 0, prfHash.length);
             return streamVerifier.isVerified();
         }
 
         TlsHash tlsHash = crypto.createHash(certificateVerify.getAlgorithm().getHash());
-        tlsHash.update(prefix, 0, prefix.length);
-        tlsHash.update(contextBytes, 0, contextBytes.length);
-        tlsHash.update(separator, 0, separator.length);
+        tlsHash.update(header, 0, header.length);
         tlsHash.update(prfHash, 0, prfHash.length);
         byte[] hash = tlsHash.calculateHash();
         return verifier.verifyRawSignature(certificateVerify, hash);
+    }
+
+    private static byte[] getCertificateVerifyHeader(String contextString)
+    {
+        int count = contextString.length();
+        byte[] header = new byte[64 + count + 1];
+        for (int i = 0; i < 64; ++i)
+        {
+            header[i] = 0x20;
+        }
+        for (int i = 0; i < count; ++i)
+        {
+            char c = contextString.charAt(i);
+            header[64 + i] = (byte)c;
+        }
+        header[64 + count] = 0x00;
+        return header;
     }
 
     static void generateServerKeyExchangeSignature(TlsContext context, TlsCredentialedSigner credentials,
