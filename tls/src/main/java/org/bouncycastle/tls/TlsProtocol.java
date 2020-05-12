@@ -1435,19 +1435,18 @@ public abstract class TlsProtocol
         securityParameters.localCertificate = certificate;
     }
 
-    protected void send13CertificateMessage(Certificate certificate, OutputStream endPointHash)
-        throws IOException
+    protected void send13CertificateMessage(Certificate certificate, OutputStream endPointHash) throws IOException
     {
+        if (null == certificate)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         TlsContext context = getContext();
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         if (null != securityParameters.getLocalCertificate())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        if (null == certificate)
-        {
-            certificate = Certificate.EMPTY_CHAIN_TLS13;
         }
 
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate);
@@ -1655,6 +1654,10 @@ public abstract class TlsProtocol
         return readExtensionsData(extBytes);
     }
 
+    /*
+     * TODO[tls13] Need a general mechanism for extensions contexts to enforce TLS 1.3 restrictions
+     * on which extensions can appear where (review all callers).
+     */
     protected static Hashtable readExtensionsData(byte[] extBytes)
         throws IOException
     {
