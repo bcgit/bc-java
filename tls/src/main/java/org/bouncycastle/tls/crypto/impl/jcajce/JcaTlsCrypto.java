@@ -228,28 +228,12 @@ public class JcaTlsCrypto
 
     public TlsHMAC createHMAC(short hashAlgorithm)
     {
-        String digestName = getDigestName(hashAlgorithm).replaceAll("-", "");
-        String hmacName = "Hmac" + digestName;
-        return createHMAC(hmacName);
+        return createHMAC(getHMACAlgorithmName(hashAlgorithm));
     }
 
     public TlsHMAC createHMAC(int macAlgorithm)
     {
-        switch (macAlgorithm)
-        {
-        case MACAlgorithm.hmac_md5:
-            return createHMAC("HmacMD5");
-        case MACAlgorithm.hmac_sha1:
-            return createHMAC("HmacSHA1");
-        case MACAlgorithm.hmac_sha256:
-            return createHMAC("HmacSHA256");
-        case MACAlgorithm.hmac_sha384:
-            return createHMAC("HmacSHA384");
-        case MACAlgorithm.hmac_sha512:
-            return createHMAC("HmacSHA512");
-        default:
-            throw new IllegalArgumentException("specified MACAlgorithm not an HMAC: " + MACAlgorithm.getText(macAlgorithm));
-        }
+        return createHMAC(TlsUtils.getHashAlgorithmForHMACAlgorithm(macAlgorithm));
     }
 
     protected TlsHMAC createHMAC_SSL(int macAlgorithm)
@@ -357,6 +341,27 @@ public class JcaTlsCrypto
                 return verifierGenerator.generateVerifier(salt, identity, password);
             }
         };
+    }
+
+    public String getHMACAlgorithmName(short hashAlgorithm)
+    {
+        switch (hashAlgorithm)
+        {
+        case HashAlgorithm.md5:
+            return "HmacMD5";
+        case HashAlgorithm.sha1:
+            return "HmacSHA1";
+        case HashAlgorithm.sha224:
+            return "HmacSHA224";
+        case HashAlgorithm.sha256:
+            return "HmacSHA256";
+        case HashAlgorithm.sha384:
+            return "HmacSHA384";
+        case HashAlgorithm.sha512:
+            return "HmacSHA512";
+        default:
+            throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
+        }
     }
 
     public AlgorithmParameters getNamedGroupAlgorithmParameters(int namedGroup) throws GeneralSecurityException
