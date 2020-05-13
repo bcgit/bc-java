@@ -319,6 +319,46 @@ public abstract class TlsCryptoTest
         }
     }
 
+    public void testHKDFExpandLimit()
+    {
+        short[] hashes = new short[]{ HashAlgorithm.md5, HashAlgorithm.sha1, HashAlgorithm.sha224,
+            HashAlgorithm.sha256, HashAlgorithm.sha384, HashAlgorithm.sha512 };
+
+        for (int i = 0; i < hashes.length; ++i)
+        {
+            short hash = HashAlgorithm.sha256;
+            int hashLen = HashAlgorithm.getOutputSize(hash);
+            byte[] zeroes = new byte[hashLen];
+
+            int limit = 255 * hashLen;
+
+            TlsSecret secret = crypto.hkdfInit(hash).hkdfExtract(hash, zeroes);
+
+            try
+            {
+                secret.hkdfExpand(hash, TlsUtils.EMPTY_BYTES, limit);
+            }
+            catch (Exception e)
+            {
+                fail("Unexpected exception: " + e.getMessage());
+            }
+
+            try
+            {
+                secret.hkdfExpand(hash, TlsUtils.EMPTY_BYTES, limit + 1);
+                fail("Expected an exception!");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // Expected
+            }
+            catch (Exception e)
+            {
+                fail("Unexpected exception: " + e.getMessage());
+            }
+        }
+    }
+
     private byte[] calculateHMAC(short hash, TlsSecret hmacKey, byte[] hmacInput)
     {
         byte[] keyBytes = extract(hmacKey);

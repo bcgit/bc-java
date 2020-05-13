@@ -72,9 +72,84 @@ public class JceTlsSecret
         }
     }
 
-    protected TlsSecret adoptLocalSecret(byte[] data)
+    public synchronized TlsSecret hkdfExpand(short hashAlgorithm, byte[] info, int length)
     {
-        return crypto.adoptLocalSecret(data);
+        if (length < 1)
+        {
+            return crypto.adoptLocalSecret(TlsUtils.EMPTY_BYTES);
+        }
+
+        int hashLen = HashAlgorithm.getOutputSize(hashAlgorithm);
+        if (length > (255 * hashLen))
+        {
+            throw new IllegalArgumentException("'length' must be <= 255 * (output size of 'hashAlgorithm')");
+        }
+
+        checkAlive();
+
+        byte[] prk = data;
+
+        try
+        {
+            String algorithm = crypto.getHMACAlgorithmName(hashAlgorithm);
+            Mac hmac = crypto.getHelper().createMac(algorithm);
+            hmac.init(new SecretKeySpec(prk, 0, prk.length, algorithm));
+
+            byte[] okm = new byte[length];
+
+            byte[] t = new byte[hashLen];
+            byte counter = 0x00;
+
+            int pos = 0;
+            for (;;)
+            {
+                hmac.update(info, 0, info.length);
+                hmac.update((byte)++counter);
+                hmac.doFinal(t, 0);
+
+                int remaining = length - pos;
+                if (remaining <= hashLen)
+                {
+                    System.arraycopy(t, 0, okm, pos, remaining);
+                    break;
+                }
+
+                System.arraycopy(t, 0, okm, pos, hashLen);
+                pos += hashLen;
+                hmac.update(t, 0, t.length);
+            }
+
+            return crypto.adoptLocalSecret(okm);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized TlsSecret hkdfExtract(short hashAlgorithm, byte[] ikm)
+    {
+        checkAlive();
+
+        byte[] salt = data;
+        this.data = null;
+
+        try
+        {
+            String algorithm = crypto.getHMACAlgorithmName(hashAlgorithm);
+            Mac hmac = crypto.getHelper().createMac(algorithm);
+            hmac.init(new SecretKeySpec(salt, 0, salt.length, algorithm));
+
+            hmac.update(ikm, 0, ikm.length);
+
+            byte[] prk = hmac.doFinal();
+
+            return crypto.adoptLocalSecret(prk);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     protected AbstractTlsCrypto getCrypto()
