@@ -54,6 +54,7 @@ public class Certificate
         this(null, convert(certificateList));
     }
 
+    // TODO[tls13] Prefer to manage the certificateRequestContext internally only? 
     public Certificate(byte[] certificateRequestContext, CertificateEntry[] certificateEntryList)
     {
         if (null != certificateRequestContext && !TlsUtils.isValidUint8(certificateRequestContext.length))
@@ -162,7 +163,10 @@ public class Certificate
 
             if (isTLSv13)
             {
-                byte[] extEncoding = TlsProtocol.writeExtensionsData(entry.getExtensions());
+                Hashtable extensions = entry.getExtensions();
+                byte[] extEncoding = (null == extensions)
+                    ?   TlsUtils.EMPTY_BYTES
+                    :   TlsProtocol.writeExtensionsData(extensions);
 
                 extEncodings.addElement(extEncoding);
                 totalLength += extEncoding.length;
@@ -234,9 +238,9 @@ public class Certificate
             Hashtable extensions = null;
             if (isTLSv13)
             {
-                byte[] extBytes = TlsUtils.readOpaque16(buf);
+                byte[] extEncoding = TlsUtils.readOpaque16(buf);
 
-                extensions = TlsProtocol.readExtensionsData(extBytes);
+                extensions = TlsProtocol.readExtensionsData(extEncoding);
             }
 
             certificate_list.addElement(new CertificateEntry(cert, extensions));

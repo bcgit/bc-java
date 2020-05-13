@@ -162,13 +162,7 @@ public class ClientHello
          */
         int[] cipherSuites = TlsUtils.readUint16Array(cipher_suites_length / 2, input);
 
-        int compression_methods_length = TlsUtils.readUint8(input);
-        if (compression_methods_length < 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        short[] compressionMethods = TlsUtils.readUint8Array(compression_methods_length, input);
+        short[] compressionMethods = TlsUtils.readUint8ArrayWithUint8Length(input, 1);
         if (!Arrays.contains(compressionMethods, CompressionMethod._null))
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);

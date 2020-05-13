@@ -55,33 +55,74 @@ public class CipherSuitesTestSuite
 
         Arrays.sort(cipherSuites);
 
+        /*
+         * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit SSLv3. Perhaps we
+         * could modify that security property when running this test suite.
+         */
+        // NOTE: Avoid defaultSSLContext.getSupportedSSLParameters() for 1.5 compatibility
+        String[] protocols = new String[]{
+            "TLSv1",
+            "TLSv1.1",
+            "TLSv1.2",
+        };
 
-        for (int t = 0; t < cipherSuites.length; t++)
+        for (int p = 0; p < protocols.length; ++p)
         {
-            String cipherSuite = cipherSuites[t];
+            String protocol = protocols[p];
 
-            if (cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_"))
+            boolean isTLSv13Protocol = "TLSv1.3".equals(protocol);
+            boolean isTLSv12Protocol = "TLSv1.2".equals(protocol);
+
+            for (int t = 0; t < cipherSuites.length; t++)
             {
+                String cipherSuite = cipherSuites[t];
+
+                boolean isTLSv13CipherSuite = !cipherSuite.contains("_WITH_");
+
+                if (isTLSv13CipherSuite != isTLSv13Protocol)
+                {
+                    // TLS 1.3 uses a distinct set of cipher suites that don't specify a key exchange
+                    continue;
+                }
+
+                boolean isTLSv12CipherSuite = !isTLSv13CipherSuite
+                    && (cipherSuite.contains("_CHACHA20_POLY1305_") ||
+                        cipherSuite.contains("_GCM_") ||
+                        cipherSuite.endsWith("_CBC_SHA256") ||
+                        cipherSuite.endsWith("_CBC_SHA384") ||
+                        cipherSuite.endsWith("_CCM") ||
+                        cipherSuite.endsWith("_CCM_8"));
+
+                if (isTLSv12CipherSuite && !isTLSv12Protocol)
+                {
+                    //  AEAD ciphers and configurable CBC PRFs are both 1.2 features
+                    continue;
+                }
+
+                if (cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_"))
+                {
+                    /*
+                     * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit these. Perhaps
+                     * we could modify that security property when running this test suite.
+                     */
+                    continue;
+                }
+
                 /*
-                 * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit these. Perhaps
-                 * we could modify that security property when running this test suite.
+                 * TODO[jsse] Note that there may be failures for cipher suites that are listed as supported
+                 * even though the TlsCrypto instance doesn't implement them (JcaTlsCrypto is dependent on the
+                 * configured crypto providers).
                  */
-                continue;
+
+                CipherSuitesTestConfig config = new CipherSuitesTestConfig();
+                config.cipherSuite = cipherSuite;
+                config.clientTrustStore = ts;
+                config.protocol = protocol;
+                config.serverKeyStore = ks;
+                config.serverPassword = serverPassword;
+
+                testSuite.addTest(new CipherSuitesTestCase(config));
             }
-
-            /*
-             * TODO[jsse] Note that there may be failures for cipher suites that are listed as supported
-             * even though the TlsCrypto instance doesn't implement them (JcaTlsCrypto is dependent on the
-             * configured crypto providers).
-             */
-
-            CipherSuitesTestConfig config = new CipherSuitesTestConfig();
-            config.cipherSuite = cipherSuite;
-            config.clientTrustStore = ts;
-            config.serverKeyStore = ks;
-            config.serverPassword = serverPassword;
-
-            testSuite.addTest(new CipherSuitesTestCase(config));
         }
 
         return testSuite;
