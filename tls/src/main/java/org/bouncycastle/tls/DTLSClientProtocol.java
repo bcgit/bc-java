@@ -253,8 +253,6 @@ public class DTLSClientProtocol
         {
             processCertificateRequest(state, serverMessage.getBody());
 
-            state.certificateRequest = TlsUtils.validateCertificateRequest(state.certificateRequest, state.keyExchange);
-
             TlsUtils.establishServerSigAlgs(securityParameters, state.certificateRequest);
 
             /*
@@ -561,10 +559,9 @@ public class DTLSClientProtocol
         }
     }
 
-    protected void processCertificateRequest(ClientHandshakeState state, byte[] body)
-        throws IOException
+    protected void processCertificateRequest(ClientHandshakeState state, byte[] body) throws IOException
     {
-        if (state.authentication == null)
+        if (null == state.authentication)
         {
             /*
              * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server to
@@ -575,9 +572,11 @@ public class DTLSClientProtocol
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        state.certificateRequest = CertificateRequest.parse(state.clientContext, buf);
+        CertificateRequest certificateRequest = CertificateRequest.parse(state.clientContext, buf);
 
         TlsProtocol.assertEmpty(buf);
+
+        state.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, state.keyExchange);
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)
@@ -633,13 +632,8 @@ public class DTLSClientProtocol
     protected void processServerCertificate(ClientHandshakeState state, byte[] body)
         throws IOException
     {
-        TlsUtils.receiveServerCertificate(state.clientContext, new ByteArrayInputStream(body));
-
-        state.authentication = state.client.getAuthentication();
-        if (null == state.authentication)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        state.authentication = TlsUtils.receiveServerCertificate(state.clientContext, state.client,
+            new ByteArrayInputStream(body));
     }
 
     protected void processServerHello(ClientHandshakeState state, byte[] body)

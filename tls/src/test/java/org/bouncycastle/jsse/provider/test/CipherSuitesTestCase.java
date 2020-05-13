@@ -34,7 +34,7 @@ public class CipherSuitesTestCase extends TestCase
 
     public CipherSuitesTestCase(CipherSuitesTestConfig config)
     {
-        super(config.cipherSuite);
+        super(config.protocol + " : " + config.cipherSuite);
 
         this.config = config;
     }
@@ -106,6 +106,7 @@ public class CipherSuitesTestCase extends TestCase
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
     
                 cSock.setEnabledCipherSuites(new String[]{ config.cipherSuite });
+                cSock.setEnabledProtocols(new String[]{ config.protocol });
 
                 if (cSock instanceof BCSSLSocket)
                 {
@@ -176,7 +177,8 @@ public class CipherSuitesTestCase extends TestCase
                 SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
     
                 sSock.setEnabledCipherSuites(new String[]{ config.cipherSuite });
-    
+                sSock.setEnabledProtocols(new String[]{ config.protocol });
+
                 latch.countDown();
     
                 SSLSocket sslSock = (SSLSocket)sSock.accept();

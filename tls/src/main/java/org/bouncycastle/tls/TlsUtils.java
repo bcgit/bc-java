@@ -42,7 +42,6 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Shorts;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 
@@ -934,6 +933,18 @@ public class TlsUtils
             uints[i] = readUint8(input);
         }
         return uints;
+    }
+
+    public static short[] readUint8ArrayWithUint8Length(InputStream input, int minLength)
+        throws IOException
+    {
+        int length = TlsUtils.readUint8(input);
+        if (length < minLength)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        return readUint8Array(length, input);
     }
 
     public static int[] readUint16Array(int count, InputStream input)
@@ -2036,6 +2047,12 @@ public class TlsUtils
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
+        if (isTLSv13(negotiatedVersion))
+        {
+            //  Should be using generateCertificateVerify13 instead
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
@@ -2043,43 +2060,69 @@ public class TlsUtils
             credentialedSigner);
 
         byte[] signature;
-        if (isTLSv13(negotiatedVersion))
+        if (streamSigner != null)
         {
-            // TODO[tls13] See verifyCertificateVerifyClient
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            handshakeHash.copyBufferTo(streamSigner.getOutputStream());
+            signature = streamSigner.getSignature();
         }
         else
         {
-            if (streamSigner != null)
+            byte[] hash;
+            if (signatureAndHashAlgorithm == null)
             {
-                handshakeHash.copyBufferTo(streamSigner.getOutputStream());
-                signature = streamSigner.getSignature();
+                hash = securityParameters.getSessionHash();
             }
             else
             {
-                byte[] hash;
-                if (signatureAndHashAlgorithm == null)
-                {
-                    hash = securityParameters.getSessionHash();
-                }
-                else
-                {
-                    hash = handshakeHash.getFinalHash(signatureAndHashAlgorithm.getHash());
-                }
-    
-                signature = credentialedSigner.generateRawSignature(hash);
+                hash = handshakeHash.getFinalHash(signatureAndHashAlgorithm.getHash());
             }
+
+            signature = credentialedSigner.generateRawSignature(hash);
         }
 
         return new DigitallySigned(signatureAndHashAlgorithm, signature);
     }
 
-    static DigitallySigned generateCertificateVerifyServer(TlsServerContext serverContext,
-        TlsCredentialedSigner credentialedSigner, TlsStreamSigner streamSigner, TlsHandshakeHash handshakeHash)
-        throws IOException
+    static DigitallySigned generate13CertificateVerify(TlsContext context, TlsCredentialedSigner credentialedSigner,
+        TlsHandshakeHash handshakeHash) throws IOException
     {
-        // TODO[tls13] See generateCertificateVerifyClient and verifyCertificateVerifyServer
-        throw new TlsFatalAlert(AlertDescription.internal_error);
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm = credentialedSigner.getSignatureAndHashAlgorithm();
+        if (null == signatureAndHashAlgorithm)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        String contextString = context.isServer()
+            ? "TLS 1.3, server CertificateVerify"
+            : "TLS 1.3, client CertificateVerify";
+
+        byte[] signature = generate13CertificateVerify(context.getCrypto(), credentialedSigner, contextString,
+            handshakeHash, signatureAndHashAlgorithm.getHash());
+
+        return new DigitallySigned(signatureAndHashAlgorithm, signature);
+    }
+
+    private static byte[] generate13CertificateVerify(TlsCrypto crypto, TlsCredentialedSigner credentialedSigner,
+        String contextString, TlsHandshakeHash handshakeHash, short hashAlgorithm) throws IOException
+    {
+        TlsStreamSigner streamSigner = credentialedSigner.getStreamSigner();
+
+        byte[] header = getCertificateVerifyHeader(contextString);
+        byte[] prfHash = getCurrentPRFHash(handshakeHash);
+
+        if (null != streamSigner)
+        {
+            OutputStream output = streamSigner.getOutputStream();
+            output.write(header, 0, header.length);
+            output.write(prfHash, 0, prfHash.length);
+            return streamSigner.getSignature();
+        }
+
+        TlsHash tlsHash = crypto.createHash(hashAlgorithm);
+        tlsHash.update(header, 0, header.length);
+        tlsHash.update(prfHash, 0, prfHash.length);
+        byte[] hash = tlsHash.calculateHash();
+        return credentialedSigner.generateRawSignature(hash);
     }
 
     static void verifyCertificateVerifyClient(TlsServerContext serverContext, CertificateRequest certificateRequest,
@@ -2123,7 +2166,7 @@ public class TlsUtils
             TlsVerifier verifier = verifyingCert.createVerifier(signatureAlgorithm);
             if (isTLSv13(securityParameters.getNegotiatedVersion()))
             {
-                verified = verify13CertificateVerify(serverContext, certificateVerify, verifier,
+                verified = verify13CertificateVerify(serverContext.getCrypto(), certificateVerify, verifier,
                     "TLS 1.3, client CertificateVerify", handshakeHash);
             }
             else
@@ -2187,7 +2230,7 @@ public class TlsUtils
             TlsVerifier verifier = verifyingCert.createVerifier(signatureAlgorithm);
             if (isTLSv13(securityParameters.getNegotiatedVersion()))
             {
-                verified = verify13CertificateVerify(clientContext, certificateVerify, verifier,
+                verified = verify13CertificateVerify(clientContext.getCrypto(), certificateVerify, verifier,
                     "TLS 1.3, server CertificateVerify", handshakeHash);
             }
             else
@@ -2210,34 +2253,44 @@ public class TlsUtils
         }
     }
 
-    private static boolean verify13CertificateVerify(TlsContext context, DigitallySigned certificateVerify,
+    private static boolean verify13CertificateVerify(TlsCrypto crypto, DigitallySigned certificateVerify,
         TlsVerifier verifier, String contextString, TlsHandshakeHash handshakeHash) throws IOException
     {
         TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
 
-        byte[] prefix = new byte[64];
-        Arrays.fill(prefix, (byte)0x20);
-        byte[] contextBytes = Strings.toByteArray(contextString);
-        byte[] separator = new byte[1];
+        byte[] header = getCertificateVerifyHeader(contextString);
         byte[] prfHash = getCurrentPRFHash(handshakeHash);
 
-        if (streamVerifier != null)
+        if (null != streamVerifier)
         {
             OutputStream output = streamVerifier.getOutputStream();
-            output.write(prefix, 0, prefix.length);
-            output.write(contextBytes, 0, contextBytes.length);
-            output.write(separator, 0, separator.length);
+            output.write(header, 0, header.length);
             output.write(prfHash, 0, prfHash.length);
             return streamVerifier.isVerified();
         }
 
-        TlsHash tlsHash = context.getCrypto().createHash(certificateVerify.getAlgorithm().getHash());
-        tlsHash.update(prefix, 0, prefix.length);
-        tlsHash.update(contextBytes, 0, contextBytes.length);
-        tlsHash.update(separator, 0, separator.length);
+        TlsHash tlsHash = crypto.createHash(certificateVerify.getAlgorithm().getHash());
+        tlsHash.update(header, 0, header.length);
         tlsHash.update(prfHash, 0, prfHash.length);
         byte[] hash = tlsHash.calculateHash();
         return verifier.verifyRawSignature(certificateVerify, hash);
+    }
+
+    private static byte[] getCertificateVerifyHeader(String contextString)
+    {
+        int count = contextString.length();
+        byte[] header = new byte[64 + count + 1];
+        for (int i = 0; i < 64; ++i)
+        {
+            header[i] = 0x20;
+        }
+        for (int i = 0; i < count; ++i)
+        {
+            char c = contextString.charAt(i);
+            header[64 + i] = (byte)c;
+        }
+        header[64 + count] = 0x00;
+        return header;
     }
 
     static void generateServerKeyExchangeSignature(TlsContext context, TlsCredentialedSigner credentials,
@@ -4369,10 +4422,12 @@ public class TlsUtils
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
 
-        // TODO[tls13] An error unless we implement PSK?
         if (null == clientAuthentication)
         {
-            // TODO[tls13] No keyExchange object for TLS 1.3
+            if (isTLSv13)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
 
             // There was no server certificate message; check it's OK
             keyExchange.skipServerCredentials();
@@ -4566,7 +4621,8 @@ public class TlsUtils
         System.arraycopy(marker, 0, randomBlock, randomBlock.length - marker.length, marker.length);
     }
 
-    static void receiveServerCertificate(TlsClientContext clientContext, ByteArrayInputStream buf) throws IOException
+    static TlsAuthentication receiveServerCertificate(TlsClientContext clientContext, TlsClient client,
+        ByteArrayInputStream buf) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         if (null != securityParameters.getPeerCertificate())
@@ -4595,6 +4651,14 @@ public class TlsUtils
 
         securityParameters.peerCertificate = serverCertificate;
         securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
+
+        TlsAuthentication authentication = client.getAuthentication();
+        if (null == authentication)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return authentication;
     }
 
     public static boolean containsNonAscii(byte[] bs)
@@ -4813,8 +4877,7 @@ public class TlsUtils
         throws IOException
     {
         securityParameters.serverSigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
-        // TODO[tls13] CertificateRequest can have sigAlgsCert extension
-        securityParameters.serverSigAlgsCert = null;
+        securityParameters.serverSigAlgsCert = certificateRequest.getSupportedSignatureAlgorithmsCert();
 
         if (null == securityParameters.getServerSigAlgsCert())
         {
