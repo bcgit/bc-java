@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +33,7 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.CertificateStatus;
 import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.ClientCertificateType;
@@ -142,13 +144,29 @@ abstract class JsseUtils
         SignatureAndHashAlgorithm sigAndHashAlg)
     {
         /*
-         * TODO[jsse] Before proceeding with EC credentials,check (TLS 1.2+) that the used curve
+         * TODO[jsse] Before proceeding with EC credentials, check (TLS 1.2+) that the used curve
          * was actually declared in the client's elliptic_curves/named_groups extension.
          */
 
         TlsCryptoParameters cryptoParams = new TlsCryptoParameters(context);
         PrivateKey privateKey = x509Key.getPrivateKey();
         Certificate certificate = getCertificateMessage(crypto, x509Key.getCertificateChain());
+
+        return new JcaDefaultTlsCredentialedSigner(cryptoParams, crypto, privateKey, certificate, sigAndHashAlg);
+    }
+
+    static TlsCredentialedSigner createCredentialedSigner13(TlsContext context, JcaTlsCrypto crypto, ProvX509Key x509Key,
+        SignatureAndHashAlgorithm sigAndHashAlg, byte[] certificateRequestContext)
+    {
+        /*
+         * TODO[jsse] Before proceeding with EC credentials, check (TLS 1.2+) that the used curve
+         * was actually declared in the client's elliptic_curves/named_groups extension.
+         */
+
+        TlsCryptoParameters cryptoParams = new TlsCryptoParameters(context);
+        PrivateKey privateKey = x509Key.getPrivateKey();
+        Certificate certificate = getCertificateMessage13(crypto, x509Key.getCertificateChain(),
+            certificateRequestContext);
 
         return new JcaDefaultTlsCredentialedSigner(cryptoParams, crypto, privateKey, certificate, sigAndHashAlg);
     }
@@ -269,7 +287,7 @@ abstract class JsseUtils
     {
         if (chain == null || chain.length < 1)
         {
-            return Certificate.EMPTY_CHAIN;
+            throw new IllegalArgumentException();
         }
 
         TlsCertificate[] certificateList = new TlsCertificate[chain.length];
@@ -278,6 +296,28 @@ abstract class JsseUtils
             certificateList[i] = new JcaTlsCertificate(crypto, chain[i]);
         }
         return new Certificate(certificateList);
+    }
+
+    static Certificate getCertificateMessage13(JcaTlsCrypto crypto, X509Certificate[] chain,
+        byte[] certificateRequestContext)
+    {
+        if (chain == null || chain.length < 1)
+        {
+            throw new IllegalArgumentException();
+        }
+
+        CertificateEntry[] certificateEntryList = new CertificateEntry[chain.length];
+        for (int i = 0; i < chain.length; ++i)
+        {
+            JcaTlsCertificate certificate = new JcaTlsCertificate(crypto, chain[i]);
+
+            // TODO[tls13] Support various extensions
+            Hashtable extensions = null;
+
+            certificateEntryList[i] = new CertificateEntry(certificate, extensions);
+        }
+
+        return new Certificate(certificateRequestContext, certificateEntryList);
     }
 
     static X509Certificate getEndEntity(JcaTlsCrypto crypto, Certificate certificateMessage) throws IOException

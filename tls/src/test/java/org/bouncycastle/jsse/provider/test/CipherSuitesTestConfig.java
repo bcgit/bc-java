@@ -6,6 +6,7 @@ public class CipherSuitesTestConfig
 {
     public String cipherSuite = null;
     public KeyStore clientTrustStore = null;
+    public String protocol = null;
     public KeyStore serverKeyStore = null;
     public char[] serverPassword = null;
 }
