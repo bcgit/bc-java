@@ -309,7 +309,7 @@ abstract class JsseUtils
             JcaTlsCertificate certificate = new JcaTlsCertificate(crypto, chain[i]);
 
             // TODO[tls13] Support various extensions
-            Hashtable extensions = null;
+            Hashtable<Integer, byte[]> extensions = null;
 
             certificateEntryList[i] = new CertificateEntry(certificate, extensions);
         }
