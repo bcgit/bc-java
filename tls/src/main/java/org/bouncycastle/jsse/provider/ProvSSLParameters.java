@@ -34,7 +34,7 @@ final class ProvSSLParameters
     private String[] protocols;
     private boolean needClientAuth = false;
     private boolean wantClientAuth = false;
-    private BCAlgorithmConstraints algorithmConstraints = JsseUtils.DEFAULT_ALGORITHM_CONSTRAINTS_BC;
+    private BCAlgorithmConstraints algorithmConstraints = ProvAlgorithmConstraints.DEFAULT;
     private String endpointIdentificationAlgorithm;
     private boolean useCipherSuitesOrder = true;
     private List<BCSNIMatcher> sniMatchers;
@@ -73,7 +73,7 @@ final class ProvSSLParameters
     {
         ProvSSLParameters p = copy();
 
-        if (JsseUtils.DEFAULT_ALGORITHM_CONSTRAINTS_BC != p.algorithmConstraints)
+        if (ProvAlgorithmConstraints.DEFAULT != p.algorithmConstraints)
         {
             p.algorithmConstraints = new ProvAlgorithmConstraints(p.algorithmConstraints, true);
         }

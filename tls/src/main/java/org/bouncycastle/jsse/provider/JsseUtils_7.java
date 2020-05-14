@@ -23,7 +23,7 @@ abstract class JsseUtils_7
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
     static final AlgorithmConstraints DEFAULT_ALGORITHM_CONSTRAINTS = new ExportAlgorithmConstraints(
-        DEFAULT_ALGORITHM_CONSTRAINTS_BC);
+        ProvAlgorithmConstraints.DEFAULT);
 
     static class ExportAlgorithmConstraints implements AlgorithmConstraints
     {
@@ -89,7 +89,7 @@ abstract class JsseUtils_7
 
     static AlgorithmConstraints exportAlgorithmConstraints(BCAlgorithmConstraints constraints)
     {
-        if (DEFAULT_ALGORITHM_CONSTRAINTS_BC == constraints)
+        if (ProvAlgorithmConstraints.DEFAULT == constraints)
         {
             return DEFAULT_ALGORITHM_CONSTRAINTS;
         }
