@@ -12,17 +12,25 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCSSLSocket;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
 public class CipherSuitesTestCase extends TestCase
 {
+    private static String getName(CipherSuitesTestConfig config)
+    {
+        String category = config.category;
+        String prefix = (null == category || category.length() < 1)
+            ?   ""
+            :   (category + " ");
+
+        return prefix + config.protocol + " : " + config.cipherSuite;
+    }
+
     protected final CipherSuitesTestConfig config;
 
     public CipherSuitesTestCase(String name)
@@ -34,14 +42,17 @@ public class CipherSuitesTestCase extends TestCase
 
     public CipherSuitesTestCase(CipherSuitesTestConfig config)
     {
-        super(config.protocol + " : " + config.cipherSuite);
+        super(getName(config));
 
         this.config = config;
     }
 
     protected void setUp()
     {
-        TestUtils.setupProvidersHighPriority();
+        if (config != null)
+        {
+            ProviderUtils.setupHighPriority(config.fips);
+        }
     }
 
     public void testDummy()
@@ -78,7 +89,7 @@ public class CipherSuitesTestCase extends TestCase
         private final int port;
         private final CipherSuitesTestConfig config;
         private final CountDownLatch latch;
-        private byte[] tlsUnique = null; 
+        private byte[] tlsUnique = null;
 
         SimpleClient(int port, CipherSuitesTestConfig config)
         {
@@ -87,24 +98,23 @@ public class CipherSuitesTestCase extends TestCase
             this.latch = new CountDownLatch(1);
         }
 
-        public Exception call()
-            throws Exception
+        public Exception call() throws Exception
         {
             try
             {
                 TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
-    
+                    ProviderUtils.PROVIDER_NAME_BCJSSE);
+
                 trustMgrFact.init(config.clientTrustStore);
-    
-                SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-    
+
+                SSLContext clientContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+
                 clientContext.init(null, trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
-    
+                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
                 SSLSocketFactory fact = clientContext.getSocketFactory();
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
-    
+
                 cSock.setEnabledCipherSuites(new String[]{ config.cipherSuite });
                 cSock.setEnabledProtocols(new String[]{ config.protocol });
 
@@ -136,8 +146,7 @@ public class CipherSuitesTestCase extends TestCase
             return null;
         }
 
-        public void await()
-            throws InterruptedException
+        public void await() throws InterruptedException
         {
             latch.await();
         }
@@ -149,7 +158,7 @@ public class CipherSuitesTestCase extends TestCase
         private final int port;
         private final CipherSuitesTestConfig config;
         private final CountDownLatch latch;
-        private byte[] tlsUnique = null; 
+        private byte[] tlsUnique = null;
 
         SimpleServer(int port, CipherSuitesTestConfig config)
         {
@@ -158,29 +167,28 @@ public class CipherSuitesTestCase extends TestCase
             this.latch = new CountDownLatch(1);
         }
 
-        public Exception call()
-            throws Exception
+        public Exception call() throws Exception
         {
             try
             {
                 KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
-    
+                    ProviderUtils.PROVIDER_NAME_BCJSSE);
+
                 keyMgrFact.init(config.serverKeyStore, config.serverPassword);
-    
-                SSLContext serverContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-    
+
+                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+
                 serverContext.init(keyMgrFact.getKeyManagers(), null,
-                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
-    
+                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
                 SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
                 SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
-    
+
                 sSock.setEnabledCipherSuites(new String[]{ config.cipherSuite });
                 sSock.setEnabledProtocols(new String[]{ config.protocol });
 
                 latch.countDown();
-    
+
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
                 sslSock.setUseClientMode(false);
 
@@ -203,7 +211,7 @@ public class CipherSuitesTestCase extends TestCase
 
                     BCSSLParameters bcParams = new BCSSLParameters();
                     bcParams.setApplicationProtocols(new String[]{ "h2", "http/1.1" });
-    
+
                     bcSock.setParameters(bcParams);
 
 //                    bcSock.setBCHandshakeApplicationProtocolSelector(new BCApplicationProtocolSelector<SSLSocket>()
@@ -233,7 +241,7 @@ public class CipherSuitesTestCase extends TestCase
                 this.tlsUnique = TestUtils.getChannelBinding(sslSock, "tls-unique");
 
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
-                
+
                 sslSock.close();
                 sSock.close();
             }
@@ -245,8 +253,7 @@ public class CipherSuitesTestCase extends TestCase
             return null;
         }
 
-        public void await()
-            throws InterruptedException
+        public void await() throws InterruptedException
         {
             latch.await();
         }

@@ -11,7 +11,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -38,7 +37,6 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -59,10 +57,8 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLSocket;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 /**
  * Test Utils
@@ -85,8 +81,8 @@ class TestUtils
         algIDs.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
         algIDs.put("SHA224withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA224));
         algIDs.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
-        algIDs.put("Ed25519", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519));
-        algIDs.put("Ed448", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448));
+        algIDs.put("Ed25519", new AlgorithmIdentifier(TestOIDs.id_Ed25519));
+        algIDs.put("Ed448", new AlgorithmIdentifier(TestOIDs.id_Ed448));
 
         return Collections.unmodifiableMap(algIDs);
     }
@@ -99,77 +95,6 @@ class TestUtils
             throw new IllegalArgumentException();
         }
         return algID;
-    }
-
-    public static void setupProviders(boolean bcPriority, boolean bcjssePriority)
-    {
-        String javaVersion = System.getProperty("java.version");
-        boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
-
-        BouncyCastleProvider bc = (BouncyCastleProvider)Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
-        BouncyCastleJsseProvider bcjsse = (BouncyCastleJsseProvider)Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
-
-        if (bc == null)
-        {
-            bc = new BouncyCastleProvider();
-        }
-        else
-        {
-            Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
-        }
-
-        if (bcjsse == null)
-        {
-            bcjsse = oldJDK ? new BouncyCastleJsseProvider(bc) : new BouncyCastleJsseProvider();
-        }
-        else
-        {
-            Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
-        }
-
-        if (bcPriority)
-        {
-            Security.insertProviderAt(bc, 1);
-        }
-        else
-        {
-            Security.addProvider(bc);
-        }
-
-        if (bcjssePriority)
-        {
-            Security.insertProviderAt(bcjsse, bcPriority ? 2 : 1);
-        }
-        else
-        {
-            Security.addProvider(bcjsse);
-        }
-    }
-
-    public static void setupProvidersHighPriority()
-    {
-        Provider[] providers = Security.getProviders();
-        if (providers.length >= 2
-            && providers[0] instanceof BouncyCastleProvider
-            && providers[1] instanceof BouncyCastleJsseProvider)
-        {
-            return;
-        }
-
-        setupProviders(true, true);
-    }
-
-    public static void setupProvidersLowPriority()
-    {
-        Provider[] providers = Security.getProviders();
-        if (providers.length >= 2
-            && providers[providers.length - 2] instanceof BouncyCastleProvider
-            && providers[providers.length - 1] instanceof BouncyCastleJsseProvider)
-        {
-            return;
-        }
-
-        setupProviders(false, false);
     }
 
     public static X509Certificate createSelfSignedCert(String dn, String sigName, KeyPair keyPair)
@@ -193,7 +118,7 @@ class TestUtils
         certGen.setSignature(getAlgID(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
-        Signature sig = Signature.getInstance(sigName, BouncyCastleProvider.PROVIDER_NAME);
+        Signature sig = Signature.getInstance(sigName, ProviderUtils.PROVIDER_NAME_BC);
 
         sig.initSign(keyPair.getPrivate());
 
@@ -207,7 +132,7 @@ class TestUtils
         v.add(getAlgID(sigName));
         v.add(new DERBitString(sig.sign()));
 
-        return (X509Certificate)CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME)
+        return (X509Certificate)CertificateFactory.getInstance("X.509", ProviderUtils.PROVIDER_NAME_BC)
             .generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
@@ -233,7 +158,7 @@ class TestUtils
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);
 
-        Signature sig = Signature.getInstance(sigName, BouncyCastleProvider.PROVIDER_NAME);
+        Signature sig = Signature.getInstance(sigName, ProviderUtils.PROVIDER_NAME_BC);
 
         sig.initSign(signerKey);
 
@@ -247,7 +172,7 @@ class TestUtils
         v.add(getAlgID(sigName));
         v.add(new DERBitString(sig.sign()));
 
-        return (X509Certificate)CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME)
+        return (X509Certificate)CertificateFactory.getInstance("X.509", ProviderUtils.PROVIDER_NAME_BC)
             .generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
@@ -257,7 +182,7 @@ class TestUtils
     public static KeyPair generateDSAKeyPair()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DSA", BouncyCastleProvider.PROVIDER_NAME);
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DSA", ProviderUtils.PROVIDER_NAME_BC);
 
         kpGen.initialize(1024, new SecureRandom());
 
@@ -270,7 +195,7 @@ class TestUtils
     public static KeyPair generateRSAKeyPair()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", ProviderUtils.PROVIDER_NAME_BC);
 
         kpGen.initialize(1024, new SecureRandom());
 
@@ -280,7 +205,7 @@ class TestUtils
     public static KeyPair generateECKeyPair()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", BouncyCastleProvider.PROVIDER_NAME);
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", ProviderUtils.PROVIDER_NAME_BC);
 
         kpGen.initialize(256, new SecureRandom());
 
@@ -290,7 +215,7 @@ class TestUtils
     public static KeyPair generateEd25519KeyPair()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed25519", BouncyCastleProvider.PROVIDER_NAME);
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed25519", ProviderUtils.PROVIDER_NAME_BC);
 
         kpGen.initialize(255, new SecureRandom());
 
@@ -300,7 +225,7 @@ class TestUtils
     public static KeyPair generateEd448KeyPair()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed448", BouncyCastleProvider.PROVIDER_NAME);
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed448", ProviderUtils.PROVIDER_NAME_BC);
 
         kpGen.initialize(448, new SecureRandom());
 
@@ -604,12 +529,12 @@ class TestUtils
             return false;
         }
 
-        public Set getCriticalExtensionOIDs()
+        public Set<String> getCriticalExtensionOIDs()
         {
             return null;
         }
 
-        public Set getNonCriticalExtensionOIDs()
+        public Set<String> getNonCriticalExtensionOIDs()
         {
             return null;
         }
@@ -655,7 +580,7 @@ class TestUtils
     {
         try
         {
-            Class clazz = TestUtils.class.getClassLoader().loadClass(name);
+            Class<?> clazz = TestUtils.class.getClassLoader().loadClass(name);
 
             return clazz != null;
         }

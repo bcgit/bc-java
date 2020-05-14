@@ -20,8 +20,6 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.Assert;
 
 import junit.framework.TestCase;
@@ -31,7 +29,7 @@ public class BasicClientAuthTlsTest
 {
     protected void setUp()
     {
-        TestUtils.setupProvidersLowPriority();
+        ProviderUtils.setupLowPriority(false);
     }
 
     private static final String HOST = "localhost";
@@ -64,19 +62,19 @@ public class BasicClientAuthTlsTest
             try
             {
                 TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
+                    ProviderUtils.PROVIDER_NAME_BCJSSE);
     
                 trustMgrFact.init(trustStore);
     
                 KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
+                    ProviderUtils.PROVIDER_NAME_BCJSSE);
     
                 keyMgrFact.init(clientStore, clientKeyPass);
     
-                SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+                SSLContext clientContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
     
                 clientContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
     
                 SSLSocketFactory fact = clientContext.getSocketFactory();
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO_ACCEPTED);
@@ -126,14 +124,14 @@ public class BasicClientAuthTlsTest
             try
             {
                 TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
+                    ProviderUtils.PROVIDER_NAME_BCJSSE);
     
                 trustMgrFact.init(trustStore);
 
-                SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+                SSLContext clientContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
                 clientContext.init(null, trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
 
                 SSLSocketFactory fact = clientContext.getSocketFactory();
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO_REJECTED);
@@ -191,19 +189,19 @@ public class BasicClientAuthTlsTest
             try
             {
                 KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
+                    ProviderUtils.PROVIDER_NAME_BCJSSE);
     
                 keyMgrFact.init(serverStore, keyPass);
     
                 TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    BouncyCastleJsseProvider.PROVIDER_NAME);
+                    ProviderUtils.PROVIDER_NAME_BCJSSE);
     
                 trustMgrFact.init(trustStore);
     
-                SSLContext serverContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
     
                 serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
     
                 SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
                 SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
