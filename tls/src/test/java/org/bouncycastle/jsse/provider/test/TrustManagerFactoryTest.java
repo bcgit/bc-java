@@ -31,7 +31,6 @@ public class TrustManagerFactoryTest
     public static byte[] rootCertBin = Base64.decode(
         "MIIBqzCCARQCAQEwDQYJKoZIhvcNAQEFBQAwHjEcMBoGA1UEAxMTVGVzdCBDQSBDZXJ0aWZpY2F0ZTAeFw0wODA5MDQwNDQ1MDhaFw0wODA5MTEwNDQ1MDhaMB4xHDAaBgNVBAMTE1Rlc3QgQ0EgQ2VydGlmaWNhdGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMRLUjhPe4YUdLo6EcjKcWUOG7CydFTH53Pr1lWjOkbmszYDpkhCTT9LOsI+disk18nkBxSl8DAHTqV+VxtuTPt64iyi10YxyDeep+DwZG/f8cVQv97U3hA9cLurZ2CofkMLGr6JpSGCMZ9FcstcTdHB4lbErIJ54YqfF4pNOs4/AgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAgyrTEFY7ALpeY59jL6xFOLpuPqoBOWrUWv6O+zy5BCU0qiX71r3BpigtxRj+DYcfLIM9FNERDoHu3TthD3nwYWUBtFX8N0QUJIdJabxqAMhLjSC744koiFpCYse5Ye3ZvEdFwDzgAQsJTp5eFGgTZPkPzcdhkFJ2p9+OWs+cb24=");
 
-
     static byte[] interCertBin = Base64.decode(
         "MIICSzCCAbSgAwIBAgIBATANBgkqhkiG9w0BAQUFADAeMRwwGgYDVQQDExNUZXN0IENBIENlcnRpZmljYXRlMB4XDTA4MDkwNDA0NDUwOFoXDTA4MDkxMTA0NDUwOFowKDEmMCQGA1UEAxMdVGVzdCBJbnRlcm1lZGlhdGUgQ2VydGlmaWNhdGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAISS9OOZ2wxzdWny9aVvk4Joq+dwSJ+oqvHUxX3PflZyuiLiCBUOUE4q59dGKdtNX5fIfwyK3cpV0e73Y/0fwfM3m9rOWFrCKOhfeswNTes0w/2PqPVVDDsF/nj7NApuqXwioeQlgTL251RDF4sVoxXqAU7lRkcqwZt3mwqS4KTJAgMBAAGjgY4wgYswRgYDVR0jBD8wPYAUhv8BOT27EB9JaCccJD4YASPP5XWhIqQgMB4xHDAaBgNVBAMTE1Rlc3QgQ0EgQ2VydGlmaWNhdGWCAQEwHQYDVR0OBBYEFL/IwAGOkHzaQyPZegy79CwM5oTFMBIGA1UdEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgGGMA0GCSqGSIb3DQEBBQUAA4GBAE4TRgUz4sUvZyVdZxqV+XyNRnqXAeLOOqFGYv2D96tQrS+zjd0elVlT6lFrtchZdOmmX7R6/H/tjMWMcTBICZyRYrvK8cCAmDOI+EIdq5p6lj2Oq6Pbw/wruojAqNrpaR6IkwNpWtdOSSupv4IJL+YU9q2YFTh4R1j3tOkPoFGr");
 
@@ -44,32 +43,31 @@ public class TrustManagerFactoryTest
 
     protected void setUp()
     {
-        TestUtils.setupProvidersLowPriority();
+        ProviderUtils.setupLowPriority(false);
     }
-    
-    public void testCertPathTrustManagerParameters()
-        throws Exception
-    {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
 
-            // initialise CertStore
+    public void testCertPathTrustManagerParameters() throws Exception
+    {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", ProviderUtils.PROVIDER_NAME_BC);
+
+        // initialise CertStore
         X509Certificate rootCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(rootCertBin));
         X509Certificate interCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(interCertBin));
         X509Certificate finalCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(finalCertBin));
         X509CRL rootCrl = (X509CRL)cf.generateCRL(new ByteArrayInputStream(rootCrlBin));
         X509CRL interCrl = (X509CRL)cf.generateCRL(new ByteArrayInputStream(interCrlBin));
-        List list = new ArrayList();
+        List<Object> list = new ArrayList<Object>();
         list.add(rootCert);
         list.add(interCert);
         list.add(finalCert);
         list.add(rootCrl);
         list.add(interCrl);
         CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(list);
-        CertStore store = CertStore.getInstance("Collection", ccsp, "BC");
+        CertStore store = CertStore.getInstance("Collection", ccsp, ProviderUtils.PROVIDER_NAME_BC);
         Date validDate = new Date(rootCrl.getThisUpdate().getTime() + 60 * 60 * 1000);
 
         //Searching for rootCert by subjectDN without CRL
-        Set trust = new HashSet();
+        Set<TrustAnchor> trust = new HashSet<TrustAnchor>();
         trust.add(new TrustAnchor(rootCert, null));
 
         X509CertSelector targetConstraints = new X509CertSelector();
@@ -87,7 +85,7 @@ public class TrustManagerFactoryTest
             params.setRevocationEnabled(true);
         }
 
-        TrustManagerFactory fact = TrustManagerFactory.getInstance("PKIX", "BCJSSE");
+        TrustManagerFactory fact = TrustManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         fact.init(new CertPathTrustManagerParameters(params));
 
@@ -95,33 +93,30 @@ public class TrustManagerFactoryTest
 
         assertEquals(rootCert, trustManager.getAcceptedIssuers()[0]);
 
-        X509Certificate[] certs = new X509Certificate[] {
-            finalCert, interCert
-        };
+        X509Certificate[] certs = new X509Certificate[]{ finalCert, interCert };
 
         trustManager.checkServerTrusted(certs, "RSA");
         trustManager.checkClientTrusted(certs, "RSA");
     }
 
-    public void testCertPathTrustManagerParametersFailure()
-        throws Exception
+    public void testCertPathTrustManagerParametersFailure() throws Exception
     {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", ProviderUtils.PROVIDER_NAME_BC);
 
-            // initialise CertStore
+        // initialise CertStore
         X509Certificate rootCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(rootCertBin));
         X509Certificate finalCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(finalCertBin));
 
-        List list = new ArrayList();
+        List<Object> list = new ArrayList<Object>();
         list.add(rootCert);
         list.add(finalCert);
 
         CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(list);
-        CertStore store = CertStore.getInstance("Collection", ccsp, "BC");
+        CertStore store = CertStore.getInstance("Collection", ccsp, ProviderUtils.PROVIDER_NAME_BC);
         Date validDate = new Date(rootCert.getNotBefore().getTime() + 60 * 60 * 1000);
 
         //Searching for rootCert by subjectDN without CRL
-        Set trust = new HashSet();
+        Set<TrustAnchor> trust = new HashSet<TrustAnchor>();
         trust.add(new TrustAnchor(rootCert, null));
 
         X509CertSelector targetConstraints = new X509CertSelector();
@@ -130,8 +125,8 @@ public class TrustManagerFactoryTest
         params.addCertStore(store);
         params.setDate(validDate);
         params.setRevocationEnabled(false);
-        
-        TrustManagerFactory fact = TrustManagerFactory.getInstance("PKIX", "BCJSSE");
+
+        TrustManagerFactory fact = TrustManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         fact.init(new CertPathTrustManagerParameters(params));
 
@@ -139,9 +134,7 @@ public class TrustManagerFactoryTest
 
         assertEquals(rootCert, trustManager.getAcceptedIssuers()[0]);
 
-        X509Certificate[] certs = new X509Certificate[] {
-            finalCert
-        };
+        X509Certificate[] certs = new X509Certificate[]{ finalCert };
 
         try
         {

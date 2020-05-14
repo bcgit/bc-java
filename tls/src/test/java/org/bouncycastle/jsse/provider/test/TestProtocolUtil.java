@@ -6,8 +6,9 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.Callable;
 
-import junit.framework.Assert;
 import org.bouncycastle.util.Strings;
+
+import junit.framework.TestCase;
 
 class TestProtocolUtil
 {
@@ -64,8 +65,8 @@ class TestProtocolUtil
         serverThread.join();
         clientThread.join();
 
-        Assert.assertNull(serverTask.getResult());
-        Assert.assertNull(clientTask.getResult());
+        TestCase.assertNull(serverTask.getResult());
+        TestCase.assertNull(clientTask.getResult());
     }
 
     public static void doClientProtocol(
@@ -80,7 +81,7 @@ class TestProtocolUtil
 
         String message = readMessage(in);
 
-        Assert.assertEquals("World", message);
+        TestCase.assertEquals("World", message);
     }
 
     public static void doServerProtocol(
@@ -95,7 +96,7 @@ class TestProtocolUtil
 
         writeMessage(text, out);
 
-        Assert.assertEquals("Hello", message);
+        TestCase.assertEquals("Hello", message);
     }
 
     private static void writeMessage(String text, OutputStream out)
