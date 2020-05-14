@@ -33,9 +33,14 @@ public class BouncyCastleJsseProvider
 
     public BouncyCastleJsseProvider()
     {
+        this(false);
+    }
+
+    public BouncyCastleJsseProvider(boolean fipsMode)
+    {
         super(PROVIDER_NAME, PROVIDER_VERSION, PROVIDER_INFO);
 
-        this.isInFipsMode = configure(false, new JcaTlsCryptoProvider());
+        this.isInFipsMode = configure(fipsMode, new JcaTlsCryptoProvider());
     }
 
     public BouncyCastleJsseProvider(Provider provider)
