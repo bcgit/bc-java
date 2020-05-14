@@ -16,7 +16,6 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 import junit.framework.TestCase;
 
@@ -27,13 +26,13 @@ public class KeyManagerFactoryTest
 
     protected void setUp()
     {
-        TestUtils.setupProvidersLowPriority();
+        ProviderUtils.setupLowPriority(false);
     }
 
     public void testBasicRSA()
         throws Exception
     {
-        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         KeyStore ks = getRsaKeyStore(true);
 
@@ -67,7 +66,7 @@ public class KeyManagerFactoryTest
     public void testBasicEC()
         throws Exception
     {
-        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         KeyStore ks = getEcKeyStore(false);
 
@@ -173,11 +172,12 @@ public class KeyManagerFactoryTest
 
         SSLUtils.startServer(ks, PASSWORD, trustStore, false, 8886);
 
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX",
+            ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         trustManagerFactory.init(trustStore);
 
-        SSLContext context = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+        SSLContext context = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         context.init(null, trustManagerFactory.getTrustManagers(), null);
 
@@ -219,10 +219,11 @@ public class KeyManagerFactoryTest
         trustStore.load(null, PASSWORD);
         trustStore.setCertificateEntry("server", ks.getCertificate("test"));
 
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX",
+            ProviderUtils.PROVIDER_NAME_BCJSSE);
         trustManagerFactory.init(trustStore);
 
-        SSLContext context = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+        SSLContext context = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         context.init(null, trustManagerFactory.getTrustManagers(), null);
 
@@ -250,17 +251,18 @@ public class KeyManagerFactoryTest
 
         SSLUtils.startServer(serverKS, PASSWORD, serverTS, true, 8887);
 
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
         keyManagerFactory.init(clientKS, PASSWORD);
 
         KeyStore clientTS = KeyStore.getInstance("JKS");
         clientTS.load(null, PASSWORD);
         clientTS.setCertificateEntry("serverRoot", serverKS.getCertificate("root"));
 
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX",
+            ProviderUtils.PROVIDER_NAME_BCJSSE);
         trustManagerFactory.init(clientTS);
 
-        SSLContext context = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+        SSLContext context = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         context.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 

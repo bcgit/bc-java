@@ -15,8 +15,6 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-
 /**
  * A simple test designed to conduct a TLS handshake with an external TLS server,
  * using the BC and BCJSSE providers.
@@ -26,7 +24,7 @@ public class BCJSSEClientTest
     public static void main(String[] args)
         throws Exception
     {
-        TestUtils.setupProvidersHighPriority();
+        ProviderUtils.setupHighPriority(false);
 
         /*
          * TEST CODE ONLY. If writing your own code based on this test case, you should configure
@@ -56,7 +54,7 @@ public class BCJSSEClientTest
             }
         };
 
-        SSLContext sslContext = SSLContext.getInstance("TLSv1.2", BouncyCastleJsseProvider.PROVIDER_NAME);
+        SSLContext sslContext = SSLContext.getInstance("TLSv1.2", ProviderUtils.PROVIDER_NAME_BCJSSE);
         sslContext.init(null, new TrustManager[]{ tm }, new SecureRandom());
 
         String host = "localhost";

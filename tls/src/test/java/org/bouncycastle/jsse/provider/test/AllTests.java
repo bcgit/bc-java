@@ -32,6 +32,7 @@ public class AllTests
         }
 
         suite.addTest(CipherSuitesTestSuite.suite());
+        suite.addTest(FipsCipherSuitesTestSuite.suite());
 
         return new BCTestSetup(suite);
     }

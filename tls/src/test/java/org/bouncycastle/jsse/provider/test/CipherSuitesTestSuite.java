@@ -1,13 +1,13 @@
 package org.bouncycastle.jsse.provider.test;
 
+import static org.junit.Assert.fail;
+
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
-
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -23,9 +23,29 @@ public class CipherSuitesTestSuite
     public static Test suite()
         throws Exception
     {
-        TestUtils.setupProvidersHighPriority();
+        return createSuite(new CipherSuitesTestSuite(), null, false, new CipherSuitesFilter()
+        {
+            public boolean isIgnored(String cipherSuite)
+            {
+                /*
+                 * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit these. Perhaps
+                 * we could modify that security property when running this test suite.
+                 */
+                return cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_");
+            }
 
-        CipherSuitesTestSuite testSuite = new CipherSuitesTestSuite();
+            public boolean isPermitted(String cipherSuite)
+            {
+                return true;
+            }
+        });
+    }
+
+    static Test createSuite(TestSuite testSuite, String category, boolean fips, CipherSuitesFilter filter)
+        throws Exception
+    {
+        // TODO Consider configuring BCJSSE with explicit crypto provider (maybe only when in fips mode?)
+        ProviderUtils.setupHighPriority(fips);
 
         char[] serverPassword = "serverPassword".toCharArray();
 
@@ -39,9 +59,9 @@ public class CipherSuitesTestSuite
 
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
-        ks.setKeyEntry("serverDSA", caKeyPairDSA.getPrivate(), serverPassword, new X509Certificate[]{caCertDSA});
-        ks.setKeyEntry("serverEC", caKeyPairEC.getPrivate(), serverPassword, new X509Certificate[]{caCertEC});
-        ks.setKeyEntry("serverRSA", caKeyPairRSA.getPrivate(), serverPassword, new X509Certificate[]{caCertRSA});
+        ks.setKeyEntry("serverDSA", caKeyPairDSA.getPrivate(), serverPassword, new X509Certificate[]{ caCertDSA });
+        ks.setKeyEntry("serverEC", caKeyPairEC.getPrivate(), serverPassword, new X509Certificate[]{ caCertEC });
+        ks.setKeyEntry("serverRSA", caKeyPairRSA.getPrivate(), serverPassword, new X509Certificate[]{ caCertRSA });
 
         KeyStore ts = KeyStore.getInstance("JKS");
         ts.load(null, null);
@@ -49,10 +69,16 @@ public class CipherSuitesTestSuite
         ts.setCertificateEntry("caEC", caCertEC);
         ts.setCertificateEntry("caRSA", caCertRSA);
 
-        SSLContext defaultSSLContext = SSLContext.getInstance("Default", BouncyCastleJsseProvider.PROVIDER_NAME);
+        SSLContext defaultSSLContext = SSLContext.getInstance("Default", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         String[] cipherSuites = defaultSSLContext.getSocketFactory().getSupportedCipherSuites();
-
+        for (int i = 0; i < cipherSuites.length; ++i)
+        {
+            if (!filter.isPermitted(cipherSuites[i]))
+            {
+                fail("Cipher suite not permitted in supported cipher suites: " + cipherSuites[i]);
+            }
+        }
         Arrays.sort(cipherSuites);
 
         /*
@@ -76,9 +102,12 @@ public class CipherSuitesTestSuite
             for (int t = 0; t < cipherSuites.length; t++)
             {
                 String cipherSuite = cipherSuites[t];
+                if (filter.isIgnored(cipherSuite))
+                {
+                    continue;
+                }
 
                 boolean isTLSv13CipherSuite = !cipherSuite.contains("_WITH_");
-
                 if (isTLSv13CipherSuite != isTLSv13Protocol)
                 {
                     // TLS 1.3 uses a distinct set of cipher suites that don't specify a key exchange
@@ -92,19 +121,9 @@ public class CipherSuitesTestSuite
                         cipherSuite.endsWith("_CBC_SHA384") ||
                         cipherSuite.endsWith("_CCM") ||
                         cipherSuite.endsWith("_CCM_8"));
-
                 if (isTLSv12CipherSuite && !isTLSv12Protocol)
                 {
                     //  AEAD ciphers and configurable CBC PRFs are both 1.2 features
-                    continue;
-                }
-
-                if (cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_"))
-                {
-                    /*
-                     * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit these. Perhaps
-                     * we could modify that security property when running this test suite.
-                     */
                     continue;
                 }
 
@@ -115,8 +134,10 @@ public class CipherSuitesTestSuite
                  */
 
                 CipherSuitesTestConfig config = new CipherSuitesTestConfig();
+                config.category = category;
                 config.cipherSuite = cipherSuite;
                 config.clientTrustStore = ts;
+                config.fips = fips;
                 config.protocol = protocol;
                 config.serverKeyStore = ks;
                 config.serverPassword = serverPassword;

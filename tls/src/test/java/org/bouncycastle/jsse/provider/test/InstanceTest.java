@@ -4,8 +4,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-
 import junit.framework.TestCase;
 
 public class InstanceTest
@@ -13,24 +11,24 @@ public class InstanceTest
 {
     protected void setUp()
     {
-        TestUtils.setupProvidersLowPriority();
+        ProviderUtils.setupLowPriority(false);
     }
 
     public void testKeyManager()
         throws Exception
     {
-        KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        KeyManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
     }
 
     public void testTrustManager()
         throws Exception
     {
-        TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        TrustManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
     }
 
     public void testSSLContext()
         throws Exception
     {
-        SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+        SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
     }
 }
