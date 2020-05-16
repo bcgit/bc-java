@@ -66,8 +66,6 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -83,6 +81,9 @@ import org.bouncycastle.util.BigIntegers;
 
 public class JcaPGPKeyConverter
 {
+    private static final int X25519_KEY_SIZE = 32;
+    private static final int ED25519_KEY_SIZE = 32;
+
     // We default to these as they are specified as mandatory in RFC 6631.
     private static final PGPKdfParameters DEFAULT_KDF_PARAMETERS = new PGPKdfParameters(HashAlgorithmTags.SHA256,
         SymmetricKeyAlgorithmTags.AES_128);
@@ -480,7 +481,7 @@ public class JcaPGPKeyConverter
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "ED2", 0, 3))
         {
             SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
-            byte[] pointEnc = new byte[1 + Ed25519PublicKeyParameters.KEY_SIZE];
+            byte[] pointEnc = new byte[1 + ED25519_KEY_SIZE];
 
             pointEnc[0] = 0x40;
             System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);
@@ -490,7 +491,7 @@ public class JcaPGPKeyConverter
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "X2", 0, 2))
         {
             SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
-            byte[] pointEnc = new byte[1 + X25519PublicKeyParameters.KEY_SIZE];
+            byte[] pointEnc = new byte[1 + X25519_KEY_SIZE];
 
             pointEnc[0] = 0x40;
             System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);

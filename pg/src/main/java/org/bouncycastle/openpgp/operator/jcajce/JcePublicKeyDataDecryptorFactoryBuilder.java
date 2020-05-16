@@ -26,7 +26,6 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
-import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -43,6 +42,8 @@ import org.bouncycastle.util.Arrays;
 
 public class JcePublicKeyDataDecryptorFactoryBuilder
 {
+    private static final int X25519_KEY_SIZE = 32;
+
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private OperatorHelper contentHelper = new OperatorHelper(new DefaultJcaJceHelper());
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
@@ -180,7 +181,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                 KeyFactory keyFact = helper.createKeyFactory("XDH");
 
                 // skip the 0x40 header byte.
-                if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
+                if (pEnc.length != (1 + X25519_KEY_SIZE) || 0x40 != pEnc[0])
                 {
                     throw new IllegalArgumentException("Invalid Curve25519 public key");
                 }
