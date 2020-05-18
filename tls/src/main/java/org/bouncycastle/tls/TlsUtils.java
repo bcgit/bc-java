@@ -1434,6 +1434,9 @@ public class TlsUtils
         return secret.deriveUsingPRF(securityParameters.getPRFAlgorithm(), asciiLabel, seed, length);
     }
 
+    /**
+     * @deprecated Use {@link #PRF(SecurityParameters, TlsSecret, String, byte[], int)} instead.
+     */
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
         return PRF(context.getSecurityParametersHandshake(), secret, asciiLabel, seed, length);
