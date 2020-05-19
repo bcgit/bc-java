@@ -1768,11 +1768,13 @@ public class NewEnvelopedDataTest
             _origEcKP.getPrivate(), _origEcKP.getPublic(),
             wrapAlgorithm).addRecipient(_reciEcCert).setProvider(BC));
 
+        // DESEDE wrap should only be used with DES/TripleDES keys.
+        ASN1ObjectIdentifier encAlg = wrapAlgorithm.equals(CMSAlgorithm.DES_EDE3_WRAP) ? CMSAlgorithm.DES_EDE3_CBC : CMSAlgorithm.AES128_CBC;
         CMSEnvelopedData ed = edGen.generate(
             new CMSProcessableByteArray(data),
-            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+            new JceCMSContentEncryptorBuilder(encAlg).setProvider(BC).build());
 
-        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
+        assertEquals(ed.getEncryptionAlgOID(), encAlg.getId());
 
         RecipientInformationStore recipients = ed.getRecipientInfos();
 
@@ -1789,7 +1791,7 @@ public class NewEnvelopedDataTest
             assertNotNull(keyWrapAlg.getParameters());
         }
 
-        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
+        assertEquals(ed.getEncryptionAlgOID(), encAlg.getId());
 
         confirmDataReceived(recipients, data, _reciEcCert, _reciEcKP.getPrivate(), BC);
         confirmNumberRecipients(recipients, 1);
