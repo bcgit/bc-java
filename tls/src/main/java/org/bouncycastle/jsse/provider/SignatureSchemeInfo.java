@@ -272,6 +272,15 @@ class SignatureSchemeInfo
             true, true);
     }
 
+    private static void addSignatureSchemeDeprecated(boolean isFipsContext, JcaTlsCrypto crypto, NamedGroupInfo.PerContext ng,
+        Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm)
+    {
+        String name = SignatureScheme.getName(signatureScheme);
+
+        addSignatureScheme(isFipsContext, crypto, ng, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm,
+            false, true);
+    }
+
     private static void addSignatureSchemeHistorical(boolean isFipsContext, JcaTlsCrypto crypto,
         NamedGroupInfo.PerContext ng, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme, String name,
         String jcaSignatureAlgorithm, String keyAlgorithm)
@@ -284,20 +293,22 @@ class SignatureSchemeInfo
         NamedGroupInfo.PerContext ng, Map<Integer, SignatureSchemeInfo> ss, int signatureScheme,
         String jcaSignatureAlgorithm, String keyAlgorithm)
     {
-        String name = SignatureScheme.getName(signatureScheme);
-
-        addSignatureScheme(isFipsContext, crypto, ng, ss, signatureScheme, name, jcaSignatureAlgorithm, keyAlgorithm,
-            false, true);
+        /*
+         * TODO[tls13] Is there more to do around these restrictions?
+         * 
+         * RFC 8446 4.2.3. Endpoints SHOULD NOT negotiate these algorithms but are permitted to do
+         * so solely for backward compatibility. Clients offering these values MUST list them as the
+         * lowest priority (listed after all other algorithms in SignatureSchemeList). TLS 1.3
+         * servers MUST NOT offer a SHA-1 signed certificate unless no valid certificate chain can
+         * be produced without it [..].
+         */
+        addSignatureSchemeDeprecated(isFipsContext, crypto, ng, ss, signatureScheme, jcaSignatureAlgorithm, keyAlgorithm);
     }
 
     private static Map<Integer, SignatureSchemeInfo> createIndex(boolean isFipsContext, JcaTlsCrypto crypto,
         NamedGroupInfo.PerContext ng)
     {
         Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
-
-        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha256, "SHA256withRSA", "RSA");
-        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha384, "SHA384withRSA", "RSA");
-        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA", "RSA");
 
         addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.ecdsa_secp256r1_sha256, "SHA256withECDSA",
             "EC");
@@ -324,6 +335,13 @@ class SignatureSchemeInfo
 //            "RSASSA-PSS");
 //        addSignatureScheme(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pss_pss_sha512, "SHA512withRSAandMGF1",
 //            "RSASSA-PSS");
+
+        addSignatureSchemeDeprecated(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha256, "SHA256withRSA",
+            "RSA");
+        addSignatureSchemeDeprecated(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha384, "SHA384withRSA",
+            "RSA");
+        addSignatureSchemeDeprecated(isFipsContext, crypto, ng, ss, SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA",
+            "RSA");
 
         /*
          * Legacy algorithms: "These values refer solely to signatures which appear in certificates
