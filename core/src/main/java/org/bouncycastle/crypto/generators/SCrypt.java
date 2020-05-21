@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.Salsa20Engine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -83,11 +84,22 @@ public class SCrypt
 
             Pack.littleEndianToInt(bytes, 0, B);
 
+            /*
+             * Chunk memory allocations; We choose 'd' so that there will be 2**d chunks, each not
+             * larger than 32KiB, except that the minimum chunk size is 2 * r * 32.
+             */
+            int d = 0, total = N * r;
+            while ((N - d) > 2 && total > (1 << 10))
+            {
+                ++d;
+                total >>>= 1;
+            }
+
             int MFLenWords = MFLenBytes >>> 2;
             for (int BOff = 0; BOff < BLen; BOff += MFLenWords)
             {
                 // TODO These can be done in parallel threads
-                SMix(B, BOff, N, r);
+                SMix(B, BOff, N, d, r);
             }
 
             Pack.intToLittleEndian(B, bytes, 0);
@@ -109,8 +121,12 @@ public class SCrypt
         return key.getKey();
     }
 
-    private static void SMix(int[] B, int BOff, int N, int r)
+    private static void SMix(int[] B, int BOff, int N, int d, int r)
     {
+        int powN = Integers.numberOfTrailingZeros(N);
+        int blocksPerChunk = N >>> d;
+        int chunkCount = 1 << d, chunkMask = blocksPerChunk - 1, chunkPow = powN - d;
+
         int BCount = r * 32;
 
         int[] blockX1 = new int[16];
@@ -118,28 +134,36 @@ public class SCrypt
         int[] blockY = new int[BCount];
 
         int[] X = new int[BCount];
-        int[] V = new int[N * BCount];
+        int[][] VV = new int[chunkCount][];
 
         try
         {
             System.arraycopy(B, BOff, X, 0, BCount);
 
-            int off = 0;
-            for (int i = 0; i < N; i += 2)
+            for (int c = 0; c < chunkCount; ++c)
             {
-                System.arraycopy(X, 0, V, off, BCount);
-                off += BCount;
-                BlockMix(X, blockX1, blockX2, blockY, r);
-                System.arraycopy(blockY, 0, V, off, BCount);
-                off += BCount;
-                BlockMix(blockY, blockX1, blockX2, X, r);
+                int[] V = new int[blocksPerChunk * BCount];
+                VV[c] = V;
+
+                int off = 0;
+                for (int i = 0; i < blocksPerChunk; i += 2)
+                {
+                    System.arraycopy(X, 0, V, off, BCount);
+                    off += BCount;
+                    BlockMix(X, blockX1, blockX2, blockY, r);
+                    System.arraycopy(blockY, 0, V, off, BCount);
+                    off += BCount;
+                    BlockMix(blockY, blockX1, blockX2, X, r);
+                }
             }
 
             int mask = N - 1;
             for (int i = 0; i < N; ++i)
             {
                 int j = X[BCount - 16] & mask;
-                System.arraycopy(V, j * BCount, blockY, 0, BCount);
+                int[] V = VV[j >>> chunkPow];
+                int VOff = (j & chunkMask) * BCount;
+                System.arraycopy(V, VOff, blockY, 0, BCount);
                 Xor(blockY, X, 0, blockY);
                 BlockMix(blockY, blockX1, blockX2, X, r);
             }
@@ -148,7 +172,7 @@ public class SCrypt
         }
         finally
         {
-            Clear(V);
+            ClearAll(VV);
             ClearAll(new int[][]{X, blockX1, blockX2, blockY});
         }
     }
