@@ -16,8 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -33,19 +37,32 @@ class ProvAlgorithmChecker
     static final int KU_KEY_AGREEMENT = 4;
 
     private static final Map<String, String> sigAlgNames = createSigAlgNames();
+    private static Map<ASN1ObjectIdentifier, String> sigAlgNamesPSS = createSigAlgNamesPSS();
     private static final Set<String> sigAlgNoParams = createSigAlgNoParams();
 
     private static final byte[] DER_NULL_ENCODING = new byte[]{ 0x05, 0x00 };
 
     private static Map<String, String> createSigAlgNames()
     {
-        Map<String, String> names = new HashMap<String, String>();
+        Map<String, String> names = new HashMap<String, String>(4);
 
-        // TODO[jsse] We may need more mappings (from sigAlgOID) here for SunJSSE compatibility (e.g. RSASSA-PSS?)
         names.put(EdECObjectIdentifiers.id_Ed25519.getId(), "Ed25519");
         names.put(EdECObjectIdentifiers.id_Ed448.getId(), "Ed448");
         names.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "SHA1withDSA");
         names.put(X9ObjectIdentifiers.id_dsa_with_sha1.getId(), "SHA1withDSA");
+
+        return Collections.unmodifiableMap(names);
+    }
+
+    private static Map<ASN1ObjectIdentifier, String> createSigAlgNamesPSS()
+    {
+        Map<ASN1ObjectIdentifier, String> names = new HashMap<ASN1ObjectIdentifier, String>(3);
+
+//        names.put(OIWObjectIdentifiers.idSHA1, "SHA1withRSAandMGF1");
+//        names.put(NISTObjectIdentifiers.id_sha224, "SHA224withRSAandMGF1");
+        names.put(NISTObjectIdentifiers.id_sha256, "SHA256withRSAandMGF1");
+        names.put(NISTObjectIdentifiers.id_sha384, "SHA384withRSAandMGF1");
+        names.put(NISTObjectIdentifiers.id_sha512, "SHA512withRSAandMGF1");
 
         return Collections.unmodifiableMap(names);
     }
@@ -276,10 +293,32 @@ class ProvAlgorithmChecker
 
     static String getSigAlgName(X509Certificate cert)
     {
-        String sigAlgName = sigAlgNames.get(cert.getSigAlgOID());
-        if (null != sigAlgName)
+        String sigAlgOID = cert.getSigAlgOID();
+
+        // Enforce/provide standard names for some OIDs
         {
-            return sigAlgName;
+            String sigAlgName = sigAlgNames.get(sigAlgOID);
+            if (null != sigAlgName)
+            {
+                return sigAlgName;
+            }
+        }
+
+        /*
+         * For the PSS OID, the name requires inspecting the parameters. We also want to ensure the
+         * returned name is of the "...andMGF1" form rather than just "RSASSA-PSS".
+         */
+        if (PKCSObjectIdentifiers.id_RSASSA_PSS.getId().equals(sigAlgOID))
+        {
+            RSASSAPSSparams pssParams = RSASSAPSSparams.getInstance(cert.getSigAlgParams());
+            if (null != pssParams)
+            {
+                String sigAlgName = sigAlgNamesPSS.get(pssParams.getHashAlgorithm().getAlgorithm());
+                if (null != sigAlgName)
+                {
+                    return sigAlgName;
+                }
+            }
         }
 
         return cert.getSigAlgName();
