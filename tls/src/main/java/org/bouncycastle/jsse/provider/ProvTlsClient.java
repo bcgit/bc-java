@@ -171,7 +171,7 @@ class ProvTlsClient
         ContextData contextData = manager.getContextData();
         ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
 
-        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveCertsSignatureSchemes(sslParameters,
+        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveCertsSignatureSchemes(false, sslParameters,
             activeProtocolVersions, jsseSecurityParameters.namedGroups);
 
         jsseSecurityParameters.localSigSchemes = signatureSchemes;
