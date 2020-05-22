@@ -75,6 +75,7 @@ class SignatureSchemeInfo
 
         private final int signatureScheme;
         private final String name;
+        private final String text;
         private final String jcaSignatureAlgorithm;
         private final String keyAlgorithm;
         private final boolean supported13;
@@ -111,6 +112,7 @@ class SignatureSchemeInfo
         {
             this.signatureScheme = signatureScheme;
             this.name = name;
+            this.text = name + "(0x" + Integer.toHexString(signatureScheme) + ")";
             this.jcaSignatureAlgorithm = jcaSignatureAlgorithm;
             this.keyAlgorithm = keyAlgorithm;
             this.supported13 = supported13;
@@ -347,17 +349,6 @@ class SignatureSchemeInfo
         }
     }
 
-    private static Map<Integer, SignatureSchemeInfo> createIndex(boolean isFipsContext, JcaTlsCrypto crypto,
-        NamedGroupInfo.PerContext ng)
-    {
-        Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
-        for (All all : All.values())
-        {
-            addSignatureScheme(isFipsContext, crypto, ng, ss, all);
-        }
-        return ss;
-    }
-
     private static int[] createCandidates(Map<Integer, SignatureSchemeInfo> index, String propertyName)
     {
         String[] names = PropertyUtils.getStringArraySystemProperty(propertyName);
@@ -412,6 +403,17 @@ class SignatureSchemeInfo
             result[i] = values[i].signatureScheme;
         }
         return result;
+    }
+
+    private static Map<Integer, SignatureSchemeInfo> createIndex(boolean isFipsContext, JcaTlsCrypto crypto,
+        NamedGroupInfo.PerContext ng)
+    {
+        Map<Integer, SignatureSchemeInfo> ss = new TreeMap<Integer, SignatureSchemeInfo>();
+        for (All all : All.values())
+        {
+            addSignatureScheme(isFipsContext, crypto, ng, ss, all);
+        }
+        return ss;
     }
 
     private static int getSignatureSchemeByName(String name)
@@ -533,7 +535,7 @@ class SignatureSchemeInfo
     @Override
     public String toString()
     {
-        return all.name + "(0x" + Integer.toHexString(all.signatureScheme) + ")";
+        return all.text;
     }
 
     private boolean isNamedGroupOK(boolean pre13Allowed, boolean post13Allowed, NamedGroupInfo.PerConnection namedGroupInfos)
