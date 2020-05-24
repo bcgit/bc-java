@@ -250,7 +250,7 @@ class ProvTlsServer
         final ProtocolVersion negotiatedVersion = context.getServerVersion();
 
         // TODO[jsse] May want this selection to depend on the peer's supported_groups (create alternate method)?
-        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveCertsSignatureSchemes(sslParameters,
+        List<SignatureSchemeInfo> signatureSchemes = contextData.getActiveCertsSignatureSchemes(true, sslParameters,
             new ProtocolVersion[]{ negotiatedVersion }, jsseSecurityParameters.namedGroups);
 
         // TODO[tls13] From TLS 1.3 these are allowed to be different (no JSSE API to configure this though)

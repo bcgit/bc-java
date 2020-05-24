@@ -20,7 +20,6 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Strings;
 
 class NamedGroupInfo
 {
@@ -29,7 +28,70 @@ class NamedGroupInfo
     private static final String PROPERTY_NAMED_GROUPS = "jdk.tls.namedGroups";
 
     // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
-    private static final int[] DEFAULT_CANDIDATES = {
+    private enum All
+    {
+        sect163k1(NamedGroup.sect163k1, "EC"),
+        sect163r1(NamedGroup.sect163r1, "EC"),
+        sect163r2(NamedGroup.sect163r2, "EC"),
+        sect193r1(NamedGroup.sect193r1, "EC"),
+        sect193r2(NamedGroup.sect193r2, "EC"),
+        sect233k1(NamedGroup.sect233k1, "EC"),
+        sect233r1(NamedGroup.sect233r1, "EC"),
+        sect239k1(NamedGroup.sect239k1, "EC"),
+        sect283k1(NamedGroup.sect283k1, "EC"),
+        sect283r1(NamedGroup.sect283r1, "EC"),
+        sect409k1(NamedGroup.sect409k1, "EC"),
+        sect409r1(NamedGroup.sect409r1, "EC"),
+        sect571k1(NamedGroup.sect571k1, "EC"),
+        sect571r1(NamedGroup.sect571r1, "EC"),
+        secp160k1(NamedGroup.secp160k1, "EC"),
+        secp160r1(NamedGroup.secp160r1, "EC"),
+        secp160r2(NamedGroup.secp160r2, "EC"),
+        secp192k1(NamedGroup.secp192k1, "EC"),
+        secp192r1(NamedGroup.secp192r1, "EC"),
+        secp224k1(NamedGroup.secp224k1, "EC"),
+        secp224r1(NamedGroup.secp224r1, "EC"),
+        secp256k1(NamedGroup.secp256k1, "EC"),
+        secp256r1(NamedGroup.secp256r1, "EC"),
+        secp384r1(NamedGroup.secp384r1, "EC"),
+        secp521r1(NamedGroup.secp521r1, "EC"),
+
+        brainpoolP256r1(NamedGroup.brainpoolP256r1, "EC"),
+        brainpoolP384r1(NamedGroup.brainpoolP384r1, "EC"),
+        brainpoolP512r1(NamedGroup.brainpoolP512r1, "EC"),
+
+        x25519(NamedGroup.x25519, "XDH"),
+        x448(NamedGroup.x448, "XDH"),
+
+        ffdhe2048(NamedGroup.ffdhe2048, "DiffieHellman"),
+        ffdhe3072(NamedGroup.ffdhe3072, "DiffieHellman"),
+        ffdhe4096(NamedGroup.ffdhe4096, "DiffieHellman"),
+        ffdhe6144(NamedGroup.ffdhe6144, "DiffieHellman"),
+        ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman");
+
+        private final int namedGroup;
+        private final String name;
+        private final String text;
+        private final String jcaAlgorithm;
+        private final boolean char2;
+        private final boolean supported13;
+        private final int bitsECDH; 
+        private final int bitsFFDHE; 
+
+        private All(int namedGroup, String jcaAlgorithm)
+        {
+            this.namedGroup = namedGroup;
+            this.name = NamedGroup.getName(namedGroup);
+            this.text = name + "(" + namedGroup + ")";
+            this.jcaAlgorithm = jcaAlgorithm;
+            this.supported13 = NamedGroup.canBeNegotiated(namedGroup, ProtocolVersion.TLSv13);
+            this.char2 = NamedGroup.isChar2Curve(namedGroup);
+            this.bitsECDH = NamedGroup.getCurveBits(namedGroup);
+            this.bitsFFDHE = NamedGroup.getFiniteFieldBits(namedGroup);
+        }
+    }
+
+    private static final int[] CANDIDATES_DEFAULT = {
         NamedGroup.x25519,
         NamedGroup.x448,
         NamedGroup.secp256r1,
@@ -166,14 +228,18 @@ class NamedGroupInfo
         return -1;
     }
 
-    private static void addNamedGroup(boolean isFipsContext, JcaTlsCrypto crypto, Map<Integer, NamedGroupInfo> ng,
-        int namedGroup, String jcaAlgorithm, boolean supported13, boolean disable)
+    private static void addNamedGroup(boolean isFipsContext, JcaTlsCrypto crypto, boolean disableChar2,
+        boolean disableFFDHE, Map<Integer, NamedGroupInfo> ng, All all)
     {
+        final int namedGroup = all.namedGroup;
+
         if (isFipsContext && !FipsUtils.isFipsNamedGroup(namedGroup))
         {
             // In FIPS mode, non-FIPS groups are currently not even entered into the map
             return;
         }
+
+        boolean disable = (disableChar2 && all.char2) || (disableFFDHE && all.bitsFFDHE > 0);
 
         boolean enabled = !disable && crypto.hasNamedGroup(namedGroup);
 
@@ -191,21 +257,11 @@ class NamedGroupInfo
             }
         }
 
-        NamedGroupInfo namedGroupInfo = new NamedGroupInfo(namedGroup, jcaAlgorithm, algorithmParameters, supported13,
-            enabled);
+        NamedGroupInfo namedGroupInfo = new NamedGroupInfo(all, algorithmParameters, enabled);
 
         if (null != ng.put(namedGroup, namedGroupInfo))
         {
             throw new IllegalStateException("Duplicate entries for NamedGroupInfo");
-        }
-    }
-
-    private static void addNamedGroups(boolean isFipsContext, JcaTlsCrypto crypto, Map<Integer, NamedGroupInfo> ng,
-        String jcaAlgorithm, boolean supported13, boolean disable, int... namedGroups)
-    {
-        for (int namedGroup : namedGroups)
-        {
-            addNamedGroup(isFipsContext, crypto, ng, namedGroup, jcaAlgorithm, supported13, disable);
         }
     }
 
@@ -214,14 +270,14 @@ class NamedGroupInfo
         String[] names = PropertyUtils.getStringArraySystemProperty(PROPERTY_NAMED_GROUPS);
         if (null == names)
         {
-            return DEFAULT_CANDIDATES;
+            return CANDIDATES_DEFAULT;
         }
 
         int[] result = new int[names.length];
         int count = 0;
         for (String name : names)
         {
-            int namedGroup = NamedGroup.getByName(Strings.toLowerCase(name));
+            int namedGroup = getNamedGroupByName(name);
             if (namedGroup < 0)
             {
                 LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains unrecognised NamedGroup: " + name);
@@ -263,52 +319,10 @@ class NamedGroupInfo
 
         final boolean disableFFDHE = !PropertyUtils.getBooleanSystemProperty("jsse.enableFFDHE", true);
 
-        addNamedGroups(isFipsContext, crypto, ng, "EC", false, disableChar2,
-            NamedGroup.sect163k1,
-            NamedGroup.sect163r1,
-            NamedGroup.sect163r2,
-            NamedGroup.sect193r1,
-            NamedGroup.sect193r2,
-            NamedGroup.sect233k1,
-            NamedGroup.sect233r1,
-            NamedGroup.sect239k1,
-            NamedGroup.sect283k1,
-            NamedGroup.sect283r1,
-            NamedGroup.sect409k1,
-            NamedGroup.sect409r1,
-            NamedGroup.sect571k1,
-            NamedGroup.sect571r1);
-
-        addNamedGroups(isFipsContext, crypto, ng, "EC", false, false,
-            NamedGroup.secp160k1,
-            NamedGroup.secp160r1,
-            NamedGroup.secp160r2,
-            NamedGroup.secp192k1,
-            NamedGroup.secp192r1,
-            NamedGroup.secp224k1,
-            NamedGroup.secp224r1,
-            NamedGroup.secp256k1);
-
-        addNamedGroups(isFipsContext, crypto, ng, "EC", true, false,
-            NamedGroup.secp256r1,
-            NamedGroup.secp384r1,
-            NamedGroup.secp521r1);
-
-        addNamedGroups(isFipsContext, crypto, ng, "EC", false, false,
-            NamedGroup.brainpoolP256r1,
-            NamedGroup.brainpoolP384r1,
-            NamedGroup.brainpoolP512r1);
-
-        addNamedGroups(isFipsContext, crypto, ng, "XDH", true, false,
-            NamedGroup.x25519,
-            NamedGroup.x448);
-
-        addNamedGroups(isFipsContext, crypto, ng, "DiffieHellman", true, disableFFDHE,
-            NamedGroup.ffdhe2048,
-            NamedGroup.ffdhe3072,
-            NamedGroup.ffdhe4096,
-            NamedGroup.ffdhe6144,
-            NamedGroup.ffdhe8192);
+        for (All all : All.values())
+        {
+            addNamedGroup(isFipsContext, crypto, disableChar2, disableFFDHE, ng, all);
+        }
 
         return ng;
     }
@@ -370,6 +384,19 @@ class NamedGroupInfo
         return perConnection.local.values();
     }
 
+    private static int getNamedGroupByName(String name)
+    {
+        for (All all : All.values())
+        {
+            if (all.name.equalsIgnoreCase(name))
+            {
+                return all.namedGroup;
+            }
+        }
+
+        return -1;
+    }
+
     private static List<NamedGroupInfo> getNamedGroupInfos(Map<Integer, NamedGroupInfo> namedGroupInfos, int[] namedGroups)
     {
         if (null == namedGroups || namedGroups.length < 1)
@@ -397,57 +424,41 @@ class NamedGroupInfo
         return result;
     }
 
-    private final int namedGroup;
-    private final String name;
-    private final String jcaAlgorithm;
+    private final All all;
     private final AlgorithmParameters algorithmParameters;
-    private final boolean supported13;
     private final boolean enabled;
-    private final int bitsECDH; 
-    private final int bitsFFDHE; 
 
-    NamedGroupInfo(int namedGroup, String jcaAlgorithm, AlgorithmParameters algorithmParameters, boolean supported13,
-        boolean enabled)
+    NamedGroupInfo(All all, AlgorithmParameters algorithmParameters, boolean enabled)
     {
-        if (!TlsUtils.isValidUint16(namedGroup))
-        {
-            throw new IllegalArgumentException();
-        }
-
-        this.namedGroup = namedGroup;
-        this.name = NamedGroup.getName(namedGroup);
-        this.jcaAlgorithm = jcaAlgorithm;
+        this.all = all;
         this.algorithmParameters = algorithmParameters;
-        this.supported13 = supported13;
         this.enabled = enabled;
-        this.bitsECDH = NamedGroup.getCurveBits(namedGroup);
-        this.bitsFFDHE = NamedGroup.getFiniteFieldBits(namedGroup);
     }
 
     int getBitsECDH()
     {
-        return bitsECDH;
+        return all.bitsECDH;
     }
 
     int getBitsFFDHE()
     {
-        return bitsFFDHE;
+        return all.bitsFFDHE;
     }
 
     String getName()
     {
-        return name;
+        return all.name;
     }
 
     int getNamedGroup()
     {
-        return namedGroup;
+        return all.namedGroup;
     }
 
     boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean pre13Active, boolean post13Active)
     {
         return enabled
-            && (pre13Active || (post13Active && supported13))
+            && (pre13Active || (post13Active && isSupported13()))
             && isPermittedBy(algorithmConstraints);
     }
 
@@ -458,20 +469,20 @@ class NamedGroupInfo
 
     boolean isSupported13()
     {
-        return supported13;
+        return all.supported13;
     }
 
     @Override
     public String toString()
     {
-        return NamedGroup.getText(namedGroup);
+        return all.text;
     }
 
     private boolean isPermittedBy(BCAlgorithmConstraints algorithmConstraints)
     {
         Set<BCCryptoPrimitive> primitives = JsseUtils.KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC;
 
-        return algorithmConstraints.permits(primitives, name, null)
-            && algorithmConstraints.permits(primitives, jcaAlgorithm, algorithmParameters);
+        return algorithmConstraints.permits(primitives, all.name, null)
+            && algorithmConstraints.permits(primitives, all.jcaAlgorithm, algorithmParameters);
     }
 }

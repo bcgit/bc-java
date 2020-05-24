@@ -39,10 +39,10 @@ final class ContextData
         return NamedGroupInfo.createPerConnection(namedGroups, sslParameters, activeProtocolVersions);
     }
 
-    List<SignatureSchemeInfo> getActiveCertsSignatureSchemes(ProvSSLParameters sslParameters,
+    List<SignatureSchemeInfo> getActiveCertsSignatureSchemes(boolean isServer, ProvSSLParameters sslParameters,
         ProtocolVersion[] activeProtocolVersions, NamedGroupInfo.PerConnection namedGroups)
     {
-        return SignatureSchemeInfo.getActiveCertsSignatureSchemes(signatureSchemes, sslParameters,
+        return SignatureSchemeInfo.getActiveCertsSignatureSchemes(signatureSchemes, isServer, sslParameters,
             activeProtocolVersions, namedGroups);
     }
 
