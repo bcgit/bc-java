@@ -2,18 +2,18 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.Provider;
 import java.security.Security;
-import java.util.Locale;
 
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.util.Strings;
 
 class JcaUtils
 {
     static String getJcaAlgorithmName(SignatureAndHashAlgorithm algorithm)
     {
         return (HashAlgorithm.getName(algorithm.getHash()) + "WITH"
-            + SignatureAlgorithm.getName(algorithm.getSignature())).toUpperCase(Locale.ENGLISH);
+            + Strings.toUpperCase(SignatureAlgorithm.getName(algorithm.getSignature())));
     }
 
     static boolean isSunMSCAPIProviderActive()
