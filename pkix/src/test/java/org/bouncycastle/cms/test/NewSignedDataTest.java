@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -1544,37 +1545,37 @@ public class NewSignedDataTest
     public void testEd25519()
         throws Exception
     {
-        encapsulatedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519);
+        encapsulatedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
     }
 
     public void testEd448()
         throws Exception
     {
-        encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448);
+        encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512)));
     }
 
     public void testDetachedEd25519()
         throws Exception
     {
-        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519);
+        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
     }
 
     public void testEdDetached448()
         throws Exception
     {
-        detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448);
+        detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512)));
     }
 
     public void testEd25519WithNoAttr()
         throws Exception
     {
-        directSignatureTest(_signEd25519KP, _signEd25519Cert, "Ed25519");
+        directSignatureTest(_signEd25519KP, _signEd25519Cert, "Ed25519", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
     }
 
     public void testEd448WithNoAttr()
         throws Exception
     {
-        directSignatureTest(_signEd448KP, _signEd448Cert, "Ed448");
+        directSignatureTest(_signEd448KP, _signEd448Cert, "Ed448", new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256));
     }
 
     public void testSHA3_224WithDSAEncapsulated()
@@ -1947,7 +1948,8 @@ public class NewSignedDataTest
     private void directSignatureTest(
         KeyPair signaturePair,
         X509Certificate signatureCert,
-        String signatureAlgorithm)
+        String signatureAlgorithm,
+        AlgorithmIdentifier digAlgId)
     throws Exception
     {
         List              certList = new ArrayList();
@@ -1970,6 +1972,8 @@ public class NewSignedDataTest
         gen.addCertificates(certs);
 
         CMSSignedData s = gen.generate(msg, false);
+     
+        assertTrue(s.getDigestAlgorithmIDs().contains(digAlgId));
 
         verifySignatures(s, null);
     }
@@ -2089,6 +2093,17 @@ public class NewSignedDataTest
         ASN1ObjectIdentifier sigAlgOid)
         throws Exception
     {
+        encapsulatedTest(signaturePair, signatureCert, signatureAlgorithm, sigAlgOid, null);
+    }
+
+    private void encapsulatedTest(
+        KeyPair         signaturePair,
+        X509Certificate signatureCert,
+        String          signatureAlgorithm,
+        ASN1ObjectIdentifier sigAlgOid,
+        AlgorithmIdentifier digAlgId)
+    throws Exception
+    {
         List                certList = new ArrayList();
         List                crlList = new ArrayList();
         CMSTypedData        msg = new CMSProcessableByteArray("Hello World!".getBytes());
@@ -2107,19 +2122,23 @@ public class NewSignedDataTest
 
         gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(contentSigner, signatureCert));
 
-
         gen.addCertificates(certs);
     
         CMSSignedData s = gen.generate(msg, true);
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
         ASN1InputStream      aIn = new ASN1InputStream(bIn);
-        
+
         s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
 
         Set digestAlgorithms = new HashSet(s.getDigestAlgorithmIDs());
 
         assertTrue(digestAlgorithms.size() > 0);
+
+        if (digAlgId != null)
+        {
+            assertTrue(digestAlgorithms.contains(digAlgId));
+        }
 
         certs = s.getCertificates();
     
@@ -2219,6 +2238,17 @@ public class NewSignedDataTest
         ASN1ObjectIdentifier sigAlgOid)
         throws Exception
     {
+        detachedTest(signaturePair, signatureCert, signatureAlgorithm, sigAlgOid, null);
+    }
+
+    private void detachedTest(
+        KeyPair signaturePair,
+        X509Certificate signatureCert,
+        String signatureAlgorithm,
+        ASN1ObjectIdentifier sigAlgOid,
+        AlgorithmIdentifier digAlgId)
+        throws Exception
+    {
         List certList = new ArrayList();
         CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
 
@@ -2245,6 +2275,10 @@ public class NewSignedDataTest
 
         assertTrue(digestAlgorithms.size() > 0);
 
+        if (digAlgId != null)
+        {
+            assertTrue(digestAlgorithms.contains(digAlgId));
+        }
         certs = s.getCertificates();
 
         SignerInformationStore signers = s.getSignerInfos();

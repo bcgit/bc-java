@@ -122,6 +122,9 @@ public class NewSignedDataStreamTest
     private static X509CRL         _signCrl;
     private static X509CRL         _origCrl;
 
+    private static KeyPair         _signEd448KP;
+    private static X509Certificate _signEd448Cert;
+
     private static boolean         _initialised = false;
 
     public NewSignedDataStreamTest(String name)
@@ -164,6 +167,9 @@ public class NewSignedDataStreamTest
 
             _signCrl  = CMSTestUtil.makeCrl(_signKP);
             _origCrl  = CMSTestUtil.makeCrl(_origKP);
+
+            _signEd448KP   = CMSTestUtil.makeEd448KeyPair();
+            _signEd448Cert = CMSTestUtil.makeCertificate(_signEd448KP, _signDN, _origKP, _origDN);
         }
     }
     
@@ -766,6 +772,74 @@ public class NewSignedDataStreamTest
 
         sigOut.write(TEST_MESSAGE.getBytes());
         
+        sigOut.close();
+
+        CMSSignedData sd = new CMSSignedData(new CMSProcessableByteArray(TEST_MESSAGE.getBytes()), bOut.toByteArray());
+
+        assertEquals(1, sd.getSignerInfos().getSigners().size());
+
+        verifyEncodedData(bOut);
+    }
+
+    public void testEd448Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", false);
+    }
+
+    private void encapsulatedTest(
+        KeyPair signaturePair,
+        X509Certificate signatureCert,
+        String signatureAlgorithm,
+        boolean isDirect)
+        throws Exception
+    {
+        List certList = new ArrayList();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        certList.add(signatureCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+
+        ContentSigner signer = new JcaContentSignerBuilder(signatureAlgorithm).setProvider(BC).build(signaturePair.getPrivate());
+
+        gen.addSignerInfoGenerator(
+            new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder()
+                    .setProvider(BC)
+                    .build())
+                .setDirectSignature(isDirect).build(signer, signatureCert));
+
+        gen.addCertificates(certs);
+
+        OutputStream sigOut = gen.open(bOut, true);
+
+        sigOut.write(TEST_MESSAGE.getBytes());
+
+        sigOut.close();
+
+        CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), bOut.toByteArray());
+
+        sp.getSignedContent().drain();
+
+        verifySignatures(sp);
+
+        //
+        // try using existing signer
+        //
+        gen = new CMSSignedDataStreamGenerator();
+
+        gen.addSigners(sp.getSignerInfos());
+
+        gen.addCertificates(sp.getCertificates());
+
+        bOut.reset();
+
+        sigOut = gen.open(bOut, true);
+
+        sigOut.write(TEST_MESSAGE.getBytes());
+
         sigOut.close();
 
         CMSSignedData sd = new CMSSignedData(new CMSProcessableByteArray(TEST_MESSAGE.getBytes()), bOut.toByteArray());
