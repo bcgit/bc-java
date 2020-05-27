@@ -35,6 +35,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, TBD.
 <li>PKIXNameConstraintValidator had a bad cast preventing use of multiple OtherName constraints. This has been fixed.</li>
 <li>Serialisation of the non-CRT RSA Private Key could cause a NullPointerException. This has been fixed.</li>
 <li>An extra 4 bytes was included in the start of HSS public key encodings. This has been fixed.</li>
+<li>CMS with Ed448 using a direct signature was using id-shake256-len rather than id-shake256. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
