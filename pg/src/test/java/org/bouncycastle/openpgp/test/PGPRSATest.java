@@ -30,6 +30,7 @@ import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
+import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
 import org.bouncycastle.openpgp.PGPLiteralData;
@@ -53,6 +54,9 @@ import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVectorGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.PGPV3SignatureGenerator;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRing;
+import org.bouncycastle.openpgp.jcajce.JcaPGPSecretKeyRing;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -1261,14 +1265,98 @@ public class PGPRSATest
 
         secretKey = new PGPSecretKey(
                                 PGPSignature.DEFAULT_CERTIFICATION,
-                                new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, kp, new Date()), "fred",
+                                new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_SIGN, kp, new Date()), "fred",
                                 null, null, new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA1).setProvider("BC"),
                                 new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).build(passPhrase));
 
         secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase));
-        
+
         secretKey.encode(new ByteArrayOutputStream());
-        
+
+        //
+        // Add a subkey.
+        //
+
+        PBESecretKeyDecryptor masterDecryptor = new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase);
+        PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.SHA1);
+        JcePBESecretKeyEncryptorBuilder keyEncryptorBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
+        JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC");
+
+        // create an encryption sub-key
+
+        PGPSecretKey secretEncSubKey = new PGPSecretKey(
+                                secretKey.extractKeyPair(masterDecryptor),
+                                new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_ENCRYPT, kpg.generateKeyPair(), new Date()),
+                                checksumCalculator,
+                                null, null, certificationSignerBuilder,
+                                keyEncryptorBuilder.build(passPhrase));
+
+        // create a signing sub-key
+        JcaPGPKeyPair signSubKeyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_SIGN, kpg.generateKeyPair(), new Date());
+
+        PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
+            new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC"));
+        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, signSubKeyPair.getPrivateKey());
+
+        PGPSignatureSubpacketGenerator subGen = new PGPSignatureSubpacketGenerator();
+
+        subGen.setEmbeddedSignature(false, signatureGenerator.generateCertification(secretKey.getPublicKey(), signSubKeyPair.getPublicKey()));
+
+        PGPSecretKey secretSigSubKey = new PGPSecretKey(
+                                secretKey.extractKeyPair(masterDecryptor),
+                                signSubKeyPair,
+                                checksumCalculator,
+                                subGen.generate(), null, certificationSignerBuilder,
+                                keyEncryptorBuilder.build(passPhrase));
+
+        // build secret and public key rings out of the master key and subkey.
+        ByteArrayOutputStream sOut = new ByteArrayOutputStream();
+
+        secretKey.encode(sOut);
+
+        PGPSecretKeyRing sRing = new JcaPGPSecretKeyRing(sOut.toByteArray());
+
+        sOut = new ByteArrayOutputStream();
+
+        secretKey.getPublicKey().encode(sOut);
+
+        PGPPublicKeyRing pRing = new JcaPGPPublicKeyRing(sOut.toByteArray());
+
+        pRing = PGPPublicKeyRing.insertPublicKey(pRing, secretEncSubKey.getPublicKey());
+        sRing = PGPSecretKeyRing.insertSecretKey(sRing, secretEncSubKey);
+        pRing = PGPPublicKeyRing.insertPublicKey(pRing, secretSigSubKey.getPublicKey());
+        sRing = PGPSecretKeyRing.insertSecretKey(sRing, secretSigSubKey);
+
+        isTrue(pRing.getPublicKey(secretEncSubKey.getKeyID()) != null);
+        isTrue(sRing.getSecretKey(secretEncSubKey.getKeyID()) != null);
+        isTrue(pRing.getPublicKey(secretSigSubKey.getKeyID()) != null);
+        isTrue(sRing.getSecretKey(secretSigSubKey.getKeyID()) != null);
+
+        // check simplified constructor
+        secretSigSubKey = new PGPSecretKey(
+            secretKey.extractKeyPair(masterDecryptor),
+            signSubKeyPair,
+            checksumCalculator,
+            new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC"),
+            new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).build(passPhrase));
+
+        try
+        {
+            subGen = new PGPSignatureSubpacketGenerator();
+
+            secretSigSubKey = new PGPSecretKey(
+                secretKey.extractKeyPair(masterDecryptor),
+                signSubKeyPair,
+                checksumCalculator,
+                subGen.generate(), null, new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC"),
+                new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).build(passPhrase));
+            fail("no exception");
+        }
+        catch (PGPException e)
+        {
+             isEquals("signing subkey requires embedded PRIMARYKEY_BINDING signature", e.getMessage());
+        }
+
         //
         // secret key password changing.
         //

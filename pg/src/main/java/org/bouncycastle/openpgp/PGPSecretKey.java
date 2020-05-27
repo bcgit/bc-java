@@ -19,10 +19,12 @@ import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SecretSubkeyPacket;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
@@ -195,6 +197,102 @@ public class PGPSecretKey
         throws PGPException
     {
         this(certificationLevel, keyPair, id, null, hashedPcks, unhashedPcks, certificationSignerBuilder, keyEncryptor);
+    }
+
+    /**
+     * Construct a PGPSecretKey sub-key using the passed in private/public key pair and binding it to the master key pair.
+     * The secret key checksum is calculated using the passed in checksum calculator.
+     *
+     * @param masterKeyPair              the master public/private keys for the new subkey.
+     * @param keyPair                    the public/private keys to use.
+     * @param checksumCalculator         a calculator for the private key checksum
+     * @param certificationSignerBuilder the builder for generating the certification.
+     * @param keyEncryptor               an encryptor for the key if required (null otherwise).
+     * @throws PGPException if there is an issue creating the secret key packet or the certification.
+     */
+    public PGPSecretKey(
+        PGPKeyPair masterKeyPair,
+        PGPKeyPair keyPair,
+        PGPDigestCalculator checksumCalculator,
+        PGPContentSignerBuilder certificationSignerBuilder,
+        PBESecretKeyEncryptor keyEncryptor)
+        throws PGPException
+    {
+        this(masterKeyPair, keyPair, checksumCalculator, null, null, certificationSignerBuilder, keyEncryptor);
+    }
+
+    /**
+     * Construct a PGPSecretKey sub-key using the passed in private/public key pair and binding it to the master key pair.
+     * The secret key checksum is calculated using the passed in checksum calculator.
+     *
+     * @param masterKeyPair              the master public/private keys for the new subkey.
+     * @param keyPair                    the public/private keys to use.
+     * @param checksumCalculator         calculator for PGP key checksums.
+     * @param hashedPcks                 the hashed packets to be added to the certification.
+     * @param unhashedPcks               the unhashed packets to be added to the certification.
+     * @param certificationSignerBuilder the builder for generating the certification.
+     * @param keyEncryptor               an encryptor for the key if required (null otherwise).
+     * @throws PGPException if there is an issue creating the secret key packet or the certification.
+     */
+    public PGPSecretKey(
+        PGPKeyPair masterKeyPair,
+        PGPKeyPair keyPair,
+        PGPDigestCalculator checksumCalculator,
+        PGPSignatureSubpacketVector hashedPcks,
+        PGPSignatureSubpacketVector unhashedPcks,
+        PGPContentSignerBuilder certificationSignerBuilder,
+        PBESecretKeyEncryptor keyEncryptor)
+        throws PGPException
+    {
+        //
+        // generate the certification
+        //
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(certificationSignerBuilder);
+
+        sGen.init(PGPSignature.SUBKEY_BINDING, masterKeyPair.getPrivateKey());
+
+        // do some basic checking if we are a signing key.
+        if (!keyPair.getPublicKey().isEncryptionKey())
+        {
+            if (hashedPcks == null)
+            {
+                PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(certificationSignerBuilder);
+
+                signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, keyPair.getPrivateKey());
+
+                PGPSignatureSubpacketGenerator subGen = new PGPSignatureSubpacketGenerator();
+
+                try
+                {
+                    subGen.setEmbeddedSignature(false, signatureGenerator.generateCertification(masterKeyPair.getPublicKey(), keyPair.getPublicKey()));
+
+                    hashedPcks = subGen.generate();
+                }
+                catch (IOException e)
+                {
+                    throw new PGPException(e.getMessage(), e);
+                }
+            }
+            else if (!hashedPcks.hasSubpacket(SignatureSubpacketTags.EMBEDDED_SIGNATURE))
+            {
+                throw new PGPException("signing subkey requires embedded PRIMARYKEY_BINDING signature");
+            }
+        }
+
+        sGen.setHashedSubpackets(hashedPcks);
+        sGen.setUnhashedSubpackets(unhashedPcks);
+
+        List subSigs = new ArrayList();
+
+        subSigs.add(sGen.generateCertification(masterKeyPair.getPublicKey(), keyPair.getPublicKey()));
+
+        // replace the public key packet structure with a public subkey one.
+        PGPPublicKey pubSubKey = new PGPPublicKey(keyPair.getPublicKey(), null, subSigs);
+
+        pubSubKey.publicPk = new PublicSubkeyPacket(pubSubKey.getAlgorithm(), pubSubKey.getCreationTime(), pubSubKey.publicPk.getKey());
+
+        this.pub = pubSubKey;
+        this.secret = buildSecretKeyPacket(false, keyPair.getPrivateKey(), keyPair.getPublicKey(), keyEncryptor, checksumCalculator);
     }
 
     /**
@@ -475,6 +573,20 @@ public class PGPSecretKey
         }
 
         return data;
+    }
+
+    /**
+     * Extract a PGPPrivate key from the SecretKey's encrypted contents.
+     *
+     * @param decryptorFactory factory to use to generate a decryptor for the passed in secretKey.
+     * @return PGPPrivateKey  the unencrypted private key.
+     * @throws PGPException on failure.
+     */
+    public PGPKeyPair extractKeyPair(
+        PBESecretKeyDecryptor decryptorFactory)
+        throws PGPException
+    {
+        return new PGPKeyPair(this.getPublicKey(), this.extractPrivateKey(decryptorFactory));
     }
 
     /**
