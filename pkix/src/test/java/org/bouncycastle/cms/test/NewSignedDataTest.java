@@ -574,7 +574,7 @@ public class NewSignedDataTest
             + "HxxN0ZjpoIEiPa+NIth1W+W3Z7yt4JUM/zX0iyhza/bPHbPOLrsXZAhGy/qn"
             + "/JNmKBiVxuxZYYHI20CZHrgjb+ARczWuOJuBVEGEgbW/t7hMVX8X+MPAzZek"
             + "Ndi9ZfkurEeYdDpGluYBH910/P95ibG8nrJyTaoxhmOJhJ/o/SO54m8oDlI0");
-
+                                                     List crlList = new ArrayList();
     private static final Set noParams = new HashSet();
 
     static
@@ -1553,6 +1553,30 @@ public class NewSignedDataTest
         encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448);
     }
 
+    public void testDetachedEd25519()
+        throws Exception
+    {
+        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519);
+    }
+
+    public void testEdDetached448()
+        throws Exception
+    {
+        detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448);
+    }
+
+    public void testEd25519WithNoAttr()
+        throws Exception
+    {
+        directSignatureTest(_signEd25519KP, _signEd25519Cert, "Ed25519");
+    }
+
+    public void testEd448WithNoAttr()
+        throws Exception
+    {
+        directSignatureTest(_signEd448KP, _signEd448Cert, "Ed448");
+    }
+
     public void testSHA3_224WithDSAEncapsulated()
         throws Exception
     {
@@ -1920,6 +1944,36 @@ public class NewSignedDataTest
         verifySignatures(s, md.digest("Hello world!".getBytes()));
     }
 
+    private void directSignatureTest(
+        KeyPair signaturePair,
+        X509Certificate signatureCert,
+        String signatureAlgorithm)
+    throws Exception
+    {
+        List              certList = new ArrayList();
+        CMSTypedData      msg = new CMSProcessableByteArray("Hello world!".getBytes());
+
+        certList.add(signatureCert);
+
+        Store           certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        ContentSigner contentSigner = new JcaContentSignerBuilder(signatureAlgorithm).setProvider(BC).build(signaturePair.getPrivate());
+
+        JcaSignerInfoGeneratorBuilder siBuilder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        siBuilder.setDirectSignature(true);
+
+        gen.addSignerInfoGenerator(siBuilder.build(contentSigner, signatureCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, false);
+
+        verifySignatures(s, null);
+    }
+
     private void subjectKeyIDTest(
         KeyPair         signaturePair,
         X509Certificate signatureCert,
@@ -2155,6 +2209,118 @@ public class NewSignedDataTest
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
         }
         
+        checkSignerStoreReplacement(s, signers);
+    }
+
+    private void detachedTest(
+        KeyPair signaturePair,
+        X509Certificate signatureCert,
+        String signatureAlgorithm,
+        ASN1ObjectIdentifier sigAlgOid)
+        throws Exception
+    {
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(signatureCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        ContentSigner contentSigner = new JcaContentSignerBuilder(signatureAlgorithm).setProvider(BC).build(signaturePair.getPrivate());
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(contentSigner, signatureCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(bIn);
+
+        s = new CMSSignedData(msg, ContentInfo.getInstance(aIn.readObject()));
+
+        Set digestAlgorithms = new HashSet(s.getDigestAlgorithmIDs());
+
+        assertTrue(digestAlgorithms.size() > 0);
+
+        certs = s.getCertificates();
+
+        SignerInformationStore signers = s.getSignerInfos();
+        Collection c = signers.getSigners();
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certs.getMatches(signer.getSID());
+
+            Iterator certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            if (sigAlgOid != null)
+            {
+                assertEquals(sigAlgOid.getId(), signer.getEncryptionAlgOID());
+                if (noParams.contains(sigAlgOid))
+                {
+                    assertNull(signer.getEncryptionAlgParams());
+                }
+                else
+                {
+                    assertEquals(DERNull.INSTANCE, ASN1Primitive.fromByteArray(signer.getEncryptionAlgParams()));
+                }
+            }
+
+            digestAlgorithms.remove(signer.getDigestAlgorithmID());
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+        }
+
+        assertTrue(digestAlgorithms.size() == 0);
+
+        //
+        // check signer information lookup
+        //
+
+        SignerId sid = new JcaSignerId(signatureCert);
+
+        Collection collection = signers.getSigners(sid);
+
+        assertEquals(1, collection.size());
+        assertTrue(collection.iterator().next() instanceof SignerInformation);
+
+        //
+        // try using existing signer
+        //
+
+        gen = new CMSSignedDataGenerator();
+
+        gen.addSigners(s.getSignerInfos());
+
+        gen.addCertificates(s.getCertificates());
+
+        s = gen.generate(msg);
+        
+        s = new CMSSignedData(msg, s.getEncoded());
+
+        certs = s.getCertificates();
+
+        signers = s.getSignerInfos();
+        c = signers.getSigners();
+        it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certs.getMatches(signer.getSID());
+
+            Iterator certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+        }
+
         checkSignerStoreReplacement(s, signers);
     }
 
