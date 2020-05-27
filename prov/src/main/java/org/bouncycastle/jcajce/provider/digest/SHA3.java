@@ -229,6 +229,10 @@ public class SHA3
             provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_512, PREFIX + "$Digest512");
             provider.addAlgorithm("MessageDigest.SHAKE256-512", PREFIX + "$DigestShake256_512");
             provider.addAlgorithm("MessageDigest.SHAKE128-256", PREFIX + "$DigestShake128_256");
+            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_shake256, PREFIX + "$DigestShake256_512");
+            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_shake128, PREFIX + "$DigestShake128_256");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.SHAKE256", "SHAKE256-512");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.SHAKE128", "SHAKE128-256");
 
             addHMACAlgorithm(provider, "SHA3-224", PREFIX + "$HashMac224",  PREFIX + "$KeyGenerator224");
             addHMACAlias(provider, "SHA3-224", NISTObjectIdentifiers.id_hmacWithSHA3_224);
