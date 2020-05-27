@@ -11,17 +11,20 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 public class JcaPGPSecretKeyRing
     extends PGPSecretKeyRing
 {
-    private static KeyFingerPrintCalculator fingerPrintCalculator = new JcaKeyFingerprintCalculator();
+    private static KeyFingerPrintCalculator getFingerPrintCalculator()
+    {
+        return new JcaKeyFingerprintCalculator();
+    }
 
     public JcaPGPSecretKeyRing(byte[] encoding)
         throws IOException, PGPException
     {
-        super(encoding, fingerPrintCalculator);
+        super(encoding, getFingerPrintCalculator());
     }
 
     public JcaPGPSecretKeyRing(InputStream in)
         throws IOException, PGPException
     {
-        super(in, fingerPrintCalculator);
+        super(in, getFingerPrintCalculator());
     }
 }
