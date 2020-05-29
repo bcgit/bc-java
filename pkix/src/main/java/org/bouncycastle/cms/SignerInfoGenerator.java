@@ -232,12 +232,12 @@ public class SignerInfoGenerator
                 unsignedAttr = getAttributeSet(unsigned);
             }
 
-            if (EdECObjectIdentifiers.id_Ed448.equals(digestEncryptionAlgorithm.getAlgorithm()))
+            if (sAttrGen == null)
             {
                 // RFC 8419, Section 3.2 - needs to be shake-256, not shake-256-len
-                if (sAttrGen == null)
+                if (EdECObjectIdentifiers.id_Ed448.equals(digestEncryptionAlgorithm.getAlgorithm()))
                 {
-                      digestAlg = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+                    digestAlg = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
                 }
             }
             
