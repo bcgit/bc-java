@@ -111,6 +111,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.symmetric;
     exports org.bouncycastle.jcajce.provider.symmetric.util;
     exports org.bouncycastle.jcajce.provider.util;
+    exports org.bouncycastle.jcajce.interfaces;
     exports org.bouncycastle.jcajce.spec;
     exports org.bouncycastle.jcajce.util;
     exports org.bouncycastle.jce;
