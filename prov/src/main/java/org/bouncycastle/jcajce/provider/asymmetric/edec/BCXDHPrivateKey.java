@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.PrivateKey;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -47,7 +46,14 @@ public class BCXDHPrivateKey
     private void populateFromPrivateKeyInfo(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        ASN1Encodable keyOcts = keyInfo.parsePrivateKey();
+        ASN1OctetString keyOcts = keyInfo.getPrivateKey();
+        byte[] infoOcts = keyOcts.getOctets();
+
+        if (infoOcts.length != 32 && infoOcts.length != 56) // exact length of X25519/X448 secret used in Java 11
+        {
+            keyOcts = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
+        }
+
         if (EdECObjectIdentifiers.id_X448.equals(keyInfo.getPrivateKeyAlgorithm().getAlgorithm()))
         {
             xdhPrivateKey = new X448PrivateKeyParameters(ASN1OctetString.getInstance(keyOcts).getOctets(), 0);
