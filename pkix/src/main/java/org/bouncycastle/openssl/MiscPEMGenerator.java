@@ -131,7 +131,9 @@ public class MiscPEMGenerator
             }
             else
             {
-                throw new IOException("Cannot identify private key");
+                type = "PRIVATE KEY";
+
+                encoding = info.getEncoded();
             }
         }
         else if (o instanceof SubjectPublicKeyInfo)
