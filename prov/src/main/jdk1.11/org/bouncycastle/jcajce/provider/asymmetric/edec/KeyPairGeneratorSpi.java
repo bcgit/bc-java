@@ -19,7 +19,9 @@ import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
+import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
+import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
@@ -165,7 +167,6 @@ public class KeyPairGeneratorSpi
             {
                 throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
             }
-            this.algorithm = algorithm;
         }
     }
 
@@ -212,19 +213,15 @@ public class KeyPairGeneratorSpi
 
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
 
-        switch (algorithm)
+        if (kp.getPrivate() instanceof X448PrivateKeyParameters
+            || kp.getPrivate() instanceof X25519PrivateKeyParameters)
         {
-        case Ed448:
-            return new KeyPair(new BCEdDSAPublicKey(kp.getPublic()), new BCEdDSAPrivateKey(kp.getPrivate()));
-        case Ed25519:
-            return new KeyPair(new BCEdDSAPublicKey(kp.getPublic()), new BCEdDSAPrivateKey(kp.getPrivate()));
-        case X448:
-            return new KeyPair(new BC11XDHPublicKey(kp.getPublic()), new BC11XDHPrivateKey(kp.getPrivate()));
-        case X25519:
             return new KeyPair(new BC11XDHPublicKey(kp.getPublic()), new BC11XDHPrivateKey(kp.getPrivate()));
         }
-
-        throw new IllegalStateException("generator not correctly initialized");
+        else
+        {
+            return new KeyPair(new BCEdDSAPublicKey(kp.getPublic()), new BCEdDSAPrivateKey(kp.getPrivate()));
+        }
     }
 
     private void setupGenerator(int algorithm)
