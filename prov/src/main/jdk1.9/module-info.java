@@ -1,4 +1,4 @@
-module org.bouncycastle.providejcajce
+module org.bouncycastle.provider
 {
     requires java.sql;
     requires java.naming;
