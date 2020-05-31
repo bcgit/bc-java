@@ -12,7 +12,9 @@ import java.security.spec.NamedParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.bouncycastle.jcajce.interfaces.XDHPrivateKey;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -136,5 +138,16 @@ public class XDHKeyTest
             publicKey instanceof XECPublicKey);
         assertTrue(
             privateKey instanceof XECPrivateKey);
+    }
+
+    public static void main(String args[])
+    {
+        junit.textui.TestRunner.run(XDHKeyTest.class);
+    }
+
+    public static Test suite()
+        throws Exception
+    {
+        return new TestSuite(XDHKeyTest.class);
     }
 }
