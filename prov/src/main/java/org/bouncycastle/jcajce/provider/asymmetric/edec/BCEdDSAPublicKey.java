@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -18,7 +19,7 @@ public class BCEdDSAPublicKey
 {
     static final long serialVersionUID = 1L;
 
-    private transient AsymmetricKeyParameter eddsaPublicKey;
+    transient AsymmetricKeyParameter eddsaPublicKey;
 
     BCEdDSAPublicKey(AsymmetricKeyParameter pubKey)
     {
@@ -119,12 +120,12 @@ public class BCEdDSAPublicKey
             return true;
         }
 
-        if (!(o instanceof BCEdDSAPublicKey))
+        if (!(o instanceof PublicKey))
         {
             return false;
         }
 
-        BCEdDSAPublicKey other = (BCEdDSAPublicKey)o;
+        PublicKey other = (PublicKey)o;
 
         return Arrays.areEqual(other.getEncoded(), this.getEncoded());
     }
