@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -22,7 +23,7 @@ public class BCEdDSAPrivateKey
 {
     static final long serialVersionUID = 1L;
     
-    private transient AsymmetricKeyParameter eddsaPrivateKey;
+    transient AsymmetricKeyParameter eddsaPrivateKey;
 
     private final boolean hasPublicKey;
     private final byte[] attributes;
@@ -127,12 +128,12 @@ public class BCEdDSAPrivateKey
             return true;
         }
 
-        if (!(o instanceof BCEdDSAPrivateKey))
+        if (!(o instanceof PrivateKey))
         {
             return false;
         }
 
-        BCEdDSAPrivateKey other = (BCEdDSAPrivateKey)o;
+        PrivateKey other = (PrivateKey)o;
 
         return Arrays.areEqual(other.getEncoded(), this.getEncoded());
     }
