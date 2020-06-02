@@ -175,6 +175,11 @@ public class PrivateKeyInfo
         }
     }
 
+    public ASN1Integer getVersion()
+    {
+        return version;
+    }
+
     public ASN1Set getAttributes()
     {
         return attributes;
