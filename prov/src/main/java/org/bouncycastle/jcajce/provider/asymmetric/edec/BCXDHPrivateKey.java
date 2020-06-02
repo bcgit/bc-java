@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jcajce.interfaces.XDHPrivateKey;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class BCXDHPrivateKey
     implements XDHPrivateKey
@@ -81,7 +82,7 @@ public class BCXDHPrivateKey
             ASN1Set attrSet = ASN1Set.getInstance(attributes);
             PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(xdhPrivateKey, attrSet);
 
-            if (hasPublicKey)
+            if (hasPublicKey && !Properties.isOverrideSet("org.bouncycastle.pkcs8.v1_info_only"))
             {
                 return privInfo.getEncoded();
             }

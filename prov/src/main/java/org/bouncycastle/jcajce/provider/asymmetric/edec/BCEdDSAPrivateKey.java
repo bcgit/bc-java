@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class BCEdDSAPrivateKey
     implements EdDSAPrivateKey
@@ -75,7 +76,7 @@ public class BCEdDSAPrivateKey
             ASN1Set attrSet = ASN1Set.getInstance(attributes);
             PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(eddsaPrivateKey, attrSet);
 
-            if (hasPublicKey)
+            if (hasPublicKey && !Properties.isOverrideSet("org.bouncycastle.pkcs8.v1_info_only"))
             {
                 return privInfo.getEncoded();
             }
