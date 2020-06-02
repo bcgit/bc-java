@@ -12,6 +12,7 @@ import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -74,6 +75,30 @@ public class ECEncodingTest
         ks[1] = k2;
         ks[2] = k1;
     }
+
+    private void testPointCompressionProperty()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        byte[] enc1 = kp.getPublic().getEncoded();
+
+        System.setProperty("org.bouncycastle.ec.enable_pc", "true");
+
+        byte[] enc2 = kp.getPublic().getEncoded();
+
+        isTrue(enc2.length == enc1.length - 32);
+
+        System.setProperty("org.bouncycastle.ec.enable_pc", "false");
+
+        byte[] enc3 = kp.getPublic().getEncoded();
+
+        isTrue(areEqual(enc1, enc3));
+    }
     
     public void performTest()
         throws Exception
@@ -94,6 +119,7 @@ public class ECEncodingTest
         testParams(ecParams, false);
         
         testPointCompression();
+        testPointCompressionProperty();
     }
     
     private void testParams(byte[] ecParameterEncoded, boolean compress)
