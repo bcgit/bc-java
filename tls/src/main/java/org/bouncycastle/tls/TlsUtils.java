@@ -94,8 +94,6 @@ public class TlsUtils
         addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_512, HashAlgorithm.sha512, SignatureAlgorithm.ecdsa);
         addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_RSA_v1_5_SHA_1, HashAlgorithm.sha1, SignatureAlgorithm.rsa);
         addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_RSA_v1_5_SHA_256, HashAlgorithm.sha256, SignatureAlgorithm.rsa);
-        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_RSA_PSS_SHA_256, HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha256);
-        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_RSA_PSS_SHA_512, HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha512);
 
         addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA1, HashAlgorithm.sha1, SignatureAlgorithm.ecdsa);
         addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA224, HashAlgorithm.sha224, SignatureAlgorithm.ecdsa);
@@ -1478,6 +1476,10 @@ public class TlsUtils
         return calculateEndPointHash(context, sigAlgOID, enc, 0, enc.length);
     }
 
+    /*
+     * TODO[tls13] Check relevance of endpoint hash in TLS 1.3; if still exists, what about
+     * signature schemes using Intrinsic hash?
+     */
     static byte[] calculateEndPointHash(TlsContext context, String sigAlgOID, byte[] enc, int encOff, int encLen)
     {
         if (sigAlgOID != null)
@@ -4456,6 +4458,7 @@ public class TlsUtils
 
     static SignatureAndHashAlgorithm getCertSigAndHashAlg(String sigAlgOID)
     {
+        // TODO[tls13] This isn't working for the 6 RSA/PSS signature schemes;
         return (SignatureAndHashAlgorithm)CERT_SIG_ALG_OIDS.get(sigAlgOID);
     }
 
