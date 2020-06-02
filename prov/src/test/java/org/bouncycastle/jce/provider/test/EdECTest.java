@@ -30,9 +30,11 @@ import java.util.Set;
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
@@ -118,6 +120,8 @@ public class EdECTest
 
         c = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(EdECTest.x25519Cert));
 
+        testPKCS8Override();
+        
         x448AgreementTest();
         x25519AgreementTest();
         ed448SignatureTest();
@@ -635,6 +639,58 @@ public class EdECTest
         signature.update(msg);
 
         isTrue(signature.verify(sig));
+    }
+
+    private void testPKCS8Override()
+        throws Exception
+    {
+        System.setProperty("org.bouncycastle.pkcs8.v1_info_only", "true");
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EdDSA", "BC");
+
+        kpGen.initialize(448);
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PrivateKeyInfo info = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
+
+        isTrue(info.getPublicKeyData() == null);
+        isTrue(info.getVersion().equals(new ASN1Integer(0)));
+
+        kpGen = KeyPairGenerator.getInstance("XDH", "BC");
+
+        kpGen.initialize(448);
+
+        kp = kpGen.generateKeyPair();
+
+        info = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
+
+        isTrue(info.getPublicKeyData() == null);
+        isTrue(info.getVersion().equals(new ASN1Integer(0)));
+
+        System.setProperty("org.bouncycastle.pkcs8.v1_info_only", "false");
+
+        kpGen = KeyPairGenerator.getInstance("EdDSA", "BC");
+
+        kpGen.initialize(448);
+
+        kp = kpGen.generateKeyPair();
+
+        info = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
+
+        isTrue(info.getPublicKeyData() != null);
+        isTrue(info.getVersion().equals(new ASN1Integer(1)));
+
+        kpGen = KeyPairGenerator.getInstance("XDH", "BC");
+
+        kpGen.initialize(448);
+
+        kp = kpGen.generateKeyPair();
+
+        info = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
+
+        isTrue(info.getPublicKeyData() != null);
+        isTrue(info.getVersion().equals(new ASN1Integer(1)));
     }
 
     public static void main(
