@@ -53,11 +53,6 @@ class TlsTestServerImpl
         return firstFatalAlertDescription;
     }
 
-    public boolean shouldCheckSigAlgOfPeerCerts()
-    {
-        return config.serverCheckSigAlgOfClientCerts;
-    }
-
     public TlsCrypto getCrypto()
     {
         switch (config.serverCrypto)
@@ -208,6 +203,16 @@ class TlsTestServerImpl
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
+
+        /*
+         * NOTE: Real implementations would need to construct a proper CertPath; certificates in the
+         * on-wire chain (after the first) are not required to be in any kind of order, or form a
+         * complete CertPath, or be unique etc.
+         */
+        if (config.serverCheckSigAlgOfClientCerts)
+        {
+            TlsUtils.checkPeerSigAlgs(context, chain);
+        }
     }
 
     protected Vector getSupportedSignatureAlgorithms()
@@ -224,15 +229,15 @@ class TlsTestServerImpl
 
     protected TlsCredentialedSigner getDSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.dsa);
+        return loadSignerCredentials(SignatureAlgorithm.dsa);
     }
 
     protected TlsCredentialedSigner getECDSASignerCredentials() throws IOException
     {
         // TODO[RFC 8422] Code should choose based on client's supported sig algs?
-        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ecdsa);
-//        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ed25519);
-//        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ed448);
+        return loadSignerCredentials(SignatureAlgorithm.ecdsa);
+//        return loadSignerCredentials(SignatureAlgorithm.ed25519);
+//        return loadSignerCredentials(SignatureAlgorithm.ed448);
     }
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
@@ -243,7 +248,7 @@ class TlsTestServerImpl
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa);
+        return loadSignerCredentials(SignatureAlgorithm.rsa);
     }
 
     protected ProtocolVersion[] getSupportedVersions()
@@ -259,5 +264,10 @@ class TlsTestServerImpl
     protected String hex(byte[] data)
     {
         return data == null ? "(null)" : Hex.toHexString(data);
+    }
+
+    private TlsCredentialedSigner loadSignerCredentials(short signatureAlgorithm) throws IOException
+    {
+        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), signatureAlgorithm);
     }
 }

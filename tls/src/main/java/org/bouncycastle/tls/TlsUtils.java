@@ -4247,15 +4247,42 @@ public class TlsUtils
         return context.getCrypto().createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
-    static void checkSigAlgOfClientCerts(TlsContext context, Certificate clientCertificate,
-        CertificateRequest certificateRequest) throws IOException
+    /**
+     * Check the signature algorithm for certificates in the peer's CertPath as specified in RFC
+     * 5246 7.4.2, 7.4.4, 7.4.6 and similar rules for earlier TLS versions. The supplied CertPath
+     * should include the trust anchor (its signature algorithm isn't checked, but in the general
+     * case checking a certificate requires the issuer certificate).
+     *
+     * @throws IOException
+     *             if any certificate in the CertPath (excepting the trust anchor) has a signature
+     *             algorithm that is not one of the locally supported signature algorithms.
+     */
+    public static void checkPeerSigAlgs(TlsContext context, TlsCertificate[] peerCertPath) throws IOException
+    {
+        if (context.isServer())
+        {
+            checkSigAlgOfClientCerts(context, peerCertPath);
+        }
+        else
+        {
+            checkSigAlgOfServerCerts(context, peerCertPath);
+        }
+    }
+
+    private static void checkSigAlgOfClientCerts(TlsContext context, TlsCertificate[] clientCertPath) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        short[] clientCertTypes = securityParameters.getClientCertTypes();
         Vector serverSigAlgsCert = securityParameters.getServerSigAlgsCert();
 
-        for (int i = 0; i < clientCertificate.getLength(); ++i)
+        int trustAnchorPos = clientCertPath.length - 1;
+        for (int i = 0; i < trustAnchorPos; ++i)
         {
-            String sigAlgOID = clientCertificate.getCertificateAt(i).getSigAlgOID();
+            TlsCertificate subjectCert = clientCertPath[i];
+            // TODO[tls13] Needed to distinguish rsa_pss_pss_* from rsa_pss_rsae_* .
+//            TlsCertificate issuerCert = clientCertPath[i + 1];
+
+            String sigAlgOID = subjectCert.getSigAlgOID();
             SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(sigAlgOID);
 
             boolean valid = false;
@@ -4266,15 +4293,16 @@ public class TlsUtils
             else if (null == serverSigAlgsCert)
             {
                 // TODO Review this (legacy) logic with RFC 4346 (7.4?.2?)
-                short[] certificateTypes = certificateRequest.getCertificateTypes();
-                for (int j = 0; j < certificateTypes.length; ++j)
+                if (null != clientCertTypes)
                 {
-                    short signatureAlgorithm = getLegacySignatureAlgorithmClientCert(certificateTypes[j]);
-
-                    if (sigAndHashAlg.getSignature() == signatureAlgorithm)
+                    for (int j = 0; j < clientCertTypes.length; ++j)
                     {
-                        valid = true;
-                        break;
+                        short signatureAlgorithm = getLegacySignatureAlgorithmClientCert(clientCertTypes[j]);
+                        if (sigAndHashAlg.getSignature() == signatureAlgorithm)
+                        {
+                            valid = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -4294,8 +4322,7 @@ public class TlsUtils
         }
     }
 
-    static void checkSigAlgOfServerCerts(TlsContext context, Certificate serverCertificate)
-        throws IOException
+    private static void checkSigAlgOfServerCerts(TlsContext context, TlsCertificate[] serverCertPath) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         Vector clientSigAlgsCert = securityParameters.getClientSigAlgsCert();
@@ -4310,9 +4337,14 @@ public class TlsUtils
             clientSigAlgs = null;
         }
 
-        for (int i = 0; i < serverCertificate.getLength(); ++i)
+        int trustAnchorPos = serverCertPath.length - 1;
+        for (int i = 0; i < trustAnchorPos; ++i)
         {
-            String sigAlgOID = serverCertificate.getCertificateAt(i).getSigAlgOID();
+            TlsCertificate subjectCert = serverCertPath[i];
+            // TODO[tls13] Needed to distinguish rsa_pss_pss_* from rsa_pss_rsae_* .
+//            TlsCertificate issuerCert = serverCertPath[i + 1];
+
+            String sigAlgOID = subjectCert.getSigAlgOID();
             SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(sigAlgOID);
 
             boolean valid = false;
@@ -4376,17 +4408,12 @@ public class TlsUtils
     }
 
     static void processClientCertificate(TlsServerContext serverContext, Certificate clientCertificate,
-        CertificateRequest certificateRequest, TlsKeyExchange keyExchange, TlsServer server) throws IOException
+        TlsKeyExchange keyExchange, TlsServer server) throws IOException
     {
         SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
         if (null != securityParameters.getPeerCertificate())
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-
-        if (null == certificateRequest)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         if (clientCertificate.isEmpty())
@@ -4400,10 +4427,6 @@ public class TlsUtils
         }
         else
         {
-            if (server.shouldCheckSigAlgOfPeerCerts())
-            {
-                checkSigAlgOfClientCerts(serverContext, clientCertificate, certificateRequest);
-            }
             keyExchange.processClientCertificate(clientCertificate);
         }
 
@@ -4420,7 +4443,7 @@ public class TlsUtils
         server.notifyClientCertificate(clientCertificate);
     }
 
-    static void processServerCertificate(TlsClientContext clientContext, TlsClient client,
+    static void processServerCertificate(TlsClientContext clientContext,
         CertificateStatus serverCertificateStatus, TlsKeyExchange keyExchange, TlsAuthentication clientAuthentication,
         Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
     {
@@ -4443,10 +4466,6 @@ public class TlsUtils
         Certificate serverCertificate = securityParameters.getPeerCertificate();
 
         checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
-        if (client.shouldCheckSigAlgOfPeerCerts())
-        {
-            checkSigAlgOfServerCerts(clientContext, serverCertificate);
-        }
 
         if (!isTLSv13)
         {
@@ -4882,6 +4901,7 @@ public class TlsUtils
     static void establishServerSigAlgs(SecurityParameters securityParameters, CertificateRequest certificateRequest)
         throws IOException
     {
+        securityParameters.clientCertTypes = certificateRequest.getCertificateTypes();
         securityParameters.serverSigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
         securityParameters.serverSigAlgsCert = certificateRequest.getSupportedSignatureAlgorithmsCert();
 

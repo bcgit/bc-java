@@ -828,7 +828,7 @@ public class TlsClientProtocol
     protected void handleServerCertificate()
         throws IOException
     {
-        TlsUtils.processServerCertificate(tlsClientContext, tlsClient, certificateStatus, keyExchange, authentication,
+        TlsUtils.processServerCertificate(tlsClientContext, certificateStatus, keyExchange, authentication,
             clientExtensions, serverExtensions);
     }
 
