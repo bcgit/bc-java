@@ -2,6 +2,7 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 /**
@@ -61,6 +62,10 @@ public interface TlsPeer
      * 
      * @return <code>true</code> if the 'signatureAlgorithm' of received certificates should be
      *         checked, or <code>false</code> to skip those checks.
+     *
+     * @deprecated No longer called by the protocol classes. Can call
+     *             {@link TlsUtils#checkPeerSigAlgs(TlsContext, TlsCertificate[])} once a complete
+     *             CertPath has been determined (i.e. as part of chain validation).
      */
     boolean shouldCheckSigAlgOfPeerCerts();
 

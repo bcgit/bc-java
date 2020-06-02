@@ -235,7 +235,7 @@ public class DTLSClientProtocol
             // Okay, CertificateStatus is optional
         }
 
-        TlsUtils.processServerCertificate(state.clientContext, state.client, state.certificateStatus, state.keyExchange,
+        TlsUtils.processServerCertificate(state.clientContext, state.certificateStatus, state.keyExchange,
             state.authentication, state.clientExtensions, state.serverExtensions);
 
         if (serverMessage.getType() == HandshakeType.server_key_exchange)

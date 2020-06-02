@@ -42,6 +42,7 @@ public class SecurityParameters
     boolean truncatedHMac = false;
     ProtocolName applicationProtocol = null;
     boolean applicationProtocolSet = false;
+    short[] clientCertTypes = null;
     Vector clientServerNames = null;
     Vector clientSigAlgs = null;
     Vector clientSigAlgsCert = null;
@@ -62,6 +63,7 @@ public class SecurityParameters
     {
         this.sessionHash = null;
         this.sessionID = null;
+        this.clientCertTypes = null;
         this.clientServerNames = null;
         this.clientSigAlgs = null;
         this.clientSigAlgsCert = null;
@@ -102,6 +104,11 @@ public class SecurityParameters
     public int getCipherSuite()
     {
         return cipherSuite;
+    }
+
+    public short[] getClientCertTypes()
+    {
+        return clientCertTypes;
     }
 
     public Vector getClientServerNames()
