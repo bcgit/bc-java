@@ -883,8 +883,12 @@ public class TlsServerProtocol
     protected void notifyClientCertificate(Certificate clientCertificate)
         throws IOException
     {
-        TlsUtils.processClientCertificate(tlsServerContext, clientCertificate, certificateRequest, keyExchange,
-            tlsServer);
+        if (null == certificateRequest)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        TlsUtils.processClientCertificate(tlsServerContext, clientCertificate, keyExchange, tlsServer);
     }
 
     protected void receive13ClientCertificate(ByteArrayInputStream buf)

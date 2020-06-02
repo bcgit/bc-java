@@ -589,8 +589,12 @@ public class DTLSServerProtocol
     protected void notifyClientCertificate(ServerHandshakeState state, Certificate clientCertificate)
         throws IOException
     {
-        TlsUtils.processClientCertificate(state.serverContext, clientCertificate, state.certificateRequest,
-            state.keyExchange, state.server);
+        if (null == state.certificateRequest)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        TlsUtils.processClientCertificate(state.serverContext, clientCertificate, state.keyExchange, state.server);
     }
 
     protected void processClientCertificate(ServerHandshakeState state, byte[] body)

@@ -27,6 +27,7 @@ import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -60,11 +61,6 @@ class TlsTestClientImpl
     short getFirstFatalAlertDescription()
     {
         return firstFatalAlertDescription;
-    }
-
-    public boolean shouldCheckSigAlgOfPeerCerts()
-    {
-        return config.clientCheckSigAlgOfServerCerts;
     }
 
     public TlsCrypto getCrypto()
@@ -197,6 +193,16 @@ class TlsTestClientImpl
                         "x509-server-rsa-enc.pem", "x509-server-rsa-sign.pem" }))
                 {
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
+                }
+
+                /*
+                 * NOTE: Real implementations would need to construct a proper CertPath;
+                 * certificates in the on-wire chain (after the first) are not required to be in any
+                 * kind of order, or form a complete CertPath, or be unique etc.
+                 */
+                if (config.clientCheckSigAlgOfServerCerts)
+                {
+                    TlsUtils.checkPeerSigAlgs(context, chain);
                 }
             }
 
