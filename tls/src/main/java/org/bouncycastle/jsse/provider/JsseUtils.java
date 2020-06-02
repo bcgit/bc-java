@@ -272,6 +272,10 @@ abstract class JsseUtils
             return null;
         }
 
+        /*
+         * TODO[jsse] Destined for an extension, but what if there are too many? Extension has total
+         * size limit, and some servers may limit e.g. ClientHello total size.
+         */
         Vector<X500Name> certificateAuthorities = new Vector<X500Name>(caSubjects.size());
         for (X500Principal caSubject : caSubjects)
         {

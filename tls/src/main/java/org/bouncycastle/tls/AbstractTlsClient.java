@@ -99,6 +99,11 @@ public abstract class AbstractTlsClient
         return new DefaultTlsSRPConfigVerifier();
     }
 
+    protected Vector getCertificateAuthorities()
+    {
+        return null;
+    }
+
     protected Vector getProtocolNames()
     {
         return null;
@@ -220,22 +225,21 @@ public abstract class AbstractTlsClient
     {
         Hashtable clientExtensions = new Hashtable();
 
+        boolean offeringTLSv13Plus = false;
         boolean offeringPreTLSv13 = false;
         {
             ProtocolVersion[] supportedVersions = getProtocolVersions();
             for (int i = 0; i < supportedVersions.length; ++i)
             {
-                if (!TlsUtils.isTLSv13(supportedVersions[i]))
+                if (TlsUtils.isTLSv13(supportedVersions[i]))
+                {
+                    offeringTLSv13Plus = true;
+                }
+                else
                 {
                     offeringPreTLSv13 = true;
-                    break;
                 }
             }
-        }
-
-        if (offeringPreTLSv13)
-        {
-            TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
         }
 
         Vector protocolNames = getProtocolNames();
@@ -256,8 +260,20 @@ public abstract class AbstractTlsClient
             TlsExtensionsUtils.addStatusRequestExtension(clientExtensions, statusRequest);
         }
 
+        if (offeringTLSv13Plus)
+        {
+            Vector certificateAuthorities = getCertificateAuthorities();
+            if (certificateAuthorities != null)
+            {
+                TlsExtensionsUtils.addCertificateAuthoritiesExtension(clientExtensions, certificateAuthorities);
+            }
+        }
+
         if (offeringPreTLSv13)
         {
+            // TODO Shouldn't add if no offered cipher suite uses a block cipher?
+            TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
+
             Vector statusRequestV2 = getMultiCertStatusRequest();
             if (statusRequestV2 != null)
             {
@@ -358,39 +374,37 @@ public abstract class AbstractTlsClient
     public void processServerExtensions(Hashtable serverExtensions)
         throws IOException
     {
+        if (null == serverExtensions)
+        {
+            return;
+        }
+
         // TODO[tls13] Adapt for when TLS 1.3 is negotiated
 
         /*
-         * TlsProtocol implementation validates that any server extensions received correspond to
-         * client extensions sent. By default, we don't send any, and this method is not called.
+         * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
          */
-        if (serverExtensions != null)
+        checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_signature_algorithms);
+        checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_signature_algorithms_cert);
+
+        checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
+
+        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
+
+        if (TlsECCUtils.isECCCipherSuite(selectedCipherSuite))
         {
-            /*
-             * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
-             */
-            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_signature_algorithms);
-            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_signature_algorithms_cert);
-
-            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
-
-            int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-
-            if (TlsECCUtils.isECCCipherSuite(selectedCipherSuite))
-            {
-                // We only support uncompressed format, this is just to validate the extension, if present.
-                TlsExtensionsUtils.getSupportedPointFormatsExtension(serverExtensions);
-            }
-            else
-            {
-                checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_ec_point_formats);
-            }
-
-            /*
-             * RFC 7685 3. The server MUST NOT echo the extension.
-             */
-            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_padding);
+            // We only support uncompressed format, this is just to validate the extension, if present.
+            TlsExtensionsUtils.getSupportedPointFormatsExtension(serverExtensions);
         }
+        else
+        {
+            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_ec_point_formats);
+        }
+
+        /*
+         * RFC 7685 3. The server MUST NOT echo the extension.
+         */
+        checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_padding);
     }
 
     public void processServerSupplementalData(Vector serverSupplementalData)

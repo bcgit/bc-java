@@ -52,7 +52,17 @@ public interface TlsClient
 
     void notifySelectedCipherSuite(int selectedCipherSuite);
 
-    // Hashtable is (Integer -> byte[])
+    /**
+     * The TlsClientProtocol implementation validates that any server extensions received correspond
+     * to client extensions sent. If further processing of the server extensions is needed, it can
+     * be done in this callback.
+     * 
+     * NOTE: This is not called for session resumption handshakes.
+     *
+     * @param serverExtensions
+     *            (Integer -> byte[])
+     * @throws IOException
+     */
     void processServerExtensions(Hashtable serverExtensions)
         throws IOException;
 

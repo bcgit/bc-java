@@ -260,6 +260,10 @@ class ProvTlsServer
         Vector<SignatureAndHashAlgorithm> serverSigAlgs = SignatureSchemeInfo
             .getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemes);
 
+        /*
+         * TODO[tls13] It appears SunJSSE will add a system property for this (default enabled?),
+         * perhaps "jdk.tls[.client/server].enableCAExtension" or similar.
+         */
         Vector<X500Name> certificateAuthorities = JsseUtils
             .getCertificateAuthorities(contextData.getX509TrustManager());
 

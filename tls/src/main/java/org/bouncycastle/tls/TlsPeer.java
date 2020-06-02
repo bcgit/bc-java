@@ -83,6 +83,9 @@ public interface TlsPeer
      * gmt_unix_time containing the current time, we recommend that implementors MAY provide the
      * ability to set gmt_unix_time as an option only, off by default."
      * 
+     * NOTE: For a server that has negotiated TLS 1.3 (or later), or a client that has offered TLS
+     * 1.3 (or later), this is not called and gmt_unix_time is not used.
+     * 
      * @return <code>true</code> if the current time should be used in the gmt_unix_time field of
      *         Random, or <code>false</code> if gmt_unix_time should contain a cryptographically
      *         random value.

@@ -1619,6 +1619,8 @@ public class TlsClientProtocol
             tlsClientContext.setClientVersion(client_version);
         }
 
+        final boolean offeringTLSv13Plus = ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(client_version);
+
         /*
          * TODO RFC 5077 3.4. When presenting a ticket, the client MAY generate and include a
          * Session ID in the TLS ClientHello.
@@ -1641,7 +1643,7 @@ public class TlsClientProtocol
         this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsClient.getClientExtensions());
 
         ProtocolVersion legacy_version = client_version;
-        if (client_version.isLaterVersionOf(ProtocolVersion.TLSv12))
+        if (offeringTLSv13Plus)
         {
             legacy_version = ProtocolVersion.TLSv12;
 
@@ -1667,15 +1669,13 @@ public class TlsClientProtocol
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
         }
-        else if (!TlsUtils.isTLSv13(client_version)
-            && tlsClient.requiresExtendedMasterSecret())
+        else if (!offeringTLSv13Plus && tlsClient.requiresExtendedMasterSecret())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         {
-            boolean useGMTUnixTime = ProtocolVersion.TLSv12.isEqualOrLaterVersionOf(client_version)
-                && tlsClient.shouldUseGMTUnixTime();
+            boolean useGMTUnixTime = !offeringTLSv13Plus && tlsClient.shouldUseGMTUnixTime();
 
             securityParameters.clientRandom = createRandomBlock(useGMTUnixTime, tlsClientContext);
         }
