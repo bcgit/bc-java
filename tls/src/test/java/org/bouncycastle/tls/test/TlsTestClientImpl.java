@@ -186,23 +186,28 @@ class TlsTestClientImpl
 
                 boolean isEmpty = serverCertificate == null || serverCertificate.getCertificate() == null
                     || serverCertificate.getCertificate().isEmpty();
-                if (isEmpty || !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
-                    new String[]
-                    { "x509-server-dsa.pem", "x509-server-ecdh.pem", "x509-server-ecdsa.pem", "x509-server-ed25519.pem",
-                        "x509-server-rsa_pss_256.pem", "x509-server-rsa_pss_384.pem", "x509-server-rsa_pss_512.pem",
-                        "x509-server-rsa-enc.pem", "x509-server-rsa-sign.pem" }))
+
+                if (isEmpty)
                 {
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
 
-                /*
-                 * NOTE: Real implementations would need to construct a proper CertPath;
-                 * certificates in the on-wire chain (after the first) are not required to be in any
-                 * kind of order, or form a complete CertPath, or be unique etc.
-                 */
+                String[] trustedCertResources = new String[]{ "x509-server-dsa.pem", "x509-server-ecdh.pem",
+                    "x509-server-ecdsa.pem", "x509-server-ed25519.pem", "x509-server-ed448.pem",
+                    "x509-server-rsa_pss_256.pem", "x509-server-rsa_pss_384.pem", "x509-server-rsa_pss_512.pem",
+                    "x509-server-rsa-enc.pem", "x509-server-rsa-sign.pem" };
+
+                TlsCertificate[] certPath = TlsTestUtils.getTrustedCertPath(context.getCrypto(), chain[0],
+                    trustedCertResources);
+
+                if (null == certPath)
+                {
+                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
+                }
+
                 if (config.clientCheckSigAlgOfServerCerts)
                 {
-                    TlsUtils.checkPeerSigAlgs(context, chain);
+                    TlsUtils.checkPeerSigAlgs(context, certPath);
                 }
             }
 
