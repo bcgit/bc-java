@@ -71,9 +71,16 @@ class ProvTlsClient
     }
 
     @Override
-    protected Vector<ProtocolName> getProtocolNames()
+    protected Vector<X500Name> getCertificateAuthorities()
     {
-        return JsseUtils.getProtocolNames(sslParameters.getApplicationProtocols());
+        /*
+         * TODO[tls13] It appears SunJSSE will add a system property for this (default disabled?),
+         * perhaps "jdk.tls[.client/server].enableCAExtension" or similar.
+         * 
+         * TODO[tls13] Avoid duplication b/w this method and getTrustedCAIndication.
+         */
+//        return JsseUtils.getCertificateAuthorities(manager.getContextData().getX509TrustManager());
+        return null;
     }
 
     @Override
@@ -105,6 +112,12 @@ class ProvTlsClient
         result.add(new CertificateStatusRequestItemV2(CertificateStatusType.ocsp_multi, ocspStatusRequest));
         result.add(new CertificateStatusRequestItemV2(CertificateStatusType.ocsp, ocspStatusRequest));
         return result;
+    }
+
+    @Override
+    protected Vector<ProtocolName> getProtocolNames()
+    {
+        return JsseUtils.getProtocolNames(sslParameters.getApplicationProtocols());
     }
 
     @Override

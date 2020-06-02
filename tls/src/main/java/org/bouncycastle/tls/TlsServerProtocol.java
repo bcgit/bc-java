@@ -153,39 +153,40 @@ public class TlsServerProtocol
         else
         {
             server_version = tlsServer.getServerVersion();
-
             if (!ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            ProtocolVersion legacy_record_version = server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
-                ? ProtocolVersion.TLSv12
-                : server_version;
-
-            recordStream.setWriteVersion(legacy_record_version);
             securityParameters.negotiatedVersion = server_version;
         }
 
         TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
 
+        final boolean negotiatedTLSv13Plus = ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(server_version);
+
         // TODO[tls13] At some point after here we should redirect to generate13ServerHello
-//        if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(server_version))
+//        if (negotiatedTLSv13Plus)
 //        {
 //            return generate13ServerHello();
 //        }
 
+        {
+            ProtocolVersion legacy_record_version = negotiatedTLSv13Plus ? ProtocolVersion.TLSv12 : server_version;
+
+            recordStream.setWriteVersion(legacy_record_version);
+        }
+
         /*
          * TODO[tls13] Send ServerHello message that MAY be a HelloRetryRequest.
          * 
-         * For HelloRetryRequest, state => CS_SERVER_HELLO_RETRY_REQUEST instead (and no
-         * further messages), and reset Transcript-Hash to begin with synthetic
-         * 'message_hash' message having Hash(ClientHello) as the message body.
+         * For HelloRetryRequest, state => CS_SERVER_HELLO_RETRY_REQUEST instead (and no further
+         * messages), and reset Transcript-Hash to begin with synthetic 'message_hash' message
+         * having Hash(ClientHello) as the message body.
          */
 
         {
-            boolean useGMTUnixTime = ProtocolVersion.TLSv12.isEqualOrLaterVersionOf(server_version)
-                && tlsServer.shouldUseGMTUnixTime();
+            boolean useGMTUnixTime = !negotiatedTLSv13Plus && tlsServer.shouldUseGMTUnixTime();
 
             securityParameters.serverRandom = createRandomBlock(useGMTUnixTime, tlsServerContext);
 
@@ -210,7 +211,7 @@ public class TlsServerProtocol
         this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
 
         ProtocolVersion legacy_version = server_version;
-        if (server_version.isLaterVersionOf(ProtocolVersion.TLSv12))
+        if (negotiatedTLSv13Plus)
         {
             legacy_version = ProtocolVersion.TLSv12;
 
