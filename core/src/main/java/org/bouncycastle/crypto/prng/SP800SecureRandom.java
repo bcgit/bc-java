@@ -45,6 +45,11 @@ public class SP800SecureRandom
         }
     }
 
+    public String getAlgorithm()
+    {
+         return drbgProvider.getAlgorithm();
+    }
+
     public void nextBytes(byte[] bytes)
     {
         synchronized (this)

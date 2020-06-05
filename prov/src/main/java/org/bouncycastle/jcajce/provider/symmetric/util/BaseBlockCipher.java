@@ -3,12 +3,14 @@ package org.bouncycastle.jcajce.provider.symmetric.util;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.security.AccessController;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedExceptionAction;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -541,7 +543,7 @@ public class BaseBlockCipher
     protected void engineInit(
         int                     opmode,
         Key                     key,
-        AlgorithmParameterSpec  params,
+        final AlgorithmParameterSpec  params,
         SecureRandom            random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
@@ -845,10 +847,7 @@ public class BaseBlockCipher
 
             try
             {
-                Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
-                Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
-
-                KeyParameter keyParam;
+                final KeyParameter keyParam;
                 if (param instanceof ParametersWithIV)
                 {
                     keyParam = (KeyParameter)((ParametersWithIV)param).getParameters();
@@ -857,7 +856,18 @@ public class BaseBlockCipher
                 {
                     keyParam = (KeyParameter)param;
                 }
-                param = aeadParams = new AEADParameters(keyParam, ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
+
+                param = aeadParams = (AEADParameters)AccessController.doPrivileged(new PrivilegedExceptionAction()
+                {
+                    public Object run()
+                        throws Exception
+                    {
+                        Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
+                        Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
+
+                        return new AEADParameters(keyParam, ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
+                    }
+                });
             }
             catch (Exception e)
             {
