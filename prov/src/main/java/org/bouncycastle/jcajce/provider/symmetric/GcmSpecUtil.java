@@ -2,6 +2,8 @@ package org.bouncycastle.jcajce.provider.symmetric;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 
@@ -49,15 +51,22 @@ class GcmSpecUtil
         }
     }
 
-    static GCMParameters extractGcmParameters(AlgorithmParameterSpec paramSpec)
+    static GCMParameters extractGcmParameters(final AlgorithmParameterSpec paramSpec)
         throws InvalidParameterSpecException
     {
         try
         {
-            Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
-            Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
+            return (GCMParameters)AccessController.doPrivileged(new PrivilegedExceptionAction()
+            {
+                public Object run()
+                    throws Exception
+                {
+                    Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
+                    Method iv = gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
 
-            return new GCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue() / 8);
+                    return new GCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue() / 8);
+                }
+            });
         }
         catch (Exception e)
         {

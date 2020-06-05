@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.params.DESedeParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -143,7 +142,7 @@ public class CTRDRBGTest
                 .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C")
                 .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBC"),
                 new DRBGTestVector(
-                            new AESFastEngine(), 128,
+                            new AESEngine(), 128,
                             new Bit256EntropyProvider().get(256),
                             false,
                             "2021222324252627",
@@ -155,7 +154,7 @@ public class CTRDRBGTest
                                 }
                         ),
                 new DRBGTestVector(
-                            new AESFastEngine(), 128,
+                            new AESEngine(), 128,
                             new Bit256EntropyProvider().get(256),
                             false,
                             "2021222324252627",
@@ -169,7 +168,7 @@ public class CTRDRBGTest
                 .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F")
                 .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBF"),
                 new DRBGTestVector(
-                           new AESFastEngine(), 128,
+                           new AESEngine(), 128,
                            new Bit256EntropyProvider().get(256),
                            false,
                            "2021222324252627",
@@ -182,7 +181,7 @@ public class CTRDRBGTest
                        )
                .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F"),
                 new DRBGTestVector(
-                            new AESFastEngine(), 128,
+                            new AESEngine(), 128,
                             new Bit256EntropyProvider().get(256),
                             true,
                             "2021222324252627",
@@ -194,7 +193,7 @@ public class CTRDRBGTest
                                 }
                         ),
                 new DRBGTestVector(
-                            new AESFastEngine(), 128,
+                            new AESEngine(), 128,
                             new Bit256EntropyProvider().get(256),
                             true,
                             "2021222324252627",
@@ -208,7 +207,7 @@ public class CTRDRBGTest
                 .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F")
                 .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBF"),
                 new DRBGTestVector(
-                           new AESFastEngine(), 128,
+                           new AESEngine(), 128,
                            new Bit256EntropyProvider().get(256),
                            true,
                            "2021222324252627",
@@ -221,7 +220,7 @@ public class CTRDRBGTest
                        )
                .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F"),
                 new DRBGTestVector(
-                            new AESFastEngine(), 192,
+                            new AESEngine(), 192,
                             new Bit320EntropyProvider().get(320),
                             false,
                             "202122232425262728292A2B",
@@ -234,7 +233,7 @@ public class CTRDRBGTest
                         )
                 .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F6061626364656667"),
                 new DRBGTestVector(
-                        new AESFastEngine(), 192,
+                        new AESEngine(), 192,
                         new Bit320EntropyProvider().get(320),
                         true,
                         "202122232425262728292A2B",
@@ -247,7 +246,7 @@ public class CTRDRBGTest
                     )
             .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F6061626364656667"),
                 new DRBGTestVector(
-                            new AESFastEngine(), 256,
+                            new AESEngine(), 256,
                             new Bit384EntropyProvider().get(384),
                             false,
                             "202122232425262728292A2B2C2D2E2F",
@@ -262,7 +261,7 @@ public class CTRDRBGTest
                 .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F")
                 .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECF"),
                 new DRBGTestVector(
-                            new AESFastEngine(), 256,
+                            new AESEngine(), 256,
                             new Bit384EntropyProvider().get(384),
                             true,
                             "202122232425262728292A2B2C2D2E2F",
@@ -276,7 +275,7 @@ public class CTRDRBGTest
                 .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F")
                 .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECF"),
                 new DRBGTestVector(
-                            new AESFastEngine(), 256,
+                            new AESEngine(), 256,
                             new Bit384EntropyProvider().get(384),
                             true,
                             "202122232425262728292A2B2C2D2E2F",
@@ -289,7 +288,7 @@ public class CTRDRBGTest
                         )
                 .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F606162636465666768696A6B6C6D6E6F"),
                 new DRBGTestVector(
-                            new AESFastEngine(), 256,
+                            new AESEngine(), 256,
                             new Bit384EntropyProvider().get(384),
                             true,
                             "202122232425262728292A2B2C2D2E2F",
@@ -304,7 +303,7 @@ public class CTRDRBGTest
                 .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F")
                 .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECF"),
                 new DRBGTestVector(
-                            new AESFastEngine(), 256,
+                            new AESEngine(), 256,
                             new Bit384EntropyProvider().get(384),
                             true,
                             "202122232425262728292A2B2C2D2E2F",
