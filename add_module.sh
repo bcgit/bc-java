@@ -1,5 +1,8 @@
-export JAVA_HOME=/usr/lib/jvm/java-9-oracle
-#export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
+export JAVA_9=/usr/lib/jvm/java-9-oracle
+export JAVA_11=/usr/lib/jvm/java-11-openjdk-amd64
+export JAVA_15=/opt/jdk-15
+
+export JAVA_HOME=$JAVA_9
 export PATH=$JAVA_HOME/bin:$PATH
 
 if [ $# -ne 1 ]
@@ -15,7 +18,7 @@ rm -rf module.tmp
 
 # Java 9 Step
 (
-    export JAVA_HOME=/usr/lib/jvm/java-9-oracle
+    export JAVA_HOME=$JAVA_9
     export PATH=$JAVA_HOME/bin:$PATH
 
     mkdir -p module.tmp/v5
@@ -28,11 +31,13 @@ rm -rf module.tmp
     if [ $1 = "prov" ]
     then
 	javac -target 1.9 -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java:core/src/main/java
-	/usr/lib/jvm/java-11-openjdk-amd64/bin/javac -classpath module.tmp/v5 -d module.tmp/v11 `find $1/src/main/jdk1.11 -name "*.java"` -sourcepath $1/src/main/jdk1.11:$1/src/main/java:core/src/main/java
+	$JAVA_11/bin/javac -classpath module.tmp/v5 -d module.tmp/v11 `find $1/src/main/jdk1.11 -name "*.java"` -sourcepath $1/src/main/jdk1.11:$1/src/main/java:core/src/main/java
+	$JAVA_15/bin/javac -classpath module.tmp/v5:mofule.tmp/v11 -d module.tmp/v15 `find prov/src/main/jdk1.15 -name "*.java"` -sourcepath prov/src/main/jdk1.15:prov/src/main/jdk1.11:prov/src/main/java:core/src/main/java
     elif [ $1 = "prov-ext" ]
     then
 	javac -target 1.9 -classpath module.tmp/v5 -d module.tmp/v9 `find prov/src/main/ext-jdk1.9 -name "*.java"` -sourcepath prov/src/main/ext-jdk1.9:prov/src/main/java:core/src/main/java
-	/usr/lib/jvm/java-11-openjdk-amd64/bin/javac -classpath module.tmp/v5 -d module.tmp/v11 `find prov/src/main/jdk1.11 -name "*.java"` -sourcepath prov/src/main/jdk1.11:prov/src/main/java:core/src/main/java
+	$JAVA_11/bin/javac -classpath module.tmp/v5 -d module.tmp/v11 `find prov/src/main/jdk1.11 -name "*.java"` -sourcepath prov/src/main/jdk1.11:prov/src/main/java:core/src/main/java
+	$JAVA_15/bin/javac -classpath module.tmp/v5:mofule.tmp/v11 -d module.tmp/v15 `find prov/src/main/jdk1.15 -name "*.java"` -sourcepath prov/src/main/jdk1.15:prov/src/main/jdk1.11:prov/src/main/java:core/src/main/java
     elif [ $1 = "mail" ]
     then
 	javac  -target 1.9 --module-path ${provJar}:$pkixJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
@@ -42,7 +47,7 @@ rm -rf module.tmp
 )
 # Java 11 Step
 (
-    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+    export JAVA_HOME=$JAVA_11
     export PATH=$JAVA_HOME/bin:$PATH 
 
     cd module.tmp
@@ -62,7 +67,7 @@ sh ./bnd.sh build/artifacts/jdk1.5/jars/$jarName
 cp build/artifacts/jdk1.5/jars/$jarName module.tmp/$jarName
 # Java 11 Step
 (
-    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+    export JAVA_HOME=$JAVA_11
     export PATH=$JAVA_HOME/bin:$PATH 
 
     cd module.tmp
@@ -70,6 +75,17 @@ cp build/artifacts/jdk1.5/jars/$jarName module.tmp/$jarName
     if [ -d v11 ]
     then
         jar uf $jarName --release 11 -C v11 .
+    fi
+)
+# Java 15 Step
+(
+    export JAVA_HOME=$JAVA_15
+    export PATH=$JAVA_HOME/bin:$PATH 
+
+    cd module.tmp
+    if [ -d v15 ]
+    then
+        jar uf $jarName --release 15 -C v15 .
     fi
 )
 cp module.tmp/$jarName build/artifacts/jdk1.5/jars/$jarName

@@ -9,6 +9,7 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.cert.CRLException;
 import java.security.cert.CertPath;
+import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
@@ -72,8 +73,10 @@ import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.PKIXCertStore;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
+import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Selector;
@@ -121,6 +124,40 @@ class CertPathValidatorUtilities
         "removeFromCRL",
         "privilegeWithdrawn",
         "aACompromise"};
+
+    static Collection findTargets(PKIXExtendedBuilderParameters paramsPKIX)
+        throws CertPathBuilderException
+    {
+        Collection targets;
+        PKIXCertStoreSelector certSelect = paramsPKIX.getBaseParameters().getTargetConstraints();
+
+        try
+        {
+            targets = CertPathValidatorUtilities.findCertificates(certSelect, paramsPKIX.getBaseParameters().getCertificateStores());
+            targets.addAll(CertPathValidatorUtilities.findCertificates(certSelect, paramsPKIX.getBaseParameters().getCertStores()));
+        }
+        catch (AnnotatedException e)
+        {
+            throw new ExtCertPathBuilderException(
+                "Error finding target certificate.", e);
+        }
+
+        if (targets.isEmpty())
+        {
+            Certificate target = certSelect.getCertificate();
+
+            if (target != null)
+            {
+                targets = Collections.singleton(target);
+            }
+            else
+            {
+                throw new CertPathBuilderException(
+                    "No certificate found matching targetConstraints.");
+            }
+        }
+        return targets;
+    }
 
     /**
      * Search the given Set of TrustAnchor's for one that is the

@@ -53,6 +53,21 @@ public class PKIXCertStoreSelector<T extends Certificate>
         this.baseSelector = baseSelector;
     }
 
+    /**
+     * Return the specific certificate this selector is designed to match.
+     *
+     * @return a specific certificate where the selector has been configured explicitly.
+     */
+    public Certificate getCertificate()
+    {
+         if (baseSelector instanceof X509CertSelector)
+         {
+             return ((X509CertSelector)baseSelector).getCertificate();
+         }
+
+         return null;
+    }
+
     public boolean match(Certificate cert)
     {
         return baseSelector.match(cert);
