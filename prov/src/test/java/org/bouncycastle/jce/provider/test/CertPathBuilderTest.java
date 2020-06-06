@@ -117,11 +117,99 @@ public class CertPathBuilderTest
         }
     }
 
+    private void eeInSelectorTest()
+        throws Exception
+    {
+        // create certificates and CRLs
+        KeyPair         rootPair = TestUtils.generateRSAKeyPair();
+        KeyPair         interPair = TestUtils.generateRSAKeyPair();
+        KeyPair         endPair = TestUtils.generateRSAKeyPair();
+
+        X509Certificate rootCert = TestUtils.generateRootCert(rootPair);
+        X509Certificate interCert = TestUtils.generateIntermediateCert(interPair.getPublic(), rootPair.getPrivate(), rootCert);
+        X509Certificate endCert = TestUtils.generateEndEntityCert(endPair.getPublic(), interPair.getPrivate(), interCert);
+
+        // create CertStore to support path building
+        List list = new ArrayList();
+
+        list.add(interCert);
+        list.add(endCert);
+        
+        CollectionCertStoreParameters params = new CollectionCertStoreParameters(list);
+        CertStore                     store = CertStore.getInstance("Collection", params, "BC");
+
+        // build the path
+        CertPathBuilder  builder = CertPathBuilder.getInstance("PKIX", "BC");
+        X509CertSelector pathConstraints = new X509CertSelector();
+
+        pathConstraints.setCertificate(endCert);
+
+        PKIXBuilderParameters buildParams = new PKIXBuilderParameters(Collections.singleton(new TrustAnchor(rootCert, null)), pathConstraints);
+
+        buildParams.addCertStore(store);
+        buildParams.setDate(new Date());
+        buildParams.setRevocationEnabled(false);
+
+        PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
+        CertPath                  path = result.getCertPath();
+
+        if (path.getCertificates().size() != 2)
+        {
+            fail("wrong number of certs in v0Test path");
+        }
+    }
+
+    private void eeOnlyInSelectorTest()
+        throws Exception
+    {
+        // create certificates and CRLs
+        KeyPair         rootPair = TestUtils.generateRSAKeyPair();
+        KeyPair         interPair = TestUtils.generateRSAKeyPair();
+        KeyPair         endPair = TestUtils.generateRSAKeyPair();
+        KeyPair         miscPair = TestUtils.generateRSAKeyPair();
+
+        X509Certificate rootCert = TestUtils.generateRootCert(rootPair);
+        X509Certificate interCert = TestUtils.generateIntermediateCert(interPair.getPublic(), rootPair.getPrivate(), rootCert);
+        X509Certificate endCert = TestUtils.generateEndEntityCert(endPair.getPublic(), interPair.getPrivate(), interCert);
+        X509Certificate miscCert = TestUtils.generateEndEntityCert(miscPair.getPublic(), interPair.getPrivate(), interCert);
+
+        // create CertStore to support path building
+        List list = new ArrayList();
+
+        list.add(interCert);
+        list.add(miscCert);
+
+        CollectionCertStoreParameters params = new CollectionCertStoreParameters(list);
+        CertStore                     store = CertStore.getInstance("Collection", params, "BC");
+
+        // build the path
+        CertPathBuilder  builder = CertPathBuilder.getInstance("PKIX", "BC");
+        X509CertSelector pathConstraints = new X509CertSelector();
+
+        pathConstraints.setCertificate(endCert);
+
+        PKIXBuilderParameters buildParams = new PKIXBuilderParameters(Collections.singleton(new TrustAnchor(rootCert, null)), pathConstraints);
+
+        buildParams.addCertStore(store);
+        buildParams.setDate(new Date());
+        buildParams.setRevocationEnabled(false);
+
+        PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
+        CertPath                  path = result.getCertPath();
+
+        if (path.getCertificates().size() != 2)
+        {
+            fail("wrong number of certs in v0Test path");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
         baseTest();
         v0Test();
+        eeInSelectorTest();
+        eeOnlyInSelectorTest();
     }
     
     public String getName()
