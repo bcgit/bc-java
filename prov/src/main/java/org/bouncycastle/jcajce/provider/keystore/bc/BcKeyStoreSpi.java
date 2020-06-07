@@ -678,7 +678,7 @@ public class BcKeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new KeyStoreException(e.toString());
+            throw new KeyStoreException(e.toString(), e);
         }
     }
 
