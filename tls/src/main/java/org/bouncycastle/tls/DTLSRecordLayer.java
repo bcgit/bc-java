@@ -559,7 +559,20 @@ class DTLSRecordLayer
 
             if (!isClientHelloFragment)
             {
-                return -1;
+                boolean isServerHelloFragment =
+                        getReadEpoch () == 0
+                                &&  length > 0
+                                &&  ContentType.handshake == recordType
+                                &&  HandshakeType.server_hello == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
+
+                if (isServerHelloFragment)
+                {
+                    setReadVersion(recordVersion);
+                }
+                else
+                {
+                    return -1;
+                }
             }
         }
 
