@@ -271,7 +271,18 @@ abstract class ProvSSLSessionBase
 
     public synchronized boolean isValid()
     {
-        return null != sslSessionContext && !TlsUtils.isNullOrEmpty(getIDArray());
+        if (null == sslSessionContext)
+        {
+            return false;
+        }
+
+        // TODO[tls13] TLS 1.3 doesn't need a session ID for resumption?
+//        if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(getProtocolTLS()))
+//        {
+//            return true;
+//        }
+
+        return !TlsUtils.isNullOrEmpty(getIDArray());
     }
 
     public void putValue(String name, Object value)
