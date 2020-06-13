@@ -47,6 +47,8 @@ public class JcaTlsCertificate
     protected static final int KU_ENCIPHER_ONLY = 7;
     protected static final int KU_DECIPHER_ONLY = 8;
 
+    private static final int X509V3_VERSION = 3;
+
     public static JcaTlsCertificate convert(JcaTlsCrypto crypto, TlsCertificate certificate) throws IOException
     {
         if (certificate instanceof JcaTlsCertificate)
@@ -60,6 +62,7 @@ public class JcaTlsCertificate
     public static X509Certificate parseCertificate(JcaJceHelper helper, byte[] encoding)
         throws IOException
     {
+        final X509Certificate certificate;
         try
         {
             /*
@@ -72,17 +75,23 @@ public class JcaTlsCertificate
             byte[] derEncoding = Certificate.getInstance(encoding).getEncoded(ASN1Encoding.DER);
 
             ByteArrayInputStream input = new ByteArrayInputStream(derEncoding);
-            X509Certificate certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(input);
+            certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(input);
             if (input.available() != 0)
             {
                 throw new IOException("Extra data detected in stream");
             }
-            return certificate;
         }
         catch (GeneralSecurityException e)
         {
             throw new TlsCryptoException("unable to decode certificate", e);
         }
+
+        if (X509V3_VERSION != certificate.getVersion())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        return certificate;
     }
 
     protected final JcaTlsCrypto crypto;
