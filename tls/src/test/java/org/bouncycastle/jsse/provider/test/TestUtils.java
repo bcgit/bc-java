@@ -54,7 +54,6 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
-import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jsse.BCSSLConnection;
@@ -106,7 +105,7 @@ class TestUtils
     public static X509Certificate createSelfSignedCert(X500Name dn, String sigName, KeyPair keyPair)
         throws Exception
     {
-        V1TBSCertificateGenerator certGen = new V1TBSCertificateGenerator();
+        V3TBSCertificateGenerator certGen = new V3TBSCertificateGenerator();
 
         long time = System.currentTimeMillis();
 
