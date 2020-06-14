@@ -43,7 +43,12 @@ class DTLSReliableHandshake
             return null;
         }
 
+        // TODO Consider stricter HelloVerifyRequest-related checks
 //        int messageSeq = TlsUtils.readUint16(message, 4);
+//        if (messageSeq > 1)
+//        {
+//            return null;
+//        }
 
         int fragmentOffset = TlsUtils.readUint24(message, 6);
         if (0 != fragmentOffset)
@@ -62,9 +67,8 @@ class DTLSReliableHandshake
         return new DTLSRequest(recordSeq, message, clientHello);
     }
 
-    static void sendHelloVerifyRequest(DatagramSender sender, long recordSeq, int messageSeq, byte[] cookie) throws IOException
+    static void sendHelloVerifyRequest(DatagramSender sender, long recordSeq, byte[] cookie) throws IOException
     {
-        TlsUtils.checkUint16(messageSeq);
         TlsUtils.checkUint8(cookie.length);
 
         int length = 3 + cookie.length;
@@ -72,8 +76,8 @@ class DTLSReliableHandshake
         byte[] message = new byte[MESSAGE_HEADER_LENGTH + length];
         TlsUtils.writeUint8(HandshakeType.hello_verify_request, message, 0);
         TlsUtils.writeUint24(length, message, 1);
-        TlsUtils.writeUint16(messageSeq, message, 4);
-        TlsUtils.writeUint24(0, message, 6);
+//        TlsUtils.writeUint16(0, message, 4);
+//        TlsUtils.writeUint24(0, message, 6);
         TlsUtils.writeUint24(length, message, 9);
 
         // HelloVerifyRequest fields
@@ -121,7 +125,8 @@ class DTLSReliableHandshake
             DTLSReassembler reassembler = new DTLSReassembler(HandshakeType.client_hello, message.length - MESSAGE_HEADER_LENGTH);
             currentInboundFlight.put(Integers.valueOf(messageSeq), reassembler);
 
-            next_send_seq = messageSeq;
+            // We sent HelloVerifyRequest with (message) sequence number 0
+            next_send_seq = 1;
             next_receive_seq = messageSeq + 1;
 
             handshakeHash.update(message, 0, message.length);
@@ -137,11 +142,10 @@ class DTLSReliableHandshake
         resendMillis = -1;
         resendTimeout = null;
 
-        next_receive_seq = next_send_seq;
+        // We're waiting for ServerHello, always with (message) sequence number 1
+        next_receive_seq = 1;
 
         handshakeHash.reset();
-
-        recordLayer.resetAfterHelloVerifyRequestClient();
     }
 
     TlsHandshakeHash getHandshakeHash()
@@ -426,9 +430,11 @@ class DTLSReliableHandshake
     private Message updateHandshakeMessagesDigest(Message message)
         throws IOException
     {
-        switch (message.getType())
+        short msg_type = message.getType();
+        switch (msg_type)
         {
         case HandshakeType.hello_request:
+        case HandshakeType.hello_verify_request:
         case HandshakeType.key_update:
         case HandshakeType.new_session_ticket:
             break;
@@ -437,7 +443,7 @@ class DTLSReliableHandshake
         {
             byte[] body = message.getBody();
             byte[] buf = new byte[MESSAGE_HEADER_LENGTH];
-            TlsUtils.writeUint8(message.getType(), buf, 0);
+            TlsUtils.writeUint8(msg_type, buf, 0);
             TlsUtils.writeUint24(body.length, buf, 1);
             TlsUtils.writeUint16(message.getSeq(), buf, 4);
             TlsUtils.writeUint24(0, buf, 6);

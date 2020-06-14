@@ -45,12 +45,30 @@ public class DTLSVerifier
                 byte[] expectedCookie = cookieMAC.calculateMAC();
                 resetCookieMAC = false;
 
+                // TODO Consider stricter HelloVerifyRequest protocol
+//                switch (request.getMessageSeq())
+//                {
+//                case 0:
+//                {
+//                    DTLSReliableHandshake.sendHelloVerifyRequest(sender, request.getRecordSeq(), expectedCookie);
+//                    break;
+//                }
+//                case 1:
+//                {
+//                    if (Arrays.constantTimeAreEqual(expectedCookie, request.getClientHello().getCookie()))
+//                    {
+//                        return request;
+//                    }
+//                    break;
+//                }
+//                }
+
                 if (Arrays.constantTimeAreEqual(expectedCookie, request.getClientHello().getCookie()))
                 {
                     return request;
                 }
 
-                DTLSReliableHandshake.sendHelloVerifyRequest(sender, request.getRecordSeq(), request.getMessageSeq(), expectedCookie);
+                DTLSReliableHandshake.sendHelloVerifyRequest(sender, request.getRecordSeq(), expectedCookie);
             }
         }
         catch (IOException e)
