@@ -865,7 +865,8 @@ public final class Arrays
         }
         if (null == b)
         {
-            return a.clone();
+            // a might also be null
+            return clone(a);
         }
 
         byte[] r = new byte[a.length + b.length];
