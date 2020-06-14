@@ -143,21 +143,12 @@ class DTLSRecordLayer
         return closed;
     }
 
-    void resetAfterHelloVerifyRequestClient()
-    {
-        currentEpoch.getReplayWindow().reset();
-    }
-
-    void resetAfterHelloVerifyRequestServer(long writeRecordSeqNo)
+    void resetAfterHelloVerifyRequestServer(long recordSeq)
     {
         this.inConnection = true;
 
-        currentEpoch.setSequenceNumber(writeRecordSeqNo);
-
-        /*
-         * TODO The sequence number reflects one that the client has already sent, so we could
-         * initialize the replay window here accordingly.
-         */
+        currentEpoch.setSequenceNumber(recordSeq);
+        currentEpoch.getReplayWindow().reset(recordSeq);
     }
 
     void setPlaintextLimit(int plaintextLimit)
