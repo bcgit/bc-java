@@ -118,22 +118,6 @@ public class DTLSClientProtocol
 
         while (serverMessage.getType() == HandshakeType.hello_verify_request)
         {
-            ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
-            ProtocolVersion client_version = state.clientContext.getClientVersion();
-
-            /*
-             * RFC 6347 4.2.1 DTLS 1.2 server implementations SHOULD use DTLS version 1.0 regardless of
-             * the version of TLS that is expected to be negotiated. DTLS 1.2 and 1.0 clients MUST use
-             * the version solely to indicate packet formatting (which is the same in both DTLS 1.2 and
-             * 1.0) and not as part of version negotiation.
-             */
-            if (!recordLayerVersion.isEqualOrEarlierVersionOf(client_version))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-
-            recordLayer.setReadVersion(null);
-
             byte[] cookie = processHelloVerifyRequest(state, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
