@@ -18,6 +18,7 @@ public class AllTests
         TestSuite suite = new TestSuite("util tests");
         suite.addTestSuite(IPTest.class);
         suite.addTestSuite(BigIntegersTest.class);
+        suite.addTestSuite(ArraysTest.class);
         return new BCTestSetup(suite);
     }
 
