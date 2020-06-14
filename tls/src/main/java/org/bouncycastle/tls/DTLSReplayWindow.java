@@ -80,12 +80,15 @@ class DTLSReplayWindow
         }
     }
 
-    /**
-     * When a new epoch begins, sequence numbers begin again at 0
-     */
-    void reset()
+    void reset(long seq)
     {
-        latestConfirmedSeq = -1;
-        bitmap = 0;
+        if ((seq & VALID_SEQ_MASK) != seq)
+        {
+            throw new IllegalArgumentException("'seq' out of range");
+        }
+
+        // Discard future records unless sequence number > 'seq'
+        latestConfirmedSeq = seq;
+        bitmap = -1L >>> Math.max(0, 63 - seq);
     }
 }

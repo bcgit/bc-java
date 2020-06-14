@@ -116,6 +116,8 @@ public class DTLSClientProtocol
 
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
 
+        // TODO Consider stricter HelloVerifyRequest protocol
+//        if (serverMessage.getType() == HandshakeType.hello_verify_request)
         while (serverMessage.getType() == HandshakeType.hello_verify_request)
         {
             byte[] cookie = processHelloVerifyRequest(state, serverMessage.getBody());
