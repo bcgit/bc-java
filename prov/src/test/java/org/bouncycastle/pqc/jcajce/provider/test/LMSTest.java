@@ -109,6 +109,27 @@ public class LMSTest
         assertEquals(kp.getPublic(), pub1);
     }
 
+    public void testPublicKeyEncodingLength()
+        throws Exception
+    {
+        KeyPairGenerator kpGen1 = KeyPairGenerator.getInstance("LMS", "BCPQC");
+
+        kpGen1.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+
+        KeyPair kp1 = kpGen1.generateKeyPair();
+
+        KeyPairGenerator kpGen2 = KeyPairGenerator.getInstance("LMS", "BCPQC");
+
+        kpGen2.initialize(new LMSHSSKeyGenParameterSpec(
+                new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1),
+                new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1)
+            ), new SecureRandom());
+
+        KeyPair kp2 = kpGen2.generateKeyPair();
+
+        assertEquals(kp1.getPublic().getEncoded().length, kp2.getPublic().getEncoded().length);
+    }
+
     public void testKeyFactoryHSSKey()
         throws Exception
     {
