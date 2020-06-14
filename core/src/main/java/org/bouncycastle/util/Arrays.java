@@ -861,7 +861,8 @@ public final class Arrays
     {
         if (null == a)
         {
-            return b.clone();
+            // b might also be null
+            return clone(b);
         }
         if (null == b)
         {
@@ -950,11 +951,13 @@ public final class Arrays
     {
         if (null == a)
         {
-            return b.clone();
+            // b might also be null
+            return clone(b);
         }
         if (null == b)
         {
-            return a.clone();
+            // a might also be null
+            return clone(a);
         }
 
         int[] r = new int[a.length + b.length];
