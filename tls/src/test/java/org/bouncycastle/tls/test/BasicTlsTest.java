@@ -10,26 +10,14 @@ import java.util.Vector;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
-import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
-import org.bouncycastle.tls.TlsClient;
-import org.bouncycastle.tls.TlsClientContext;
 import org.bouncycastle.tls.TlsClientProtocol;
-import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsKeyExchange;
 import org.bouncycastle.tls.TlsServerCertificate;
-import org.bouncycastle.tls.TlsSession;
-import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -49,7 +37,7 @@ public class BasicTlsTest
             return false;
         }
         String[] parts = vmVersion.split("\\.");
-        if (parts == null || parts.length != 2)
+        if (parts == null || parts.length < 1)
         {
             return false;
         }
@@ -59,6 +47,10 @@ public class BasicTlsTest
             if (major != 1)
             {
                 return major > 1;
+            }
+            if (parts.length < 2)
+            {
+                return false;
             }
             int minor = Integer.parseInt(parts[1]);
             return minor >= 7;
