@@ -35,6 +35,8 @@ import org.bouncycastle.util.Arrays;
 public class BcTlsCertificate
     implements TlsCertificate
 {
+    private static final BigInteger X509V3_VERSION = BigInteger.valueOf(2);
+
     public static BcTlsCertificate convert(BcTlsCrypto crypto, TlsCertificate certificate)
         throws IOException
     {
@@ -49,14 +51,22 @@ public class BcTlsCertificate
     public static Certificate parseCertificate(byte[] encoding)
         throws IOException
     {
+        final Certificate c;
         try
         {
-            return Certificate.getInstance(encoding);
+            c = Certificate.getInstance(encoding);
         }
         catch (IllegalArgumentException e)
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate, e);
         }
+
+        if (!X509V3_VERSION.equals(c.getTBSCertificate().getVersion().getValue()))
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        return c;
     }
 
     protected final BcTlsCrypto crypto;
