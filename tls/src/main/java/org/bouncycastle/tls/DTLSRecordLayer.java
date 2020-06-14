@@ -581,7 +581,29 @@ class DTLSRecordLayer
 
         if (null == readVersion)
         {
-            readVersion = recordVersion;
+            boolean isHelloVerifyRequest =
+                    getReadEpoch() == 0
+                &&  length > 0
+                &&  ContentType.handshake == recordType
+                &&  HandshakeType.hello_verify_request == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
+
+            if (isHelloVerifyRequest)
+            {
+                /*
+                 * RFC 6347 4.2.1 DTLS 1.2 server implementations SHOULD use DTLS version 1.0
+                 * regardless of the version of TLS that is expected to be negotiated. DTLS 1.2 and
+                 * 1.0 clients MUST use the version solely to indicate packet formatting (which is
+                 * the same in both DTLS 1.2 and 1.0) and not as part of version negotiation.
+                 */
+                if (!ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(recordVersion))
+                {
+                    return -1;
+                }
+            }
+            else
+            {
+                readVersion = recordVersion;
+            }
         }
 
         switch (decoded.contentType)
