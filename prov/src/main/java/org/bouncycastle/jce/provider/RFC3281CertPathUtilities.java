@@ -367,8 +367,8 @@ class RFC3281CertPathUtilities
     protected static void processAttrCert3(X509Certificate acIssuerCert,
         PKIXExtendedParameters pkixParams) throws CertPathValidatorException
     {
-        if (acIssuerCert.getKeyUsage() != null
-            && (!acIssuerCert.getKeyUsage()[0] && !acIssuerCert.getKeyUsage()[1]))
+        boolean[] keyUsage = acIssuerCert.getKeyUsage();
+        if (keyUsage != null && !((keyUsage.length > 0 && keyUsage[0]) || (keyUsage.length > 1 && keyUsage[1])))
         {
             throw new CertPathValidatorException(
                 "Attribute certificate issuer public key cannot be used to validate digital signatures.");
