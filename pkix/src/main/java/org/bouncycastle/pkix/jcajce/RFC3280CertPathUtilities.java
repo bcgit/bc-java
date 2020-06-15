@@ -507,9 +507,9 @@ class RFC3280CertPathUtilities
         for (int i = 0; i < validCerts.size(); i++)
         {
             X509Certificate signCert = (X509Certificate)validCerts.get(i);
-            boolean[] keyusage = signCert.getKeyUsage();
+            boolean[] keyUsage = signCert.getKeyUsage();
 
-            if (keyusage != null && (keyusage.length < 7 || !keyusage[CRL_SIGN]))
+            if (keyUsage != null && (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN]))
             {
                 lastException = new AnnotatedException(
                     "Issuer certificate key usage extension does not permit CRL signing.");

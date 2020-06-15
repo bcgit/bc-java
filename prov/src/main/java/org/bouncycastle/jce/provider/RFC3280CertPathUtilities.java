@@ -558,9 +558,9 @@ class RFC3280CertPathUtilities
         for (int i = 0; i < validCerts.size(); i++)
         {
             X509Certificate signCert = (X509Certificate)validCerts.get(i);
-            boolean[] keyusage = signCert.getKeyUsage();
+            boolean[] keyUsage = signCert.getKeyUsage();
 
-            if (keyusage != null && (keyusage.length < 7 || !keyusage[CRL_SIGN]))
+            if (keyUsage != null && (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN]))
             {
                 lastException = new AnnotatedException(
                     "Issuer certificate key usage extension does not permit CRL signing.");
@@ -2116,9 +2116,9 @@ class RFC3280CertPathUtilities
         //
         // (n)
         //
-        boolean[] _usage = cert.getKeyUsage();
+        boolean[] keyUsage = cert.getKeyUsage();
 
-        if ((_usage != null) && !_usage[RFC3280CertPathUtilities.KEY_CERT_SIGN])
+        if (keyUsage != null && (keyUsage.length <= KEY_CERT_SIGN || !keyUsage[KEY_CERT_SIGN]))
         {
             throw new ExtCertPathValidatorException(
                 "Issuer certificate keyusage extension is critical and does not permit key signing.", null,

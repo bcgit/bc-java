@@ -791,7 +791,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             if (sign != null)
             {
                 boolean[] ku = sign.getKeyUsage(); 
-                if (ku != null && !ku[5])
+                if (ku != null && (ku.length <= 5 || !ku[5]))
                 {
                     ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.trustKeyUsage");
                     addNotification(msg);
@@ -1052,9 +1052,9 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
                 // n)
 
-                boolean[] _usage = cert.getKeyUsage();
+                boolean[] keyUsage = cert.getKeyUsage();
 
-                if ((_usage != null) && !_usage[KEY_CERT_SIGN])
+                if (keyUsage != null && (keyUsage.length <= KEY_CERT_SIGN || !keyUsage[KEY_CERT_SIGN]))
                 {
                     ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noCertSign");
                     addError(msg,index);
@@ -2162,10 +2162,9 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         {
             if (sign != null)
             {
-                boolean[] keyusage = sign.getKeyUsage();
+                boolean[] keyUsage = sign.getKeyUsage();
 
-                if (keyusage != null
-                    && (keyusage.length < 7 || !keyusage[CRL_SIGN]))
+                if (keyUsage != null && (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN]))
                 {
                     ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noCrlSigningPermited");
                     throw new CertPathReviewerException(msg);
