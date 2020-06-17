@@ -237,9 +237,9 @@ public class KMAC
 
         b[n] = n;
 
-        for (int i = 0; i < n; i++)
+        for (int i = 1; i <= n; i++)
         {
-            b[n - i - 1] = (byte)(strLen >> (8 * (n - i)));
+            b[i - 1] = (byte)(strLen >> (8 * (n - i)));
         }
 
         return b;
