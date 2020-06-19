@@ -40,6 +40,8 @@ public class CSHAKEDigest
 
         int required = blockSize - (diff.length % blockSize);
 
+        required %= blockSize;  //  otherwise diffPadAndAbsorb will add one entire blockSize of ZEROs,
+                                //  which contradicts the specification of bytepad(X,w) in NIST SP 800-185
         while (required > padding.length)
         {
             absorb(padding, 0, padding.length);
