@@ -1501,9 +1501,9 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                     //
                     // (n)
                     //
-                    boolean[] _usage = cert.getKeyUsage();
-                
-                    if ((_usage != null) && !_usage[5])
+                    boolean[] keyUsage = cert.getKeyUsage();
+
+                    if (keyUsage != null && (keyUsage.length <= 5 || !keyUsage[5]))
                     {
                         throw new CertPathValidatorException(
                                     "Issuer certificate keyusage extension is critical an does not permit key signing.\n",
@@ -1867,10 +1867,9 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
 
                 if (sign != null)
                 {
-                    boolean[] keyusage = sign.getKeyUsage();
+                    boolean[] keyUsage = sign.getKeyUsage();
 
-                    if (keyusage != null
-                        && (keyusage.length < 7 || !keyusage[CRL_SIGN]))
+                    if (keyUsage != null && (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN]))
                     {
                         throw new AnnotatedException(
                             "Issuer certificate keyusage extension does not permit crl signing.\n" + sign);
