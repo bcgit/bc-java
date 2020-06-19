@@ -548,7 +548,8 @@ public class CertTest
 
             PublicKey    k = cert.getPublicKey();
 
-            if (cert.getKeyUsage()[7])
+            boolean[] keyUsage = cert.getKeyUsage();
+            if (keyUsage == null || keyUsage.length <= 7 || keyUsage[7])
             {
                 return new SimpleTestResult(false, getName() + ": error generating cert - key usage wrong.");
             }
@@ -726,7 +727,8 @@ public class CertTest
 
             cert = (X509Certificate)fact.generateCertificate(bIn);
 
-            if (!cert.getKeyUsage()[7])
+            boolean[] keyUsage = cert.getKeyUsage();
+            if (keyUsage == null || keyUsage.length <= 7 || !keyUsage[7])
             {
                 return new SimpleTestResult(false, getName() + ": error generating cert - key usage wrong.");
             }
