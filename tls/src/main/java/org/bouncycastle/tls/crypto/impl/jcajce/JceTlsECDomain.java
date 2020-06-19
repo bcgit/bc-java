@@ -6,11 +6,12 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
@@ -51,7 +52,7 @@ public class JceTlsECDomain
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }
 
-    public JceTlsSecret calculateECDHAgreement(ECPrivateKey privateKey, ECPublicKey publicKey)
+    public JceTlsSecret calculateECDHAgreement(PrivateKey privateKey, PublicKey publicKey)
         throws IOException
     {
         try
@@ -84,7 +85,7 @@ public class JceTlsECDomain
         return ecCurve.decodePoint(encoding);
     }
 
-    public ECPublicKey decodePublicKey(byte[] encoding)
+    public PublicKey decodePublicKey(byte[] encoding)
         throws IOException
     {
         try
@@ -96,7 +97,7 @@ public class JceTlsECDomain
             ECPublicKeySpec keySpec = new ECPublicKeySpec(new java.security.spec.ECPoint(x, y), ecSpec);
 
             KeyFactory keyFact = crypto.getHelper().createKeyFactory("EC");
-            return (ECPublicKey)keyFact.generatePublic(keySpec);
+            return keyFact.generatePublic(keySpec);
         }
         catch (Exception e)
         {
@@ -109,11 +110,23 @@ public class JceTlsECDomain
         return point.getEncoded(false);
     }
 
-    public byte[] encodePublicKey(ECPublicKey publicKey) throws IOException
+    public byte[] encodePublicKey(PublicKey publicKey) throws IOException
     {
-        java.security.spec.ECPoint w = publicKey.getW();
+        // TODO Add new org.bouncycastle.util.ECPointHolder with getEncodedPoint(boolean)
 
-        return encodePoint(ecCurve.createPoint(w.getAffineX(), w.getAffineY()));
+        if (publicKey instanceof org.bouncycastle.jce.interfaces.ECPublicKey)
+        {
+            return encodePoint(((org.bouncycastle.jce.interfaces.ECPublicKey)publicKey).getQ());
+        }
+
+        if (publicKey instanceof java.security.interfaces.ECPublicKey)
+        {
+            java.security.spec.ECPoint w = ((java.security.interfaces.ECPublicKey)publicKey).getW();
+            return encodePoint(ecCurve.createPoint(w.getAffineX(), w.getAffineY()));
+        }
+
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+        return spki.getPublicKeyData().getOctets();
     }
 
     public KeyPair generateKeyPair()

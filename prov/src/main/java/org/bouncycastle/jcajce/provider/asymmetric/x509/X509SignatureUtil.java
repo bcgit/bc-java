@@ -119,7 +119,7 @@ class X509SignatureUtil
             return name.substring(0, dIndex) + name.substring(dIndex + 1);
         }
 
-        return MessageDigestUtils.getDigestName(digestAlgOID);
+        return name;
     }
 
     private static String findAlgName(ASN1ObjectIdentifier algOid)
