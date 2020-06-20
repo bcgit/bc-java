@@ -28,7 +28,7 @@ public class CSHAKEDigest
         }
         else
         {
-            diff = Arrays.concatenate(leftEncode(rate / 8), encodeString(N), encodeString(S));
+            diff = Arrays.concatenate(XofUtils.leftEncode(rate / 8), encodeString(N), encodeString(S));
             diffPadAndAbsorb();
         }
     }
@@ -53,32 +53,10 @@ public class CSHAKEDigest
     {
         if (str == null || str.length == 0)
         {
-            return leftEncode(0);
+            return XofUtils.leftEncode(0);
         }
 
-        return Arrays.concatenate(leftEncode(str.length * 8L), str);
-    }
-    
-    private static byte[] leftEncode(long strLen)
-    {
-    	byte n = 1;
-
-        long v = strLen;
-    	while ((v >>= 8) != 0)
-        {
-    		n++;
-    	}
-
-        byte[] b = new byte[n + 1];
-
-    	b[0] = n;
-  
-    	for (int i = 1; i <= n; i++)
-    	{
-    		b[i] = (byte)(strLen >> (8 * (n - i)));
-    	}
- 
-    	return b;
+        return Arrays.concatenate(XofUtils.leftEncode(str.length * 8L), str);
     }
     
     public int doOutput(byte[] out, int outOff, int outLen)
