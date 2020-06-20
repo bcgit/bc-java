@@ -271,7 +271,7 @@ public class ASN1GeneralizedTime
             }
         }
         catch (ParseException e)
-        {       e.printStackTrace();
+        {
             // we'll do our best and ignore daylight savings
         }
 
