@@ -55,7 +55,7 @@ public class KMAC
 
     public String getAlgorithmName()
     {
-        return "KMACwith" + cshake.getAlgorithmName();
+        return "KMAC" + cshake.getAlgorithmName().substring(6);
     }
 
     public int getByteLength()

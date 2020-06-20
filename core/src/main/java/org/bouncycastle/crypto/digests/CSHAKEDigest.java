@@ -15,8 +15,8 @@ public class CSHAKEDigest
      * Base constructor.
      *
      * @param bitLength bit length of the underlying SHAKE function, 128 or 256.
-     * @param N the function name string, note this is reserved for use by NIST. Avoid using it if not required.
-     * @param S the customization string - available for local use.
+     * @param N         the function name string, note this is reserved for use by NIST. Avoid using it if not required.
+     * @param S         the customization string - available for local use.
      */
     public CSHAKEDigest(int bitLength, byte[] N, byte[] S)
     {
@@ -45,7 +45,7 @@ public class CSHAKEDigest
             absorb(padding, 0, padding.length);
             required -= padding.length;
         }
-        
+
         absorb(padding, 0, required);
     }
 
@@ -58,7 +58,12 @@ public class CSHAKEDigest
 
         return Arrays.concatenate(XofUtils.leftEncode(str.length * 8L), str);
     }
-    
+
+    public String getAlgorithmName()
+    {
+        return "CSHAKE" + fixedOutputLength;
+    }
+
     public int doOutput(byte[] out, int outOff, int outLen)
     {
         if (diff != null)
@@ -81,7 +86,7 @@ public class CSHAKEDigest
     public void reset()
     {
         super.reset();
-        
+
         if (diff != null)
         {
             diffPadAndAbsorb();
