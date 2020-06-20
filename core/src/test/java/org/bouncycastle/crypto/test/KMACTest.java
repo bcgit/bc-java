@@ -25,7 +25,7 @@ public class KMACTest
     {
         KMAC kmac = new KMAC(128, Strings.toByteArray(""));
 
-        isEquals("KMACwithSHAKE128", kmac.getAlgorithmName());
+        isEquals("KMAC128", kmac.getAlgorithmName());
 
         kmac.init(new KeyParameter(Hex.decode(
             "404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F")));
@@ -74,7 +74,7 @@ public class KMACTest
 
         kmac = new KMAC(256, Strings.toByteArray("My Tagged Application"));
 
-        isEquals("KMACwithSHAKE256", kmac.getAlgorithmName());
+        isEquals("KMAC256", kmac.getAlgorithmName());
 
         kmac.init(new KeyParameter(Hex.decode("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F")));
 

@@ -187,6 +187,29 @@ public class ECDSA5Test
         isTrue(Arrays.areEqual(namedPubKey, pubKey.getEncoded()));
     }
 
+    private void pointCompressionTest()
+        throws Exception
+    {
+        String[] ids = new String[]{
+            "P-256",
+            "B-409",
+            "K-283"};
+
+        for (int i = 0; i != ids.length; i++)
+        {
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+            kpGen.initialize(new ECGenParameterSpec(ids[i]));
+
+            KeyPair kp = kpGen.generateKeyPair();
+
+            byte[] enc1 = kp.getPublic().getEncoded();
+            byte[] enc2 = org.bouncycastle.jcajce.util.ECKeyUtil.createKeyWithCompression((ECPublicKey)kp.getPublic()).getEncoded();
+
+            isTrue(enc1.length >= enc2.length + 32);
+        }
+    }
+
     private void decodeTest()
     {
         EllipticCurve curve = new EllipticCurve(
@@ -1227,6 +1250,7 @@ public class ECDSA5Test
         testSM2();
         testNonsense();
         testNamedCurveInKeyFactory();
+        pointCompressionTest();
     }
 
     public static void main(
