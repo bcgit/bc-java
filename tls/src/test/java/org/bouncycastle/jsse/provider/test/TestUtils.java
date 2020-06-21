@@ -117,16 +117,13 @@ class TestUtils
         certGen.setSignature(getAlgID(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
-        Signature sig = Signature.getInstance(sigName, ProviderUtils.PROVIDER_NAME_BC);
-
-        sig.initSign(keyPair.getPrivate());
-
-        sig.update(certGen.generateTBSCertificate().getEncoded(ASN1Encoding.DER));
-
         TBSCertificate tbsCert = certGen.generateTBSCertificate();
 
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        Signature sig = Signature.getInstance(sigName, ProviderUtils.PROVIDER_NAME_BC);
+        sig.initSign(keyPair.getPrivate());
+        sig.update(tbsCert.getEncoded(ASN1Encoding.DER));
 
+        ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(tbsCert);
         v.add(getAlgID(sigName));
         v.add(new DERBitString(sig.sign()));
@@ -157,16 +154,13 @@ class TestUtils
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);
 
-        Signature sig = Signature.getInstance(sigName, ProviderUtils.PROVIDER_NAME_BC);
-
-        sig.initSign(signerKey);
-
-        sig.update(certGen.generateTBSCertificate().getEncoded(ASN1Encoding.DER));
-
         TBSCertificate tbsCert = certGen.generateTBSCertificate();
 
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        Signature sig = Signature.getInstance(sigName, ProviderUtils.PROVIDER_NAME_BC);
+        sig.initSign(signerKey);
+        sig.update(tbsCert.getEncoded(ASN1Encoding.DER));
 
+        ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(tbsCert);
         v.add(getAlgID(sigName));
         v.add(new DERBitString(sig.sign()));
