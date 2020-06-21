@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.util;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -40,7 +41,7 @@ public class SSHNamedCurves
     private static final Map<String, String> curveNameToSSHName = Collections.unmodifiableMap(new HashMap<String, String>()
     {
         {
-            for (String[] item : new String[][]{
+            String[][] curves = {
                 {"secp256r1", "nistp256"},
                 {"secp384r1", "nistp384"},
                 {"secp521r1", "nistp521"},
@@ -53,8 +54,10 @@ public class SSHNamedCurves
                 {"sect409k1", "nistk409"},
                 {"sect409r1", "nistb409"},
                 {"sect571k1", "nistt571"}
-            })
+            };
+            for (int i = 0; i != curves.length; i++)
             {
+                String[] item = curves[i];
                 put(item[0], item[1]);
             }
         }
@@ -78,8 +81,9 @@ public class SSHNamedCurves
         oidToName = Collections.unmodifiableMap(new HashMap<ASN1ObjectIdentifier, String>()
         {
             {
-                for (String key : oidMap.keySet())
+                for (Iterator it = oidMap.keySet().iterator(); it.hasNext();)
                 {
+                    String key = (String)it.next();
                     put(oidMap.get(key), key);
                 }
             }
