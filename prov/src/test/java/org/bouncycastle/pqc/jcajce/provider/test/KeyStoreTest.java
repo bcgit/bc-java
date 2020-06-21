@@ -216,20 +216,15 @@ public class KeyStoreTest
 
         certGen.setExtensions(extGenerator.generate());
 
-        Signature sig = Signature.getInstance(sigName, BouncyCastlePQCProvider.PROVIDER_NAME);
-
-        sig.initSign(keyPair.getPrivate());
-
-        sig.update(certGen.generateTBSCertificate().getEncoded(ASN1Encoding.DER));
-
         TBSCertificate tbsCert = certGen.generateTBSCertificate();
 
+        Signature sig = Signature.getInstance(sigName, BouncyCastlePQCProvider.PROVIDER_NAME);
+        sig.initSign(keyPair.getPrivate());
+        sig.update(tbsCert.getEncoded(ASN1Encoding.DER));
+
         ASN1EncodableVector v = new ASN1EncodableVector();
-        // TBS
         v.add(tbsCert);
-        // Algorithm Identifier
         v.add((AlgorithmIdentifier)algIds.get(sigName));
-        // Signature
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME)
@@ -255,16 +250,13 @@ public class KeyStoreTest
 
         certGen.setExtensions(extensions);
 
-        Signature sig = Signature.getInstance(sigName, BouncyCastlePQCProvider.PROVIDER_NAME);
-
-        sig.initSign(signerKey);
-
-        sig.update(certGen.generateTBSCertificate().getEncoded(ASN1Encoding.DER));
-
         TBSCertificate tbsCert = certGen.generateTBSCertificate();
 
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        Signature sig = Signature.getInstance(sigName, BouncyCastlePQCProvider.PROVIDER_NAME);
+        sig.initSign(signerKey);
+        sig.update(tbsCert.getEncoded(ASN1Encoding.DER));
 
+        ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(tbsCert);
         v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));

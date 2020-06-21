@@ -138,21 +138,19 @@ class TestUtils
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);
 
-        Signature sig = Signature.getInstance(sigName, "BC");
-
-        sig.initSign(signerKey);
-
-        sig.update(certGen.generateTBSCertificate().getEncoded(ASN1Encoding.DER));
-
         TBSCertificate tbsCert = certGen.generateTBSCertificate();
 
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        Signature sig = Signature.getInstance(sigName, "BC");
+        sig.initSign(signerKey);
+        sig.update(tbsCert.getEncoded(ASN1Encoding.DER));
 
+        ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(tbsCert);
         v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
-        return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
+        return (X509Certificate)CertificateFactory.getInstance("X.509", "BC")
+            .generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
     /**
