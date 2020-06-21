@@ -117,6 +117,10 @@ class TestUtils
         certGen.setSignature(getAlgID(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
+        // some cert path analysers will reject a V3 certificate as a CA if it doesn't have basic constraints set.
+        certGen.setExtensions(new Extensions(
+            new Extension(Extension.basicConstraints, false, new BasicConstraints(true).getEncoded())));
+
         TBSCertificate tbsCert = certGen.generateTBSCertificate();
 
         Signature sig = Signature.getInstance(sigName, ProviderUtils.PROVIDER_NAME_BC);
