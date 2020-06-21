@@ -41,25 +41,21 @@ public class ECKeyUtil
             this.ecPublicKey = ecPublicKey;
         }
 
-        @Override
         public ECPoint getW()
         {
             return ecPublicKey.getW();
         }
 
-        @Override
         public String getAlgorithm()
         {
             return ecPublicKey.getAlgorithm();
         }
 
-        @Override
         public String getFormat()
         {
             return ecPublicKey.getFormat();
         }
 
-        @Override
         public byte[] getEncoded()
         {
             SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(ecPublicKey.getEncoded());
@@ -102,7 +98,6 @@ public class ECKeyUtil
             }
         }
 
-        @Override
         public ECParameterSpec getParams()
         {
             return ecPublicKey.getParams();
