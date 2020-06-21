@@ -94,8 +94,7 @@ public class KMACwithSHAKE256_params
     {
         return Arrays.clone(customizationString);
     }
-
-    @Override
+    
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
