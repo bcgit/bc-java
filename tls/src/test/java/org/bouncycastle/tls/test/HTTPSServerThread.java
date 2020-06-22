@@ -85,7 +85,7 @@ public class HTTPSServerThread
         TrustManagerFactory trustFact = TlsTestUtils.getSunX509TrustManagerFactory();
         trustFact.init(trustStore);
 
-        SSLContext sslContext = SSLContext.getInstance("TLS");
+        SSLContext sslContext = SSLContext.getInstance("TLS","SunJSSE");
         sslContext.init(mgrFact.getKeyManagers(), trustFact.getTrustManagers(), null);
         return sslContext;
     }
