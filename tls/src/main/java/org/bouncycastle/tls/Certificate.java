@@ -258,7 +258,7 @@ public class Certificate
     protected static void calculateEndPointHash(TlsContext context, TlsCertificate cert, byte[] encoding,
         OutputStream output) throws IOException
     {
-        byte[] endPointHash = TlsUtils.calculateEndPointHash(context, cert.getSigAlgOID(), encoding);
+        byte[] endPointHash = TlsUtils.calculateEndPointHash(context, cert, encoding);
         if (endPointHash != null && endPointHash.length > 0)
         {
             output.write(endPointHash);

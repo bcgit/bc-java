@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.tls.crypto.TlsAgreement;
@@ -1471,42 +1472,74 @@ public class TlsUtils
         return c;
     }
 
-    static byte[] calculateEndPointHash(TlsContext context, String sigAlgOID, byte[] enc)
+    static byte[] calculateEndPointHash(TlsContext context, TlsCertificate certificate, byte[] enc) throws IOException
     {
-        return calculateEndPointHash(context, sigAlgOID, enc, 0, enc.length);
+        return calculateEndPointHash(context, certificate, enc, 0, enc.length);
     }
 
     /*
      * TODO[tls13] Check relevance of endpoint hash in TLS 1.3; if still exists, what about
      * signature schemes using Intrinsic hash?
      */
-    static byte[] calculateEndPointHash(TlsContext context, String sigAlgOID, byte[] enc, int encOff, int encLen)
+    static byte[] calculateEndPointHash(TlsContext context, TlsCertificate certificate, byte[] enc, int encOff,
+        int encLen) throws IOException
     {
+        short hashAlgorithm = HashAlgorithm.none;
+
+        String sigAlgOID = certificate.getSigAlgOID();
         if (sigAlgOID != null)
         {
-            SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(sigAlgOID);
-            if (sigAndHashAlg != null)
+            if (PKCSObjectIdentifiers.id_RSASSA_PSS.getId().equals(sigAlgOID))
             {
-                short hashAlgorithm = sigAndHashAlg.getHash();
-                switch (hashAlgorithm)
+                RSASSAPSSparams pssParams = RSASSAPSSparams.getInstance(certificate.getSigAlgParams());
+                if (null != pssParams)
                 {
-                case HashAlgorithm.md5:
-                case HashAlgorithm.sha1:
-                    hashAlgorithm = HashAlgorithm.sha256;
-                    break;
-                case HashAlgorithm.none:
-                case HashAlgorithm.Intrinsic:
-                    return EMPTY_BYTES;
+                    ASN1ObjectIdentifier hashOID = pssParams.getHashAlgorithm().getAlgorithm();
+                    if (NISTObjectIdentifiers.id_sha256.equals(hashOID))
+                    {
+                        hashAlgorithm = HashAlgorithm.sha256;
+                    }
+                    else if (NISTObjectIdentifiers.id_sha384.equals(hashOID))
+                    {
+                        hashAlgorithm = HashAlgorithm.sha384;
+                    }
+                    else if (NISTObjectIdentifiers.id_sha512.equals(hashOID))
+                    {
+                        hashAlgorithm = HashAlgorithm.sha512;
+                    }
                 }
-
-                TlsHash hash = context.getCrypto().createHash(hashAlgorithm);
-                if (hash != null)
-                {                
-                    hash.update(enc, encOff, encLen);
-                    return hash.calculateHash();
+            }
+            else
+            {
+                SignatureAndHashAlgorithm sigAndHashAlg = (SignatureAndHashAlgorithm)CERT_SIG_ALG_OIDS.get(sigAlgOID);
+                if (sigAndHashAlg != null)
+                {
+                    hashAlgorithm = sigAndHashAlg.getHash();
                 }
             }
         }
+
+        switch (hashAlgorithm)
+        {
+        case HashAlgorithm.Intrinsic:
+            hashAlgorithm = HashAlgorithm.none;
+            break;
+        case HashAlgorithm.md5:
+        case HashAlgorithm.sha1:
+            hashAlgorithm = HashAlgorithm.sha256;
+            break;
+        }
+
+        if (HashAlgorithm.none != hashAlgorithm)
+        {
+            TlsHash hash = context.getCrypto().createHash(hashAlgorithm);
+            if (hash != null)
+            {                
+                hash.update(enc, encOff, encLen);
+                return hash.calculateHash();
+            }
+        }
+
         return EMPTY_BYTES;
     }
 
