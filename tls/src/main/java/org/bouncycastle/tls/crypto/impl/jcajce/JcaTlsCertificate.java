@@ -44,7 +44,7 @@ public class JcaTlsCertificate
     protected static final int KU_KEY_ENCIPHERMENT = 2;
     protected static final int KU_DATA_ENCIPHERMENT = 3;
     protected static final int KU_KEY_AGREEMENT = 4;
-    protected static final int KU_CERT_SIGN = 5;
+    protected static final int KU_KEY_CERT_SIGN = 5;
     protected static final int KU_CRL_SIGN = 6;
     protected static final int KU_ENCIPHER_ONLY = 7;
     protected static final int KU_DECIPHER_ONLY = 8;
@@ -307,7 +307,8 @@ public class JcaTlsCertificate
     public boolean supportsSignatureAlgorithm(short signatureAlgorithm)
         throws IOException
     {
-        if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE))
+        if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE) &&
+            !supportsKeyUsageBit(KU_KEY_CERT_SIGN))
         {
             return false;
         }

@@ -4312,11 +4312,9 @@ public class TlsUtils
         for (int i = 0; i < trustAnchorPos; ++i)
         {
             TlsCertificate subjectCert = clientCertPath[i];
-            // TODO[tls13] Needed to distinguish rsa_pss_pss_* from rsa_pss_rsae_* .
-//            TlsCertificate issuerCert = clientCertPath[i + 1];
+            TlsCertificate issuerCert = clientCertPath[i + 1];
 
-            String sigAlgOID = subjectCert.getSigAlgOID();
-            SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(sigAlgOID);
+            SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(subjectCert, issuerCert);
 
             boolean valid = false;
             if (null == sigAndHashAlg)
@@ -4374,11 +4372,9 @@ public class TlsUtils
         for (int i = 0; i < trustAnchorPos; ++i)
         {
             TlsCertificate subjectCert = serverCertPath[i];
-            // TODO[tls13] Needed to distinguish rsa_pss_pss_* from rsa_pss_rsae_* .
-//            TlsCertificate issuerCert = serverCertPath[i + 1];
+            TlsCertificate issuerCert = serverCertPath[i + 1];
 
-            String sigAlgOID = subjectCert.getSigAlgOID();
-            SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(sigAlgOID);
+            SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(subjectCert, issuerCert);
 
             boolean valid = false;
             if (null == sigAndHashAlg)
@@ -4508,10 +4504,59 @@ public class TlsUtils
         clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
     }
 
-    static SignatureAndHashAlgorithm getCertSigAndHashAlg(String sigAlgOID)
+    static SignatureAndHashAlgorithm getCertSigAndHashAlg(TlsCertificate subjectCert, TlsCertificate issuerCert)
+        throws IOException
     {
-        // TODO[tls13] This isn't working for the 6 RSA/PSS signature schemes;
-        return (SignatureAndHashAlgorithm)CERT_SIG_ALG_OIDS.get(sigAlgOID);
+        String sigAlgOID = subjectCert.getSigAlgOID();
+
+        if (null != sigAlgOID)
+        {
+            if (!PKCSObjectIdentifiers.id_RSASSA_PSS.getId().equals(sigAlgOID))
+            {
+                return (SignatureAndHashAlgorithm)CERT_SIG_ALG_OIDS.get(sigAlgOID);
+            }
+
+            RSASSAPSSparams pssParams = RSASSAPSSparams.getInstance(subjectCert.getSigAlgParams());
+            if (null != pssParams)
+            {
+                ASN1ObjectIdentifier hashOID = pssParams.getHashAlgorithm().getAlgorithm();
+                if (NISTObjectIdentifiers.id_sha256.equals(hashOID))
+                {
+                    if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_pss_sha256))
+                    {
+                        return SignatureAndHashAlgorithm.rsa_pss_pss_sha256;
+                    }
+                    else if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_rsae_sha256))
+                    {
+                        return SignatureAndHashAlgorithm.rsa_pss_rsae_sha256;
+                    }
+                }
+                else if (NISTObjectIdentifiers.id_sha384.equals(hashOID))
+                {
+                    if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_pss_sha384))
+                    {
+                        return SignatureAndHashAlgorithm.rsa_pss_pss_sha384;
+                    }
+                    else if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_rsae_sha384))
+                    {
+                        return SignatureAndHashAlgorithm.rsa_pss_rsae_sha384;
+                    }
+                }
+                else if (NISTObjectIdentifiers.id_sha512.equals(hashOID))
+                {
+                    if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_pss_sha512))
+                    {
+                        return SignatureAndHashAlgorithm.rsa_pss_pss_sha512;
+                    }
+                    else if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_rsae_sha512))
+                    {
+                        return SignatureAndHashAlgorithm.rsa_pss_rsae_sha512;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     static CertificateRequest validateCertificateRequest(CertificateRequest certificateRequest, TlsKeyExchange keyExchange)
