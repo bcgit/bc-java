@@ -2195,8 +2195,6 @@ public class TlsUtils
             verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(), sigAndHashAlg);
         }
 
-        // TODO Check explicitly that clientCertificate supports the signatureAlgorithm (instead of fail-on-try)
-
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified;
         try
@@ -2258,8 +2256,6 @@ public class TlsUtils
         verifySupportedSignatureAlgorithm(securityParameters.getClientSigAlgs(), sigAndHashAlg);
 
         short signatureAlgorithm = sigAndHashAlg.getSignature();
-
-        // TODO Check explicitly that serverCertificate supports the signatureAlgorithm (instead of fail-on-try)
 
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified;
@@ -4522,33 +4518,33 @@ public class TlsUtils
                 ASN1ObjectIdentifier hashOID = pssParams.getHashAlgorithm().getAlgorithm();
                 if (NISTObjectIdentifiers.id_sha256.equals(hashOID))
                 {
-                    if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_pss_sha256))
+                    if (issuerCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_pss_sha256))
                     {
                         return SignatureAndHashAlgorithm.rsa_pss_pss_sha256;
                     }
-                    else if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_rsae_sha256))
+                    else if (issuerCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_rsae_sha256))
                     {
                         return SignatureAndHashAlgorithm.rsa_pss_rsae_sha256;
                     }
                 }
                 else if (NISTObjectIdentifiers.id_sha384.equals(hashOID))
                 {
-                    if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_pss_sha384))
+                    if (issuerCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_pss_sha384))
                     {
                         return SignatureAndHashAlgorithm.rsa_pss_pss_sha384;
                     }
-                    else if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_rsae_sha384))
+                    else if (issuerCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_rsae_sha384))
                     {
                         return SignatureAndHashAlgorithm.rsa_pss_rsae_sha384;
                     }
                 }
                 else if (NISTObjectIdentifiers.id_sha512.equals(hashOID))
                 {
-                    if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_pss_sha512))
+                    if (issuerCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_pss_sha512))
                     {
                         return SignatureAndHashAlgorithm.rsa_pss_pss_sha512;
                     }
-                    else if (issuerCert.supportsSignatureAlgorithm(SignatureAlgorithm.rsa_pss_rsae_sha512))
+                    else if (issuerCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_rsae_sha512))
                     {
                         return SignatureAndHashAlgorithm.rsa_pss_rsae_sha512;
                     }

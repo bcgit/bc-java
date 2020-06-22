@@ -44,6 +44,8 @@ public interface TlsCertificate
      */
     boolean supportsSignatureAlgorithm(short signatureAlgorithm) throws IOException;
 
+    boolean supportsSignatureAlgorithmCA(short signatureAlgorithm) throws IOException;
+
     /**
      * @param connectionEnd
      *            {@link ConnectionEnd}
