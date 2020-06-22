@@ -13,6 +13,7 @@ import java.security.interfaces.RSAPublicKey;
 
 import javax.crypto.interfaces.DHPublicKey;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -26,6 +27,7 @@ import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
@@ -179,6 +181,13 @@ public class JcaTlsCertificate
     public String getSigAlgOID()
     {
         return certificate.getSigAlgOID();
+    }
+
+    public ASN1Encodable getSigAlgParams() throws IOException
+    {
+        byte[] derEncoding = certificate.getSigAlgParams();
+
+        return null == derEncoding ? null : TlsUtils.readDERObject(derEncoding);
     }
 
     DHPublicKey getPubKeyDH() throws IOException
