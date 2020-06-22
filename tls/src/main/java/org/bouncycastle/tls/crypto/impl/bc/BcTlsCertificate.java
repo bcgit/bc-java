@@ -289,7 +289,8 @@ public class BcTlsCertificate
     public boolean supportsSignatureAlgorithm(short signatureAlgorithm)
         throws IOException
     {
-        if (!supportsKeyUsage(KeyUsage.digitalSignature))
+        if (!supportsKeyUsage(KeyUsage.digitalSignature) &&
+            !supportsKeyUsage(KeyUsage.keyCertSign))
         {
             return false;
         }
