@@ -186,7 +186,7 @@ abstract class AbstractTlsContext
         {
             byte[] tlsServerEndPoint = sp.getTLSServerEndPoint();
 
-            return tlsServerEndPoint.length < 1 ? null : Arrays.clone(tlsServerEndPoint);
+            return TlsUtils.isNullOrEmpty(tlsServerEndPoint) ? null : Arrays.clone(tlsServerEndPoint);
         }
 
         case ChannelBinding.tls_unique:
