@@ -125,6 +125,20 @@ class SMimeUtils
     {
         return new FilterOutputStream(destination)
         {
+            public void write(byte buf[], int off, int len)
+                throws IOException
+            {
+                if (buf == null)
+                {
+                    throw new NullPointerException();
+                }
+                if ((off | len | (buf.length - (len + off)) | (off + len)) < 0)
+                {
+                    throw new IndexOutOfBoundsException();
+                }
+                out.write(buf, off, len);
+            }
+
             public void close()
                 throws IOException
             {

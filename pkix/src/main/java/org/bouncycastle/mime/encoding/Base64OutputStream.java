@@ -44,6 +44,8 @@ public class Base64OutputStream
         if (bufOff > 0)
         {
             Base64.encode(buffer, 0, bufOff, out);
+            out.write('\r');
+            out.write('\n');
         }
         out.close();
     }
