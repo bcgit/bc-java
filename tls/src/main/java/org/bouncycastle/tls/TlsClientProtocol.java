@@ -12,6 +12,7 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 
 public class TlsClientProtocol
     extends TlsProtocol
@@ -1019,7 +1020,7 @@ public class TlsClientProtocol
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            TlsAgreement agreement = (TlsAgreement)clientAgreements.get(keyShareEntry.getNamedGroup());
+            TlsAgreement agreement = (TlsAgreement)clientAgreements.get(Integers.valueOf(keyShareEntry.getNamedGroup()));
             if (null == agreement)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
