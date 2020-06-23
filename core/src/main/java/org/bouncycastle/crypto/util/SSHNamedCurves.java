@@ -94,12 +94,12 @@ public class SSHNamedCurves
 
     public static ASN1ObjectIdentifier getByName(String sshName)
     {
-        return oidMap.get(sshName);
+        return (ASN1ObjectIdentifier)oidMap.get(sshName);
     }
 
     public static X9ECParameters getParameters(String sshName)
     {
-        return NISTNamedCurves.getByOID(oidMap.get(Strings.toLowerCase(sshName)));
+        return NISTNamedCurves.getByOID((ASN1ObjectIdentifier)oidMap.get(Strings.toLowerCase(sshName)));
     }
 
     public static X9ECParameters getParameters(ASN1ObjectIdentifier oid)
@@ -109,7 +109,7 @@ public class SSHNamedCurves
 
     public static String getName(ASN1ObjectIdentifier oid)
     {
-        return oidToName.get(oid);
+        return (String)oidToName.get(oid);
     }
 
     public static String getNameForParameters(ECDomainParameters parameters)
@@ -125,6 +125,6 @@ public class SSHNamedCurves
 
     public static String getNameForParameters(ECCurve curve)
     {
-        return curveNameToSSHName.get(curveMap.get(curve));
+        return (String)curveNameToSSHName.get(curveMap.get(curve));
     }
 }
