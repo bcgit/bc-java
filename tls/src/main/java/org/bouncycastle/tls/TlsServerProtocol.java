@@ -17,7 +17,6 @@ public class TlsServerProtocol
 
     protected int[] offeredCipherSuites = null;
     protected TlsKeyExchange keyExchange = null;
-    protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
     protected byte[] serverFinishedTranscriptHash = null;
     protected boolean offeredExtendedMasterSecret;
@@ -101,7 +100,6 @@ public class TlsServerProtocol
 
         this.offeredCipherSuites = null;
         this.keyExchange = null;
-        this.serverCredentials = null;
         this.certificateRequest = null;
         this.serverFinishedTranscriptHash = null;
         this.offeredExtendedMasterSecret = false;
@@ -114,8 +112,7 @@ public class TlsServerProtocol
         return null != clientCertificate && !clientCertificate.isEmpty() && keyExchange.requiresCertificateVerify();
     }
 
-    protected ServerHello generate13ServerHello()
-        throws IOException
+    protected ServerHello generate13ServerHello(boolean afterHelloRetryRequest) throws IOException
     {
         // TODO[tls13]
         throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -168,7 +165,7 @@ public class TlsServerProtocol
         // TODO[tls13] At some point after here we should redirect to generate13ServerHello
 //        if (negotiatedTLSv13Plus)
 //        {
-//            return generate13ServerHello();
+//            return generate13ServerHello(false);
 //        }
 
         {
@@ -424,25 +421,11 @@ public class TlsServerProtocol
                 receive13ClientHelloRetry(buf);
                 this.connection_state = CS_CLIENT_HELLO_RETRY;
 
-                /*
-                 * TODO[tls13] ServerHello, EncryptedExtensions, CertificateRequest*, Certificate,
-                 * CertificateVerify, Finished
-                 */
-
+                ServerHello serverHello = generate13ServerHello(true);
+                sendServerHelloMessage(serverHello);
                 this.connection_state = CS_SERVER_HELLO;
 
-                byte[] serverHelloTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
-
-                TlsUtils.establish13PhaseHandshake(tlsServerContext, serverHelloTranscriptHash, recordStream);
-
-                this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
-                this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
-                this.connection_state = CS_SERVER_CERTIFICATE;
-                this.connection_state = CS_SERVER_CERTIFICATE_VERIFY;
-                this.connection_state = CS_SERVER_FINISHED;
-
-                this.serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
-
+                send13ServerHelloCoda(serverHello, true);
                 break;
             }
             default:
@@ -559,55 +542,60 @@ public class TlsServerProtocol
                 ServerHello serverHello = generateServerHelloMessage();
                 handshakeHash.notifyPRFDetermined();
 
-                if (serverHello.isHelloRetryRequest())
+                if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                 {
-                    TlsUtils.adjustTranscriptForRetry(handshakeHash);
-                    sendServerHelloMessage(serverHello);
-                    this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
+                    // TODO[tls13]
+//                    throw new TlsFatalAlert(AlertDescription.internal_error);
+
+                    if (serverHello.isHelloRetryRequest())
+                    {
+                        TlsUtils.adjustTranscriptForRetry(handshakeHash);
+                        sendServerHelloMessage(serverHello);
+                        this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
+                    }
+                    else
+                    {
+                        sendServerHelloMessage(serverHello);
+                        this.connection_state = CS_SERVER_HELLO;
+
+                        send13ServerHelloCoda(serverHello, false);
+                    }
                     break;
                 }
 
                 sendServerHelloMessage(serverHello);
                 this.connection_state = CS_SERVER_HELLO;
 
-                if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
-                {
-                    /*
-                     * TODO[tls13] EncryptedExtensions, CertificateRequest*, Certificate,
-                     * CertificateVerify, Finished
-                     */
-//                    break;
-                    throw new TlsFatalAlert(AlertDescription.internal_error);
-                }
-
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
                 {
                     sendSupplementalDataMessage(serverSupplementalData);
+                    this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
                 }
-                this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
                 this.keyExchange = TlsUtils.initKeyExchangeServer(tlsServerContext, tlsServer);
-                this.serverCredentials = TlsUtils.establishServerCredentials(tlsServer);
+
+                TlsCredentials serverCredentials = TlsUtils.establishServerCredentials(tlsServer);
 
                 // Server certificate
                 {
                     Certificate serverCertificate = null;
 
                     ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
-                    if (null == this.serverCredentials)
+                    if (null == serverCredentials)
                     {
                         this.keyExchange.skipServerCredentials();
                     }
                     else
                     {
-                        this.keyExchange.processServerCredentials(this.serverCredentials);
+                        this.keyExchange.processServerCredentials(serverCredentials);
 
-                        serverCertificate = this.serverCredentials.getCertificate();
+                        serverCertificate = serverCredentials.getCertificate();
                         sendCertificateMessage(serverCertificate, endPointHash);
+                        this.connection_state = CS_SERVER_CERTIFICATE;
                     }
+
                     securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
-                    this.connection_state = CS_SERVER_CERTIFICATE;
 
                     // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
                     if (null == serverCertificate || serverCertificate.isEmpty())
@@ -622,19 +610,18 @@ public class TlsServerProtocol
                     if (certificateStatus != null)
                     {
                         sendCertificateStatusMessage(certificateStatus);
+                        this.connection_state = CS_SERVER_CERTIFICATE_STATUS;
                     }
                 }
-
-                this.connection_state = CS_SERVER_CERTIFICATE_STATUS;
 
                 byte[] serverKeyExchange = this.keyExchange.generateServerKeyExchange();
                 if (serverKeyExchange != null)
                 {
                     sendServerKeyExchangeMessage(serverKeyExchange);
+                    this.connection_state = CS_SERVER_KEY_EXCHANGE;
                 }
-                this.connection_state = CS_SERVER_KEY_EXCHANGE;
 
-                if (this.serverCredentials != null)
+                if (null != serverCredentials)
                 {
                     this.certificateRequest = tlsServer.getCertificateRequest();
 
@@ -664,9 +651,9 @@ public class TlsServerProtocol
                         TlsUtils.trackHashAlgorithms(handshakeHash, securityParameters.getServerSigAlgs());
 
                         sendCertificateRequestMessage(certificateRequest);
+                        this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
                     }
                 }
-                this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
 
                 sendServerHelloDoneMessage();
                 this.connection_state = CS_SERVER_HELLO_DONE;
@@ -817,8 +804,8 @@ public class TlsServerProtocol
                 if (this.expectSessionTicket)
                 {
                     sendNewSessionTicketMessage(tlsServer.getNewSessionTicket());
+                    this.connection_state = CS_SERVER_SESSION_TICKET;
                 }
-                this.connection_state = CS_SERVER_SESSION_TICKET;
 
                 sendChangeCipherSpecMessage();
                 sendFinishedMessage();
@@ -1175,6 +1162,82 @@ public class TlsServerProtocol
         {
             this.handshakeHash = handshakeHash.stopTracking();
         }
+    }
+
+    protected void send13ServerHelloCoda(ServerHello serverHello, boolean afterHelloRetryRequest) throws IOException
+    {
+        final SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+
+        byte[] serverHelloTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
+
+        TlsUtils.establish13PhaseHandshake(tlsServerContext, serverHelloTranscriptHash, recordStream);
+
+        /*
+         * TODO[tls13] EncryptedExtensions
+         */
+        this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
+
+        // CertificateRequest
+        {
+            this.certificateRequest = tlsServer.getCertificateRequest();
+            if (null != certificateRequest)
+            {
+                if (!certificateRequest.hasCertificateRequestContext(TlsUtils.EMPTY_BYTES))
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
+
+                sendCertificateRequestMessage(certificateRequest);
+                this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
+            }
+        }
+
+        /*
+         * TODO[tls13] For PSK-only key exchange, there's no Certificate message.
+         */
+
+        TlsCredentialedSigner serverCredentials = TlsUtils.establish13ServerCredentials(tlsServer);
+        if (null == serverCredentials)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        // Certificate
+        {
+            /*
+             * TODO[tls13] Note that we are expecting the TlsServer implementation to take care of
+             * e.g. adding optional "status_request" extension to each CertificateEntry.
+             */
+            /*
+             * No CertificateStatus message is sent; TLS 1.3 uses per-CertificateEntry
+             * "status_request" extension instead.
+             */
+
+            ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
+            Certificate serverCertificate = serverCredentials.getCertificate();
+            send13CertificateMessage(serverCertificate, endPointHash);
+            securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
+            securityParameters.statusRequestVersion = 1;
+            this.connection_state = CS_SERVER_CERTIFICATE;
+        }
+
+        // CertificateVerify
+        {
+            DigitallySigned certificateVerify = TlsUtils.generate13CertificateVerify(tlsServerContext, serverCredentials,
+                handshakeHash);
+            send13CertificateVerifyMessage(certificateVerify);
+            this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
+        }
+
+        // Finished
+        {
+            send13FinishedMessage();
+            this.connection_state = CS_SERVER_FINISHED;
+        }
+
+        this.serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
