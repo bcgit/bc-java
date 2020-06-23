@@ -179,6 +179,18 @@ public class SMIMEEnvelopedWriter
             this.backing = backing;
         }
 
+        public void write(byte[] buf)
+            throws IOException
+        {
+            main.write(buf);
+        }
+
+        public void write(byte[] buf, int off, int len)
+            throws IOException
+        {
+            main.write(buf, off, len);
+        }
+
         public void write(int i)
             throws IOException
         {
