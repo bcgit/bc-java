@@ -50,70 +50,101 @@ public class Base64Encoder
         initialiseDecodingTable();
     }
     
+    public int encode(byte[] inBuf, int inOff, int inLen, byte[] outBuf, int outOff) throws IOException
+    {
+        int inPos = inOff;
+        int inEnd = inOff + inLen - 2;
+        int outPos = outOff;
+
+        while (inPos < inEnd)
+        {
+            int a1 = inBuf[inPos++] & 0xFF;
+            int a2 = inBuf[inPos++] & 0xFF;
+            int a3 = inBuf[inPos++] & 0xFF;
+
+            outBuf[outPos++] = encodingTable[(a1 >>> 2) & 0x3F];
+            outBuf[outPos++] = encodingTable[((a1 << 4) | (a2 >>> 4)) & 0x3F];
+            outBuf[outPos++] = encodingTable[((a2 << 2) | (a3 >>> 6)) & 0x3F];
+            outBuf[outPos++] = encodingTable[a3 & 0x3F];
+        }
+
+        switch (inLen - (inPos - inOff))
+        {
+        case 1:
+        {
+            int a1 = inBuf[inPos++] & 0xff;
+
+            outBuf[outPos++] = encodingTable[(a1 >>> 2) & 0x3F];
+            outBuf[outPos++] = encodingTable[(a1 << 4) & 0x3F];
+            outBuf[outPos++] = padding;
+            outBuf[outPos++] = padding;
+            break;
+        }
+        case 2:
+        {
+            int a1 = inBuf[inPos++] & 0xFF;
+            int a2 = inBuf[inPos++] & 0xFF;
+
+            outBuf[outPos++] = encodingTable[(a1 >>> 2) & 0x3F];
+            outBuf[outPos++] = encodingTable[((a1 << 4) | (a2 >>> 4)) & 0x3F];
+            outBuf[outPos++] = encodingTable[(a2 << 2) & 0x3F];
+            outBuf[outPos++] = padding;
+            break;
+        }
+        }
+
+        return outPos - outOff;
+    }
+
     /**
      * encode the input data producing a base 64 output stream.
      *
      * @return the number of bytes produced.
      */
-    public int encode(
-        byte[]                data,
-        int                    off,
-        int                    length,
-        OutputStream    out) 
+    public int encode(byte[] inBuf, int inOff, int inLen, OutputStream out) 
         throws IOException
     {
-        int modulus = length % 3;
-        int dataLength = (length - modulus);
-        int a1, a2, a3;
-        
-        for (int i = off; i < off + dataLength; i += 3)
-        {
-            a1 = data[i] & 0xff;
-            a2 = data[i + 1] & 0xff;
-            a3 = data[i + 2] & 0xff;
+        int inPos = inOff;
+        int inEnd = inOff + inLen - 2;
 
-            out.write(encodingTable[(a1 >>> 2) & 0x3f]);
-            out.write(encodingTable[((a1 << 4) | (a2 >>> 4)) & 0x3f]);
-            out.write(encodingTable[((a2 << 2) | (a3 >>> 6)) & 0x3f]);
-            out.write(encodingTable[a3 & 0x3f]);
+        while (inPos < inEnd)
+        {
+            int a1 = inBuf[inPos++] & 0xFF;
+            int a2 = inBuf[inPos++] & 0xFF;
+            int a3 = inBuf[inPos++] & 0xFF;
+
+            out.write(encodingTable[(a1 >>> 2) & 0x3F]);
+            out.write(encodingTable[((a1 << 4) | (a2 >>> 4)) & 0x3F]);
+            out.write(encodingTable[((a2 << 2) | (a3 >>> 6)) & 0x3F]);
+            out.write(encodingTable[a3 & 0x3F]);
         }
 
-        /*
-         * process the tail end.
-         */
-        int    b1, b2, b3;
-        int    d1, d2;
-
-        switch (modulus)
+        switch (inLen - (inPos - inOff))
         {
-        case 0:        /* nothing left to do */
-            break;
         case 1:
-            d1 = data[off + dataLength] & 0xff;
-            b1 = (d1 >>> 2) & 0x3f;
-            b2 = (d1 << 4) & 0x3f;
+        {
+            int a1 = inBuf[inPos++] & 0xff;
 
-            out.write(encodingTable[b1]);
-            out.write(encodingTable[b2]);
+            out.write(encodingTable[(a1 >>> 2) & 0x3F]);
+            out.write(encodingTable[(a1 << 4) & 0x3F]);
             out.write(padding);
-            out.write(padding);
-            break;
-        case 2:
-            d1 = data[off + dataLength] & 0xff;
-            d2 = data[off + dataLength + 1] & 0xff;
-
-            b1 = (d1 >>> 2) & 0x3f;
-            b2 = ((d1 << 4) | (d2 >>> 4)) & 0x3f;
-            b3 = (d2 << 2) & 0x3f;
-
-            out.write(encodingTable[b1]);
-            out.write(encodingTable[b2]);
-            out.write(encodingTable[b3]);
             out.write(padding);
             break;
         }
+        case 2:
+        {
+            int a1 = inBuf[inPos++] & 0xFF;
+            int a2 = inBuf[inPos++] & 0xFF;
 
-        return (dataLength / 3) * 4 + ((modulus == 0) ? 0 : 4);
+            out.write(encodingTable[(a1 >>> 2) & 0x3F]);
+            out.write(encodingTable[((a1 << 4) | (a2 >>> 4)) & 0x3F]);
+            out.write(encodingTable[(a2 << 2) & 0x3F]);
+            out.write(padding);
+            break;
+        }
+        }
+
+        return ((inLen + 2) / 3) * 4;
     }
 
     private boolean ignore(
