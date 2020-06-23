@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
@@ -30,6 +31,8 @@ public interface TlsCertificate
      */
     String getSigAlgOID();
 
+    ASN1Encodable getSigAlgParams() throws IOException;
+
     /**
      * @return {@link SignatureAlgorithm}
      */
@@ -40,6 +43,8 @@ public interface TlsCertificate
      * @return true if (and only if) this certificate can be used to verify the given signature algorithm. 
      */
     boolean supportsSignatureAlgorithm(short signatureAlgorithm) throws IOException;
+
+    boolean supportsSignatureAlgorithmCA(short signatureAlgorithm) throws IOException;
 
     /**
      * @param connectionEnd
