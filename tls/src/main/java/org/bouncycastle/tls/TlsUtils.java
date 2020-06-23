@@ -1443,7 +1443,7 @@ public class TlsUtils
 
     public static byte[] clone(byte[] data)
     {
-        return null == data ? null : data.length == 0 ? EMPTY_BYTES : data.clone();
+        return null == data ? (byte[])null : data.length == 0 ? EMPTY_BYTES : data.clone();
     }
 
     public static boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
@@ -4816,7 +4816,7 @@ public class TlsUtils
         int keyShareGroup) throws IOException
     {
         int[] supportedGroups = new int[]{ keyShareGroup };
-        Vector keyShareGroups = vectorOfOne(Integer.valueOf(keyShareGroup));
+        Vector keyShareGroups = vectorOfOne(Integers.valueOf(keyShareGroup));
         Hashtable clientAgreements = new Hashtable(1, 1.0f);
         Vector clientShares = new Vector(1);
 
