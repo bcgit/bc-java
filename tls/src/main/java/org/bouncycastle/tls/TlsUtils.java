@@ -4745,7 +4745,7 @@ public class TlsUtils
 
         if (serverCertificate.isEmpty())
         {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+            throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
         securityParameters.peerCertificate = serverCertificate;
