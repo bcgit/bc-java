@@ -10,6 +10,7 @@ import java.util.Vector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Parsing and encoding of a <i>CertificateRequest</i> struct from RFC 4346:
@@ -127,6 +128,11 @@ public class CertificateRequest
     public Vector getCertificateAuthorities()
     {
         return certificateAuthorities;
+    }
+
+    public boolean hasCertificateRequestContext(byte[] certificateRequestContext)
+    {
+        return Arrays.areEqual(this.certificateRequestContext, certificateRequestContext);
     }
 
     /**

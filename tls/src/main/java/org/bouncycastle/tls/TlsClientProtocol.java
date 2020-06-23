@@ -198,6 +198,9 @@ public class TlsClientProtocol
             }
             case CS_SERVER_CERTIFICATE_REQUEST:
             {
+                /*
+                 * TODO[tls13] For PSK-only key exchange, there's no Certificate message.
+                 */
                 receive13ServerCertificate(buf);
                 this.connection_state = CS_SERVER_CERTIFICATE;
                 break;
@@ -523,6 +526,7 @@ public class TlsClientProtocol
             {
                 ServerHello serverHello = ServerHello.parse(buf);
 
+                // TODO[tls13] Only treat as HRR if it's TLS 1.3??
                 if (serverHello.isHelloRetryRequest())
                 {
                     process13HelloRetryRequest(serverHello);
@@ -604,8 +608,8 @@ public class TlsClientProtocol
                 if (clientSupplementalData != null)
                 {
                     sendSupplementalDataMessage(clientSupplementalData);
+                    this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
                 }
-                this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
 
                 TlsCredentialedSigner credentialedSigner = null;
                 TlsStreamSigner streamSigner = null;
@@ -1421,7 +1425,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (certificateRequest.getCertificateRequestContext().length > 0)
+        if (!certificateRequest.hasCertificateRequestContext(TlsUtils.EMPTY_BYTES))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
