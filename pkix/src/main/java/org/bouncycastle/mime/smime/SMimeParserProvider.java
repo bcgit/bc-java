@@ -24,12 +24,14 @@ public class SMimeParserProvider
     public MimeParser createParser(InputStream source)
         throws IOException
     {
-        return new BasicMimeParser(new SMimeParserContext(defaultContentTransferEncoding, digestCalculatorProvider), source);
+        return new BasicMimeParser(new SMimeParserContext(defaultContentTransferEncoding, digestCalculatorProvider),
+            SMimeUtils.autoBuffer(source));
     }
 
     public MimeParser createParser(Headers headers, InputStream source)
         throws IOException
     {
-        return new BasicMimeParser(new SMimeParserContext(defaultContentTransferEncoding, digestCalculatorProvider), headers, source);
+        return new BasicMimeParser(new SMimeParserContext(defaultContentTransferEncoding, digestCalculatorProvider),
+            headers, SMimeUtils.autoBuffer(source));
     }
 }

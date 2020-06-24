@@ -119,7 +119,7 @@ public class SMIMEEnvelopedWriter
 
         public SMIMEEnvelopedWriter build(OutputStream mimeOut, OutputEncryptor outEnc)
         {
-            return new SMIMEEnvelopedWriter(this, outEnc, mimeOut);
+            return new SMIMEEnvelopedWriter(this, outEnc, SMimeUtils.autoBuffer(mimeOut));
         }
     }
 
@@ -148,18 +148,16 @@ public class SMIMEEnvelopedWriter
 
         try
         {
-            OutputStream outStream;
+            OutputStream backing = mimeOut;
 
             if ("base64".equals(contentTransferEncoding))
             {
-                outStream = new Base64OutputStream(mimeOut);
-                
-                return new ContentOutputStream(envGen.open(SMimeUtils.createUnclosable(outStream), outEnc), outStream);
+                backing = new Base64OutputStream(backing);
             }
-            else
-            {
-                return new ContentOutputStream(envGen.open(SMimeUtils.createUnclosable(mimeOut), outEnc), null);
-            }
+
+            OutputStream main = envGen.open(SMimeUtils.createUnclosable(backing), outEnc);
+
+            return new ContentOutputStream(main, backing);
         }
         catch (CMSException e)
         {
