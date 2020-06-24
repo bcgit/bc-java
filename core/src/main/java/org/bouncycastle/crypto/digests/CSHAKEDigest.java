@@ -33,20 +33,27 @@ public class CSHAKEDigest
         }
     }
 
+    // bytepad in SP 800-185
     private void diffPadAndAbsorb()
     {
         int blockSize = rate / 8;
         absorb(diff, 0, diff.length);
 
-        int required = blockSize - (diff.length % blockSize);
+        int delta = diff.length % blockSize;
 
-        while (required > padding.length)
+        // only add padding if needed
+        if (delta != 0)
         {
-            absorb(padding, 0, padding.length);
-            required -= padding.length;
-        }
+            int required = blockSize - delta;
 
-        absorb(padding, 0, required);
+            while (required > padding.length)
+            {
+                absorb(padding, 0, padding.length);
+                required -= padding.length;
+            }
+
+            absorb(padding, 0, required);
+        }
     }
 
     private byte[] encodeString(byte[] str)
