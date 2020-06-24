@@ -353,6 +353,18 @@ public class SMIMESignedWriter
             this.sigBase = sigBase;
         }
 
+        public void write(byte[] buf)
+            throws IOException
+        {
+            main.write(buf);
+        }
+
+        public void write(byte[] buf, int off, int len)
+            throws IOException
+        {
+            main.write(buf, off, len);
+        }
+
         public void write(int i)
             throws IOException
         {
