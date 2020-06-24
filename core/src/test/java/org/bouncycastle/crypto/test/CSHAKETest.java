@@ -99,6 +99,7 @@ public class CSHAKETest
 
         doFinalTest();
         longBlockTest();
+        checkZeroPadZ();
         
         checkSHAKE(128, new CSHAKEDigest(128, new byte[0], new byte[0]), Hex.decode("eeaabeef"));
         checkSHAKE(256, new CSHAKEDigest(256, new byte[0], null), Hex.decode("eeaabeef"));
@@ -107,6 +108,19 @@ public class CSHAKETest
         checkSHAKE(256, new CSHAKEDigest(256, null, null), Hex.decode("eeaabeef"));
     }
 
+    private void checkZeroPadZ()
+    {
+        byte[] buf = new byte[20];
+
+        CSHAKEDigest cshake1 = new CSHAKEDigest(256, new byte[0], new byte[265]);
+        cshake1.doOutput(buf, 0, buf.length);
+        isTrue(areEqual(Hex.decode("6e393540387004f087c4180db008acf6825190cf"), buf));
+
+        CSHAKEDigest cshake2 = new CSHAKEDigest(128, new byte[0], new byte[329]);
+        cshake2.doOutput(buf, 0, buf.length);
+        isTrue(areEqual(Hex.decode("309bd7c285fcf8b839c9686b2cc00bd578947bee"), buf));
+    }
+    
     private void doFinalTest()
     {
         CSHAKEDigest cshake = new CSHAKEDigest(128, new byte[0], Strings.toByteArray("Email Signature"));
