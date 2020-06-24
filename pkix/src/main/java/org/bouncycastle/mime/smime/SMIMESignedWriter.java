@@ -204,7 +204,7 @@ public class SMIMESignedWriter
                 headers.put((String)ent.getKey(), (String)ent.getValue());
             }
 
-            return new SMIMESignedWriter(this, headers, boundary, mimeOut);
+            return new SMIMESignedWriter(this, headers, boundary, SMimeUtils.autoBuffer(mimeOut));
         }
 
         private void addHashHeader(
