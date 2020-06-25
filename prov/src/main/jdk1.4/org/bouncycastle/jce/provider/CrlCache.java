@@ -37,15 +37,15 @@ class CrlCache
 {
     private static final int DEFAULT_TIMEOUT = 15000;
 
-    private static Map<URI, WeakReference<PKIXCRLStore>> cache =
-        Collections.synchronizedMap(new WeakHashMap<URI, WeakReference<PKIXCRLStore>>());
+    private static Map cache =
+        Collections.synchronizedMap(new WeakHashMap());
 
     static synchronized PKIXCRLStore getCrl(CertificateFactory certFact, Date validDate, URI distributionPoint)
         throws IOException, CRLException
     {
         PKIXCRLStore crlStore = null;
 
-        WeakReference<PKIXCRLStore> markerRef = (WeakReference)cache.get(distributionPoint);
+        WeakReference markerRef = (WeakReference)cache.get(distributionPoint);
         if (markerRef != null)
         {
             crlStore = (PKIXCRLStore)markerRef.get();
@@ -109,7 +109,7 @@ class CrlCache
         }
         catch (NamingException e)
         {
-            throw new CRLException("issue connecting to: " + distributionPoint.toString(), e);
+            throw new CRLException("issue connecting to: " + distributionPoint.toString());
         }
 
         if ((val == null) || (val.length == 0))
@@ -126,8 +126,8 @@ class CrlCache
         throws IOException, CRLException
     {
         HttpURLConnection crlCon = (HttpURLConnection)distributionPoint.toURL().openConnection();
-        crlCon.setConnectTimeout(DEFAULT_TIMEOUT);
-        crlCon.setReadTimeout(DEFAULT_TIMEOUT);
+//        crlCon.setConnectTimeout(DEFAULT_TIMEOUT);
+//        crlCon.setReadTimeout(DEFAULT_TIMEOUT);
 
         InputStream crlIn = crlCon.getInputStream();
 
@@ -173,7 +173,7 @@ class CrlCache
 
                 while (iter.hasNext())
                 {
-                    CRL obj = iter.next();
+                    CRL obj = (CRL)iter.next();
 
                     if (selector.match(obj))
                     {
