@@ -95,8 +95,10 @@ public class HTTPSServerThread
         String[] cipherSuites = s.getEnabledCipherSuites();
 
         Vector v = new Vector();
-        for (String cipherSuite : cipherSuites)
+        for (int i = 0; i != cipherSuites.length; i++)
         {
+            String cipherSuite = cipherSuites[i];
+
             if (!cipherSuite.regionMatches(true, 0, "SSL_RSA_", 0, "SSL_RSA_".length()) &&
                 !cipherSuite.regionMatches(true, 0, "TLS_RSA_", 0, "TLS_RSA_".length()))
             {

@@ -2,9 +2,13 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.PrivateKey;
 import java.security.AlgorithmParameters;
+import java.security.KeyPairGenerator;
+import java.security.KeyPair;
+import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 
+import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -75,12 +79,12 @@ class ECUtil
 
     static AlgorithmParameterSpec createInitSpec(String curveName)
     {
-        return new ECGenParameterSpec(curveName);
+        return new ECNamedCurveGenParameterSpec(curveName);
     }
 
     static AlgorithmParameters getAlgorithmParameters(JcaTlsCrypto crypto, String curveName)
     {
-        return getAlgorithmParameters(crypto, new ECGenParameterSpec(curveName));
+        return getAlgorithmParameters(crypto, new ECNamedCurveGenParameterSpec(curveName));
     }
 
     static AlgorithmParameters getAlgorithmParameters(JcaTlsCrypto crypto, AlgorithmParameterSpec initSpec)
@@ -90,7 +94,7 @@ class ECUtil
             AlgorithmParameters ecAlgParams = crypto.getHelper().createAlgorithmParameters("EC");
             ecAlgParams.init(initSpec);
 
-            ECParameterSpec ecSpec = ecAlgParams.getParameterSpec(ECParameterSpec.class);
+            ECParameterSpec ecSpec = (ECParameterSpec)ecAlgParams.getParameterSpec(ECParameterSpec.class);
             if (null != ecSpec)
             {
                 return ecAlgParams;
@@ -116,7 +120,7 @@ class ECUtil
             AlgorithmParameters ecAlgParams = crypto.getHelper().createAlgorithmParameters("EC");
             ecAlgParams.init(initSpec);
 
-            ECParameterSpec ecSpec = ecAlgParams.getParameterSpec(ECParameterSpec.class);
+            ECParameterSpec ecSpec = (ECParameterSpec)ecAlgParams.getParameterSpec(ECParameterSpec.class);
             if (null != ecSpec)
             {
                 return ecSpec;
@@ -153,10 +157,10 @@ class ECUtil
 
     static boolean isCurveSupported(JcaTlsCrypto crypto, String curveName)
     {
-        return isCurveSupported(crypto, new ECGenParameterSpec(curveName));
+        return isCurveSupported(crypto, new ECNamedCurveGenParameterSpec(curveName));
     }
 
-    static boolean isCurveSupported(JcaTlsCrypto crypto, ECGenParameterSpec initSpec)
+    static boolean isCurveSupported(JcaTlsCrypto crypto, ECNamedCurveGenParameterSpec initSpec)
     {
         return null != getECParameterSpec(crypto, initSpec);
     }

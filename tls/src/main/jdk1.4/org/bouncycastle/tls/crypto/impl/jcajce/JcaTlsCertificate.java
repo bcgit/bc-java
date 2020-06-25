@@ -13,6 +13,7 @@ import java.security.interfaces.RSAPublicKey;
 
 import javax.crypto.interfaces.DHPublicKey;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -26,6 +27,7 @@ import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
@@ -42,10 +44,12 @@ public class JcaTlsCertificate
     protected static final int KU_KEY_ENCIPHERMENT = 2;
     protected static final int KU_DATA_ENCIPHERMENT = 3;
     protected static final int KU_KEY_AGREEMENT = 4;
-    protected static final int KU_CERT_SIGN = 5;
+    protected static final int KU_KEY_CERT_SIGN = 5;
     protected static final int KU_CRL_SIGN = 6;
     protected static final int KU_ENCIPHER_ONLY = 7;
     protected static final int KU_DECIPHER_ONLY = 8;
+
+    private static final int X509V3_VERSION = 3;
 
     public static JcaTlsCertificate convert(JcaTlsCrypto crypto, TlsCertificate certificate) throws IOException
     {
@@ -60,6 +64,7 @@ public class JcaTlsCertificate
     public static X509Certificate parseCertificate(JcaJceHelper helper, byte[] encoding)
         throws IOException
     {
+        final X509Certificate certificate;
         try
         {
             /*
@@ -72,17 +77,23 @@ public class JcaTlsCertificate
             byte[] derEncoding = Certificate.getInstance(encoding).getEncoded(ASN1Encoding.DER);
 
             ByteArrayInputStream input = new ByteArrayInputStream(derEncoding);
-            X509Certificate certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(input);
+            certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(input);
             if (input.available() != 0)
             {
                 throw new IOException("Extra data detected in stream");
             }
-            return certificate;
         }
         catch (GeneralSecurityException e)
         {
             throw new TlsCryptoException("unable to decode certificate", e);
         }
+
+        if (X509V3_VERSION != certificate.getVersion())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        return certificate;
     }
 
     protected final JcaTlsCrypto crypto;
@@ -170,6 +181,13 @@ public class JcaTlsCertificate
     public String getSigAlgOID()
     {
         return certificate.getSigAlgOID();
+    }
+
+    public ASN1Encodable getSigAlgParams() throws IOException
+    {
+        byte[] derEncoding = certificate.getSigAlgParams();
+
+        return null == derEncoding ? null : TlsUtils.readDERObject(derEncoding);
     }
 
     DHPublicKey getPubKeyDH() throws IOException
@@ -286,49 +304,14 @@ public class JcaTlsCertificate
          return -1;
     }
 
-    public boolean supportsSignatureAlgorithm(short signatureAlgorithm)
-        throws IOException
+    public boolean supportsSignatureAlgorithm(short signatureAlgorithm) throws IOException
     {
-        if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE))
-        {
-            return false;
-        }
+        return supportsSignatureAlgorithm(signatureAlgorithm, KU_DIGITAL_SIGNATURE);
+    }
 
-        PublicKey publicKey = getPublicKey();
-
-        switch (signatureAlgorithm)
-        {
-        case SignatureAlgorithm.rsa:
-            return supportsRSA_PKCS1()
-                && publicKey instanceof RSAPublicKey;
-
-        case SignatureAlgorithm.dsa:
-            return publicKey instanceof DSAPublicKey;
-
-        case SignatureAlgorithm.ecdsa:
-            return publicKey instanceof ECPublicKey;
-
-        case SignatureAlgorithm.ed25519:
-            return "Ed25519".equals(publicKey.getAlgorithm());
-
-        case SignatureAlgorithm.ed448:
-            return "Ed448".equals(publicKey.getAlgorithm());
-
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return supportsRSA_PSS_RSAE()
-                && publicKey instanceof RSAPublicKey;
-
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return supportsRSA_PSS_PSS(signatureAlgorithm)
-                && publicKey instanceof RSAPublicKey;
-
-        default:
-            return false;
-        }
+    public boolean supportsSignatureAlgorithmCA(short signatureAlgorithm) throws IOException
+    {
+        return supportsSignatureAlgorithm(signatureAlgorithm, KU_KEY_CERT_SIGN);
     }
 
     public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
@@ -417,6 +400,50 @@ public class JcaTlsCertificate
     {
         AlgorithmIdentifier pubKeyAlgID = getSubjectPublicKeyInfo().getAlgorithm();
         return RSAUtil.supportsPSS_RSAE(pubKeyAlgID);
+    }
+
+    protected boolean supportsSignatureAlgorithm(short signatureAlgorithm, int keyUsageBit) throws IOException
+    {
+        if (!supportsKeyUsageBit(keyUsageBit))
+        {
+            return false;
+        }
+
+        PublicKey publicKey = getPublicKey();
+
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+            return supportsRSA_PKCS1()
+                && publicKey instanceof RSAPublicKey;
+
+        case SignatureAlgorithm.dsa:
+            return publicKey instanceof DSAPublicKey;
+
+        case SignatureAlgorithm.ecdsa:
+            return publicKey instanceof ECPublicKey;
+
+        case SignatureAlgorithm.ed25519:
+            return "Ed25519".equals(publicKey.getAlgorithm());
+
+        case SignatureAlgorithm.ed448:
+            return "Ed448".equals(publicKey.getAlgorithm());
+
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return supportsRSA_PSS_RSAE()
+                && publicKey instanceof RSAPublicKey;
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return supportsRSA_PSS_PSS(signatureAlgorithm)
+                && publicKey instanceof RSAPublicKey;
+
+        default:
+            return false;
+        }
     }
 
     protected void validateKeyUsageBit(int keyUsageBit)
