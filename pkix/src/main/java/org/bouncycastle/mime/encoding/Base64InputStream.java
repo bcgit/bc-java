@@ -96,87 +96,82 @@ public class Base64InputStream
     InputStream    in;
     int[]          outBuf = new int[3];
     int            bufPtr = 3;
-    boolean        isEndOfStream;
+//    boolean        isEndOfStream;
 
-    /**
-     * Create a stream for reading a PGP armoured message, parsing up to a header
-     * and then reading the data that follows.
-     *
-     * @param in
-     */
     public Base64InputStream(
         InputStream    in)
     {
         this.in = in;
     }
-    
+
     public int available()
         throws IOException
     {
-        return in.available();
+        // We can't guarantee 'in.available()' bytes aren't all spaces
+        return 0;
     }
-    
-    private int readIgnoreSpace() 
-        throws IOException
-    {
-        int    c = in.read();
-        
-        while (c == ' ' || c == '\t')
-        {
-            c = in.read();
-        }
-        
-        return c;
-    }
-    
+
     public int read()
         throws IOException
     {
-        int    c;
-
         if (bufPtr > 2)
         {
-            c = readIgnoreSpace();
-            
-            if (c == '\r' || c == '\n')
+            int in0 = readIgnoreSpaceFirst();
+            if (in0 < 0)
             {
-                c = readIgnoreSpace();
-                
-                while (c == '\n' || c == '\r')
-                {
-                    c = readIgnoreSpace();
-                }
-
-                if (c < 0)                // EOF
-                {
-                    isEndOfStream = true;
-                    return -1;
-                }
-
-                bufPtr = decode(c, readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
+//                isEndOfStream = true;
+                return -1;
             }
-            else
-            {
-                if (c >= 0)
-                {
-                    bufPtr = decode(c, readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
-                }
-                else
-                {
-                    isEndOfStream = true;
-                    return -1;
-                }
-            }
+
+            int in1 = readIgnoreSpace();
+            int in2 = readIgnoreSpace();
+            int in3 = readIgnoreSpace();
+
+            bufPtr = decode(in0, in1, in2, in3, outBuf);
         }
 
-        c = outBuf[bufPtr++];
-
-        return c;
+        return outBuf[bufPtr++];
     }
-    
+
     public void close()
         throws IOException
     {
         in.close();
+    }
+
+    private int readIgnoreSpace()
+        throws IOException
+    {
+        for (;;)
+        {
+            int c;
+            switch (c = in.read())
+            {
+            case ' ':
+            case '\t':
+                break;
+            default:
+                return c;
+            }
+        }
+    }
+
+    private int readIgnoreSpaceFirst()
+        throws IOException
+    {
+        for (;;)
+        {
+            int c;
+            switch (c = in.read())
+            {
+            case ' ':
+            case '\n':
+            case '\r':
+            case '\t':
+                break;
+            default:
+                return c;
+            }
+        }
     }
 }
