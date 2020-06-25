@@ -34,7 +34,7 @@ public class SM3
     }
 
     /**
-     * SHA1 HMac
+     * SM3 HMac
      */
     public static class HashMac
         extends BaseMac
