@@ -13,6 +13,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.RC5ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -63,6 +64,7 @@ public class HMacTest
     static byte[] outputDSTU7564_256 = Hex.decode("98ac67aa21eaf6e8666fb748d66cfc15d5d66f5194c87fffa647e406d3375cdb");
     static byte[] outputDSTU7564_384 = Hex.decode("4e46a87e70fcd2ccfb4433a8eaec68991a96b11085c5d5484db71af51bac469c03f76e1f721843c8e8667708fe41a48d");
     static byte[] outputDSTU7564_512 = Hex.decode("5b7acf633a7551b8410fa66a60c74a494e46a87e70fcd2ccfb4433a8eaec68991a96b11085c5d5484db71af51bac469c03f76e1f721843c8e8667708fe41a48d");
+    static byte[] outputSM3 = Hex.decode("51b00d1fb49832bfb01c3ce27848e59f871d9ba938dc563b338ca964755cce70");
 
     public HMacTest()
     {
@@ -244,6 +246,7 @@ public class HMacTest
         testHMac("HMac/SHA3-512", 512, outputSha3_512);
         testHMac("HMac/GOST3411-2012-256", 256, outputGost2012_256);
         testHMac("HMac/GOST3411-2012-512", 512, outputGost2012_512);
+        testHMac("HMac/SM3", 256, outputSM3);
 
         testHMac(PKCSObjectIdentifiers.id_hmacWithSHA1.getId(), 160, output1);
         testHMac(PKCSObjectIdentifiers.id_hmacWithSHA224.getId(), 224, output224);
@@ -266,6 +269,8 @@ public class HMacTest
         testHMac(UAObjectIdentifiers.dstu7564mac_256.getId(), 256, outputDSTU7564_256);
         testHMac(UAObjectIdentifiers.dstu7564mac_384.getId(), 384, outputDSTU7564_384);
         testHMac(UAObjectIdentifiers.dstu7564mac_512.getId(), 512, outputDSTU7564_512);
+
+        testHMac(GMObjectIdentifiers.hmac_sm3.getId(), 256, outputSM3);
 
         // test for compatibility with broken HMac.
         testHMac("OldHMacSHA384", outputOld384);
