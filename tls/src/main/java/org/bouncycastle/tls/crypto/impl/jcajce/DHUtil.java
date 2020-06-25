@@ -37,7 +37,7 @@ class DHUtil
             AlgorithmParameters dhAlgParams = crypto.getHelper().createAlgorithmParameters("DiffieHellman");
             dhAlgParams.init(initSpec);
 
-            DHParameterSpec dhSpec = dhAlgParams.getParameterSpec(DHParameterSpec.class);
+            DHParameterSpec dhSpec = (DHParameterSpec)dhAlgParams.getParameterSpec(DHParameterSpec.class);
             if (null != dhSpec)
             {
                 return dhAlgParams;
@@ -62,7 +62,7 @@ class DHUtil
             AlgorithmParameters dhAlgParams = crypto.getHelper().createAlgorithmParameters("DiffieHellman");
             dhAlgParams.init(initSpec);
 
-            DHParameterSpec dhSpec = dhAlgParams.getParameterSpec(DHParameterSpec.class);
+            DHParameterSpec dhSpec = (DHParameterSpec)dhAlgParams.getParameterSpec(DHParameterSpec.class);
             if (null != dhSpec)
             {
                 return dhSpec;
