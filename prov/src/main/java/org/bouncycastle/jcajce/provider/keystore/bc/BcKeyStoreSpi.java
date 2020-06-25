@@ -678,7 +678,7 @@ public class BcKeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new KeyStoreException(e.toString(), e);
+            throw new BCKeyStoreException(e.toString(), e);
         }
     }
 
@@ -1062,6 +1062,23 @@ public class BcKeyStoreSpi
         public Version1()
         {
             super(1);
+        }
+    }
+
+    private static class BCKeyStoreException
+        extends KeyStoreException
+    {
+        private final Exception cause;
+
+        public BCKeyStoreException(String msg, Exception cause)
+        {
+            super(msg);
+            this.cause = cause;
+        }
+
+        public Throwable getCause()
+        {
+            return cause;
         }
     }
 }

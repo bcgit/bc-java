@@ -111,9 +111,9 @@ public class OpenSSHKeyParsingTests
         };
 
 
-        for (String[] pair : pairs)
+        for (int i = 0; i != pairs.length; i++)
         {
-
+            String[] pair = pairs[i];
 
             CipherParameters pubSpec = OpenSSHPublicKeyUtil.parsePublicKey(
                 Base64.decode(pair[0]));
