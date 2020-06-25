@@ -48,9 +48,15 @@
                 <exclude name="**/BCFKSStoreParameter.java"/>
                 <exclude name="**/ECPointUtil.java"/>
                 <exclude name="**/ECNamedCurveSpec.java"/>
+                <exclude name="**/PKIXCertPathValidatorSpi_8.java"/>
+		<exclude name="**/PKIXCertPathBuilderSpi_8.java"/>
+		<exclude name="**/WrappedRevocationChecker.java"/>
+                <exclude name="**/ProvRevocationChecker.java"/>
                 <exclude name="**/BCEC*.java"/>
                 <exclude name="**/JCEEC5*.java"/>
                 <exclude name="**/provider/JCEEC*.java"/>
+                <exclude name="**/provider/OcspCache.java"/>
+                <exclude name="**/provider/ProvOcspRevocationChecker.java"/>
                 <exclude name="**/EC5*.java"/>
                 <exclude name="**/PKCS12StoreParameter.java"/>
                 <exclude name="**/JDKPKCS12StoreParameter.java"/>
