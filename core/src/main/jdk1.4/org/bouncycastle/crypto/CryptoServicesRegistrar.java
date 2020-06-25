@@ -128,6 +128,17 @@ public final class CryptoServicesRegistrar
     }
 
     /**
+     * Return either the passed-in SecureRandom, or if it is null, then the default source of randomness.
+     *
+     * @param secureRandom the SecureRandom to use if it is not null.
+     * @return the SecureRandom parameter if it is not null, or else the default SecureRandom
+     */
+    public static SecureRandom getSecureRandom(SecureRandom secureRandom)
+    {
+        return null == secureRandom ? getSecureRandom() : secureRandom;
+    }
+    
+    /**
      * Return the default value for a particular property if one exists. The look up is done on the thread's local
      * configuration first and then on the global configuration in no local configuration exists.
      *
