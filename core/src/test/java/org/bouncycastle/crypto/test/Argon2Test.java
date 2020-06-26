@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.params.Argon2Parameters;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -116,9 +117,14 @@ public class Argon2Test
         gen.init(builder.build());
 
         byte[] result = new byte[outputLength];
+
         gen.generateBytes(password.toCharArray(), result, 0, result.length);
+        isTrue(passwordRef + " Failed", areEqual(result, Hex.decode(passwordRef)));
 
+        Arrays.clear(result);
 
+        // Should be able to re-use generator after successful use
+        gen.generateBytes(password.toCharArray(), result, 0, result.length);
         isTrue(passwordRef + " Failed", areEqual(result, Hex.decode(passwordRef)));
     }
 
@@ -195,26 +201,29 @@ public class Argon2Test
 
     private static int getJvmVersion()
     {
-        String version = System.getProperty("java.version");
-
-        if (version.startsWith("1.7"))
+        String version = System.getProperty("java.specification.version");
+        if (null == version)
         {
-            return 7;
+            return -1;
         }
-        if (version.startsWith("1.8"))
+        String[] parts = version.split("\\.");
+        if (parts == null || parts.length < 1)
         {
-            return 8;
+            return -1;
         }
-        if (version.startsWith("1.9"))
+        try
         {
-            return 9;
+            int major = Integer.parseInt(parts[0]);
+            if (major == 1 && parts.length > 1)
+            {
+                return Integer.parseInt(parts[1]);
+            }
+            return major;
         }
-        if (version.startsWith("1.1"))
+        catch (NumberFormatException e)
         {
-            return 10;
+            return -1;
         }
-
-        return -1;
     }
 
     public static void main(String[] args)
