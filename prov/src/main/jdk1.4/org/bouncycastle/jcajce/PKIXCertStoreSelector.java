@@ -4,6 +4,7 @@ import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
 import java.security.cert.Certificate;
+import java.security.cert.X509CertSelector;
 import java.util.Collection;
 
 import org.bouncycastle.util.Selector;
@@ -36,6 +37,21 @@ public class PKIXCertStoreSelector
     private PKIXCertStoreSelector(CertSelector baseSelector)
     {
         this.baseSelector = baseSelector;
+    }
+
+    /**
+     * Return the specific certificate this selector is designed to match.
+     *
+     * @return a specific certificate where the selector has been configured explicitly.
+     */
+    public Certificate getCertificate()
+    {
+         if (baseSelector instanceof X509CertSelector)
+         {
+             return ((X509CertSelector)baseSelector).getCertificate();
+         }
+
+         return null;
     }
 
     public boolean match(Object cert)

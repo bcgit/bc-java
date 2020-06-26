@@ -112,6 +112,65 @@ public class TlsTestUtils
         return "x509-ca-" + getResourceName(signatureAlgorithm) + ".pem";
     }
 
+    static String getCACertResource(String eeCertResource) throws IOException
+    {
+        if (eeCertResource.startsWith("x509-client-"))
+        {
+            eeCertResource = eeCertResource.substring("x509-client-".length());
+        }
+        if (eeCertResource.startsWith("x509-server-"))
+        {
+            eeCertResource = eeCertResource.substring("x509-server-".length());
+        }
+        if (eeCertResource.endsWith(".pem"))
+        {
+            eeCertResource = eeCertResource.substring(0, eeCertResource.length() - ".pem".length());
+        }
+
+        if ("dsa".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource(SignatureAlgorithm.dsa);
+        }
+
+        if ("ecdh".equalsIgnoreCase(eeCertResource)
+            || "ecdsa".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource(SignatureAlgorithm.ecdsa);
+        }
+
+        if ("ed25519".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource(SignatureAlgorithm.ed25519);
+        }
+
+        if ("ed448".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource(SignatureAlgorithm.ed448);
+        }
+
+        if ("rsa".equalsIgnoreCase(eeCertResource)
+            || "rsa-enc".equalsIgnoreCase(eeCertResource)
+            || "rsa-sign".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource(SignatureAlgorithm.rsa);
+        }
+
+        if ("rsa_pss_256".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource(SignatureAlgorithm.rsa_pss_pss_sha256);
+        }
+        if ("rsa_pss_384".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource(SignatureAlgorithm.rsa_pss_pss_sha384);
+        }
+        if ("rsa_pss_512".equalsIgnoreCase(eeCertResource))
+        {
+            return getCACertResource(SignatureAlgorithm.rsa_pss_pss_sha512);
+        }
+
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
     static String getResourceName(short signatureAlgorithm) throws IOException
     {
         switch (signatureAlgorithm)
@@ -233,8 +292,7 @@ public class TlsTestUtils
             return null;
         }
 
-        return loadSignerCredentials(context, new String[]{ certResource, getCACertResource(signatureAlgorithm) },
-            keyResource, signatureAndHashAlgorithm);
+        return loadSignerCredentials(context, new String[]{ certResource }, keyResource, signatureAndHashAlgorithm);
     }
 
     static TlsCredentialedSigner loadSignerCredentialsServer(TlsContext context, Vector supportedSignatureAlgorithms,
@@ -411,16 +469,24 @@ public class TlsTestUtils
         return Arrays.areEqual(a.getEncoded(), b.getEncoded());
     }
 
-    static boolean isCertificateOneOf(TlsCrypto crypto, TlsCertificate cert, String[] resources) throws IOException
+    static TlsCertificate[] getTrustedCertPath(TlsCrypto crypto, TlsCertificate cert, String[] resources)
+        throws IOException
     {
         for (int i = 0; i < resources.length; ++i)
         {
-            if (areSameCertificate(crypto, cert, resources[i]))
+            String eeCertResource = resources[i];
+            TlsCertificate eeCert = loadCertificateResource(crypto, eeCertResource);
+            if (areSameCertificate(cert, eeCert))
             {
-                return true;
+                String caCertResource = getCACertResource(eeCertResource);
+                TlsCertificate caCert = loadCertificateResource(crypto, caCertResource);
+                if (null != caCert)
+                {
+                    return new TlsCertificate[]{ eeCert, caCert };
+                }
             }
         }
-        return false;
+        return null;
     }
 
     static TrustManagerFactory getSunX509TrustManagerFactory()

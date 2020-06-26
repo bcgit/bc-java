@@ -67,7 +67,7 @@ public class HTTPSServerThread
     SSLContext createSSLContext()
         throws Exception
     {
-        JcaTlsCrypto crypto = new JcaTlsCryptoProvider().create(new SecureRandom());
+        JcaTlsCrypto crypto = (JcaTlsCrypto)new JcaTlsCryptoProvider().create(new SecureRandom());
         X509Certificate certificate = ((JcaTlsCertificate)TlsTestUtils.loadCertificateResource(crypto,
             "x509-server-rsa-sign.pem")).getX509Certificate();
         PrivateKey privateKey = TlsTestUtils.loadJcaPrivateKeyResource(crypto, "x509-server-key-rsa-sign.pem");
