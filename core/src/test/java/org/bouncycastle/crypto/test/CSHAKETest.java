@@ -119,6 +119,10 @@ public class CSHAKETest
         CSHAKEDigest cshake2 = new CSHAKEDigest(128, new byte[0], new byte[329]);
         cshake2.doOutput(buf, 0, buf.length);
         isTrue(areEqual(Hex.decode("309bd7c285fcf8b839c9686b2cc00bd578947bee"), buf));
+
+        cshake2 = new CSHAKEDigest(128, new byte[29], new byte[300]);
+        cshake2.doOutput(buf, 0, buf.length);
+        isTrue(areEqual(Hex.decode("ff6aafd83b8d22fc3e2e9b9948b581967ed9c5e7"), buf));
     }
     
     private void doFinalTest()
