@@ -143,20 +143,20 @@ class CertPathValidatorUtilities
         }
 
         // getCertificate() does not exist in 1.4
-//        if (targets.isEmpty())
-//        {
-//            Certificate target = certSelect.getCertificate();
-//
-//            if (target != null)
-//            {
-//                targets = Collections.singleton(target);
-//            }
-//            else
-//            {
-//                throw new CertPathBuilderException(
-//                    "No certificate found matching targetConstraints.");
-//            }
-//        }
+        if (targets.isEmpty())
+        {
+            Certificate target = certSelect.getCertificate();
+
+            if (target != null)
+            {
+                targets = Collections.singleton(target);
+            }
+            else
+            {
+                throw new CertPathBuilderException(
+                    "No certificate found matching targetConstraints.");
+            }
+        }
         return targets;
     }
 
