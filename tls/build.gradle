@@ -1,10 +1,10 @@
 dependencies {
     compile project(':core')
-    compile project(':pkix')
     compile project(':prov')
+    compile project(':pkix')
 }
 
-jar.baseName = "bctls-jdk15on"
+jar.baseName = "bctls-$vmrange"
 
 sourceSets {
     main {
@@ -14,12 +14,21 @@ sourceSets {
     }
 }
 
+task sourcesJar(type: Jar) {
+  baseName = jar.baseName
+  classifier = 'sources'
+  from sourceSets.main.allSource
+}
 
-cobertura {
-   coverageDirs = [
-       "${rootProject.projectDir}/core/build/classes/main",
-       "${rootProject.projectDir}/prov/build/classes/main",
-       "${rootProject.projectDir}/tls/build/classes/main"
-  ]
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  baseName = jar.baseName
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
 }
 

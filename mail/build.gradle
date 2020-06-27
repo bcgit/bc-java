@@ -6,14 +6,23 @@ dependencies {
     compile group: 'javax.mail', name: 'mail', version: '1.4'
 }
 
-jar.baseName = "bcmail-jdk15on"
+jar.baseName = "bcmail-$vmrange"
 
-cobertura {
-   coverageDirs = [
-       "${rootProject.projectDir}/core/build/classes/main",
-       "${rootProject.projectDir}/prov/build/classes/main",
-       "${rootProject.projectDir}/pkix/build/classes/main",
-       "${rootProject.projectDir}/mail/build/classes/main"
-  ]
+task sourcesJar(type: Jar) {
+  baseName = jar.baseName
+  classifier = 'sources'
+  from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  baseName = jar.baseName
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
 }
 
