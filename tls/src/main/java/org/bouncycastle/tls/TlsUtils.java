@@ -51,8 +51,8 @@ import org.bouncycastle.util.io.Streams;
  */
 public class TlsUtils
 {
-    private static byte[] DOWNGRADE_TLS11 = Hex.decode("444F574E47524400");
-    private static byte[] DOWNGRADE_TLS12 = Hex.decode("444F574E47524401");
+    private static byte[] DOWNGRADE_TLS11 = Hex.decodeStrict("444F574E47524400");
+    private static byte[] DOWNGRADE_TLS12 = Hex.decodeStrict("444F574E47524401");
 
     // Map OID strings to HashAlgorithm values
     private static final Hashtable CERT_SIG_ALG_OIDS = createCertSigAlgOIDs();

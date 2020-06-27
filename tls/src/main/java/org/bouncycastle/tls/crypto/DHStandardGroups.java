@@ -13,7 +13,7 @@ public class DHStandardGroups
 
     private static BigInteger fromHex(String hex)
     {
-        return new BigInteger(1, Hex.decode(hex));
+        return new BigInteger(1, Hex.decodeStrict(hex));
     }
 
 //    private static DHGroup fromPG(String hexP, String hexG)
