@@ -22,7 +22,7 @@ public abstract class BCSNIServerName
         }
 
         this.nameType = nameType;
-        this.encoded = Arrays.clone(encoded);
+        this.encoded = TlsUtils.clone(encoded);
     }
 
     public final int getType()
@@ -32,7 +32,7 @@ public abstract class BCSNIServerName
 
     public final byte[] getEncoded()
     {
-        return (byte[])Arrays.clone(encoded);
+        return (byte[])TlsUtils.clone(encoded);
     }
 
     @Override
