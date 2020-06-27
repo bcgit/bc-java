@@ -108,7 +108,7 @@ abstract class ProvSSLSessionBase
     public byte[] getId()
     {
         byte[] id = getIDArray();
-        return (null == id) ? TlsUtils.EMPTY_BYTES : Arrays.clone(id);
+        return TlsUtils.isNullOrEmpty(id) ? TlsUtils.EMPTY_BYTES : id.clone();
     }
 
     public long getLastAccessedTime()

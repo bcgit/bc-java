@@ -1443,7 +1443,7 @@ public class TlsUtils
 
     public static byte[] clone(byte[] data)
     {
-        return null == data ? (byte[])null : data.length == 0 ? EMPTY_BYTES : Arrays.clone(data);
+        return null == data ? (byte[])null : data.length == 0 ? EMPTY_BYTES : data.clone();
     }
 
     public static boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
