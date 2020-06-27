@@ -846,11 +846,11 @@ public final class Arrays
     {
         if (null == a)
         {
-            return (byte[])b.clone();
+            return clone(b);
         }
         if (null == b)
         {
-            return (byte[])a.clone();
+            return clone(a);
         }
 
         byte[] r = new byte[a.length + b.length];
@@ -934,11 +934,11 @@ public final class Arrays
     {
         if (null == a)
         {
-            return (int[])b.clone();
+            return clone(b);
         }
         if (null == b)
         {
-            return (int[])a.clone();
+            return clone(a);
         }
 
         int[] r = new int[a.length + b.length];
