@@ -1,5 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
+import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
@@ -27,6 +28,8 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
 import org.bouncycastle.util.Arrays;
 
 class ProvAlgorithmChecker
@@ -37,10 +40,23 @@ class ProvAlgorithmChecker
     static final int KU_KEY_AGREEMENT = 4;
 
     private static final Map<String, String> sigAlgNames = createSigAlgNames();
-    private static Map<ASN1ObjectIdentifier, String> sigAlgNamesPSS = createSigAlgNamesPSS();
     private static final Set<String> sigAlgNoParams = createSigAlgNoParams();
 
     private static final byte[] DER_NULL_ENCODING = new byte[]{ 0x05, 0x00 };
+
+    private static final String SIG_ALG_NAME_rsa_pss_pss_sha256 = JsseUtils
+        .getJcaSignatureAlgorithmBC("SHA256withRSAandMGF1", "RSASSA-PSS");
+    private static final String SIG_ALG_NAME_rsa_pss_pss_sha384 = JsseUtils
+        .getJcaSignatureAlgorithmBC("SHA384withRSAandMGF1", "RSASSA-PSS");
+    private static final String SIG_ALG_NAME_rsa_pss_pss_sha512 = JsseUtils
+        .getJcaSignatureAlgorithmBC("SHA512withRSAandMGF1", "RSASSA-PSS");
+
+    private static final String SIG_ALG_NAME_rsa_pss_rsae_sha256 = JsseUtils
+        .getJcaSignatureAlgorithmBC("SHA256withRSAandMGF1", "RSA");
+    private static final String SIG_ALG_NAME_rsa_pss_rsae_sha384 = JsseUtils
+        .getJcaSignatureAlgorithmBC("SHA384withRSAandMGF1", "RSA");
+    private static final String SIG_ALG_NAME_rsa_pss_rsae_sha512 = JsseUtils
+        .getJcaSignatureAlgorithmBC("SHA512withRSAandMGF1", "RSA");
 
     private static Map<String, String> createSigAlgNames()
     {
@@ -50,19 +66,6 @@ class ProvAlgorithmChecker
         names.put(EdECObjectIdentifiers.id_Ed448.getId(), "Ed448");
         names.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "SHA1withDSA");
         names.put(X9ObjectIdentifiers.id_dsa_with_sha1.getId(), "SHA1withDSA");
-
-        return Collections.unmodifiableMap(names);
-    }
-
-    private static Map<ASN1ObjectIdentifier, String> createSigAlgNamesPSS()
-    {
-        Map<ASN1ObjectIdentifier, String> names = new HashMap<ASN1ObjectIdentifier, String>(3);
-
-//        names.put(OIWObjectIdentifiers.idSHA1, "SHA1withRSAandMGF1");
-//        names.put(NISTObjectIdentifiers.id_sha224, "SHA224withRSAandMGF1");
-        names.put(NISTObjectIdentifiers.id_sha256, "SHA256withRSAandMGF1");
-        names.put(NISTObjectIdentifiers.id_sha384, "SHA384withRSAandMGF1");
-        names.put(NISTObjectIdentifiers.id_sha512, "SHA512withRSAandMGF1");
 
         return Collections.unmodifiableMap(names);
     }
@@ -228,7 +231,7 @@ class ProvAlgorithmChecker
     private static void checkIssued(JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
         X509Certificate cert) throws CertPathValidatorException
     {
-        String sigAlgName = getSigAlgName(cert);
+        String sigAlgName = getSigAlgName(cert, null);
         if (!JsseUtils.isNameSpecified(sigAlgName))
         {
             throw new CertPathValidatorException();
@@ -245,7 +248,7 @@ class ProvAlgorithmChecker
     private static void checkIssuedBy(JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
         X509Certificate subjectCert, X509Certificate issuerCert) throws CertPathValidatorException
     {
-        String sigAlgName = getSigAlgName(subjectCert);
+        String sigAlgName = getSigAlgName(subjectCert, issuerCert);
         if (!JsseUtils.isNameSpecified(sigAlgName))
         {
             throw new CertPathValidatorException();
@@ -301,9 +304,9 @@ class ProvAlgorithmChecker
         }
     }
 
-    static String getSigAlgName(X509Certificate cert)
+    static String getSigAlgName(X509Certificate subjectCert, X509Certificate issuerCert)
     {
-        String sigAlgOID = cert.getSigAlgOID();
+        String sigAlgOID = subjectCert.getSigAlgOID();
 
         // Enforce/provide standard names for some OIDs
         {
@@ -320,18 +323,74 @@ class ProvAlgorithmChecker
          */
         if (PKCSObjectIdentifiers.id_RSASSA_PSS.getId().equals(sigAlgOID))
         {
-            RSASSAPSSparams pssParams = RSASSAPSSparams.getInstance(cert.getSigAlgParams());
+            RSASSAPSSparams pssParams = RSASSAPSSparams.getInstance(subjectCert.getSigAlgParams());
             if (null != pssParams)
             {
-                String sigAlgName = sigAlgNamesPSS.get(pssParams.getHashAlgorithm().getAlgorithm());
-                if (null != sigAlgName)
+                ASN1ObjectIdentifier hashOID = pssParams.getHashAlgorithm().getAlgorithm();
+                if (null != hashOID)
                 {
-                    return sigAlgName;
+                    X509Certificate keyCert = issuerCert;
+                    if (null == keyCert)
+                    {
+                        /*
+                         * TODO[jsse] Is there any better way to handle this? Distinguishing
+                         * rsa_pss_pss_* from rsa_pss_rsae_* requires knowing the issuer's public
+                         * key OID, but here the TA cert is not available. It happens most notably
+                         * when choosing a certificate from the key manager, but also for imported
+                         * trust managers that don't implement X509ExtendedTrustManager.
+                         */
+                        keyCert = subjectCert;
+                    }
+
+                    try
+                    {
+                        JcaTlsCertificate jcaKeyCert = new JcaTlsCertificate(null, keyCert);
+
+                        if (NISTObjectIdentifiers.id_sha256.equals(hashOID))
+                        {
+                            if (jcaKeyCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_pss_sha256))
+                            {
+                                return SIG_ALG_NAME_rsa_pss_pss_sha256;
+                            }
+                            if (jcaKeyCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_rsae_sha256))
+                            {
+                                return SIG_ALG_NAME_rsa_pss_rsae_sha256;
+                            }
+                        }
+                        else if (NISTObjectIdentifiers.id_sha384.equals(hashOID))
+                        {
+                            if (jcaKeyCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_pss_sha384))
+                            {
+                                return SIG_ALG_NAME_rsa_pss_pss_sha384;
+                            }
+                            if (jcaKeyCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_rsae_sha384))
+                            {
+                                return SIG_ALG_NAME_rsa_pss_rsae_sha384;
+                            }
+                        }
+                        else if (NISTObjectIdentifiers.id_sha512.equals(hashOID))
+                        {
+                            if (jcaKeyCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_pss_sha512))
+                            {
+                                return SIG_ALG_NAME_rsa_pss_pss_sha512;
+                            }
+                            if (jcaKeyCert.supportsSignatureAlgorithmCA(SignatureAlgorithm.rsa_pss_rsae_sha512))
+                            {
+                                return SIG_ALG_NAME_rsa_pss_rsae_sha512;
+                            }
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        // Ignore
+                    }
                 }
             }
+
+            return null;
         }
 
-        return cert.getSigAlgName();
+        return subjectCert.getSigAlgName();
     }
 
     static AlgorithmParameters getSigAlgParams(JcaJceHelper helper, X509Certificate cert)

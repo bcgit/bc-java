@@ -12,7 +12,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -36,6 +35,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+import org.bouncycastle.tls.KeyExchangeAlgorithm;
 
 class ProvX509KeyManager
     extends X509ExtendedKeyManager
@@ -64,16 +64,16 @@ class ProvX509KeyManager
     {
         String algorithm = keyType;
 
-        addFilter(filters, algorithm, null, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, keyType);
+        addFilter(filters, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, algorithm, null, keyType);
     }
 
     private static void addFilter(Map<String, PublicKeyFilter> filters, Class<? extends PublicKey> clazz, String... keyTypes)
     {
-        addFilter(filters, null, clazz, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, keyTypes);
+        addFilter(filters, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, null, clazz, keyTypes);
     }
 
-    private static void addFilter(Map<String, PublicKeyFilter> filters, String algorithm,
-        Class<? extends PublicKey> clazz, int keyUsageBit, String... keyTypes)
+    private static void addFilter(Map<String, PublicKeyFilter> filters, int keyUsageBit, String algorithm,
+        Class<? extends PublicKey> clazz, String... keyTypes)
     {
         PublicKeyFilter filter = new PublicKeyFilter(algorithm, clazz, keyUsageBit);
 
@@ -81,9 +81,33 @@ class ProvX509KeyManager
         {
             if (null != filters.put(keyType.toUpperCase(Locale.ENGLISH), filter))
             {
-                throw new IllegalStateException("Duplicate names in filters");
+                throw new IllegalStateException("Duplicate keys in filters");
             }
         }
+    }
+
+    private static void addFilterLegacyServer(Map<String, PublicKeyFilter> filters, String algorithm,
+        int... keyExchangeAlgorithms)
+    {
+        addFilterLegacyServer(filters, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, algorithm, keyExchangeAlgorithms);
+    }
+
+    private static void addFilterLegacyServer(Map<String, PublicKeyFilter> filters, int keyUsageBit, String algorithm,
+        int... keyExchangeAlgorithms)
+    {
+        addFilterLegacyServer(filters, keyUsageBit, algorithm, null, keyExchangeAlgorithms);
+    }
+
+    private static void addFilterLegacyServer(Map<String, PublicKeyFilter> filters, Class<? extends PublicKey> clazz,
+        int... keyExchangeAlgorithms)
+    {
+        addFilterLegacyServer(filters, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, null, clazz, keyExchangeAlgorithms);
+    }
+
+    private static void addFilterLegacyServer(Map<String, PublicKeyFilter> filters, int keyUsageBit, String algorithm,
+        Class<? extends PublicKey> clazz, int... keyExchangeAlgorithms)
+    {
+        addFilter(filters, keyUsageBit, algorithm, clazz, getKeyTypesLegacyServer(keyExchangeAlgorithms));
     }
 
     private static Map<String, PublicKeyFilter> createFiltersClient()
@@ -93,9 +117,12 @@ class ProvX509KeyManager
         addFilter(filters, "Ed25519");
         addFilter(filters, "Ed448");
 
+        // TODO Perhaps check the public key OID explicitly for these
+        addFilter(filters, "RSA");
+        addFilter(filters, "RSASSA-PSS");
+
         addFilter(filters, DSAPublicKey.class, "DSA");
         addFilter(filters, ECPublicKey.class, "EC");
-        addFilter(filters, RSAPublicKey.class, "RSA");
 
         return Collections.unmodifiableMap(filters);
     }
@@ -107,13 +134,28 @@ class ProvX509KeyManager
         addFilter(filters, "Ed25519");
         addFilter(filters, "Ed448");
 
-        addFilter(filters, DSAPublicKey.class, "DHE_DSS", "SRP_DSS");
-        addFilter(filters, ECPublicKey.class, "ECDHE_ECDSA");
-        addFilter(filters, RSAPublicKey.class, "DHE_RSA", "ECDHE_RSA", "SRP_RSA");
+        // TODO Perhaps check the public key OID explicitly for these
+        addFilter(filters, "RSA");
+        addFilter(filters, "RSASSA-PSS");
 
-        addFilter(filters, null, RSAPublicKey.class, ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT, "RSA");
+        addFilterLegacyServer(filters, DSAPublicKey.class, KeyExchangeAlgorithm.DHE_DSS, KeyExchangeAlgorithm.SRP_DSS);
+        addFilterLegacyServer(filters, ECPublicKey.class, KeyExchangeAlgorithm.ECDHE_ECDSA);
+        addFilterLegacyServer(filters, "RSA", KeyExchangeAlgorithm.DHE_RSA, KeyExchangeAlgorithm.ECDHE_RSA,
+            KeyExchangeAlgorithm.SRP_RSA);
+        addFilterLegacyServer(filters, ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT, "RSA", KeyExchangeAlgorithm.RSA);
 
         return Collections.unmodifiableMap(filters);
+    }
+
+    private static String[] getKeyTypesLegacyServer(int... keyExchangeAlgorithms)
+    {
+        int count = keyExchangeAlgorithms.length;
+        String[] keyTypes = new String[count];
+        for (int i = 0; i < count; ++i)
+        {
+            keyTypes[i] = JsseUtils.getKeyTypeLegacyServer(keyExchangeAlgorithms[i]);
+        }
+        return keyTypes;
     }
 
     private final AtomicLong versions = new AtomicLong();

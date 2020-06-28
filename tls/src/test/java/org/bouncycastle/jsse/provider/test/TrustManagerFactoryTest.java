@@ -41,6 +41,12 @@ public class TrustManagerFactoryTest
     static byte[] interCrlBin = Base64.decode(
         "MIIBbDCB1gIBATANBgkqhkiG9w0BAQsFADAoMSYwJAYDVQQDEx1UZXN0IEludGVybWVkaWF0ZSBDZXJ0aWZpY2F0ZRcNMDgwOTA0MDQ0NTA4WhcNMDgwOTA0MDczMTQ4WjAiMCACAQIXDTA4MDkwNDA0NDUwOFowDDAKBgNVHRUEAwoBCaBWMFQwRgYDVR0jBD8wPYAUv8jAAY6QfNpDI9l6DLv0LAzmhMWhIqQgMB4xHDAaBgNVBAMTE1Rlc3QgQ0EgQ2VydGlmaWNhdGWCAQEwCgYDVR0UBAMCAQEwDQYJKoZIhvcNAQELBQADgYEAEVCr5TKs5yguGgLH+dBzmSPoeSIWJFLsgWwJEit/iUDJH3dgYmaczOcGxIDtbYYHLWIHM+P2YRyQz3MEkCXEgm/cx4y7leAmux5l+xQWgmxFPz+197vaphPeCZo+B7V1CWtm518gcq4mrs9ovfgNqgyFj7KGjcBpWdJE32KMt50=");
 
+    private static final String CLIENT_AUTH_TYPE = "RSA";
+
+    // NOTE: This depends on the value of JsseUtils.getAuthTypeServer(KeyExchangeAlgorithm.RSA)
+//    private static final String SERVER_AUTH_TYPE = "RSA";
+    private static final String SERVER_AUTH_TYPE = "KE:RSA";
+
     protected void setUp()
     {
         ProviderUtils.setupLowPriority(false);
@@ -95,8 +101,8 @@ public class TrustManagerFactoryTest
 
         X509Certificate[] certs = new X509Certificate[]{ finalCert, interCert };
 
-        trustManager.checkServerTrusted(certs, "RSA");
-        trustManager.checkClientTrusted(certs, "RSA");
+        trustManager.checkServerTrusted(certs, SERVER_AUTH_TYPE);
+        trustManager.checkClientTrusted(certs, CLIENT_AUTH_TYPE);
     }
 
     public void testCertPathTrustManagerParametersFailure() throws Exception
@@ -138,7 +144,7 @@ public class TrustManagerFactoryTest
 
         try
         {
-            trustManager.checkServerTrusted(certs, "RSA");
+            trustManager.checkServerTrusted(certs, SERVER_AUTH_TYPE);
             fail("no exception");
         }
         catch (CertificateException e)
@@ -148,7 +154,7 @@ public class TrustManagerFactoryTest
 
         try
         {
-            trustManager.checkClientTrusted(certs, "RSA");
+            trustManager.checkClientTrusted(certs, CLIENT_AUTH_TYPE);
             fail("no exception");
         }
         catch (CertificateException e)

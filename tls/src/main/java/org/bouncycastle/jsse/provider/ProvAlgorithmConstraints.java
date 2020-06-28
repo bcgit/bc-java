@@ -62,9 +62,15 @@ class ProvAlgorithmConstraints
         checkPrimitives(primitives);
         checkAlgorithmName(algorithm);
 
-        if (null != supportedSignatureAlgorithms && !isSupportedSignatureAlgorithm(algorithm))
+        if (null != supportedSignatureAlgorithms)
         {
-            return false;
+            String algorithmBC = algorithm;
+            algorithm = getAlgorithm(algorithmBC);
+
+            if (!isSupportedSignatureAlgorithm(algorithmBC))
+            {
+                return false;
+            }
         }
 
         if (null != configAlgorithmConstraints && !configAlgorithmConstraints.permits(primitives, algorithm, parameters))
@@ -116,9 +122,15 @@ class ProvAlgorithmConstraints
         checkAlgorithmName(algorithm);
         checkKey(key);
 
-        if (null != supportedSignatureAlgorithms && !isSupportedSignatureAlgorithm(algorithm))
+        if (null != supportedSignatureAlgorithms)
         {
-            return false;
+            String algorithmBC = algorithm;
+            algorithm = getAlgorithm(algorithmBC);
+
+            if (!isSupportedSignatureAlgorithm(algorithmBC))
+            {
+                return false;
+            }
         }
 
         if (null != configAlgorithmConstraints && !configAlgorithmConstraints.permits(primitives, algorithm, key, parameters))
@@ -140,16 +152,14 @@ class ProvAlgorithmConstraints
         return true;
     }
 
-    private boolean isSupportedSignatureAlgorithm(String algorithm)
+    private String getAlgorithm(String algorithmBC)
     {
-        return !supportedSignatureAlgorithms.isEmpty()
-            && containsIgnoreCase(supportedSignatureAlgorithms, removeAnyMGFSpecifier(algorithm));
+        int colonPos = algorithmBC.indexOf(':');
+        return colonPos < 0 ? algorithmBC : algorithmBC.substring(0, colonPos);
     }
 
-    private static String removeAnyMGFSpecifier(String algorithm)
+    private boolean isSupportedSignatureAlgorithm(String algorithmBC)
     {
-        // TODO[jsse] Follows SunJSSE behaviour. Case-insensitive search?
-        int andPos = algorithm.indexOf("and");
-        return andPos < 1 ? algorithm : algorithm.substring(0, andPos);
+        return containsIgnoreCase(supportedSignatureAlgorithms, algorithmBC);
     }
 }
