@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
@@ -77,6 +78,12 @@ class TestUtils
         algIDs.put("SHA1withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha1WithRSAEncryption, DERNull.INSTANCE));
         algIDs.put("SHA224withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha224WithRSAEncryption, DERNull.INSTANCE));
         algIDs.put("SHA256withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE));
+        algIDs.put("SHA256withRSAandMGF1",
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS,
+                new RSASSAPSSparams(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+                    new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1,
+                        new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)),
+                    new ASN1Integer(32), new ASN1Integer(1))));
         algIDs.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
         algIDs.put("SHA224withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA224));
         algIDs.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
@@ -105,6 +112,8 @@ class TestUtils
     public static X509Certificate createSelfSignedCert(X500Name dn, String sigName, KeyPair keyPair)
         throws Exception
     {
+        AlgorithmIdentifier sigAlgID = getAlgID(sigName);
+
         V3TBSCertificateGenerator certGen = new V3TBSCertificateGenerator();
 
         long time = System.currentTimeMillis();
@@ -114,7 +123,7 @@ class TestUtils
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature(getAlgID(sigName));
+        certGen.setSignature(sigAlgID);
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
         // some cert path analysers will reject a V3 certificate as a CA if it doesn't have basic constraints set.
@@ -129,7 +138,7 @@ class TestUtils
 
         ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(tbsCert);
-        v.add(getAlgID(sigName));
+        v.add(sigAlgID);
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", ProviderUtils.PROVIDER_NAME_BC)
@@ -199,6 +208,19 @@ class TestUtils
         return kpGen.generateKeyPair();
     }
 
+    /**
+     * Create a random 1024 bit RSASSA-PSS key pair
+     */
+    public static KeyPair generatePSSKeyPair()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSASSA-PSS", ProviderUtils.PROVIDER_NAME_BC);
+
+        kpGen.initialize(1024, new SecureRandom());
+
+        return kpGen.generateKeyPair();
+    }
+
     public static KeyPair generateECKeyPair()
         throws Exception
     {
@@ -240,6 +262,10 @@ class TestUtils
         else if (alg.equals("RSA"))
         {
             return createSelfSignedCert("CN=Test CA Certificate", "SHA256withRSA", pair);
+        }
+        else if (alg.equals("RSASSA-PSS"))
+        {
+            return createSelfSignedCert("CN=Test CA Certificate", "SHA256withRSAandMGF1", pair);
         }
         else if (alg.equals("EC"))
         {
