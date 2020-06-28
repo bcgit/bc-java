@@ -1,7 +1,9 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.security.Key;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.ECPrivateKey;
@@ -22,7 +24,10 @@ import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
@@ -546,6 +551,59 @@ abstract class JsseUtils
         return root + " " + AlertLevel.getText(alertLevel) + " " + AlertDescription.getText(alertDescription) + " alert";
     }
 
+    static String getKeyAlgorithm(Key key)
+    {
+        if (key instanceof PrivateKey)
+        {
+            return getPrivateKeyAlgorithm((PrivateKey)key);
+        }
+        if (key instanceof PublicKey)
+        {
+            return getPublicKeyAlgorithm((PublicKey)key);
+        }
+        return key.getAlgorithm();
+    }
+
+    static String getPrivateKeyAlgorithm(PrivateKey privateKey)
+    {
+        String algorithm = privateKey.getAlgorithm();
+
+        /*
+         * TODO[fips] Early BCFIPS versions didn't return standard name for PSS keys. Once the
+         * minimum BCFIPS version no longer has that problem, this handler can be removed.
+         */
+        if ("RSA".equalsIgnoreCase(algorithm))
+        {
+            PrivateKeyInfo pki = PrivateKeyInfo.getInstance(privateKey.getEncoded());
+            if (PKCSObjectIdentifiers.id_RSASSA_PSS.equals(pki.getPrivateKeyAlgorithm().getAlgorithm()))
+            {
+                return "RSASSA-PSS";
+            }
+        }
+
+        return algorithm;
+    }
+
+    static String getPublicKeyAlgorithm(PublicKey publicKey)
+    {
+        String algorithm = publicKey.getAlgorithm();
+
+        /*
+         * TODO[fips] Early BCFIPS versions didn't return standard name for PSS keys. Once the
+         * minimum BCFIPS version no longer has that problem, this handler can be removed.
+         */
+        if ("RSA".equalsIgnoreCase(algorithm))
+        {
+            SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+            if (PKCSObjectIdentifiers.id_RSASSA_PSS.equals(spki.getAlgorithm().getAlgorithm()))
+            {
+                return "RSASSA-PSS";
+            }
+        }
+
+        return algorithm;
+    }
+
     static boolean isNameSpecified(String name)
     {
         return null != name && name.length() > 0;
@@ -560,7 +618,7 @@ abstract class JsseUtils
 
     static boolean isUsableKeyForServer(short signatureAlgorithm, PrivateKey privateKey)
     {
-        final String algorithm = privateKey.getAlgorithm();
+        final String algorithm = getPrivateKeyAlgorithm(privateKey);
 
         switch (signatureAlgorithm)
         {
@@ -602,7 +660,7 @@ abstract class JsseUtils
             return isUsableKeyForServer(TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm), privateKey);
 
         case KeyExchangeAlgorithm.RSA:
-            return privateKey instanceof RSAPrivateKey || "RSA".equalsIgnoreCase(privateKey.getAlgorithm());
+            return privateKey instanceof RSAPrivateKey || "RSA".equalsIgnoreCase(getPrivateKeyAlgorithm(privateKey));
 
         // NOTE: This method should never be called for TLS 1.3 
         case KeyExchangeAlgorithm.NULL:
