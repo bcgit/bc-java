@@ -660,7 +660,7 @@ class ProvX509KeyManager
 
         private boolean appliesTo(PublicKey publicKey)
         {
-            return (null != algorithm && algorithm.equalsIgnoreCase(publicKey.getAlgorithm()))
+            return (null != algorithm && algorithm.equalsIgnoreCase(JsseUtils.getPublicKeyAlgorithm(publicKey)))
                 || (null != clazz && clazz.isInstance(publicKey));
         }
     }
