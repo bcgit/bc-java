@@ -9,7 +9,17 @@ public abstract class BCExtendedSSLSession implements SSLSession
 {
     public abstract String[] getLocalSupportedSignatureAlgorithms();
 
+    public String[] getLocalSupportedSignatureAlgorithmsBC()
+    {
+        return getLocalSupportedSignatureAlgorithms();
+    }
+
     public abstract String[] getPeerSupportedSignatureAlgorithms();
+
+    public String[] getPeerSupportedSignatureAlgorithmsBC()
+    {
+        return getPeerSupportedSignatureAlgorithms();
+    }
 
     public List<BCSNIServerName> getRequestedServerNames()
     {

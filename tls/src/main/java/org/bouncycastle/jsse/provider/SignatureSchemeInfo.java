@@ -200,6 +200,21 @@ class SignatureSchemeInfo
         return result.toArray(new String[0]);
     }
 
+    static String[] getJcaSignatureAlgorithmsBC(Collection<SignatureSchemeInfo> infos)
+    {
+        if (null == infos)
+        {
+            return new String[0];
+        }
+
+        ArrayList<String> result = new ArrayList<String>();
+        for (SignatureSchemeInfo info : infos)
+        {
+            result.add(info.getJcaSignatureAlgorithmBC());
+        }
+        return result.toArray(new String[0]);
+    }
+
     static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(int signatureScheme)
     {
         if (!TlsUtils.isValidUint16(signatureScheme))
@@ -468,6 +483,12 @@ class SignatureSchemeInfo
 
     String getJcaSignatureAlgorithm()
     {
+        return all.jcaSignatureAlgorithm;
+    }
+
+    String getJcaSignatureAlgorithmBC()
+    {
+        // TODO Add and use jcaSignatureAlgorithmBC instead
         return all.jcaSignatureAlgorithm;
     }
 
