@@ -229,6 +229,11 @@ class ProvAlgorithmChecker
         X509Certificate cert) throws CertPathValidatorException
     {
         String sigAlgName = getSigAlgName(cert);
+        if (!JsseUtils.isNameSpecified(sigAlgName))
+        {
+            throw new CertPathValidatorException();
+        }
+
         AlgorithmParameters sigAlgParams = getSigAlgParams(helper, cert);
 
         if (!algorithmConstraints.permits(JsseUtils.SIGNATURE_CRYPTO_PRIMITIVES_BC, sigAlgName, sigAlgParams))
@@ -241,6 +246,11 @@ class ProvAlgorithmChecker
         X509Certificate subjectCert, X509Certificate issuerCert) throws CertPathValidatorException
     {
         String sigAlgName = getSigAlgName(subjectCert);
+        if (!JsseUtils.isNameSpecified(sigAlgName))
+        {
+            throw new CertPathValidatorException();
+        }
+
         AlgorithmParameters sigAlgParams = getSigAlgParams(helper, subjectCert);
 
         if (!algorithmConstraints.permits(JsseUtils.SIGNATURE_CRYPTO_PRIMITIVES_BC, sigAlgName,
