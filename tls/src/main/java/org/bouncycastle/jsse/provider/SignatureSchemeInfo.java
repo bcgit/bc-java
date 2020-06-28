@@ -77,6 +77,7 @@ class SignatureSchemeInfo
         private final String name;
         private final String text;
         private final String jcaSignatureAlgorithm;
+        private final String jcaSignatureAlgorithmBC;
         private final String keyAlgorithm;
         private final boolean supported13;
         private final boolean supportedCerts13;
@@ -114,6 +115,7 @@ class SignatureSchemeInfo
             this.name = name;
             this.text = name + "(0x" + Integer.toHexString(signatureScheme) + ")";
             this.jcaSignatureAlgorithm = jcaSignatureAlgorithm;
+            this.jcaSignatureAlgorithmBC = JsseUtils.getJcaSignatureAlgorithmBC(jcaSignatureAlgorithm, keyAlgorithm);
             this.keyAlgorithm = keyAlgorithm;
             this.supported13 = supported13;
             this.supportedCerts13 = supportedCerts13;
@@ -195,6 +197,7 @@ class SignatureSchemeInfo
         ArrayList<String> result = new ArrayList<String>();
         for (SignatureSchemeInfo info : infos)
         {
+            // TODO The two kinds of PSS signature scheme can give duplicates here
             result.add(info.getJcaSignatureAlgorithm());
         }
         return result.toArray(new String[0]);
@@ -304,21 +307,6 @@ class SignatureSchemeInfo
         Map<Integer, SignatureSchemeInfo> ss, All all)
     {
         final int signatureScheme = all.signatureScheme;
-
-        /*
-         * TODO[tls13] Currently removed because it's not clear how the KeyManager and/or
-         * TrustManager are supposed to distinguish rsa_pss_pss_* from rsa_pss_rsae_* .
-         */
-        switch (signatureScheme)
-        {
-        case SignatureScheme.rsa_pss_pss_sha256:
-        case SignatureScheme.rsa_pss_pss_sha384:
-        case SignatureScheme.rsa_pss_pss_sha512:
-        case SignatureScheme.rsa_pss_rsae_sha256:
-        case SignatureScheme.rsa_pss_rsae_sha384:
-        case SignatureScheme.rsa_pss_rsae_sha512:
-            return;
-        }
 
         if (isFipsContext && !FipsUtils.isFipsSignatureScheme(signatureScheme))
         {
@@ -488,8 +476,7 @@ class SignatureSchemeInfo
 
     String getJcaSignatureAlgorithmBC()
     {
-        // TODO Add and use jcaSignatureAlgorithmBC instead
-        return all.jcaSignatureAlgorithm;
+        return all.jcaSignatureAlgorithmBC;
     }
 
     String getKeyAlgorithm()

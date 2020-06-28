@@ -25,6 +25,7 @@ public class AllTests
         suite.addTestSuite(EdDSACredentialsTest.class);
         suite.addTestSuite(InstanceTest.class);
         suite.addTestSuite(KeyManagerFactoryTest.class);
+        suite.addTestSuite(PSSCredentialsTest.class);
 
         if (hasClass("javax.net.ssl.CertPathTrustManagerParameters"))
         {
