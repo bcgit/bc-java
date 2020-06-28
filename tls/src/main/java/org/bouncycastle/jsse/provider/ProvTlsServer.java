@@ -727,6 +727,7 @@ class ProvTlsServer
         }
     }
 
+    // TODO[tls13] Need an alternate (probably simpler) version of this for TLS 1.3
     protected TlsCredentials selectServerCredentials(Principal[] issuers, int keyExchangeAlgorithm) throws IOException
     {
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
@@ -745,11 +746,6 @@ class ProvTlsServer
 
             final short signatureAlgorithm = signatureSchemeInfo.getSignatureAlgorithm();
 
-            /*
-             * TODO[jsse] Probably insufficient for rsa_pss_* signature algorithms. In fact we'd
-             * prefer that none of the legacy names shadow the signature scheme key algorithms
-             * (maybe rename them to e.g. "KE_RSA" etc.?), to avoid this conditional.
-             */
             String keyType = (legacySignatureAlgorithm == signatureAlgorithm)
                 ?   JsseUtils.getKeyTypeLegacyServer(keyExchangeAlgorithm)
                 :   JsseUtils.getKeyType(signatureSchemeInfo);

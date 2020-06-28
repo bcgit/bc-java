@@ -7,7 +7,6 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,7 +51,6 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
-import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.TrustedAuthority;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -198,7 +196,7 @@ abstract class JsseUtils
         return applicationProtocol.getUtf8Decoding();
     }
 
-    static String getAuthTypeClient(short signatureAlgorithm) throws IOException
+    static String getAuthTypeClient(short signatureAlgorithm)
     {
         /*
          * For use with checkClientTrusted calls on a trust manager.
@@ -218,21 +216,20 @@ abstract class JsseUtils
             return "Ed25519";
         case SignatureAlgorithm.ed448:
             return "Ed448";
-        // TODO[RFC 8446]
-//        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-//        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-//        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-//            return "RSA_PSS_RSAE"; // TODO Review
-//        case SignatureAlgorithm.rsa_pss_pss_sha256:
-//        case SignatureAlgorithm.rsa_pss_pss_sha384:
-//        case SignatureAlgorithm.rsa_pss_pss_sha512:
-//            return "RSA_PSS_PSS"; // TODO Review
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return "RSA";
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return "RSASSA-PSS";
         default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new IllegalArgumentException();
         }
     }
 
-    static String getAuthTypeServer(int keyExchangeAlgorithm) throws IOException
+    static String getAuthTypeServer(int keyExchangeAlgorithm)
     {
         /*
          * For use with checkServerTrusted calls on a trust manager.
@@ -242,10 +239,18 @@ abstract class JsseUtils
 
         switch (keyExchangeAlgorithm)
         {
+        case KeyExchangeAlgorithm.DH_DSS:
+            return "DH_DSS";
+        case KeyExchangeAlgorithm.DH_RSA:
+            return "DH_RSA";
         case KeyExchangeAlgorithm.DHE_DSS:
             return "DHE_DSS";
         case KeyExchangeAlgorithm.DHE_RSA:
             return "DHE_RSA";
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+            return "ECDH_ECDSA";
+        case KeyExchangeAlgorithm.ECDH_RSA:
+            return "ECDH_RSA";
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
             return "ECDHE_ECDSA";
         case KeyExchangeAlgorithm.ECDHE_RSA:
@@ -255,9 +260,14 @@ abstract class JsseUtils
 //            return "NULL";
             return "UNKNOWN";
         case KeyExchangeAlgorithm.RSA:
-            return "RSA";
+            // Prefixed to disambiguate from RSA signing credentials
+            return "KE:RSA";
+        case KeyExchangeAlgorithm.SRP_DSS:
+            return "SRP_DSS";
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return "SRP_RSA";
         default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new IllegalArgumentException();
         }
     }
 
@@ -336,19 +346,23 @@ abstract class JsseUtils
         return getX509Certificate(crypto, certificateMessage.getCertificateAt(0));
     }
 
+    static String getJcaSignatureAlgorithmBC(String jcaSignatureAlgorithm, String keyAlgorithm)
+    {
+        if (!jcaSignatureAlgorithm.endsWith("withRSAandMGF1"))
+        {
+            return jcaSignatureAlgorithm;
+        }
+
+        return jcaSignatureAlgorithm + ":" + keyAlgorithm;
+    }
+
     static String getKeyType(SignatureSchemeInfo signatureSchemeInfo)
     {
         return signatureSchemeInfo.getKeyAlgorithm();
     }
 
-    static String getKeyTypeLegacyClient(short clientCertificateType) throws IOException
+    static String getKeyTypeLegacyClient(short clientCertificateType)
     {
-        /*
-         * For use with chooseClientAlias calls on a key manager. Values from JSSE Standard Names.
-         * 
-         * TODO[RFC 8446] "RSASSA-PSS" is listed in JSSE Standard Names - how does that work?
-         */
-
         switch (clientCertificateType)
         {
         /*
@@ -366,18 +380,16 @@ abstract class JsseUtils
 
         case ClientCertificateType.dss_sign:
             return "DSA";
-        // NOTE: Compatible with peer signature_algorithms "ed25519" and "ed448" in TLS 1.2
         case ClientCertificateType.ecdsa_sign:
             return "EC";
-        // NOTE: Compatible with peer signature_algorithms "rsa_pss_*" in TLS 1.2 
         case ClientCertificateType.rsa_sign:
             return "RSA";
         default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new IllegalArgumentException();
         }
     }
 
-    static String getKeyTypeLegacyServer(int keyExchangeAlgorithm) throws IOException
+    static String getKeyTypeLegacyServer(int keyExchangeAlgorithm)
     {
         /*
          * For use with chooseServerAlias calls on a key manager. JSSE Standard Names suggest using
@@ -635,15 +647,18 @@ abstract class JsseUtils
             return "Ed448".equalsIgnoreCase(algorithm);
 
         case SignatureAlgorithm.rsa:
-            return privateKey instanceof RSAPrivateKey || "RSA".equalsIgnoreCase(algorithm);
+            return "RSA".equalsIgnoreCase(algorithm);
 
-        // TODO[RFC 8446]
-//        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-//        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-//        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-//        case SignatureAlgorithm.rsa_pss_pss_sha256:
-//        case SignatureAlgorithm.rsa_pss_pss_sha384:
-//        case SignatureAlgorithm.rsa_pss_pss_sha512:
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return "RSA".equalsIgnoreCase(algorithm);
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return "RSASSA-PSS".equalsIgnoreCase(algorithm);
+
         default:
             return false;
         }
@@ -660,7 +675,7 @@ abstract class JsseUtils
             return isUsableKeyForServer(TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm), privateKey);
 
         case KeyExchangeAlgorithm.RSA:
-            return privateKey instanceof RSAPrivateKey || "RSA".equalsIgnoreCase(getPrivateKeyAlgorithm(privateKey));
+            return "RSA".equalsIgnoreCase(getPrivateKeyAlgorithm(privateKey));
 
         // NOTE: This method should never be called for TLS 1.3 
         case KeyExchangeAlgorithm.NULL:

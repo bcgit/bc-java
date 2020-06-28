@@ -39,6 +39,7 @@ import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+import org.bouncycastle.tls.KeyExchangeAlgorithm;
 
 class ProvX509TrustManager
     extends BCX509ExtendedTrustManager
@@ -48,26 +49,35 @@ class ProvX509TrustManager
     private static final boolean provCheckRevocation = PropertyUtils
         .getBooleanSystemProperty("com.sun.net.ssl.checkRevocation", false);
 
-    private static final Map<String, Integer> serverKeyUsageMap = createServerKeyUsageMap();
+    private static final Map<String, Integer> keyUsagesServer = createKeyUsagesServer();
 
-    private static Map<String, Integer> createServerKeyUsageMap()
+    private static void addKeyUsageServer(Map<String, Integer> keyUsages, int keyUsage, int... keyExchangeAlgorithms)
     {
-        Map<String, Integer> kus = new HashMap<String, Integer>();
+        for (int keyExchangeAlgorithm : keyExchangeAlgorithms)
+        {
+            String authType = JsseUtils.getAuthTypeServer(keyExchangeAlgorithm);
 
-        kus.put("DHE_DSS", ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE);
-        kus.put("DHE_RSA", ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE);
-        kus.put("ECDHE_ECDSA", ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE);
-        kus.put("ECDHE_RSA", ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE);
-        kus.put("UNKNOWN", ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE);  // TLS 1.3
+            if (null != keyUsages.put(authType, keyUsage))
+            {
+                throw new IllegalStateException("Duplicate keys in server key usages");
+            }
+        }
+    }
 
-        kus.put("RSA", ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT);
+    private static Map<String, Integer> createKeyUsagesServer()
+    {
+        Map<String, Integer> keyUsages = new HashMap<String, Integer>();
 
-        kus.put("DH_DSS", ProvAlgorithmChecker.KU_KEY_AGREEMENT);
-        kus.put("DH_RSA", ProvAlgorithmChecker.KU_KEY_AGREEMENT);
-        kus.put("ECDH_ECDSA", ProvAlgorithmChecker.KU_KEY_AGREEMENT);
-        kus.put("ECDH_RSA", ProvAlgorithmChecker.KU_KEY_AGREEMENT);
+        addKeyUsageServer(keyUsages, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE, KeyExchangeAlgorithm.DHE_DSS,
+            KeyExchangeAlgorithm.DHE_RSA, KeyExchangeAlgorithm.ECDHE_ECDSA, KeyExchangeAlgorithm.ECDHE_RSA,
+            KeyExchangeAlgorithm.NULL);
 
-        return Collections.unmodifiableMap(kus);
+        addKeyUsageServer(keyUsages, ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT, KeyExchangeAlgorithm.RSA);
+
+        addKeyUsageServer(keyUsages, ProvAlgorithmChecker.KU_KEY_AGREEMENT, KeyExchangeAlgorithm.DH_DSS,
+            KeyExchangeAlgorithm.DH_RSA, KeyExchangeAlgorithm.ECDH_ECDSA, KeyExchangeAlgorithm.ECDH_RSA);
+
+        return Collections.unmodifiableMap(keyUsages);
     }
 
     private final JcaJceHelper helper;
@@ -355,7 +365,7 @@ class ProvX509TrustManager
             return ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE;
         }
 
-        Integer requiredKeyUsage = serverKeyUsageMap.get(authType);
+        Integer requiredKeyUsage = keyUsagesServer.get(authType);
         if (null == requiredKeyUsage)
         {
             throw new CertificateException("Unsupported server authType: " + authType);

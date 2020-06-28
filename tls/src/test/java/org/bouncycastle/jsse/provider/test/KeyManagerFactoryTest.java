@@ -42,7 +42,11 @@ public class KeyManagerFactoryTest
 
         X509ExtendedKeyManager manager = (X509ExtendedKeyManager)managers[0];
 
-        String alias = manager.chooseServerAlias("RSA", null, null);
+        // NOTE: This depends on the value of JsseUtils.getKeyTypeLegacyServer(KeyExchangeAlgorithm.RSA)
+//        String keyType = "RSA";
+        String keyType = "KE:RSA";
+
+        String alias = manager.chooseServerAlias(keyType, null, null);
 
         assertNotNull(alias);
 
@@ -50,11 +54,11 @@ public class KeyManagerFactoryTest
 
         assertNotNull(manager.getPrivateKey(alias));
 
-        alias = manager.chooseServerAlias("RSA", new Principal[] { new X500Principal("CN=TLS Test") }, null);
+        alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
 
         assertNull(alias);
 
-        alias = manager.chooseServerAlias("RSA", new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+        alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
 
         assertNotNull(alias);
 
@@ -76,7 +80,10 @@ public class KeyManagerFactoryTest
 
         X509ExtendedKeyManager manager = (X509ExtendedKeyManager)managers[0];
 
-        String alias = manager.chooseServerAlias("ECDHE_ECDSA", null, null);
+        // NOTE: This depends on the value of JsseUtils.getKeyTypeLegacyServer(KeyExchangeAlgorithm.ECDHE_ECDSA)
+        String keyType = "ECDHE_ECDSA";
+
+        String alias = manager.chooseServerAlias(keyType, null, null);
 
         assertNotNull(alias);
 
@@ -84,11 +91,11 @@ public class KeyManagerFactoryTest
 
         assertNotNull(manager.getPrivateKey(alias));
 
-        alias = manager.chooseServerAlias("ECDHE_ECDSA", new Principal[] { new X500Principal("CN=TLS Test") }, null);
+        alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
 
         assertNull(alias);
 
-        alias = manager.chooseServerAlias("ECDHE_ECDSA", new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+        alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
 
         assertNotNull(alias);
 
