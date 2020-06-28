@@ -67,6 +67,12 @@ class ProvSSLSessionHandshake
     }
 
     @Override
+    public String[] getLocalSupportedSignatureAlgorithmsBC()
+    {
+        return SignatureSchemeInfo.getJcaSignatureAlgorithmsBC(jsseSecurityParameters.localSigSchemesCert);
+    }
+
+    @Override
     protected org.bouncycastle.tls.Certificate getPeerCertificateTLS()
     {
         return securityParameters.getPeerCertificate();
@@ -76,6 +82,12 @@ class ProvSSLSessionHandshake
     public String[] getPeerSupportedSignatureAlgorithms()
     {
         return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.peerSigSchemesCert);
+    }
+
+    @Override
+    public String[] getPeerSupportedSignatureAlgorithmsBC()
+    {
+        return SignatureSchemeInfo.getJcaSignatureAlgorithmsBC(jsseSecurityParameters.peerSigSchemesCert);
     }
 
     @Override

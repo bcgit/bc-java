@@ -105,8 +105,8 @@ class TransportData
         if (null != handshakeSession && JsseUtils.isTLSv12(handshakeSession.getProtocol()))
         {
             String[] sigAlgsCert = peerSigAlgs
-                ?   handshakeSession.getPeerSupportedSignatureAlgorithms()
-                :   handshakeSession.getLocalSupportedSignatureAlgorithms();
+                ?   handshakeSession.getPeerSupportedSignatureAlgorithmsBC()
+                :   handshakeSession.getLocalSupportedSignatureAlgorithmsBC();
 
             if (null != sigAlgsCert)
             {
