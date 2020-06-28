@@ -670,7 +670,7 @@ public class JcaTlsCrypto
         JcaTlsCertificate jcaCert = JcaTlsCertificate.convert(this, certificate);
         jcaCert.validateKeyUsageBit(JcaTlsCertificate.KU_KEY_ENCIPHERMENT);
 
-        final RSAPublicKey pubKeyRSA = jcaCert.getPubKeyRSA();
+        final PublicKey pubKeyRSA = jcaCert.getPubKeyRSA();
 
         return new TlsEncryptor()
         {
