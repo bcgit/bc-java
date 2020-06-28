@@ -216,7 +216,7 @@ class DisabledAlgorithmConstraints
         checkPrimitives(primitives);
         checkKey(key);
 
-        if (isAlgorithmSpecified(algorithm)
+        if (JsseUtils.isNameSpecified(algorithm)
             && !permits(primitives, algorithm, parameters))
         {
             return false;

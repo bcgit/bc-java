@@ -19,7 +19,7 @@ abstract class AbstractAlgorithmConstraints implements BCAlgorithmConstraints
 
     protected void checkAlgorithmName(String algorithm)
     {
-        if (!isAlgorithmSpecified(algorithm))
+        if (!JsseUtils.isNameSpecified(algorithm))
         {
             throw new IllegalArgumentException("No algorithm name specified");
         }
@@ -77,11 +77,6 @@ abstract class AbstractAlgorithmConstraints implements BCAlgorithmConstraints
             }
         }
         return false;
-    }
-
-    protected boolean isAlgorithmSpecified(String algorithm)
-    {
-        return null != algorithm && algorithm.length() > 0;
     }
 
     protected boolean isPrimitivesSpecified(Set<BCCryptoPrimitive> primitives)

@@ -546,6 +546,11 @@ abstract class JsseUtils
         return root + " " + AlertLevel.getText(alertLevel) + " " + AlertDescription.getText(alertDescription) + " alert";
     }
 
+    static boolean isNameSpecified(String name)
+    {
+        return null != name && name.length() > 0;
+    }
+
     static boolean isTLSv12(String protocol)
     {
         ProtocolVersion protocolVersion = ProvSSLContextSpi.getProtocolVersion(protocol);
