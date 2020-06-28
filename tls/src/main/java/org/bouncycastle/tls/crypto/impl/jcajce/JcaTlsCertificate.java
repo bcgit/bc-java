@@ -101,7 +101,7 @@ public class JcaTlsCertificate
 
     protected DHPublicKey pubKeyDH = null;
     protected ECPublicKey pubKeyEC = null;
-    protected RSAPublicKey pubKeyRSA = null;
+    protected PublicKey pubKeyRSA = null;
 
     public JcaTlsCertificate(JcaTlsCrypto crypto, byte[] encoding)
         throws IOException
@@ -246,62 +246,55 @@ public class JcaTlsCertificate
         return publicKey;
     }
 
-    RSAPublicKey getPubKeyRSA() throws IOException
+    PublicKey getPubKeyRSA() throws IOException
     {
-        try
-        {
-            return (RSAPublicKey)getPublicKey();
-        }
-        catch (ClassCastException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
-        }
+        return getPublicKey();
     }
 
     public short getLegacySignatureAlgorithm() throws IOException
     {
-         PublicKey publicKey = getPublicKey();
+        PublicKey publicKey = getPublicKey();
 
-         if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE))
-         {
-             return -1;
-         }
+        if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE))
+        {
+            return -1;
+        }
 
-         /*
-          * RFC 5246 7.4.6. Client Certificate
-          */
+        /*
+         * RFC 5246 7.4.6. Client Certificate
+         */
 
-         /*
-          * RSA public key; the certificate MUST allow the key to be used for signing with the
-          * signature scheme and hash algorithm that will be employed in the certificate verify
-          * message.
-          */
-         if (publicKey instanceof RSAPublicKey)
-         {
-             return SignatureAlgorithm.rsa;
-         }
+        /*
+         * RSA public key; the certificate MUST allow the key to be used for signing with the
+         * signature scheme and hash algorithm that will be employed in the certificate verify
+         * message.
+         */
+        if (publicKey instanceof RSAPublicKey)
+        {
+            return SignatureAlgorithm.rsa;
+        }
 
-         /*
-          * DSA public key; the certificate MUST allow the key to be used for signing with the
-          * hash algorithm that will be employed in the certificate verify message.
-          */
-         if (publicKey instanceof DSAPublicKey)
-         {
-             return SignatureAlgorithm.dsa;
-         }
+        /*
+         * DSA public key; the certificate MUST allow the key to be used for signing with the hash
+         * algorithm that will be employed in the certificate verify message.
+         */
+        if (publicKey instanceof DSAPublicKey)
+        {
+            return SignatureAlgorithm.dsa;
+        }
 
-         /*
-          * ECDSA-capable public key; the certificate MUST allow the key to be used for signing
-          * with the hash algorithm that will be employed in the certificate verify message; the
-          * public key MUST use a curve and point format supported by the server.
-          */
-         if (publicKey instanceof ECPublicKey)
-         {
-             // TODO Check the curve and point format
-             return SignatureAlgorithm.ecdsa;
-         }
+        /*
+         * ECDSA-capable public key; the certificate MUST allow the key to be used for signing with
+         * the hash algorithm that will be employed in the certificate verify message; the public
+         * key MUST use a curve and point format supported by the server.
+         */
+        if (publicKey instanceof ECPublicKey)
+        {
+            // TODO Check the curve and point format
+            return SignatureAlgorithm.ecdsa;
+        }
 
-         return -1;
+        return -1;
     }
 
     public boolean supportsSignatureAlgorithm(short signatureAlgorithm) throws IOException
