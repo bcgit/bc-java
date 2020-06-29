@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -83,8 +84,14 @@ public class RSAUtil
             return false;
         }
 
+        /*
+         * TODO ASN.1 NULL shouldn't really be allowed here; it's a workaround for e.g. Oracle JDK
+         * 1.8.0_241, where the X.509 certificate implementation adds the NULL when re-encoding the
+         * original parameters. It appears it was fixed at some later date (OpenJDK 12.0.2 does not
+         * have the issue), but not sure exactly when.
+         */
         ASN1Encodable pssParams = pubKeyAlgID.getParameters();
-        if (null == pssParams)
+        if (null == pssParams || pssParams instanceof ASN1Null)
         {
             switch (signatureAlgorithm)
             {

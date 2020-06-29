@@ -76,6 +76,7 @@ class ProvAlgorithmChecker
 
         noParams.add(OIWObjectIdentifiers.dsaWithSHA1.getId());
         noParams.add(X9ObjectIdentifiers.id_dsa_with_sha1.getId());
+        noParams.add(PKCSObjectIdentifiers.id_RSASSA_PSS.getId());
 
         return Collections.unmodifiableSet(noParams);
     }
