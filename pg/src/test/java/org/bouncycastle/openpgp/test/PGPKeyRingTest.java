@@ -30,6 +30,7 @@ import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
@@ -1463,6 +1464,27 @@ public class PGPKeyRingTest
         "vo5M2QEAoKQGmOIWXPBlGp9iSKpINILNt4eGrux+/Sql2BuGvgY=");
 
     private static final char[] curve25519Pwd = "foobar".toCharArray();
+
+    private static final byte[] datedKey = Base64.decode(
+            "xsBNBF6fiQABCACotBYSynnO2fcy65n7IIwcdDM7EM4y19FNKmKM1lBYtbXDOkRR\n" +
+            "uMmIF8vQveLT/5JdCCbVRQe/xKUrYBd8Qu9ToJjPiJ70ydJCEsaCeJYqCzTNCAro\n" +
+            "qhEqs6vut7IHg+iH20BZcWCk9Zs2gIKlSiuiH811A+TzfXZknxBIfqJZUmW2szXo\n" +
+            "xpSQkz0sJKAeZFv91CJKKUKoJiNvse1bh0PHUW0OG6FKHPG+atjlmJ5BbMJGKs8F\n" +
+            "nsYU6hLIu3EU0YiIjklXD4xNMwRFE+uwphTCgTAvRU/sL+wqWvOHChcKmcnIojDR\n" +
+            "xAtQk6snka5plLrIaE0bC/uuxCPrdqH1eH+jABEBAAHCwGIEHwEIABYFCQTV8IAF\n" +
+            "Al6fmtMJEFhym0NDoekEAAB7Lwf/aVmxc07XL9YhxY3uXob6eeks/CHy4wTKwXqr\n" +
+            "lTHva0HtwoQetmZlWpN6/RGA1ASMY91WohVdYBafuHFZ2dGKfgXNfV262TlTUViR\n" +
+            "YGgX6h/NgCGrAmkaj9uRwn1m4pdi7pWSNgWOEl++dxSbYq7D+nCKcMfVI+UVGmvJ\n" +
+            "qGkmmfr7N92xaSvJevfsZdSDFi6Be6tkmLEzQHdZBiya58Pcim5cRH1BKI7UD098\n" +
+            "81Uta9ytQM0ybPkTYSsRDtWX1ELE8cpxpkbNBwSlhErcN6Ke5szaKW9jPhWXeivK\n" +
+            "3bPbheZl3u7UU4l/c+eBQ5Q4hwCxL+uvPkp6htO0BkhAVX0g2s0oRmlsZWFjdGl2\n" +
+            "ZSBTdXBwb3J0IDxzdXBwb3J0QGFuemdjaXMuY29tPsLAXwQQAQgAEwUCXqAncwIZ\n" +
+            "AQkQWHKbQ0Oh6QQAAGmPCACWn+o3V9UbrkvH5XiGoWCX4+JNNR/UANS5ch3axdVM\n" +
+            "GT2jT5I/NbYCgkhwbgIuAeuv0MxAthWKz8TRCwuZ7eXG8WHTUfRTK0LrWc7uCRX4\n" +
+            "obK3xs8/YafKTCAnF14s7aszBEpv/90WEuZ8Xkgoknqw23GmB00jDR6cg/zjgIb+\n" +
+            "ZE2MpaCihpcIHDMJ18ZKFWM60BMA5Oqje+lu/sE3aj9q4yYceQsdwLEB414OO5Cj\n" +
+            "D5IqRt7f/9WBY4hRF6ZvURvTDZez4pgSHqeNOC39hH+6ndDPBnrjOryFtBHxbT2l\n" +
+            "mAKpCgOv3VtjQjW0xqV2NumiYWY8e5q9RXbJZNvDQdqa\n");
 
     public void test1()
         throws Exception
@@ -3295,6 +3317,18 @@ public class PGPKeyRingTest
         }
     }
 
+    private void testDirectSigDatedKey()
+        throws Exception
+    {
+        PGPObjectFactory factory = new PGPObjectFactory(new ByteArrayInputStream(datedKey), new JcaKeyFingerprintCalculator());
+        PGPPublicKeyRing pkr = (PGPPublicKeyRing)factory.nextObject();
+        PGPPublicKey publicKey = pkr.getPublicKey();
+
+        long validSeconds = publicKey.getValidSeconds();
+
+        isEquals(81129600L, validSeconds);
+    }
+
     private void testApacheRings()
         throws Exception
     {
@@ -3338,6 +3372,7 @@ public class PGPKeyRingTest
             testNoExportPrivateKey();
             shouldStripPreserveTrustPackets();
             testNullEncryption();
+            testDirectSigDatedKey();
             testEdDsaRing();
             testCurve25519Ring();
             testShouldProduceSubkeys();
@@ -3364,6 +3399,7 @@ public class PGPKeyRingTest
 
     public static void main(
         String[]    args)
+    throws Exception
     {
         Security.addProvider(new BouncyCastleProvider());
 
