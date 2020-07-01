@@ -391,7 +391,7 @@ public class PGPPublicKey
      */
     public boolean isMasterKey()
     {
-        return (subSigs == null) && !this.isEncryptionKey();
+        return (subSigs == null) && !(this.isEncryptionKey() && publicPk.getAlgorithm() != PublicKeyAlgorithmTags.RSA_GENERAL);
     }
     
     /**
