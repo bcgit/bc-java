@@ -20,6 +20,7 @@ import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
@@ -32,7 +33,7 @@ import org.bouncycastle.util.Arrays;
 public class PGPPublicKey
     implements PublicKeyAlgorithmTags
 {
-    private static final int[] MASTER_KEY_CERTIFICATION_TYPES = new int[] { PGPSignature.POSITIVE_CERTIFICATION, PGPSignature.CASUAL_CERTIFICATION, PGPSignature.NO_CERTIFICATION, PGPSignature.DEFAULT_CERTIFICATION };
+    private static final int[] MASTER_KEY_CERTIFICATION_TYPES = new int[] { PGPSignature.POSITIVE_CERTIFICATION, PGPSignature.CASUAL_CERTIFICATION, PGPSignature.NO_CERTIFICATION, PGPSignature.DEFAULT_CERTIFICATION, PGPSignature.DIRECT_KEY };
     
     PublicKeyPacket publicPk;
     TrustPacket     trustPk;
@@ -271,7 +272,7 @@ public class PGPPublicKey
                 for (int i = 0; i != MASTER_KEY_CERTIFICATION_TYPES.length; i++)
                 {
                     long seconds = getExpirationTimeFromSig(true, MASTER_KEY_CERTIFICATION_TYPES[i]);
-                    
+
                     if (seconds >= 0)
                     {
                         return seconds;
@@ -322,6 +323,11 @@ public class PGPPublicKey
                     continue;
                 }
 
+                if (!hashed.hasSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME))
+                {
+                    continue;
+                }
+                
                 long current = hashed.getKeyExpirationTime();
 
                 if (sig.getKeyID() == this.getKeyID())
