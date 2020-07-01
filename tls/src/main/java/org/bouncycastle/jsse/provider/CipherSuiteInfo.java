@@ -382,10 +382,10 @@ class CipherSuiteInfo
             return "ARIA/GCM/NoPadding";
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            return "CAMELLIA/CBC/NoPadding";
+            return "Camellia/CBC/NoPadding";
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
-            return "CAMELLIA/GCM/NoPadding";
+            return "Camellia/GCM/NoPadding";
         case EncryptionAlgorithm.CHACHA20_POLY1305:
             return "ChaCha20-Poly1305";
         case EncryptionAlgorithm.NULL:
