@@ -286,6 +286,12 @@ public class PGPPublicKey
                 {
                     return seconds;
                 }
+
+                seconds = getExpirationTimeFromSig(false, PGPSignature.DIRECT_KEY);
+                if (seconds >= 0)
+                {
+                    return seconds;
+                }
             }
             
             return 0;
@@ -380,12 +386,12 @@ public class PGPPublicKey
     }
 
     /**
-     * Return true if this is a master key.
+     * Return true if this could be a master key.
      * @return true if a master key.
      */
     public boolean isMasterKey()
     {
-        return (subSigs == null);
+        return (subSigs == null) && !this.isEncryptionKey();
     }
     
     /**
