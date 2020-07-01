@@ -1,11 +1,8 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
-import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.PrivilegedExceptionAction;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -204,24 +201,7 @@ public class BaseMac
         }
         else if (gcmSpecClass != null && gcmSpecClass.isAssignableFrom(params.getClass()))
         {
-            try
-            {
-                param = (CipherParameters)AccessController.doPrivileged(new PrivilegedExceptionAction()
-                {
-                    public Object run()
-                        throws Exception
-                    {
-                        Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
-                        Method iv = gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
-
-                        return new AEADParameters(keyParam, ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                throw new InvalidAlgorithmParameterException("Cannot process GCMParameterSpec.");
-            }
+            param = GcmSpecUtil.extractAeadParameters(keyParam, params);
         }
         else if (!(params instanceof PBEParameterSpec))
         {
