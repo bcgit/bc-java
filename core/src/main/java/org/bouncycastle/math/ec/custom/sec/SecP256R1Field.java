@@ -68,6 +68,61 @@ public class SecP256R1Field
         }
     }
 
+    public static void inv(int[] x, int[] z)
+    {
+        /*
+         * Raise this element to the exponent 2^256 - 2^224 + 2^192 + 2^96 - 3
+         *
+         * Breaking up the exponent's binary representation into "repunits", we get:
+         * { 32 1s } { 31 0s } { 1 1s } { 96 0s } { 94 1s } { 1 0s} { 1 1s}
+         *
+         * Therefore we need an addition chain containing 1, 32, 94 (the lengths of the repunits)
+         * We use: [1], 2, 4, 8, 16, [32], 64, 80, 88, 92, [94]
+         */
+
+        int[] x1 = x;
+        int[] x2 = Nat256.create();
+        square(x1, x2);
+        multiply(x2, x1, x2);
+        int[] x4 = Nat256.create();
+        squareN(x2, 2, x4);
+        multiply(x4, x2, x4);
+        int[] x8 = Nat256.create();
+        squareN(x4, 4, x8);
+        multiply(x8, x4, x8);
+        int[] x16 = Nat256.create();
+        squareN(x8, 8, x16);
+        multiply(x16, x8, x16);
+        int[] x32 = Nat256.create();
+        squareN(x16, 16, x32);
+        multiply(x32, x16, x32);
+        int[] x64 = Nat256.create();
+        squareN(x32, 32, x64);
+        multiply(x64, x32, x64);
+        int[] x80 = x64;
+        squareN(x64, 16, x80);
+        multiply(x80, x16, x80);
+        int[] x88 = x16;
+        squareN(x80, 8, x88);
+        multiply(x88, x8, x88);
+        int[] x92 = x8;
+        squareN(x88, 4, x92);
+        multiply(x92, x4, x92);
+        int[] x94 = x4;
+        squareN(x92, 2, x94);
+        multiply(x94, x2, x94);
+
+        int[] t = x32;
+        squareN(t, 32, t);
+        multiply(t, x1, t);
+        squareN(t, 190, t);
+        multiply(t, x94, t);
+        squareN(t, 2, t);
+
+        // NOTE that x1 and z could be the same array
+        multiply(x1, t, z);
+    }
+
     public static void multiply(int[] x, int[] y, int[] z)
     {
         int[] tt = Nat256.createExt();
