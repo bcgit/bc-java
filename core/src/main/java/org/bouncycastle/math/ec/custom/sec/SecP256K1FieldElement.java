@@ -3,7 +3,6 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -97,7 +96,7 @@ public class SecP256K1FieldElement extends ECFieldElement.AbstractFp
     {
 //        return multiply(b.invert());
         int[] z = Nat256.create();
-        Mod.invert(SecP256K1Field.P, ((SecP256K1FieldElement)b).x, z);
+        SecP256K1Field.inv(((SecP256K1FieldElement)b).x, z);
         SecP256K1Field.multiply(z, x, z);
         return new SecP256K1FieldElement(z);
     }
@@ -120,7 +119,7 @@ public class SecP256K1FieldElement extends ECFieldElement.AbstractFp
     {
 //        return new SecP256K1FieldElement(toBigInteger().modInverse(Q));
         int[] z = Nat256.create();
-        Mod.invert(SecP256K1Field.P, x, z);
+        SecP256K1Field.inv(x, z);
         return new SecP256K1FieldElement(z);
     }
 
@@ -135,7 +134,7 @@ public class SecP256K1FieldElement extends ECFieldElement.AbstractFp
          * Raise this element to the exponent 2^254 - 2^30 - 2^7 - 2^6 - 2^5 - 2^4 - 2^2
          *
          * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 223 1s } { 1 0s } { 22 1s } { 4 0s } { 2 1s } { 2 0s}
+         * { 223 1s } { 1 0s } { 22 1s } { 4 0s } { 2 1s } { 2 0s }
          *
          * Therefore we need an addition chain containing 2, 22, 223 (the lengths of the repunits)
          * We use: 1, [2], 3, 6, 9, 11, [22], 44, 88, 176, 220, [223]
