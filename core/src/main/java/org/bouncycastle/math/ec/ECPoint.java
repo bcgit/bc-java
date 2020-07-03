@@ -1,7 +1,10 @@
 package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Hashtable;
+
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 
 /**
  * base class for points on elliptic curves.
@@ -222,13 +225,31 @@ public abstract class ECPoint
         }
         default:
         {
-            ECFieldElement Z1 = getZCoord(0);
-            if (Z1.isOne())
+            ECFieldElement z = getZCoord(0);
+            if (z.isOne())
             {
                 return this;
             }
 
-            return normalize(Z1.invert());
+            if (null == curve)
+            {
+                throw new IllegalStateException("Detached points must be in affine coordinates");
+            }
+
+            /*
+             * Use blinding to avoid the side-channel leak identified and analyzed in the paper
+             * "Yet another GCD based inversion side-channel affecting ECC implementations" by Nir
+             * Drucker and Shay Gueron.
+             * 
+             * To blind the calculation of z^-1, choose a multiplicative (i.e. non-zero) field
+             * element 'b' uniformly at random, then calculate the result instead as (z * b)^-1 * b.
+             * Any side-channel in the implementation of 'inverse' now only leaks information about
+             * the value (z * b), and no longer reveals information about 'z' itself.
+             */
+            SecureRandom r = CryptoServicesRegistrar.getSecureRandom();
+            ECFieldElement b = curve.randomFieldElementMult(r);
+            ECFieldElement zInv = z.multiply(b).invert().multiply(b); 
+            return normalize(zInv);
         }
         }
     }
