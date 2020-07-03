@@ -1,9 +1,11 @@
 package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat512;
+import org.bouncycastle.util.Pack;
 
 public class SecP521R1Field
 {
@@ -63,6 +65,11 @@ public class SecP521R1Field
          * We use: [1], 2, 4, 8, 16, 32, 64, 128, 256, 512, 516, 518, [519]
          */
 
+        if (0 != isZero(x))
+        {
+            throw new IllegalArgumentException("'x' cannot be 0");
+        }
+
         int[] x1 = x;
         int[] x2 = Nat.create(17);
         square(x1, x2);
@@ -108,6 +115,17 @@ public class SecP521R1Field
         multiply(x1, t, z);
     }
 
+    public static int isZero(int[] x)
+    {
+        int d = 0;
+        for (int i = 0; i < 17; ++i)
+        {
+            d |= x[i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
     public static void multiply(int[] x, int[] y, int[] z)
     {
         int[] tt = Nat.create(33);
@@ -117,14 +135,33 @@ public class SecP521R1Field
 
     public static void negate(int[] x, int[] z)
     {
-        if (Nat.isZero(17, x))
+        if (0 != isZero(x))
         {
-            Nat.zero(17, z);
+            Nat.sub(17, P, P, z);
         }
         else
         {
             Nat.sub(17, P, x, z);
         }
+    }
+
+    public static void random(SecureRandom r, int[] z)
+    {
+        int[] tt = Nat.create(33);
+        byte[] bb = new byte[tt.length * 4];
+        r.nextBytes(bb);
+        Pack.littleEndianToInt(bb, 0, tt);
+        tt[32] &= 0x0003FFFF;
+        reduce(tt, z);
+    }
+
+    public static void randomMult(SecureRandom r, int[] z)
+    {
+        do
+        {
+            random(r, z);
+        }
+        while (0 != isZero(z));
     }
 
     public static void reduce(int[] xx, int[] z)

@@ -1,9 +1,11 @@
 package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
+import org.bouncycastle.util.Pack;
 
 public class SecP256R1Field
 {
@@ -80,6 +82,11 @@ public class SecP256R1Field
          * We use: [1], 2, 4, 8, 16, [32], 64, 80, 88, 92, [94]
          */
 
+        if (0 != isZero(x))
+        {
+            throw new IllegalArgumentException("'x' cannot be 0");
+        }
+
         int[] x1 = x;
         int[] x2 = Nat256.create();
         square(x1, x2);
@@ -123,6 +130,17 @@ public class SecP256R1Field
         multiply(x1, t, z);
     }
 
+    public static int isZero(int[] x)
+    {
+        int d = 0;
+        for (int i = 0; i < 8; ++i)
+        {
+            d |= x[i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
     public static void multiply(int[] x, int[] y, int[] z)
     {
         int[] tt = Nat256.createExt();
@@ -141,14 +159,32 @@ public class SecP256R1Field
 
     public static void negate(int[] x, int[] z)
     {
-        if (Nat256.isZero(x))
+        if (0 != isZero(x))
         {
-            Nat256.zero(z);
+            Nat256.sub(P, P, z);
         }
         else
         {
             Nat256.sub(P, x, z);
         }
+    }
+
+    public static void random(SecureRandom r, int[] z)
+    {
+        int[] tt = Nat256.createExt();
+        byte[] bb = new byte[tt.length * 4];
+        r.nextBytes(bb);
+        Pack.littleEndianToInt(bb, 0, tt);
+        reduce(tt, z);
+    }
+
+    public static void randomMult(SecureRandom r, int[] z)
+    {
+        do
+        {
+            random(r, z);
+        }
+        while (0 != isZero(z));
     }
 
     public static void reduce(int[] xx, int[] z)
