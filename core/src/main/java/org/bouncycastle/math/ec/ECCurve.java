@@ -1,6 +1,7 @@
 package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Random;
 
@@ -106,6 +107,10 @@ public abstract class ECCurve
     public abstract ECFieldElement fromBigInteger(BigInteger x);
 
     public abstract boolean isValidFieldElement(BigInteger x);
+
+    public abstract ECFieldElement randomFieldElement(SecureRandom r);
+
+    public abstract ECFieldElement randomFieldElementMult(SecureRandom r);
 
     public synchronized Config configure()
     {
@@ -585,6 +590,30 @@ public abstract class ECCurve
             return x != null && x.signum() >= 0 && x.compareTo(this.getField().getCharacteristic()) < 0;
         }
 
+        public ECFieldElement randomFieldElement(SecureRandom r)
+        {
+            /*
+             * NOTE: BigInteger comparisons in the rejection sampling are not constant-time, so we
+             * use the product of two independent elements to mitigate side-channels.
+             */
+            BigInteger p = getField().getCharacteristic();
+            ECFieldElement fe1 = fromBigInteger(implRandomFieldElement(r, p));
+            ECFieldElement fe2 = fromBigInteger(implRandomFieldElement(r, p));
+            return fe1.multiply(fe2);
+        }
+
+        public ECFieldElement randomFieldElementMult(SecureRandom r)
+        {
+            /*
+             * NOTE: BigInteger comparisons in the rejection sampling are not constant-time, so we
+             * use the product of two independent elements to mitigate side-channels.
+             */
+            BigInteger p = getField().getCharacteristic();
+            ECFieldElement fe1 = fromBigInteger(implRandomFieldElementMult(r, p));
+            ECFieldElement fe2 = fromBigInteger(implRandomFieldElementMult(r, p));
+            return fe1.multiply(fe2);
+        }
+
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
             ECFieldElement x = this.fromBigInteger(X1);
@@ -606,6 +635,28 @@ public abstract class ECCurve
             }
 
             return this.createRawPoint(x, y);
+        }
+
+        private static BigInteger implRandomFieldElement(SecureRandom r, BigInteger p)
+        {
+            BigInteger x;
+            do
+            {
+                x = BigIntegers.createRandomBigInteger(p.bitLength(), r);
+            }
+            while (x.compareTo(p) >= 0);
+            return x;
+        }
+
+        private static BigInteger implRandomFieldElementMult(SecureRandom r, BigInteger p)
+        {
+            BigInteger x;
+            do
+            {
+                x = BigIntegers.createRandomBigInteger(p.bitLength(), r);
+            }
+            while (x.signum() <= 0 || x.compareTo(p) >= 0);
+            return x;
         }
     }
 
@@ -785,11 +836,6 @@ public abstract class ECCurve
             super(buildField(m, k1, k2, k3));
         }
 
-        public boolean isValidFieldElement(BigInteger x)
-        {
-            return x != null && x.signum() >= 0 && x.bitLength() <= this.getFieldSize();
-        }
-
         public ECPoint createPoint(BigInteger x, BigInteger y)
         {
             ECFieldElement X = this.fromBigInteger(x), Y = this.fromBigInteger(y);
@@ -833,6 +879,29 @@ public abstract class ECCurve
             }
 
             return this.createRawPoint(X, Y);
+        }
+
+        public boolean isValidFieldElement(BigInteger x)
+        {
+            return x != null && x.signum() >= 0 && x.bitLength() <= this.getFieldSize();
+        }
+
+        public ECFieldElement randomFieldElement(SecureRandom r)
+        {
+            int m = getFieldSize();
+            return fromBigInteger(BigIntegers.createRandomBigInteger(m, r));
+        }
+
+        public ECFieldElement randomFieldElementMult(SecureRandom r)
+        {
+            /*
+             * NOTE: BigInteger comparisons in the rejection sampling are not constant-time, so we
+             * use the product of two independent elements to mitigate side-channels.
+             */
+            int m = getFieldSize();
+            ECFieldElement fe1 = fromBigInteger(implRandomFieldElementMult(r, m));
+            ECFieldElement fe2 = fromBigInteger(implRandomFieldElementMult(r, m));
+            return fe1.multiply(fe2);
         }
 
         /**
@@ -970,6 +1039,17 @@ public abstract class ECCurve
         public boolean isKoblitz()
         {
             return this.order != null && this.cofactor != null && this.b.isOne() && (this.a.isZero() || this.a.isOne());
+        }
+
+        private static BigInteger implRandomFieldElementMult(SecureRandom r, int m)
+        {
+            BigInteger x;
+            do
+            {
+                x = BigIntegers.createRandomBigInteger(m, r);
+            }
+            while (x.signum() <= 0);
+            return x;
         }
     }
 
