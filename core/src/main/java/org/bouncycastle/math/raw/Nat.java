@@ -603,6 +603,30 @@ public abstract class Nat
         return true;
     }
 
+    public static int lessThan(int len, int[] x, int[] y)
+    {
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (x[i] & M) - (y[i] & M);
+            c >>= 32;
+        }
+//        assert c == 0L || c == 1L;
+        return (int)c;
+    }
+
+    public static int lessThan(int len, int[] x, int xOff, int[] y, int yOff)
+    {
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (x[xOff + i] & M) - (y[yOff + i] & M);
+            c >>= 32;
+        }
+//        assert c == 0L || c == 1L;
+        return (int)c;
+    }
+
     public static void mul(int len, int[] x, int[] y, int[] zz)
     {
         zz[len] = mulWord(len, x[0], y, zz);
