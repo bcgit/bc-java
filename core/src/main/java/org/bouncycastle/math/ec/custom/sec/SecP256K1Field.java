@@ -183,11 +183,13 @@ public class SecP256K1Field
 
     public static void random(SecureRandom r, int[] z)
     {
-        int[] tt = Nat256.createExt();
-        byte[] bb = new byte[tt.length * 4];
-        r.nextBytes(bb);
-        Pack.littleEndianToInt(bb, 0, tt);
-        reduce(tt, z);
+        byte[] bb = new byte[8 * 4];
+        do
+        {
+            r.nextBytes(bb);
+            Pack.littleEndianToInt(bb, 0, z, 0, 8);
+        }
+        while (0 == Nat.lessThan(8, z, P));
     }
 
     public static void randomMult(SecureRandom r, int[] z)

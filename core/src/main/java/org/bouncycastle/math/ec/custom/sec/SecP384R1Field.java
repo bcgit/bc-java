@@ -174,11 +174,13 @@ public class SecP384R1Field
 
     public static void random(SecureRandom r, int[] z)
     {
-        int[] tt = Nat.create(24);
-        byte[] bb = new byte[tt.length * 4];
-        r.nextBytes(bb);
-        Pack.littleEndianToInt(bb, 0, tt);
-        reduce(tt, z);
+        byte[] bb = new byte[12 * 4];
+        do
+        {
+            r.nextBytes(bb);
+            Pack.littleEndianToInt(bb, 0, z, 0, 12);
+        }
+        while (0 == Nat.lessThan(12, z, P));
     }
 
     public static void randomMult(SecureRandom r, int[] z)
