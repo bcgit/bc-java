@@ -147,12 +147,14 @@ public class SecP521R1Field
 
     public static void random(SecureRandom r, int[] z)
     {
-        int[] tt = Nat.create(33);
-        byte[] bb = new byte[tt.length * 4];
-        r.nextBytes(bb);
-        Pack.littleEndianToInt(bb, 0, tt);
-        tt[32] &= 0x0003FFFF;
-        reduce(tt, z);
+        byte[] bb = new byte[17 * 4];
+        do
+        {
+            r.nextBytes(bb);
+            Pack.littleEndianToInt(bb, 0, z, 0, 17);
+            z[16] &= 0x000001FFL;
+        }
+        while (0 == Nat.lessThan(17, z, P));
     }
 
     public static void randomMult(SecureRandom r, int[] z)
