@@ -58,6 +58,8 @@ import org.bouncycastle.util.test.SimpleTest;
 public class PKCS12StoreTest
     extends SimpleTest
 {
+    private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
+    
     static char[]   passwd = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd' };
 
     //
@@ -606,7 +608,7 @@ public class PKCS12StoreTest
     private void testCertsOnly()
         throws Exception
     {
-        KeyStore pkcs12 = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore pkcs12 = KeyStore.getInstance("PKCS12", BC);
 
         pkcs12.load(new ByteArrayInputStream(certsOnly), null);
 
@@ -616,7 +618,7 @@ public class PKCS12StoreTest
 
         pkcs12.store(bOut, null);
 
-        pkcs12 = KeyStore.getInstance("PKCS12", "BC");
+        pkcs12 = KeyStore.getInstance("PKCS12", BC);
 
         pkcs12.load(new ByteArrayInputStream(bOut.toByteArray()), null);
 
@@ -643,14 +645,14 @@ public class PKCS12StoreTest
     {
         byte[] data = Hex.decode("deadbeef");
 
-        KeyStore pkcs12 = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore pkcs12 = KeyStore.getInstance("PKCS12", BC);
 
         pkcs12.load(new ByteArrayInputStream(gostPfx), "1".toCharArray());
 
         PrivateKey pk = (PrivateKey)pkcs12.getKey("cp_exported", null);
         Certificate[] pubCerts = pkcs12.getCertificateChain("cp_exported");
 
-        Signature sig = Signature.getInstance("ECGOST3410", "BC");
+        Signature sig = Signature.getInstance("ECGOST3410", BC);
 
         sig.initSign(pk);
 
@@ -658,7 +660,7 @@ public class PKCS12StoreTest
 
         byte[] signature = sig.sign();
 
-        sig = Signature.getInstance("ECGOST3410", "BC");
+        sig = Signature.getInstance("ECGOST3410", BC);
 
         sig.initVerify(pubCerts[0].getPublicKey());
 
@@ -669,7 +671,7 @@ public class PKCS12StoreTest
             fail("key test failed in GOST store");
         }
 
-        KeyStore ks = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore ks = KeyStore.getInstance("PKCS12", BC);
 
         ks.load(new ByteArrayInputStream(gostOpenSSLIntegerDPfx), "password".toCharArray());
 
@@ -705,7 +707,7 @@ public class PKCS12StoreTest
         isEquals(8, mData.getSalt().length);
 
         //confirm key recovery
-        pkcs12 = KeyStore.getInstance("PKCS12", "BC");
+        pkcs12 = KeyStore.getInstance("PKCS12", BC);
 
         pkcs12.load(new ByteArrayInputStream(stream.toByteArray()), "2".toCharArray());
 
@@ -718,7 +720,7 @@ public class PKCS12StoreTest
         throws Exception
     {
         BigInteger  mod = new BigInteger("bb1be8074e4787a8d77967f1575ef72dd7582f9b3347724413c021beafad8f32dba5168e280cbf284df722283dad2fd4abc750e3d6487c2942064e2d8d80641aa5866d1f6f1f83eec26b9b46fecb3b1c9856a303148a5cc899c642fb16f3d9d72f52526c751dc81622c420c82e2cfda70fe8d13f16cc7d6a613a5b2a2b5894d1", 16);
-        KeyStore store = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore store = KeyStore.getInstance("PKCS12", BC);
         ByteArrayInputStream stream = new ByteArrayInputStream(pkcs12);
 
         store.load(stream, passwd);
@@ -901,7 +903,7 @@ public class PKCS12StoreTest
         //
         // UTF 8 single cert test
         //
-        store = KeyStore.getInstance("PKCS12", "BC");
+        store = KeyStore.getInstance("PKCS12", BC);
         stream = new ByteArrayInputStream(certUTF);
 
         store.load(stream, "user".toCharArray());
@@ -936,7 +938,7 @@ public class PKCS12StoreTest
 
         try
         {
-            KeyFactory  fact = KeyFactory.getInstance("RSA", "BC");
+            KeyFactory  fact = KeyFactory.getInstance("RSA", BC);
 
             privKey = fact.generatePrivate(privKeySpec);
             pubKey = fact.generatePublic(pubKeySpec);
@@ -952,7 +954,7 @@ public class PKCS12StoreTest
 
         testSupportedTypes(privKey, chain);
 
-        store = KeyStore.getInstance("PKCS12", "BC");
+        store = KeyStore.getInstance("PKCS12", BC);
 
         store.load(null, null);
 
@@ -987,7 +989,7 @@ public class PKCS12StoreTest
         //
         // no friendly name test
         //
-        store = KeyStore.getInstance("PKCS12", "BC");
+        store = KeyStore.getInstance("PKCS12", BC);
         stream = new ByteArrayInputStream(pkcs12noFriendly);
 
         store.load(stream, noFriendlyPassword);
@@ -1031,7 +1033,7 @@ public class PKCS12StoreTest
         //
         // storage test
         //
-        store = KeyStore.getInstance("PKCS12", "BC");
+        store = KeyStore.getInstance("PKCS12", BC);
         stream = new ByteArrayInputStream(pkcs12StorageIssue);
 
         store.load(stream, storagePassword);
@@ -1100,7 +1102,7 @@ public class PKCS12StoreTest
         //
         // test restoring of a certificate with private key originally as a ca certificate
         //
-        store = KeyStore.getInstance("PKCS12", "BC");
+        store = KeyStore.getInstance("PKCS12", BC);
         
         store.load(null, null);
         
@@ -1139,7 +1141,7 @@ public class PKCS12StoreTest
         //
         // test of reading incorrect zero-length encoding
         //
-        store = KeyStore.getInstance("PKCS12", "BC");
+        store = KeyStore.getInstance("PKCS12", BC);
         stream = new ByteArrayInputStream(pkcs12nopass);
         
         store.load(stream, "".toCharArray());
@@ -1162,7 +1164,7 @@ public class PKCS12StoreTest
     private void basicStoreTest(PrivateKey privKey, Certificate[] chain, String type)
         throws Exception
     {
-        KeyStore store = KeyStore.getInstance(type, "BC");
+        KeyStore store = KeyStore.getInstance(type, BC);
 
         store.load(null, null);
 
@@ -1287,17 +1289,17 @@ public class PKCS12StoreTest
     private void testNoExtraLocalKeyID(byte[] store1data)
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BC);
 
         kpg.initialize(512);
 
         KeyPair newPair = kpg.genKeyPair();
 
-        KeyStore store1 = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore store1 = KeyStore.getInstance("PKCS12", BC);
 
         store1.load(new ByteArrayInputStream(store1data), passwd);
 
-        KeyStore store2 = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore store2 = KeyStore.getInstance("PKCS12", BC);
 
         store2.load(null, null);
         
@@ -1334,7 +1336,7 @@ public class PKCS12StoreTest
     private void testChainCycle()
         throws Exception
     {
-        KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", BC);
 
         // initialize key store
         keyStore.load(new ByteArrayInputStream(certChainCycle), "test".toCharArray());
@@ -1368,7 +1370,7 @@ public class PKCS12StoreTest
         KeyPair kp3 = TestUtils.generateRSAKeyPair();
         X509Certificate kp3Root = TestUtils.generateRootCert(kp3, new X500Name("CN=KP3 ROOT"));
 
-        KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", BC);
 
         keyStore.load(null, null);
 
@@ -1384,7 +1386,7 @@ public class PKCS12StoreTest
 
         byte[] baseData = bOut.toByteArray();
 
-        KeyStore ks1 = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore ks1 = KeyStore.getInstance("PKCS12", BC);
 
         ks1.load(new ByteArrayInputStream(baseData), "fred".toCharArray());
 
@@ -1399,7 +1401,7 @@ public class PKCS12StoreTest
 
         ks1.store(bOut1, "fred".toCharArray());
 
-        KeyStore ks2 = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore ks2 = KeyStore.getInstance("PKCS12", BC);
 
         ks2.load(new ByteArrayInputStream(bOut1.toByteArray()), "fred".toCharArray());
 
@@ -1429,7 +1431,7 @@ public class PKCS12StoreTest
 
         ks2.store(bOut2, "fred".toCharArray());
 
-        KeyStore ks3 = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore ks3 = KeyStore.getInstance("PKCS12", BC);
 
         ks3.load(new ByteArrayInputStream(bOut2.toByteArray()), "fred".toCharArray());
 
@@ -1455,7 +1457,7 @@ public class PKCS12StoreTest
         System.setProperty("org.bouncycastle.pkcs12.max_it_count", "10");
 
         ByteArrayInputStream stream = new ByteArrayInputStream(pkcs12StorageIssue);
-        KeyStore store = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore store = KeyStore.getInstance("PKCS12", BC);
 
         try
         {
@@ -1473,7 +1475,7 @@ public class PKCS12StoreTest
     private void testBCFKSLoad()
         throws Exception
     {
-        KeyStore k = KeyStore.getInstance("BCFKS", "BC");
+        KeyStore k = KeyStore.getInstance("BCFKS", BC);
 
         try
         {
@@ -1507,7 +1509,7 @@ public class PKCS12StoreTest
         KeyPair kp3 = TestUtils.generateRSAKeyPair();
         X509Certificate kp3Root = TestUtils.generateRootCert(kp3, new X500Name("CN=KP3 ROOT"));
 
-        KeyStore keyStore = KeyStore.getInstance("BCFKS", "BC");
+        KeyStore keyStore = KeyStore.getInstance("BCFKS", BC);
 
         keyStore.load(null, null);
 
@@ -1521,7 +1523,7 @@ public class PKCS12StoreTest
 
         keyStore.store(bOut, "fred".toCharArray());
 
-        KeyStore k12 = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore k12 = KeyStore.getInstance("PKCS12", BC);
 
         try
         {
@@ -1550,7 +1552,7 @@ public class PKCS12StoreTest
 
         // converter tests
 
-        KeyStore kS = KeyStore.getInstance("PKCS12", "BC");
+        KeyStore kS = KeyStore.getInstance("PKCS12", BC);
 
         byte[] data = PKCS12Util.convertToDefiniteLength(pkcs12);
         kS.load(new ByteArrayInputStream(data), passwd);     // check MAC
@@ -1561,7 +1563,7 @@ public class PKCS12StoreTest
             fail("Failed DER conversion test.");
         }
 
-        data = PKCS12Util.convertToDefiniteLength(pkcs12, passwd, "BC");
+        data = PKCS12Util.convertToDefiniteLength(pkcs12, passwd, BC);
         kS.load(new ByteArrayInputStream(data), passwd); //check MAC
 
         obj = new ASN1StreamParser(data).readObject();

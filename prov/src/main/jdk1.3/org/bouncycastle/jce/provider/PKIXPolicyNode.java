@@ -1,19 +1,18 @@
 package org.bouncycastle.jce.provider;
 
+import org.bouncycastle.jce.cert.PolicyNode;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.bouncycastle.jce.cert.PolicyNode;
-
 public class PKIXPolicyNode
     implements PolicyNode
 {
     protected List       children;
     protected int        depth;
-    public Set        expectedPolicies;
+    protected Set        expectedPolicies;
     protected PolicyNode parent;
     protected Set        policyQualifiers;
     protected String     validPolicy;
@@ -117,7 +116,7 @@ public class PKIXPolicyNode
         _buf.append(validPolicy);
         _buf.append(" {\n");
         
-        for(int i = 0; i < children.size(); i++) 
+        for(int i = 0; i < children.size(); i++)
         {
             _buf.append(((PKIXPolicyNode)children.get(i)).toString(_indent + "    "));
         }
@@ -134,14 +133,14 @@ public class PKIXPolicyNode
     
     public PKIXPolicyNode copy()
     {
-        Set _expectedPolicies = new HashSet();
+        Set     _expectedPolicies = new HashSet();
         Iterator _iter = expectedPolicies.iterator();
         while (_iter.hasNext())
         {
             _expectedPolicies.add(new String((String)_iter.next()));
         }
         
-        Set _policyQualifiers = new HashSet();
+        Set     _policyQualifiers = new HashSet();
         _iter = policyQualifiers.iterator();
         while (_iter.hasNext())
         {
@@ -165,5 +164,10 @@ public class PKIXPolicyNode
         }
         
         return _node;
+    }
+
+    public void setExpectedPolicies(Set expectedPolicies)
+    {
+        this.expectedPolicies = expectedPolicies;
     }
 }
