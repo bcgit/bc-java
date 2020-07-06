@@ -37,9 +37,16 @@ public class PKIXCertPathValidatorSpi
         extends CertPathValidatorSpi
 {
     private final JcaJceHelper helper = new BCJcaJceHelper();
+    private final boolean isForCRLCheck;
 
     public PKIXCertPathValidatorSpi()
     {
+        this(false);
+    }
+
+    public PKIXCertPathValidatorSpi(boolean isForCRLCheck)
+    {
+        this.isForCRLCheck = isForCRLCheck;
     }
 
     public CertPathValidatorResult engineValidate(
@@ -273,6 +280,16 @@ public class PKIXCertPathValidatorSpi
             ((PKIXCertPathChecker) certIter.next()).init(false);
         }
 
+        ProvCrlRevocationChecker revocationChecker;
+        if (paramsPKIX.isRevocationEnabled())
+        {
+            revocationChecker = new ProvCrlRevocationChecker(helper);
+        }
+        else
+        {
+            revocationChecker = null;
+        }
+
         X509Certificate cert = null;
 
         for (index = certs.size() - 1; index >= 0; index--)
@@ -297,13 +314,13 @@ public class PKIXCertPathValidatorSpi
             // 6.1.3
             //
 
-            RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, index, workingPublicKey,
-                verificationAlreadyPerformed, workingIssuerName, sign, helper);
+            RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, revocationChecker, index, workingPublicKey,
+                verificationAlreadyPerformed, workingIssuerName, sign);
 
-            RFC3280CertPathUtilities.processCertBC(certPath, index, nameConstraintValidator);
+            RFC3280CertPathUtilities.processCertBC(certPath, index, nameConstraintValidator, isForCRLCheck);
 
             validPolicyTree = RFC3280CertPathUtilities.processCertD(certPath, index, acceptablePolicies,
-                    validPolicyTree, policyNodes, inhibitAnyPolicy);
+                    validPolicyTree, policyNodes, inhibitAnyPolicy, isForCRLCheck);
 
             validPolicyTree = RFC3280CertPathUtilities.processCertE(certPath, index, validPolicyTree);
 

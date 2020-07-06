@@ -70,6 +70,8 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/jcajce/provider/LMS*
     rm -rf org/bouncycastle/pqc/crypto/*/LMS*
     rm org/bouncycastle/pqc/jcajce/spec/LMS*
+    rm -f org/bouncycastle/jce/provider/test/SimpleTestTest.java
+    rm -f org/bouncycastle/jce/provider/ProvCrlRevocationChecker.java
     rm -rf org/bouncycastle/pqc/crypto/*/HSS*
     rm -rf org/bouncycastle/pqc/math/ntru
     rm -rf org/bouncycastle/pqc/crypto/ntru
@@ -83,12 +85,20 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/crypto/*/IndexGenerator*
     rm -rf org/bouncycastle/util/utiltest
     rm -rf org/bouncycastle/i18n/test
+    rm -f org/bouncycastle/jce/provider/PKIXCertPathValidatorSpi_8.java
+    rm -f org/bouncycastle/jce/provider/PKIXCertPathBuilderSpi_8.java
+    rm -f org/bouncycastle/jce/provider/WrappedRevocationChecker.java
+    rm -f org/bouncycastle/jce/provider/ProvRevocationChecker.java
+    rm -f org/bouncycastle/jce/provider/OcspCache.java
+    rm -f org/bouncycastle/jce/provider/ProvOcspRevocationChecker.java
     rm -rf org/bouncycastle/i18n/filter/test
     rm -rf org/bouncycastle/math/ec/test
+    rm -rf org/bouncycastle/jce/provider/test/ECEncodingTest.java
     rm -rf org/bouncycastle/math/ec/custom/test
     rm -rf org/bouncycastle/math/ec/custom/sec/test
     rm -rf org/bouncycastle/crypto/CryptoServicesPermission.java
     rm -rf org/bouncycastle/crypto/tls/test
+    rm -rf org/bouncycastle/crypto/test/SimpleTestTest.java
     rm -rf org/bouncycastle/crypto/test/GCMReorderTest.java
     rm -rf org/bouncycastle/jce/cert
     rm -rf org/bouncycastle/jce/ECPointUtil.java
@@ -167,6 +177,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/cert/test/CertPathLoopTest.java
     rm -rf org/bouncycastle/cert/test/Bc*
     rm -rf org/bouncycastle/cert/test/GOST3410_2012CMSTest.java
+    rm -rf org/bouncycastle/cert/ocsp/test/PKIXRevocationTest.java
     rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
     rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
     rm -rf org/bouncycastle/tsp/DataGroup*

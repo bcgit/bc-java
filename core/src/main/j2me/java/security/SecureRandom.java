@@ -66,6 +66,11 @@ public class SecureRandom extends java.util.Random
         return getInstance(algorithm);
     }
 
+    public String getAlgorithm()
+    {
+        return "unknown";
+    }
+
     public static byte[] getSeed(int numBytes)
     {
         byte[] rv = new byte[numBytes];

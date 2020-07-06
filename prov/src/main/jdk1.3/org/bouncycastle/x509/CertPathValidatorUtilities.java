@@ -522,7 +522,7 @@ class CertPathValidatorUtilities
             if (node.getValidPolicy().equals(id_p))
             {
                 idp_found = true;
-                node.expectedPolicies = (Set)m_idp.get(id_p);
+                node.setExpectedPolicies((Set)m_idp.get(id_p));
                 break;
             }
         }

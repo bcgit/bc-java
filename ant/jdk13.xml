@@ -87,6 +87,12 @@
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
+                <exclude name="**/PKIXCertPathValidatorSpi_8.java"/>
+                <exclude name="**/PKIXCertPathBuilderSpi_8.java"/>
+                <exclude name="**/WrappedRevocationChecker.java"/>
+                <exclude name="**/ProvRevocationChecker.java"/>
+                <exclude name="**/provider/OcspCache.java"/>
+                <exclude name="**/provider/ProvOcspRevocationChecker.java"/>
                 <exclude name="**/jcajce/BCFKSLoadStoreParameter.java" />
                 <exclude name="**/jcajce/BCLoadStoreParameter.java" />
                 <exclude name="**/jcajce/spec/DSTU4145ParameterSpec.java" />
@@ -191,8 +197,10 @@
                 <exclude name="**/PSSTest.java" />
                 <exclude name="**/KDFCounterGeneratorTest.java" />
                 <exclude name="**/jce/provider/test/AEADTest.java" />
+                <exclude name="**/jce/provider/test/ECEncodingTest.java" />
             </fileset>
             <fileset dir="pkix/src/test/java">
+                <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/SunProviderTest.java" />
                 <exclude name="**/NullProviderTest.java" />
                 <exclude name="**/CertPathLoopTest.java" />
@@ -202,6 +210,7 @@
                 <exclude name="**/pkix/**/RevocationTest.java" />
                 <exclude name="**/pkix/**/TestUtil.java" />
                 <exclude name="**/JournalingSecureRandomEncryptTest.java" />
+                <exclude name="**/PKIXRevocationTest.java" />
                 <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
                 <exclude name="**/bouncycastle/cms/test/AuthEnvelopedDataTest.java"/>
             </fileset>

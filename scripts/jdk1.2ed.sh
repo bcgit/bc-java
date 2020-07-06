@@ -95,3 +95,8 @@ w
 q
 %
 
+ed org/bouncycastle/crypto/prng/SP800SecureRandomBuilder.java <<%
+g/private final/s/final//
+w
+q
+%

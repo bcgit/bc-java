@@ -1,15 +1,15 @@
 package org.bouncycastle.jce.provider;
 
 import java.security.InvalidAlgorithmParameterException;
-import org.bouncycastle.jce.cert.CertPath;
-import org.bouncycastle.jce.cert.CertPathBuilderException;
-import org.bouncycastle.jce.cert.CertPathBuilderResult;
-import org.bouncycastle.jce.cert.CertPathBuilderSpi;
-import org.bouncycastle.jce.cert.CertPathParameters;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertPathBuilderResult;
+import java.security.cert.CertPathBuilderSpi;
+import java.security.cert.CertPathParameters;
 import java.security.cert.CertificateParsingException;
-import org.bouncycastle.jce.cert.PKIXBuilderParameters;
-import org.bouncycastle.jce.cert.PKIXCertPathBuilderResult;
-import org.bouncycastle.jce.cert.PKIXCertPathValidatorResult;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.PKIXCertPathValidatorResult;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,12 +19,9 @@ import java.util.List;
 
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.jcajce.PKIXCertStore;
-import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory;
-import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
-import org.bouncycastle.jce.provider.AnnotatedException;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
 
@@ -36,6 +33,18 @@ import org.bouncycastle.x509.ExtendedPKIXParameters;
 public class PKIXCertPathBuilderSpi
     extends CertPathBuilderSpi
 {
+    private final boolean isForCRLCheck;
+
+    public PKIXCertPathBuilderSpi()
+    {
+        this(false);
+    }
+
+    PKIXCertPathBuilderSpi(boolean isForCRLCheck)
+    {
+        this.isForCRLCheck = isForCRLCheck;
+    }
+
     /**
      * Build and validate a CertPath using the given parameter.
      * 
@@ -45,16 +54,6 @@ public class PKIXCertPathBuilderSpi
     public CertPathBuilderResult engineBuild(CertPathParameters params)
         throws CertPathBuilderException, InvalidAlgorithmParameterException
     {
-        if (!(params instanceof PKIXBuilderParameters)
-            && !(params instanceof ExtendedPKIXBuilderParameters)
-            && !(params instanceof PKIXExtendedBuilderParameters))
-        {
-            throw new InvalidAlgorithmParameterException(
-                "Parameters must be an instance of "
-                    + PKIXBuilderParameters.class.getName() + " or "
-                    + PKIXExtendedBuilderParameters.class.getName() + ".");
-        }
-
         PKIXExtendedBuilderParameters paramsPKIX;
         if (params instanceof PKIXBuilderParameters)
         {
@@ -81,9 +80,16 @@ public class PKIXCertPathBuilderSpi
 
             paramsPKIX = paramsBldrPKIXBldr.build();
         }
-        else
+        else if (params instanceof PKIXExtendedBuilderParameters)
         {
             paramsPKIX = (PKIXExtendedBuilderParameters)params;
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException(
+                "Parameters must be an instance of "
+                    + PKIXBuilderParameters.class.getName() + " or "
+                    + PKIXExtendedBuilderParameters.class.getName() + ".");
         }
 
         Collection targets;
@@ -92,26 +98,7 @@ public class PKIXCertPathBuilderSpi
         X509Certificate cert;
 
         // search target certificates
-
-        PKIXCertStoreSelector certSelect = paramsPKIX.getBaseParameters().getTargetConstraints();
-
-        try
-        {
-            targets = CertPathValidatorUtilities.findCertificates(certSelect, paramsPKIX.getBaseParameters().getCertificateStores());
-            targets.addAll(CertPathValidatorUtilities.findCertificates(certSelect, paramsPKIX.getBaseParameters().getCertStores()));
-        }
-        catch (AnnotatedException e)
-        {
-            throw new ExtCertPathBuilderException(
-                "Error finding target certificate.", e);
-        }
-
-        if (targets.isEmpty())
-        {
-
-            throw new CertPathBuilderException(
-                "No certificate found matching targetConstraints.");
-        }
+        targets = CertPathValidatorUtilities.findTargets(paramsPKIX);
 
         CertPathBuilderResult result = null;
 
@@ -179,7 +166,7 @@ public class PKIXCertPathBuilderSpi
         try
         {
             cFact = new CertificateFactory();
-            validator = new PKIXCertPathValidatorSpi();
+            validator = new PKIXCertPathValidatorSpi(isForCRLCheck);
         }
         catch (Exception e)
         {

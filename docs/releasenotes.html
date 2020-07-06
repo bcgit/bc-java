@@ -24,7 +24,7 @@ to conform the algorithms to the JCE framework.
 
 <h3>2.1.1 Version</h3>
 Release: 1.66<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, TBD.
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, July 4th.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>EdDSA verifiers now reset correctly after rejecting overly long signatures.</li>
@@ -39,6 +39,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, TBD.
 <li>Use of GCMParameterSpec could cause an AccessControlException under some circumstances. This has been fixed.</li>
 <li>DTLS: Fixed high-latency HelloVerifyRequest handshakes.</li>
 <li>An encoding bug for rightEncoded() in KMAC has been fixed.</li>
+<li>For a few values the cSHAKE implementation would add unnecessary pad bytes where the N and S strings produced encoded data that was block aligned. This has been fixed.</li>
+<li>There were a few circumstances where Argon2BytesGenerator might hit an unexpected null. These have been removed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -56,6 +58,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, TBD.
 <li>The PKIX CertPathBuilder will now take the target certificate from the target constraints if a specific certificate is given to the selector.</li>
 <li>BCJSSE: A range of ARIA and CAMELLIA cipher suites added to supported list.</li>
 <li>BCJSSE: Now supports the PSS signature schemes from RFC 8446 (TLS 1.2 onwards).</li>
+<li>Performance of the Base64 encoder has been improved.</li>
+<li>The PGPPublicKey class will now include direct key sigantures when checking for key expiry times.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <p>
