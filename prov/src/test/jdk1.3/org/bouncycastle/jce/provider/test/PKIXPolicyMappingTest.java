@@ -17,6 +17,7 @@ import org.bouncycastle.jce.cert.PKIXBuilderParameters;
 import org.bouncycastle.jce.cert.PKIXCertPathBuilderResult;
 import org.bouncycastle.jce.cert.TrustAnchor;
 import org.bouncycastle.jce.cert.X509CertSelector;
+import org.bouncycastle.jce.cert.CertPathBuilderException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.spec.RSAPrivateCrtKeySpec;
@@ -185,6 +186,15 @@ public class PKIXPolicyMappingTest
             if (okay)
             {
                 fail(index + ": path failed to validate when success expected.");
+            }
+
+            if (e instanceof CertPathBuilderException)
+            {
+                Throwable ee = ((CertPathBuilderException)e).getCause();
+                if (ee != null)
+                {
+                    return ee.getMessage();
+                }
             }
 
             return e.getMessage();

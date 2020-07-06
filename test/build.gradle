@@ -4,7 +4,7 @@ dependencies {
   compile project(":mail")
   compile project(":pg")
   compile project(":pkix")
- // compile project(":prov")
+  compile project(":prov")
   compile project(":tls")
 }
 

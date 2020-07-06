@@ -72,6 +72,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/pqc/jcajce/spec/LMS*
     rm -rf org/bouncycastle/crypto/*/test
     rm -rf org/bouncycastle/crypto/*/IndexGenerator*
+    rm -rf org/bouncycastle/crypto/test/SimpleTestTest.java
     rm -rf org/bouncycastle/util/utiltest
     rm -rf org/bouncycastle/mail
     rm -rf org/bouncycastle/bcpg
@@ -122,6 +123,13 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/test/rsa3
     rm -rf org/bouncycastle/jce/provider/test/DSTU4145Test.java
     rm -rf org/bouncycastle/jce/provider/test/JceTestUtil.java
+    rm -f org/bouncycastle/jce/provider/PKIXCertPathValidatorSpi_8.java
+    rm -f org/bouncycastle/jce/provider/PKIXCertPathBuilderSpi_8.java
+    rm -f org/bouncycastle/jce/provider/WrappedRevocationChecker.java
+    rm -f org/bouncycastle/jce/provider/ProvRevocationChecker.java
+    rm -f org/bouncycastle/jce/provider/OcspCache.java
+    rm -f org/bouncycastle/jce/provider/test/SimpleTestTest.java
+    rm -f org/bouncycastle/jce/provider/ProvOcspRevocationChecker.java
     rm -rf org/bouncycastle/x509/PKIXAttrCert*.java
     rm -rf org/bouncycastle/jce/provider/RFC3281*.java
     rm -rf org/bouncycastle/jcajce/PKCS12StoreParameter.java
@@ -134,12 +142,14 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/jcajce/provider/test/PrivateConstructorTest.java
     rm -rf org/bouncycastle/jcajce/provider/test/ECAlgorithmParametersTest.java
     rm -rf org/bouncycastle/jcajce/provider/test/RandomTest.java
+    rm -rf org/bouncycastle/jce/provider/test/ECEncodingTest.java
     rm org/bouncycastle/asn1/test/GetInstanceTest.java
     rm org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
     rm org/bouncycastle/asn1/test/OctetStringTest.java
     rm org/bouncycastle/asn1/test/ParseTest.java
     rm org/bouncycastle/pkix/test/RevocationTest.java
     rm org/bouncycastle/pkix/test/TestUtil.java
+    rm org/bouncycastle/cert/ocsp/test/PKIXRevocationTest.java
     rm -r org/bouncycastle/crypto/test/BigSkippingCipherTest.java
     rm -rf org/bouncycastle/openssl/test
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/dstu

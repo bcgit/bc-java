@@ -6,20 +6,21 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.engines.DESedeEngine;
+import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;
-import org.bouncycastle.crypto.prng.drbg.DualECPoints;
-import org.bouncycastle.crypto.prng.drbg.DualECSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.HMacSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Builder class for making SecureRandom objects based on SP 800-90A Deterministic Random Bit Generators (DRBG).
  */
 public class SP800SecureRandomBuilder
 {
-    private SecureRandom random;
-    private EntropySourceProvider entropySourceProvider;
+    private final SecureRandom random;
+    private final EntropySourceProvider entropySourceProvider;
 
     private byte[] personalizationString;
     private int securityStrength = 256;
@@ -45,8 +46,8 @@ public class SP800SecureRandomBuilder
      * Any SecureRandom created from a builder constructed like this will make use of input passed to SecureRandom.setSeed() if
      * the passed in SecureRandom does for its generateSeed() call.
      * </p>
-     * @param entropySource
-     * @param predictionResistant
+     * @param entropySource the SecureRandom acting as a source of entropy for DRBGs made by this builder.
+     * @param predictionResistant true if the SecureRandom seeder can be regarded as predictionResistant.
      */
     public SP800SecureRandomBuilder(SecureRandom entropySource, boolean predictionResistant)
     {
@@ -74,7 +75,7 @@ public class SP800SecureRandomBuilder
      */
     public SP800SecureRandomBuilder setPersonalizationString(byte[] personalizationString)
     {
-        this.personalizationString = personalizationString;
+        this.personalizationString = Arrays.clone(personalizationString);
 
         return this;
     }
@@ -145,33 +146,6 @@ public class SP800SecureRandomBuilder
         return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new HMacDRBGProvider(hMac, nonce, personalizationString, securityStrength), predictionResistant);
     }
 
-    /**
-     * Build a SecureRandom based on a SP 800-90A Dual EC DRBG.
-     *
-     * @param digest digest algorithm to use in the DRBG underneath the SecureRandom.
-     * @param nonce  nonce value to use in DRBG construction.
-     * @param predictionResistant specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
-     * @return a SecureRandom supported by a Dual EC DRBG.
-     */
-    public SP800SecureRandom buildDualEC(Digest digest, byte[] nonce, boolean predictionResistant)
-    {
-        return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new DualECDRBGProvider(digest, nonce, personalizationString, securityStrength), predictionResistant);
-    }
-
-    /**
-     * Build a SecureRandom based on a SP 800-90A Dual EC DRBG.
-     *
-     * @param pointSet an array of DualECPoints to use for DRB generation.
-     * @param digest digest algorithm to use in the DRBG underneath the SecureRandom.
-     * @param nonce  nonce value to use in DRBG construction.
-     * @param predictionResistant specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
-     * @return a SecureRandom supported by a Dual EC DRBG.
-     */
-    public SP800SecureRandom buildDualEC(DualECPoints[] pointSet, Digest digest, byte[] nonce, boolean predictionResistant)
-    {
-        return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new ConfigurableDualECDRBGProvider(pointSet, digest, nonce, personalizationString, securityStrength), predictionResistant);
-    }
-
     private static class HashDRBGProvider
         implements DRBGProvider
     {
@@ -188,56 +162,14 @@ public class SP800SecureRandomBuilder
             this.securityStrength = securityStrength;
         }
 
+        public String getAlgorithm()
+        {
+            return "HASH-DRBG-" + getSimplifiedName(digest);
+        }
+
         public SP80090DRBG get(EntropySource entropySource)
         {
             return new HashSP800DRBG(digest, securityStrength, entropySource, personalizationString, nonce);
-        }
-    }
-
-    private static class DualECDRBGProvider
-        implements DRBGProvider
-    {
-        private final Digest digest;
-        private final byte[] nonce;
-        private final byte[] personalizationString;
-        private final int securityStrength;
-
-        public DualECDRBGProvider(Digest digest, byte[] nonce, byte[] personalizationString, int securityStrength)
-        {
-            this.digest = digest;
-            this.nonce = nonce;
-            this.personalizationString = personalizationString;
-            this.securityStrength = securityStrength;
-        }
-
-        public SP80090DRBG get(EntropySource entropySource)
-        {
-            return new DualECSP800DRBG(digest, securityStrength, entropySource, personalizationString, nonce);
-        }
-    }
-
-    private static class ConfigurableDualECDRBGProvider
-        implements DRBGProvider
-    {
-        private final DualECPoints[] pointSet;
-        private final Digest digest;
-        private final byte[] nonce;
-        private final byte[] personalizationString;
-        private final int securityStrength;
-
-        public ConfigurableDualECDRBGProvider(DualECPoints[] pointSet, Digest digest, byte[] nonce, byte[] personalizationString, int securityStrength)
-        {
-            this.pointSet = new DualECPoints[pointSet.length];
-            System.arraycopy(pointSet, 0, this.pointSet, 0, pointSet.length);
-            this.digest = digest;
-            this.nonce = nonce;
-            this.personalizationString = personalizationString;
-            this.securityStrength = securityStrength;
-        }
-
-        public SP80090DRBG get(EntropySource entropySource)
-        {
-            return new DualECSP800DRBG(pointSet, digest, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 
@@ -255,6 +187,16 @@ public class SP800SecureRandomBuilder
             this.nonce = nonce;
             this.personalizationString = personalizationString;
             this.securityStrength = securityStrength;
+        }
+
+        public String getAlgorithm()
+        {
+            if (hMac instanceof HMac)
+            {
+                return "HMAC-DRBG-" + getSimplifiedName(((HMac)hMac).getUnderlyingDigest());
+            }
+
+            return "HMAC-DRBG-" + hMac.getAlgorithmName();
         }
 
         public SP80090DRBG get(EntropySource entropySource)
@@ -282,9 +224,32 @@ public class SP800SecureRandomBuilder
             this.securityStrength = securityStrength;
         }
 
+        public String getAlgorithm()
+        {
+            if (blockCipher instanceof DESedeEngine)
+            {
+                return "CTR-DRBG-3KEY-TDES";
+            }
+            return "CTR-DRBG-" + blockCipher.getAlgorithmName() + keySizeInBits;
+        }
+
         public SP80090DRBG get(EntropySource entropySource)
         {
             return new CTRSP800DRBG(blockCipher, keySizeInBits, securityStrength, entropySource, personalizationString, nonce);
         }
     }
+
+    private static String getSimplifiedName(Digest digest)
+    {
+        String name = digest.getAlgorithmName();
+
+        int dIndex = name.indexOf('-');
+        if (dIndex > 0 && !name.startsWith("SHA3"))
+        {
+            return name.substring(0, dIndex) + name.substring(dIndex + 1);
+        }
+
+        return name;
+    }
+
 }

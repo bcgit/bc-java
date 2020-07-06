@@ -106,6 +106,8 @@ then
         rm src/org/bouncycastle/asn1/test/TagTest.java
         rm src/org/bouncycastle/asn1/test/TypeOfBiometricDataUnitTest.java
         rm src/org/bouncycastle/asn1/test/UTCTimeTest.java
+        rm src/org/bouncycastle/crypto/test/SimpleTestTest.java
+        rm src/org/bouncycastle/crypto/test/Argon2Test.java
         rm src/org/bouncycastle/crypto/test/AESVectorFileTest.java
         rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
         rm src/org/bouncycastle/crypto/test/HCFamilyVecTest.java
