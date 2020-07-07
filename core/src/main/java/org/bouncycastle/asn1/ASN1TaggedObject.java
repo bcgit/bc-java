@@ -124,14 +124,6 @@ public abstract class ASN1TaggedObject
     }
 
     /**
-     * @deprecated Will be removed (always returns false).
-     */
-    public boolean isEmpty()
-    {
-        return false;
-    }
-
-    /**
      * Return whatever was following the tag.
      * <p>
      * Note: tagged objects are generally context dependent if you're

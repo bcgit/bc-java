@@ -32,10 +32,7 @@ public class ASN1OutputStream
 
     private OutputStream os;
 
-    /**
-     * @deprecated Use {@link ASN1OutputStream#create(OutputStream)} instead.
-     */
-    public ASN1OutputStream(OutputStream os)
+    ASN1OutputStream(OutputStream os)
     {
         this.os = os;
     }
@@ -262,16 +259,6 @@ public class ASN1OutputStream
                 write(stack, pos, stack.length - pos);
             }
         }
-    }
-
-    /**
-     * @deprecated Will be removed.
-     */
-    protected void writeNull()
-        throws IOException
-    {
-        write(BERTags.NULL);
-        write(0x00);
     }
 
     public void writeObject(ASN1Encodable obj) throws IOException

@@ -5,17 +5,11 @@ import java.io.OutputStream;
 
 /**
  * Stream that outputs encoding based on distinguished encoding rules.
- * 
- * @deprecated Will be removed from public API.
  */
-public class DEROutputStream
+class DEROutputStream
     extends ASN1OutputStream
 {
-    /**
-     * @deprecated Use {@link ASN1OutputStream#create(OutputStream, String)} with
-     *             {@link ASN1Encoding#DER} instead.
-     */
-    public DEROutputStream(OutputStream os)
+    DEROutputStream(OutputStream os)
     {
         super(os);
     }

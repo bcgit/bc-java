@@ -203,7 +203,15 @@ public abstract class ASN1BitString
 
     public byte[] getBytes()
     {
-        return derForm(data, padBits);
+        if (0 == data.length)
+        {
+            return data;
+        }
+
+        byte[] rv = Arrays.clone(data);
+        // DER requires pad bits be zero
+        rv[data.length - 1] &= (0xFF << padBits);
+        return rv;
     }
 
     public int getPadBits()
@@ -267,21 +275,6 @@ public abstract class ASN1BitString
         byte derB = (byte)(b[end] & (0xFF << padBits));
 
         return derA == derB;
-    }
-
-    /**
-     * @deprecated Will be hidden/removed.
-     */
-    protected static byte[] derForm(byte[] data, int padBits)
-    {
-        if (0 == data.length)
-        {
-            return data;
-        }
-        byte[] rv = Arrays.clone(data);
-        // DER requires pad bits be zero
-        rv[data.length - 1] &= (0xFF << padBits);
-        return rv;
     }
 
     static ASN1BitString fromInputStream(int length, InputStream stream)
