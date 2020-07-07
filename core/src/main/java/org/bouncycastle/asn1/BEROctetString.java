@@ -3,7 +3,7 @@ package org.bouncycastle.asn1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.Vector;
+import java.util.NoSuchElementException;
 
 /**
  * ASN.1 OctetStrings, with indefinite length rules, and <i>constructed form</i> support.
@@ -129,7 +129,28 @@ public class BEROctetString
     {
         if (octs == null)
         {
-            return generateOcts().elements();
+            return new Enumeration()
+            {
+                int pos = 0;
+
+                public boolean hasMoreElements()
+                {
+                    return pos < string.length;
+                }
+
+                public Object nextElement()
+                {
+                    if (pos < string.length)
+                    {
+                        int length = Math.min(string.length - pos, chunkSize);
+                        byte[] chunk = new byte[length];
+                        System.arraycopy(string, pos, chunk, 0, length);
+                        pos += length;
+                        return new DEROctetString(chunk);
+                    }
+                    throw new NoSuchElementException();
+                }
+            };
         }
 
         return new Enumeration()
@@ -143,26 +164,13 @@ public class BEROctetString
 
             public Object nextElement()
             {
-                return octs[counter++];
+                if (counter < octs.length)
+                {
+                    return octs[counter++];
+                }
+                throw new NoSuchElementException();
             }
         };
-    }
-
-    private Vector generateOcts()
-    { 
-        Vector vec = new Vector();
-        for (int i = 0; i < string.length; i += chunkSize)
-        { 
-            int end = Math.min(string.length, i + chunkSize); 
-
-            byte[] nStr = new byte[end - i]; 
-
-            System.arraycopy(string, i, nStr, 0, nStr.length);
-
-            vec.addElement(new DEROctetString(nStr));
-         } 
-        
-         return vec; 
     }
 
     boolean isConstructed()
