@@ -3,7 +3,6 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat224;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -101,7 +100,7 @@ public class SecP224K1FieldElement extends ECFieldElement.AbstractFp
     {
 //        return multiply(b.invert());
         int[] z = Nat224.create();
-        Mod.invert(SecP224K1Field.P, ((SecP224K1FieldElement)b).x, z);
+        SecP224K1Field.inv(((SecP224K1FieldElement)b).x, z);
         SecP224K1Field.multiply(z, x, z);
         return new SecP224K1FieldElement(z);
     }
@@ -124,7 +123,7 @@ public class SecP224K1FieldElement extends ECFieldElement.AbstractFp
     {
 //        return new SecP224K1FieldElement(toBigInteger().modInverse(Q));
         int[] z = Nat224.create();
-        Mod.invert(SecP224K1Field.P, x, z);
+        SecP224K1Field.inv(x, z);
         return new SecP224K1FieldElement(z);
     }
 
@@ -141,7 +140,7 @@ public class SecP224K1FieldElement extends ECFieldElement.AbstractFp
          * First, raise this element to the exponent 2^221 - 2^29 - 2^9 - 2^8 - 2^6 - 2^4 - 2^1 (i.e. m + 1)
          *
          * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 191 1s } { 1 0s } { 19 1s } { 2 0s } { 1 1s } { 1 0s} { 1 1s } { 1 0s} { 3 1s } { 1 0s}
+         * { 191 1s } { 1 0s } { 19 1s } { 2 0s } { 1 1s } { 1 0s } { 1 1s } { 1 0s } { 3 1s } { 1 0s }
          *
          * Therefore we need an addition chain containing 1, 3, 19, 191 (the lengths of the repunits)
          * We use: [1], 2, [3], 4, 8, 11, [19], 23, 42, 84, 107, [191]

@@ -59,7 +59,7 @@ public class SecP521R1Field
          * Raise this element to the exponent 2^521 - 3
          *
          * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 519 1s } { 1 0s} { 1 1s}
+         * { 519 1s } { 1 0s } { 1 1s }
          *
          * Therefore we need an addition chain containing 1, 519 (the lengths of the repunits)
          * We use: [1], 2, 4, 8, 16, 32, 64, 128, 256, 512, 516, 518, [519]
@@ -152,7 +152,7 @@ public class SecP521R1Field
         {
             r.nextBytes(bb);
             Pack.littleEndianToInt(bb, 0, z, 0, 17);
-            z[16] &= 0x000001FFL;
+            z[16] &= P16;
         }
         while (0 == Nat.lessThan(17, z, P));
     }

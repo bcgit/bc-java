@@ -14,9 +14,9 @@ public class SecP256R1Field
     // 2^256 - 2^224 + 2^192 + 2^96 - 1
     static final int[] P = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000,
         0x00000001, 0xFFFFFFFF };
-    static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0x00000001, 0xFFFFFFFE,
-        0x00000002, 0xFFFFFFFE };
+    private static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0x00000001, 0xFFFFFFFE, 0x00000002,
+        0xFFFFFFFE };
     private static final int P7 = 0xFFFFFFFF;
     private static final int PExt15s1 = 0xFFFFFFFE >>> 1;
 
@@ -76,7 +76,7 @@ public class SecP256R1Field
          * Raise this element to the exponent 2^256 - 2^224 + 2^192 + 2^96 - 3
          *
          * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 32 1s } { 31 0s } { 1 1s } { 96 0s } { 94 1s } { 1 0s} { 1 1s}
+         * { 32 1s } { 31 0s } { 1 1s } { 96 0s } { 94 1s } { 1 0s } { 1 1s }
          *
          * Therefore we need an addition chain containing 1, 32, 94 (the lengths of the repunits)
          * We use: [1], 2, 4, 8, 16, [32], 64, 80, 88, 92, [94]
