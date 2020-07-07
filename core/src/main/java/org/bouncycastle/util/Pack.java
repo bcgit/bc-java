@@ -30,6 +30,15 @@ public abstract class Pack
         }
     }
 
+    public static void bigEndianToInt(byte[] bs, int off, int[] ns, int nsOff, int nsLen)
+    {
+        for (int i = 0; i < nsLen; ++i)
+        {
+            ns[nsOff + i] = bigEndianToInt(bs, off);
+            off += 4;
+        }
+    }
+
     public static byte[] intToBigEndian(int n)
     {
         byte[] bs = new byte[4];
@@ -44,7 +53,6 @@ public abstract class Pack
         bs[++off] = (byte)(n >>> 8);
         bs[++off] = (byte)(n);
     }
-
 
     public static byte[] intToBigEndian(int[] ns)
     {
@@ -62,6 +70,15 @@ public abstract class Pack
         }
     }
 
+    public static void intToBigEndian(int[] ns, int nsOff, int nsLen, byte[] bs, int bsOff)
+    {
+        for (int i = 0; i < nsLen; ++i)
+        {
+            intToBigEndian(ns[nsOff + i], bs, bsOff);
+            bsOff += 4;
+        }
+    }
+
     public static long bigEndianToLong(byte[] bs, int off)
     {
         int hi = bigEndianToInt(bs, off);
@@ -75,6 +92,15 @@ public abstract class Pack
         {
             ns[i] = bigEndianToLong(bs, off);
             off += 8;
+        }
+    }
+
+    public static void bigEndianToLong(byte[] bs, int bsOff, long[] ns, int nsOff, int nsLen)
+    {
+        for (int i = 0; i < nsLen; ++i)
+        {
+            ns[nsOff + i] = bigEndianToLong(bs, bsOff);
+            bsOff += 8;
         }
     }
 
@@ -107,11 +133,22 @@ public abstract class Pack
         }
     }
 
+    public static void longToBigEndian(long[] ns, int nsOff, int nsLen, byte[] bs, int bsOff)
+    {
+        for (int i = 0; i < nsLen; ++i)
+        {
+            longToBigEndian(ns[nsOff + i], bs, bsOff);
+            bsOff += 8;
+        }
+    }
+
     /**
      * @param value The number
      * @param bs    The target.
      * @param off   Position in target to start.
      * @param bytes number of bytes to write.
+     * 
+     * @deprecated Will be removed
      */
     public static void longToBigEndian(long value, byte[] bs, int off, int bytes)
     {
