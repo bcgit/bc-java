@@ -3,7 +3,6 @@ package org.bouncycastle.math.ec.custom.gm;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -97,7 +96,7 @@ public class SM2P256V1FieldElement extends ECFieldElement.AbstractFp
     {
 //        return multiply(b.invert());
         int[] z = Nat256.create();
-        Mod.invert(SM2P256V1Field.P, ((SM2P256V1FieldElement)b).x, z);
+        SM2P256V1Field.inv(((SM2P256V1FieldElement)b).x, z);
         SM2P256V1Field.multiply(z, x, z);
         return new SM2P256V1FieldElement(z);
     }
@@ -120,7 +119,7 @@ public class SM2P256V1FieldElement extends ECFieldElement.AbstractFp
     {
 //        return new SM2P256V1FieldElement(toBigInteger().modInverse(Q));
         int[] z = Nat256.create();
-        Mod.invert(SM2P256V1Field.P, x, z);
+        SM2P256V1Field.inv(x, z);
         return new SM2P256V1FieldElement(z);
     }
 
@@ -134,7 +133,7 @@ public class SM2P256V1FieldElement extends ECFieldElement.AbstractFp
          * Raise this element to the exponent 2^254 - 2^222 - 2^94 + 2^62
          *
          * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 31 1s } { 1 0s } { 128 1s } { 31 0s } { 1 1s } { 62 0s}
+         * { 31 1s } { 1 0s } { 128 1s } { 31 0s } { 1 1s } { 62 0s }
          *
          * We use an addition chain for the beginning: [1], 2, 3, 6, 12, [24], 30, [31] 
          */

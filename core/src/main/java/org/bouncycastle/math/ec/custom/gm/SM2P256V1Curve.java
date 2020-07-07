@@ -1,6 +1,7 @@
 package org.bouncycastle.math.ec.custom.gm;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.math.ec.AbstractECLookupTable;
 import org.bouncycastle.math.ec.ECConstants;
@@ -144,5 +145,19 @@ public class SM2P256V1Curve extends ECCurve.AbstractFp
                 return createRawPoint(new SM2P256V1FieldElement(x), new SM2P256V1FieldElement(y), SM2P256V1_AFFINE_ZS);
             }
         };
+    }
+
+    public ECFieldElement randomFieldElement(SecureRandom r)
+    {
+        int[] x = Nat256.create();
+        SM2P256V1Field.random(r, x);
+        return new SM2P256V1FieldElement(x);
+    }
+
+    public ECFieldElement randomFieldElementMult(SecureRandom r)
+    {
+        int[] x = Nat256.create();
+        SM2P256V1Field.randomMult(r, x);
+        return new SM2P256V1FieldElement(x);
     }
 }

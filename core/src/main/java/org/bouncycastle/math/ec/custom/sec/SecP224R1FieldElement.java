@@ -98,7 +98,7 @@ public class SecP224R1FieldElement extends ECFieldElement.AbstractFp
     {
 //        return multiply(b.invert());
         int[] z = Nat224.create();
-        Mod.invert(SecP224R1Field.P, ((SecP224R1FieldElement)b).x, z);
+        SecP224R1Field.inv(((SecP224R1FieldElement)b).x, z);
         SecP224R1Field.multiply(z, x, z);
         return new SecP224R1FieldElement(z);
     }
@@ -121,7 +121,7 @@ public class SecP224R1FieldElement extends ECFieldElement.AbstractFp
     {
 //        return new SecP224R1FieldElement(toBigInteger().modInverse(Q));
         int[] z = Nat224.create();
-        Mod.invert(SecP224R1Field.P, x, z);
+        SecP224R1Field.inv(x, z);
         return new SecP224R1FieldElement(z);
     }
 
