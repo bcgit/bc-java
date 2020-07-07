@@ -312,11 +312,11 @@ public abstract class ASN1Set
 
             public Object nextElement()
             {
-                if (pos >= elements.length)
+                if (pos < elements.length)
                 {
-                    throw new NoSuchElementException("ASN1Set Enumeration");
+                    return elements[pos++];
                 }
-                return elements[pos++];
+                throw new NoSuchElementException();
             }
         };
     }
