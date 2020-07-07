@@ -48,7 +48,7 @@ public class MiscTest
         }
     }
 
-    public void derIntegerTest()
+    public void asn1IntegerTest()
         throws Exception
     {
         try
@@ -133,7 +133,7 @@ public class MiscTest
         }
 
         shouldFailOnExtraData();
-        derIntegerTest();
+        asn1IntegerTest();
     }
 
     public String getName()
