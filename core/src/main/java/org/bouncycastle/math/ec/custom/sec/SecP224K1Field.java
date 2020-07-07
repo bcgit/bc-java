@@ -1,17 +1,19 @@
 package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat224;
+import org.bouncycastle.util.Pack;
 
 public class SecP224K1Field
 {
     // 2^224 - 2^32 - 2^12 - 2^11 - 2^9 - 2^7 - 2^4 - 2 - 1
     static final int[] P = new int[]{ 0xFFFFE56D, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF };
-    static final int[] PExt = new int[]{ 0x02C23069, 0x00003526, 0x00000001, 0x00000000, 0x00000000,
-        0x00000000, 0x00000000, 0xFFFFCADA, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int[] PExt = new int[]{ 0x02C23069, 0x00003526, 0x00000001, 0x00000000, 0x00000000, 0x00000000,
+        0x00000000, 0xFFFFCADA, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
     private static final int[] PExtInv = new int[]{ 0xFD3DCF97, 0xFFFFCAD9, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF, 0x00003525, 0x00000002 };
     private static final int P6 = 0xFFFFFFFF;
@@ -71,6 +73,84 @@ public class SecP224K1Field
         }
     }
 
+    public static void inv(int[] x, int[] z)
+    {
+        /*
+         * Raise this element to the exponent 2^224 - 2^32 - 2^12 - 2^11 - 2^9 - 2^7 - 2^4 - 5
+         *
+         * Breaking up the exponent's binary representation into "repunits", we get:
+         * { 191 1s } { 1 0s } { 19 1s } "0010101101011"
+         *
+         * Therefore we need an addition chain containing 1, 2, 19, 191 (the lengths of the repunits)
+         * We use: [1], [2], 4, 5, 9, 10, [19], 38, 76, 152, 190 [191]
+         */
+
+        if (0 != isZero(x))
+        {
+            throw new IllegalArgumentException("'x' cannot be 0");
+        }
+
+        int[] x1 = x;
+        int[] x2 = Nat224.create();
+        square(x1, x2);
+        multiply(x2, x1, x2);
+        int[] x4 = Nat224.create();
+        squareN(x2, 2, x4);
+        multiply(x4, x2, x4);
+        int[] x5 = Nat224.create();
+        square(x4, x5);
+        multiply(x5, x1, x5);
+        int[] x9 = x5;
+        squareN(x5, 4, x9);
+        multiply(x9, x4, x9);
+        int[] x10 = x4;
+        square(x9, x10);
+        multiply(x10, x1, x10);
+        int[] x19 = x10;
+        squareN(x10, 9, x19);
+        multiply(x19, x9, x19);
+        int[] x38 = x9;
+        squareN(x19, 19, x38);
+        multiply(x38, x19, x38);
+        int[] x76 = Nat224.create();
+        squareN(x38, 38, x76);
+        multiply(x76, x38, x76);
+        int[] x152 = Nat224.create();
+        squareN(x76, 76, x152);
+        multiply(x152, x76, x152);
+        int[] x190 = x76;
+        squareN(x152, 38, x190);
+        multiply(x190, x38, x190);
+        int[] x191 = x38;
+        square(x190, x191);
+        multiply(x191, x1, x191);
+
+        int[] t = x191;
+        squareN(t, 20, t);
+        multiply(t, x19, t);
+        squareN(t, 3, t);
+        multiply(t, x1, t);
+        squareN(t, 2, t);
+        multiply(t, x1, t);
+        squareN(t, 3, t);
+        multiply(t, x2, t);
+        squareN(t, 2, t);
+        multiply(t, x1, t);
+        squareN(t, 3, t);
+        multiply(t, x2, z);
+    }
+
+    public static int isZero(int[] x)
+    {
+        int d = 0;
+        for (int i = 0; i < 7; ++i)
+        {
+            d |= x[i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
     public static void multiply(int[] x, int[] y, int[] z)
     {
         int[] tt = Nat224.createExt();
@@ -92,14 +172,34 @@ public class SecP224K1Field
 
     public static void negate(int[] x, int[] z)
     {
-        if (Nat224.isZero(x))
+        if (0 != isZero(x))
         {
-            Nat224.zero(z);
+            Nat224.sub(P, P, z);
         }
         else
         {
             Nat224.sub(P, x, z);
         }
+    }
+
+    public static void random(SecureRandom r, int[] z)
+    {
+        byte[] bb = new byte[7 * 4];
+        do
+        {
+            r.nextBytes(bb);
+            Pack.littleEndianToInt(bb, 0, z, 0, 7);
+        }
+        while (0 == Nat.lessThan(7, z, P));
+    }
+
+    public static void randomMult(SecureRandom r, int[] z)
+    {
+        do
+        {
+            random(r, z);
+        }
+        while (0 != isZero(z));
     }
 
     public static void reduce(int[] xx, int[] z)

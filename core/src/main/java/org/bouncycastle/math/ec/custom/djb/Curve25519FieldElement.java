@@ -3,7 +3,6 @@ package org.bouncycastle.math.ec.custom.djb;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
 
@@ -99,7 +98,7 @@ public class Curve25519FieldElement extends ECFieldElement.AbstractFp
     {
 //        return multiply(b.invert());
         int[] z = Nat256.create();
-        Mod.invert(Curve25519Field.P, ((Curve25519FieldElement)b).x, z);
+        Curve25519Field.inv(((Curve25519FieldElement)b).x, z);
         Curve25519Field.multiply(z, x, z);
         return new Curve25519FieldElement(z);
     }
@@ -122,7 +121,7 @@ public class Curve25519FieldElement extends ECFieldElement.AbstractFp
     {
 //        return new Curve25519FieldElement(toBigInteger().modInverse(Q));
         int[] z = Nat256.create();
-        Mod.invert(Curve25519Field.P, x, z);
+        Curve25519Field.inv(x, z);
         return new Curve25519FieldElement(z);
     }
 
