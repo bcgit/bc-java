@@ -25,6 +25,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 
@@ -482,18 +483,13 @@ public class Blake2bDigest
     {
 
         internalState[posA] = internalState[posA] + internalState[posB] + m1;
-        internalState[posD] = rotr64(internalState[posD] ^ internalState[posA], 32);
+        internalState[posD] = Longs.rotateRight(internalState[posD] ^ internalState[posA], 32);
         internalState[posC] = internalState[posC] + internalState[posD];
-        internalState[posB] = rotr64(internalState[posB] ^ internalState[posC], 24); // replaces 25 of BLAKE
+        internalState[posB] = Longs.rotateRight(internalState[posB] ^ internalState[posC], 24); // replaces 25 of BLAKE
         internalState[posA] = internalState[posA] + internalState[posB] + m2;
-        internalState[posD] = rotr64(internalState[posD] ^ internalState[posA], 16);
+        internalState[posD] = Longs.rotateRight(internalState[posD] ^ internalState[posA], 16);
         internalState[posC] = internalState[posC] + internalState[posD];
-        internalState[posB] = rotr64(internalState[posB] ^ internalState[posC], 63); // replaces 11 of BLAKE
-    }
-
-    private static long rotr64(long x, int rot)
-    {
-        return x >>> rot | (x << (64 - rot));
+        internalState[posB] = Longs.rotateRight(internalState[posB] ^ internalState[posC], 63); // replaces 11 of BLAKE
     }
 
     /**
