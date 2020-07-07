@@ -4,9 +4,8 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
 import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
-
 
 /**
  * Argon2 PBKDF - Based on the results of https://password-hashing.net/ and https://www.ietf.org/archive/id/draft-irtf-cfrg-argon2-03.txt
@@ -32,6 +31,10 @@ public class Argon2BytesGenerator
 
     /* Minimum and maximum number of passes */
     private static final int MIN_ITERATIONS = 1;
+
+    private static final long M32L = 0xFFFFFFFFL;
+
+    private static final byte[] ZERO_BYTES = new byte[4];
 
     private Argon2Parameters parameters;
     private Block[] memory;
@@ -93,9 +96,11 @@ public class Argon2BytesGenerator
             throw new IllegalStateException("output length less than " + Argon2BytesGenerator.MIN_OUTLEN);
         }
 
-        initialize(password, outLen);
+        byte[] tmpBlockBytes = new byte[ARGON2_BLOCK_SIZE];
+
+        initialize(tmpBlockBytes, password, outLen);
         fillMemoryBlocks();
-        digest(out, outOff, outLen);
+        digest(tmpBlockBytes, out, outOff, outLen);
 
         reset();
 
@@ -153,13 +158,18 @@ public class Argon2BytesGenerator
     {
         FillBlock filler = new FillBlock();
         Position position = new Position();
-        for (int i = 0; i < parameters.getIterations(); i++)
+        for (int pass = 0; pass < parameters.getIterations(); ++pass)
         {
-            for (int j = 0; j < ARGON2_SYNC_POINTS; j++)
+            position.pass = pass;
+
+            for (int slice = 0; slice < ARGON2_SYNC_POINTS; ++slice)
             {
-                for (int k = 0; k < parameters.getLanes(); k++)
+                position.slice = slice;
+
+                for (int lane = 0; lane < parameters.getLanes(); ++lane)
                 {
-                    position.update(i, k, j, 0);
+                    position.lane = lane;
+
                     fillSegment(filler, position);
                 }
             }
@@ -168,7 +178,7 @@ public class Argon2BytesGenerator
 
     private void fillSegment(FillBlock filler, Position position)
     {
-        Block addressBlock = null, inputBlock = null, zeroBlock = null;
+        Block addressBlock = null, inputBlock = null;
 
         boolean dataIndependentAddressing = isDataIndependentAddressing(position);
         int startingIndex = getStartingIndex(position);
@@ -178,26 +188,25 @@ public class Argon2BytesGenerator
         if (dataIndependentAddressing)
         {
             addressBlock = filler.addressBlock.clear();
-            zeroBlock = filler.zeroBlock.clear();
             inputBlock = filler.inputBlock.clear();
 
-            initAddressBlocks(filler, position, zeroBlock, inputBlock, addressBlock);
+            initAddressBlocks(filler, position, inputBlock, addressBlock);
         }
 
-        for (position.index = startingIndex; position.index < segmentLength; position.index++, currentOffset++, prevOffset++)
-        {
-            prevOffset = rotatePrevOffset(currentOffset, prevOffset);
+        final boolean withXor = isWithXor(position);
 
-            long pseudoRandom = getPseudoRandom(filler, position, addressBlock, inputBlock, zeroBlock, prevOffset, dataIndependentAddressing);
+        for (int index = startingIndex; index < segmentLength; ++index)
+        {
+            long pseudoRandom = getPseudoRandom(filler, index, addressBlock, inputBlock, prevOffset, dataIndependentAddressing);
             int refLane = getRefLane(position, pseudoRandom);
-            int refColumn = getRefColumn(position, pseudoRandom, refLane == position.lane);
+            int refColumn = getRefColumn(position, index, pseudoRandom, refLane == position.lane);
 
             /* 2 Creating a new block */
             Block prevBlock = memory[prevOffset];
             Block refBlock = memory[((laneLength) * refLane + refColumn)];
             Block currentBlock = memory[currentOffset];
 
-            if (isWithXor(position))
+            if (withXor)
             {
                 filler.fillBlockWithXor(prevBlock, refBlock, currentBlock);
             }
@@ -205,6 +214,9 @@ public class Argon2BytesGenerator
             {
                 filler.fillBlock(prevBlock, refBlock, currentBlock);
             }
+
+            prevOffset = currentOffset;
+            currentOffset++;
         }
     }
 
@@ -217,7 +229,7 @@ public class Argon2BytesGenerator
             );
     }
 
-    private void initAddressBlocks(FillBlock filler, Position position, Block zeroBlock, Block inputBlock, Block addressBlock)
+    private void initAddressBlocks(FillBlock filler, Position position, Block inputBlock, Block addressBlock)
     {
         inputBlock.v[0] = intToLong(position.pass);
         inputBlock.v[1] = intToLong(position.lane);
@@ -229,7 +241,7 @@ public class Argon2BytesGenerator
         if ((position.pass == 0) && (position.slice == 0))
         {
             /* Don't forget to generate the first block of addresses: */
-            nextAddresses(filler, zeroBlock, inputBlock, addressBlock);
+            nextAddresses(filler, inputBlock, addressBlock);
         }
     }
 
@@ -252,15 +264,6 @@ public class Argon2BytesGenerator
         }
     }
 
-    private int rotatePrevOffset(int currentOffset, int prevOffset)
-    {
-        if (currentOffset % laneLength == 1)
-        {
-            prevOffset = currentOffset - 1;
-        }
-        return prevOffset;
-    }
-
     private static int getStartingIndex(Position position)
     {
         if ((position.pass == 0) && (position.slice == 0))
@@ -273,24 +276,26 @@ public class Argon2BytesGenerator
         }
     }
 
-    private void nextAddresses(FillBlock filler, Block zeroBlock, Block inputBlock, Block addressBlock)
+    private void nextAddresses(FillBlock filler, Block inputBlock, Block addressBlock)
     {
         inputBlock.v[6]++;
-        filler.fillBlock(zeroBlock, inputBlock, addressBlock);
-        filler.fillBlock(zeroBlock, addressBlock, addressBlock);
+        filler.fillBlock(inputBlock, addressBlock);
+        filler.fillBlock(addressBlock, addressBlock);
     }
 
     /* 1.2 Computing the index of the reference block */
     /* 1.2.1 Taking pseudo-random value from the previous block */
-    private long getPseudoRandom(FillBlock filler, Position position, Block addressBlock, Block inputBlock, Block zeroBlock, int prevOffset, boolean dataIndependentAddressing)
+    private long getPseudoRandom(FillBlock filler, int index, Block addressBlock, Block inputBlock, int prevOffset,
+        boolean dataIndependentAddressing)
     {
         if (dataIndependentAddressing)
         {
-            if (position.index % ARGON2_ADDRESSES_IN_BLOCK == 0)
+            int addressIndex = index % ARGON2_ADDRESSES_IN_BLOCK;
+            if (addressIndex == 0)
             {
-                nextAddresses(filler, zeroBlock, inputBlock, addressBlock);
+                nextAddresses(filler, inputBlock, addressBlock);
             }
-            return addressBlock.v[position.index % ARGON2_ADDRESSES_IN_BLOCK];
+            return addressBlock.v[addressIndex];
         }
         else
         {
@@ -310,7 +315,7 @@ public class Argon2BytesGenerator
         return refLane;
     }
 
-    private int getRefColumn(Position position, long pseudoRandom, boolean sameLane)
+    private int getRefColumn(Position position, int index, long pseudoRandom, boolean sameLane)
     {
         int referenceAreaSize;
         int startPosition;
@@ -322,12 +327,12 @@ public class Argon2BytesGenerator
             if (sameLane)
             {
                 /* The same lane => add current segment */
-                referenceAreaSize = position.slice * segmentLength + position.index - 1;
+                referenceAreaSize = position.slice * segmentLength + index - 1;
             }
             else
             {
                 /* pass == 0 && !sameLane => position.slice > 0*/
-                referenceAreaSize = position.slice * segmentLength + ((position.index == 0) ? (-1) : 0);
+                referenceAreaSize = position.slice * segmentLength + ((index == 0) ? (-1) : 0);
             }
         }
         else
@@ -336,11 +341,11 @@ public class Argon2BytesGenerator
 
             if (sameLane)
             {
-                referenceAreaSize = laneLength - segmentLength + position.index - 1;
+                referenceAreaSize = laneLength - segmentLength + index - 1;
             }
             else
             {
-                referenceAreaSize = laneLength - segmentLength + ((position.index == 0) ? (-1) : 0);
+                referenceAreaSize = laneLength - segmentLength + ((index == 0) ? (-1) : 0);
             }
         }
 
@@ -351,7 +356,7 @@ public class Argon2BytesGenerator
         return (int)(startPosition + relativePosition) % laneLength;
     }
 
-    private void digest(byte[] out, int outOff, int outLen)
+    private void digest(byte[] tmpBlockBytes, byte[] out, int outOff, int outLen)
     {
         Block finalBlock = memory[laneLength - 1];
 
@@ -362,35 +367,9 @@ public class Argon2BytesGenerator
             finalBlock.xorWith(memory[lastBlockInLane]);
         }
 
-        byte[] finalBlockBytes = finalBlock.toBytes();
+        finalBlock.toBytes(tmpBlockBytes);
 
-        hash(finalBlockBytes, out, outOff, outLen);
-    }
-
-    /**
-     * H0 = H64(p, τ, m, t, v, y, |P|, P, |S|, S, |L|, K, |X|, X)
-     * -> 64 byte (ARGON2_PREHASH_DIGEST_LENGTH)
-     */
-    private byte[] initialHash(Argon2Parameters parameters, int outputLength, byte[] password)
-    {
-        Blake2bDigest blake = new Blake2bDigest(ARGON2_PREHASH_DIGEST_LENGTH * 8);
-
-        addIntToLittleEndian(blake, parameters.getLanes());
-        addIntToLittleEndian(blake, outputLength);
-        addIntToLittleEndian(blake, parameters.getMemory());
-        addIntToLittleEndian(blake, parameters.getIterations());
-        addIntToLittleEndian(blake, parameters.getVersion());
-        addIntToLittleEndian(blake, parameters.getType());
-
-        addByteString(blake, password);
-        addByteString(blake, parameters.getSalt());
-        addByteString(blake, parameters.getSecret());
-        addByteString(blake, parameters.getAdditional());
-
-        byte[] blake2hash = new byte[blake.getDigestSize()];
-        blake.doFinal(blake2hash, 0);
-
-        return blake2hash;
+        hash(tmpBlockBytes, out, outOff, outLen);
     }
 
     /**
@@ -452,118 +431,124 @@ public class Argon2BytesGenerator
                                       int v8, int v9, int v10, int v11,
                                       int v12, int v13, int v14, int v15)
     {
+        final long[] v = block.v;
 
-        F(block, v0, v4, v8, v12);
-        F(block, v1, v5, v9, v13);
-        F(block, v2, v6, v10, v14);
-        F(block, v3, v7, v11, v15);
+        F(v, v0, v4, v8, v12);
+        F(v, v1, v5, v9, v13);
+        F(v, v2, v6, v10, v14);
+        F(v, v3, v7, v11, v15);
 
-        F(block, v0, v5, v10, v15);
-        F(block, v1, v6, v11, v12);
-        F(block, v2, v7, v8, v13);
-        F(block, v3, v4, v9, v14);
+        F(v, v0, v5, v10, v15);
+        F(v, v1, v6, v11, v12);
+        F(v, v2, v7, v8, v13);
+        F(v, v3, v4, v9, v14);
     }
 
-    private static void F(Block block, int a, int b, int c, int d)
+    private static void F(long[] v, int a, int b, int c, int d)
     {
-        fBlaMka(block, a, b);
-        rotr64(block, d, a, 32);
+        quarterRound(v, a, b, d, 32);
+        quarterRound(v, c, d, b, 24);
+        quarterRound(v, a, b, d, 16);
+        quarterRound(v, c, d, b, 63);
+    }
 
-        fBlaMka(block, c, d);
-        rotr64(block, b, c, 24);
+    private static void quarterRound(long[] v, int x, int y, int z, int s)
+    {
+//        fBlaMka(v, x, y);
+//        rotr64(v, z, x, s);
 
-        fBlaMka(block, a, b);
-        rotr64(block, d, a, 16);
+        long a = v[x], b = v[y], c = v[z];
 
-        fBlaMka(block, c, d);
-        rotr64(block, b, c, 63);
+        a += b + 2 * (a & M32L) * (b & M32L);
+        c = Longs.rotateRight(c ^ a, s);
+
+        v[x] = a;
+        v[z] = c;
     }
 
     /*designed by the Lyra PHC team */
     /* a <- a + b + 2*aL*bL
      * + == addition modulo 2^64
      * aL = least 32 bit */
-    private static void fBlaMka(Block block, int x, int y)
-    {
-        final long m = 0xFFFFFFFFL;
-        final long xy = (block.v[x] & m) * (block.v[y] & m);
+//    private static void fBlaMka(long[] v, int x, int y)
+//    {
+//        final long a = v[x], b = v[y];
+//        final long ab = (a & M32L) * (b & M32L);
+//
+//        v[x] = a + b + 2 * ab;
+//    }
+//
+//    private static void rotr64(long[] v, int x, int y, int s)
+//    {
+//        v[x] = Longs.rotateRight(v[x] ^ v[y], s);
+//    }
 
-        block.v[x] = block.v[x] + block.v[y] + 2 * xy;
+    private void initialize(byte[] tmpBlockBytes, byte[] password, int outputLength)
+    {
+        /**
+         * H0 = H64(p, τ, m, t, v, y, |P|, P, |S|, S, |L|, K, |X|, X)
+         * -> 64 byte (ARGON2_PREHASH_DIGEST_LENGTH)
+         */
+
+        Blake2bDigest blake = new Blake2bDigest(ARGON2_PREHASH_DIGEST_LENGTH * 8);
+
+        int[] values = { parameters.getLanes(), outputLength, parameters.getMemory(), parameters.getIterations(),
+            parameters.getVersion(), parameters.getType() };
+
+        Pack.intToLittleEndian(values, tmpBlockBytes, 0);
+        blake.update(tmpBlockBytes, 0, values.length * 4);
+
+        addByteString(tmpBlockBytes, blake, password);
+        addByteString(tmpBlockBytes, blake, parameters.getSalt());
+        addByteString(tmpBlockBytes, blake, parameters.getSecret());
+        addByteString(tmpBlockBytes, blake, parameters.getAdditional());
+
+        byte[] initialHashWithZeros = new byte[ARGON2_PREHASH_SEED_LENGTH];
+        blake.doFinal(initialHashWithZeros, 0);
+
+        fillFirstBlocks(tmpBlockBytes, initialHashWithZeros);
     }
 
-    private static void rotr64(Block block, int v, int w, long c)
+    private static void addByteString(byte[] tmpBlockBytes, Digest digest, byte[] octets)
     {
-        final long temp = block.v[v] ^ block.v[w];
-        block.v[v] = (temp >>> c) | (temp << (64 - c));
-    }
-
-    private void initialize(byte[] password, int outputLength)
-    {
-        byte[] initialHash = initialHash(parameters, outputLength, password);
-
-        fillFirstBlocks(initialHash);
-    }
-
-    private static void addIntToLittleEndian(Digest digest, int n)
-    {
-        digest.update((byte)(n));
-        digest.update((byte)(n >>> 8));
-        digest.update((byte)(n >>> 16));
-        digest.update((byte)(n >>> 24));
-    }
-
-    private static void addByteString(Digest digest, byte[] octets)
-    {
-        if (octets != null)
+        if (null == octets)
         {
-            addIntToLittleEndian(digest, octets.length);
-            digest.update(octets, 0, octets.length);
+            digest.update(ZERO_BYTES, 0, 4);
+            return;
         }
-        else
-        {
-            addIntToLittleEndian(digest, 0);
-        }
+
+        Pack.intToLittleEndian(octets.length, tmpBlockBytes, 0);
+        digest.update(tmpBlockBytes, 0, 4);
+        digest.update(octets, 0, octets.length);
     }
 
     /**
      * (H0 || 0 || i) 72 byte -> 1024 byte
      * (H0 || 1 || i) 72 byte -> 1024 byte
      */
-    private void fillFirstBlocks(byte[] initialHash)
+    private void fillFirstBlocks(byte[] tmpBlockBytes, byte[] initialHashWithZeros)
     {
-        final byte[] zeroBytes = {0, 0, 0, 0};
-        final byte[] oneBytes = {1, 0, 0, 0};
-
-        byte[] initialHashWithZeros = getInitialHashLong(initialHash, zeroBytes);
-        byte[] initialHashWithOnes = getInitialHashLong(initialHash, oneBytes);
-        byte[] blockhashBytes = new byte[ARGON2_BLOCK_SIZE];
+        byte[] initialHashWithOnes = new byte[ARGON2_PREHASH_SEED_LENGTH];
+        System.arraycopy(initialHashWithZeros, 0, initialHashWithOnes, 0, ARGON2_PREHASH_DIGEST_LENGTH);
+//        Pack.intToLittleEndian(1, initialHashWithOnes, ARGON2_PREHASH_DIGEST_LENGTH);
+        initialHashWithOnes[ARGON2_PREHASH_DIGEST_LENGTH] = 1;
 
         for (int i = 0; i < parameters.getLanes(); i++)
         {
             Pack.intToLittleEndian(i, initialHashWithZeros, ARGON2_PREHASH_DIGEST_LENGTH + 4);
             Pack.intToLittleEndian(i, initialHashWithOnes, ARGON2_PREHASH_DIGEST_LENGTH + 4);
 
-            hash(initialHashWithZeros, blockhashBytes, 0, ARGON2_BLOCK_SIZE);
-            memory[i * laneLength + 0].fromBytes(blockhashBytes);
+            hash(initialHashWithZeros, tmpBlockBytes, 0, ARGON2_BLOCK_SIZE);
+            memory[i * laneLength + 0].fromBytes(tmpBlockBytes);
 
-            hash(initialHashWithOnes, blockhashBytes, 0, ARGON2_BLOCK_SIZE);
-            memory[i * laneLength + 1].fromBytes(blockhashBytes);
+            hash(initialHashWithOnes, tmpBlockBytes, 0, ARGON2_BLOCK_SIZE);
+            memory[i * laneLength + 1].fromBytes(tmpBlockBytes);
         }
-    }
-
-    private byte[] getInitialHashLong(byte[] initialHash, byte[] appendix)
-    {
-        byte[] initialHashLong = new byte[ARGON2_PREHASH_SEED_LENGTH];
-
-        System.arraycopy(initialHash, 0, initialHashLong, 0, ARGON2_PREHASH_DIGEST_LENGTH);
-        System.arraycopy(appendix, 0, initialHashLong, ARGON2_PREHASH_DIGEST_LENGTH, 4);
-
-        return initialHashLong;
     }
 
     private long intToLong(int x)
     {
-        return (long)(x & 0xffffffffL);
+        return (long)(x & M32L);
     }
 
     private static class FillBlock
@@ -572,7 +557,6 @@ public class Argon2BytesGenerator
         Block Z = new Block();
 
         Block addressBlock = new Block();
-        Block zeroBlock = new Block();
         Block inputBlock = new Block();
 
         private void applyBlake()
@@ -610,16 +594,16 @@ public class Argon2BytesGenerator
             }
         }
 
+        private void fillBlock(Block Y, Block currentBlock)
+        {
+            Z.copyBlock(Y);
+            applyBlake();
+            currentBlock.xor(Y, Z);
+        }
+
         private void fillBlock(Block X, Block Y, Block currentBlock)
         {
-            if (X == zeroBlock)
-            {
-                R.copyBlock(Y);
-            }
-            else
-            {
-                R.xor(X, Y);
-            }
+            R.xor(X, Y);
             Z.copyBlock(R);
             applyBlake();
             currentBlock.xor(R, Z);
@@ -630,7 +614,7 @@ public class Argon2BytesGenerator
             R.xor(X, Y);
             Z.copyBlock(R);
             applyBlake();
-            currentBlock.xor(R, Z, currentBlock);
+            currentBlock.xorWith(R, Z);
         }
     }
 
@@ -648,27 +632,22 @@ public class Argon2BytesGenerator
 
         void fromBytes(byte[] input)
         {
-            if (input.length != ARGON2_BLOCK_SIZE)
+            if (input.length < ARGON2_BLOCK_SIZE)
             {
                 throw new IllegalArgumentException("input shorter than blocksize");
             }
 
-            for (int i = 0; i < SIZE; i++)
-            {
-                v[i] = Pack.littleEndianToLong(input, i * 8);
-            }
+            Pack.littleEndianToLong(input, 0, v);
         }
 
-        byte[] toBytes()
+        void toBytes(byte[] output)
         {
-            byte[] result = new byte[ARGON2_BLOCK_SIZE];
-
-            for (int i = 0; i < SIZE; i++)
+            if (output.length < ARGON2_BLOCK_SIZE)
             {
-                Pack.longToLittleEndian(v[i], result, i * 8);
+                throw new IllegalArgumentException("output shorter than blocksize");
             }
 
-            return result;
+            Pack.longToLittleEndian(v, output, 0);
         }
 
         private void copyBlock(Block other)
@@ -678,37 +657,29 @@ public class Argon2BytesGenerator
 
         private void xor(Block b1, Block b2)
         {
+            long[] v0 = v, v1 = b1.v, v2 = b2.v;
             for (int i = 0; i < SIZE; i++)
             {
-                v[i] = b1.v[i] ^ b2.v[i];
+                v0[i] = v1[i] ^ v2[i];
             }
         }
 
-        public void xor(Block b1, Block b2, Block b3)
+        private void xorWith(Block b1)
         {
+            long[] v0 = v, v1 = b1.v;
             for (int i = 0; i < SIZE; i++)
             {
-                v[i] = b1.v[i] ^ b2.v[i] ^ b3.v[i];
+                v0[i] ^= v1[i];
             }
         }
 
-        private void xorWith(Block other)
+        private void xorWith(Block b1, Block b2)
         {
-            for (int i = 0; i < v.length; i++)
-            {
-                v[i] = v[i] ^ other.v[i];
-            }
-        }
-
-        public String toString()
-        {
-            StringBuffer result = new StringBuffer();
+            long[] v0 = v, v1 = b1.v, v2 = b2.v;
             for (int i = 0; i < SIZE; i++)
             {
-                result.append(Hex.toHexString(Pack.longToLittleEndian(v[i])));
+                v0[i] ^= v1[i] ^ v2[i];
             }
-
-            return result.toString();
         }
 
         public Block clear()
@@ -723,19 +694,9 @@ public class Argon2BytesGenerator
         int pass;
         int lane;
         int slice;
-        int index;
 
         Position()
         {
-
-        }
-
-        void update(int pass, int lane, int slice, int index)
-        {
-            this.pass = pass;
-            this.lane = lane;
-            this.slice = slice;
-            this.index = index;
         }
     }
 }
