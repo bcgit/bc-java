@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -180,38 +181,38 @@ public class ChaChaEngine extends Salsa20Engine
 
         for (int i = rounds; i > 0; i -= 2)
         {
-            x00 += x04; x12 = rotl(x12 ^ x00, 16);
-            x08 += x12; x04 = rotl(x04 ^ x08, 12);
-            x00 += x04; x12 = rotl(x12 ^ x00, 8);
-            x08 += x12; x04 = rotl(x04 ^ x08, 7);
-            x01 += x05; x13 = rotl(x13 ^ x01, 16);
-            x09 += x13; x05 = rotl(x05 ^ x09, 12);
-            x01 += x05; x13 = rotl(x13 ^ x01, 8);
-            x09 += x13; x05 = rotl(x05 ^ x09, 7);
-            x02 += x06; x14 = rotl(x14 ^ x02, 16);
-            x10 += x14; x06 = rotl(x06 ^ x10, 12);
-            x02 += x06; x14 = rotl(x14 ^ x02, 8);
-            x10 += x14; x06 = rotl(x06 ^ x10, 7);
-            x03 += x07; x15 = rotl(x15 ^ x03, 16);
-            x11 += x15; x07 = rotl(x07 ^ x11, 12);
-            x03 += x07; x15 = rotl(x15 ^ x03, 8);
-            x11 += x15; x07 = rotl(x07 ^ x11, 7);
-            x00 += x05; x15 = rotl(x15 ^ x00, 16);
-            x10 += x15; x05 = rotl(x05 ^ x10, 12);
-            x00 += x05; x15 = rotl(x15 ^ x00, 8);
-            x10 += x15; x05 = rotl(x05 ^ x10, 7);
-            x01 += x06; x12 = rotl(x12 ^ x01, 16);
-            x11 += x12; x06 = rotl(x06 ^ x11, 12);
-            x01 += x06; x12 = rotl(x12 ^ x01, 8);
-            x11 += x12; x06 = rotl(x06 ^ x11, 7);
-            x02 += x07; x13 = rotl(x13 ^ x02, 16);
-            x08 += x13; x07 = rotl(x07 ^ x08, 12);
-            x02 += x07; x13 = rotl(x13 ^ x02, 8);
-            x08 += x13; x07 = rotl(x07 ^ x08, 7);
-            x03 += x04; x14 = rotl(x14 ^ x03, 16);
-            x09 += x14; x04 = rotl(x04 ^ x09, 12);
-            x03 += x04; x14 = rotl(x14 ^ x03, 8);
-            x09 += x14; x04 = rotl(x04 ^ x09, 7);
+            x00 += x04; x12 = Integers.rotateLeft(x12 ^ x00, 16);
+            x08 += x12; x04 = Integers.rotateLeft(x04 ^ x08, 12);
+            x00 += x04; x12 = Integers.rotateLeft(x12 ^ x00, 8);
+            x08 += x12; x04 = Integers.rotateLeft(x04 ^ x08, 7);
+            x01 += x05; x13 = Integers.rotateLeft(x13 ^ x01, 16);
+            x09 += x13; x05 = Integers.rotateLeft(x05 ^ x09, 12);
+            x01 += x05; x13 = Integers.rotateLeft(x13 ^ x01, 8);
+            x09 += x13; x05 = Integers.rotateLeft(x05 ^ x09, 7);
+            x02 += x06; x14 = Integers.rotateLeft(x14 ^ x02, 16);
+            x10 += x14; x06 = Integers.rotateLeft(x06 ^ x10, 12);
+            x02 += x06; x14 = Integers.rotateLeft(x14 ^ x02, 8);
+            x10 += x14; x06 = Integers.rotateLeft(x06 ^ x10, 7);
+            x03 += x07; x15 = Integers.rotateLeft(x15 ^ x03, 16);
+            x11 += x15; x07 = Integers.rotateLeft(x07 ^ x11, 12);
+            x03 += x07; x15 = Integers.rotateLeft(x15 ^ x03, 8);
+            x11 += x15; x07 = Integers.rotateLeft(x07 ^ x11, 7);
+            x00 += x05; x15 = Integers.rotateLeft(x15 ^ x00, 16);
+            x10 += x15; x05 = Integers.rotateLeft(x05 ^ x10, 12);
+            x00 += x05; x15 = Integers.rotateLeft(x15 ^ x00, 8);
+            x10 += x15; x05 = Integers.rotateLeft(x05 ^ x10, 7);
+            x01 += x06; x12 = Integers.rotateLeft(x12 ^ x01, 16);
+            x11 += x12; x06 = Integers.rotateLeft(x06 ^ x11, 12);
+            x01 += x06; x12 = Integers.rotateLeft(x12 ^ x01, 8);
+            x11 += x12; x06 = Integers.rotateLeft(x06 ^ x11, 7);
+            x02 += x07; x13 = Integers.rotateLeft(x13 ^ x02, 16);
+            x08 += x13; x07 = Integers.rotateLeft(x07 ^ x08, 12);
+            x02 += x07; x13 = Integers.rotateLeft(x13 ^ x02, 8);
+            x08 += x13; x07 = Integers.rotateLeft(x07 ^ x08, 7);
+            x03 += x04; x14 = Integers.rotateLeft(x14 ^ x03, 16);
+            x09 += x14; x04 = Integers.rotateLeft(x04 ^ x09, 12);
+            x03 += x04; x14 = Integers.rotateLeft(x14 ^ x03, 8);
+            x09 += x14; x04 = Integers.rotateLeft(x04 ^ x09, 7);
 
         }
 
