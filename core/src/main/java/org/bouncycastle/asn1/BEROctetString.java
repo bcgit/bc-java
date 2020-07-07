@@ -112,15 +112,6 @@ public class BEROctetString
     }
 
     /**
-     * Return a concatenated byte array of all the octets making up the constructed OCTET STRING
-     * @return the full OCTET STRING.
-     */
-//    public byte[] getOctets()
-//    {
-//        return string;
-//    }
-
-    /**
      * Return the OCTET STRINGs that make up this string.
      *
      * @return an Enumeration of the component OCTET STRINGs.
@@ -188,15 +179,6 @@ public class BEROctetString
         }
 
         return 2 + length + 2;
-    }
-
-    /**
-     * @deprecated
-     */
-    public void encode(ASN1OutputStream out)
-        throws IOException
-    {
-        out.writeObject(this);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
