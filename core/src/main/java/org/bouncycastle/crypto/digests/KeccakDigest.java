@@ -175,7 +175,8 @@ public class KeccakDigest
         int bytesInQueue = bitsInQueue >>> 3;
         int rateBytes = rate >>> 3;
 
-        if (len < (rateBytes - bytesInQueue))
+        int available = rateBytes - bytesInQueue;
+        if (len < available)
         {
             System.arraycopy(data, off, dataQueue, bytesInQueue, len);
             this.bitsInQueue += len << 3;
@@ -185,7 +186,6 @@ public class KeccakDigest
         int count = 0;
         if (bytesInQueue > 0)
         {
-            int available = rateBytes - bytesInQueue;
             System.arraycopy(data, off, dataQueue, bytesInQueue, available);
             count += available;
             KeccakAbsorb(dataQueue, 0);
