@@ -530,6 +530,19 @@ class ProvX509KeyManager
             }
         }
 
+        /*
+         * Prefer RSA certificates with more specific KeyUsage over "multi-use" ones.
+         */
+        if ("RSA".equalsIgnoreCase(JsseUtils.getPublicKeyAlgorithm(certificate.getPublicKey())))
+        {
+            boolean[] keyUsage = certificate.getKeyUsage();
+            if (ProvAlgorithmChecker.supportsKeyUsage(keyUsage, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE) &&
+                ProvAlgorithmChecker.supportsKeyUsage(keyUsage, ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT))
+            {
+                return Match.Quality.RSA_MULTI_USE; 
+            }
+        }
+
         return Match.Quality.OK;
     }
 
@@ -654,6 +667,7 @@ class ProvX509KeyManager
         static enum Quality
         {
             OK,
+            RSA_MULTI_USE,
             MISMATCH_SNI,
             EXPIRED,
             // TODO[jsse] Consider allowing certificates with invalid ExtendedKeyUsage and/or KeyUsage (as SunJSSE does)
