@@ -2,6 +2,7 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.NoSuchElementException;
 
 class LazyConstructionEnumeration
     implements Enumeration
@@ -22,11 +23,13 @@ class LazyConstructionEnumeration
 
     public Object nextElement()
     {
-        Object o = nextObj;
-
-        nextObj = readObject();
-
-        return o;
+        if (nextObj != null)
+        {
+            Object o = nextObj;
+            nextObj = readObject();
+            return o;
+        }
+        throw new NoSuchElementException();
     }
 
     private Object readObject()

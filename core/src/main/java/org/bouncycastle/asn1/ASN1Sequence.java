@@ -245,11 +245,11 @@ public abstract class ASN1Sequence
 
             public Object nextElement()
             {
-                if (pos >= elements.length)
+                if (pos < elements.length)
                 {
-                    throw new NoSuchElementException("ASN1Sequence Enumeration");
+                    return elements[pos++];
                 }
-                return elements[pos++];
+                throw new NoSuchElementException();
             }
         };
     }
