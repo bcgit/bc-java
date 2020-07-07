@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.BERConstructedOctetString;
+import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.BERTaggedObject;
@@ -49,7 +49,7 @@ public class EqualsAndHashCodeTest
         byte[]    data = { 0, 1, 0, 1, 0, 0, 1 };
         
         ASN1Primitive    values[] = {
-                new BERConstructedOctetString(data),
+                new BEROctetString(data),
                 new BERSequence(new DERPrintableString("hello world")),
                 new BERSet(new DERPrintableString("hello world")),
                 new BERTaggedObject(0, new DERPrintableString("hello world")),
@@ -63,7 +63,7 @@ public class EqualsAndHashCodeTest
                 new DERGeneralString("hello world"),
                 new DERIA5String("hello"),
                 new ASN1Integer(1000),
-                new DERNull(),
+                DERNull.INSTANCE,
                 new DERNumericString("123456"),
                 new ASN1ObjectIdentifier("1.1.1.10000.1"),
                 new DEROctetString(data),
