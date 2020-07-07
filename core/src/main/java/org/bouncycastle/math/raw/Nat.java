@@ -611,7 +611,7 @@ public abstract class Nat
             c += (x[i] & M) - (y[i] & M);
             c >>= 32;
         }
-//        assert c == 0L || c == 1L;
+//        assert c == 0L || c == -1L;
         return (int)c;
     }
 
@@ -623,7 +623,7 @@ public abstract class Nat
             c += (x[xOff + i] & M) - (y[yOff + i] & M);
             c >>= 32;
         }
-//        assert c == 0L || c == 1L;
+//        assert c == 0L || c == -1L;
         return (int)c;
     }
 
