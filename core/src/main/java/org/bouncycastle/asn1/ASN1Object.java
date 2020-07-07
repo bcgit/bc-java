@@ -73,15 +73,6 @@ public abstract class ASN1Object
     }
 
     /**
-     * @deprecated use toASN1Primitive()
-     * @return the underlying primitive type.
-     */
-    public ASN1Primitive toASN1Object()
-    {
-        return this.toASN1Primitive();
-    }
-
-    /**
      * Return true if obj is a byte array and represents an object with the given tag value.
      *
      * @param obj object of interest.

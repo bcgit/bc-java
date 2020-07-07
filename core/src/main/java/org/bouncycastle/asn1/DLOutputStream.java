@@ -5,17 +5,11 @@ import java.io.OutputStream;
 
 /**
  * Stream that outputs encoding based on definite length.
- * 
- * @deprecated Will be removed from public API.
  */
-public class DLOutputStream
+class DLOutputStream
     extends ASN1OutputStream
 {
-    /**
-     * @deprecated Use {@link ASN1OutputStream#create(OutputStream, String)} with
-     *             {@link ASN1Encoding#DL} instead.
-     */
-    public DLOutputStream(OutputStream os)
+    DLOutputStream(OutputStream os)
     {
         super(os);
     }

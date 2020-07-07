@@ -14,10 +14,7 @@ public class DERNull
 
     private static final byte[]  zeroBytes = new byte[0];
 
-    /**
-     * @deprecated use DERNull.INSTANCE
-     */
-    public DERNull()
+    private DERNull()
     {
     }
 
