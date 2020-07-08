@@ -8,33 +8,38 @@ import java.util.Hashtable;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
-import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.tls.ChannelBinding;
-import org.bouncycastle.tls.ClientCertificateType;
-import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.MaxFragmentLength;
+import org.bouncycastle.tls.PSKTlsClient;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
-import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsPSKIdentity;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
-class MockDTLSClient
-    extends DefaultTlsClient
+class MockPSKDTLSClient
+    extends PSKTlsClient
 {
     TlsSession session;
 
-    MockDTLSClient(TlsSession session)
+    MockPSKDTLSClient(TlsSession session)
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        this(session, new BasicTlsPSKIdentity("client", Strings.toUTF8ByteArray("TLS_TEST_PSK")));
+    }
+
+    MockPSKDTLSClient(TlsSession session, TlsPSKIdentity pskIdentity)
+    {
+        super(new BcTlsCrypto(new SecureRandom()), pskIdentity);
 
         this.session = session;
     }
@@ -47,7 +52,7 @@ class MockDTLSClient
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("DTLS client raised alert: " + AlertLevel.getText(alertLevel)
+        out.println("DTLS-PSK client raised alert: " + AlertLevel.getText(alertLevel)
             + ", " + AlertDescription.getText(alertDescription));
         if (message != null)
         {
@@ -62,7 +67,7 @@ class MockDTLSClient
     public void notifyAlertReceived(short alertLevel, short alertDescription)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("DTLS client received alert: " + AlertLevel.getText(alertLevel)
+        out.println("DTLS-PSK client received alert: " + AlertLevel.getText(alertLevel)
             + ", " + AlertDescription.getText(alertDescription));
     }
 
@@ -70,18 +75,18 @@ class MockDTLSClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("DTLS client negotiated " + serverVersion);
+        System.out.println("DTLS-PSK client negotiated " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException
     {
-        return new TlsAuthentication()
+        return new ServerOnlyTlsAuthentication()
         {
             public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
             {
                 TlsCertificate[] chain = serverCertificate.getCertificate().getCertificateList();
 
-                System.out.println("DTLS client received server certificate chain of length " + chain.length);
+                System.out.println("DTLS-PSK client received server certificate chain of length " + chain.length);
                 for (int i = 0; i != chain.length; i++)
                 {
                     Certificate entry = Certificate.getInstance(chain[i].getEncoded());
@@ -112,18 +117,6 @@ class MockDTLSClient
                 }
 
                 TlsUtils.checkPeerSigAlgs(context, certPath);
-            }
-
-            public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
-            {
-                short[] certificateTypes = certificateRequest.getCertificateTypes();
-                if (certificateTypes == null || !Arrays.contains(certificateTypes, ClientCertificateType.rsa_sign))
-                {
-                    return null;
-                }
-
-                return TlsTestUtils.loadSignerCredentials(context, certificateRequest.getSupportedSignatureAlgorithms(),
-                    SignatureAlgorithm.rsa, "x509-client-rsa.pem", "x509-client-key-rsa.pem");
             }
         };
     }
@@ -170,6 +163,6 @@ class MockDTLSClient
 
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
+        return ProtocolVersion.DTLSv12.only();
     }
 }

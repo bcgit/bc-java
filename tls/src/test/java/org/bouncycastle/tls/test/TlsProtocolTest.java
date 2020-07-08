@@ -5,17 +5,17 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
+import junit.framework.TestCase;
+
 public class TlsProtocolTest
     extends TestCase
 {
-    public void testClientServer()
-        throws Exception
+    public void testClientServer() throws Exception
     {
         SecureRandom secureRandom = new SecureRandom();
 
