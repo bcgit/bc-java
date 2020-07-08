@@ -97,13 +97,11 @@ class MockTlsClient
         System.out.println("TLS client negotiated " + serverVersion);
     }
 
-    public TlsAuthentication getAuthentication()
-        throws IOException
+    public TlsAuthentication getAuthentication() throws IOException
     {
         return new TlsAuthentication()
         {
-            public void notifyServerCertificate(TlsServerCertificate serverCertificate)
-                throws IOException
+            public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
             {
                 TlsCertificate[] chain = serverCertificate.getCertificate().getCertificateList();
 
@@ -140,8 +138,7 @@ class MockTlsClient
                 TlsUtils.checkPeerSigAlgs(context, certPath);
             }
 
-            public TlsCredentials getClientCredentials(CertificateRequest certificateRequest)
-                throws IOException
+            public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
             {
                 short[] certificateTypes = certificateRequest.getCertificateTypes();
                 if (certificateTypes == null || !Arrays.contains(certificateTypes, ClientCertificateType.rsa_sign))
