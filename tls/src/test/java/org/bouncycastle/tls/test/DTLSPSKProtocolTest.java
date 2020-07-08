@@ -10,7 +10,7 @@ import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
-public class DTLSProtocolTest
+public class DTLSPSKProtocolTest
     extends TestCase
 {
     public void testClientServer() throws Exception
@@ -31,7 +31,7 @@ public class DTLSProtocolTest
 
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
 
-        MockDTLSClient client = new MockDTLSClient(null);
+        MockPSKDTLSClient client = new MockPSKDTLSClient(null);
 
         DTLSTransport dtlsClient = clientProtocol.connect(client, clientTransport);
 
@@ -69,7 +69,7 @@ public class DTLSProtocolTest
         {
             try
             {
-                MockDTLSServer server = new MockDTLSServer();
+                MockPSKDTLSServer server = new MockPSKDTLSServer();
                 DTLSTransport dtlsServer = serverProtocol.accept(server, serverTransport);
                 byte[] buf = new byte[dtlsServer.getReceiveLimit()];
                 while (!isShutdown)

@@ -93,8 +93,7 @@ class MockTlsServer
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
 
-    public void notifyClientCertificate(org.bouncycastle.tls.Certificate clientCertificate)
-        throws IOException
+    public void notifyClientCertificate(org.bouncycastle.tls.Certificate clientCertificate) throws IOException
     {
         TlsCertificate[] chain = clientCertificate.getCertificateList();
 
@@ -146,10 +145,9 @@ class MockTlsServer
         System.out.println("Server 'tls-unique': " + hex(tlsUnique));
     }
 
-    protected TlsCredentialedDecryptor getRSAEncryptionCredentials()
-        throws IOException
+    protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
     {
-        return TlsTestUtils.loadEncryptionCredentials(context, new String[]{"x509-server-rsa-enc.pem", "x509-ca-rsa.pem"},
+        return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server-rsa-enc.pem", "x509-ca-rsa.pem" },
             "x509-server-key-rsa-enc.pem");
     }
 

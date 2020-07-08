@@ -152,7 +152,7 @@ public class BasicTlsTest
             out.println("TLS client raised alert: " + AlertLevel.getText(alertLevel) + ", " + AlertDescription.getText(alertDescription));
             if (message != null)
             {
-                out.println(message);
+                out.println("> " + message);
             }
             if (cause != null)
             {
