@@ -154,7 +154,7 @@ public class RFC5649WrapEngine
             throw new InvalidCipherTextException("unwrap data must be a multiple of 8 bytes");
         }
 
-        if (n == 1)
+        if (n <= 1)
         {
             throw new InvalidCipherTextException("unwrap data must be at least 16 bytes");
         }
@@ -217,7 +217,7 @@ public class RFC5649WrapEngine
 
         // Check the number of padded zeros
         int expectedZeros = upperBound - mli;
-        if (expectedZeros >= paddedPlaintext.length)
+        if (expectedZeros >= paddedPlaintext.length || expectedZeros<0)
         {
             isValid = false;
             expectedZeros = paddedPlaintext.length;
