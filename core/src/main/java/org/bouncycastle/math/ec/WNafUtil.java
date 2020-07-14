@@ -407,57 +407,6 @@ public abstract class WNafUtil
         return Math.max(2, Math.min(maxWidth, w + 2));
     }
 
-    /**
-     * @deprecated
-     */
-    public static ECPoint mapPointWithPrecomp(ECPoint p, final int minWidth, final boolean includeNegated,
-        final ECPointMap pointMap)
-    {
-        final ECCurve c = p.getCurve();
-        final WNafPreCompInfo infoP = precompute(p, minWidth, includeNegated);
-
-        ECPoint q = pointMap.map(p);
-        c.precompute(q, PRECOMP_NAME, new PreCompCallback()
-        {
-            public PreCompInfo precompute(PreCompInfo existing)
-            {
-                WNafPreCompInfo result = new WNafPreCompInfo();
-
-                result.setConfWidth(infoP.getConfWidth());
-
-                ECPoint twiceP = infoP.getTwice();
-                if (null != twiceP)
-                {
-                    ECPoint twiceQ = pointMap.map(twiceP);
-                    result.setTwice(twiceQ);
-                }
-
-                ECPoint[] preCompP = infoP.getPreComp();
-                ECPoint[] preCompQ = new ECPoint[preCompP.length];
-                for (int i = 0; i < preCompP.length; ++i)
-                {
-                    preCompQ[i] = pointMap.map(preCompP[i]);
-                }
-                result.setPreComp(preCompQ);
-                result.setWidth(infoP.getWidth());
-
-                if (includeNegated)
-                {
-                    ECPoint[] preCompNegQ = new ECPoint[preCompQ.length];
-                    for (int i = 0; i < preCompNegQ.length; ++i)
-                    {
-                        preCompNegQ[i] = preCompQ[i].negate();
-                    }
-                    result.setPreCompNeg(preCompNegQ);
-                }
-
-                return result;
-            }
-        });
-
-        return q;
-    }
-
     public static WNafPreCompInfo precompute(final ECPoint p, final int minWidth, final boolean includeNegated)
     {
         final ECCurve c = p.getCurve();
