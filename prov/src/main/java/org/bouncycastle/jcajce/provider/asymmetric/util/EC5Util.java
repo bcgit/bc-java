@@ -109,7 +109,7 @@ public class EC5Util
                 {
                     ASN1ObjectIdentifier gostCurve = ASN1ObjectIdentifier.getInstance(pSeq.getObjectAt(0));
 
-                    curve = ECGOST3410NamedCurves.getByOID(gostCurve).getCurve();
+                    curve = ECGOST3410NamedCurves.getByOIDX9(gostCurve).getCurve();
                 }
             }
             else

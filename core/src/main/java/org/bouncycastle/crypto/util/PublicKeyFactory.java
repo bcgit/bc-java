@@ -280,8 +280,7 @@ public class PublicKeyFactory
                 {
                     x9 = ECNamedCurveTable.getByOID(oid);
                 }
-                dParams = new ECNamedDomainParameters(
-                    oid, x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+                dParams = new ECNamedDomainParameters(oid, x9);
             }
             else if (params.isImplicitlyCA())
             {
@@ -290,8 +289,7 @@ public class PublicKeyFactory
             else
             {
                 X9ECParameters x9 = X9ECParameters.getInstance(params.getParameters());
-                dParams = new ECDomainParameters(
-                    x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+                dParams = new ECDomainParameters(x9);
             }
 
             DERBitString bits = keyInfo.getPublicKeyData();
@@ -336,7 +334,7 @@ public class PublicKeyFactory
             ASN1ObjectIdentifier publicKeyParamSet = gostParams.getPublicKeyParamSet();
 
             ECGOST3410Parameters ecDomainParameters = new ECGOST3410Parameters(
-                new ECNamedDomainParameters(publicKeyParamSet, ECGOST3410NamedCurves.getByOID(publicKeyParamSet)),
+                new ECNamedDomainParameters(publicKeyParamSet, ECGOST3410NamedCurves.getByOIDX9(publicKeyParamSet)),
                 publicKeyParamSet,
                 gostParams.getDigestParamSet(),
                 gostParams.getEncryptionParamSet());
@@ -385,7 +383,7 @@ public class PublicKeyFactory
             ASN1ObjectIdentifier publicKeyParamSet = gostParams.getPublicKeyParamSet();
 
             ECGOST3410Parameters ecDomainParameters = new ECGOST3410Parameters(
-                new ECNamedDomainParameters(publicKeyParamSet, ECGOST3410NamedCurves.getByOID(publicKeyParamSet)),
+                new ECNamedDomainParameters(publicKeyParamSet, ECGOST3410NamedCurves.getByOIDX9(publicKeyParamSet)),
                 publicKeyParamSet,
                 gostParams.getDigestParamSet(),
                 gostParams.getEncryptionParamSet());

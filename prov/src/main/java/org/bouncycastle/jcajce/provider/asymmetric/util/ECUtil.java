@@ -155,7 +155,7 @@ public class ECUtil
 
                 ecP = (X9ECParameters)extraCurves.get(oid);
             }
-            domainParameters = new ECNamedDomainParameters(oid, ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+            domainParameters = new ECNamedDomainParameters(oid, ecP);
         }
         else if (params.isImplicitlyCA())
         {

@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
@@ -18,6 +19,11 @@ public class ECDomainParameters
     private final BigInteger  h;
 
     private BigInteger  hInv = null;
+
+    public ECDomainParameters(X9ECParameters x9)
+    {
+        this(x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+    }
 
     public ECDomainParameters(
         ECCurve     curve,
