@@ -249,7 +249,7 @@ public class BCECGOST3410_2012PrivateKey
 
                 if (ecP == null) // GOST Curve
                 {
-                    ECDomainParameters gParam = ECGOST3410NamedCurves.getByOID(oid);
+                    X9ECParameters gParam = ECGOST3410NamedCurves.getByOIDX9(oid);
                     EllipticCurve ellipticCurve = EC5Util.convertCurve(gParam.getCurve(), gParam.getSeed());
 
                     ecSpec = new ECNamedCurveSpec(
