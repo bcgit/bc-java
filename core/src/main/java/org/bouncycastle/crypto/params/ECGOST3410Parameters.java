@@ -16,7 +16,7 @@ public class ECGOST3410Parameters
 
     public ECGOST3410Parameters(ECDomainParameters ecParameters, ASN1ObjectIdentifier publicKeyParamSet, ASN1ObjectIdentifier digestParamSet, ASN1ObjectIdentifier encryptionParamSet)
     {
-        super(publicKeyParamSet, ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH(), ecParameters.getSeed());
+        super(publicKeyParamSet, ecParameters);
 
         if (ecParameters instanceof ECNamedDomainParameters)
         {

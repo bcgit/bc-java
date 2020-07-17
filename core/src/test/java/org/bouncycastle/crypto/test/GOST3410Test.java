@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.GOST3410KeyPairGenerator;
@@ -39,6 +40,12 @@ import org.bouncycastle.util.test.TestResult;
 public class GOST3410Test
     implements Test
 {
+    private static ECNamedDomainParameters getECNamedDomainParameters(ASN1ObjectIdentifier oid)
+    {
+        X9ECParameters x9 = ECGOST3410NamedCurves.getByOIDX9(oid);
+        return new ECNamedDomainParameters(oid, x9);
+    }
+
     byte[] hashmessage = Hex.decode("3042453136414534424341374533364339313734453431443642453241453435");
 
     private byte[] zeroTwo(int length)
@@ -104,7 +111,7 @@ public class GOST3410Test
             try
             {
                 ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID("GostR3410-2001-CryptoPro-A");
-                ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+                ECNamedDomainParameters ecp = getECNamedDomainParameters(oid);
                 ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, CryptoProObjectIdentifiers.gostR3411);
                 ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
                 ECKeyPairGenerator engine = new ECKeyPairGenerator();
@@ -203,7 +210,7 @@ public class GOST3410Test
         public SimpleTestResult encodeRecodePublicKeyGost2006()
         {
             ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID("GostR3410-2001-CryptoPro-A");
-            ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+            ECNamedDomainParameters ecp = getECNamedDomainParameters(oid);
             ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, CryptoProObjectIdentifiers.gostR3411);
             ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
             ECKeyPairGenerator engine = new ECKeyPairGenerator();
@@ -301,7 +308,7 @@ public class GOST3410Test
         {
 
             ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID("Tc26-Gost-3410-12-512-paramSetA");
-            ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+            ECNamedDomainParameters ecp = getECNamedDomainParameters(oid);
             ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
             ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
             ECKeyPairGenerator engine = new ECKeyPairGenerator();
@@ -404,7 +411,7 @@ public class GOST3410Test
             try
             {
                 ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID("Tc26-Gost-3410-12-512-paramSetA");
-                ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+                ECNamedDomainParameters ecp = getECNamedDomainParameters(oid);
                 ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
                 ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
                 ECKeyPairGenerator engine = new ECKeyPairGenerator();
@@ -664,7 +671,7 @@ public class GOST3410Test
             try
             {
                 ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID(oidStr);
-                ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+                ECNamedDomainParameters ecp = getECNamedDomainParameters(oid);
                 ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, digest);
                 ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
                 ECKeyPairGenerator engine = new ECKeyPairGenerator();
@@ -757,7 +764,7 @@ public class GOST3410Test
             try
             {
                 ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID(oidStr);
-                ECNamedDomainParameters ecp = new ECNamedDomainParameters(oid, ECGOST3410NamedCurves.getByOID(oid));
+                ECNamedDomainParameters ecp = getECNamedDomainParameters(oid);
                 ECGOST3410Parameters gostParams = new ECGOST3410Parameters(ecp, oid, digest);
                 ECKeyGenerationParameters params = new ECKeyGenerationParameters(gostParams, new SecureRandom());
                 ECKeyPairGenerator engine = new ECKeyPairGenerator();
