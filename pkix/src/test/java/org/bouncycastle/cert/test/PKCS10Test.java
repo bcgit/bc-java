@@ -504,12 +504,12 @@ public class PKCS10Test
         }
 
         Attribute[] attr1 = p1.getAttributes();
-        Attribute[] attr2 = p1.getAttributes();
+        Attribute[] attr2 = p2.getAttributes();
 
         checkAttrs(1, attr1, attr2);
 
         attr1 = p1.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest);
-        attr2 = p1.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest);
+        attr2 = p2.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest);
 
         checkAttrs(1, attr1, attr2);
     }
