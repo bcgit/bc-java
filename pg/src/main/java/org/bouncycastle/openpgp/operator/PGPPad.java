@@ -14,37 +14,57 @@ public class PGPPad
 
     public static byte[] padSessionData(byte[] sessionInfo)
     {
-        byte[] result = new byte[40];
+        return padSessionData(sessionInfo, true);
+    }
 
-        System.arraycopy(sessionInfo, 0, result, 0, sessionInfo.length);
+    public static byte[] padSessionData(byte[] sessionInfo, boolean obfuscate)
+    {
+        int length = sessionInfo.length;
+        int paddedLength = ((length >>> 3) + 1) << 3;
 
-        byte padValue = (byte)(result.length - sessionInfo.length);
-
-        for (int i =  sessionInfo.length; i != result.length; i++)
+        if (obfuscate)
         {
-            result[i] = padValue;
+            paddedLength = Math.max(40, paddedLength);
         }
 
+        int padCount = paddedLength - length;
+        byte padByte = (byte)padCount;
+
+        byte[] result = new byte[paddedLength];
+        System.arraycopy(sessionInfo, 0, result, 0, length);
+        for (int i = length; i < paddedLength; ++i)
+        {
+            result[i] = padByte;
+        }
         return result;
     }
 
     public static byte[] unpadSessionData(byte[] encoded)
         throws PGPException
     {
-        byte padValue = encoded[encoded.length - 1];
+        int paddedLength = encoded.length;
+        byte padByte = encoded[paddedLength - 1];
+        int padCount = padByte & 0xFF;
+        int length = paddedLength - padCount;
+        int last = length - 1;
 
-        for (int i = encoded.length - padValue; i != encoded.length; i++)
+        int diff = 0;
+        for (int i = 0; i < paddedLength; ++i)
         {
-            if (encoded[i] != padValue)
-            {
-                throw new PGPException("bad padding found in session data");
-            }
+            int mask = (last - i) >> 31;
+            diff |= (padByte ^ encoded[i]) & mask;
         }
 
-        byte[] taggedKey = new byte[encoded.length - padValue];
+        diff |= paddedLength & 7;
+        diff |= (40 - paddedLength) >> 31;
 
-        System.arraycopy(encoded, 0, taggedKey, 0, taggedKey.length);
+        if (diff != 0)
+        {
+            throw new PGPException("bad padding found in session data");
+        }
 
-        return taggedKey;
+        byte[] result = new byte[length];
+        System.arraycopy(encoded, 0, result, 0, length);
+        return result;
     }
 }
