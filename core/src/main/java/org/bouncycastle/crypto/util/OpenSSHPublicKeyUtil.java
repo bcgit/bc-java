@@ -165,13 +165,7 @@ public class OpenSSHPublicKeyUtil
 
             result = new ECPublicKeyParameters(
                 curve.decodePoint(pointRaw),
-                new ECNamedDomainParameters(
-                    oid,
-                    curve,
-                    x9ECParameters.getG(),
-                    x9ECParameters.getN(),
-                    x9ECParameters.getH(),
-                    x9ECParameters.getSeed()));
+                new ECNamedDomainParameters(oid, x9ECParameters));
         }
         else if (ED_25519.equals(magic))
         {

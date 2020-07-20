@@ -205,11 +205,7 @@ public class OpenSSHPrivateKeyUtil
                         ecPrivateKey.getKey(),
                         new ECNamedDomainParameters(
                             curveOID,
-                            x9Params.getCurve(),
-                            x9Params.getG(),
-                            x9Params.getN(),
-                            x9Params.getH(),
-                            x9Params.getSeed()));
+                            x9Params));
                 }
             }
         }
@@ -289,11 +285,7 @@ public class OpenSSHPrivateKeyUtil
                 byte[] privKey = pkIn.readBlock();
 
                 result = new ECPrivateKeyParameters(new BigInteger(1, privKey),
-                    new ECNamedDomainParameters(oid,
-                        curveParams.getCurve(),
-                        curveParams.getG(),
-                        curveParams.getN(),
-                        curveParams.getH(), curveParams.getSeed()));
+                    new ECNamedDomainParameters(oid, curveParams));
             }
 
 

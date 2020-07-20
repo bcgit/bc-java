@@ -5,11 +5,12 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
+
+import junit.framework.TestCase;
 
 public class TlsPSKProtocolTest
     extends TestCase
@@ -73,7 +74,7 @@ public class TlsPSKProtocolTest
             }
             catch (Exception e)
             {
-                //                throw new RuntimeException(e);
+//                throw new RuntimeException(e);
             }
         }
     }

@@ -72,15 +72,11 @@ public class Curve25519Field
 
     public static void inv(int[] x, int[] z)
     {
-        // z = x^(p-2) = x^7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEB
-        // (250 1s) (1 0s) (1 1s) (1 0s) (2 1s)
-        // Addition chain: [1] [2] 3 5 10 15 25 50 75 125 [250]
-
         /*
          * Raise this element to the exponent 2^255 - 21
          *
          * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 250 1s } { 1 0s } { 1 1s } { 1 0s } { 2 1s }
+         * { 250 1s } "01011"
          *
          * Therefore we need an addition chain containing 1, 2, 250 (the lengths of the repunits)
          * We use: [1], [2], 3, 5, 10, 15, 25, 50, 75, 125, [250]

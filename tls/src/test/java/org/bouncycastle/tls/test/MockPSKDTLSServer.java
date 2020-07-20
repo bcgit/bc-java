@@ -3,42 +3,30 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.security.SecureRandom;
-import java.util.Vector;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.PSKTlsServer;
-import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
-import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsPSKIdentityManager;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
-class MockPSKTlsServer
+class MockPSKDTLSServer
     extends PSKTlsServer
 {
-    MockPSKTlsServer()
+    MockPSKDTLSServer()
     {
         super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager());
-    }
-
-    protected Vector getProtocolNames()
-    {
-        Vector protocolNames = new Vector();
-        protocolNames.addElement(ProtocolName.HTTP_2_TLS);
-        protocolNames.addElement(ProtocolName.HTTP_1_1);
-        return protocolNames;
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS-PSK server raised alert: " + AlertLevel.getText(alertLevel)
+        out.println("DTLS-PSK server raised alert: " + AlertLevel.getText(alertLevel)
             + ", " + AlertDescription.getText(alertDescription));
         if (message != null)
         {
@@ -53,7 +41,7 @@ class MockPSKTlsServer
     public void notifyAlertReceived(short alertLevel, short alertDescription)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS-PSK server received alert: " + AlertLevel.getText(alertLevel)
+        out.println("DTLS-PSK server received alert: " + AlertLevel.getText(alertLevel)
             + ", " + AlertDescription.getText(alertDescription));
     }
 
@@ -61,7 +49,7 @@ class MockPSKTlsServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS-PSK server negotiated " + serverVersion);
+        System.out.println("DTLS-PSK server negotiated " + serverVersion);
 
         return serverVersion;
     }
@@ -69,12 +57,6 @@ class MockPSKTlsServer
     public void notifyHandshakeComplete() throws IOException
     {
         super.notifyHandshakeComplete();
-
-        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
-        if (protocolName != null)
-        {
-            System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
-        }
 
         byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
         System.out.println("Server 'tls-server-end-point': " + hex(tlsServerEndPoint));
@@ -103,7 +85,7 @@ class MockPSKTlsServer
 
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.TLSv12.only();
+        return ProtocolVersion.DTLSv12.only();
     }
 
     static class MyIdentityManager

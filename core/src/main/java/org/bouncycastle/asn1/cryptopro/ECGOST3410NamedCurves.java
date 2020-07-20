@@ -6,6 +6,8 @@ import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
@@ -222,11 +224,19 @@ public class ECGOST3410NamedCurves
      * isn't present.
      *
      * @param oid an object identifier representing a named parameters, if present.
+     * 
+     * @deprecated Use {@link #getByOIDX9(ASN1ObjectIdentifier)} instead.
      */
-    public static ECDomainParameters getByOID(
-        ASN1ObjectIdentifier  oid)
+    public static ECDomainParameters getByOID(ASN1ObjectIdentifier oid)
     {
         return (ECDomainParameters)params.get(oid);
+    }
+
+    public static X9ECParameters getByOIDX9(ASN1ObjectIdentifier oid)
+    {
+        ECDomainParameters ec = (ECDomainParameters)params.get(oid);
+        return ec == null ? null : new X9ECParameters(ec.getCurve(), new X9ECPoint(ec.getG(), false), ec.getN(),
+            ec.getH(), ec.getSeed());
     }
 
     /**
@@ -238,17 +248,19 @@ public class ECGOST3410NamedCurves
         return names.elements();
     }
 
-    public static ECDomainParameters getByName(
-        String  name)
+    /**
+     * @deprecated Use {@link #getByNameX9(String)} instead.
+     */
+    public static ECDomainParameters getByName(String name)
     {
         ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(name);
+        return oid == null ? null : (ECDomainParameters)params.get(oid);
+    }
 
-        if (oid != null)
-        {
-            return (ECDomainParameters)params.get(oid);
-        }
-
-        return null;
+    public static X9ECParameters getByNameX9(String name)
+    {
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(name);
+        return oid == null ? null : getByOIDX9(oid);
     }
 
     /**
