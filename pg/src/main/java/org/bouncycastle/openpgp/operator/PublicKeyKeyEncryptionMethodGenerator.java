@@ -12,13 +12,22 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 public abstract class PublicKeyKeyEncryptionMethodGenerator
     extends PGPKeyEncryptionMethodGenerator
 {
+    public static final String SESSION_KEY_OBFUSCATION_PROPERTY = "org.bouncycastle.openpgp.session_key_obfuscation";
+
+    private static boolean getSessionKeyObfuscationDefault()
+    {
+        String value = System.getProperty(SESSION_KEY_OBFUSCATION_PROPERTY);
+
+        return !"false".equalsIgnoreCase(value);
+    }
+
     private PGPPublicKey pubKey;
+
+    protected boolean sessionKeyObfuscation;
 
     protected PublicKeyKeyEncryptionMethodGenerator(
         PGPPublicKey pubKey)
     {
-        this.pubKey = pubKey;
-
         switch (pubKey.getAlgorithm())
         {
         case PGPPublicKey.RSA_ENCRYPT:
@@ -38,6 +47,23 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         default:
             throw new IllegalArgumentException("unknown asymmetric algorithm: " + pubKey.getAlgorithm());
         }
+
+        this.pubKey = pubKey;
+        this.sessionKeyObfuscation = getSessionKeyObfuscationDefault();
+    }
+
+    /**
+     * Controls whether to obfuscate the size of ECDH session keys using extra padding where necessary.
+     * <p>
+     * The default behaviour can be configured using the system property "", or else it will default to enabled.
+     * </p>
+     * @return the current generator.
+     */
+    public PublicKeyKeyEncryptionMethodGenerator setSessionKeyObfuscation(boolean enabled)
+    {
+        this.sessionKeyObfuscation = enabled;
+
+        return this;
     }
 
     public byte[][] processSessionInfo(

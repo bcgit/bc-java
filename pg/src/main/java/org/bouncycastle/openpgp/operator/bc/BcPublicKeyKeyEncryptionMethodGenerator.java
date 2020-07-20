@@ -145,7 +145,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             new BcPGPDigestCalculatorProvider().get(ecPubKey.getHashAlgorithm()), ecPubKey.getSymmetricKeyAlgorithm());
         KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
 
-        byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
+        byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo, sessionKeyObfuscation);
 
         Wrapper c = BcImplProvider.createWrapper(ecPubKey.getSymmetricKeyAlgorithm());
         c.init(true, new ParametersWithRandom(key, random));

@@ -241,20 +241,12 @@ public class BCECGOST3410PrivateKey
                 ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
                 X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
 
-                String curveName;
-                if (ecP == null) // GOST Curve
+                if (ecP == null)
                 {
-                    ECDomainParameters gParam = ECGOST3410NamedCurves.getByOID(oid);
-
-                    // Point compression ignored for these temporary parameters
-                    ecP = new X9ECParameters(gParam.getCurve(), new X9ECPoint(gParam.getG(), false), gParam.getN(), gParam.getH(), gParam.getSeed());
-
-                    curveName = ECGOST3410NamedCurves.getName(oid);
+                    throw new IllegalStateException();
                 }
-                else
-                {
-                    curveName = ECUtil.getCurveName(oid);
-                }
+
+                String curveName = ECUtil.getCurveName(oid);
 
                 EllipticCurve ellipticCurve = EC5Util.convertCurve(ecP.getCurve(), ecP.getSeed());
 
