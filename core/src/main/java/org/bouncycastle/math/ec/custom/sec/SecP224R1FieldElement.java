@@ -264,7 +264,7 @@ public class SecP224R1FieldElement extends ECFieldElement.AbstractFp
 
             if (Nat224.isZero(d1))
             {
-                Mod.invert(SecP224R1Field.P, e0, t);
+                SecP224R1Field.inv(e0, t);
                 SecP224R1Field.multiply(t, d0, t);
                 return true;
             }

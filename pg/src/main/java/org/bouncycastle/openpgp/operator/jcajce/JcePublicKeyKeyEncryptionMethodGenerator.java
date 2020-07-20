@@ -183,7 +183,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
     private byte[] encryptSessionInfo(ECDHPublicBCPGKey ecKey, byte[] sessionInfo, Key secret, byte[] ephPubEncoding)
         throws GeneralSecurityException, IOException, PGPException
     {
-        byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
+        byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo, sessionKeyObfuscation);
 
         Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
         c.init(Cipher.WRAP_MODE, secret, random);

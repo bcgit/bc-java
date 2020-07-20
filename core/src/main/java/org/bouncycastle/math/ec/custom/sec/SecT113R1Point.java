@@ -180,7 +180,7 @@ public class SecT113R1Point extends AbstractF2m
         ECFieldElement X1 = this.x;
         if (X1.isZero())
         {
-            // A point with X == 0 is it's own additive inverse
+            // A point with X == 0 is its own additive inverse
             return curve.getInfinity();
         }
 
@@ -222,7 +222,7 @@ public class SecT113R1Point extends AbstractF2m
         ECFieldElement X1 = this.x;
         if (X1.isZero())
         {
-            // A point with X == 0 is it's own additive inverse
+            // A point with X == 0 is its own additive inverse
             return b;
         }
 

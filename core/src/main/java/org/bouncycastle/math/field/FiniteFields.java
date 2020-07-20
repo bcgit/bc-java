@@ -17,7 +17,7 @@ public abstract class FiniteFields
         {
             if (exponents[i] <= exponents[i - 1])
             {
-                throw new IllegalArgumentException("Polynomial exponents must be montonically increasing");
+                throw new IllegalArgumentException("Polynomial exponents must be monotonically increasing");
             }
         }
 
