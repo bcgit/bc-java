@@ -60,14 +60,29 @@ public class CipherStreamTest2
                 testWriteReadEmpty(cipherName, key, authenticated, false, true);
             }
 
+
+
             if (authenticated)
             {
+                boolean aeadAvailable = false;
+                try
+                {
+                    this.getClass().getClassLoader().loadClass("javax.crypto.spec.GCMParameterSpec");
+                    aeadAvailable = true;
+                }
+                catch (ClassNotFoundException e)
+                {
+                }
+
                 testTamperedRead(cipherName, key, true, true);
-                testTamperedRead(cipherName, key, true, false);
                 testTruncatedRead(cipherName, key, true, true);
-                testTruncatedRead(cipherName, key, true, false);
                 testTamperedWrite(cipherName, key, true, true);
-                testTamperedWrite(cipherName, key, true, false);
+                if (aeadAvailable)
+                {
+                    testTamperedRead(cipherName, key, true, false);
+                    testTruncatedRead(cipherName, key, true, false);
+                    testTamperedWrite(cipherName, key, true, false);
+                }
             }
         }
     }
