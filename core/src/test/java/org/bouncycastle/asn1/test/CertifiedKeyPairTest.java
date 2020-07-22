@@ -6,6 +6,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.CertOrEncCert;
 import org.bouncycastle.asn1.cmp.CertifiedKeyPair;
+import org.bouncycastle.asn1.crmf.EncryptedKey;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
 import org.bouncycastle.asn1.crmf.PKIPublicationInfo;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -64,7 +65,7 @@ public class CertifiedKeyPairTest
         encEqualTest(ckp);
 
         PKIPublicationInfo pubInfo = new PKIPublicationInfo(PKIPublicationInfo.dontPublish);
-        ckp = new CertifiedKeyPair(certOrEncCert, null, pubInfo);
+        ckp = new CertifiedKeyPair(certOrEncCert, (EncryptedKey)null, pubInfo);
 
         isEquals(certOrEncCert, ckp.getCertOrEncCert());
         isTrue(null == ckp.getPrivateKey());
