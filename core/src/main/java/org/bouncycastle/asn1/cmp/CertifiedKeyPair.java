@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.crmf.EncryptedKey;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
 import org.bouncycastle.asn1.crmf.PKIPublicationInfo;
 
@@ -14,7 +15,7 @@ import org.bouncycastle.asn1.crmf.PKIPublicationInfo;
  * <pre>
  * CertifiedKeyPair ::= SEQUENCE {
  *                                  certOrEncCert       CertOrEncCert,
- *                                  privateKey      [0] EncryptedValue      OPTIONAL,
+ *                                  privateKey      [0] EncryptedKey      OPTIONAL,
  *                                  -- see [CRMF] for comment on encoding
  *                                  publicationInfo [1] PKIPublicationInfo  OPTIONAL
  *       }
@@ -24,7 +25,7 @@ public class CertifiedKeyPair
     extends ASN1Object
 {
     private CertOrEncCert certOrEncCert;
-    private EncryptedValue privateKey;
+    private EncryptedKey privateKey;
     private PKIPublicationInfo  publicationInfo;
 
     private CertifiedKeyPair(ASN1Sequence seq)
@@ -38,7 +39,7 @@ public class CertifiedKeyPair
                 ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(seq.getObjectAt(1));
                 if (tagged.getTagNo() == 0)
                 {
-                    privateKey = EncryptedValue.getInstance(tagged.getObject());
+                    privateKey = EncryptedKey.getInstance(tagged.getObject());
                 }
                 else
                 {
@@ -47,7 +48,7 @@ public class CertifiedKeyPair
             }
             else
             {
-                privateKey = EncryptedValue.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(1)).getObject());
+                privateKey = EncryptedKey.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(1)).getObject());
                 publicationInfo = PKIPublicationInfo.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2)).getObject());
             }
         }
@@ -71,7 +72,22 @@ public class CertifiedKeyPair
     public CertifiedKeyPair(
         CertOrEncCert certOrEncCert)
     {
-        this(certOrEncCert, null, null);
+        this(certOrEncCert, (EncryptedKey)null, null);
+    }
+
+    public CertifiedKeyPair(
+        CertOrEncCert certOrEncCert,
+        EncryptedKey privateKey,
+        PKIPublicationInfo  publicationInfo)
+    {
+        if (certOrEncCert == null)
+        {
+            throw new IllegalArgumentException("'certOrEncCert' cannot be null");
+        }
+
+        this.certOrEncCert = certOrEncCert;
+        this.privateKey = privateKey;
+        this.publicationInfo = publicationInfo;
     }
 
     public CertifiedKeyPair(
@@ -85,7 +101,7 @@ public class CertifiedKeyPair
         }
 
         this.certOrEncCert = certOrEncCert;
-        this.privateKey = privateKey;
+        this.privateKey = (privateKey != null) ? new EncryptedKey(privateKey) : (EncryptedKey)null;
         this.publicationInfo = publicationInfo;
     }
 
@@ -94,7 +110,7 @@ public class CertifiedKeyPair
         return certOrEncCert;
     }
 
-    public EncryptedValue getPrivateKey()
+    public EncryptedKey getPrivateKey()
     {
         return privateKey;
     }
