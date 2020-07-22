@@ -30,6 +30,7 @@ import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
 import org.bouncycastle.asn1.crmf.CertReqMessages;
 import org.bouncycastle.asn1.crmf.CertReqMsg;
+import org.bouncycastle.asn1.crmf.EncryptedKey;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
 import org.bouncycastle.asn1.crmf.ProofOfPossession;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
@@ -297,8 +298,8 @@ public class AllTests
         CertifiedKeyPair certKp = response.getCertifiedKeyPair();
 
         // steps to unwrap private key
-        EncryptedValue encValue = certKp.getPrivateKey();
-
+        EncryptedKey encKey = certKp.getPrivateKey();
+        EncryptedValue encValue = EncryptedValue.getInstance(encKey.getValue());
         // recover symmetric key
         AsymmetricKeyUnwrapper unwrapper = new JceAsymmetricKeyUnwrapper(encValue.getKeyAlg(), kp.getPrivate());
         

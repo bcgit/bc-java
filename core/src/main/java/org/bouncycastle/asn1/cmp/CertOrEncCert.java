@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.crmf.EncryptedKey;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
 
 public class CertOrEncCert
@@ -12,7 +13,7 @@ public class CertOrEncCert
     implements ASN1Choice
 {
     private CMPCertificate certificate;
-    private EncryptedValue encryptedCert;
+    private EncryptedKey encryptedKey;
 
     private CertOrEncCert(ASN1TaggedObject tagged)
     {
@@ -22,7 +23,7 @@ public class CertOrEncCert
         }
         else if (tagged.getTagNo() == 1)
         {
-            encryptedCert = EncryptedValue.getInstance(tagged.getObject());
+            encryptedKey = EncryptedKey.getInstance(tagged.getObject());
         }
         else
         {
@@ -62,7 +63,17 @@ public class CertOrEncCert
             throw new IllegalArgumentException("'encryptedCert' cannot be null");
         }
 
-        this.encryptedCert = encryptedCert;
+        this.encryptedKey = new EncryptedKey(encryptedCert);
+    }
+
+    public CertOrEncCert(EncryptedKey encryptedKey)
+    {
+        if (encryptedKey == null)
+        {
+            throw new IllegalArgumentException("'encryptedKey' cannot be null");
+        }
+
+        this.encryptedKey = encryptedKey;
     }
 
     public CMPCertificate getCertificate()
@@ -70,16 +81,16 @@ public class CertOrEncCert
         return certificate;
     }
 
-    public EncryptedValue getEncryptedCert()
+    public EncryptedKey getEncryptedCert()
     {
-        return encryptedCert;
+        return encryptedKey;
     }
 
     /**
      * <pre>
      * CertOrEncCert ::= CHOICE {
      *                      certificate     [0] CMPCertificate,
-     *                      encryptedCert   [1] EncryptedValue
+     *                      encryptedCert   [1] EncryptedKey
      *           }
      * </pre>
      * @return a basic ASN.1 object representation.
@@ -91,6 +102,6 @@ public class CertOrEncCert
             return new DERTaggedObject(true, 0, certificate);
         }
 
-        return new DERTaggedObject(true, 1, encryptedCert);
+        return new DERTaggedObject(true, 1, encryptedKey);
     }
 }
