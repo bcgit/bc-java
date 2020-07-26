@@ -103,7 +103,7 @@ public class GF2nONBElement
     private static final int MAXLONG = 64;
 
     /**
-     * holds the lenght of the polynomial with 64 bit sized fields.
+     * holds the length of the polynomial with 64 bit sized fields.
      */
     private int mLength;
 

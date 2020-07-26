@@ -467,20 +467,20 @@ public class SignedMailValidator
     {
         // get key length
         PublicKey key = cert.getPublicKey();
-        int keyLenght = -1;
+        int keyLength = -1;
         if (key instanceof RSAPublicKey)
         {
-            keyLenght = ((RSAPublicKey)key).getModulus().bitLength();
+            keyLength = ((RSAPublicKey)key).getModulus().bitLength();
         }
         else if (key instanceof DSAPublicKey)
         {
-            keyLenght = ((DSAPublicKey)key).getParams().getP().bitLength();
+            keyLength = ((DSAPublicKey)key).getParams().getP().bitLength();
         }
-        if (keyLenght != -1 && keyLenght <= shortKeyLength)
+        if (keyLength != -1 && keyLength <= shortKeyLength)
         {
             ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
                 "SignedMailValidator.shortSigningKey",
-                new Object[]{Integers.valueOf(keyLenght)});
+                new Object[]{Integers.valueOf(keyLength)});
             notifications.add(msg);
         }
 
