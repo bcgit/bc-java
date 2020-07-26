@@ -40,7 +40,7 @@ import org.bouncycastle.util.Strings;
  * <p>
  * To sign a file: ClearSignedFileProcessor -s fileName secretKey passPhrase.<br>
  * <p>
- * To decrypt: ClearSignedFileProcessor -v fileName signatureFile publicKeyFile.
+ * To decrypt: ClearSignedFileProcessor -v signatureFile publicKeyFile.
  */
 public class ClearSignedFileProcessor
 {
