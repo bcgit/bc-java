@@ -8,6 +8,7 @@ import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.util.Properties;
 
 public abstract class PublicKeyKeyEncryptionMethodGenerator
     extends PGPKeyEncryptionMethodGenerator
@@ -16,9 +17,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     private static boolean getSessionKeyObfuscationDefault()
     {
-        String value = System.getProperty(SESSION_KEY_OBFUSCATION_PROPERTY);
-
-        return !"false".equalsIgnoreCase(value);
+        // by default we want this to be true.
+        return !Properties.isOverrideSetFalse(SESSION_KEY_OBFUSCATION_PROPERTY);
     }
 
     private PGPPublicKey pubKey;
