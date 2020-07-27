@@ -10,7 +10,6 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.bcpg.ArmoredInputStream;
