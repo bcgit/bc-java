@@ -100,7 +100,7 @@ public class LMSPublicKeyParameters
 
     boolean matchesT1(byte[] sig)
     {
-        return Arrays.areEqual(T1, sig);
+        return Arrays.constantTimeAreEqual(T1, sig);
     }
 
     public byte[] getI()
