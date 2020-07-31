@@ -62,10 +62,11 @@ public abstract class Nat576
         }
 
         long[] z = create64();
-        int i = 0;
-        while (x.signum() != 0)
+
+        // NOTE: Use a fixed number of loop iterations
+        for (int i = 0; i < 9; ++i)
         {
-            z[i++] = x.longValue();
+            z[i] = x.longValue();
             x = x.shiftRight(64);
         }
         return z;
