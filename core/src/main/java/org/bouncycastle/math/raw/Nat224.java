@@ -270,10 +270,11 @@ public abstract class Nat224
         }
 
         int[] z = create();
-        int i = 0;
-        while (x.signum() != 0)
+
+        // NOTE: Use a fixed number of loop iterations
+        for (int i = 0; i < 7; ++i)
         {
-            z[i++] = x.intValue();
+            z[i] = x.intValue();
             x = x.shiftRight(32);
         }
         return z;
