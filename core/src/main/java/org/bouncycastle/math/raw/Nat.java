@@ -446,10 +446,11 @@ public abstract class Nat
 
         int len = (bits + 31) >> 5;
         int[] z = create(len);
-        int i = 0;
-        while (x.signum() != 0)
+
+        // NOTE: Use a fixed number of loop iterations
+        for (int i = 0; i < len; ++i)
         {
-            z[i++] = x.intValue();
+            z[i] = x.intValue();
             x = x.shiftRight(32);
         }
         return z;
@@ -464,10 +465,11 @@ public abstract class Nat
 
         int len = (bits + 63) >> 6;
         long[] z = create64(len);
-        int i = 0;
-        while (x.signum() != 0)
+
+        // NOTE: Use a fixed number of loop iterations
+        for (int i = 0; i < len; ++i)
         {
-            z[i++] = x.longValue();
+            z[i] = x.longValue();
             x = x.shiftRight(64);
         }
         return z;
