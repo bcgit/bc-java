@@ -130,7 +130,7 @@ public final class CAST5
             Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (paramSpec == IvParameterSpec.class)
+            if (paramSpec == IvParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
             {
                 return new IvParameterSpec(iv);
             }

@@ -322,18 +322,7 @@ public class BaseStreamCipher
 
         if (params != null)
         {
-            for (int i = 0; i != availableSpecs.length; i++)
-            {
-                try
-                {
-                    paramSpec = params.getParameterSpec(availableSpecs[i]);
-                    break;
-                }
-                catch (Exception e)
-                {
-                    continue;
-                }
-            }
+            paramSpec = SpecUtil.extractSpec(params, availableSpecs);
 
             if (paramSpec == null)
             {
