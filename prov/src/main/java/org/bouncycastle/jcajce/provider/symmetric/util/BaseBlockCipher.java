@@ -985,23 +985,7 @@ public class BaseBlockCipher
 
         if (params != null)
         {
-            for (int i = 0; i != availableSpecs.length; i++)
-            {
-                if (availableSpecs[i] == null)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    paramSpec = params.getParameterSpec(availableSpecs[i]);
-                    break;
-                }
-                catch (Exception e)
-                {
-                    // try again if possible
-                }
-            }
+            paramSpec = SpecUtil.extractSpec(params, availableSpecs);
 
             if (paramSpec == null)
             {
