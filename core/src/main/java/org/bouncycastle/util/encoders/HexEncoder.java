@@ -45,41 +45,41 @@ public class HexEncoder
         initialiseDecodingTable();
     }
 
+    public int encode(byte[] inBuf, int inOff, int inLen, byte[] outBuf, int outOff) throws IOException
+    {
+        int inPos = inOff;
+        int inEnd = inOff + inLen;
+        int outPos = outOff;
+
+        while (inPos < inEnd)
+        {
+            int b = inBuf[inPos++] & 0xFF;
+
+            outBuf[outPos++] = encodingTable[b >>> 4];
+            outBuf[outPos++] = encodingTable[b & 0xF];
+        }
+
+        return outPos - outOff;
+    }
+
     /**
      * encode the input data producing a Hex output stream.
      *
      * @return the number of bytes produced.
      */
-    public int encode(
-        byte[]          data,
-        int             off,
-        int             length,
-        OutputStream    out) 
+    public int encode(byte[] buf, int off, int len, OutputStream out) 
         throws IOException
     {
-        byte[] buf = new byte[72];
-        int    bufOff = 0;
-
-        for (int i = off; i < (off + length); i++)
+        byte[] tmp = new byte[72];
+        while (len > 0)
         {
-            int    v = data[i] & 0xff;
-
-            buf[bufOff++] = encodingTable[(v >>> 4)];
-            buf[bufOff++] = encodingTable[v & 0xf];
-
-            if (bufOff == buf.length)
-            {
-                out.write(buf);
-                bufOff = 0;
-            }
+            int inLen = Math.min(36, len);
+            int outLen = encode(buf, off, inLen, tmp, 0);
+            out.write(tmp, 0, outLen);
+            off += inLen;
+            len -= inLen;
         }
-
-        if (bufOff > 0)
-        {
-            out.write(buf, 0, bufOff);
-        }
-
-        return length * 2;
+        return len * 2;
     }
 
     private static boolean ignore(
