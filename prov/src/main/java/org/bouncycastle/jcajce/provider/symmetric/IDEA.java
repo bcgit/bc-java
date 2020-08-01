@@ -150,7 +150,7 @@ public final class IDEA
             Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (paramSpec == IvParameterSpec.class)
+            if (paramSpec == IvParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
             {
                 return new IvParameterSpec(iv);
             }

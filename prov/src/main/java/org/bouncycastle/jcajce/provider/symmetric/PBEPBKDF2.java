@@ -88,7 +88,7 @@ public class PBEPBKDF2
             Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (paramSpec == PBEParameterSpec.class)
+            if (paramSpec == PBEParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
             {
                 return new PBEParameterSpec(params.getSalt(),
                     params.getIterationCount().intValue());

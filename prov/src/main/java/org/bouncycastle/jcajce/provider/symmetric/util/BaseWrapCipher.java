@@ -274,18 +274,7 @@ public abstract class BaseWrapCipher
 
         if (params != null)
         {
-            for (int i = 0; i != availableSpecs.length; i++)
-            {
-                try
-                {
-                    paramSpec = params.getParameterSpec(availableSpecs[i]);
-                    break;
-                }
-                catch (Exception e)
-                {
-                    // try next spec
-                }
-            }
+            paramSpec = SpecUtil.extractSpec(params, availableSpecs);
 
             if (paramSpec == null)
             {
