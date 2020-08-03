@@ -3294,6 +3294,48 @@ public class PGPKeyRingTest
         // Extract the public keys
         ByteArrayOutputStream bOut = new ByteArrayOutputStream(2048);
         Iterator<PGPPublicKey> iterator = secretKeys.getPublicKeys();
+        int count = 0;
+        while (iterator.hasNext())
+        {
+            bOut.write(((PGPPublicKey)iterator.next()).getEncoded());
+            count++;
+        }
+
+        isTrue(count == 2);
+
+        checkPublicKeyRing(secretKeys, bOut.toByteArray());
+
+        isTrue(Arrays.areEqual(publicKeys.getEncoded(), bOut.toByteArray()));
+
+        // add an extra subkey
+        pgpGenerator = new PGPKeyRingGenerator(secretKeys, null, calculator, signerBuilder, null);
+
+        // Add sub key
+
+        subPackets.setKeyFlags(false, KeyFlags.ENCRYPT_STORAGE & KeyFlags.ENCRYPT_COMMS);
+
+        pair = generator.generateKeyPair();
+        pgpSubKey = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDH, pair, new Date());
+
+        pgpGenerator.addSubKey(pgpSubKey, subPackets.generate(), null);
+
+        // Generate SecretKeyRing
+
+        secretKeys = pgpGenerator.generateSecretKeyRing();
+
+        publicKeys = pgpGenerator.generatePublicKeyRing();
+        count = 0;
+        for (Iterator it = publicKeys.getPublicKeys(); it.hasNext();)
+        {
+            it.next();
+            count++;
+        }
+        isTrue(count == 3);
+
+        checkPublicKeyRing(secretKeys, publicKeys.getEncoded());
+        // Extract the public keys
+        bOut = new ByteArrayOutputStream(2048);
+        iterator = secretKeys.getPublicKeys();
         while (iterator.hasNext())
         {
             bOut.write(((PGPPublicKey)iterator.next()).getEncoded());

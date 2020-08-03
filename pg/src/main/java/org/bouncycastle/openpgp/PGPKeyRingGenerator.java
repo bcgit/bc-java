@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -29,12 +30,12 @@ public class PGPKeyRingGenerator
      *
      * @param certificationLevel
      * @param masterKey
-     * @param id
-     * @param checksumCalculator
+     * @param id id to associate with the key.
+     * @param checksumCalculator key checksum calculator
      * @param hashedPcks
      * @param unhashedPcks
-     * @param keySignerBuilder
-     * @param keyEncryptor
+     * @param keySignerBuilder builder for key certifications - will be initialised with master secret key.
+     * @param keyEncryptor encryptor for secret subkeys.
      * @throws PGPException
      */
     public PGPKeyRingGenerator(
@@ -56,6 +57,38 @@ public class PGPKeyRingGenerator
         this.unhashedPcks = unhashedPcks;
 
         keys.add(new PGPSecretKey(certificationLevel, masterKey, id, checksumCalculator, hashedPcks, unhashedPcks, keySignerBuilder, keyEncryptor));
+    }
+
+    /**
+     * Create a new key ring generator based on an original secret key ring. The default hashed/unhashed sub-packets
+     * for subkey signatures will be taken from the first signature on the master key.
+     *
+     * @param originalSecretRing the secret key ring we want to add a subkeyto,
+     * @param secretKeyDecryptor a decryptor for the signing master key.
+     * @param checksumCalculator key checksum calculator
+     * @param keySignerBuilder builder for key certifications - will be initialised with master secret key.
+     * @param keyEncryptor encryptor for secret subkeys.
+     * @throws PGPException
+     */
+    public PGPKeyRingGenerator(
+        PGPSecretKeyRing            originalSecretRing,
+        PBESecretKeyDecryptor       secretKeyDecryptor,
+        PGPDigestCalculator         checksumCalculator,
+        PGPContentSignerBuilder     keySignerBuilder,
+        PBESecretKeyEncryptor       keyEncryptor)
+        throws PGPException
+    {
+        this.masterKey = new PGPKeyPair(originalSecretRing.getPublicKey(),
+            originalSecretRing.getSecretKey().extractPrivateKey(secretKeyDecryptor));
+        this.keyEncryptor = keyEncryptor;
+        this.checksumCalculator = checksumCalculator;
+        this.keySignerBuilder = keySignerBuilder;
+
+        PGPSignature certSig = (PGPSignature)originalSecretRing.getPublicKey().getSignatures().next();
+        this.hashedPcks = certSig.getHashedSubPackets();
+        this.unhashedPcks = certSig.getUnhashedSubPackets();
+
+        keys.addAll(originalSecretRing.keys);
     }
 
     /**
