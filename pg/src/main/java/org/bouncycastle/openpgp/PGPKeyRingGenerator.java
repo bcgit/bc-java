@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
+import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
@@ -61,7 +63,8 @@ public class PGPKeyRingGenerator
 
     /**
      * Create a new key ring generator based on an original secret key ring. The default hashed/unhashed sub-packets
-     * for subkey signatures will be taken from the first signature on the master key.
+     * for subkey signatures will be inherited from the first signature on the master key (other than CREATION-TIME
+     * which will be ignored).
      *
      * @param originalSecretRing the secret key ring we want to add a subkeyto,
      * @param secretKeyDecryptor a decryptor for the signing master key.
@@ -85,7 +88,18 @@ public class PGPKeyRingGenerator
         this.keySignerBuilder = keySignerBuilder;
 
         PGPSignature certSig = (PGPSignature)originalSecretRing.getPublicKey().getSignatures().next();
-        this.hashedPcks = certSig.getHashedSubPackets();
+        List hashedVec = new ArrayList();
+        PGPSignatureSubpacketVector existing = certSig.getHashedSubPackets();
+        for (int i = 0; i != existing.size(); i++)
+        {
+            if (existing.packets[i].getType() == SignatureSubpacketTags.CREATION_TIME)
+            {
+                continue;
+            }
+            hashedVec.add(existing.packets[i]);
+        }
+        this.hashedPcks = new PGPSignatureSubpacketVector(
+            (SignatureSubpacket[])hashedVec.toArray(new SignatureSubpacket[hashedVec.size()]));
         this.unhashedPcks = certSig.getUnhashedSubPackets();
 
         keys.addAll(originalSecretRing.keys);
