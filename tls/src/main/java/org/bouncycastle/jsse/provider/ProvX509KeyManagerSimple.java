@@ -1,12 +1,14 @@
 package org.bouncycastle.jsse.provider;
 
-import java.lang.ref.SoftReference;
 import java.net.Socket;
 import java.security.KeyStore;
-import java.security.KeyStore.ProtectionParameter;
+import java.security.KeyStore.PrivateKeyEntry;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -18,13 +20,10 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
@@ -37,26 +36,15 @@ import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 
-class ProvX509KeyManager
+class ProvX509KeyManagerSimple
     extends X509ExtendedKeyManager
 {
-    private static final Logger LOG = Logger.getLogger(ProvX509KeyManager.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProvX509KeyManagerSimple.class.getName());
 
     private static final int X509V3_VERSION = 3;
 
-    private final AtomicLong versions = new AtomicLong();
     private final JcaJceHelper helper;
-    private final List<KeyStore.Builder> builders;
-
-    @SuppressWarnings("serial")
-    private final Map<String, SoftReference<KeyStore.PrivateKeyEntry>> cachedEntries = Collections.synchronizedMap(
-        new LinkedHashMap<String, SoftReference<KeyStore.PrivateKeyEntry>>(16, 0.75f, true)
-        {
-            protected boolean removeEldestEntry(Map.Entry<String, SoftReference<KeyStore.PrivateKeyEntry>> eldest)
-            {
-                return size() > 16;
-            }
-        });
+    private final Map<String, Credential> credentials = new HashMap<String, Credential>();
 
     private static final Map<String, PublicKeyFilter> FILTERS_CLIENT = createFiltersClient();
     private static final Map<String, PublicKeyFilter> FILTERS_SERVER = createFiltersServer();
@@ -159,10 +147,30 @@ class ProvX509KeyManager
         return keyTypes;
     }
 
-    ProvX509KeyManager(JcaJceHelper helper, List<KeyStore.Builder> builders)
+    ProvX509KeyManagerSimple(JcaJceHelper helper, KeyStore ks, char[] password)
+        throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
         this.helper = helper;
-        this.builders = builders;
+
+        if (null == ks)
+        {
+            return;
+        }
+
+        Enumeration<String> aliases = ks.aliases();
+        while (aliases.hasMoreElements())
+        {
+            String alias = aliases.nextElement();
+            if (ks.entryInstanceOf(alias, PrivateKeyEntry.class))
+            {
+                PrivateKey privateKey = (PrivateKey)ks.getKey(alias, password);
+                X509Certificate[] certificateChain = JsseUtils.getX509CertificateChain(ks.getCertificateChain(alias));
+                if (certificateChain != null && certificateChain.length > 0)
+                {
+                    credentials.put(alias, new Credential(privateKey, certificateChain));
+                }
+            }
+        }
     }
 
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
@@ -187,8 +195,8 @@ class ProvX509KeyManager
 
     public X509Certificate[] getCertificateChain(String alias)
     {
-        KeyStore.PrivateKeyEntry entry = getPrivateKeyEntry(alias);
-        return null == entry ? null : (X509Certificate[])entry.getCertificateChain();
+        Credential credential = getCredential(alias);
+        return null == credential ? null : credential.certificateChain.clone();
     }
 
     public String[] getClientAliases(String keyType, Principal[] issuers)
@@ -198,8 +206,8 @@ class ProvX509KeyManager
 
     public PrivateKey getPrivateKey(String alias)
     {
-        KeyStore.PrivateKeyEntry entry = getPrivateKeyEntry(alias);
-        return null == entry ? null : entry.getPrivateKey();
+        Credential credential = getCredential(alias);
+        return null == credential ? null : credential.privateKey;
     }
 
     public String[] getServerAliases(String keyType, Principal[] issuers)
@@ -211,33 +219,20 @@ class ProvX509KeyManager
     {
         Match bestMatch = Match.NOTHING;
 
-        if (!builders.isEmpty() && !keyTypes.isEmpty())
+        if (!credentials.isEmpty() && !keyTypes.isEmpty())
         {
             Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
             BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
             Date atDate = new Date();
             String requestedHostName = getRequestedHostName(transportData, forServer);
 
-            for (int i = 0, count = builders.size(); i < count; ++i)
+            try
             {
-                try
-                {
-                    Match match = chooseAliasFromBuilder(i, keyTypes, uniqueIssuers, algorithmConstraints, forServer,
-                        atDate, requestedHostName);
-
-                    if (match.compareTo(bestMatch) < 0)
-                    {
-                        bestMatch = match;
-
-                        if (Match.Quality.OK == bestMatch.quality)
-                        {
-                            break;
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                }
+                bestMatch = chooseAliasFromCredentials(keyTypes, uniqueIssuers, algorithmConstraints, forServer, atDate,
+                    requestedHostName);
+            }
+            catch (Exception e)
+            {
             }
         }
 
@@ -247,26 +242,21 @@ class ProvX509KeyManager
             return null;
         }
 
-        String alias = getAlias(bestMatch, getNextVersionSuffix());
+        String alias = getAlias(bestMatch);
         LOG.fine("Found matching key, returning alias: " + alias);
         return alias;
     }
 
-    private Match chooseAliasFromBuilder(int builderIndex, List<String> keyTypes, Set<Principal> uniqueIssuers,
+    private Match chooseAliasFromCredentials(List<String> keyTypes, Set<Principal> uniqueIssuers,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
         throws Exception
     {
-        KeyStore.Builder builder = builders.get(builderIndex);
-        KeyStore keyStore = builder.getKeyStore();
-
         Match bestMatch = Match.NOTHING;
 
-        for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
+        for (Map.Entry<String, Credential> credentialEntry : credentials.entrySet())
         {
-            String localAlias = en.nextElement();
-
-            Match match = getPotentialMatch(builderIndex, keyStore, localAlias, bestMatch.quality, keyTypes,
-                uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
+            Match match = getPotentialMatch(credentialEntry, bestMatch.quality, keyTypes, uniqueIssuers,
+                algorithmConstraints, forServer, atDate, requestedHostName);
 
             if (null != match)
             {
@@ -285,7 +275,7 @@ class ProvX509KeyManager
     private String[] getAliases(List<String> keyTypes, Principal[] issuers, TransportData transportData,
         boolean forServer)
     {
-        if (!builders.isEmpty() && !keyTypes.isEmpty())
+        if (!credentials.isEmpty() && !keyTypes.isEmpty())
         {
             Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
             BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
@@ -294,18 +284,13 @@ class ProvX509KeyManager
 
             List<Match> allMatches = null;
 
-            for (int i = 0, count = builders.size(); i < count; ++i)
+            try
             {
-                try
-                {
-                    List<Match> matches = getAliasesFromBuilder(i, keyTypes, uniqueIssuers, algorithmConstraints,
-                        forServer, atDate, requestedHostName);
-
-                    allMatches = addToAllMatches(allMatches, matches);
-                }
-                catch (Exception e)
-                {
-                }
+                allMatches = getAliasesFromCredentials(keyTypes, uniqueIssuers, algorithmConstraints, forServer, atDate,
+                    requestedHostName);
+            }
+            catch (Exception e)
+            {
             }
 
             if (null != allMatches && !allMatches.isEmpty())
@@ -313,28 +298,23 @@ class ProvX509KeyManager
                 // NOTE: We are relying on this being a stable sort
                 Collections.sort(allMatches);
 
-                return getAliases(allMatches, getNextVersionSuffix());
+                return getAliases(allMatches);
             }
         }
 
         return null;
     }
 
-    private List<Match> getAliasesFromBuilder(int builderIndex, List<String> keyTypes, Set<Principal> uniqueIssuers,
+    private List<Match> getAliasesFromCredentials(List<String> keyTypes, Set<Principal> uniqueIssuers,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
         throws Exception
     {
-        KeyStore.Builder builder = builders.get(builderIndex);
-        KeyStore keyStore = builder.getKeyStore();
-
         List<Match> matches = null;
 
-        for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
+        for (Map.Entry<String, Credential> credentialEntry : credentials.entrySet())
         {
-            String localAlias = en.nextElement();
-
-            Match match = getPotentialMatch(builderIndex, keyStore, localAlias, Match.Quality.NONE, keyTypes,
-                uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
+            Match match = getPotentialMatch(credentialEntry, Match.Quality.NONE, keyTypes, uniqueIssuers,
+                algorithmConstraints, forServer, atDate, requestedHostName);
 
             if (null != match)
             {
@@ -345,54 +325,26 @@ class ProvX509KeyManager
         return matches;
     }
 
-    private String getNextVersionSuffix()
-    {
-        return "." + versions.incrementAndGet();
-    }
-
-    private Match getPotentialMatch(int builderIndex, KeyStore keyStore, String localAlias, Match.Quality qualityLimit,
+    private Match getPotentialMatch(Map.Entry<String, Credential> credentialEntry, Match.Quality qualityLimit,
         List<String> keyTypes, Set<Principal> uniqueIssuers, BCAlgorithmConstraints algorithmConstraints,
         boolean forServer, Date atDate, String requestedHostName) throws Exception
     {
-        if (keyStore.isKeyEntry(localAlias))
+        X509Certificate[] chain = credentialEntry.getValue().certificateChain;
+        if (isSuitableChain(chain, keyTypes, uniqueIssuers, algorithmConstraints, forServer))
         {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(keyStore.getCertificateChain(localAlias));
-            if (isSuitableChain(chain, keyTypes, uniqueIssuers, algorithmConstraints, forServer))
+            Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
+            if (quality.compareTo(qualityLimit) < 0)
             {
-                Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
-                if (quality.compareTo(qualityLimit) < 0)
-                {
-                    return new Match(builderIndex, localAlias, quality);
-                }
+                return new Match(credentialEntry.getKey(), quality);
             }
         }
 
         return null;
     }
 
-    private KeyStore.PrivateKeyEntry getPrivateKeyEntry(String alias)
+    private Credential getCredential(String alias)
     {
-        if (null == alias)
-        {
-            return null;
-        }
-
-        SoftReference<KeyStore.PrivateKeyEntry> entryRef = cachedEntries.get(alias);
-        if (null != entryRef)
-        {
-            KeyStore.PrivateKeyEntry cachedEntry = entryRef.get();
-            if (null != cachedEntry)
-            {
-                return cachedEntry;
-            }
-        }
-
-        KeyStore.PrivateKeyEntry result = loadPrivateKeyEntry(alias);
-        if (null != result)
-        {
-            cachedEntries.put(alias, new SoftReference<KeyStore.PrivateKeyEntry>(result));
-        }
-        return result;
+        return null == alias ? null : credentials.get(alias);
     }
 
     private boolean isSuitableChain(X509Certificate[] chain, List<String> keyTypes, Set<Principal> uniqueIssuers,
@@ -422,59 +374,6 @@ class ProvX509KeyManager
         return true;
     }
 
-    private KeyStore.PrivateKeyEntry loadPrivateKeyEntry(String alias)
-    {
-        try
-        {
-            int builderIndexStart = 0;
-            int builderIndexEnd = alias.indexOf('.', builderIndexStart);
-            if (builderIndexEnd > builderIndexStart)
-            {
-                int localAliasStart = builderIndexEnd + 1;
-                int localAliasEnd = alias.indexOf('.', localAliasStart);
-                if (localAliasEnd > localAliasStart)
-                {
-                    int builderIndex = Integer.parseInt(alias.substring(builderIndexStart, builderIndexEnd));
-                    if (0 <= builderIndex && builderIndex < builders.size())
-                    {
-                        KeyStore.Builder builder = builders.get(builderIndex);
-
-                        String localAlias = alias.substring(localAliasStart, localAliasEnd);
-                        KeyStore keyStore = builder.getKeyStore();
-                        ProtectionParameter protectionParameter = builder.getProtectionParameter(localAlias);
-
-                        KeyStore.Entry entry = keyStore.getEntry(localAlias, protectionParameter);
-                        if (entry instanceof KeyStore.PrivateKeyEntry)
-                        {
-                            return (KeyStore.PrivateKeyEntry)entry;
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            LOG.log(Level.FINER, "Failed to load PrivateKeyEntry: " + alias, e);
-        }
-        return null;
-    }
-
-    private static List<Match> addToAllMatches(List<Match> allMatches, List<Match> matches)
-    {
-        if (null != matches && !matches.isEmpty())
-        {
-            if (null == allMatches)
-            {
-                allMatches = matches;
-            }
-            else
-            {
-                allMatches.addAll(matches);
-            }
-        }
-        return allMatches;
-    }
-
     private static List<Match> addToMatches(List<Match> matches, Match match)
     {
         if (null == matches)
@@ -486,18 +385,18 @@ class ProvX509KeyManager
         return matches;
     }
 
-    private static String getAlias(Match match, String versionSuffix)
+    private static String getAlias(Match match)
     {
-        return match.builderIndex + "." + match.localAlias + versionSuffix;
+        return match.alias;
     }
 
-    private static String[] getAliases(List<Match> matches, String versionSuffix)
+    private static String[] getAliases(List<Match> matches)
     {
         int count = matches.size(), pos = 0;
         String[] result = new String[count];
         for (Match match : matches)
         {
-            result[pos++] = getAlias(match, versionSuffix);
+            result[pos++] = getAlias(match);
         }
         return result;
     }
@@ -659,6 +558,18 @@ class ProvX509KeyManager
         return false;
     }
 
+    private static class Credential
+    {
+        private final PrivateKey privateKey;
+        private final X509Certificate[] certificateChain;
+
+        Credential(PrivateKey privateKey, X509Certificate[] certificateChain)
+        {
+            this.privateKey = privateKey;
+            this.certificateChain = certificateChain;
+        }
+    }
+
     private static final class Match
         implements Comparable<Match>
     {
@@ -675,16 +586,14 @@ class ProvX509KeyManager
             NONE
         }
 
-        static final Match NOTHING = new Match(-1, null, Quality.NONE);
+        static final Match NOTHING = new Match(null, Quality.NONE);
 
-        final int builderIndex;
-        final String localAlias;
+        final String alias;
         final Quality quality;
 
-        Match(int builderIndex, String localAlias, Quality quality)
+        Match(String alias, Quality quality)
         {
-            this.builderIndex = builderIndex;
-            this.localAlias = localAlias;
+            this.alias = alias;
             this.quality = quality;
         }
 
