@@ -47,11 +47,16 @@ public class Properties
      * @param propertyName the property name for the override.
      * @return true if the property is set to "false", false otherwise.
      */
-    public static boolean isOverrideSetFalse(String propertyName)
+    public static boolean isOverrideSetTo(String propertyName, boolean isTrue)
     {
         try
         {
-            return isSetFalse(getPropertyValue(propertyName));
+            String propertyValue = getPropertyValue(propertyName);
+            if (isTrue)
+            {
+                return isSetTrue(propertyValue);
+            }
+            return isSetFalse(propertyValue);
         }
         catch (AccessControlException e)
         {
