@@ -32,6 +32,7 @@ import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
+import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
@@ -132,7 +133,7 @@ abstract class JsseUtils
         return tmp;
     }
 
-    static TlsCredentialedDecryptor createCredentialedDecryptor(JcaTlsCrypto crypto, ProvX509Key x509Key)
+    static TlsCredentialedDecryptor createCredentialedDecryptor(JcaTlsCrypto crypto, BCX509Key x509Key)
     {
         PrivateKey privateKey = x509Key.getPrivateKey();
         Certificate certificate = getCertificateMessage(crypto, x509Key.getCertificateChain());
@@ -140,7 +141,7 @@ abstract class JsseUtils
         return new JceDefaultTlsCredentialedDecryptor(crypto, certificate, privateKey);
     }
 
-    static TlsCredentialedSigner createCredentialedSigner(TlsContext context, JcaTlsCrypto crypto, ProvX509Key x509Key,
+    static TlsCredentialedSigner createCredentialedSigner(TlsContext context, JcaTlsCrypto crypto, BCX509Key x509Key,
         SignatureAndHashAlgorithm sigAndHashAlg)
     {
         /*
@@ -155,7 +156,7 @@ abstract class JsseUtils
         return new JcaDefaultTlsCredentialedSigner(cryptoParams, crypto, privateKey, certificate, sigAndHashAlg);
     }
 
-    static TlsCredentialedSigner createCredentialedSigner13(TlsContext context, JcaTlsCrypto crypto, ProvX509Key x509Key,
+    static TlsCredentialedSigner createCredentialedSigner13(TlsContext context, JcaTlsCrypto crypto, BCX509Key x509Key,
         SignatureAndHashAlgorithm sigAndHashAlg, byte[] certificateRequestContext)
     {
         /*

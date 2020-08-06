@@ -5,12 +5,13 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.X509ExtendedKeyManager;
+import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
+import org.bouncycastle.jsse.BCX509Key;
 
 final class DummyX509KeyManager
-    extends X509ExtendedKeyManager
+    extends BCX509ExtendedKeyManager
 {
-    static final X509ExtendedKeyManager INSTANCE = new DummyX509KeyManager();
+    static final BCX509ExtendedKeyManager INSTANCE = new DummyX509KeyManager();
 
     private DummyX509KeyManager()
     {
@@ -32,6 +33,12 @@ final class DummyX509KeyManager
     }
 
     public String[] getClientAliases(String keyType, Principal[] issuers)
+    {
+        return null;
+    }
+
+    @Override
+    public BCX509Key getKeyBC(String alias)
     {
         return null;
     }

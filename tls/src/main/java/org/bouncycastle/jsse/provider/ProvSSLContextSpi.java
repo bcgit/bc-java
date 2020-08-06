@@ -27,11 +27,11 @@ import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
@@ -776,7 +776,7 @@ class ProvSSLContextSpi
         this.contextData = null;
 
         JcaTlsCrypto crypto = cryptoProvider.create(sr);
-        X509ExtendedKeyManager x509KeyManager = selectX509KeyManager(crypto.getHelper(), kms);
+        BCX509ExtendedKeyManager x509KeyManager = selectX509KeyManager(crypto.getHelper(), kms);
         BCX509ExtendedTrustManager x509TrustManager = selectX509TrustManager(crypto.getHelper(), tms);
 
         // Trigger (possibly expensive) RNG initialization here to avoid timeout in an actual handshake
@@ -795,7 +795,7 @@ class ProvSSLContextSpi
         return contextData;
     }
 
-    protected X509ExtendedKeyManager selectX509KeyManager(JcaJceHelper helper, KeyManager[] kms)
+    protected BCX509ExtendedKeyManager selectX509KeyManager(JcaJceHelper helper, KeyManager[] kms)
         throws KeyManagementException
     {
         if (kms != null)

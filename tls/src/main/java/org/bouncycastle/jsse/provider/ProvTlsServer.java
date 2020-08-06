@@ -18,6 +18,7 @@ import javax.net.ssl.SSLException;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
@@ -762,7 +763,7 @@ class ProvTlsServer
                 continue;
             }
 
-            ProvX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+            BCX509Key x509Key = manager.chooseServerKey(keyType, issuers);
             if (null == x509Key
                 || !JsseUtils.isUsableKeyForServer(signatureAlgorithm, x509Key.getPrivateKey()))
             {
@@ -786,7 +787,7 @@ class ProvTlsServer
             return null;
         }
 
-        ProvX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+        BCX509Key x509Key = manager.chooseServerKey(keyType, issuers);
         if (null == x509Key
             || !JsseUtils.isUsableKeyForServerLegacy(keyExchangeAlgorithm, x509Key.getPrivateKey()))
         {

@@ -3,8 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.util.List;
 import java.util.Vector;
 
-import javax.net.ssl.X509ExtendedKeyManager;
-
+import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -14,14 +13,14 @@ final class ContextData
 {
     private final ProvSSLContextSpi context;
     private final JcaTlsCrypto crypto;
-    private final X509ExtendedKeyManager x509KeyManager;
+    private final BCX509ExtendedKeyManager x509KeyManager;
     private final BCX509ExtendedTrustManager x509TrustManager;
     private final ProvSSLSessionContext clientSessionContext;
     private final ProvSSLSessionContext serverSessionContext;
     private final NamedGroupInfo.PerContext namedGroups;
     private final SignatureSchemeInfo.PerContext signatureSchemes;
 
-    ContextData(ProvSSLContextSpi context, JcaTlsCrypto crypto, X509ExtendedKeyManager x509KeyManager,
+    ContextData(ProvSSLContextSpi context, JcaTlsCrypto crypto, BCX509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager)
     {
         this.context = context;
@@ -71,7 +70,7 @@ final class ContextData
         return SignatureSchemeInfo.getSignatureSchemes(signatureSchemes, sigAndHashAlgs);
     }
 
-    X509ExtendedKeyManager getX509KeyManager()
+    BCX509ExtendedKeyManager getX509KeyManager()
     {
         return x509KeyManager;
     }
