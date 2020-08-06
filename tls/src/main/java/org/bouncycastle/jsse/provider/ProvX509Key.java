@@ -64,7 +64,7 @@ class ProvX509Key
 
     public X509Certificate[] getCertificateChain()
     {
-        return certificateChain;
+        return certificateChain.clone();
     }
 
     public PrivateKey getPrivateKey()

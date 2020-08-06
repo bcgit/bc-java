@@ -200,7 +200,25 @@ class ProvX509KeyManager
     @Override
     public BCX509Key getKeyBC(String alias)
     {
-        return ProvX509Key.from(this, alias);
+        KeyStore.PrivateKeyEntry entry = getPrivateKeyEntry(alias);
+        if (null == entry)
+        {
+            return null;
+        }
+
+        PrivateKey privateKey = entry.getPrivateKey();
+        if (null == privateKey)
+        {
+            return null;
+        }
+
+        X509Certificate[] certificateChain = JsseUtils.getX509CertificateChain(entry.getCertificateChain());
+        if (certificateChain == null || certificateChain.length < 1)
+        {
+            return null;
+        }
+
+        return new ProvX509Key(privateKey, certificateChain);
     }
 
     public PrivateKey getPrivateKey(String alias)
