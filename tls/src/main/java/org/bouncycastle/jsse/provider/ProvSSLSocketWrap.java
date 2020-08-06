@@ -19,12 +19,12 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
+import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -131,18 +131,14 @@ class ProvSSLSocketWrap
         }
     }
 
-    public ProvX509Key chooseClientKey(String[] keyTypes, Principal[] issuers)
+    public BCX509Key chooseClientKey(String[] keyTypes, Principal[] issuers)
     {
-        X509ExtendedKeyManager x509KeyManager = getContextData().getX509KeyManager();
-        String alias = x509KeyManager.chooseClientAlias(keyTypes, JsseUtils.clone(issuers), this);
-        return ProvX509Key.from(x509KeyManager, alias);
+        return getContextData().getX509KeyManager().chooseClientKeyBC(keyTypes, JsseUtils.clone(issuers), this);
     }
 
-    public ProvX509Key chooseServerKey(String keyType, Principal[] issuers)
+    public BCX509Key chooseServerKey(String keyType, Principal[] issuers)
     {
-        X509ExtendedKeyManager x509KeyManager = getContextData().getX509KeyManager();
-        String alias = x509KeyManager.chooseServerAlias(keyType, JsseUtils.clone(issuers), this);
-        return ProvX509Key.from(x509KeyManager, alias);
+        return getContextData().getX509KeyManager().chooseServerKeyBC(keyType, JsseUtils.clone(issuers), this);
     }
 
     @Override

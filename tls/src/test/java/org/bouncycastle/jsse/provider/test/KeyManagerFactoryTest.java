@@ -12,10 +12,11 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
+import org.bouncycastle.jsse.BCX509Key;
 
 import junit.framework.TestCase;
 
@@ -40,31 +41,35 @@ public class KeyManagerFactoryTest
 
         KeyManager[] managers = fact.getKeyManagers();
 
-        X509ExtendedKeyManager manager = (X509ExtendedKeyManager)managers[0];
+        BCX509ExtendedKeyManager manager = (BCX509ExtendedKeyManager)managers[0];
 
         // NOTE: This depends on the value of JsseUtils.getKeyTypeLegacyServer(KeyExchangeAlgorithm.RSA)
 //        String keyType = "RSA";
         String keyType = "KE:RSA";
 
         String alias = manager.chooseServerAlias(keyType, null, null);
-
         assertNotNull(alias);
-
         assertNotNull(manager.getCertificateChain(alias));
-
         assertNotNull(manager.getPrivateKey(alias));
+        assertNotNull(manager.getKeyBC(alias));
+
+        BCX509Key key = manager.chooseServerKeyBC(keyType, null, null);
+        assertNotNull(key);
 
         alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
-
         assertNull(alias);
 
+        key = manager.chooseServerKeyBC(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
+        assertNull(key);
+
         alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
-
         assertNotNull(alias);
-
         assertNotNull(manager.getCertificateChain(alias));
-
         assertNotNull(manager.getPrivateKey(alias));
+        assertNotNull(manager.getKeyBC(alias));
+
+        key = manager.chooseServerKeyBC(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+        assertNotNull(key);
     }
 
     public void testBasicEC()
@@ -78,30 +83,34 @@ public class KeyManagerFactoryTest
 
         KeyManager[] managers = fact.getKeyManagers();
 
-        X509ExtendedKeyManager manager = (X509ExtendedKeyManager)managers[0];
+        BCX509ExtendedKeyManager manager = (BCX509ExtendedKeyManager)managers[0];
 
         // NOTE: This depends on the value of JsseUtils.getKeyTypeLegacyServer(KeyExchangeAlgorithm.ECDHE_ECDSA)
         String keyType = "ECDHE_ECDSA";
 
         String alias = manager.chooseServerAlias(keyType, null, null);
-
         assertNotNull(alias);
-
         assertNotNull(manager.getCertificateChain(alias));
-
         assertNotNull(manager.getPrivateKey(alias));
+        assertNotNull(manager.getKeyBC(alias));
+
+        BCX509Key key = manager.chooseServerKeyBC(keyType, null, null);
+        assertNotNull(key);
 
         alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
-
         assertNull(alias);
 
+        key = manager.chooseServerKeyBC(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
+        assertNull(key);
+
         alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
-
         assertNotNull(alias);
-
         assertNotNull(manager.getCertificateChain(alias));
-
         assertNotNull(manager.getPrivateKey(alias));
+        assertNotNull(manager.getKeyBC(alias));
+
+        key = manager.chooseServerKeyBC(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+        assertNotNull(key);
     }
 
     private KeyStore getRsaKeyStore(boolean encryption)

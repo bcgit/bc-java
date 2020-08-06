@@ -5,7 +5,10 @@ import java.security.cert.X509Certificate;
 
 import javax.net.ssl.X509KeyManager;
 
+import org.bouncycastle.jsse.BCX509Key;
+
 class ProvX509Key
+    implements BCX509Key
 {
     static ProvX509Key from(X509KeyManager x509KeyManager, String alias)
     {
@@ -53,18 +56,18 @@ class ProvX509Key
     private final PrivateKey privateKey;
     private final X509Certificate[] certificateChain;
 
-    private ProvX509Key(PrivateKey privateKey, X509Certificate[] certificateChain)
+    ProvX509Key(PrivateKey privateKey, X509Certificate[] certificateChain)
     {
         this.privateKey = privateKey;
         this.certificateChain = certificateChain;
     }
 
-    X509Certificate[] getCertificateChain()
+    public X509Certificate[] getCertificateChain()
     {
         return certificateChain;
     }
 
-    PrivateKey getPrivateKey()
+    public PrivateKey getPrivateKey()
     {
         return privateKey;
     }

@@ -5,15 +5,17 @@ import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
+import org.bouncycastle.jsse.BCX509Key;
+
 interface ProvTlsManager
 {
     void checkClientTrusted(X509Certificate[] chain, String authType) throws IOException;
 
     void checkServerTrusted(X509Certificate[] chain, String authType) throws IOException;
 
-    ProvX509Key chooseClientKey(String[] keyTypes, Principal[] issuers);
+    BCX509Key chooseClientKey(String[] keyTypes, Principal[] issuers);
 
-    ProvX509Key chooseServerKey(String keyType, Principal[] issuers);
+    BCX509Key chooseServerKey(String keyType, Principal[] issuers);
 
     boolean getEnableSessionCreation();
 

@@ -17,9 +17,9 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactorySpi;
 import javax.net.ssl.KeyStoreBuilderParameters;
 import javax.net.ssl.ManagerFactoryParameters;
-import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 
 class ProvKeyManagerFactorySpi
     extends KeyManagerFactorySpi
@@ -82,7 +82,7 @@ class ProvKeyManagerFactorySpi
 
     protected final JcaJceHelper helper;
 
-    protected X509ExtendedKeyManager x509KeyManager;
+    protected BCX509ExtendedKeyManager x509KeyManager;
 
     ProvKeyManagerFactorySpi(JcaJceHelper helper)
     {
