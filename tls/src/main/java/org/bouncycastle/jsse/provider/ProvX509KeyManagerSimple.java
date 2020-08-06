@@ -45,7 +45,7 @@ class ProvX509KeyManagerSimple
     private static final int X509V3_VERSION = 3;
 
     private final JcaJceHelper helper;
-    private final Map<String, Credential> credentials = new HashMap<String, Credential>();
+    private final Map<String, Credential> credentials;
 
     private static final Map<String, PublicKeyFilter> FILTERS_CLIENT = createFiltersClient();
     private static final Map<String, PublicKeyFilter> FILTERS_SERVER = createFiltersServer();
@@ -148,30 +148,46 @@ class ProvX509KeyManagerSimple
         return keyTypes;
     }
 
+    private static Map<String, Credential> loadCredentials(KeyStore ks, char[] password)
+        throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
+    {
+        Map<String, Credential> credentials = new HashMap<String, Credential>(4);
+
+        if (null != ks)
+        {
+            Enumeration<String> aliases = ks.aliases();
+            while (aliases.hasMoreElements())
+            {
+                String alias = aliases.nextElement();
+                if (!ks.entryInstanceOf(alias, PrivateKeyEntry.class))
+                {
+                    continue;
+                }
+
+                PrivateKey privateKey = (PrivateKey)ks.getKey(alias, password);
+                if (null == privateKey)
+                {
+                    continue;
+                }
+
+                X509Certificate[] certificateChain = JsseUtils.getX509CertificateChain(ks.getCertificateChain(alias));
+                if (certificateChain == null || certificateChain.length < 1)
+                {
+                    continue;
+                }
+
+                credentials.put(alias, new Credential(privateKey, certificateChain));
+            }
+        }
+
+        return Collections.unmodifiableMap(credentials);
+    }
+
     ProvX509KeyManagerSimple(JcaJceHelper helper, KeyStore ks, char[] password)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
         this.helper = helper;
-
-        if (null == ks)
-        {
-            return;
-        }
-
-        Enumeration<String> aliases = ks.aliases();
-        while (aliases.hasMoreElements())
-        {
-            String alias = aliases.nextElement();
-            if (ks.entryInstanceOf(alias, PrivateKeyEntry.class))
-            {
-                PrivateKey privateKey = (PrivateKey)ks.getKey(alias, password);
-                X509Certificate[] certificateChain = JsseUtils.getX509CertificateChain(ks.getCertificateChain(alias));
-                if (certificateChain != null && certificateChain.length > 0)
-                {
-                    credentials.put(alias, new Credential(privateKey, certificateChain));
-                }
-            }
-        }
+        this.credentials = loadCredentials(ks, password);
     }
 
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
