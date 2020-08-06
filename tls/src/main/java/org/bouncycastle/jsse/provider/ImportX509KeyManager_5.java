@@ -5,17 +5,18 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
+import org.bouncycastle.jsse.BCX509Key;
 
 /*
  * Note that chooseEngineClientAlias() and chooseEngineServerAlias() are inherited (they return
  * null), for compatibility with SunJSSE provider.
  */
 final class ImportX509KeyManager_5
-    extends X509ExtendedKeyManager
+    extends BCX509ExtendedKeyManager
 {
     final JcaJceHelper helper;
     final X509KeyManager x509KeyManager;
@@ -44,6 +45,12 @@ final class ImportX509KeyManager_5
     public String[] getClientAliases(String keyType, Principal[] issuers)
     {
         return x509KeyManager.getClientAliases(keyType, issuers);
+    }
+
+    @Override
+    public BCX509Key getKeyBC(String alias)
+    {
+        return ProvX509Key.from(x509KeyManager, alias);
     }
 
     public PrivateKey getPrivateKey(String alias)

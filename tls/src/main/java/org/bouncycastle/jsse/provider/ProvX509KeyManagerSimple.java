@@ -27,17 +27,18 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSNIHostName;
+import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
+import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 
 class ProvX509KeyManagerSimple
-    extends X509ExtendedKeyManager
+    extends BCX509ExtendedKeyManager
 {
     private static final Logger LOG = Logger.getLogger(ProvX509KeyManagerSimple.class.getName());
 
@@ -202,6 +203,12 @@ class ProvX509KeyManagerSimple
     public String[] getClientAliases(String keyType, Principal[] issuers)
     {
         return getAliases(getKeyTypes(keyType), issuers, null, false);
+    }
+
+    @Override
+    public BCX509Key getKeyBC(String alias)
+    {
+        return ProvX509Key.from(this, alias);
     }
 
     public PrivateKey getPrivateKey(String alias)

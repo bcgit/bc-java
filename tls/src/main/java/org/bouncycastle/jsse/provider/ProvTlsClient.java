@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
@@ -562,7 +563,7 @@ class ProvTlsClient
                 continue;
             }
 
-            ProvX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
+            BCX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
             if (null == x509Key)
             {
                 keyManagerMissCache.add(keyType);
@@ -607,7 +608,7 @@ class ProvTlsClient
                 continue;
             }
 
-            ProvX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
+            BCX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
             if (null == x509Key)
             {
                 keyManagerMissCache.add(keyType);
@@ -626,7 +627,7 @@ class ProvTlsClient
     {
         String[] keyTypes = getKeyTypesLegacy(certificateTypes);
 
-        ProvX509Key x509Key = manager.chooseClientKey(keyTypes, issuers);
+        BCX509Key x509Key = manager.chooseClientKey(keyTypes, issuers);
         if (null == x509Key)
         {
             return null;
