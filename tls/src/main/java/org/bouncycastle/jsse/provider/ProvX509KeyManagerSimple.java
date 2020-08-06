@@ -224,7 +224,8 @@ class ProvX509KeyManagerSimple
     @Override
     public BCX509Key getKeyBC(String alias)
     {
-        return ProvX509Key.from(this, alias);
+        Credential credential = getCredential(alias);
+        return null == credential ? null : new ProvX509Key(credential.privateKey, credential.certificateChain);
     }
 
     public PrivateKey getPrivateKey(String alias)
