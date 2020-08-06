@@ -18,7 +18,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     private static boolean getSessionKeyObfuscationDefault()
     {
         // by default we want this to be true.
-        return !Properties.isOverrideSetFalse(SESSION_KEY_OBFUSCATION_PROPERTY);
+        return !Properties.isOverrideSetTo(SESSION_KEY_OBFUSCATION_PROPERTY, false);
     }
 
     private PGPPublicKey pubKey;

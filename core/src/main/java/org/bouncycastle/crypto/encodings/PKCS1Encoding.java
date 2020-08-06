@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.encodings;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
@@ -11,6 +9,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 /**
  * this does your basic PKCS 1 v1.5 padding - whether or not you should be using this
@@ -95,28 +94,12 @@ public class PKCS1Encoding
     //
     private boolean useStrict()
     {
-        // required if security manager has been installed.
-        String strict = (String)AccessController.doPrivileged(new PrivilegedAction()
+        if (Properties.isOverrideSetTo(NOT_STRICT_LENGTH_ENABLED_PROPERTY, true))
         {
-            public Object run()
-            {
-                return System.getProperty(STRICT_LENGTH_ENABLED_PROPERTY);
-            }
-        });
-        String notStrict = (String)AccessController.doPrivileged(new PrivilegedAction()
-        {
-            public Object run()
-            {
-                return System.getProperty(NOT_STRICT_LENGTH_ENABLED_PROPERTY);
-            }
-        });
-
-        if (notStrict != null)
-        {
-            return !notStrict.equals("true");
+            return false;
         }
 
-        return strict == null || strict.equals("true");
+        return !Properties.isOverrideSetTo(STRICT_LENGTH_ENABLED_PROPERTY, false);
     }
 
     public AsymmetricBlockCipher getUnderlyingCipher()
