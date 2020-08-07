@@ -2,11 +2,15 @@ package org.bouncycastle.jsse.provider;
 
 import java.lang.ref.SoftReference;
 import java.net.Socket;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStore.ProtectionParameter;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -171,9 +175,21 @@ class ProvX509KeyManager
         return chooseAlias(getKeyTypes(keyTypes), issuers, TransportData.from(socket), false);
     }
 
+    @Override
+    public BCX509Key chooseClientKeyBC(String[] keyTypes, Principal[] issuers, Socket socket)
+    {
+        return chooseKeyBC(getKeyTypes(keyTypes), issuers, TransportData.from(socket), false);
+    }
+
     public String chooseEngineClientAlias(String[] keyTypes, Principal[] issuers, SSLEngine engine)
     {
         return chooseAlias(getKeyTypes(keyTypes), issuers, TransportData.from(engine), false);
+    }
+
+    @Override
+    public BCX509Key chooseEngineClientKeyBC(String[] keyTypes, Principal[] issuers, SSLEngine engine)
+    {
+        return chooseKeyBC(getKeyTypes(keyTypes), issuers, TransportData.from(engine), false);
     }
 
     public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine)
@@ -181,9 +197,21 @@ class ProvX509KeyManager
         return chooseAlias(getKeyTypes(keyType), issuers, TransportData.from(engine), true);
     }
 
+    @Override
+    public BCX509Key chooseEngineServerKeyBC(String keyType, Principal[] issuers, SSLEngine engine)
+    {
+        return chooseKeyBC(getKeyTypes(keyType), issuers, TransportData.from(engine), true);
+    }
+
     public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
     {
         return chooseAlias(getKeyTypes(keyType), issuers, TransportData.from(socket), true);
+    }
+
+    @Override
+    public BCX509Key chooseServerKeyBC(String keyType, Principal[] issuers, Socket socket)
+    {
+        return chooseKeyBC(getKeyTypes(keyType), issuers, TransportData.from(socket), true);
     }
 
     public X509Certificate[] getCertificateChain(String alias)
@@ -232,79 +260,72 @@ class ProvX509KeyManager
         return getAliases(getKeyTypes(keyType), issuers, null, true);
     }
 
-    private String chooseAlias(List<String> keyTypes, Principal[] issuers, TransportData transportData, boolean forServer)
+    private String chooseAlias(List<String> keyTypes, Principal[] issuers, TransportData transportData,
+        boolean forServer)
     {
-        Match bestMatch = Match.NOTHING;
+        Match bestMatch = getBestMatch(keyTypes, issuers, transportData, forServer);
 
-        if (!builders.isEmpty() && !keyTypes.isEmpty())
+        if (Match.NOTHING != bestMatch)
         {
-            Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
-            BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
-            Date atDate = new Date();
-            String requestedHostName = getRequestedHostName(transportData, forServer);
-
-            for (int i = 0, count = builders.size(); i < count; ++i)
-            {
-                try
-                {
-                    Match match = chooseAliasFromBuilder(i, keyTypes, uniqueIssuers, algorithmConstraints, forServer,
-                        atDate, requestedHostName);
-
-                    if (match.compareTo(bestMatch) < 0)
-                    {
-                        bestMatch = match;
-
-                        if (Match.Quality.OK == bestMatch.quality)
-                        {
-                            break;
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                }
-            }
+            String alias = getAlias(bestMatch, getNextVersionSuffix());
+            LOG.fine("Found matching key, returning alias: " + alias);
+            return alias;
         }
 
-        if (Match.NOTHING == bestMatch)
-        {
-            LOG.fine("No matching key found");
-            return null;
-        }
-
-        String alias = getAlias(bestMatch, getNextVersionSuffix());
-        LOG.fine("Found matching key, returning alias: " + alias);
-        return alias;
+        LOG.fine("No matching key found");
+        return null;
     }
 
-    private Match chooseAliasFromBuilder(int builderIndex, List<String> keyTypes, Set<Principal> uniqueIssuers,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws Exception
+    private BCX509Key chooseKeyBC(List<String> keyTypes, Principal[] issuers, TransportData transportData,
+        boolean forServer)
+    {
+        Match bestMatch = getBestMatch(keyTypes, issuers, transportData, forServer);
+
+        if (Match.NOTHING != bestMatch)
+        {
+            try
+            {
+                BCX509Key keyBC = createKeyBC(bestMatch.builderIndex, bestMatch.localAlias, bestMatch.cachedKeyStore,
+                    bestMatch.cachedCertificateChain);
+                if (null != keyBC)
+                {
+                    LOG.fine("Found matching key, from alias: " + bestMatch.builderIndex + "." + bestMatch.localAlias);
+                    return keyBC;
+                }
+            }
+            catch (Exception e)
+            {
+            }
+        }
+
+        LOG.fine("No matching key found");
+        return null;
+    }
+
+    private BCX509Key createKeyBC(int builderIndex, String alias, KeyStore keyStore, X509Certificate[] certificateChain)
+        throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
         KeyStore.Builder builder = builders.get(builderIndex);
-        KeyStore keyStore = builder.getKeyStore();
+        ProtectionParameter protectionParameter = builder.getProtectionParameter(alias);
 
-        Match bestMatch = Match.NOTHING;
-
-        for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
+        if (protectionParameter instanceof KeyStore.PasswordProtection)
         {
-            String localAlias = en.nextElement();
-
-            Match match = getPotentialMatch(builderIndex, keyStore, localAlias, bestMatch.quality, keyTypes,
-                uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
-
-            if (null != match)
+            KeyStore.PasswordProtection passwordProtection = (KeyStore.PasswordProtection)protectionParameter;
+            if (null == passwordProtection.getProtectionAlgorithm())
             {
-                bestMatch = match;
-
-                if (Match.Quality.OK == bestMatch.quality)
+                Key key = keyStore.getKey(alias, passwordProtection.getPassword());
+                if (key instanceof PrivateKey)
                 {
-                    break;
+                    PrivateKey privateKey = (PrivateKey)key;
+                    if (null != privateKey)
+                    {
+                        return new ProvX509Key(privateKey, certificateChain);
+                    }
                 }
             }
         }
 
-        return bestMatch;
+        return null;
     }
 
     private String[] getAliases(List<String> keyTypes, Principal[] issuers, TransportData transportData,
@@ -358,7 +379,7 @@ class ProvX509KeyManager
         {
             String localAlias = en.nextElement();
 
-            Match match = getPotentialMatch(builderIndex, keyStore, localAlias, Match.Quality.NONE, keyTypes,
+            Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, Match.Quality.NONE, keyTypes,
                 uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
 
             if (null != match)
@@ -370,14 +391,83 @@ class ProvX509KeyManager
         return matches;
     }
 
+    private Match getBestMatch(List<String> keyTypes, Principal[] issuers, TransportData transportData,
+        boolean forServer)
+    {
+        Match bestMatch = Match.NOTHING;
+
+        if (!builders.isEmpty() && !keyTypes.isEmpty())
+        {
+            Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
+            BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
+            Date atDate = new Date();
+            String requestedHostName = getRequestedHostName(transportData, forServer);
+
+            for (int i = 0, count = builders.size(); i < count; ++i)
+            {
+                try
+                {
+                    Match match = getBestMatchFromBuilder(i, keyTypes, uniqueIssuers, algorithmConstraints, forServer,
+                        atDate, requestedHostName);
+
+                    if (match.compareTo(bestMatch) < 0)
+                    {
+                        bestMatch = match;
+
+                        if (Match.Quality.OK == bestMatch.quality)
+                        {
+                            break;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                }
+            }
+        }
+
+        return bestMatch;
+    }
+
+    private Match getBestMatchFromBuilder(int builderIndex, List<String> keyTypes, Set<Principal> uniqueIssuers,
+        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
+        throws Exception
+    {
+        KeyStore.Builder builder = builders.get(builderIndex);
+        KeyStore keyStore = builder.getKeyStore();
+
+        Match bestMatch = Match.NOTHING;
+
+        for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
+        {
+            String localAlias = en.nextElement();
+
+            Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, bestMatch.quality, keyTypes,
+                uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
+
+            if (null != match)
+            {
+                bestMatch = match;
+
+                if (Match.Quality.OK == bestMatch.quality)
+                {
+                    break;
+                }
+            }
+        }
+
+        return bestMatch;
+    }
+
     private String getNextVersionSuffix()
     {
         return "." + versions.incrementAndGet();
     }
 
-    private Match getPotentialMatch(int builderIndex, KeyStore keyStore, String localAlias, Match.Quality qualityLimit,
-        List<String> keyTypes, Set<Principal> uniqueIssuers, BCAlgorithmConstraints algorithmConstraints,
-        boolean forServer, Date atDate, String requestedHostName) throws Exception
+    private Match getPotentialMatch(int builderIndex, KeyStore.Builder builder, KeyStore keyStore, String localAlias,
+        Match.Quality qualityLimit, List<String> keyTypes, Set<Principal> uniqueIssuers,
+        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
+        throws Exception
     {
         if (keyStore.isKeyEntry(localAlias))
         {
@@ -387,7 +477,7 @@ class ProvX509KeyManager
                 Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
                 if (quality.compareTo(qualityLimit) < 0)
                 {
-                    return new Match(builderIndex, localAlias, quality);
+                    return new Match(quality, builderIndex, localAlias, keyStore, chain);
                 }
             }
         }
@@ -700,17 +790,22 @@ class ProvX509KeyManager
             NONE
         }
 
-        static final Match NOTHING = new Match(-1, null, Quality.NONE);
+        static final Match NOTHING = new Match(Quality.NONE, -1, null, null, null);
 
+        final Quality quality;
         final int builderIndex;
         final String localAlias;
-        final Quality quality;
+        final KeyStore cachedKeyStore;
+        final X509Certificate[] cachedCertificateChain;
 
-        Match(int builderIndex, String localAlias, Quality quality)
+        Match(Quality quality, int builderIndex, String localAlias, KeyStore cachedKeyStore,
+            X509Certificate[] cachedCertificateChain)
         {
+            this.quality = quality;
             this.builderIndex = builderIndex;
             this.localAlias = localAlias;
-            this.quality = quality;
+            this.cachedKeyStore = cachedKeyStore;
+            this.cachedCertificateChain = cachedCertificateChain;
         }
 
         public int compareTo(Match other)

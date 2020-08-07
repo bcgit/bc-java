@@ -176,7 +176,7 @@ class ProvX509KeyManagerSimple
                     continue;
                 }
 
-                credentials.put(alias, new Credential(privateKey, certificateChain));
+                credentials.put(alias, new Credential(alias, privateKey, certificateChain));
             }
         }
 
@@ -195,9 +195,21 @@ class ProvX509KeyManagerSimple
         return chooseAlias(getKeyTypes(keyTypes), issuers, TransportData.from(socket), false);
     }
 
+    @Override
+    public BCX509Key chooseClientKeyBC(String[] keyTypes, Principal[] issuers, Socket socket)
+    {
+        return chooseKeyBC(getKeyTypes(keyTypes), issuers, TransportData.from(socket), false);
+    }
+
     public String chooseEngineClientAlias(String[] keyTypes, Principal[] issuers, SSLEngine engine)
     {
         return chooseAlias(getKeyTypes(keyTypes), issuers, TransportData.from(engine), false);
+    }
+
+    @Override
+    public BCX509Key chooseEngineClientKeyBC(String[] keyTypes, Principal[] issuers, SSLEngine engine)
+    {
+        return chooseKeyBC(getKeyTypes(keyTypes), issuers, TransportData.from(engine), false);
     }
 
     public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine)
@@ -205,9 +217,21 @@ class ProvX509KeyManagerSimple
         return chooseAlias(getKeyTypes(keyType), issuers, TransportData.from(engine), true);
     }
 
+    @Override
+    public BCX509Key chooseEngineServerKeyBC(String keyType, Principal[] issuers, SSLEngine engine)
+    {
+        return chooseKeyBC(getKeyTypes(keyType), issuers, TransportData.from(engine), true);
+    }
+
     public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
     {
         return chooseAlias(getKeyTypes(keyType), issuers, TransportData.from(socket), true);
+    }
+
+    @Override
+    public BCX509Key chooseServerKeyBC(String keyType, Principal[] issuers, Socket socket)
+    {
+        return chooseKeyBC(getKeyTypes(keyType), issuers, TransportData.from(socket), true);
     }
 
     public X509Certificate[] getCertificateChain(String alias)
@@ -225,7 +249,7 @@ class ProvX509KeyManagerSimple
     public BCX509Key getKeyBC(String alias)
     {
         Credential credential = getCredential(alias);
-        return null == credential ? null : new ProvX509Key(credential.privateKey, credential.certificateChain);
+        return createKeyBC(credential);
     }
 
     public PrivateKey getPrivateKey(String alias)
@@ -239,61 +263,44 @@ class ProvX509KeyManagerSimple
         return getAliases(getKeyTypes(keyType), issuers, null, true);
     }
 
-    private String chooseAlias(List<String> keyTypes, Principal[] issuers, TransportData transportData, boolean forServer)
+    private String chooseAlias(List<String> keyTypes, Principal[] issuers, TransportData transportData,
+        boolean forServer)
     {
-        Match bestMatch = Match.NOTHING;
+        Match bestMatch = getBestMatch(keyTypes, issuers, transportData, forServer);
 
-        if (!credentials.isEmpty() && !keyTypes.isEmpty())
+        if (Match.NOTHING != bestMatch)
         {
-            Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
-            BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
-            Date atDate = new Date();
-            String requestedHostName = getRequestedHostName(transportData, forServer);
-
-            try
-            {
-                bestMatch = chooseAliasFromCredentials(keyTypes, uniqueIssuers, algorithmConstraints, forServer, atDate,
-                    requestedHostName);
-            }
-            catch (Exception e)
-            {
-            }
+            String alias = getAlias(bestMatch);
+            LOG.fine("Found matching key, returning alias: " + alias);
+            return alias;
         }
 
-        if (Match.NOTHING == bestMatch)
-        {
-            LOG.fine("No matching key found");
-            return null;
-        }
-
-        String alias = getAlias(bestMatch);
-        LOG.fine("Found matching key, returning alias: " + alias);
-        return alias;
+        LOG.fine("No matching key found");
+        return null;
     }
 
-    private Match chooseAliasFromCredentials(List<String> keyTypes, Set<Principal> uniqueIssuers,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws Exception
+    private BCX509Key chooseKeyBC(List<String> keyTypes, Principal[] issuers, TransportData transportData,
+        boolean forServer)
     {
-        Match bestMatch = Match.NOTHING;
+        Match bestMatch = getBestMatch(keyTypes, issuers, transportData, forServer);
 
-        for (Map.Entry<String, Credential> credentialEntry : credentials.entrySet())
+        if (Match.NOTHING != bestMatch)
         {
-            Match match = getPotentialMatch(credentialEntry, bestMatch.quality, keyTypes, uniqueIssuers,
-                algorithmConstraints, forServer, atDate, requestedHostName);
-
-            if (null != match)
+            BCX509Key keyBC = createKeyBC(bestMatch.credential);
+            if (null != keyBC)
             {
-                bestMatch = match;
-
-                if (Match.Quality.OK == bestMatch.quality)
-                {
-                    break;
-                }
+                LOG.fine("Found matching key, from alias: " + getAlias(bestMatch));
+                return keyBC;
             }
         }
 
-        return bestMatch;
+        LOG.fine("No matching key found");
+        return null;
+    }
+
+    private BCX509Key createKeyBC(Credential credential)
+    {
+        return null == credential ? null : new ProvX509Key(credential.privateKey, credential.certificateChain);
     }
 
     private String[] getAliases(List<String> keyTypes, Principal[] issuers, TransportData transportData,
@@ -335,9 +342,9 @@ class ProvX509KeyManagerSimple
     {
         List<Match> matches = null;
 
-        for (Map.Entry<String, Credential> credentialEntry : credentials.entrySet())
+        for (Credential credential : credentials.values())
         {
-            Match match = getPotentialMatch(credentialEntry, Match.Quality.NONE, keyTypes, uniqueIssuers,
+            Match match = getPotentialMatch(credential, Match.Quality.NONE, keyTypes, uniqueIssuers,
                 algorithmConstraints, forServer, atDate, requestedHostName);
 
             if (null != match)
@@ -349,17 +356,65 @@ class ProvX509KeyManagerSimple
         return matches;
     }
 
-    private Match getPotentialMatch(Map.Entry<String, Credential> credentialEntry, Match.Quality qualityLimit,
-        List<String> keyTypes, Set<Principal> uniqueIssuers, BCAlgorithmConstraints algorithmConstraints,
-        boolean forServer, Date atDate, String requestedHostName) throws Exception
+    private Match getBestMatch(List<String> keyTypes, Principal[] issuers, TransportData transportData,
+        boolean forServer)
     {
-        X509Certificate[] chain = credentialEntry.getValue().certificateChain;
+        if (!credentials.isEmpty() && !keyTypes.isEmpty())
+        {
+            Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
+            BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
+            Date atDate = new Date();
+            String requestedHostName = getRequestedHostName(transportData, forServer);
+
+            try
+            {
+                return getBestMatchFromCredentials(keyTypes, uniqueIssuers, algorithmConstraints, forServer, atDate,
+                    requestedHostName);
+            }
+            catch (Exception e)
+            {
+            }
+        }
+
+        return Match.NOTHING;
+    }
+
+    private Match getBestMatchFromCredentials(List<String> keyTypes, Set<Principal> uniqueIssuers,
+        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
+        throws Exception
+    {
+        Match bestMatch = Match.NOTHING;
+
+        for (Credential credential : credentials.values())
+        {
+            Match match = getPotentialMatch(credential, bestMatch.quality, keyTypes, uniqueIssuers,
+                algorithmConstraints, forServer, atDate, requestedHostName);
+
+            if (null != match)
+            {
+                bestMatch = match;
+
+                if (Match.Quality.OK == bestMatch.quality)
+                {
+                    break;
+                }
+            }
+        }
+
+        return bestMatch;
+    }
+
+    private Match getPotentialMatch(Credential credential, Match.Quality qualityLimit, List<String> keyTypes,
+        Set<Principal> uniqueIssuers, BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate,
+        String requestedHostName) throws Exception
+    {
+        X509Certificate[] chain = credential.certificateChain;
         if (isSuitableChain(chain, keyTypes, uniqueIssuers, algorithmConstraints, forServer))
         {
             Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
             if (quality.compareTo(qualityLimit) < 0)
             {
-                return new Match(credentialEntry.getKey(), quality);
+                return new Match(quality, credential);
             }
         }
 
@@ -411,7 +466,7 @@ class ProvX509KeyManagerSimple
 
     private static String getAlias(Match match)
     {
-        return match.alias;
+        return match.credential.alias;
     }
 
     private static String[] getAliases(List<Match> matches)
@@ -584,11 +639,13 @@ class ProvX509KeyManagerSimple
 
     private static class Credential
     {
+        private final String alias;
         private final PrivateKey privateKey;
         private final X509Certificate[] certificateChain;
 
-        Credential(PrivateKey privateKey, X509Certificate[] certificateChain)
+        Credential(String alias, PrivateKey privateKey, X509Certificate[] certificateChain)
         {
+            this.alias = alias;
             this.privateKey = privateKey;
             this.certificateChain = certificateChain;
         }
@@ -610,15 +667,15 @@ class ProvX509KeyManagerSimple
             NONE
         }
 
-        static final Match NOTHING = new Match(null, Quality.NONE);
+        static final Match NOTHING = new Match(Quality.NONE, null);
 
-        final String alias;
         final Quality quality;
+        final Credential credential;
 
-        Match(String alias, Quality quality)
+        Match(Quality quality, Credential credential)
         {
-            this.alias = alias;
             this.quality = quality;
+            this.credential = credential;
         }
 
         public int compareTo(Match other)
