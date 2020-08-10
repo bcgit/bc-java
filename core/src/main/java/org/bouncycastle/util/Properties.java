@@ -45,7 +45,8 @@ public class Properties
      * Return whether a particular override has been set to false.
      *
      * @param propertyName the property name for the override.
-     * @return true if the property is set to "false", false otherwise.
+     * @param isTrue true if the override should be true, false otherwise.
+     * @return true if the property is set to the value of isTrue, false otherwise.
      */
     public static boolean isOverrideSetTo(String propertyName, boolean isTrue)
     {
