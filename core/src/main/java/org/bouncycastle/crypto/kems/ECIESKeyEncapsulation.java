@@ -205,7 +205,7 @@ public class ECIESKeyEncapsulation
         BigInteger xHat = ecPrivKey.getD();
         if (CofactorMode)
         {
-            xHat = xHat.multiply(h.modInverse(n)).mod(n);
+            xHat = xHat.multiply(ecParams.getHInv()).mod(n);
         }
 
         ECPoint hTilde = gHat.multiply(xHat).normalize();
