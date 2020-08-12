@@ -437,6 +437,28 @@ public abstract class Nat
         return true;
     }
 
+    public static int equalTo(int len, int[] x, int[] y)
+    {
+        int d = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= x[i] ^ y[i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
+    public static int equalTo(int len, int[] x, int xOff, int[] y, int yOff)
+    {
+        int d = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            d |= x[xOff + i] ^ y[yOff + i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
     public static int[] fromBigInteger(int bits, BigInteger x)
     {
         if (x.signum() < 0 || x.bitLength() > bits)
