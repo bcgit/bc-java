@@ -35,6 +35,7 @@ import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -149,6 +150,8 @@ public class AuthEnvelopedDataTest
         byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(privKey).setProvider(BC));
 
         assertEquals("auth-enveloped data", Strings.fromByteArray(recData));
+
+        assertTrue(Arrays.areEqual(Sample1, authEnv.getEncoded()));
     }
 
     public void testAttributes()
@@ -183,7 +186,9 @@ public class AuthEnvelopedDataTest
         
         CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
 
-        RecipientInformationStore recipients = authData.getRecipientInfos();
+        CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(authData.getEncoded());
+
+        RecipientInformationStore recipients = encAuthData.getRecipientInfos();
 
         RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
 
