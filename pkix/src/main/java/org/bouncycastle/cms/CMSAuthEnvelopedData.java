@@ -11,11 +11,13 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Encodable;
 
 /**
  * containing class for an CMS AuthEnveloped Data object
  */
 public class CMSAuthEnvelopedData
+    implements Encodable
 {
     RecipientInformationStore recipientInfoStore;
     ContentInfo contentInfo;
@@ -153,5 +155,22 @@ public class CMSAuthEnvelopedData
     public byte[] getMac()
     {
         return Arrays.clone(mac);
+    }
+
+    /**
+     * return the ContentInfo
+     */
+    public ContentInfo toASN1Structure()
+    {
+        return contentInfo;
+    }
+
+    /**
+     * return the ASN.1 encoded representation of this object.
+     */
+    public byte[] getEncoded()
+        throws IOException
+    {
+        return contentInfo.getEncoded();
     }
 }
