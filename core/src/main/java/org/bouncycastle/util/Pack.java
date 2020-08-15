@@ -263,6 +263,15 @@ public abstract class Pack
         }
     }
 
+    public static void intToLittleEndian(int[] ns, int nsOff, int nsLen, byte[] bs, int bsOff)
+    {
+        for (int i = 0; i < nsLen; ++i)
+        {
+            intToLittleEndian(ns[nsOff + i], bs, bsOff);
+            bsOff += 4;
+        }
+    }
+
     public static long littleEndianToLong(byte[] bs, int off)
     {
         int lo = littleEndianToInt(bs, off);
