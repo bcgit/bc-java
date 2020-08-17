@@ -36,7 +36,7 @@ public class CFBBlockCipher
     {
         super(cipher);
 
-        if (bitBlockSize < 8 || bitBlockSize % 8 != 0)
+        if (bitBlockSize > (cipher.getBlockSize() * 8) || bitBlockSize < 8 || bitBlockSize % 8 != 0)
         {
             throw new IllegalArgumentException("CFB" + bitBlockSize + " not supported");
         }
