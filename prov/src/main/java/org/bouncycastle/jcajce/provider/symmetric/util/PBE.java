@@ -193,7 +193,7 @@ public interface PBE
             throws InvalidAlgorithmParameterException
         {
             if ((spec == null) || !(spec instanceof PBEParameterSpec))
-            {                      System.err.println(spec);
+            {
                 throw new InvalidAlgorithmParameterException("Need a PBEParameter spec with a PBE key.");
             }
 
