@@ -11,6 +11,8 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -25,6 +27,7 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.ShortBufferException;
@@ -599,6 +602,23 @@ public class BlockCipherTest
             "22095a9d37588d3d469c1051b473c4d645512a805f06d34971c83e18c5b5dab" +
             "2e8ed2958f038f7d8133333f90cfef1d72eefc69623e2f07a19ff520b8b4e75" +
             "3d9255",
+    };
+
+    static String[] cipherModes = new String[]
+    {
+        "OFB",
+        "CFB",
+        "PGP",
+        "OpenPGPCFB",
+        "SIC",
+        "CTR",
+        "GOFB",
+        "GCFB",
+        "CTS",
+        "CCM",
+        "OCB",
+        "EAX",
+        "GCM"
     };
 
     static byte[]   input1 = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
@@ -1578,7 +1598,52 @@ public class BlockCipherTest
             fail("unexpected exception.", e);
         }
     }
-    
+
+    private void testIncorrectCipherModes()
+    {
+        for (int i = 0; i != cipherModes.length; i++)
+        {
+            try
+            {
+                Cipher.getInstance("AES/" + cipherModes[i] + "NOT_REAL" + "/NoPadding", "BC");
+                fail("\"AES/" + cipherModes[i] + "NOT_REAL/NoPadding\"" + "returned");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                isEquals("No such algorithm: AES/" + cipherModes[i] + "NOT_REAL/NoPadding", e.getMessage());
+            }
+            catch (NoSuchPaddingException e)
+            {
+                fail(e.toString());
+            }
+            catch (NoSuchProviderException e)
+            {
+                fail(e.toString());
+            }
+        }
+
+        for (int i = 0; i != cipherModes.length; i++)
+        {
+            try
+            {
+                Cipher.getInstance("AES/" + cipherModes[i] + "256" + "/NoPadding", "BC");
+                fail("\"AES/" + cipherModes[i] + "256/NoPadding\"" + "returned");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                isEquals("No such algorithm: AES/" + cipherModes[i] + "256/NoPadding", e.getMessage());
+            }
+            catch (NoSuchPaddingException e)
+            {
+                fail(e.toString());
+            }
+            catch (NoSuchProviderException e)
+            {
+                fail(e.toString());
+            }
+        }
+    }
+
     public void performTest()
     {
         for (int i = 0; i != cipherTests1.length; i += 2)
@@ -1618,6 +1683,7 @@ public class BlockCipherTest
         }
         
         testExceptions();
+        testIncorrectCipherModes();
     }
 
     public static void main(
