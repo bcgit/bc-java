@@ -25,16 +25,21 @@ public class OFBBlockCipher
      *
      * @param cipher the block cipher to be used as the basis of the
      * feedback mode.
-     * @param blockSize the block size in bits (note: a multiple of 8)
+     * @param bitBlockSize the block size in bits (note: a multiple of 8)
      */
     public OFBBlockCipher(
         BlockCipher cipher,
-        int         blockSize)
+        int         bitBlockSize)
     {
         super(cipher);
 
+        if (bitBlockSize > (cipher.getBlockSize() * 8) || bitBlockSize < 8 || bitBlockSize % 8 != 0)
+        {
+            throw new IllegalArgumentException("0FB" + bitBlockSize + " not supported");
+        }
+
         this.cipher = cipher;
-        this.blockSize = blockSize / 8;
+        this.blockSize = bitBlockSize / 8;
 
         this.IV = new byte[cipher.getBlockSize()];
         this.ofbV = new byte[cipher.getBlockSize()];
