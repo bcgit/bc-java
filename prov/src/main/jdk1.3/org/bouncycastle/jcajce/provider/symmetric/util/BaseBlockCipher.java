@@ -295,9 +295,13 @@ public class BaseBlockCipher
     }
 
     protected void engineSetMode(
-        String  mode)
+        String mode)
         throws NoSuchAlgorithmException
     {
+        if (baseEngine == null)
+        {
+            throw new NoSuchAlgorithmException("no mode supported for this algorithm");
+        }
         modeName = Strings.toUpperCase(mode);
 
         if (modeName.equals("ECB"))
@@ -309,7 +313,7 @@ public class BaseBlockCipher
         {
             ivLength = baseEngine.getBlockSize();
             cipher = new BufferedGenericBlockCipher(
-                            new CBCBlockCipher(baseEngine));
+                new CBCBlockCipher(baseEngine));
         }
         else if (modeName.startsWith("OFB"))
         {
@@ -319,12 +323,12 @@ public class BaseBlockCipher
                 int wordSize = Integer.parseInt(modeName.substring(3));
 
                 cipher = new BufferedGenericBlockCipher(
-                                new OFBBlockCipher(baseEngine, wordSize));
+                    new OFBBlockCipher(baseEngine, wordSize));
             }
             else
             {
                 cipher = new BufferedGenericBlockCipher(
-                        new OFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
+                    new OFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
             }
         }
         else if (modeName.startsWith("CFB"))
@@ -335,29 +339,34 @@ public class BaseBlockCipher
                 int wordSize = Integer.parseInt(modeName.substring(3));
 
                 cipher = new BufferedGenericBlockCipher(
-                                new CFBBlockCipher(baseEngine, wordSize));
+                    new CFBBlockCipher(baseEngine, wordSize));
             }
             else
             {
                 cipher = new BufferedGenericBlockCipher(
-                        new CFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
+                    new CFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
             }
         }
-        else if (modeName.startsWith("PGP"))
+        else if (modeName.startsWith("PGPCFB"))
         {
-            boolean inlineIV = modeName.equalsIgnoreCase("PGPCFBwithIV");
+            boolean inlineIV = modeName.equals("PGPCFBWITHIV");
+
+            if (!inlineIV && modeName.length() != 6)
+            {
+                throw new NoSuchAlgorithmException("no mode support for " + modeName);
+            }
 
             ivLength = baseEngine.getBlockSize();
             cipher = new BufferedGenericBlockCipher(
                 new PGPCFBBlockCipher(baseEngine, inlineIV));
         }
-        else if (modeName.equalsIgnoreCase("OpenPGPCFB"))
+        else if (modeName.equals("OPENPGPCFB"))
         {
             ivLength = 0;
             cipher = new BufferedGenericBlockCipher(
                 new OpenPGPCFBBlockCipher(baseEngine));
         }
-        else if (modeName.startsWith("SIC"))
+        else if (modeName.equals("SIC"))
         {
             ivLength = baseEngine.getBlockSize();
             if (ivLength < 16)
@@ -366,16 +375,16 @@ public class BaseBlockCipher
             }
             fixedIv = false;
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                        new SICBlockCipher(baseEngine)));
+                new SICBlockCipher(baseEngine)));
         }
-        else if (modeName.startsWith("CTR"))
+        else if (modeName.equals("CTR"))
         {
             ivLength = baseEngine.getBlockSize();
             fixedIv = false;
             if (baseEngine instanceof DSTU7624Engine)
             {
                 cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                                    new KCTRBlockCipher(baseEngine)));
+                    new KCTRBlockCipher(baseEngine)));
             }
             else
             {
@@ -383,24 +392,24 @@ public class BaseBlockCipher
                     new SICBlockCipher(baseEngine)));
             }
         }
-        else if (modeName.startsWith("GOFB"))
+        else if (modeName.equals("GOFB"))
         {
             ivLength = baseEngine.getBlockSize();
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                        new GOFBBlockCipher(baseEngine)));
+                new GOFBBlockCipher(baseEngine)));
         }
-        else if (modeName.startsWith("GCFB"))
+        else if (modeName.equals("GCFB"))
         {
             ivLength = baseEngine.getBlockSize();
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                        new GCFBBlockCipher(baseEngine)));
+                new GCFBBlockCipher(baseEngine)));
         }
-        else if (modeName.startsWith("CTS"))
+        else if (modeName.equals("CTS"))
         {
             ivLength = baseEngine.getBlockSize();
             cipher = new BufferedGenericBlockCipher(new CTSBlockCipher(new CBCBlockCipher(baseEngine)));
         }
-        else if (modeName.startsWith("CCM"))
+        else if (modeName.equals("CCM"))
         {
             ivLength = 12; // CCM nonce 7..13 bytes
             if (baseEngine instanceof DSTU7624Engine)
@@ -412,7 +421,7 @@ public class BaseBlockCipher
                 cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
             }
         }
-        else if (modeName.startsWith("OCB"))
+        else if (modeName.equals("OCB"))
         {
             if (engineProvider != null)
             {
@@ -427,12 +436,12 @@ public class BaseBlockCipher
                 throw new NoSuchAlgorithmException("can't support mode " + mode);
             }
         }
-        else if (modeName.startsWith("EAX"))
+        else if (modeName.equals("EAX"))
         {
             ivLength = baseEngine.getBlockSize();
             cipher = new AEADGenericBlockCipher(new EAXBlockCipher(baseEngine));
         }
-        else if (modeName.startsWith("GCM"))
+        else if (modeName.equals("GCM"))
         {
             ivLength = baseEngine.getBlockSize();
             if (baseEngine instanceof DSTU7624Engine)
