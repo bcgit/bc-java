@@ -36,6 +36,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -89,10 +90,14 @@ public class EdECTest
 
         isTrue("priv failed", areEqual(privEnc, priv.getEncoded()));
 
+        isEquals(((EdDSAPrivateKey)priv).getPublicKey(), pub);
+
         priv = kFact.generatePrivate(new PKCS8EncodedKeySpec(privWithPubEnc));
 
         isTrue("priv with pub failed", areEqual(privWithPubEnc, priv.getEncoded()));
 
+        isEquals(((EdDSAPrivateKey)priv).getPublicKey(), pub);
+        
         serializationTest("ref priv", priv);
 
         Signature sig = Signature.getInstance("EDDSA", "BC");
