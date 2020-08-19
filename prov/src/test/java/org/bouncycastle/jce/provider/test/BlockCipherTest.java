@@ -1642,6 +1642,48 @@ public class BlockCipherTest
                 fail(e.toString());
             }
         }
+
+        for (int i = 0; i != cipherModes.length; i++)
+        {
+            try
+            {
+                Cipher.getInstance("AES/" + cipherModes[i] + "2" + "/NoPadding", "BC");
+                fail("\"AES/" + cipherModes[i] + "2/NoPadding\"" + "returned");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                isEquals("No such algorithm: AES/" + cipherModes[i] + "2/NoPadding", e.getMessage());
+            }
+            catch (NoSuchPaddingException e)
+            {
+                fail(e.toString());
+            }
+            catch (NoSuchProviderException e)
+            {
+                fail(e.toString());
+            }
+        }
+
+        for (int i = 0; i != cipherModes.length; i++)
+        {
+            try
+            {
+                Cipher.getInstance("AES/" + cipherModes[i] + "9" + "/NoPadding", "BC");
+                fail("\"AES/" + cipherModes[i] + "9/NoPadding\"" + "returned");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                isEquals("No such algorithm: AES/" + cipherModes[i] + "9/NoPadding", e.getMessage());
+            }
+            catch (NoSuchPaddingException e)
+            {
+                fail(e.toString());
+            }
+            catch (NoSuchProviderException e)
+            {
+                fail(e.toString());
+            }
+        }
     }
 
     public void performTest()
