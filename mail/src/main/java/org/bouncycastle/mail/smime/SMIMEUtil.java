@@ -381,15 +381,23 @@ public class SMIMEUtil
             // Write headers
             //
             LineOutputStream outLine = new LineOutputStream(out);
-            for (Enumeration e = mimePart.getAllHeaderLines(); e.hasMoreElements();) 
+            try
             {
-                String header = (String)e.nextElement();
-  
-                outLine.writeln(header);
-            }
+                for (Enumeration e = mimePart.getAllHeaderLines(); e.hasMoreElements();) 
+                {
+                    String header = (String)e.nextElement();
+    
+                    outLine.writeln(header);
+                }
 
-            outLine.writeln();
-            outLine.flush();
+                outLine.writeln();
+                outLine.flush();
+            }
+            finally
+            {
+                outLine.close();
+            }
+            
 
 
             OutputStream outCRLF;

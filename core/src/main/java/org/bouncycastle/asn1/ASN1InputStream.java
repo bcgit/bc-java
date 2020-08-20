@@ -249,31 +249,38 @@ public class ASN1InputStream
             }
 
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
-            ASN1StreamParser sp = new ASN1StreamParser(indIn, limit);
-
-            if ((tag & APPLICATION) != 0)
+            try
             {
-                return new BERApplicationSpecificParser(tagNo, sp).getLoadedObject();
+                ASN1StreamParser sp = new ASN1StreamParser(indIn, limit);
+
+                if ((tag & APPLICATION) != 0)
+                {
+                    return new BERApplicationSpecificParser(tagNo, sp).getLoadedObject();
+                }
+
+                if ((tag & TAGGED) != 0)
+                {
+                    return new BERTaggedObjectParser(true, tagNo, sp).getLoadedObject();
+                }
+
+                // TODO There are other tags that may be constructed (e.g. BIT_STRING)
+                switch (tagNo)
+                {
+                    case OCTET_STRING:
+                        return new BEROctetStringParser(sp).getLoadedObject();
+                    case SEQUENCE:
+                        return new BERSequenceParser(sp).getLoadedObject();
+                    case SET:
+                        return new BERSetParser(sp).getLoadedObject();
+                    case EXTERNAL:
+                        return new DERExternalParser(sp).getLoadedObject();
+                    default:
+                        throw new IOException("unknown BER object encountered");
+                }
             }
-
-            if ((tag & TAGGED) != 0)
+            finally
             {
-                return new BERTaggedObjectParser(true, tagNo, sp).getLoadedObject();
-            }
-
-            // TODO There are other tags that may be constructed (e.g. BIT_STRING)
-            switch (tagNo)
-            {
-                case OCTET_STRING:
-                    return new BEROctetStringParser(sp).getLoadedObject();
-                case SEQUENCE:
-                    return new BERSequenceParser(sp).getLoadedObject();
-                case SET:
-                    return new BERSetParser(sp).getLoadedObject();
-                case EXTERNAL:
-                    return new DERExternalParser(sp).getLoadedObject();
-                default:
-                    throw new IOException("unknown BER object encountered");
+                indIn.close();
             }
         }
         else

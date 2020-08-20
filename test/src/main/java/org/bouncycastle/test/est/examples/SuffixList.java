@@ -15,35 +15,39 @@ class SuffixList
         throws Exception
     {
         FileInputStream fin = new FileInputStream(file);
-        String line = null;
-        BufferedReader bin = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+        BufferedReader bin = new BufferedReader(new InputStreamReader(fin));
         ArrayList<String> suffixes = new ArrayList<String>();
-
-        while ((line = bin.readLine()) != null)
+        try
         {
-            if (line.length() == 0 || (line.startsWith("//") && !line.startsWith("// xn--")))
-            {
-                continue;
-            }
+            String line = null;
 
-            if (line.startsWith("!"))
+            while ((line = bin.readLine()) != null)
             {
-                continue;
-            }
+                if (line.length() == 0 || (line.startsWith("//") && !line.startsWith("// xn--")))
+                {
+                    continue;
+                }
 
-            line = line.trim();
-            if (line.startsWith("// xn--"))
-            {
-                String[] j = line.split(" ");
-                suffixes.add(j[1]);
-            }
-            else
-            {
-                suffixes.add(line);
+                if (line.startsWith("!"))
+                {
+                    continue;
+                }
+
+                line = line.trim();
+                if (line.startsWith("// xn--"))
+                {
+                    String[] j = line.split(" ");
+                    suffixes.add(j[1]);
+                }
+                else
+                {
+                    suffixes.add(line);
+                }
             }
         }
-
-        bin.close();
+        finally {
+            bin.close();
+        }
 
         for (int t = 0; t < suffixes.size(); t++)
         {
