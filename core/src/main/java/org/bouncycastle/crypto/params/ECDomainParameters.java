@@ -8,6 +8,7 @@ import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 public class ECDomainParameters
     implements ECConstants
@@ -90,7 +91,7 @@ public class ECDomainParameters
     {
         if (hInv == null)
         {
-            hInv = h.modInverse(n);
+            hInv = BigIntegers.modOddInverseVar(n, h);
         }
         return hInv;
     }

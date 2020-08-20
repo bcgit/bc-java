@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat224;
 import org.bouncycastle.util.Pack;
@@ -76,56 +77,7 @@ public class SecP224R1Field
 
     public static void inv(int[] x, int[] z)
     {
-        /*
-         * Raise this element to the exponent 2^224 - 2^96 - 1
-         *
-         * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 127 1s } { 1 0s } { 96 1s }
-         *
-         * Therefore we need an addition chain containing 96, 127 (the lengths of the repunits)
-         * We use: 1, 2, 3, 6, 12, 24, 48, [96], 120, 126, [127]
-         */
-
-        if (0 != isZero(x))
-        {
-            throw new IllegalArgumentException("'x' cannot be 0");
-        }
-
-        int[] x1 = x;
-        int[] x2 = Nat224.create();
-        square(x1, x2);
-        multiply(x2, x1, x2);
-        int[] x3 = x2;
-        square(x2, x3);
-        multiply(x3, x1, x3);
-        int[] x6 = Nat224.create();
-        squareN(x3, 3, x6);
-        multiply(x6, x3, x6);
-        int[] x12 = x3;
-        squareN(x6, 6, x12);
-        multiply(x12, x6, x12);
-        int[] x24 = Nat224.create();
-        squareN(x12, 12, x24);
-        multiply(x24, x12, x24);
-        int[] x48 = x12;
-        squareN(x24, 24, x48);
-        multiply(x48, x24, x48);
-        int[] x96 = Nat224.create();
-        squareN(x48, 48, x96);
-        multiply(x96, x48, x96);
-        int[] x120 = x48;
-        squareN(x96, 24, x120);
-        multiply(x120, x24, x120);
-        int[] x126 = x24;
-        squareN(x120, 6, x126);
-        multiply(x126, x6, x126);
-        int[] x127 = x6;
-        square(x126, x127);
-        multiply(x127, x1, x127);
-
-        int[] t = x127;
-        squareN(t, 97, t);
-        multiply(t, x96, z);
+        Mod.checkedModOddInverse(P, x, z);
     }
 
     public static int isZero(int[] x)

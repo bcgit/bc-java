@@ -3,8 +3,6 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 import java.util.Random;
 
-import org.bouncycastle.math.raw.Mod;
-import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
@@ -418,13 +416,7 @@ public abstract class ECFieldElement
 
         protected BigInteger modInverse(BigInteger x)
         {
-            int bits = getFieldSize();
-            int len = (bits + 31) >> 5;
-            int[] p = Nat.fromBigInteger(bits, q);
-            int[] n = Nat.fromBigInteger(bits, x);
-            int[] z = Nat.create(len);
-            Mod.invert(p, n, z);
-            return Nat.toBigInteger(len, z);
+            return BigIntegers.modOddInverse(q, x);
         }
 
         protected BigInteger modMult(BigInteger x1, BigInteger x2)
