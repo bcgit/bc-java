@@ -3,6 +3,8 @@ package org.bouncycastle.bcpg;
 import java.io.*;
 import java.math.BigInteger;
 
+import org.bouncycastle.util.BigIntegers;
+
 /**
  * base class for an RSA Secret (or Private) Key.
  */
@@ -32,7 +34,7 @@ public class RSASecretBCPGKey
 
         expP = d.getValue().remainder(p.getValue().subtract(BigInteger.valueOf(1)));
         expQ = d.getValue().remainder(q.getValue().subtract(BigInteger.valueOf(1)));
-        crt = q.getValue().modInverse(p.getValue());
+        crt = BigIntegers.modOddInverse(p.getValue(), q.getValue());
     }
     
     /**
@@ -65,11 +67,11 @@ public class RSASecretBCPGKey
         this.d = new MPInteger(d);
         this.p = new MPInteger(p);
         this.q = new MPInteger(q);
-        this.u = new MPInteger(p.modInverse(q));
+        this.u = new MPInteger(BigIntegers.modOddInverse(q, p));
 
         expP = d.remainder(p.subtract(BigInteger.valueOf(1)));
         expQ = d.remainder(q.subtract(BigInteger.valueOf(1)));
-        crt = q.modInverse(p);
+        crt = BigIntegers.modOddInverse(p, q);
     }
     
     /**

@@ -925,7 +925,7 @@ public abstract class Ed25519
 
                     X25519Field.add(q.z, q.z, x);
                     // TODO[ed25519] Batch inversion
-                    X25519Field.inv(x, y);
+                    X25519Field.invVar(x, y);
                     X25519Field.mul(q.x, y, x);
                     X25519Field.mul(q.y, y, y);
 

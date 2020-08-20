@@ -125,7 +125,7 @@ public class RSABlindedEngine
                 BigInteger blindedInput = r.modPow(e, m).multiply(input).mod(m);
                 BigInteger blindedResult = core.processBlock(blindedInput);
 
-                BigInteger rInv = r.modInverse(m);
+                BigInteger rInv = BigIntegers.modOddInverse(m, r);
                 result = blindedResult.multiply(rInv).mod(m);
                 // defence against Arjen Lenstra’s CRT attack
                 if (!input.equals(result.modPow(e, m)))

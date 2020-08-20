@@ -437,6 +437,28 @@ public abstract class Nat
         return true;
     }
 
+    public static int equalTo(int len, int[] x, int y)
+    {
+        int d = x[0] ^ y;
+        for (int i = 1; i < len; ++i)
+        {
+            d |= x[i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
+    public static int equalTo(int len, int[] x, int xOff, int y)
+    {
+        int d = x[xOff] ^ y;
+        for (int i = 1; i < len; ++i)
+        {
+            d |= x[xOff + i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
     public static int equalTo(int len, int[] x, int[] y)
     {
         int d = 0;

@@ -20,6 +20,7 @@ import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -177,7 +178,7 @@ public class SM2Signer
             while (r.equals(ZERO) || r.add(k).equals(n));
 
             // A6
-            BigInteger dPlus1ModN = d.add(ONE).modInverse(n);
+            BigInteger dPlus1ModN = BigIntegers.modOddInverse(n, d.add(ONE));
 
             s = k.subtract(r.multiply(d)).mod(n);
             s = dPlus1ModN.multiply(s).mod(n);

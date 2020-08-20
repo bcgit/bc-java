@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.gm;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Pack;
@@ -72,62 +73,7 @@ public class SM2P256V1Field
 
     public static void inv(int[] x, int[] z)
     {
-        /*
-         * Raise this element to the exponent 2^256 - 2^224 - 2^96 + 2^64 - 3
-         *
-         * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 31 1s } { 1 0s } { 128 1s } { 32 0s } { 62 1s } { 1 0s } { 1 1s }
-         *
-         * We use an addition chain for the beginning: [1], 2, [4], 6, 12, 24, 30, [31] 
-         */
-
-        if (0 != isZero(x))
-        {
-            throw new IllegalArgumentException("'x' cannot be 0");
-        }
-
-        int[] x1 = x;
-        int[] x2 = Nat256.create();
-        square(x1, x2);
-        multiply(x2, x1, x2);
-        int[] x4 = Nat256.create();
-        squareN(x2, 2, x4);
-        multiply(x4, x2, x4);
-        int[] x6 = Nat256.create();
-        squareN(x4, 2, x6);
-        multiply(x6, x2, x6);
-        int[] x12 = x2;
-        squareN(x6, 6, x12);
-        multiply(x12, x6, x12);
-        int[] x24 = Nat256.create();
-        squareN(x12, 12, x24);
-        multiply(x24, x12, x24);
-        int[] x30 = x12;
-        squareN(x24, 6, x30);
-        multiply(x30, x6, x30);
-        int[] x31 = x6;
-        square(x30, x31);
-        multiply(x31, x1, x31);
-
-        int[] t = x24;
-        squareN(x31, 32, t);
-        multiply(t, x31, t);
-        squareN(t, 31, t);
-        multiply(t, x31, t);
-        squareN(t, 31, t);
-        multiply(t, x31, t);
-        squareN(t, 31, t);
-        multiply(t, x31, t);
-        squareN(t, 4, t);
-        multiply(t, x4, t);
-        squareN(t, 63, t);
-        multiply(t, x31, t);
-        squareN(t, 31, t);
-        multiply(t, x31, t);
-        squareN(t, 2, t);
-
-        // NOTE that x1 and z could be the same array
-        multiply(x1, t, z);
+        Mod.checkedModOddInverse(P, x, z);
     }
 
     public static int isZero(int[] x)

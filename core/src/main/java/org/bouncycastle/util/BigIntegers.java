@@ -3,6 +3,9 @@ package org.bouncycastle.util;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.raw.Mod;
+import org.bouncycastle.math.raw.Nat;
+
 /**
  * BigInteger utilities.
  */
@@ -183,6 +186,68 @@ public final class BigIntegers
         }
 
         return x.longValue(); 
+    }
+
+    public static BigInteger modOddInverse(BigInteger M, BigInteger X)
+    {
+        if (!M.testBit(0))
+        {
+            throw new IllegalArgumentException("'modulus' must be odd");
+        }
+        if (M.signum() != 1)
+        {
+            throw new ArithmeticException("BigInteger: modulus not positive");
+        }
+        if (X.signum() < 0 || X.compareTo(M) >= 0)
+        {
+            X = X.mod(M);
+        }
+
+        int bits = M.bitLength();
+        int[] m = Nat.fromBigInteger(bits, M);
+        int[] x = Nat.fromBigInteger(bits, X);
+        int len = m.length;
+        int[] z = Nat.create(len);
+        if (0 == Mod.modOddInverse(m, x, z))
+        {
+            throw new ArithmeticException("BigInteger not invertible.");
+        }
+        return Nat.toBigInteger(len, z);
+    }
+
+    public static BigInteger modOddInverseVar(BigInteger M, BigInteger X)
+    {
+        if (!M.testBit(0))
+        {
+            throw new IllegalArgumentException("BigInteger: modulus not odd");
+        }
+        if (M.signum() != 1)
+        {
+            throw new ArithmeticException("BigInteger: modulus not positive");
+        }
+        if (M.equals(ONE))
+        {
+            return ZERO;
+        }
+        if (X.signum() < 0 || X.compareTo(M) >= 0)
+        {
+            X = X.mod(M);
+        }
+        if (X.equals(ONE))
+        {
+            return ONE;
+        }
+
+        int bits = M.bitLength();
+        int[] m = Nat.fromBigInteger(bits, M);
+        int[] x = Nat.fromBigInteger(bits, X);
+        int len = m.length;
+        int[] z = Nat.create(len);
+        if (!Mod.modOddInverseVar(m, x, z))
+        {
+            throw new ArithmeticException("BigInteger not invertible.");
+        }
+        return Nat.toBigInteger(len, z);
     }
 
     public static int getUnsignedByteLength(BigInteger n)

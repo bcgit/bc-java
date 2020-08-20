@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat160;
 import org.bouncycastle.util.Pack;
@@ -76,60 +77,7 @@ public class SecP160R1Field
 
     public static void inv(int[] x, int[] z)
     {
-        /*
-         * Raise this element to the exponent 2^160 - 2^31 - 3
-         *
-         * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 128 1s } { 1 0s } { 29 1s } { 1 0s } { 1 1s }
-         *
-         * Therefore we need an addition chain containing 1, 29, 128 (the lengths of the repunits)
-         * We use: [1], 2, 3, 6, 12, 24, 27, [29], 32, 64, [128]
-         */
-
-        if (0 != isZero(x))
-        {
-            throw new IllegalArgumentException("'x' cannot be 0");
-        }
-
-        int[] x1 = x;
-        int[] x2 = Nat160.create();
-        square(x1, x2);
-        multiply(x2, x1, x2);
-        int[] x3 = Nat160.create();
-        square(x2, x3);
-        multiply(x3, x1, x3);
-        int[] x6 = Nat160.create();
-        squareN(x3, 3, x6);
-        multiply(x6, x3, x6);
-        int[] x12 = Nat160.create();
-        squareN(x6, 6, x12);
-        multiply(x12, x6, x12);
-        int[] x24 = x6;
-        squareN(x12, 12, x24);
-        multiply(x24, x12, x24);
-        int[] x27 = x12;
-        squareN(x24, 3, x27);
-        multiply(x27, x3, x27);
-        int[] x29 = x24;
-        squareN(x27, 2, x29);
-        multiply(x29, x2, x29);
-        int[] x32 = x2;
-        squareN(x29, 3, x32);
-        multiply(x32, x3, x32);
-        int[] x64 = x3;
-        squareN(x32, 32, x64);
-        multiply(x64, x32, x64);
-        int[] x128 = x27;
-        squareN(x64, 64, x128);
-        multiply(x128, x64, x128);
-
-        int[] t = x128;
-        squareN(t, 30, t);
-        multiply(t, x29, t);
-        squareN(t, 2, t);
-
-        // NOTE that x1 and z could be the same array
-        multiply(x1, t, z);
+        Mod.checkedModOddInverse(P, x, z);
     }
 
     public static int isZero(int[] x)

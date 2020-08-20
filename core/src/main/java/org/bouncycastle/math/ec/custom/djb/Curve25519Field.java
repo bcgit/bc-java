@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.djb;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Pack;
@@ -72,58 +73,7 @@ public class Curve25519Field
 
     public static void inv(int[] x, int[] z)
     {
-        /*
-         * Raise this element to the exponent 2^255 - 21
-         *
-         * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 250 1s } "01011"
-         *
-         * Therefore we need an addition chain containing 1, 2, 250 (the lengths of the repunits)
-         * We use: [1], [2], 3, 5, 10, 15, 25, 50, 75, 125, [250]
-         */
-
-        if (0 != isZero(x))
-        {
-            throw new IllegalArgumentException("'x' cannot be 0");
-        }
-
-        int[] x1 = x;
-        int[] x2 = Nat256.create();
-        square(x1, x2);
-        multiply(x2, x1, x2);
-        int[] x3 = Nat256.create();
-        square(x2, x3);
-        multiply(x3, x1, x3);
-        int[] x5 = x3;
-        squareN(x3, 2, x5);
-        multiply(x5, x2, x5);
-        int[] x10 = Nat256.create();
-        squareN(x5, 5, x10);
-        multiply(x10, x5, x10);
-        int[] x15 = Nat256.create();
-        squareN(x10, 5, x15);
-        multiply(x15, x5, x15);
-        int[] x25 = x5;
-        squareN(x15, 10, x25);
-        multiply(x25, x10, x25);
-        int[] x50 = x10;
-        squareN(x25, 25, x50);
-        multiply(x50, x25, x50);
-        int[] x75 = x15;
-        squareN(x50, 25, x75);
-        multiply(x75, x25, x75);
-        int[] x125 = x25;
-        squareN(x75, 50, x125);
-        multiply(x125, x50, x125);
-        int[] x250 = x50;
-        squareN(x125, 125, x250);
-        multiply(x250, x125, x250);
-
-        int[] t = x250;
-        squareN(t, 2, t);
-        multiply(t, x1, t);
-        squareN(t, 3, t);
-        multiply(t, x2, z);
+        Mod.modOddInverse(P, x, z);
     }
 
     public static int isZero(int[] x)

@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Pack;
@@ -76,67 +77,7 @@ public class SecP256K1Field
 
     public static void inv(int[] x, int[] z)
     {
-        /*
-         * Raise this element to the exponent 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 3
-         *
-         * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 223 1s } { 1 0s } { 22 1s } { 4 0s } { 1 1s } { 1 0s } { 2 1s } { 1 0s } { 1 1s }
-         *
-         * Therefore we need an addition chain containing 1, 2, 22, 223 (the lengths of the repunits)
-         * We use: [1], [2], 3, 6, 9, 11, [22], 44, 88, 176, 220, [223]
-         */
-
-        if (0 != isZero(x))
-        {
-            throw new IllegalArgumentException("'x' cannot be 0");
-        }
-
-        int[] x1 = x;
-        int[] x2 = Nat256.create();
-        square(x1, x2);
-        multiply(x2, x1, x2);
-        int[] x3 = Nat256.create();
-        square(x2, x3);
-        multiply(x3, x1, x3);
-        int[] x6 = Nat256.create();
-        squareN(x3, 3, x6);
-        multiply(x6, x3, x6);
-        int[] x9 = x6;
-        squareN(x6, 3, x9);
-        multiply(x9, x3, x9);
-        int[] x11 = x9;
-        squareN(x9, 2, x11);
-        multiply(x11, x2, x11);
-        int[] x22 = Nat256.create();
-        squareN(x11, 11, x22);
-        multiply(x22, x11, x22);
-        int[] x44 = x11;
-        squareN(x22, 22, x44);
-        multiply(x44, x22, x44);
-        int[] x88 = Nat256.create();
-        squareN(x44, 44, x88);
-        multiply(x88, x44, x88);
-        int[] x176 = Nat256.create();
-        squareN(x88, 88, x176);
-        multiply(x176, x88, x176);
-        int[] x220 = x88;
-        squareN(x176, 44, x220);
-        multiply(x220, x44, x220);
-        int[] x223 = x44;
-        squareN(x220, 3, x223);
-        multiply(x223, x3, x223);
-
-        int[] t = x223;
-        squareN(t, 23, t);
-        multiply(t, x22, t);
-        squareN(t, 5, t);
-        multiply(t, x1, t);
-        squareN(t, 3, t);
-        multiply(t, x2, t);
-        squareN(t, 2, t);
-
-        // NOTE that x1 and z could be the same array
-        multiply(x1, t, z);
+        Mod.checkedModOddInverse(P, x, z);
     }
 
     public static int isZero(int[] x)
