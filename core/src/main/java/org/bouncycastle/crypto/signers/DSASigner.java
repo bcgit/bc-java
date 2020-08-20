@@ -105,7 +105,7 @@ public class DSASigner
         // the randomizer is to conceal timing information related to k and x.
         BigInteger  r = params.getG().modPow(k.add(getRandomizer(q, random)), params.getP()).mod(q);
 
-        k = k.modInverse(q).multiply(m.add(x.multiply(r)));
+        k = BigIntegers.modOddInverse(q, k).multiply(m.add(x.multiply(r)));
 
         BigInteger  s = k.mod(q);
 
@@ -137,7 +137,7 @@ public class DSASigner
             return false;
         }
 
-        BigInteger  w = s.modInverse(q);
+        BigInteger w = BigIntegers.modOddInverseVar(q, s);
 
         BigInteger  u1 = m.multiply(w).mod(q);
         BigInteger  u2 = r.multiply(w).mod(q);

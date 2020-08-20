@@ -130,7 +130,7 @@ public class ECGOST3410_2012Signer
             return false;
         }
 
-        BigInteger v = e.modInverse(n);
+        BigInteger v = BigIntegers.modOddInverseVar(n, e);
 
         BigInteger z1 = s.multiply(v).mod(n);
         BigInteger z2 = (n.subtract(r)).multiply(v).mod(n);

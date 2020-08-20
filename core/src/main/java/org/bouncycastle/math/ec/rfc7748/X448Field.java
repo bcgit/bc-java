@@ -1,11 +1,16 @@
 package org.bouncycastle.math.ec.rfc7748;
 
+import org.bouncycastle.math.raw.Mod;
+
 public abstract class X448Field
 {
     public static final int SIZE = 16;
 
     private static final int M28 = 0x0FFFFFFF;
     private static final long U32 = 0xFFFFFFFFL;
+
+    private static final int[] P32 = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
 
     protected X448Field() {}
 
@@ -129,6 +134,12 @@ public abstract class X448Field
         }
     }
 
+    public static void decode(int[] x, int xOff, int[] z)
+    {
+        decode224(x, xOff, z, 0);
+        decode224(x, xOff + 7, z, 8);
+    }
+
     public static void decode(byte[] x, int xOff, int[] z)
     {
         decode56(x, xOff, z, 0);
@@ -139,6 +150,21 @@ public abstract class X448Field
         decode56(x, xOff + 35, z, 10);
         decode56(x, xOff + 42, z, 12);
         decode56(x, xOff + 49, z, 14);
+    }
+
+    private static void decode224(int[] x, int xOff, int[] z, int zOff)
+    {
+        int x0 = x[xOff + 0], x1 = x[xOff + 1], x2 = x[xOff + 2], x3 = x[xOff + 3];
+        int x4 = x[xOff + 4], x5 = x[xOff + 5], x6 = x[xOff + 6];
+
+        z[zOff + 0] =  x0                    & M28;
+        z[zOff + 1] = (x0 >>> 28 | x1 <<  4) & M28;
+        z[zOff + 2] = (x1 >>> 24 | x2 <<  8) & M28;
+        z[zOff + 3] = (x2 >>> 20 | x3 << 12) & M28;
+        z[zOff + 4] = (x3 >>> 16 | x4 << 16) & M28;
+        z[zOff + 5] = (x4 >>> 12 | x5 << 20) & M28;
+        z[zOff + 6] = (x5 >>>  8 | x6 << 24) & M28;
+        z[zOff + 7] =  x6 >>>  4;
     }
 
     private static int decode24(byte[] bs, int off)
@@ -166,6 +192,12 @@ public abstract class X448Field
         z[zOff + 1] = (lo >>> 28) | (hi << 4);
     }
 
+    public static void encode(int[] x, int[] z, int zOff)
+    {
+        encode224(x, 0, z, zOff);
+        encode224(x, 8, z, zOff + 7);
+    }
+
     public static void encode(int[] x,  byte[] z , int zOff)
     {
         encode56(x, 0, z, zOff);
@@ -176,6 +208,20 @@ public abstract class X448Field
         encode56(x, 10, z, zOff + 35);
         encode56(x, 12, z, zOff + 42);
         encode56(x, 14, z, zOff + 49);
+    }
+
+    private static void encode224(int[] x, int xOff, int[] is, int off)
+    {
+        int x0 = x[xOff + 0], x1 = x[xOff + 1], x2 = x[xOff + 2], x3 = x[xOff + 3];
+        int x4 = x[xOff + 4], x5 = x[xOff + 5], x6 = x[xOff + 6], x7 = x[xOff + 7];
+
+        is[off + 0] =  x0         | (x1 << 28);
+        is[off + 1] = (x1 >>>  4) | (x2 << 24);
+        is[off + 2] = (x2 >>>  8) | (x3 << 20);
+        is[off + 3] = (x3 >>> 12) | (x4 << 16);
+        is[off + 4] = (x4 >>> 16) | (x5 << 12);
+        is[off + 5] = (x5 >>> 20) | (x6 <<  8);
+        is[off + 6] = (x6 >>> 24) | (x7 <<  4);
     }
 
     private static void encode24(int n, byte[] bs, int off)
@@ -202,14 +248,35 @@ public abstract class X448Field
 
     public static void inv(int[] x, int[] z)
     {
-        // z = x^(p-2) = x^(2^448 - 2^224 - 3)
-        // (223 1s) (1 0s) (222 1s) (1 0s) (1 1s)
-        // Addition chain: [1] 2 3 6 9 18 19 37 74 111 [222] [223]
+//        int[] t = create();
+//        powPm3d4(x, t);
+//        sqr(t, 2, t);
+//        mul(t, x, z);
 
         int[] t = create();
-        powPm3d4(x, t);
-        sqr(t, 2, t);
-        mul(t, x, z);
+        int[] u = new int[14];
+
+        copy(x, 0, t, 0);
+        normalize(t);
+        encode(t, u, 0);
+
+        Mod.modOddInverse(P32, u, t);
+
+        decode(t, 0, z);
+    }
+
+    public static void invVar(int[] x, int[] z)
+    {
+        int[] t = create();
+        int[] u = new int[14];
+
+        copy(x, 0, t, 0);
+        normalize(t);
+        encode(t, u, 0);
+
+        Mod.modOddInverseVar(P32, u, t);
+
+        decode(t, 0, z);
     }
 
     public static int isZero(int[] x)

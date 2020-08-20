@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat160;
 import org.bouncycastle.util.Pack;
@@ -74,72 +75,7 @@ public class SecP160R2Field
 
     public static void inv(int[] x, int[] z)
     {
-        /*
-         * Raise this element to the exponent 2^160 - 2^32 - 2^14 - 2^12 - 2^9 - 2^8 - 2^7 - 2^3 - 2^2 - 3
-         *
-         * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 127 1s } { 1 0s } { 17 1s } "010110001110001"
-         *
-         * Therefore we need an addition chain containing 1, 2, 3, 17, 127 (the lengths of the repunits)
-         * We use: 1, 2, 3, 6, 12, 15, [17], 34, 68, 102, 119, 125, [127]
-         */
-
-        if (0 != isZero(x))
-        {
-            throw new IllegalArgumentException("'x' cannot be 0");
-        }
-
-        int[] x1 = x;
-        int[] x2 = Nat160.create();
-        square(x1, x2);
-        multiply(x2, x1, x2);
-        int[] x3 = Nat160.create();
-        square(x2, x3);
-        multiply(x3, x1, x3);
-        int[] x6 = Nat160.create();
-        squareN(x3, 3, x6);
-        multiply(x6, x3, x6);
-        int[] x12 = Nat160.create();
-        squareN(x6, 6, x12);
-        multiply(x12, x6, x12);
-        int[] x15 = x12;
-        squareN(x12, 3, x15);
-        multiply(x15, x3, x15);
-        int[] x17 = x15;
-        squareN(x15, 2, x17);
-        multiply(x17, x2, x17);
-        int[] x34 = Nat160.create();
-        squareN(x17, 17, x34);
-        multiply(x34, x17, x34);
-        int[] x68 = Nat160.create();
-        squareN(x34, 34, x68);
-        multiply(x68, x34, x68);
-        int[] x102 = x68;
-        squareN(x68, 34, x102);
-        multiply(x102, x34, x102);
-        int[] x119 = x34;
-        squareN(x102, 17, x119);
-        multiply(x119, x17, x119);
-        int[] x125 = x102;
-        squareN(x119, 6, x125);
-        multiply(x125, x6, x125);
-        int[] x127 = x6;
-        squareN(x125, 2, x127);
-        multiply(x127, x2, x127);
-
-        int[] t = x127;
-        squareN(t, 18, t);
-        multiply(t, x17, t);
-        squareN(t, 2, t);
-        multiply(t, x1, t);
-        squareN(t, 3, t);
-        multiply(t, x2, t);
-        squareN(t, 6, t);
-        multiply(t, x3, t);
-        squareN(t, 4, t);
-
-        // NOTE that x1 and z could be the same array
-        multiply(x1, t, z);
+        Mod.checkedModOddInverse(P, x, z);
     }
 
     public static int isZero(int[] x)

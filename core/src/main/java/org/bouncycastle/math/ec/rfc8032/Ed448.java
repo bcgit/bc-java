@@ -820,7 +820,7 @@ public abstract class Ed448
                 {
                     PointExt q = points[i];
                     // TODO[ed448] Batch inversion
-                    X448Field.inv(q.z, q.z);
+                    X448Field.invVar(q.z, q.z);
                     X448Field.mul(q.x, q.z, q.x);
                     X448Field.mul(q.y, q.z, q.y);
 

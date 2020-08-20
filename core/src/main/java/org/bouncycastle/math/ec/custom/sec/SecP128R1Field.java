@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat128;
 import org.bouncycastle.math.raw.Nat256;
@@ -73,53 +74,7 @@ public class SecP128R1Field
 
     public static void inv(int[] x, int[] z)
     {
-        /*
-         * Raise this element to the exponent 2^128 - 2^97 - 3
-         *
-         * Breaking up the exponent's binary representation into "repunits", we get:
-         * { 30 1s } { 1 0s } { 95 1s } { 1 0s } { 1 1s }
-         *
-         * We use an addition chain for the beginning: [1], 2, 3, [5], 10, 20, [30]
-         */
-
-        if (0 != isZero(x))
-        {
-            throw new IllegalArgumentException("'x' cannot be 0");
-        }
-
-        int[] x1 = x;
-        int[] x2 = Nat128.create();
-        square(x1, x2);
-        multiply(x2, x1, x2);
-        int[] x3 = Nat128.create();
-        square(x2, x3);
-        multiply(x3, x1, x3);
-        int[] x5 = x3;
-        squareN(x3, 2, x5);
-        multiply(x5, x2, x5);
-        int[] x10 = x2;
-        squareN(x5, 5, x10);
-        multiply(x10, x5, x10);
-        int[] x20 = Nat128.create();
-        squareN(x10, 10, x20);
-        multiply(x20, x10, x20);
-        int[] x30 = x20;
-        squareN(x20, 10, x30);
-        multiply(x30, x10, x30);
-
-        int[] t = x10;
-        squareN(x30, 31, t);
-        multiply(t, x30, t);
-        squareN(t, 30, t);
-        multiply(t, x30, t);
-        squareN(t, 30, t);
-        multiply(t, x30, t);
-        squareN(t, 5, t);
-        multiply(t, x5, t);
-        squareN(t, 2, t);
-
-        // NOTE that x1 and z could be the same array
-        multiply(x1, t, z);
+        Mod.checkedModOddInverse(P, x, z);
     }
 
     public static int isZero(int[] x)
