@@ -76,6 +76,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLEntryHolder;
 import org.bouncycastle.cert.X509CRLHolder;
@@ -1279,7 +1280,7 @@ public class CertTest
             "/BzKc9dNZIpDmAgs3babFOTQbs+BolzlDUwsPrdGxO3YNGhW7Ibz3OGhhlxXrCe1Cg" +
             "w1AH9efZBw=="
     );
-    
+
     private static byte[] gost_2012_privateKey = Base64.decode(
         "MEgCAQAwHwYIKoUDBwEBBgEwEwYHKoUDAgIkAAYIKoUDBwEBAgIEIgQg0MVlKYHb5/AwO1ZjNW8nhjyX3IgHo7nPSKuvKf87" +
             "tTU=");
@@ -1468,7 +1469,7 @@ public class CertTest
 
             X509CertificateHolder certHldr = new X509CertificateHolder(bytes);
             String provider = certHldr.getSignatureAlgorithm().getAlgorithm().equals(IsaraObjectIdentifiers.id_alg_xmss) ? "BCPQC" : BC;
-            
+
             isTrue(certHldr.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(provider).build(k)));
             // System.out.println(cert);
         }
@@ -3277,7 +3278,7 @@ public class CertTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("LMS", "BCPQC");
 
         kpg.initialize(new LMSParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
-        
+
         KeyPair kp = kpg.generateKeyPair();
 
         PrivateKey privKey = kp.getPrivate();
@@ -3666,7 +3667,6 @@ public class CertTest
             CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
 
             cert = (X509Certificate)fact.generateCertificate(bIn);
-
 //            System.out.println(cert);
         }
     }
@@ -3913,7 +3913,7 @@ public class CertTest
         PublicKey pubKey = pair.getPublic();
         PrivateKey privKey = pair.getPrivate();
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(privKey);
         JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(new X500Name("CN=Test"), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), new X500Name("CN=Test"), pubKey);
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
@@ -3940,11 +3940,45 @@ public class CertTest
 
             cert = (X509Certificate)fact.generateCertificate(bIn);
 
+            try
+            {
+                cert.verify(cert.getPublicKey());
+                fail("no exception - X509Cert");
+            }
+            catch (CertificateException e)
+            {
+                isTrue(e.getMessage().equals("signature algorithm in TBS cert not same as outer cert"));
+            }
+
+            try
+            {
+                X509CertificateHolder x509CertHldr = new JcaX509CertificateHolder(cert);
+
+                x509CertHldr.isSignatureValid(new JcaContentVerifierProviderBuilder()
+                    .setProvider("BC").build(cert));
+                fail("no exception - CertHolder");
+            }
+            catch (CertException e)
+            {
+                isTrue(e.getMessage().equals("signature invalid - algorithm identifier mismatch"));
+            }
+
+            System.setProperty("org.bouncycastle.x509.allow_absent_equiv_NULL", "true");
+
             cert.verify(cert.getPublicKey());
+
+            X509CertificateHolder x509CertHldr = new JcaX509CertificateHolder(cert);
+
+            x509CertHldr.isSignatureValid(new JcaContentVerifierProviderBuilder()
+                .setProvider("BC").build(cert));
         }
         catch (Exception e)
         {
             fail(dump + Strings.lineSeparator() + getName() + ": testNullDerNull failed - exception " + e.toString(), e);
+        }
+        finally
+        {
+            System.setProperty("org.bouncycastle.x509.allow_absent_equiv_NULL", "false");
         }
     }
 

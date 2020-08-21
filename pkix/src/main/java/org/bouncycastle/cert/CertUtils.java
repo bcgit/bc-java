@@ -33,6 +33,7 @@ import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.util.Properties;
 
 class CertUtils
 {
@@ -229,31 +230,44 @@ class CertUtils
     static boolean isAlgIdEqual(AlgorithmIdentifier id1, AlgorithmIdentifier id2)
     {
         if (!id1.getAlgorithm().equals(id2.getAlgorithm()))
-        {
-            return false;
-        }
+         {
+             return false;
+         }
 
-        if (id1.getParameters() == null)
-        {
-            if (id2.getParameters() != null && !id2.getParameters().equals(DERNull.INSTANCE))
-            {
-                return false;
-            }
+         if (Properties.isOverrideSet("org.bouncycastle.x509.allow_absent_equiv_NULL"))
+         {
+             if (id1.getParameters() == null)
+             {
+                 if (id2.getParameters() != null && !id2.getParameters().equals(DERNull.INSTANCE))
+                 {
+                     return false;
+                 }
 
-            return true;
-        }
+                 return true;
+             }
 
-        if (id2.getParameters() == null)
-        {
-            if (id1.getParameters() != null && !id1.getParameters().equals(DERNull.INSTANCE))
-            {
-                return false;
-            }
+             if (id2.getParameters() == null)
+             {
+                 if (id1.getParameters() != null && !id1.getParameters().equals(DERNull.INSTANCE))
+                 {
+                     return false;
+                 }
 
-            return true;
-        }
+                 return true;
+             }
+         }
 
-        return id1.getParameters().equals(id2.getParameters());
+         if (id1.getParameters() != null)
+         {
+             return id1.getParameters().equals(id2.getParameters());
+         }
+
+         if (id2.getParameters() != null)
+         {
+             return id2.getParameters().equals(id1.getParameters());
+         }
+
+         return true;
     }
 
     static ExtensionsGenerator doReplaceExtension(ExtensionsGenerator extGenerator, Extension ext)

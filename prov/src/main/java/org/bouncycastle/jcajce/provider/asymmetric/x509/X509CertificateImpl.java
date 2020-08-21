@@ -64,6 +64,7 @@ import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -678,27 +679,40 @@ abstract class X509CertificateImpl
             return false;
         }
 
-        if (id1.getParameters() == null)
+        if (Properties.isOverrideSet("org.bouncycastle.x509.allow_absent_equiv_NULL"))
         {
-            if (id2.getParameters() != null && !id2.getParameters().equals(DERNull.INSTANCE))
+            if (id1.getParameters() == null)
             {
-                return false;
+                if (id2.getParameters() != null && !id2.getParameters().equals(DERNull.INSTANCE))
+                {
+                    return false;
+                }
+
+                return true;
             }
 
-            return true;
-        }
-
-        if (id2.getParameters() == null)
-        {
-            if (id1.getParameters() != null && !id1.getParameters().equals(DERNull.INSTANCE))
+            if (id2.getParameters() == null)
             {
-                return false;
-            }
+                if (id1.getParameters() != null && !id1.getParameters().equals(DERNull.INSTANCE))
+                {
+                    return false;
+                }
 
-            return true;
+                return true;
+            }
         }
-        
-        return id1.getParameters().equals(id2.getParameters());
+
+        if (id1.getParameters() != null)
+        {
+            return id1.getParameters().equals(id2.getParameters());
+        }
+
+        if (id2.getParameters() != null)
+        {
+            return id2.getParameters().equals(id1.getParameters());
+        }
+
+        return true;
     }
 
     private static Collection getAlternativeNames(org.bouncycastle.asn1.x509.Certificate c, String oid)
