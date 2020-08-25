@@ -3869,6 +3869,9 @@ public class TlsUtils
                 return false;
             }
 
+        case KeyExchangeAlgorithm.NULL:
+            return SignatureAlgorithm.anonymous != signatureAlgorithm;
+
         default:
             return false;
         }
