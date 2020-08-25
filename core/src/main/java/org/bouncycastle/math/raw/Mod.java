@@ -284,7 +284,8 @@ public abstract class Mod
 //            assert (u * f0 + v * g0) == f << i;
 //            assert (q * f0 + r * g0) == g << i;
 
-            c1 = -(g & (eta >>> 31));
+            c2 = -(g & 1);
+            c1 = c2 & (eta >> 31);
 
             x = (f ^ g) & c1;
             f ^= x; g ^= x; g ^= c1; g -= c1;
@@ -296,8 +297,6 @@ public abstract class Mod
             v ^= z; r ^= z; r ^= c1; r -= c1;
 
             eta = (eta ^ c1) - c1 - 1;
-
-            c2 = -(g & 1);
 
             g += (f & c2); g >>= 1;
             q += (u & c2); u <<= 1;
