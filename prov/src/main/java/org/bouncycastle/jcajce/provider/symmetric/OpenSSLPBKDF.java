@@ -60,7 +60,7 @@ public final class OpenSSLPBKDF
 
                 OpenSSLPBEParametersGenerator pGen = new OpenSSLPBEParametersGenerator();
 
-                pGen.init(Strings.toByteArray(pbeSpec.getPassword()), pbeSpec.getSalt());
+                pGen.init(Strings.toUTF8ByteArray(pbeSpec.getPassword()), pbeSpec.getSalt());
 
                 return new SecretKeySpec(((KeyParameter)pGen.generateDerivedParameters(pbeSpec.getKeyLength())).getKey(), "OpenSSLPBKDF");
             }
