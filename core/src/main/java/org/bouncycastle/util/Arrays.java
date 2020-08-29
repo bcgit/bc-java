@@ -1131,6 +1131,11 @@ public final class Arrays
         return null == array || array.length < 1;
     }
 
+    public static boolean isNullOrEmpty(int[] array)
+    {
+        return null == array || array.length < 1;
+    }
+
     public static boolean isNullOrEmpty(Object[] array)
     {
         return null == array || array.length < 1;
