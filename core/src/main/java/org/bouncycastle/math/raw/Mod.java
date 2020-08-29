@@ -275,32 +275,37 @@ public abstract class Mod
     private static int divsteps30(int eta, int f0, int g0, int[] t)
     {
         int u = 1, v = 0, q = 0, r = 1;
-        int c1, c2, f = f0, g = g0, x, y, z;
-        int i;
+        int f = f0, g = g0;
 
-        for (i = 0; i < 30; ++i)
+        for (int i = 0; i < 30; ++i)
         {
 //            assert (f & 1) == 1;
 //            assert (u * f0 + v * g0) == f << i;
 //            assert (q * f0 + r * g0) == g << i;
 
-            c2 = -(g & 1);
-            c1 = c2 & (eta >> 31);
+            int p = -(g & 1);
+            int s = eta >> 31;
 
-            x = (f ^ g) & c1;
-            f ^= x; g ^= x; g ^= c1; g -= c1;
-
-            y = (u ^ q) & c1;
-            u ^= y; q ^= y; q ^= c1; q -= c1;
-
-            z = (v ^ r) & c1;
-            v ^= z; r ^= z; r ^= c1; r -= c1;
+            int c1 = p & s;
+            int c2 = p & ~s;
 
             eta = (eta ^ c1) - c1 - 1;
 
-            g += (f & c2); g >>= 1;
-            q += (u & c2); u <<= 1;
-            r += (v & c2); v <<= 1;
+            g += f & c2;
+            q += u & c2;
+            r += v & c2;
+
+            g -= f & c1;
+            q -= u & c1;
+            r -= v & c1;
+
+            f += g & c1;
+            u += q & c1;
+            v += r & c1;
+
+            g >>= 1;
+            u <<= 1;
+            v <<= 1;
         }
 
         t[0] = u;
