@@ -5,8 +5,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
 
 public class TlsServerProtocol
@@ -113,11 +118,79 @@ public class TlsServerProtocol
     protected ServerHello generate13ServerHello(ClientHello clientHello, boolean afterHelloRetryRequest)
         throws IOException
     {
-        final ProtocolVersion legacy_record_version = ProtocolVersion.TLSv12;
-        recordStream.setWriteVersion(legacy_record_version);
+        SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+        TlsCrypto crypto = tlsServerContext.getCrypto();
+
+        Vector clientShares = TlsExtensionsUtils.getKeyShareClientHello(clientHello.getExtensions());
+        KeyShareEntry clientShare = null;
+
+        if (afterHelloRetryRequest)
+        {
+            // TODO[tls13] Require a single client share for the group specified in the HelloRetryRequest
+            clientShare = null;
+
+            if (null == clientShare)
+            {
+                // TODO[tls13] What type of alert here?
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
+        else
+        {
+            if (null != clientShares && !clientShares.isEmpty())
+            {
+                // TODO[tls13] Avoid redundancy with setting of securityParameters.clientSupportedGroups elsewhere
+                int[] clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientHello.getExtensions());
+
+                // TODO[tls] Fetch from tlsServer
+                int[] serverSupportedGroups = new int[] { NamedGroup.x25519 };
+
+                clientShare = TlsUtils.selectKeyShare(crypto, securityParameters.getNegotiatedVersion(), clientShares,
+                    clientSupportedGroups, serverSupportedGroups);
+            }
+
+            if (null == clientShare)
+            {
+                // TODO[tls13] Send HelloRetryRequest
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
+
+        // TODO[tls13] Lots of other processing from generateServerHello needed here
+        Hashtable serverExtensions = null;
+
+        {
+            int namedGroup = clientShare.getNamedGroup();
+    
+            TlsAgreement agreement;
+            if (NamedGroup.refersToASpecificCurve(namedGroup))
+            {
+                agreement = crypto.createECDomain(new TlsECConfig(namedGroup)).createECDH();
+            }
+            else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
+            {
+                agreement = crypto.createDHDomain(new TlsDHConfig(namedGroup, true)).createDH();
+            }
+            else
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            byte[] key_exchange = agreement.generateEphemeral();
+            KeyShareEntry serverShare = new KeyShareEntry(namedGroup, key_exchange);
+            TlsExtensionsUtils.addKeyShareServerHello(serverExtensions, serverShare);
+
+            agreement.receivePeerValue(clientShare.getKeyExchange());
+            securityParameters.sharedSecret = agreement.calculateSecret();
+            // TODO[tls13] We need the PRF for this i.e. the cipher suite has to have been negotiated 
+            TlsUtils.establish13PhaseSecrets(tlsServerContext);
+        }
 
         // TODO[tls13]
         throw new TlsFatalAlert(AlertDescription.internal_error);
+
+//        return new ServerHello(serverLegacyVersion, securityParameters.getServerRandom(), tlsSession.getSessionID(),
+//            securityParameters.getCipherSuite(), serverExtensions);
     }
 
     protected ServerHello generateServerHello(ClientHello clientHello) throws IOException
@@ -205,8 +278,12 @@ public class TlsServerProtocol
 
         if (negotiatedTLSv13Plus)
         {
+            recordStream.setWriteVersion(ProtocolVersion.TLSv12);
+
             return generate13ServerHello(clientHello, false);
         }
+
+        recordStream.setWriteVersion(serverVersion);
 
         /*
          * TODO[resumption] Check RFC 7627 5.4. for required behaviour.
@@ -349,9 +426,6 @@ public class TlsServerProtocol
         }
 
         TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
-
-        final ProtocolVersion legacy_record_version = negotiatedTLSv13Plus ? ProtocolVersion.TLSv12 : serverVersion;
-        recordStream.setWriteVersion(legacy_record_version);
 
         /*
          * TODO[tls13] Send ServerHello message that MAY be a HelloRetryRequest.
