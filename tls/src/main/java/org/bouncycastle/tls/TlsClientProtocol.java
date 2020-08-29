@@ -367,7 +367,7 @@ public class TlsClientProtocol
             }
             case CS_CLIENT_HELLO_RETRY:
             {
-                ServerHello serverHello = ServerHello.parse(buf);
+                ServerHello serverHello = receiveServerHelloMessage(buf);
                 if (serverHello.isHelloRetryRequest())
                 {
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -524,7 +524,7 @@ public class TlsClientProtocol
             {
             case CS_CLIENT_HELLO:
             {
-                ServerHello serverHello = ServerHello.parse(buf);
+                ServerHello serverHello = receiveServerHelloMessage(buf);
 
                 // TODO[tls13] Only treat as HRR if it's TLS 1.3??
                 if (serverHello.isHelloRetryRequest())
@@ -540,7 +540,7 @@ public class TlsClientProtocol
                 }
                 else
                 {
-                    processServerHelloMessage(serverHello);
+                    processServerHello(serverHello);
                     handshakeHash.notifyPRFDetermined();
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO;
@@ -849,6 +849,9 @@ public class TlsClientProtocol
     protected void process13HelloRetryRequest(ServerHello serverHello)
         throws IOException
     {
+        final ProtocolVersion legacy_record_version = ProtocolVersion.TLSv12;
+        recordStream.setWriteVersion(legacy_record_version);
+
         final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
         if (securityParameters.isRenegotiating())
         {
@@ -900,8 +903,6 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        final ProtocolVersion legacy_record_version = ProtocolVersion.TLSv12;
-
         /*
          * RFC 8446 4.2.8. Upon receipt of this [Key Share] extension in a HelloRetryRequest, the
          * client MUST verify that (1) the selected_group field corresponds to a group which was
@@ -922,7 +923,6 @@ public class TlsClientProtocol
 
 
 
-        recordStream.setWriteVersion(legacy_record_version);
         securityParameters.negotiatedVersion = server_version;
         TlsUtils.negotiatedVersionTLSClient(tlsClientContext, tlsClient);
 
@@ -1054,7 +1054,7 @@ public class TlsClientProtocol
         TlsUtils.establish13PhaseHandshake(tlsClientContext, serverHelloTranscriptHash, recordStream);
     }
 
-    protected void processServerHelloMessage(ServerHello serverHello)
+    protected void processServerHello(ServerHello serverHello)
         throws IOException
     {
         Hashtable serverHelloExtensions = serverHello.getExtensions();
@@ -1535,6 +1535,12 @@ public class TlsClientProtocol
         assertEmpty(buf);
 
         tlsClient.notifyNewSessionTicket(newSessionTicket);
+    }
+
+    protected ServerHello receiveServerHelloMessage(ByteArrayInputStream buf)
+        throws IOException
+    {
+        return ServerHello.parse(buf);
     }
 
     protected void send13ClientHelloRetry() throws IOException
