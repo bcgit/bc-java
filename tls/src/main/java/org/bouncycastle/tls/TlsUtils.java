@@ -1205,6 +1205,11 @@ public class TlsUtils
         return null == array || array.length < 1;
     }
 
+    public static boolean isNullOrEmpty(int[] array)
+    {
+        return null == array || array.length < 1;
+    }
+
     public static boolean isNullOrEmpty(Object[] array)
     {
         return null == array || array.length < 1;
@@ -4885,6 +4890,45 @@ public class TlsUtils
                 clientAgreements.put(supportedGroupElement, agreement);
             }
         }
+    }
+
+    static KeyShareEntry selectKeyShare(TlsCrypto crypto, ProtocolVersion negotiatedVersion, Vector clientShares,
+        int[] clientSupportedGroups, int[] serverSupportedGroups)
+    {
+        if (null != clientShares && !isNullOrEmpty(clientSupportedGroups) && !isNullOrEmpty(serverSupportedGroups))
+        {
+            for (int i = 0; i < clientShares.size(); ++i)
+            {
+                KeyShareEntry clientShare = (KeyShareEntry)clientShares.elementAt(i);
+
+                int group = clientShare.getNamedGroup();
+
+                if (!NamedGroup.canBeNegotiated(group, negotiatedVersion))
+                {
+                    continue;
+                }
+
+                if (!Arrays.contains(serverSupportedGroups, group) ||
+                    !Arrays.contains(clientSupportedGroups, group))
+                {
+                    continue;
+                }
+
+                if (!crypto.hasNamedGroup(group))
+                {
+                    continue;
+                }
+
+                if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
+                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                {
+                    continue;
+                }
+
+                return clientShare;
+            }
+        }
+        return null;
     }
 
     static byte[] readEncryptedPMS(TlsContext context, InputStream input) throws IOException
