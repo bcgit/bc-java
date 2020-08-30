@@ -711,7 +711,6 @@ class ProvTlsServer
         case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
-        case KeyExchangeAlgorithm.NULL:
         case KeyExchangeAlgorithm.RSA:
         {
             if (KeyExchangeAlgorithm.RSA == keyExchangeAlgorithm
@@ -720,7 +719,14 @@ class ProvTlsServer
                 return selectServerCredentialsLegacy(issuers, keyExchangeAlgorithm);
             }
 
-            return selectServerCredentials(issuers, keyExchangeAlgorithm);
+            return selectServerCredentials12(issuers, keyExchangeAlgorithm);
+        }
+
+        case KeyExchangeAlgorithm.NULL:
+        {
+            byte[] certificateRequestContext = TlsUtils.EMPTY_BYTES;
+
+            return selectServerCredentials13(issuers, certificateRequestContext);
         }
 
         default:
@@ -728,8 +734,7 @@ class ProvTlsServer
         }
     }
 
-    // TODO[tls13] Need an alternate (probably simpler) version of this for TLS 1.3
-    protected TlsCredentials selectServerCredentials(Principal[] issuers, int keyExchangeAlgorithm) throws IOException
+    protected TlsCredentials selectServerCredentials12(Principal[] issuers, int keyExchangeAlgorithm) throws IOException
     {
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
         boolean post13Active = TlsUtils.isTLSv13(context);
@@ -773,6 +778,40 @@ class ProvTlsServer
 
             return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key,
                 signatureSchemeInfo.getSignatureAndHashAlgorithm());
+        }
+
+        return null;
+    }
+
+    protected TlsCredentials selectServerCredentials13(Principal[] issuers, byte[] certificateRequestContext)
+        throws IOException
+    {
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+
+        for (SignatureSchemeInfo sigScheme : jsseSecurityParameters.peerSigSchemes)
+        {
+            String keyType = JsseUtils.getKeyType(sigScheme);
+            if (keyManagerMissCache.contains(keyType))
+            {
+                continue;
+            }
+
+            // TODO[tls13] Somewhat redundant if we get all active signature schemes later (for CertificateRequest)
+            if (!sigScheme.isActive(algorithmConstraints, false, true, jsseSecurityParameters.namedGroups))
+            {
+                continue;
+            }
+
+            BCX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+            if (null == x509Key
+                || !JsseUtils.isUsableKeyForServer(sigScheme.getSignatureAlgorithm(), x509Key.getPrivateKey()))
+            {
+                keyManagerMissCache.add(keyType);
+                continue;
+            }
+
+            return JsseUtils.createCredentialedSigner13(context, getCrypto(), x509Key,
+                sigScheme.getSignatureAndHashAlgorithm(), certificateRequestContext);
         }
 
         return null;
