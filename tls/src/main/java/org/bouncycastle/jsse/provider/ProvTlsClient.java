@@ -303,15 +303,15 @@ class ProvTlsClient
 
                 if (isTLSv13)
                 {
-                    return chooseClientCredentials13(issuers, certificateRequestContext);
+                    return selectClientCredentials13(issuers, certificateRequestContext);
                 }
                 else if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(negotiatedVersion))
                 {
-                    return chooseClientCredentials12(issuers, certificateTypes);
+                    return selectClientCredentials12(issuers, certificateTypes);
                 }
                 else
                 {
-                    return chooseClientCredentialsLegacy(issuers, certificateTypes);
+                    return selectClientCredentialsLegacy(issuers, certificateTypes);
                 }
             }
 
@@ -544,40 +544,40 @@ class ProvTlsClient
         return JsseUtils.useExtendedMasterSecret();
     }
 
-    protected TlsCredentials chooseClientCredentials13(Principal[] issuers, byte[] certificateRequestContext)
-        throws IOException
+    protected String[] getKeyTypesLegacy(short[] certificateTypes) throws IOException
     {
-        Set<String> keyManagerMissCache = new HashSet<String>();
-
-        for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
+        String[] keyTypes = new String[certificateTypes.length];
+        for (int i = 0; i < certificateTypes.length; ++i)
         {
-            if (!signatureSchemeInfo.isSupported13() ||
-                !jsseSecurityParameters.localSigSchemes.contains(signatureSchemeInfo))
-            {
-                continue;
-            }
-
-            String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
-            if (keyManagerMissCache.contains(keyType))
-            {
-                continue;
-            }
-
-            BCX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
-            if (null == x509Key)
-            {
-                keyManagerMissCache.add(keyType);
-                continue;
-            }
-
-            return JsseUtils.createCredentialedSigner13(context, getCrypto(), x509Key,
-                signatureSchemeInfo.getSignatureAndHashAlgorithm(), certificateRequestContext);
+            // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
+            keyTypes[i] = JsseUtils.getKeyTypeLegacyClient(certificateTypes[i]);
         }
 
-        return null;
+        return keyTypes;
     }
 
-    protected TlsCredentials chooseClientCredentials12(Principal[] issuers, short[] certificateTypes)
+    protected boolean isResumable(ProvSSLSession availableSSLSession)
+    {
+        // TODO[jsse] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
+
+        JsseSessionParameters jsseSessionParameters = availableSSLSession.getJsseSessionParameters();
+
+        String endpointIDAlgorithm = sslParameters.getEndpointIdentificationAlgorithm();
+        if (null != endpointIDAlgorithm)
+        {
+            String identificationProtocol = jsseSessionParameters.getIdentificationProtocol();
+            if (!endpointIDAlgorithm.equalsIgnoreCase(identificationProtocol))
+            {
+                LOG.finest("Session not resumed - endpoint ID algorithm mismatch; requested: " + endpointIDAlgorithm
+                    + ", session: " + identificationProtocol);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected TlsCredentials selectClientCredentials12(Principal[] issuers, short[] certificateTypes)
         throws IOException
     {
         /*
@@ -622,7 +622,40 @@ class ProvTlsClient
         return null;
     }
 
-    protected TlsCredentials chooseClientCredentialsLegacy(Principal[] issuers, short[] certificateTypes)
+    protected TlsCredentials selectClientCredentials13(Principal[] issuers, byte[] certificateRequestContext)
+        throws IOException
+    {
+        Set<String> keyManagerMissCache = new HashSet<String>();
+
+        for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
+        {
+            if (!signatureSchemeInfo.isSupported13() ||
+                !jsseSecurityParameters.localSigSchemes.contains(signatureSchemeInfo))
+            {
+                continue;
+            }
+
+            String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
+            if (keyManagerMissCache.contains(keyType))
+            {
+                continue;
+            }
+
+            BCX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
+            if (null == x509Key)
+            {
+                keyManagerMissCache.add(keyType);
+                continue;
+            }
+
+            return JsseUtils.createCredentialedSigner13(context, getCrypto(), x509Key,
+                signatureSchemeInfo.getSignatureAndHashAlgorithm(), certificateRequestContext);
+        }
+
+        return null;
+    }
+
+    protected TlsCredentials selectClientCredentialsLegacy(Principal[] issuers, short[] certificateTypes)
         throws IOException
     {
         String[] keyTypes = getKeyTypesLegacy(certificateTypes);
@@ -634,38 +667,5 @@ class ProvTlsClient
         }
 
         return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key, null);
-    }
-
-    protected String[] getKeyTypesLegacy(short[] certificateTypes) throws IOException
-    {
-        String[] keyTypes = new String[certificateTypes.length];
-        for (int i = 0; i < certificateTypes.length; ++i)
-        {
-            // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
-            keyTypes[i] = JsseUtils.getKeyTypeLegacyClient(certificateTypes[i]);
-        }
-
-        return keyTypes;
-    }
-
-    protected boolean isResumable(ProvSSLSession availableSSLSession)
-    {
-        // TODO[jsse] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
-
-        JsseSessionParameters jsseSessionParameters = availableSSLSession.getJsseSessionParameters();
-
-        String endpointIDAlgorithm = sslParameters.getEndpointIdentificationAlgorithm();
-        if (null != endpointIDAlgorithm)
-        {
-            String identificationProtocol = jsseSessionParameters.getIdentificationProtocol();
-            if (!endpointIDAlgorithm.equalsIgnoreCase(identificationProtocol))
-            {
-                LOG.finest("Session not resumed - endpoint ID algorithm mismatch; requested: " + endpointIDAlgorithm
-                    + ", session: " + identificationProtocol);
-                return false;
-            }
-        }
-
-        return true;
     }
 }
