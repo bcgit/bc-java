@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
+import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.ClientCertificateType;
@@ -223,10 +224,15 @@ class TlsTestClientImpl
                     return null;
                 }
 
-                short[] certificateTypes = certificateRequest.getCertificateTypes();
-                if (certificateTypes == null || !Arrays.contains(certificateTypes, ClientCertificateType.rsa_sign))
+                boolean isTLSv13 = TlsUtils.isTLSv13(context);
+
+                if (!isTLSv13)
                 {
-                    return null;
+                    short[] certificateTypes = certificateRequest.getCertificateTypes();
+                    if (certificateTypes == null || !Arrays.contains(certificateTypes, ClientCertificateType.rsa_sign))
+                    {
+                        return null;
+                    }
                 }
 
                 Vector supportedSigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
@@ -235,6 +241,8 @@ class TlsTestClientImpl
                     supportedSigAlgs = new Vector(1);
                     supportedSigAlgs.addElement(config.clientAuthSigAlg);
                 }
+
+                // TODO[tls13] Check also supportedSigAlgsCert against the chain signature(s)
 
                 final TlsCredentialedSigner signerCredentials = TlsTestUtils.loadSignerCredentials(context,
                     supportedSigAlgs, SignatureAlgorithm.rsa, "x509-client-rsa.pem", "x509-client-key-rsa.pem");
@@ -286,16 +294,18 @@ class TlsTestClientImpl
 
     protected org.bouncycastle.tls.Certificate corruptCertificate(TlsCrypto crypto, org.bouncycastle.tls.Certificate cert)
     {
-        TlsCertificate[] certList = cert.getCertificateList();
+        CertificateEntry[] certEntryList = cert.getCertificateEntryList();
         try
         {
-            certList[0] = corruptCertificateSignature(crypto, certList[0]);
+            CertificateEntry ee = certEntryList[0];
+            TlsCertificate corruptCert = corruptCertificateSignature(crypto, ee.getCertificate());
+            certEntryList[0] = new CertificateEntry(corruptCert, ee.getExtensions());
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
-        return new org.bouncycastle.tls.Certificate(certList);
+        return new org.bouncycastle.tls.Certificate(cert.getCertificateRequestContext(), certEntryList);
     }
 
     protected TlsCertificate corruptCertificateSignature(TlsCrypto crypto, TlsCertificate tlsCertificate) throws IOException

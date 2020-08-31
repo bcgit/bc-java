@@ -318,6 +318,11 @@ public class TlsClientProtocol
                 send13FinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;
 
+                /*
+                 * TODO[tls13] This will cause bad_mac on alerts received as a result of the client
+                 * flight. Perhaps we need to wait for an actual application-data record to switch
+                 * the read cipher?
+                 */
                 TlsUtils.establish13PhaseApplication(tlsClientContext, serverFinishedTranscriptHash, recordStream);
 
                 completeHandshake();
@@ -1446,6 +1451,17 @@ public class TlsClientProtocol
 
         // TODO[tls13] Check permitted types and request/response consistency
 
+        /*
+         * TODO[tls13] Review all extensions that are processed in processServerHello (i.e. pre-1.3)
+         * and explicitly set all extension-related values (even if ignored from 1.3).
+         */
+
+        /*
+         * TODO[tls13] This is supposed to be negotiated independently for client (CH extension)
+         * and server (CR extension). It is not present in SH or EE for 1.3; set based on CH/CR only. 
+         */
+//        securityParameters.statusRequestVersion = 1;
+
         tlsClient.processServerExtensions(serverExtensions);
     }
 
@@ -1475,7 +1491,7 @@ public class TlsClientProtocol
     {
         this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf);
 
-        // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message. 
+        // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message.
         handleServerCertificate();
     }
 
@@ -1493,7 +1509,7 @@ public class TlsClientProtocol
 
         assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerifyServer(tlsClientContext, certificateVerify, handshakeHash);
+        TlsUtils.verify13CertificateVerifyServer(tlsClientContext, certificateVerify, handshakeHash);
     }
 
     protected void receive13ServerFinished(ByteArrayInputStream buf)

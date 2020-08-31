@@ -799,9 +799,15 @@ public class DTLSServerProtocol
 
     protected boolean expectCertificateVerifyMessage(ServerHandshakeState state)
     {
+        if (null == state.certificateRequest)
+        {
+            return false;
+        }
+
         Certificate clientCertificate = state.serverContext.getSecurityParametersHandshake().getPeerCertificate();
 
-        return null != clientCertificate && !clientCertificate.isEmpty() && state.keyExchange.requiresCertificateVerify();
+        return null != clientCertificate && !clientCertificate.isEmpty()
+            && (null == state.keyExchange || state.keyExchange.requiresCertificateVerify());
     }
 
     protected static class ServerHandshakeState

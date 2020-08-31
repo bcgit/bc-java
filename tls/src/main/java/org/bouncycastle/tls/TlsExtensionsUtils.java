@@ -1116,6 +1116,13 @@ public class TlsExtensionsUtils
             throw new IllegalArgumentException("'extensionData' cannot be null");
         }
 
+        /*
+         * TODO[tls13] Clients MUST NOT offer multiple KeyShareEntry values for the same group.
+         * Clients MUST NOT offer any KeyShareEntry values for groups not listed in the client's
+         * "supported_groups" extension. Servers MAY check for violations of these rules and abort
+         * the handshake with an "illegal_parameter" alert if one is violated.
+         */
+
         ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
 
         int length = TlsUtils.readUint16(buf);
