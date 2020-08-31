@@ -39,6 +39,9 @@ public interface TlsServer
     ProtocolVersion getServerVersion()
         throws IOException;
 
+    int[] getSupportedGroups()
+        throws IOException;
+
     int getSelectedCipherSuite()
         throws IOException;
 

@@ -366,6 +366,13 @@ public abstract class AbstractTlsServer
         throw new TlsFatalAlert(AlertDescription.protocol_version);
     }
 
+    public int[] getSupportedGroups() throws IOException
+    {
+        // TODO[tls13] The rest of this class assumes all named groups are supported
+        return new int[]{ NamedGroup.x25519, NamedGroup.x448, NamedGroup.secp256r1, NamedGroup.secp384r1,
+            NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096 };
+    }
+
     public int getSelectedCipherSuite()
         throws IOException
     {

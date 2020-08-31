@@ -128,7 +128,7 @@ class ProvTlsClient
 //        @SuppressWarnings("unchecked")
 //        Vector<Integer> namedGroupRoles = namedGroupRolesRaw;
 
-        return NamedGroupInfo.getSupportedGroupsLocal(jsseSecurityParameters.namedGroups);
+        return NamedGroupInfo.getSupportedGroupsLocalClient(jsseSecurityParameters.namedGroups);
     }
 
     @Override
