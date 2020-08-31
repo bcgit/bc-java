@@ -245,6 +245,7 @@ public class CertificateRequest
 
             Hashtable extensions = TlsProtocol.readExtensionsData(extEncoding);
 
+            // TODO[tls13] The "signature_algorithms" extension MUST be specified
             Vector supportedSignatureAlgorithms = TlsExtensionsUtils.getSignatureAlgorithmsExtension(extensions);
             Vector supportedSignatureAlgorithmsCert = TlsExtensionsUtils
                 .getSignatureAlgorithmsCertExtension(extensions);

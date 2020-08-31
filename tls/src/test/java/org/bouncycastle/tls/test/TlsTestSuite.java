@@ -58,7 +58,7 @@ public class TlsTestSuite extends TestSuite
 
     private static void addFallbackTests(TestSuite testSuite, int clientCrypto, int serverCrypto)
     {
-        String prefix =  getCryptoName(clientCrypto) + "_" + getCryptoName(serverCrypto) + "_";
+        String prefix = getCryptoName(clientCrypto) + "_" + getCryptoName(serverCrypto) + "_";
 
         {
             TlsTestConfig c = createTlsTestConfig(ProtocolVersion.TLSv12, clientCrypto, serverCrypto);
@@ -86,8 +86,16 @@ public class TlsTestSuite extends TestSuite
 
     private static void addVersionTests(TestSuite testSuite, ProtocolVersion version, int clientCrypto, int serverCrypto)
     {
-        String prefix =  getCryptoName(clientCrypto) + "_" + getCryptoName(serverCrypto) + "_"
+        String prefix = getCryptoName(clientCrypto) + "_" + getCryptoName(serverCrypto) + "_"
             + version.toString().replaceAll("[ \\.]", "") + "_";
+
+        final boolean isTLSv12 = TlsUtils.isTLSv12(version);
+        final boolean isTLSv13 = TlsUtils.isTLSv13(version);
+        final boolean isTLSv12Exactly = isTLSv12 && !isTLSv13;
+
+        final short certReqDeclinedAlert = TlsUtils.isTLSv13(version)
+            ?   AlertDescription.certificate_required
+            :   AlertDescription.handshake_failure;
 
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
@@ -99,7 +107,7 @@ public class TlsTestSuite extends TestSuite
          * Server only declares support for SHA1/RSA, client selects MD5/RSA. Since the client is
          * NOT actually tracking MD5 over the handshake, we expect fatal alert from the client.
          */
-        if (TlsUtils.isTLSv12(version))
+        if (isTLSv12Exactly)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_VALID;
@@ -117,7 +125,8 @@ public class TlsTestSuite extends TestSuite
          * when it verifies the selected algorithm against the CertificateRequest supported
          * algorithms.
          */
-        if (TlsUtils.isTLSv12(version))
+        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
+        if (isTLSv12Exactly)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_VALID;
@@ -136,7 +145,8 @@ public class TlsTestSuite extends TestSuite
          * we expect fatal alert to come from the server when it finds the claimed algorithm
          * doesn't match the client certificate.
          */
-        if (TlsUtils.isTLSv12(version))
+        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
+        if (isTLSv12Exactly)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_VALID;
@@ -148,6 +158,8 @@ public class TlsTestSuite extends TestSuite
             addTestCase(testSuite, c, prefix + "BadCertificateVerifySigAlgMismatch");
         }
 
+        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
+        if (!isTLSv13)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_INVALID_VERIFY;
@@ -156,6 +168,8 @@ public class TlsTestSuite extends TestSuite
             addTestCase(testSuite, c, prefix + "BadCertificateVerifySignature");
         }
 
+        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
+        if (!isTLSv13)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_INVALID_CERT;
@@ -164,11 +178,27 @@ public class TlsTestSuite extends TestSuite
             addTestCase(testSuite, c, prefix + "BadClientCertificate");
         }
 
+        if (isTLSv13)
+        {
+            /*
+             * 'For TLS 1.3 the supported_algorithms extension is required in ClientHello when the
+             * server authenticates via a certificate.
+             */
+            TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
+            c.clientSendSignatureAlgorithms = false;
+            c.clientSendSignatureAlgorithmsCert = false;
+            c.expectServerFatalAlert(AlertDescription.missing_extension);
+
+            addTestCase(testSuite, c, prefix + "BadClientSigAlgs");
+        }
+
+        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
+        if (!isTLSv13)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_NONE;
             c.serverCertReq = C.SERVER_CERT_REQ_MANDATORY;
-            c.expectServerFatalAlert(AlertDescription.handshake_failure);
+            c.expectServerFatalAlert(certReqDeclinedAlert);
 
             addTestCase(testSuite, c, prefix + "BadMandatoryCertReqDeclined");
         }
@@ -178,7 +208,7 @@ public class TlsTestSuite extends TestSuite
          * absent signature_algorithms extension. We expect fatal alert from the client when it
          * verifies the certificate's 'signatureAlgorithm' against the implicit default signature_algorithms.
          */
-        if (TlsUtils.isTLSv12(version))
+        if (isTLSv12Exactly)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientSendSignatureAlgorithms = false;
@@ -208,7 +238,7 @@ public class TlsTestSuite extends TestSuite
          * implied by the absent signature_algorithms extension. We expect fatal alert from the
          * client when it verifies the selected algorithm against the implicit default.
          */
-        if (TlsUtils.isTLSv12(version))
+        if (isTLSv12Exactly)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientCheckSigAlgOfServerCerts = false;
@@ -239,7 +269,7 @@ public class TlsTestSuite extends TestSuite
          * (illegal_parameter) from the client.
          */
         // TODO[tls13]
-//        if (!TlsUtils.isTLSv13(version))
+//        if (!isTLSv13)
 //        {
 //            TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
 //            c.serverNegotiateVersion = version;

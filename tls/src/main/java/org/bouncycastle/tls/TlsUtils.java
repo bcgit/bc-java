@@ -2250,7 +2250,43 @@ public class TlsUtils
         }
     }
 
-    static void verifyCertificateVerifyServer(TlsClientContext clientContext, DigitallySigned certificateVerify,
+    static void verify13CertificateVerifyClient(TlsServerContext serverContext, CertificateRequest certificateRequest,
+        DigitallySigned certificateVerify, TlsHandshakeHash handshakeHash) throws IOException
+    {
+        SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
+        Certificate clientCertificate = securityParameters.getPeerCertificate();
+        TlsCertificate verifyingCert = clientCertificate.getCertificateAt(0);
+
+        SignatureAndHashAlgorithm sigAndHashAlg = certificateVerify.getAlgorithm();
+        verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(), sigAndHashAlg);
+
+        short signatureAlgorithm = sigAndHashAlg.getSignature();
+
+        // Verify the CertificateVerify message contains a correct signature.
+        boolean verified;
+        try
+        {
+            TlsVerifier verifier = verifyingCert.createVerifier(signatureAlgorithm);
+
+            verified = verify13CertificateVerify(serverContext.getCrypto(), certificateVerify, verifier,
+                "TLS 1.3, client CertificateVerify", handshakeHash);
+        }
+        catch (TlsFatalAlert e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error, e);
+        }
+
+        if (!verified)
+        {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
+        }
+    }
+
+    static void verify13CertificateVerifyServer(TlsClientContext clientContext, DigitallySigned certificateVerify,
         TlsHandshakeHash handshakeHash) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
@@ -2267,15 +2303,9 @@ public class TlsUtils
         try
         {
             TlsVerifier verifier = verifyingCert.createVerifier(signatureAlgorithm);
-            if (isTLSv13(securityParameters.getNegotiatedVersion()))
-            {
-                verified = verify13CertificateVerify(clientContext.getCrypto(), certificateVerify, verifier,
-                    "TLS 1.3, server CertificateVerify", handshakeHash);
-            }
-            else
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
+
+            verified = verify13CertificateVerify(clientContext.getCrypto(), certificateVerify, verifier,
+                "TLS 1.3, server CertificateVerify", handshakeHash);
         }
         catch (TlsFatalAlert e)
         {
@@ -4449,7 +4479,12 @@ public class TlsUtils
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        if (clientCertificate.isEmpty())
+        boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
+        if (isTLSv13)
+        {
+            // TODO[tls13] Review whether any alternative checks needed here.
+        }
+        else if (clientCertificate.isEmpty())
         {
             /*
              * NOTE: We tolerate SSLv3 clients sending an empty chain, although "If no suitable
@@ -5002,11 +5037,6 @@ public class TlsUtils
     {
         securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(clientExtensions);
         securityParameters.clientSigAlgsCert = TlsExtensionsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
-
-        /*
-         * TODO[tls13] RFC 8446 4.2.3 Clients which desire the server to authenticate itself via a
-         * certificate MUST send the "signature_algorithms" extension.
-         */
     }
 
     static TlsCredentials establishServerCredentials(TlsServer server) throws IOException
