@@ -182,9 +182,21 @@ class NamedGroupInfo
         return perContext.index.get(namedGroup);
     }
 
-    static Vector<Integer> getSupportedGroupsLocal(PerConnection perConnection)
+    static Vector<Integer> getSupportedGroupsLocalClient(PerConnection perConnection)
     {
         return new Vector<Integer>(perConnection.local.keySet());
+    }
+
+    static int[] getSupportedGroupsLocalServer(PerConnection perConnection)
+    {
+        Set<Integer> keys = perConnection.local.keySet();
+        int count = keys.size(), pos = 0;
+        int[] result = new int[count];
+        for (Integer key : keys)
+        {
+            result[pos++] = key.intValue();
+        }
+        return result;
     }
 
     static boolean hasAnyECDSALocal(PerConnection perConnection)

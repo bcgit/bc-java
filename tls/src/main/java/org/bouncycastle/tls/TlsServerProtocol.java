@@ -138,6 +138,13 @@ public class TlsServerProtocol
 
         if (afterHelloRetryRequest)
         {
+            /*
+             * TODO[tls13] RFC 8446 4.1.2 [..] when the server has responded to its ClientHello with
+             * a HelloRetryRequest [..] the client MUST send the same ClientHello without
+             * modification, except as follows: [key_share, early_data, cookie, pre_shared_key,
+             * padding].
+             */
+
             // TODO[tls13] Require a single client share for the group specified in the HelloRetryRequest
             clientShare = null;
 
@@ -151,11 +158,8 @@ public class TlsServerProtocol
         {
             if (null != clientShares && !clientShares.isEmpty())
             {
-                // TODO[tls13] Avoid redundancy with setting of securityParameters.clientSupportedGroups elsewhere
-                int[] clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientHello.getExtensions());
-
-                // TODO[tls] Fetch from tlsServer
-                int[] serverSupportedGroups = new int[] { NamedGroup.x25519, NamedGroup.secp256r1 };
+                int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
+                int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
 
                 clientShare = TlsUtils.selectKeyShare(crypto, serverVersion, clientShares, clientSupportedGroups,
                     serverSupportedGroups);
@@ -205,8 +209,6 @@ public class TlsServerProtocol
             securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(clientExtensions);
 
             TlsUtils.establishClientSigAlgs(securityParameters, clientExtensions);
-
-            securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
 
             tlsServer.processClientExtensions(clientExtensions);
         }
@@ -449,6 +451,10 @@ public class TlsServerProtocol
 
             securityParameters.negotiatedVersion = serverVersion;
         }
+
+        securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(
+            clientHello.getExtensions());
+        securityParameters.serverSupportedGroups = tlsServer.getSupportedGroups();
 
         if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(serverVersion))
         {

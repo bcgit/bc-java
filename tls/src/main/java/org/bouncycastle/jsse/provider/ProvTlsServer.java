@@ -361,6 +361,19 @@ class ProvTlsServer
     }
 
     @Override
+    public int[] getSupportedGroups() throws IOException
+    {
+        // Setup the local supported groups
+        {
+            ProtocolVersion[] activeProtocolVersions = new ProtocolVersion[]{ context.getServerVersion() };
+
+            jsseSecurityParameters.namedGroups = manager.getContextData().getNamedGroups(sslParameters, activeProtocolVersions);
+        }
+
+        return NamedGroupInfo.getSupportedGroupsLocalServer(jsseSecurityParameters.namedGroups);
+    }
+
+    @Override
     public int getSelectedCipherSuite() throws IOException
     {
         final ContextData contextData = manager.getContextData();
@@ -388,13 +401,6 @@ class ProvTlsServer
             }
 
             manager.notifyHandshakeSession(handshakeSession);
-        }
-
-        // Setup the local supported groups
-        {
-            ProtocolVersion[] activeProtocolVersions = new ProtocolVersion[]{ context.getServerVersion() };
-
-            jsseSecurityParameters.namedGroups = contextData.getNamedGroups(sslParameters, activeProtocolVersions);
         }
 
         // Setup the peer supported groups

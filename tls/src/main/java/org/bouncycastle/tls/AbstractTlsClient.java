@@ -144,20 +144,21 @@ public abstract class AbstractTlsClient
 
         if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh)))
         {
-            TlsUtils.addIfSupported(supportedGroups, crypto, NamedGroup.x25519);
+            TlsUtils.addIfSupported(supportedGroups, crypto,
+                new int[]{ NamedGroup.x25519, NamedGroup.x448 });
         }
 
-        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh))
-            || namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdsa)))
+        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh)) ||
+            namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdsa)))
         {
-            TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
-                NamedGroup.secp256r1, NamedGroup.secp384r1 });
+            TlsUtils.addIfSupported(supportedGroups, crypto,
+                new int[]{ NamedGroup.secp256r1, NamedGroup.secp384r1 });
         }
 
         if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.dh)))
         {
-            TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
-                NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096 });
+            TlsUtils.addIfSupported(supportedGroups, crypto,
+                new int[]{ NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096 });
         }
 
         return supportedGroups;
