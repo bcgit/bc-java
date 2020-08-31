@@ -16,6 +16,7 @@ import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ChannelBinding;
+import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.DefaultTlsClient;
@@ -39,6 +40,34 @@ import org.bouncycastle.util.encoders.Hex;
 class TlsTestClientImpl
     extends DefaultTlsClient
 {
+    private static final int[] TEST_CIPHER_SUITES = new int[]
+    {
+        /*
+         * TLS 1.3
+         */
+        CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_AES_128_GCM_SHA256,
+
+        /*
+         * pre-TLS 1.3
+         */
+        CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+    };
+
     protected final TlsTestConfig config;
 
     protected int firstFatalAlertConnectionEnd = -1;
@@ -334,6 +363,11 @@ class TlsTestClientImpl
         bs[bit >>> 3] ^= (1 << (bit & 7));
 
         return bs;
+    }
+
+    protected int[] getSupportedCipherSuites()
+    {
+        return TlsUtils.getSupportedCipherSuites(getCrypto(), TEST_CIPHER_SUITES);
     }
 
     protected ProtocolVersion[] getSupportedVersions()
