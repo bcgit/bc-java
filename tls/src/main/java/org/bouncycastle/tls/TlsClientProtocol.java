@@ -1008,19 +1008,14 @@ public class TlsClientProtocol
         // NOTE: Apparently downgrade marker mechanism not used for TLS 1.3+?
         securityParameters.serverRandom = serverHello.getRandom();
 
-        {
-            securityParameters.secureRenegotiation = true;
-            tlsClient.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
-        }
+        securityParameters.secureRenegotiation = false;
 
         /*
          * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
          * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
          * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
          */
-        {
-            securityParameters.extendedMasterSecret = true;
-        }
+        securityParameters.extendedMasterSecret = true;
 
         {
             KeyShareEntry keyShareEntry = TlsExtensionsUtils.getKeyShareServerHello(serverHelloExtensions);

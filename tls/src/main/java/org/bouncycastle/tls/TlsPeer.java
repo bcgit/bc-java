@@ -97,7 +97,14 @@ public interface TlsPeer
      */
     boolean shouldUseGMTUnixTime();
 
-    void notifySecureRenegotiation(boolean secureNegotiation) throws IOException;
+    /**
+     * RFC 5746 3.4/3.6. In case this is false, peers may want to terminate the handshake instead of
+     * continuing; see Section 4.1/4.3 for discussion.
+     * 
+     * NOTE: TLS 1.3 forbids renegotiation, so this is never called when TLS 1.3 (or later) was
+     * negotiated.
+     */
+    void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException;
 
     TlsKeyExchangeFactory getKeyExchangeFactory() throws IOException;
 
