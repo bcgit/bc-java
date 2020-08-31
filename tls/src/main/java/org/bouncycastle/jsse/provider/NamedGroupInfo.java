@@ -345,9 +345,9 @@ class NamedGroupInfo
             NamedGroupInfo namedGroupInfo = perContext.index.get(candidate);
 
             if (null != namedGroupInfo
-                && !result.containsKey(candidate)
                 && namedGroupInfo.isActive(algorithmConstraints, pre13Active, post13Active))
             {
+                // NOTE: Re-insertion doesn't affect iteration order for insertion-order LinkedHashMap
                 result.put(candidate, namedGroupInfo);
             }
         }
