@@ -1724,15 +1724,18 @@ public abstract class TlsProtocol
     protected static byte[] writeExtensionsData(Hashtable extensions) throws IOException
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        writeExtensionsData(extensions, buf);
+        return buf.toByteArray();
+    }
 
+    protected static void writeExtensionsData(Hashtable extensions, ByteArrayOutputStream buf) throws IOException
+    {
         /*
          * NOTE: There are reports of servers that don't accept a zero-length extension as the last
          * one, so we write out any zero-length ones first as a best-effort workaround.
          */
         writeSelectedExtensions(buf, extensions, true);
         writeSelectedExtensions(buf, extensions, false);
-
-        return buf.toByteArray();
     }
 
     protected static void writeSelectedExtensions(OutputStream output, Hashtable extensions, boolean selectEmpty)

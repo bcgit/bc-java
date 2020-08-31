@@ -22,7 +22,7 @@ public final class ProtocolVersion
     static final ProtocolVersion SERVER_EARLIEST_SUPPORTED_DTLS = DTLSv10;
     static final ProtocolVersion SERVER_EARLIEST_SUPPORTED_TLS = SSLv3;
     static final ProtocolVersion SERVER_LATEST_SUPPORTED_DTLS = DTLSv12;
-    static final ProtocolVersion SERVER_LATEST_SUPPORTED_TLS = TLSv12;
+    static final ProtocolVersion SERVER_LATEST_SUPPORTED_TLS = TLSv13;
 
     public static boolean contains(ProtocolVersion[] versions, ProtocolVersion version)
     {

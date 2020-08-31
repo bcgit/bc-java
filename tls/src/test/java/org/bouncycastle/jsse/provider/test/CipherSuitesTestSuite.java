@@ -90,6 +90,7 @@ public class CipherSuitesTestSuite
             "TLSv1",
             "TLSv1.1",
             "TLSv1.2",
+            "TLSv1.3",
         };
 
         for (int p = 0; p < protocols.length; ++p)
