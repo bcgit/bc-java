@@ -125,6 +125,11 @@ public class TlsServerProtocol
         throws IOException
     {
         SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+        if (securityParameters.isRenegotiating())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         ProtocolVersion serverVersion = securityParameters.getNegotiatedVersion();
         TlsCrypto crypto = tlsServerContext.getCrypto();
 
@@ -174,95 +179,7 @@ public class TlsServerProtocol
          */
         this.clientExtensions = clientHello.getExtensions();
 
-        byte[] clientRenegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
-
-        if (securityParameters.isRenegotiating())
-        {
-            /*
-             * RFC 5746 3.7. Server Behavior: Secure Renegotiation
-             * 
-             * This text applies if the connection's "secure_renegotiation" flag is set to TRUE.
-             */
-            if (!securityParameters.isSecureRenegotiation())
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            /*
-             * When a ClientHello is received, the server MUST verify that it does not contain the
-             * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If the SCSV is present, the server MUST abort
-             * the handshake.
-             */
-            if (Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
-
-            /*
-             * The server MUST verify that the "renegotiation_info" extension is present; if it is
-             * not, the server MUST abort the handshake.
-             */
-            if (null == clientRenegExtData)
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
-
-            /*
-             * The server MUST verify that the value of the "renegotiated_connection" field is equal
-             * to the saved client_verify_data value; if it is not, the server MUST abort the
-             * handshake.
-             */
-            SecurityParameters saved = tlsServerContext.getSecurityParametersConnection();
-            byte[] reneg_conn_info = saved.getPeerVerifyData();
-
-            if (!Arrays.constantTimeAreEqual(clientRenegExtData, createRenegotiationInfo(reneg_conn_info)))
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
-        }
-        else
-        {
-            /*
-             * RFC 5746 3.6. Server Behavior: Initial Handshake
-             */
-
-            /*
-             * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
-             * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
-             * ClientHello. Including both is NOT RECOMMENDED.
-             */
-
-            /*
-             * When a ClientHello is received, the server MUST check if it includes the
-             * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
-             * to TRUE.
-             */
-            if (Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
-            {
-                securityParameters.secureRenegotiation = true;
-            }
-
-            /*
-             * The server MUST check if the "renegotiation_info" extension is included in the
-             * ClientHello.
-             */
-            if (clientRenegExtData != null)
-            {
-                /*
-                 * If the extension is present, set secure_renegotiation flag to TRUE. The
-                 * server MUST then verify that the length of the "renegotiated_connection"
-                 * field is zero, and if it is not, MUST abort the handshake.
-                 */
-                securityParameters.secureRenegotiation = true;
-
-                if (!Arrays.constantTimeAreEqual(clientRenegExtData, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
-                {
-                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
-                }
-            }
-        }
-
-        tlsServer.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
+        securityParameters.secureRenegotiation = false;
 
         if (clientExtensions != null)
         {
@@ -342,33 +259,6 @@ public class TlsServerProtocol
 
         ProtocolVersion serverLegacyVersion = ProtocolVersion.TLSv12;
         TlsExtensionsUtils.addSupportedVersionsExtensionServer(serverHelloExtensions, serverVersion);
-
-        if (securityParameters.isRenegotiating())
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-        else if (securityParameters.isSecureRenegotiation())
-        {
-            byte[] serverRenegExtData = TlsUtils.getExtensionData(serverEncryptedExtensions, EXT_RenegotiationInfo);
-            boolean noRenegExt = (null == serverRenegExtData);
-
-            if (noRenegExt)
-            {
-                /*
-                 * Note that sending a "renegotiation_info" extension in response to a ClientHello
-                 * containing only the SCSV is an explicit exception to the prohibition in RFC 5246,
-                 * Section 7.4.1.4, on the server sending unsolicited extensions and is only allowed
-                 * because the client is signaling its willingness to receive the extension via the
-                 * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
-                 */
-
-                /*
-                 * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
-                 * "renegotiation_info" extension in the ServerHello message.
-                 */
-                serverEncryptedExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
-            }
-        }
 
         /*
          * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
