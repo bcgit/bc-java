@@ -19,6 +19,8 @@ public class SecurityParameters
     short prfHashAlgorithm = -1;
     int prfHashLength = -1;
     int verifyDataLength = -1;
+    TlsSecret baseKeyClient = null;
+    TlsSecret baseKeyServer = null;
     TlsSecret earlyExporterMasterSecret = null;
     TlsSecret earlySecret = null;
     TlsSecret exporterMasterSecret = null;
@@ -74,6 +76,8 @@ public class SecurityParameters
         this.serverSupportedGroups = null;
         this.statusRequestVersion = 0;
 
+        this.baseKeyClient = clearSecret(baseKeyClient);
+        this.baseKeyServer = clearSecret(baseKeyServer);
         this.earlyExporterMasterSecret = clearSecret(earlyExporterMasterSecret);
         this.earlySecret = clearSecret(earlySecret);
         this.exporterMasterSecret = clearSecret(exporterMasterSecret);
@@ -196,6 +200,16 @@ public class SecurityParameters
     public int getVerifyDataLength()
     {
         return verifyDataLength;
+    }
+
+    public TlsSecret getBaseKeyClient()
+    {
+        return baseKeyClient;
+    }
+
+    public TlsSecret getBaseKeyServer()
+    {
+        return baseKeyServer;
     }
 
     public TlsSecret getEarlyExporterMasterSecret()

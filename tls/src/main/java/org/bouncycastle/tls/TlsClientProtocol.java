@@ -318,12 +318,10 @@ public class TlsClientProtocol
                 send13FinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;
 
-                /*
-                 * TODO[tls13] This will cause bad_mac on alerts received as a result of the client
-                 * flight. Perhaps we need to wait for an actual application-data record to switch
-                 * the read cipher?
-                 */
                 TlsUtils.establish13PhaseApplication(tlsClientContext, serverFinishedTranscriptHash, recordStream);
+
+                recordStream.sentWriteCipherSpec();
+                recordStream.receivedReadCipherSpec();
 
                 completeHandshake();
                 break;
@@ -1052,6 +1050,9 @@ public class TlsClientProtocol
         byte[] serverHelloTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
 
         TlsUtils.establish13PhaseHandshake(tlsClientContext, serverHelloTranscriptHash, recordStream);
+
+        recordStream.sentWriteCipherSpec();
+        recordStream.receivedReadCipherSpec();
     }
 
     protected void processServerHello(ServerHello serverHello)
@@ -1627,7 +1628,6 @@ public class TlsClientProtocol
             }
             else
             {
-                // TODO[tls13] Subsequent ClientHello messages (of a TLSv13 handshake) should use TLSv12
                 recordStream.setWriteVersion(ProtocolVersion.TLSv10);
             }
 

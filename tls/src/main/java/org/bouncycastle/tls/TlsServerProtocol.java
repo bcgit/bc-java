@@ -23,7 +23,6 @@ public class TlsServerProtocol
     protected int[] offeredCipherSuites = null;
     protected TlsKeyExchange keyExchange = null;
     protected CertificateRequest certificateRequest = null;
-    protected byte[] serverFinishedTranscriptHash = null;
 
     /**
      * Constructor for non-blocking mode.<br>
@@ -105,7 +104,6 @@ public class TlsServerProtocol
         this.offeredCipherSuites = null;
         this.keyExchange = null;
         this.certificateRequest = null;
-        this.serverFinishedTranscriptHash = null;
     }
 
     protected boolean expectCertificateVerifyMessage()
@@ -861,7 +859,8 @@ public class TlsServerProtocol
                 receive13ClientFinished(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
 
-                TlsUtils.establish13PhaseApplication(tlsServerContext, serverFinishedTranscriptHash, recordStream);
+                // NOTE: Completes the switch to application-data phase (server entered after CS_SERVER_FINISHED).
+                recordStream.receivedReadCipherSpec();
 
                 completeHandshake();
                 break;
@@ -1403,6 +1402,9 @@ public class TlsServerProtocol
 
         TlsUtils.establish13PhaseHandshake(tlsServerContext, serverHelloTranscriptHash, recordStream);
 
+        recordStream.sentWriteCipherSpec();
+        recordStream.receivedReadCipherSpec();
+
         send13EncryptedExtensionsMessage(serverExtensions);
         this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
 
@@ -1470,7 +1472,11 @@ public class TlsServerProtocol
             this.connection_state = CS_SERVER_FINISHED;
         }
 
-        this.serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
+        byte[] serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
+
+        TlsUtils.establish13PhaseApplication(tlsServerContext, serverFinishedTranscriptHash, recordStream);
+
+        recordStream.sentWriteCipherSpec();
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
