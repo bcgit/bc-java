@@ -49,6 +49,7 @@ public class SecurityParameters
     int[] clientSupportedGroups = null;
     Vector serverSigAlgs = null;
     Vector serverSigAlgsCert = null;
+    int[] serverSupportedGroups = null;
     int keyExchangeAlgorithm = -1;
     Certificate localCertificate = null;
     Certificate peerCertificate = null;
@@ -70,6 +71,7 @@ public class SecurityParameters
         this.clientSupportedGroups = null;
         this.serverSigAlgs = null;
         this.serverSigAlgsCert = null;
+        this.serverSupportedGroups = null;
         this.statusRequestVersion = 0;
 
         this.earlyExporterMasterSecret = clearSecret(earlyExporterMasterSecret);
@@ -139,6 +141,11 @@ public class SecurityParameters
     public Vector getServerSigAlgsCert()
     {
         return serverSigAlgsCert;
+    }
+
+    public int[] getServerSupportedGroups()
+    {
+        return serverSupportedGroups;
     }
 
     /**
