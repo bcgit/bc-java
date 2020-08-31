@@ -409,7 +409,7 @@ public abstract class TlsProtocol
         context.handshakeBeginning(peer);
 
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        if (renegotiation != securityParameters.renegotiating)
+        if (renegotiation != securityParameters.isRenegotiating())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
