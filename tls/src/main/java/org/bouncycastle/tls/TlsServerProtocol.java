@@ -159,6 +159,22 @@ public class TlsServerProtocol
 
                 clientShare = TlsUtils.selectKeyShare(crypto, serverVersion, clientShares, clientSupportedGroups,
                     serverSupportedGroups);
+
+                if (clientShare != null && clientShare.getNamedGroup() != serverSupportedGroups[0])
+                {
+                    /*
+                     * TODO[tls13] RFC 8446 4.2.7. As of TLS 1.3, servers are permitted to send the
+                     * "supported_groups" extension to the client. Clients MUST NOT act upon any
+                     * information found in "supported_groups" prior to successful completion of the
+                     * handshake but MAY use the information learned from a successfully completed
+                     * handshake to change what groups they use in their "key_share" extension in
+                     * subsequent connections. If the server has a group it prefers to the ones in
+                     * the "key_share" extension but is still willing to accept the ClientHello, it
+                     * SHOULD send "supported_groups" to update the client's view of its
+                     * preferences; this extension SHOULD contain all groups the server supports,
+                     * regardless of whether they are currently supported by the client.
+                     */
+                }
             }
 
             if (null == clientShare)
