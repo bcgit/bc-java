@@ -124,8 +124,7 @@ public class TlsTestSuite extends TestSuite
          * when it verifies the selected algorithm against the CertificateRequest supported
          * algorithms.
          */
-        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
-        if (isTLSv12Exactly)
+        if (isTLSv12)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_VALID;
@@ -144,8 +143,7 @@ public class TlsTestSuite extends TestSuite
          * we expect fatal alert to come from the server when it finds the claimed algorithm
          * doesn't match the client certificate.
          */
-        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
-        if (isTLSv12Exactly)
+        if (isTLSv12)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_VALID;
@@ -157,8 +155,6 @@ public class TlsTestSuite extends TestSuite
             addTestCase(testSuite, c, prefix + "BadCertificateVerifySigAlgMismatch");
         }
 
-        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
-        if (!isTLSv13)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_INVALID_VERIFY;
@@ -167,8 +163,6 @@ public class TlsTestSuite extends TestSuite
             addTestCase(testSuite, c, prefix + "BadCertificateVerifySignature");
         }
 
-        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
-        if (!isTLSv13)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_INVALID_CERT;
@@ -180,7 +174,7 @@ public class TlsTestSuite extends TestSuite
         if (isTLSv13)
         {
             /*
-             * 'For TLS 1.3 the supported_algorithms extension is required in ClientHello when the
+             * For TLS 1.3 the supported_algorithms extension is required in ClientHello when the
              * server authenticates via a certificate.
              */
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
@@ -191,8 +185,6 @@ public class TlsTestSuite extends TestSuite
             addTestCase(testSuite, c, prefix + "BadClientSigAlgs");
         }
 
-        // TODO[tls13] Handshake encryption prevents client receiving server alert (bad_record_mac)
-        if (!isTLSv13)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_NONE;

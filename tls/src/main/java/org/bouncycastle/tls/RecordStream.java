@@ -332,16 +332,19 @@ class RecordStream
     {
         if (readCipher.usesOpaqueRecordType())
         {
-            if (ContentType.change_cipher_spec == recordType)
+            if (ContentType.application_data != recordType)
             {
-                /*
-                 * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
-                 * RFC 8446 for "change_cipher_spec" for details.
-                 */
-            }
-            else if (ContentType.application_data != recordType)
-            {
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                if (ContentType.change_cipher_spec == recordType)
+                {
+                    /*
+                     * TODO[tls13] No CCS required, but accept one for compatibility purposes.
+                     * Search RFC 8446 for "change_cipher_spec" for details.
+                     */
+                }
+                else
+                {
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                }
             }
         }
         else

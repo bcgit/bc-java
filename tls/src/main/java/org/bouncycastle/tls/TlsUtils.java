@@ -1596,8 +1596,8 @@ public class TlsUtils
         if (isTLSv13(negotiatedVersion))
         {
             TlsSecret baseKey = isServer
-                ?   securityParameters.getTrafficSecretServer()
-                :   securityParameters.getTrafficSecretClient();
+                ?   securityParameters.getBaseKeyServer()
+                :   securityParameters.getBaseKeyClient();
 
             TlsSecret finishedKey = deriveSecret(securityParameters, baseKey, "finished", TlsUtils.EMPTY_BYTES);
             byte[] transcriptHash = getCurrentPRFHash(handshakeHash);
@@ -1681,8 +1681,6 @@ public class TlsUtils
 
         // TODO[tls13] Early data (client->server only)
         recordStream.setPendingConnectionState(initCipher(context));
-        recordStream.receivedReadCipherSpec();
-        recordStream.sentWriteCipherSpec();
     }
 
     static void establish13PhaseApplication(TlsContext context, byte[] serverFinishedTranscriptHash,
@@ -1720,10 +1718,14 @@ public class TlsUtils
     static void establish13PhaseHandshake(TlsContext context, byte[] serverHelloTranscriptHash,
         RecordStream recordStream) throws IOException
     {
-        TlsSecret phaseSecret = context.getSecurityParametersHandshake().getHandshakeSecret();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        TlsSecret phaseSecret = securityParameters.getHandshakeSecret();
 
         establish13TrafficSecrets(context, serverHelloTranscriptHash, phaseSecret, "c hs traffic", "s hs traffic",
             recordStream);
+
+        securityParameters.baseKeyClient = securityParameters.getTrafficSecretClient();
+        securityParameters.baseKeyServer = securityParameters.getTrafficSecretServer();
     }
 
     public static short getHashAlgorithmForHMACAlgorithm(int macAlgorithm)
