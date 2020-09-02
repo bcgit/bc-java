@@ -351,9 +351,11 @@ public abstract class ECCurve
     }
 
     /**
-     * Sets the default <code>ECMultiplier</code>, unless already set. 
+     * Sets the default <code>ECMultiplier</code>, unless already set.
+     * 
+     * We avoid synchronizing for performance reasons, so there is no uniqueness guarantee.
      */
-    public synchronized ECMultiplier getMultiplier()
+    public ECMultiplier getMultiplier()
     {
         if (this.multiplier == null)
         {
