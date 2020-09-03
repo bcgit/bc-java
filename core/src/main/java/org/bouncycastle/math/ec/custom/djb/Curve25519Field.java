@@ -73,7 +73,7 @@ public class Curve25519Field
 
     public static void inv(int[] x, int[] z)
     {
-        Mod.modOddInverse(P, x, z);
+        Mod.checkedModOddInverse(P, x, z);
     }
 
     public static int isZero(int[] x)
