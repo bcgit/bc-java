@@ -260,9 +260,9 @@ public abstract class X448Field
         normalize(t);
         encode(t, u, 0);
 
-        Mod.modOddInverse(P32, u, t);
+        Mod.modOddInverse(P32, u, u);
 
-        decode(t, 0, z);
+        decode(u, 0, z);
     }
 
     public static void invVar(int[] x, int[] z)
@@ -274,9 +274,9 @@ public abstract class X448Field
         normalize(t);
         encode(t, u, 0);
 
-        Mod.modOddInverseVar(P32, u, t);
+        Mod.modOddInverseVar(P32, u, u);
 
-        decode(t, 0, z);
+        decode(u, 0, z);
     }
 
     public static int isZero(int[] x)

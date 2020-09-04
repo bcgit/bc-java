@@ -192,7 +192,7 @@ public final class BigIntegers
     {
         if (!M.testBit(0))
         {
-            throw new IllegalArgumentException("'modulus' must be odd");
+            throw new IllegalArgumentException("'M' must be odd");
         }
         if (M.signum() != 1)
         {
@@ -219,7 +219,7 @@ public final class BigIntegers
     {
         if (!M.testBit(0))
         {
-            throw new IllegalArgumentException("BigInteger: modulus not odd");
+            throw new IllegalArgumentException("'M' must be odd");
         }
         if (M.signum() != 1)
         {
