@@ -289,7 +289,7 @@ public abstract class Mod
             int c1 = p & s;
             int c2 = p & ~s;
 
-            eta = (eta ^ c1) - c1 - 1;
+            eta = (eta ^ c1) - (c1 + 1);
 
             g += f & c2;
             q += u & c2;
