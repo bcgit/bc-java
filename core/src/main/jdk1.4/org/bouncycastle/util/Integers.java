@@ -2,6 +2,11 @@ package org.bouncycastle.util;
 
 public class Integers
 {
+    private static final byte[] DEBRUIJN_TZ = {
+        0x00, 0x01, 0x02, 0x18, 0x03, 0x13, 0x06, 0x19, 0x16, 0x04, 0x14, 0x0A,
+        0x10, 0x07, 0x0C, 0x1A, 0x1F, 0x17, 0x12, 0x05, 0x15, 0x09, 0x0F, 0x0B,
+        0x1E, 0x11, 0x08, 0x0E, 0x1D, 0x0D, 0x1C, 0x1B };
+
     public static int numberOfLeadingZeros(int i)
     {
         if (i <= 0)
@@ -20,18 +25,7 @@ public class Integers
 
     public static int numberOfTrailingZeros(int i)
     {
-        if (i == 0)
-        {
-            return 32;
-        }
-
-        int count = 0;
-        while ((i & 1) == 0)
-        {
-            i >>>= 1;
-            ++count;
-        }
-        return count;
+        return DEBRUIJN_TZ[((i & -i) * 0x04D7651F) >>> 27];
     }
 
     public static int rotateLeft(int i, int distance)
