@@ -1680,7 +1680,8 @@ public class TlsUtils
         }
 
         // TODO[tls13] Early data (client->server only)
-        recordStream.setPendingConnectionState(initCipher(context));
+
+        recordStream.setPendingCipher(initCipher(context));
     }
 
     static void establish13PhaseApplication(TlsContext context, byte[] serverFinishedTranscriptHash,

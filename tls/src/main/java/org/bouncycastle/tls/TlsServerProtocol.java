@@ -860,7 +860,7 @@ public class TlsServerProtocol
                 this.connection_state = CS_CLIENT_FINISHED;
 
                 // NOTE: Completes the switch to application-data phase (server entered after CS_SERVER_FINISHED).
-                recordStream.receivedReadCipherSpec();
+                recordStream.enablePendingCipherRead(false);
 
                 completeHandshake();
                 break;
@@ -1375,7 +1375,7 @@ public class TlsServerProtocol
             establishMasterSecret(tlsServerContext, keyExchange);
         }
 
-        recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsServerContext));
+        recordStream.setPendingCipher(TlsUtils.initCipher(tlsServerContext));
 
         if (!expectCertificateVerifyMessage())
         {
@@ -1402,8 +1402,8 @@ public class TlsServerProtocol
 
         TlsUtils.establish13PhaseHandshake(tlsServerContext, serverHelloTranscriptHash, recordStream);
 
-        recordStream.sentWriteCipherSpec();
-        recordStream.receivedReadCipherSpec();
+        recordStream.enablePendingCipherWrite();
+        recordStream.enablePendingCipherRead(true);
 
         send13EncryptedExtensionsMessage(serverExtensions);
         this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
@@ -1476,7 +1476,7 @@ public class TlsServerProtocol
 
         TlsUtils.establish13PhaseApplication(tlsServerContext, serverFinishedTranscriptHash, recordStream);
 
-        recordStream.sentWriteCipherSpec();
+        recordStream.enablePendingCipherWrite();
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)

@@ -320,8 +320,8 @@ public class TlsClientProtocol
 
                 TlsUtils.establish13PhaseApplication(tlsClientContext, serverFinishedTranscriptHash, recordStream);
 
-                recordStream.sentWriteCipherSpec();
-                recordStream.receivedReadCipherSpec();
+                recordStream.enablePendingCipherWrite();
+                recordStream.enablePendingCipherRead(false);
 
                 completeHandshake();
                 break;
@@ -681,7 +681,7 @@ public class TlsClientProtocol
                     establishMasterSecret(tlsClientContext, keyExchange);
                 }
 
-                recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsClientContext));
+                recordStream.setPendingCipher(TlsUtils.initCipher(tlsClientContext));
 
                 if (credentialedSigner != null)
                 {
@@ -1051,8 +1051,8 @@ public class TlsClientProtocol
 
         TlsUtils.establish13PhaseHandshake(tlsClientContext, serverHelloTranscriptHash, recordStream);
 
-        recordStream.sentWriteCipherSpec();
-        recordStream.receivedReadCipherSpec();
+        recordStream.enablePendingCipherWrite();
+        recordStream.enablePendingCipherRead(false);
     }
 
     protected void processServerHello(ServerHello serverHello)
@@ -1392,7 +1392,7 @@ public class TlsClientProtocol
         if (this.resumedSession)
         {
             securityParameters.masterSecret = sessionMasterSecret;
-            this.recordStream.setPendingConnectionState(TlsUtils.initCipher(tlsClientContext));
+            this.recordStream.setPendingCipher(TlsUtils.initCipher(tlsClientContext));
         }
         else
         {

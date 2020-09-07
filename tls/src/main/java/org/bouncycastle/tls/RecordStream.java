@@ -24,7 +24,7 @@ class RecordStream
     private InputStream input;
     private OutputStream output;
 //    private TlsContext context = null;
-    private TlsCipher pendingCipher = null, readCipher = null, writeCipher = null;
+    private TlsCipher pendingCipher = null, readCipher = null, readCipherDeferred = null, writeCipher = null;
     private SequenceNumber readSeqNo = new SequenceNumber(), writeSeqNo = new SequenceNumber();
 
     private ProtocolVersion writeVersion = null;
@@ -63,12 +63,35 @@ class RecordStream
         this.writeVersion = writeVersion;
     }
 
-    void setPendingConnectionState(TlsCipher tlsCipher)
+    void setPendingCipher(TlsCipher tlsCipher)
     {
         this.pendingCipher = tlsCipher;
     }
 
-    void sentWriteCipherSpec()
+    void enablePendingCipherRead(boolean deferred)
+        throws IOException
+    {
+        if (pendingCipher == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+        if (readCipherDeferred != null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        if (deferred)
+        {
+            this.readCipherDeferred = pendingCipher;
+        }
+        else
+        {
+            this.readCipher = pendingCipher;
+            this.ciphertextLimit = readCipher.getCiphertextDecodeLimit(plaintextLimit);
+            this.readSeqNo = new SequenceNumber();
+        }
+    }
+
+    void enablePendingCipherWrite()
         throws IOException
     {
         if (pendingCipher == null)
@@ -77,18 +100,6 @@ class RecordStream
         }
         this.writeCipher = this.pendingCipher;
         this.writeSeqNo = new SequenceNumber();
-    }
-
-    void receivedReadCipherSpec()
-        throws IOException
-    {
-        if (pendingCipher == null)
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-        this.readCipher = this.pendingCipher;
-        this.ciphertextLimit = readCipher.getCiphertextDecodeLimit(plaintextLimit);
-        this.readSeqNo = new SequenceNumber();
     }
 
     void finaliseHandshake()
@@ -103,9 +114,7 @@ class RecordStream
 
     RecordPreview previewRecordHeader(byte[] recordHeader) throws IOException
     {
-        short recordType = TlsUtils.readUint8(recordHeader, RecordFormat.TYPE_OFFSET);
-
-        checkRecordType(recordType);
+        short recordType = checkRecordType(recordHeader, RecordFormat.TYPE_OFFSET);
 
 //        ProtocolVersion recordVersion = TlsUtils.readVersion(recordHeader, RecordFormat.VERSION_OFFSET);
 
@@ -149,9 +158,7 @@ class RecordStream
             return false;
         }
 
-        short recordType = TlsUtils.readUint8(input, inputOff + RecordFormat.TYPE_OFFSET);
-
-        checkRecordType(recordType);
+        short recordType = checkRecordType(input, inputOff + RecordFormat.TYPE_OFFSET);
 
         ProtocolVersion recordVersion = TlsUtils.readVersion(input, inputOff + RecordFormat.VERSION_OFFSET);
 
@@ -181,9 +188,7 @@ class RecordStream
             return false;
         }
 
-        short recordType = TlsUtils.readUint8(inputRecord.buf, RecordFormat.TYPE_OFFSET);
-
-        checkRecordType(recordType);
+        short recordType = checkRecordType(inputRecord.buf, RecordFormat.TYPE_OFFSET);
 
         ProtocolVersion recordVersion = TlsUtils.readVersion(inputRecord.buf, RecordFormat.VERSION_OFFSET);
 
@@ -327,10 +332,19 @@ class RecordStream
         output.flush();
     }
 
-    private void checkRecordType(short recordType)
+    private short checkRecordType(byte[] buf, int off)
         throws IOException
     {
-        if (readCipher.usesOpaqueRecordType())
+        short recordType = TlsUtils.readUint8(buf, off);
+
+        if (null != readCipherDeferred && recordType == ContentType.application_data)
+        {
+            this.readCipher = readCipherDeferred;
+            this.readCipherDeferred = null;
+            this.ciphertextLimit = readCipher.getCiphertextDecodeLimit(plaintextLimit);
+            this.readSeqNo = new SequenceNumber();
+        }
+        else if (readCipher.usesOpaqueRecordType())
         {
             if (ContentType.application_data != recordType)
             {
@@ -368,6 +382,8 @@ class RecordStream
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
         }
+
+        return recordType;
     }
 
     private static void checkLength(int length, int limit, short alertDescription)
