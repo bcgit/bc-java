@@ -287,11 +287,7 @@ public class TlsClientProtocol
                 byte[] serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
 
                 // See RFC 8446 D.4.
-                // TODO[tls13] If offering early data, the record is placed immediately after the first ClientHello.
-                if (clientHelloRetryGroup < 0)
-                {
-                    sendChangeCipherSpecMessage();
-                }
+                recordStream.setIgnoreChangeCipherSpec(false);
 
                 if (null != certificateRequest)
                 {
@@ -1058,6 +1054,19 @@ public class TlsClientProtocol
 
         TlsUtils.establish13PhaseHandshake(tlsClientContext, serverHelloTranscriptHash, recordStream);
 
+        // See RFC 8446 D.4.
+        if (!afterHelloRetryRequest)
+        {
+            recordStream.setIgnoreChangeCipherSpec(true);
+
+            // TODO[tls13] If offering early data, the record is placed immediately after the first ClientHello.
+            /*
+             * TODO[tls13] Ideally wait until just after Server Finished received, but then we'd need to defer
+             * the enabling of the pending write cipher
+             */
+            sendChangeCipherSpecMessage();
+        }
+
         recordStream.enablePendingCipherWrite();
         recordStream.enablePendingCipherRead(false);
     }
@@ -1606,8 +1615,12 @@ public class TlsClientProtocol
          */
 
         // See RFC 8446 D.4.
-        // TODO[tls13] If offering early data, the record is placed immediately after the first ClientHello.
-        sendChangeCipherSpecMessage();
+        {
+            recordStream.setIgnoreChangeCipherSpec(true);
+
+            // TODO[tls13] If offering early data, the record is placed immediately after the first ClientHello.
+            sendChangeCipherSpecMessage();
+        }
 
         sendClientHelloMessage();
     }
