@@ -1464,12 +1464,18 @@ public abstract class TlsProtocol
         message.send(this);
     }
 
+    protected void sendChangeCipherSpec()
+        throws IOException
+    {
+        sendChangeCipherSpecMessage();
+        recordStream.enablePendingCipherWrite();
+    }
+
     protected void sendChangeCipherSpecMessage()
         throws IOException
     {
         byte[] message = new byte[]{ 1 };
         safeWriteRecord(ContentType.change_cipher_spec, message, 0, message.length);
-        recordStream.enablePendingCipherWrite();
     }
 
     protected void sendFinishedMessage()
