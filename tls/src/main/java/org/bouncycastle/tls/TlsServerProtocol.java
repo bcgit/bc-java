@@ -456,6 +456,9 @@ public class TlsServerProtocol
 
         if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(serverVersion))
         {
+            // See RFC 8446 D.4.
+            recordStream.setIgnoreChangeCipherSpec(true);
+
             recordStream.setWriteVersion(ProtocolVersion.TLSv12);
 
             return generate13ServerHello(clientHello, false);
@@ -858,6 +861,9 @@ public class TlsServerProtocol
             {
                 receive13ClientFinished(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
+
+                // See RFC 8446 D.4.
+                recordStream.setIgnoreChangeCipherSpec(false);
 
                 // NOTE: Completes the switch to application-data phase (server entered after CS_SERVER_FINISHED).
                 recordStream.enablePendingCipherRead(false);

@@ -30,6 +30,7 @@ class RecordStream
     private ProtocolVersion writeVersion = null;
 
     private int plaintextLimit, ciphertextLimit;
+    private boolean ignoreChangeCipherSpec;
 
     RecordStream(TlsProtocol handler, InputStream input, OutputStream output)
     {
@@ -43,6 +44,7 @@ class RecordStream
 //        this.context = context;
         this.readCipher = TlsNullNullCipher.INSTANCE;
         this.writeCipher = this.readCipher;
+        this.ignoreChangeCipherSpec = false;
 
         setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }
@@ -63,9 +65,25 @@ class RecordStream
         this.writeVersion = writeVersion;
     }
 
+    public void setIgnoreChangeCipherSpec(boolean ignoreChangeCipherSpec)
+    {
+        this.ignoreChangeCipherSpec = ignoreChangeCipherSpec;
+    }
+
     void setPendingCipher(TlsCipher tlsCipher)
     {
         this.pendingCipher = tlsCipher;
+    }
+
+    void notifyChangeCipherSpecReceived()
+        throws IOException
+    {
+        if (pendingCipher == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        enablePendingCipherRead(false);
     }
 
     void enablePendingCipherRead(boolean deferred)
@@ -73,7 +91,7 @@ class RecordStream
     {
         if (pendingCipher == null)
         {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         if (readCipherDeferred != null)
         {
@@ -96,7 +114,7 @@ class RecordStream
     {
         if (pendingCipher == null)
         {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         this.writeCipher = this.pendingCipher;
         this.writeSeqNo = new SequenceNumber();
@@ -164,12 +182,9 @@ class RecordStream
 
         checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
 
-        /*
-         * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
-         * RFC 8446 for "change_cipher_spec" for details.
-         */
-        if (readCipher.usesOpaqueRecordType() && ContentType.change_cipher_spec == recordType)
+        if (ignoreChangeCipherSpec && ContentType.change_cipher_spec == recordType)
         {
+            checkChangeCipherSpec(input, inputOff + RecordFormat.FRAGMENT_OFFSET, length);
             return true;
         }
 
@@ -201,12 +216,9 @@ class RecordStream
         TlsDecodeResult decoded;
         try
         {
-            /*
-             * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
-             * RFC 8446 for "change_cipher_spec" for details.
-             */
-            if (readCipher.usesOpaqueRecordType() && ContentType.change_cipher_spec == recordType)
+            if (ignoreChangeCipherSpec && ContentType.change_cipher_spec == recordType)
             {
+                checkChangeCipherSpec(inputRecord.buf, RecordFormat.FRAGMENT_OFFSET, length);
                 return true;
             }
 
@@ -332,6 +344,15 @@ class RecordStream
         output.flush();
     }
 
+    private void checkChangeCipherSpec(byte[] buf, int off, int len)
+        throws IOException
+    {
+        if (1 != len || (byte)ChangeCipherSpec.change_cipher_spec != buf[off])
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+    }
+
     private short checkRecordType(byte[] buf, int off)
         throws IOException
     {
@@ -348,12 +369,9 @@ class RecordStream
         {
             if (ContentType.application_data != recordType)
             {
-                if (ContentType.change_cipher_spec == recordType)
+                if (ignoreChangeCipherSpec && ContentType.change_cipher_spec == recordType)
                 {
-                    /*
-                     * TODO[tls13] No CCS required, but accept one for compatibility purposes.
-                     * Search RFC 8446 for "change_cipher_spec" for details.
-                     */
+                    // See RFC 8446 D.4.
                 }
                 else
                 {
