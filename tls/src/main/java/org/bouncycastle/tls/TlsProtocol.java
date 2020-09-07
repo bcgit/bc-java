@@ -687,14 +687,11 @@ public abstract class TlsProtocol
     private void processChangeCipherSpec(byte[] buf, int off, int len)
         throws IOException
     {
-        /*
-         * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
-         * RFC 8446 for "change_cipher_spec" for details.
-         */
         ProtocolVersion negotiatedVersion = getContext().getServerVersion();
-        if (null != negotiatedVersion && TlsUtils.isTLSv13(negotiatedVersion))
+        if (null == negotiatedVersion || TlsUtils.isTLSv13(negotiatedVersion))
         {
-            return;
+            // See RFC 8446 D.4.
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
         for (int i = 0; i < len; ++i)
@@ -713,7 +710,7 @@ public abstract class TlsProtocol
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
-            recordStream.enablePendingCipherRead(false);
+            recordStream.notifyChangeCipherSpecReceived();
 
             this.receivedChangeCipherSpec = true;
 
