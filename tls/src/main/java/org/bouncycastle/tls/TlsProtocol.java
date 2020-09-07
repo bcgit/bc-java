@@ -713,7 +713,7 @@ public abstract class TlsProtocol
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
-            recordStream.receivedReadCipherSpec();
+            recordStream.enablePendingCipherRead(false);
 
             this.receivedChangeCipherSpec = true;
 
@@ -1469,7 +1469,7 @@ public abstract class TlsProtocol
     {
         byte[] message = new byte[]{ 1 };
         safeWriteRecord(ContentType.change_cipher_spec, message, 0, message.length);
-        recordStream.sentWriteCipherSpec();
+        recordStream.enablePendingCipherWrite();
     }
 
     protected void sendFinishedMessage()
