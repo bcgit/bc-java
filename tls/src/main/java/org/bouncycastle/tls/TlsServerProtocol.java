@@ -957,11 +957,17 @@ public class TlsServerProtocol
                         TlsUtils.adjustTranscriptForRetry(handshakeHash);
                         sendServerHelloMessage(serverHello);
                         this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
+
+                        // See RFC 8446 D.4.
+                        sendChangeCipherSpecMessage();
                     }
                     else
                     {
                         sendServerHelloMessage(serverHello);
                         this.connection_state = CS_SERVER_HELLO;
+
+                        // See RFC 8446 D.4.
+                        sendChangeCipherSpecMessage();
 
                         send13ServerHelloCoda(serverHello, false);
                     }
@@ -1212,7 +1218,7 @@ public class TlsServerProtocol
                     this.connection_state = CS_SERVER_SESSION_TICKET;
                 }
 
-                sendChangeCipherSpecMessage();
+                sendChangeCipherSpec();
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
 

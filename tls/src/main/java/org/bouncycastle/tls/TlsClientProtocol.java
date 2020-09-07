@@ -286,6 +286,13 @@ public class TlsClientProtocol
 
                 byte[] serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
 
+                // See RFC 8446 D.4.
+                // TODO[tls13] If offering early data, the record is placed immediately after the first ClientHello.
+                if (clientHelloRetryGroup < 0)
+                {
+                    sendChangeCipherSpecMessage();
+                }
+
                 if (null != certificateRequest)
                 {
                     TlsCredentialedSigner clientCredentials = TlsUtils.establish13ClientCredentials(authentication,
@@ -433,7 +440,7 @@ public class TlsClientProtocol
             buf.updateHash(handshakeHash);
             this.connection_state = CS_SERVER_FINISHED;
 
-            sendChangeCipherSpecMessage();
+            sendChangeCipherSpec();
             sendFinishedMessage();
             this.connection_state = CS_CLIENT_FINISHED;
 
@@ -693,7 +700,7 @@ public class TlsClientProtocol
 
                 this.handshakeHash = handshakeHash.stopTracking();
 
-                sendChangeCipherSpecMessage();
+                sendChangeCipherSpec();
                 sendFinishedMessage();
                 break;
             }
@@ -1579,11 +1586,13 @@ public class TlsClientProtocol
          * original "key_share" extension with one containing only a new KeyShareEntry for the group
          * indicated in the selected_group field of the triggering HelloRetryRequest.
          */
-        if (clientHelloRetryGroup >= 0)
+        if (clientHelloRetryGroup < 0)
         {
-            this.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(tlsClientContext, clientHelloExtensions,
-                clientHelloRetryGroup);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+
+        this.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(tlsClientContext, clientHelloExtensions,
+            clientHelloRetryGroup);
 
         /*
          * TODO[tls13] Updating the "pre_shared_key" extension if present by recomputing the
@@ -1595,6 +1604,10 @@ public class TlsClientProtocol
          * TODO[tls13] Optionally adding, removing, or changing the length of the "padding"
          * extension [RFC7685].
          */
+
+        // See RFC 8446 D.4.
+        // TODO[tls13] If offering early data, the record is placed immediately after the first ClientHello.
+        sendChangeCipherSpecMessage();
 
         sendClientHelloMessage();
     }
