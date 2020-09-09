@@ -289,7 +289,7 @@ public class RSATest
         {
             data = eng.processBlock(data, 0, data.length);
 
-            fail("missing data block not recognised");
+            fail("incorrect block not recognised");
         }
         catch (InvalidCipherTextException e)
         {
