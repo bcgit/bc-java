@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateEncodingException;
@@ -120,7 +121,7 @@ public class OCSPTest
 
         OCSPResponse response = responses[0];
 
-        assertEquals(OCSPResponseStatus.SUCCESSFUL, response.getResponseStatus().getValue().intValue());
+        assertEquals(BigInteger.valueOf(OCSPResponseStatus.SUCCESSFUL), response.getResponseStatus().getValue());
         assertEquals(OCSPObjectIdentifiers.id_pkix_ocsp_basic, response.getResponseBytes().getResponseType());
         
         BasicOCSPResp basicResp = new BasicOCSPResp(BasicOCSPResponse.getInstance(response.getResponseBytes().getResponse().getOctets()));
@@ -134,7 +135,7 @@ public class OCSPTest
 
         response = responses[1];
 
-        assertEquals(OCSPResponseStatus.SUCCESSFUL, response.getResponseStatus().getValue().intValue());
+        assertEquals(BigInteger.valueOf(OCSPResponseStatus.SUCCESSFUL), response.getResponseStatus().getValue());
         assertEquals(OCSPObjectIdentifiers.id_pkix_ocsp_basic, response.getResponseBytes().getResponseType());
 
         basicResp = new BasicOCSPResp(BasicOCSPResponse.getInstance(response.getResponseBytes().getResponse().getOctets()));
