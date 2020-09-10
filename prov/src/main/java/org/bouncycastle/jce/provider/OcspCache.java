@@ -38,6 +38,7 @@ import org.bouncycastle.asn1.ocsp.TBSRequest;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.io.Streams;
 
 class OcspCache
@@ -173,7 +174,7 @@ class OcspCache
             }
             OCSPResponse response = OCSPResponse.getInstance(Streams.readAllLimited(reqIn, contentLength));
 
-            if (OCSPResponseStatus.SUCCESSFUL == response.getResponseStatus().getValue().intValueExact())
+            if (OCSPResponseStatus.SUCCESSFUL == response.getResponseStatus().getIntValue())
             {
                 boolean validated = false;
                 ResponseBytes respBytes = ResponseBytes.getInstance(response.getResponseBytes());
