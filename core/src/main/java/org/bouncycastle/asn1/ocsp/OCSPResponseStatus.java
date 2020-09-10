@@ -78,6 +78,11 @@ public class OCSPResponseStatus
         return null;
     }
 
+    public int getIntValue()
+    {
+        return value.intValueExact();
+    }
+
     public BigInteger getValue()
     {
         return value.getValue();

@@ -248,7 +248,7 @@ class ProvOcspRevocationChecker
 
             if (ocspResponse != null)
             {
-                if (OCSPResponseStatus.SUCCESSFUL == ocspResponse.getResponseStatus().getValue().intValueExact())
+                if (OCSPResponseStatus.SUCCESSFUL == ocspResponse.getResponseStatus().getIntValue())
                 {
                     ResponseBytes respBytes = ResponseBytes.getInstance(ocspResponse.getResponseBytes());
 
