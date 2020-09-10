@@ -174,7 +174,7 @@ class OcspCache
             }
             OCSPResponse response = OCSPResponse.getInstance(Streams.readAllLimited(reqIn, contentLength));
 
-            if (OCSPResponseStatus.SUCCESSFUL == BigIntegers.intValueExact(response.getResponseStatus().getValue()))
+            if (OCSPResponseStatus.SUCCESSFUL == response.getResponseStatus().getIntValue())
             {
                 boolean validated = false;
                 ResponseBytes respBytes = ResponseBytes.getInstance(response.getResponseBytes());
