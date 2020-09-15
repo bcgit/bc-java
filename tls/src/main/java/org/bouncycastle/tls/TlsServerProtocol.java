@@ -229,6 +229,8 @@ public class TlsServerProtocol
          * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
          * ONLY when extended_master_secret has been negotiated (otherwise NULL).
          */
+        byte[] legacy_session_id = clientHello.getSessionID();
+
         {
             invalidateSession();
 
@@ -365,7 +367,7 @@ public class TlsServerProtocol
 
         this.serverExtensions = serverEncryptedExtensions;
 
-        return new ServerHello(serverLegacyVersion, securityParameters.getServerRandom(), tlsSession.getSessionID(),
+        return new ServerHello(serverLegacyVersion, securityParameters.getServerRandom(), legacy_session_id,
             securityParameters.getCipherSuite(), serverHelloExtensions);
     }
 

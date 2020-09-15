@@ -1673,18 +1673,18 @@ public class TlsClientProtocol
          * TODO RFC 5077 3.4. When presenting a ticket, the client MAY generate and include a
          * Session ID in the TLS ClientHello.
          */
-        byte[] session_id = TlsUtils.getSessionID(tlsSession);
+        byte[] legacy_session_id = TlsUtils.getSessionID(tlsSession);
 
         boolean fallback = tlsClient.isFallback();
 
         int[] offeredCipherSuites = tlsClient.getCipherSuites();
 
-        if (session_id.length > 0 && this.sessionParameters != null)
+        if (legacy_session_id.length > 0 && this.sessionParameters != null)
         {
             if (!Arrays.contains(offeredCipherSuites, sessionParameters.getCipherSuite())
                 || CompressionMethod._null != sessionParameters.getCompressionAlgorithm())
             {
-                session_id = TlsUtils.EMPTY_BYTES;
+                legacy_session_id = TlsUtils.EMPTY_BYTES;
             }
         }
 
@@ -1697,6 +1697,15 @@ public class TlsClientProtocol
 
             TlsExtensionsUtils.addSupportedVersionsExtensionClient(clientExtensions,
                 tlsClientContext.getClientSupportedVersions());
+
+            /*
+             * RFC 8446 4.2.1. In compatibility mode [..], this field MUST be non-empty, so a client
+             * not offering a pre-TLS 1.3 session MUST generate a new 32-byte value.
+             */
+            if (legacy_session_id.length < 1)
+            {
+                legacy_session_id = tlsClientContext.getNonceGenerator().generateNonce(32);
+            }
         }
 
         tlsClientContext.setRSAPreMasterSecretVersion(legacy_version);
@@ -1784,7 +1793,7 @@ public class TlsClientProtocol
 
 
 
-        this.clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(), session_id,
+        this.clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(), legacy_session_id,
             null, offeredCipherSuites, clientExtensions);
 
         sendClientHelloMessage();
