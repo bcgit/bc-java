@@ -11,7 +11,8 @@ public class SecT283Field
     private static final long M27 = -1L >>> 37;
     private static final long M57 = -1L >>> 7;
 
-    private static final long[] ROOT_Z = new long[]{ 0x0C30C30C30C30808L, 0x30C30C30C30C30C3L, 0x820820820820830CL, 0x0820820820820820L, 0x2082082L };
+    private static final long[] ROOT_Z = new long[]{ 0x0C30C30C30C30808L, 0x30C30C30C30C30C3L, 0x820820820820830CL,
+        0x0820820820820820L, 0x2082082L };
 
     public static void add(long[] x, long[] y, long[] z)
     {
@@ -266,32 +267,33 @@ public class SecT283Field
         implExpand(x, a);
         implExpand(y, b);
 
+        long[] u = zz;
         long[] p = new long[26];
 
-        implMulw(a[0], b[0], p, 0);                                 // m1
-        implMulw(a[1], b[1], p, 2);                                 // m2
-        implMulw(a[2], b[2], p, 4);                                 // m3
-        implMulw(a[3], b[3], p, 6);                                 // m4
-        implMulw(a[4], b[4], p, 8);                                 // m5
+        implMulw(u, a[0], b[0], p, 0);                  // m1
+        implMulw(u, a[1], b[1], p, 2);                  // m2
+        implMulw(u, a[2], b[2], p, 4);                  // m3
+        implMulw(u, a[3], b[3], p, 6);                  // m4
+        implMulw(u, a[4], b[4], p, 8);                  // m5
 
         long u0 = a[0] ^ a[1], v0 = b[0] ^ b[1];
         long u1 = a[0] ^ a[2], v1 = b[0] ^ b[2];
         long u2 = a[2] ^ a[4], v2 = b[2] ^ b[4];
         long u3 = a[3] ^ a[4], v3 = b[3] ^ b[4];
 
-        implMulw(u1 ^ a[3], v1 ^ b[3], p, 18);                      // m10
-        implMulw(u2 ^ a[1], v2 ^ b[1], p, 20);                      // m11
+        implMulw(u, u1 ^ a[3], v1 ^ b[3], p, 18);       // m10
+        implMulw(u, u2 ^ a[1], v2 ^ b[1], p, 20);       // m11
 
         long A4 = u0 ^ u3  , B4 = v0 ^ v3;
         long A5 = A4 ^ a[2], B5 = B4 ^ b[2];
 
-        implMulw(A4, B4, p, 22);                                    // m12
-        implMulw(A5, B5, p, 24);                                    // m13
+        implMulw(u, A4, B4, p, 22);                     // m12
+        implMulw(u, A5, B5, p, 24);                     // m13
 
-        implMulw(u0, v0, p, 10);                                    // m6
-        implMulw(u1, v1, p, 12);                                    // m7
-        implMulw(u2, v2, p, 14);                                    // m8
-        implMulw(u3, v3, p, 16);                                    // m9
+        implMulw(u, u0, v0, p, 10);                     // m6
+        implMulw(u, u1, v1, p, 12);                     // m7
+        implMulw(u, u2, v2, p, 14);                     // m8
+        implMulw(u, u3, v3, p, 16);                     // m9
 
 
         // Original method, corresponding to formula (16)
@@ -378,12 +380,11 @@ public class SecT283Field
         implCompactExt(zz);
     }
 
-    protected static void implMulw(long x, long y, long[] z, int zOff)
+    protected static void implMulw(long[] u, long x, long y, long[] z, int zOff)
     {
 //        assert x >>> 57 == 0;
 //        assert y >>> 57 == 0;
 
-        long[] u = new long[8];
 //      u[0] = 0;
         u[1] = y;
         u[2] = u[1] << 1;
@@ -417,10 +418,7 @@ public class SecT283Field
 
     protected static void implSquare(long[] x, long[] zz)
     {
-        Interleave.expand64To128(x[0], zz, 0);
-        Interleave.expand64To128(x[1], zz, 2);
-        Interleave.expand64To128(x[2], zz, 4);
-        Interleave.expand64To128(x[3], zz, 6);
+        Interleave.expand64To128(x, 0, 4, zz, 0);
         zz[8] = Interleave.expand32to64((int)x[4]);
     }
 }

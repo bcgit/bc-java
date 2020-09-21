@@ -93,6 +93,23 @@ public class Interleave
         z[zOff + 1] = (x >>> 1) & M64;
     }
 
+    public static void expand64To128(long[] xs, int xsOff, int xsLen, long[] zs, int zsOff)
+    {
+        for (int i = 0; i < xsLen; ++i)
+        {
+            // "shuffle" low half to even bits and high half to odd bits
+            long x = xs[xsOff + i], t;
+            t = (x ^ (x >>> 16)) & 0x00000000FFFF0000L; x ^= (t ^ (t << 16));
+            t = (x ^ (x >>>  8)) & 0x0000FF000000FF00L; x ^= (t ^ (t <<  8));
+            t = (x ^ (x >>>  4)) & 0x00F000F000F000F0L; x ^= (t ^ (t <<  4));
+            t = (x ^ (x >>>  2)) & 0x0C0C0C0C0C0C0C0CL; x ^= (t ^ (t <<  2));
+            t = (x ^ (x >>>  1)) & 0x2222222222222222L; x ^= (t ^ (t <<  1));
+
+            zs[zsOff++] = (x      ) & M64;
+            zs[zsOff++] = (x >>> 1) & M64;
+        }
+    }
+
     public static void expand64To128Rev(long x, long[] z, int zOff)
     {
         // "shuffle" low half to even bits and high half to odd bits

@@ -109,14 +109,14 @@ public class SecT163Field
 
     public static void multiply(long[] x, long[] y, long[] z)
     {
-        long[] tt = Nat192.createExt64();
+        long[] tt = new long[8];
         implMultiply(x, y, tt);
         reduce(tt, z);
     }
 
     public static void multiplyAddToExt(long[] x, long[] y, long[] zz)
     {
-        long[] tt = Nat192.createExt64();
+        long[] tt = new long[8];
         implMultiply(x, y, tt);
         addExt(zz, tt, zz);
     }
@@ -228,21 +228,22 @@ public class SecT163Field
         g1  = ((g0 >>> 55) ^ (g1 <<  9)) & M55;
         g0 &= M55;
 
+        long[] u = zz;
         long[] H = new long[10];
 
-        implMulw(f0, g0, H, 0);               // H(0)       55/54 bits
-        implMulw(f2, g2, H, 2);               // H(INF)     55/50 bits
+        implMulw(u, f0, g0, H, 0);               // H(0)       55/54 bits
+        implMulw(u, f2, g2, H, 2);               // H(INF)     55/50 bits
 
         long t0 = f0 ^ f1 ^ f2;
         long t1 = g0 ^ g1 ^ g2;
 
-        implMulw(t0, t1, H, 4);               // H(1)       55/54 bits
+        implMulw(u, t0, t1, H, 4);               // H(1)       55/54 bits
 
         long t2 = (f1 << 1) ^ (f2 << 2);
         long t3 = (g1 << 1) ^ (g2 << 2);
 
-        implMulw(f0 ^ t2, g0 ^ t3, H, 6);     // H(t)       55/56 bits
-        implMulw(t0 ^ t2, t1 ^ t3, H, 8);     // H(t + 1)   55/56 bits
+        implMulw(u, f0 ^ t2, g0 ^ t3, H, 6);     // H(t)       55/56 bits
+        implMulw(u, t0 ^ t2, t1 ^ t3, H, 8);     // H(t + 1)   55/56 bits
 
         long t4 = H[6] ^ H[8];
         long t5 = H[7] ^ H[9];
@@ -315,12 +316,11 @@ public class SecT163Field
         implCompactExt(zz);
     }
 
-    protected static void implMulw(long x, long y, long[] z, int zOff)
+    protected static void implMulw(long[] u, long x, long y, long[] z, int zOff)
     {
 //        assert x >>> 56 == 0;
 //        assert y >>> 56 == 0;
 
-        long[] u = new long[8];
 //      u[0] = 0;
         u[1] = y;
         u[2] = u[1] << 1;
@@ -352,8 +352,6 @@ public class SecT163Field
 
     protected static void implSquare(long[] x, long[] zz)
     {
-        Interleave.expand64To128(x[0], zz, 0);
-        Interleave.expand64To128(x[1], zz, 2);
-        Interleave.expand64To128(x[2], zz, 4);
+        Interleave.expand64To128(x, 0, 3, zz, 0);
     }
 }

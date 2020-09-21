@@ -10,10 +10,9 @@ public class SecT571Field
 {
     private static final long M59 = -1L >>> 5;
 
-    private static final long RM = 0xEF7BDEF7BDEF7BDEL;
-
-    private static final long[] ROOT_Z = new long[]{ 0x2BE1195F08CAFB99L, 0x95F08CAF84657C23L, 0xCAF84657C232BE11L, 0x657C232BE1195F08L,
-        0xF84657C2308CAF84L, 0x7C232BE1195F08CAL, 0xBE1195F08CAF8465L, 0x5F08CAF84657C232L, 0x784657C232BE119L };
+    private static final long[] ROOT_Z = new long[]{ 0x2BE1195F08CAFB99L, 0x95F08CAF84657C23L, 0xCAF84657C232BE11L,
+        0x657C232BE1195F08L, 0xF84657C2308CAF84L, 0x7C232BE1195F08CAL, 0xBE1195F08CAF8465L, 0x5F08CAF84657C232L,
+        0x784657C232BE119L };
 
     public static void add(long[] x, long[] y, long[] z)
     {
@@ -290,14 +289,87 @@ public class SecT571Field
 
     protected static void implMultiply(long[] x, long[] y, long[] zz)
     {
-//        for (int i = 0; i < 9; ++i)
-//        {
-//            implMulwAcc(x, y[i], zz, i);
-//        }
+//        long[] precomp = precompMultiplicand(y);
+//
+//        implMultiplyPrecomp(x, precomp, zz);
 
-        long[] precomp = precompMultiplicand(y);
-        
-        implMultiplyPrecomp(x, precomp, zz);
+        long[] u = new long[16];
+        for (int i = 0; i < 9; ++i)
+        {
+            implMulwAcc(u, x[i], y[i], zz, i << 1);
+        }
+
+        long v0 = zz[0], v1 = zz[1];
+        v0 ^= zz[ 2]; zz[1] = v0 ^ v1; v1 ^= zz[ 3];
+        v0 ^= zz[ 4]; zz[2] = v0 ^ v1; v1 ^= zz[ 5];
+        v0 ^= zz[ 6]; zz[3] = v0 ^ v1; v1 ^= zz[ 7];
+        v0 ^= zz[ 8]; zz[4] = v0 ^ v1; v1 ^= zz[ 9];
+        v0 ^= zz[10]; zz[5] = v0 ^ v1; v1 ^= zz[11];
+        v0 ^= zz[12]; zz[6] = v0 ^ v1; v1 ^= zz[13];
+        v0 ^= zz[14]; zz[7] = v0 ^ v1; v1 ^= zz[15];
+        v0 ^= zz[16]; zz[8] = v0 ^ v1; v1 ^= zz[17];
+
+        long w = v0 ^ v1;
+        zz[ 9]  = zz[0] ^ w;
+        zz[10]  = zz[1] ^ w;
+        zz[11]  = zz[2] ^ w;
+        zz[12]  = zz[3] ^ w;
+        zz[13]  = zz[4] ^ w;
+        zz[14]  = zz[5] ^ w;
+        zz[15]  = zz[6] ^ w;
+        zz[16]  = zz[7] ^ w;
+        zz[17]  = zz[8] ^ w;
+
+        implMulwAcc(u, x[0] ^ x[1], y[0] ^ y[1], zz,  1);
+
+        implMulwAcc(u, x[0] ^ x[2], y[0] ^ y[2], zz,  2);
+
+        implMulwAcc(u, x[0] ^ x[3], y[0] ^ y[3], zz,  3);
+        implMulwAcc(u, x[1] ^ x[2], y[1] ^ y[2], zz,  3);
+
+        implMulwAcc(u, x[0] ^ x[4], y[0] ^ y[4], zz,  4);
+        implMulwAcc(u, x[1] ^ x[3], y[1] ^ y[3], zz,  4);
+
+        implMulwAcc(u, x[0] ^ x[5], y[0] ^ y[5], zz,  5);
+        implMulwAcc(u, x[1] ^ x[4], y[1] ^ y[4], zz,  5);
+        implMulwAcc(u, x[2] ^ x[3], y[2] ^ y[3], zz,  5);
+
+        implMulwAcc(u, x[0] ^ x[6], y[0] ^ y[6], zz,  6);
+        implMulwAcc(u, x[1] ^ x[5], y[1] ^ y[5], zz,  6);
+        implMulwAcc(u, x[2] ^ x[4], y[2] ^ y[4], zz,  6);
+
+        implMulwAcc(u, x[0] ^ x[7], y[0] ^ y[7], zz,  7);
+        implMulwAcc(u, x[1] ^ x[6], y[1] ^ y[6], zz,  7);
+        implMulwAcc(u, x[2] ^ x[5], y[2] ^ y[5], zz,  7);
+        implMulwAcc(u, x[3] ^ x[4], y[3] ^ y[4], zz,  7);
+
+        implMulwAcc(u, x[0] ^ x[8], y[0] ^ y[8], zz,  8);
+        implMulwAcc(u, x[1] ^ x[7], y[1] ^ y[7], zz,  8);
+        implMulwAcc(u, x[2] ^ x[6], y[2] ^ y[6], zz,  8);
+        implMulwAcc(u, x[3] ^ x[5], y[3] ^ y[5], zz,  8);
+
+        implMulwAcc(u, x[1] ^ x[8], y[1] ^ y[8], zz,  9);
+        implMulwAcc(u, x[2] ^ x[7], y[2] ^ y[7], zz,  9);
+        implMulwAcc(u, x[3] ^ x[6], y[3] ^ y[6], zz,  9);
+        implMulwAcc(u, x[4] ^ x[5], y[4] ^ y[5], zz,  9);
+
+        implMulwAcc(u, x[2] ^ x[8], y[2] ^ y[8], zz, 10);
+        implMulwAcc(u, x[3] ^ x[7], y[3] ^ y[7], zz, 10);
+        implMulwAcc(u, x[4] ^ x[6], y[4] ^ y[6], zz, 10);
+
+        implMulwAcc(u, x[3] ^ x[8], y[3] ^ y[8], zz, 11);
+        implMulwAcc(u, x[4] ^ x[7], y[4] ^ y[7], zz, 11);
+        implMulwAcc(u, x[5] ^ x[6], y[5] ^ y[6], zz, 11);
+
+        implMulwAcc(u, x[4] ^ x[8], y[4] ^ y[8], zz, 12);
+        implMulwAcc(u, x[5] ^ x[7], y[5] ^ y[7], zz, 12);
+
+        implMulwAcc(u, x[5] ^ x[8], y[5] ^ y[8], zz, 13);
+        implMulwAcc(u, x[6] ^ x[7], y[6] ^ y[7], zz, 13);
+
+        implMulwAcc(u, x[6] ^ x[8], y[6] ^ y[8], zz, 14);
+
+        implMulwAcc(u, x[7] ^ x[8], y[7] ^ y[8], zz, 15);
     }
 
     protected static void implMultiplyPrecomp(long[] x, long[] precomp, long[] zz)
@@ -336,60 +408,44 @@ public class SecT571Field
         }
     }
 
-    protected static void implMulwAcc(long[] xs, long y, long[] z, int zOff)
+    protected static void implMulwAcc(long[] u, long x, long y, long[] z, int zOff)
     {
-        long[] u = new long[32];
 //      u[0] = 0;
         u[1] = y;
-        for (int i = 2; i < 32; i += 2)
+        for (int i = 2; i < 16; i += 2)
         {
             u[i    ] = u[i >>> 1] << 1;
             u[i + 1] = u[i      ] ^  y;
         }
 
-        long l = 0;
-        for (int i = 0; i < 9; ++i)
+        int j = (int)x;
+        long g, h = 0, l = u[j & 15]
+                         ^ u[(j >>> 4) & 15] << 4;
+        int k = 56;
+        do
         {
-            long x = xs[i];
-
-            int j = (int)x;
-
-            l ^= u[j & 31];
-
-            long g, h = 0;
-            int k = 60;
-            do
-            {
-                j  = (int)(x >>> k);
-                g  = u[j & 31];
-                l ^= (g <<   k);
-                h ^= (g >>> -k);
-            }
-            while ((k -= 5) > 0);
-
-            for (int p = 0; p < 4; ++p)
-            {
-                x = (x & RM) >>> 1;
-                h ^= x & ((y << p) >> 63);
-            }
-
-            z[zOff + i] ^= l;
-
-            l = h;
+            j  = (int)(x >>> k);
+            g  = u[j & 15]
+               ^ u[(j >>> 4) & 15] << 4;
+            l ^= (g << k);
+            h ^= (g >>> -k);
         }
-        z[zOff + 9] ^= l;
+        while ((k -= 8) > 0);
+
+        for (int p = 0; p < 7; ++p)
+        {
+            x = (x & 0xFEFEFEFEFEFEFEFEL) >>> 1;
+            h ^= x & ((y << p) >> 63);
+        }
+
+//        assert h >>> 63 == 0;
+
+        z[zOff + 0] ^= l;
+        z[zOff + 1] ^= h;
     }
 
     protected static void implSquare(long[] x, long[] zz)
     {
-        Interleave.expand64To128(x[0], zz,  0);
-        Interleave.expand64To128(x[1], zz,  2);
-        Interleave.expand64To128(x[2], zz,  4);
-        Interleave.expand64To128(x[3], zz,  6);
-        Interleave.expand64To128(x[4], zz,  8);
-        Interleave.expand64To128(x[5], zz, 10);
-        Interleave.expand64To128(x[6], zz, 12);
-        Interleave.expand64To128(x[7], zz, 14);
-        Interleave.expand64To128(x[8], zz, 16);
+        Interleave.expand64To128(x, 0, 9, zz,  0);
     }
 }
