@@ -242,10 +242,12 @@ public class SecT193Field
         implExpand(x, f);
         implExpand(y, g);
 
-        implMulwAcc(f[0], g[0], zz, 0);
-        implMulwAcc(f[1], g[1], zz, 1);
-        implMulwAcc(f[2], g[2], zz, 2);
-        implMulwAcc(f[3], g[3], zz, 3);
+        long[] u = new long[8];
+
+        implMulwAcc(u, f[0], g[0], zz, 0);
+        implMulwAcc(u, f[1], g[1], zz, 1);
+        implMulwAcc(u, f[2], g[2], zz, 2);
+        implMulwAcc(u, f[3], g[3], zz, 3);
 
         // U *= (1 - t^n)
         for (int i = 5; i > 0; --i)
@@ -253,8 +255,8 @@ public class SecT193Field
             zz[i] ^= zz[i - 1];
         }
 
-        implMulwAcc(f[0] ^ f[1], g[0] ^ g[1], zz, 1);
-        implMulwAcc(f[2] ^ f[3], g[2] ^ g[3], zz, 3);
+        implMulwAcc(u, f[0] ^ f[1], g[0] ^ g[1], zz, 1);
+        implMulwAcc(u, f[2] ^ f[3], g[2] ^ g[3], zz, 3);
 
         // V *= (1 - t^2n)
         for (int i = 7; i > 1; --i)
@@ -266,10 +268,10 @@ public class SecT193Field
         {
             long c0 = f[0] ^ f[2], c1 = f[1] ^ f[3];
             long d0 = g[0] ^ g[2], d1 = g[1] ^ g[3];
-            implMulwAcc(c0 ^ c1, d0 ^ d1, zz, 3);
+            implMulwAcc(u, c0 ^ c1, d0 ^ d1, zz, 3);
             long[] t = new long[3];
-            implMulwAcc(c0, d0, t, 0);
-            implMulwAcc(c1, d1, t, 1);
+            implMulwAcc(u, c0, d0, t, 0);
+            implMulwAcc(u, c1, d1, t, 1);
             long t0 = t[0], t1 = t[1], t2 = t[2];
             zz[2] ^= t0;
             zz[3] ^= t0 ^ t1;
@@ -280,12 +282,11 @@ public class SecT193Field
         implCompactExt(zz);
     }
 
-    protected static void implMulwAcc(long x, long y, long[] z, int zOff)
+    protected static void implMulwAcc(long[] u, long x, long y, long[] z, int zOff)
     {
 //        assert x >>> 49 == 0;
 //        assert y >>> 49 == 0;
 
-        long[] u = new long[8];
 //        u[0] = 0;
         u[1] = y;
         u[2] = u[1] << 1;
@@ -320,9 +321,7 @@ public class SecT193Field
 
     protected static void implSquare(long[] x, long[] zz)
     {
-        Interleave.expand64To128(x[0], zz, 0);
-        Interleave.expand64To128(x[1], zz, 2);
-        Interleave.expand64To128(x[2], zz, 4);
-        zz[6] = (x[3] & M01);
+        Interleave.expand64To128(x, 0, 3, zz, 0);
+        zz[6] = x[3] & M01;
     }
 }
