@@ -191,7 +191,7 @@ public class SecT571Field
         }
 
         /*
-         * Second section with all 4-bit products of B shifted 4 bits
+         * Second section with all 4-bit products of x shifted 4 bits
          */
         Nat.shiftUpBits64(len, t, 0, 4, 0L, t, len);
 
@@ -310,15 +310,15 @@ public class SecT571Field
         v0 ^= zz[16]; zz[8] = v0 ^ v1; v1 ^= zz[17];
 
         long w = v0 ^ v1;
-        zz[ 9]  = zz[0] ^ w;
-        zz[10]  = zz[1] ^ w;
-        zz[11]  = zz[2] ^ w;
-        zz[12]  = zz[3] ^ w;
-        zz[13]  = zz[4] ^ w;
-        zz[14]  = zz[5] ^ w;
-        zz[15]  = zz[6] ^ w;
-        zz[16]  = zz[7] ^ w;
-        zz[17]  = zz[8] ^ w;
+        zz[ 9] = zz[0] ^ w;
+        zz[10] = zz[1] ^ w;
+        zz[11] = zz[2] ^ w;
+        zz[12] = zz[3] ^ w;
+        zz[13] = zz[4] ^ w;
+        zz[14] = zz[5] ^ w;
+        zz[15] = zz[6] ^ w;
+        zz[16] = zz[7] ^ w;
+        zz[17] = zz[8] ^ w;
 
         implMulwAcc(u, x[0] ^ x[1], y[0] ^ y[1], zz,  1);
 
@@ -440,7 +440,7 @@ public class SecT571Field
 
 //        assert h >>> 63 == 0;
 
-        z[zOff + 0] ^= l;
+        z[zOff    ] ^= l;
         z[zOff + 1] ^= h;
     }
 
