@@ -311,13 +311,13 @@ public class SecT409Field
         v0 ^= zz[12]; zz[6] = v0 ^ v1; v1 ^= zz[13];
 
         long w = v0 ^ v1;
-        zz[ 7]  = zz[0] ^ w;
-        zz[ 8]  = zz[1] ^ w;
-        zz[ 9]  = zz[2] ^ w;
-        zz[10]  = zz[3] ^ w;
-        zz[11]  = zz[4] ^ w;
-        zz[12]  = zz[5] ^ w;
-        zz[13]  = zz[6] ^ w;
+        zz[ 7] = zz[0] ^ w;
+        zz[ 8] = zz[1] ^ w;
+        zz[ 9] = zz[2] ^ w;
+        zz[10] = zz[3] ^ w;
+        zz[11] = zz[4] ^ w;
+        zz[12] = zz[5] ^ w;
+        zz[13] = zz[6] ^ w;
 
         implMulwAcc(u, a[0] ^ a[1], b[0] ^ b[1], zz,  1);
 
@@ -356,6 +356,7 @@ public class SecT409Field
 
     protected static void implMulwAcc(long[] u, long x, long y, long[] z, int zOff)
     {
+//        assert x >>> 59 == 0;
 //        assert y >>> 59 == 0;
 
 //      u[0] = 0;
@@ -366,8 +367,6 @@ public class SecT409Field
         u[5] = u[4] ^  y;
         u[6] = u[3] << 1;
         u[7] = u[6] ^  y;
-
-//        assert x >>> 59 == 0;
 
         int j = (int)x;
         long g, h = 0, l = u[j & 7]
