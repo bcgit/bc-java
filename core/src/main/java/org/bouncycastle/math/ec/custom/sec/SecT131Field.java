@@ -96,14 +96,14 @@ public class SecT131Field
 
     public static void multiply(long[] x, long[] y, long[] z)
     {
-        long[] tt = Nat192.createExt64();
+        long[] tt = new long[8];
         implMultiply(x, y, tt);
         reduce(tt, z);
     }
 
     public static void multiplyAddToExt(long[] x, long[] y, long[] zz)
     {
-        long[] tt = Nat192.createExt64();
+        long[] tt = new long[8];
         implMultiply(x, y, tt);
         addExt(zz, tt, zz);
     }
@@ -217,21 +217,22 @@ public class SecT131Field
         g1  = ((g0 >>> 44) ^ (g1 << 20)) & M44;
         g0 &= M44;
 
+        long[] u = zz;
         long[] H = new long[10];
 
-        implMulw(f0, g0, H, 0);               // H(0)       44/43 bits
-        implMulw(f2, g2, H, 2);               // H(INF)     44/41 bits
+        implMulw(u, f0, g0, H, 0);              // H(0)       44/43 bits
+        implMulw(u, f2, g2, H, 2);              // H(INF)     44/41 bits
 
         long t0 = f0 ^ f1 ^ f2;
         long t1 = g0 ^ g1 ^ g2;
 
-        implMulw(t0, t1, H, 4);               // H(1)       44/43 bits
+        implMulw(u, t0, t1, H, 4);              // H(1)       44/43 bits
 
         long t2 = (f1 << 1) ^ (f2 << 2);
         long t3 = (g1 << 1) ^ (g2 << 2);
 
-        implMulw(f0 ^ t2, g0 ^ t3, H, 6);     // H(t)       44/45 bits
-        implMulw(t0 ^ t2, t1 ^ t3, H, 8);     // H(t + 1)   44/45 bits
+        implMulw(u, f0 ^ t2, g0 ^ t3, H, 6);    // H(t)       44/45 bits
+        implMulw(u, t0 ^ t2, t1 ^ t3, H, 8);    // H(t + 1)   44/45 bits
 
         long t4 = H[6] ^ H[8];
         long t5 = H[7] ^ H[9];
@@ -304,12 +305,11 @@ public class SecT131Field
         implCompactExt(zz);
     }
 
-    protected static void implMulw(long x, long y, long[] z, int zOff)
+    protected static void implMulw(long[] u, long x, long y, long[] z, int zOff)
     {
 //        assert x >>> 45 == 0;
 //        assert y >>> 45 == 0;
 
-        long[] u = new long[8];
 //      u[0] = 0;
         u[1] = y;
         u[2] = u[1] << 1;
@@ -321,20 +321,23 @@ public class SecT131Field
 
         int j = (int)x;
         long g, h = 0, l = u[j & 7]
-                         ^ u[(j >>> 3) & 7] << 3
-                         ^ u[(j >>> 6) & 7] << 6;
-        int k = 33;
+                         ^ u[(j >>>  3) & 7] <<  3
+                         ^ u[(j >>>  6) & 7] <<  6
+                         ^ u[(j >>>  9) & 7] <<  9
+                         ^ u[(j >>> 12) & 7] << 12;
+        int k = 30;
         do
         {
             j  = (int)(x >>> k);
             g  = u[j & 7]
-               ^ u[(j >>> 3) & 7] << 3
-               ^ u[(j >>> 6) & 7] << 6
-               ^ u[(j >>> 9) & 7] << 9;
+               ^ u[(j >>>  3) & 7] <<  3
+               ^ u[(j >>>  6) & 7] <<  6
+               ^ u[(j >>>  9) & 7] <<  9
+               ^ u[(j >>> 12) & 7] << 12;
             l ^= (g <<   k);
             h ^= (g >>> -k);
         }
-        while ((k -= 12) > 0);
+        while ((k -= 15) > 0);
 
 //        assert h >>> 25 == 0;
 
@@ -344,8 +347,7 @@ public class SecT131Field
 
     protected static void implSquare(long[] x, long[] zz)
     {
-        Interleave.expand64To128(x[0], zz, 0);
-        Interleave.expand64To128(x[1], zz, 2);
+        Interleave.expand64To128(x, 0, 2, zz, 0);
         zz[4] = Interleave.expand8to16((int)x[2]) & 0xFFFFFFFFL;
     }
 }

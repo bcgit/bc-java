@@ -90,14 +90,14 @@ public class SecT113Field
 
     public static void multiply(long[] x, long[] y, long[] z)
     {
-        long[] tt = Nat128.createExt64();
+        long[] tt = new long[8];
         implMultiply(x, y, tt);
         reduce(tt, z);
     }
 
     public static void multiplyAddToExt(long[] x, long[] y, long[] zz)
     {
-        long[] tt = Nat128.createExt64();
+        long[] tt = new long[8];
         implMultiply(x, y, tt);
         addExt(zz, tt, zz);
     }
@@ -183,11 +183,12 @@ public class SecT113Field
         g1  = ((g0 >>> 57) ^ (g1 <<  7)) & M57;
         g0 &= M57;
 
+        long[] u = zz;
         long[] H = new long[6];
 
-        implMulw(f0, g0, H, 0);               // H(0)       57/56 bits
-        implMulw(f1, g1, H, 2);               // H(INF)     57/54 bits
-        implMulw(f0 ^ f1, g0 ^ g1, H, 4);     // H(1)       57/56 bits
+        implMulw(u, f0, g0, H, 0);              // H(0)       57/56 bits
+        implMulw(u, f1, g1, H, 2);              // H(INF)     57/54 bits
+        implMulw(u, f0 ^ f1, g0 ^ g1, H, 4);    // H(1)       57/56 bits
 
         long r  = H[1] ^ H[2];
         long z0 = H[0],
@@ -201,12 +202,11 @@ public class SecT113Field
         zz[3] = (z3 >>> 21);
     }
 
-    protected static void implMulw(long x, long y, long[] z, int zOff)
+    protected static void implMulw(long[] u, long x, long y, long[] z, int zOff)
     {
 //        assert x >>> 57 == 0;
 //        assert y >>> 57 == 0;
 
-        long[] u = new long[8];
 //      u[0] = 0;
         u[1] = y;
         u[2] = u[1] << 1;
@@ -240,7 +240,6 @@ public class SecT113Field
 
     protected static void implSquare(long[] x, long[] zz)
     {
-        Interleave.expand64To128(x[0], zz, 0);
-        Interleave.expand64To128(x[1], zz, 2);
+        Interleave.expand64To128(x, 0, 2, zz, 0);
     }
 }
