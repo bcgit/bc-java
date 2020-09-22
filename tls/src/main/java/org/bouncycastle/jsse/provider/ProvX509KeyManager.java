@@ -49,6 +49,9 @@ class ProvX509KeyManager
 
     private static final int X509V3_VERSION = 3;
 
+    private static final boolean provKeyManagerCheckEKU = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.keyManager.checkEKU", true);
+
     private final AtomicLong versions = new AtomicLong();
     private final JcaJceHelper helper;
     private final List<KeyStore.Builder> builders;
@@ -258,6 +261,15 @@ class ProvX509KeyManager
     public String[] getServerAliases(String keyType, Principal[] issuers)
     {
         return getAliases(getKeyTypes(keyType), issuers, null, true);
+    }
+
+    static KeyPurposeId getRequiredExtendedKeyUsage(boolean forServer)
+    {
+        return !provKeyManagerCheckEKU
+            ?   null
+            :   forServer
+            ?   KeyPurposeId.id_kp_serverAuth
+            :   KeyPurposeId.id_kp_clientAuth;
     }
 
     private String chooseAlias(List<String> keyTypes, Principal[] issuers, TransportData transportData,
@@ -524,7 +536,7 @@ class ProvX509KeyManager
         try
         {
             Set<X509Certificate> trustedCerts = Collections.emptySet();
-            KeyPurposeId ekuOID = ProvX509TrustManager.getRequiredExtendedKeyUsage(forServer);
+            KeyPurposeId ekuOID = getRequiredExtendedKeyUsage(forServer);
             int kuBit = -1; // i.e. no checks; we handle them in isSuitableEECert
 
             ProvAlgorithmChecker.checkChain(helper, algorithmConstraints, trustedCerts, chain, ekuOID, kuBit);

@@ -440,7 +440,7 @@ class ProvX509KeyManagerSimple
         try
         {
             Set<X509Certificate> trustedCerts = Collections.emptySet();
-            KeyPurposeId ekuOID = ProvX509TrustManager.getRequiredExtendedKeyUsage(forServer);
+            KeyPurposeId ekuOID = ProvX509KeyManager.getRequiredExtendedKeyUsage(forServer);
             int kuBit = -1; // i.e. no checks; we handle them in isSuitableEECert
 
             ProvAlgorithmChecker.checkChain(helper, algorithmConstraints, trustedCerts, chain, ekuOID, kuBit);
