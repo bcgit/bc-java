@@ -48,6 +48,8 @@ class ProvX509TrustManager
 
     private static final boolean provCheckRevocation = PropertyUtils
         .getBooleanSystemProperty("com.sun.net.ssl.checkRevocation", false);
+    private static final boolean provTrustManagerCheckEKU = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.trustManager.checkEKU", true);
 
     private static final Map<String, Integer> keyUsagesServer = createKeyUsagesServer();
 
@@ -352,7 +354,9 @@ class ProvX509TrustManager
 
     static KeyPurposeId getRequiredExtendedKeyUsage(boolean forServer)
     {
-        return forServer
+        return !provTrustManagerCheckEKU
+            ?   null
+            :   forServer
             ?   KeyPurposeId.id_kp_serverAuth
             :   KeyPurposeId.id_kp_clientAuth;
     }
