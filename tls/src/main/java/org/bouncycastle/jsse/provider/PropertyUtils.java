@@ -44,17 +44,38 @@ class PropertyUtils
         }
     }
 
+    static boolean getBooleanSecurityProperty(String propertyName, boolean defaultValue)
+    {
+        String propertyValue = getSecurityProperty(propertyName);
+        if (null != propertyValue)
+        {
+            if ("true".equalsIgnoreCase(propertyValue))
+            {
+                LOG.log(Level.INFO, "Found boolean security property [" + propertyName + "]: " + true);
+                return true;
+            }
+            if ("false".equalsIgnoreCase(propertyValue))
+            {
+                LOG.log(Level.INFO, "Found boolean security property [" + propertyName + "]: " + false);
+                return false;
+            }
+            LOG.log(Level.WARNING, "Unrecognized value for boolean security property [" + propertyName + "]: " + propertyValue);
+        }
+        LOG.log(Level.FINE, "Boolean security property [" + propertyName + "] defaulted to: " + defaultValue);
+        return defaultValue;
+    }
+
     static boolean getBooleanSystemProperty(String propertyName, boolean defaultValue)
     {
         String propertyValue = getSystemProperty(propertyName);
         if (null != propertyValue)
         {
-            if ("true".equals(propertyValue))
+            if ("true".equalsIgnoreCase(propertyValue))
             {
                 LOG.log(Level.INFO, "Found boolean system property [" + propertyName + "]: " + true);
                 return true;
             }
-            if ("false".equals(propertyValue))
+            if ("false".equalsIgnoreCase(propertyValue))
             {
                 LOG.log(Level.INFO, "Found boolean system property [" + propertyName + "]: " + false);
                 return false;
