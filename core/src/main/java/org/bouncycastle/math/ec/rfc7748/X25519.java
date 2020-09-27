@@ -16,6 +16,8 @@ public abstract class X25519
     public static final int POINT_SIZE = 32;
     public static final int SCALAR_SIZE = 32;
 
+    private static class F extends X25519Field {};
+
     private static final int C_A = 486662;
     private static final int C_A24 = (C_A + 2)/4;
 
@@ -65,17 +67,17 @@ public abstract class X25519
 
     private static void pointDouble(int[] x, int[] z)
     {
-        int[] A = X25519Field.create();
-        int[] B = X25519Field.create();
+        int[] a = F.create();
+        int[] b = F.create();
 
-        X25519Field.apm(x, z, A, B);
-        X25519Field.sqr(A, A);
-        X25519Field.sqr(B, B);
-        X25519Field.mul(A, B, x);
-        X25519Field.sub(A, B, A);
-        X25519Field.mul(A, C_A24, z);
-        X25519Field.add(z, B, z);
-        X25519Field.mul(z, A, z);
+        F.apm(x, z, a, b);
+        F.sqr(a, a);
+        F.sqr(b, b);
+        F.mul(a, b, x);
+        F.sub(a, b, a);
+        F.mul(a, C_A24, z);
+        F.add(z, b, z);
+        F.mul(z, a, z);
     }
 
     public static void precompute()
@@ -85,47 +87,47 @@ public abstract class X25519
 
     public static void scalarMult(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
     {
-        int[] n = new int[8];   decodeScalar(k, kOff, n);
+        int[] n = new int[8];       decodeScalar(k, kOff, n);
 
-        int[] x1 = X25519Field.create();        X25519Field.decode(u, uOff, x1);
-        int[] x2 = X25519Field.create();        X25519Field.copy(x1, 0, x2, 0);
-        int[] z2 = X25519Field.create();        z2[0] = 1;
-        int[] x3 = X25519Field.create();        x3[0] = 1;
-        int[] z3 = X25519Field.create();
+        int[] x1 = F.create();      F.decode(u, uOff, x1);
+        int[] x2 = F.create();      F.copy(x1, 0, x2, 0);
+        int[] z2 = F.create();      z2[0] = 1;
+        int[] x3 = F.create();      x3[0] = 1;
+        int[] z3 = F.create();
 
-        int[] t1 = X25519Field.create();
-        int[] t2 = X25519Field.create();
+        int[] t1 = F.create();
+        int[] t2 = F.create();
 
 //        assert n[7] >>> 30 == 1;
 
         int bit = 254, swap = 1;
         do
         {
-            X25519Field.apm(x3, z3, t1, x3);
-            X25519Field.apm(x2, z2, z3, x2);
-            X25519Field.mul(t1, x2, t1);
-            X25519Field.mul(x3, z3, x3);
-            X25519Field.sqr(z3, z3);
-            X25519Field.sqr(x2, x2);
+            F.apm(x3, z3, t1, x3);
+            F.apm(x2, z2, z3, x2);
+            F.mul(t1, x2, t1);
+            F.mul(x3, z3, x3);
+            F.sqr(z3, z3);
+            F.sqr(x2, x2);
 
-            X25519Field.sub(z3, x2, t2);
-            X25519Field.mul(t2, C_A24, z2);
-            X25519Field.add(z2, x2, z2);
-            X25519Field.mul(z2, t2, z2);
-            X25519Field.mul(x2, z3, x2);
+            F.sub(z3, x2, t2);
+            F.mul(t2, C_A24, z2);
+            F.add(z2, x2, z2);
+            F.mul(z2, t2, z2);
+            F.mul(x2, z3, x2);
 
-            X25519Field.apm(t1, x3, x3, z3);
-            X25519Field.sqr(x3, x3);
-            X25519Field.sqr(z3, z3);
-            X25519Field.mul(z3, x1, z3);
+            F.apm(t1, x3, x3, z3);
+            F.sqr(x3, x3);
+            F.sqr(z3, z3);
+            F.mul(z3, x1, z3);
 
             --bit;
 
             int word = bit >>> 5, shift = bit & 0x1F;
             int kt = (n[word] >>> shift) & 1;
             swap ^= kt;
-            X25519Field.cswap(swap, x2, x3);
-            X25519Field.cswap(swap, z2, z3);
+            F.cswap(swap, x2, x3);
+            F.cswap(swap, z2, z3);
             swap = kt;
         }
         while (bit >= 3);
@@ -137,26 +139,26 @@ public abstract class X25519
             pointDouble(x2, z2);
         }
 
-        X25519Field.inv(z2, z2);
-        X25519Field.mul(x2, z2, x2);
+        F.inv(z2, z2);
+        F.mul(x2, z2, x2);
 
-        X25519Field.normalize(x2);
-        X25519Field.encode(x2, r, rOff);
+        F.normalize(x2);
+        F.encode(x2, r, rOff);
     }
 
     public static void scalarMultBase(byte[] k, int kOff, byte[] r, int rOff)
     {
-        int[] y = X25519Field.create();
-        int[] z = X25519Field.create();
+        int[] y = F.create();
+        int[] z = F.create();
 
         Ed25519.scalarMultBaseYZ(Friend.INSTANCE, k, kOff, y, z);
 
-        X25519Field.apm(z, y, y, z);
+        F.apm(z, y, y, z);
 
-        X25519Field.inv(z, z);
-        X25519Field.mul(y, z, y);
+        F.inv(z, z);
+        F.mul(y, z, y);
 
-        X25519Field.normalize(y);
-        X25519Field.encode(y, r, rOff);
+        F.normalize(y);
+        F.encode(y, r, rOff);
     }
 }
