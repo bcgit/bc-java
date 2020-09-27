@@ -17,9 +17,7 @@ import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
-import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
-import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
@@ -207,13 +205,14 @@ public class KeyPairGeneratorSpi
 
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
 
-        if (kp.getPrivate() instanceof X448PrivateKeyParameters
-           || kp.getPrivate() instanceof X25519PrivateKeyParameters)
+        switch (algorithm)
         {
+        case XDH:
+        case X25519:
+        case X448:
             return new KeyPair(new BCXDHPublicKey(kp.getPublic()), new BCXDHPrivateKey(kp.getPrivate()));
-        }
-        else
-        {
+
+        default:
             return new KeyPair(new BCEdDSAPublicKey(kp.getPublic()), new BCEdDSAPrivateKey(kp.getPrivate()));
         }
     }
