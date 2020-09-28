@@ -16,6 +16,8 @@ public abstract class X448
     public static final int POINT_SIZE = 56;
     public static final int SCALAR_SIZE = 56;
 
+    private static class F extends X448Field {};
+
     private static final int C_A = 156326;
     private static final int C_A24 = (C_A + 2)/4;
 
@@ -64,19 +66,19 @@ public abstract class X448
 
     private static void pointDouble(int[] x, int[] z)
     {
-        int[] A = X448Field.create();
-        int[] B = X448Field.create();
+        int[] a = F.create();
+        int[] b = F.create();
 
-//        X448Field.apm(x, z, A, B);
-        X448Field.add(x, z, A);
-        X448Field.sub(x, z, B);
-        X448Field.sqr(A, A);
-        X448Field.sqr(B, B);
-        X448Field.mul(A, B, x);
-        X448Field.sub(A, B, A);
-        X448Field.mul(A, C_A24, z);
-        X448Field.add(z, B, z);
-        X448Field.mul(z, A, z);
+//        F.apm(x, z, a, b);
+        F.add(x, z, a);
+        F.sub(x, z, b);
+        F.sqr(a, a);
+        F.sqr(b, b);
+        F.mul(a, b, x);
+        F.sub(a, b, a);
+        F.mul(a, C_A24, z);
+        F.add(z, b, z);
+        F.mul(z, a, z);
     }
 
     public static void precompute()
@@ -86,54 +88,54 @@ public abstract class X448
 
     public static void scalarMult(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
     {
-        int[] n = new int[14];  decodeScalar(k, kOff, n);
+        int[] n = new int[14];      decodeScalar(k, kOff, n);
 
-        int[] x1 = X448Field.create();        X448Field.decode(u, uOff, x1);
-        int[] x2 = X448Field.create();        X448Field.copy(x1, 0, x2, 0);
-        int[] z2 = X448Field.create();        z2[0] = 1;
-        int[] x3 = X448Field.create();        x3[0] = 1;
-        int[] z3 = X448Field.create();
+        int[] x1 = F.create();      F.decode(u, uOff, x1);
+        int[] x2 = F.create();      F.copy(x1, 0, x2, 0);
+        int[] z2 = F.create();      z2[0] = 1;
+        int[] x3 = F.create();      x3[0] = 1;
+        int[] z3 = F.create();
 
-        int[] t1 = X448Field.create();
-        int[] t2 = X448Field.create();
+        int[] t1 = F.create();
+        int[] t2 = F.create();
 
 //        assert n[13] >>> 31 == 1;
 
         int bit = 447, swap = 1;
         do
         {
-//            X448Field.apm(x3, z3, t1, x3);
-            X448Field.add(x3, z3, t1);
-            X448Field.sub(x3, z3, x3);
-//            X448Field.apm(x2, z2, z3, x2);
-            X448Field.add(x2, z2, z3);
-            X448Field.sub(x2, z2, x2);
+//            F.apm(x3, z3, t1, x3);
+            F.add(x3, z3, t1);
+            F.sub(x3, z3, x3);
+//            F.apm(x2, z2, z3, x2);
+            F.add(x2, z2, z3);
+            F.sub(x2, z2, x2);
 
-            X448Field.mul(t1, x2, t1);
-            X448Field.mul(x3, z3, x3);
-            X448Field.sqr(z3, z3);
-            X448Field.sqr(x2, x2);
+            F.mul(t1, x2, t1);
+            F.mul(x3, z3, x3);
+            F.sqr(z3, z3);
+            F.sqr(x2, x2);
 
-            X448Field.sub(z3, x2, t2);
-            X448Field.mul(t2, C_A24, z2);
-            X448Field.add(z2, x2, z2);
-            X448Field.mul(z2, t2, z2);
-            X448Field.mul(x2, z3, x2);
+            F.sub(z3, x2, t2);
+            F.mul(t2, C_A24, z2);
+            F.add(z2, x2, z2);
+            F.mul(z2, t2, z2);
+            F.mul(x2, z3, x2);
 
-//            X448Field.apm(t1, x3, x3, z3);
-            X448Field.sub(t1, x3, z3);
-            X448Field.add(t1, x3, x3);
-            X448Field.sqr(x3, x3);
-            X448Field.sqr(z3, z3);
-            X448Field.mul(z3, x1, z3);
+//            F.apm(t1, x3, x3, z3);
+            F.sub(t1, x3, z3);
+            F.add(t1, x3, x3);
+            F.sqr(x3, x3);
+            F.sqr(z3, z3);
+            F.mul(z3, x1, z3);
 
             --bit;
 
             int word = bit >>> 5, shift = bit & 0x1F;
             int kt = (n[word] >>> shift) & 1;
             swap ^= kt;
-            X448Field.cswap(swap, x2, x3);
-            X448Field.cswap(swap, z2, z3);
+            F.cswap(swap, x2, x3);
+            F.cswap(swap, z2, z3);
             swap = kt;
         }
         while (bit >= 2);
@@ -145,25 +147,25 @@ public abstract class X448
             pointDouble(x2, z2);
         }
 
-        X448Field.inv(z2, z2);
-        X448Field.mul(x2, z2, x2);
+        F.inv(z2, z2);
+        F.mul(x2, z2, x2);
 
-        X448Field.normalize(x2);
-        X448Field.encode(x2, r, rOff);
+        F.normalize(x2);
+        F.encode(x2, r, rOff);
     }
 
     public static void scalarMultBase(byte[] k, int kOff, byte[] r, int rOff)
     {
-        int[] x = X448Field.create();
-        int[] y = X448Field.create();
+        int[] x = F.create();
+        int[] y = F.create();
 
         Ed448.scalarMultBaseXY(Friend.INSTANCE, k, kOff, x, y);
 
-        X448Field.inv(x, x);
-        X448Field.mul(x, y, x);
-        X448Field.sqr(x, x);
+        F.inv(x, x);
+        F.mul(x, y, x);
+        F.sqr(x, x);
 
-        X448Field.normalize(x);
-        X448Field.encode(x, r, rOff);
+        F.normalize(x);
+        F.encode(x, r, rOff);
     }
 }
