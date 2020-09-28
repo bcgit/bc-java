@@ -119,7 +119,7 @@ public class ESTService
      * @return A store of X509Certificates.
      */
     public CACertsResponse getCACerts()
-        throws Exception
+        throws ESTException
     {
         ESTResponse resp = null;
         Exception finalThrowable = null;
@@ -201,14 +201,12 @@ public class ESTService
         {
             if (finalThrowable instanceof ESTException)
             {
-                throw finalThrowable;
+                throw (ESTException)finalThrowable;
             }
             throw new ESTException("Get CACerts: " + url.toString(), finalThrowable, resp.getStatusCode(), null);
         }
 
         return caCertsResponse;
-
-
     }
 
     /**
