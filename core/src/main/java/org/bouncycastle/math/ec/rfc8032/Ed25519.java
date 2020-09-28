@@ -10,7 +10,6 @@ import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
 public abstract class Ed25519
 {
@@ -38,7 +37,10 @@ public abstract class Ed25519
     public static final int SECRET_KEY_SIZE = 32;
     public static final int SIGNATURE_SIZE = POINT_BYTES + SCALAR_BYTES;
 
-    private static final byte[] DOM2_PREFIX = Strings.toByteArray("SigEd25519 no Ed25519 collisions");
+    // "SigEd25519 no Ed25519 collisions"
+    private static final byte[] DOM2_PREFIX = new byte[]{ 0x53, 0x69, 0x67, 0x45, 0x64, 0x32, 0x35, 0x35, 0x31, 0x39,
+        0x20, 0x6e, 0x6f, 0x20, 0x45, 0x64, 0x32, 0x35, 0x35, 0x31, 0x39, 0x20, 0x63, 0x6f, 0x6c, 0x6c, 0x69, 0x73,
+        0x69, 0x6f, 0x6e, 0x73 };
 
     private static final int[] P = new int[]{ 0xFFFFFFED, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0x7FFFFFFF };
@@ -266,10 +268,14 @@ public abstract class Ed25519
     {
         if (ctx != null)
         {
-            d.update(DOM2_PREFIX, 0, DOM2_PREFIX.length);
-            d.update(phflag);
-            d.update((byte)ctx.length);
-            d.update(ctx, 0, ctx.length);
+            int n = DOM2_PREFIX.length;
+            byte[] t = new byte[n + 2 + ctx.length];
+            System.arraycopy(DOM2_PREFIX, 0, t, 0, n);
+            t[n] = phflag;
+            t[n + 1] = (byte)ctx.length;
+            System.arraycopy(ctx, 0, t, n + 2, ctx.length);
+
+            d.update(t, 0, t.length);
         }
     }
 
