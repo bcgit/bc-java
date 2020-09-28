@@ -35,6 +35,22 @@ public class JsseESTServiceBuilder
     /**
      * Create a builder for a client using a custom SSLSocketFactoryCreator.
      *
+     * @param hostName             hostName to talk to.
+     * @param socketFactoryCreator a custom creator of socket factories.
+     */
+    public JsseESTServiceBuilder(String hostName, int portNo, SSLSocketFactoryCreator socketFactoryCreator)
+    {
+        super(hostName + ":" + portNo);
+        if (socketFactoryCreator == null)
+        {
+            throw new NullPointerException("No socket factory creator.");
+        }
+        this.socketFactoryCreator = socketFactoryCreator;
+    }
+
+    /**
+     * Create a builder for a client using a custom SSLSocketFactoryCreator.
+     *
      * @param server               name of the server to talk to (URL format).
      * @param socketFactoryCreator a custom creator of socket factories.
      */
@@ -46,7 +62,6 @@ public class JsseESTServiceBuilder
             throw new NullPointerException("No socket factory creator.");
         }
         this.socketFactoryCreator = socketFactoryCreator;
-
     }
 
     /**
@@ -63,8 +78,21 @@ public class JsseESTServiceBuilder
     /**
      * Create a builder for a client talking to a trusted server.
      *
+     * @param hostName     name of the server to talk to.
+     * @param portNo       port number to connect on.
+     * @param trustManager trust manager to be used for validating the connection.
+     */
+    public JsseESTServiceBuilder(String hostName, int portNo, X509TrustManager trustManager)
+    {
+        super(hostName + ":" + portNo);
+        sslSocketFactoryCreatorBuilder = new SSLSocketFactoryCreatorBuilder(trustManager);
+    }
+
+    /**
+     * Create a builder for a client talking to a trusted server.
+     *
      * @param server       name of the server to talk to (URL format).
-     * @param trustManager
+     * @param trustManager trust manager to be used for validating the connection.
      */
     public JsseESTServiceBuilder(String server, X509TrustManager trustManager)
     {
@@ -75,13 +103,25 @@ public class JsseESTServiceBuilder
     /**
      * Create a builder for a client talking to a trusted server.
      *
-     * @param server       name of the server to talk to (URL format).
-     * @param trustManager
+     * @param hostName      name of the server to talk to.
+     * @param portNo        port number to connect on.
+     * @param trustManagers trust managers that can be used for validating the connection.
      */
-    public JsseESTServiceBuilder(String server, X509TrustManager[] trustManager)
+    public JsseESTServiceBuilder(String hostName, int portNo, X509TrustManager[] trustManagers)
+    {
+        this(hostName + ":" + portNo, trustManagers);
+    }
+
+    /**
+     * Create a builder for a client talking to a trusted server.
+     *
+     * @param server       name of the server to talk to (URL format).
+     * @param trustManagers trust managers that can be used for validating the connection.
+     */
+    public JsseESTServiceBuilder(String server, X509TrustManager[] trustManagers)
     {
         super(server);
-        sslSocketFactoryCreatorBuilder = new SSLSocketFactoryCreatorBuilder(trustManager);
+        sslSocketFactoryCreatorBuilder = new SSLSocketFactoryCreatorBuilder(trustManagers);
     }
 
     public JsseESTServiceBuilder withHostNameAuthorizer(JsseHostnameAuthorizer hostNameAuthorizer)
