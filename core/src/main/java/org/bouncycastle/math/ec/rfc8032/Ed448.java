@@ -8,7 +8,6 @@ import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
 public abstract class Ed448
 {
@@ -35,7 +34,8 @@ public abstract class Ed448
     public static final int SECRET_KEY_SIZE = 57;
     public static final int SIGNATURE_SIZE = POINT_BYTES + SCALAR_BYTES;
 
-    private static final byte[] DOM4_PREFIX = Strings.toByteArray("SigEd448");
+    // "SigEd448"
+    private static final byte[] DOM4_PREFIX = new byte[]{ 0x53, 0x69, 0x67, 0x45, 0x64, 0x34, 0x34, 0x38 };
 
     private static final int[] P = new int[] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
@@ -268,12 +268,16 @@ public abstract class Ed448
         decode32(k, kOff, n, 0, SCALAR_INTS);
     }
 
-    private static void dom4(Xof d, byte x, byte[] y)
+    private static void dom4(Xof d, byte phflag, byte[] ctx)
     {
-        d.update(DOM4_PREFIX, 0, DOM4_PREFIX.length);
-        d.update(x);
-        d.update((byte)y.length);
-        d.update(y, 0, y.length);
+        int n = DOM4_PREFIX.length;
+        byte[] t = new byte[n + 2 + ctx.length];
+        System.arraycopy(DOM4_PREFIX, 0, t, 0, n);
+        t[n] = phflag;
+        t[n + 1] = (byte)ctx.length;
+        System.arraycopy(ctx, 0, t, n + 2, ctx.length);
+
+        d.update(t, 0, t.length);
     }
 
     private static void encode24(int n, byte[] bs, int off)
