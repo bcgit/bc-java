@@ -47,8 +47,6 @@ class ProvX509KeyManager
 {
     private static final Logger LOG = Logger.getLogger(ProvX509KeyManager.class.getName());
 
-    private static final int X509V3_VERSION = 3;
-
     private static final boolean provKeyManagerCheckEKU = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.keyManager.checkEKU", true);
 
@@ -526,7 +524,6 @@ class ProvX509KeyManager
         BCAlgorithmConstraints algorithmConstraints, boolean forServer)
     {
         if (null == chain || chain.length < 1
-            || !isSuitableChainForTLS(chain)
             || !isSuitableChainForIssuers(chain, uniqueIssuers)
             || !isSuitableEECert(chain[0], keyTypes, algorithmConstraints, forServer))
         {
@@ -752,18 +749,6 @@ class ProvX509KeyManager
         X509Certificate eeCert = chain[0];
         return eeCert.getBasicConstraints() >= 0
             && uniqueIssuers.contains(eeCert.getSubjectX500Principal());
-    }
-
-    private static boolean isSuitableChainForTLS(X509Certificate[] chain)
-    {
-        for (int i = 0, count = chain.length; i < count; ++i)
-        {
-            if (X509V3_VERSION != chain[i].getVersion())
-            {
-                return false;
-            }
-        }
-        return true;
     }
 
     private static boolean isSuitableEECert(X509Certificate eeCert, List<String> keyTypes,
