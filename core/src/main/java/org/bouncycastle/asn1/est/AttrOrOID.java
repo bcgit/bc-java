@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.pkcs.Attribute;
  * <pre>
  *    AttrOrOID ::= CHOICE (oid OBJECT IDENTIFIER, attribute Attribute }
  * </pre>
+ * @deprecated use org.bouncycastle.est.asn1.AttrOrOID
  */
 public class AttrOrOID
     extends ASN1Object
