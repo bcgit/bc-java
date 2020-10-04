@@ -73,37 +73,7 @@ public class PKIFailureInfo
     public static final int systemUnavail        = (1 << 31);
     public static final int systemFailure        = (1 << 30); //the request cannot be handled due to system failure
     public static final int duplicateCertReq     = (1 << 29);
-
-    /** @deprecated use lower case version */
-    public static final int BAD_ALG                   = badAlg; // unrecognized or unsupported Algorithm Identifier
-    /** @deprecated use lower case version */
-    public static final int BAD_MESSAGE_CHECK         = badMessageCheck;
-    /** @deprecated use lower case version */
-    public static final int BAD_REQUEST               = badRequest; // transaction not permitted or supported
-    /** @deprecated use lower case version */
-    public static final int BAD_TIME                  = badTime;
-    /** @deprecated use lower case version */
-    public static final int BAD_CERT_ID               = badCertId;
-    /** @deprecated use lower case version */
-    public static final int BAD_DATA_FORMAT           = badDataFormat; // the data submitted has the wrong format
-    /** @deprecated use lower case version */
-    public static final int WRONG_AUTHORITY           = wrongAuthority;
-    /** @deprecated use lower case version */
-    public static final int INCORRECT_DATA            = incorrectData;
-    /** @deprecated use lower case version */
-    public static final int MISSING_TIME_STAMP        = missingTimeStamp;
-    /** @deprecated use lower case version */
-    public static final int BAD_POP                   = badPOP;
-    /** @deprecated use lower case version */
-    public static final int TIME_NOT_AVAILABLE        = timeNotAvailable;
-    /** @deprecated use lower case version */
-    public static final int UNACCEPTED_POLICY         = unacceptedPolicy;
-    /** @deprecated use lower case version */
-    public static final int UNACCEPTED_EXTENSION      = unacceptedExtension;
-    /** @deprecated use lower case version */
-    public static final int ADD_INFO_NOT_AVAILABLE    = addInfoNotAvailable; 
-    /** @deprecated use lower case version */
-    public static final int SYSTEM_FAILURE            = systemFailure; 
+    
     /**
      * Basic constructor.
      */
