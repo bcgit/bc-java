@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.x509.PolicyInformation;
  *         inhibitAnyPolicy             [1] BOOLEAN DEFAULT FALSE
  *     }
  * </pre>
+ * @deprecated use org.bouncycastle.dvcs.asn1.PathProcInput
  */
 public class PathProcInput
     extends ASN1Object

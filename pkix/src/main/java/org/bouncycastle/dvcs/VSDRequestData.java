@@ -1,8 +1,8 @@
 package org.bouncycastle.dvcs;
 
-import org.bouncycastle.asn1.dvcs.Data;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.dvcs.asn1.Data;
 
 /**
  * Data piece of DVCS request to VSD service (Verify Signed Document).

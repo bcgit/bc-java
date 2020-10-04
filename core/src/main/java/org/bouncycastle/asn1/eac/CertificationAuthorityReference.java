@@ -1,5 +1,8 @@
 package org.bouncycastle.asn1.eac;
 
+/**
+ * @deprecated use org.bouncycastle.eac.asn1.CertificationAuthorityReference
+ */
 public class CertificationAuthorityReference
     extends CertificateHolderReference
 {

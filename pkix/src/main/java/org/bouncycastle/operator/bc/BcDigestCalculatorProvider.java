@@ -2,11 +2,9 @@ package org.bouncycastle.operator.bc;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Map;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;

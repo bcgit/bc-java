@@ -8,9 +8,9 @@ import java.security.cert.X509Certificate;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cmp.PKIFailureInfo;
-import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.cmp.asn1.PKIFailureInfo;
+import org.bouncycastle.cert.cmp.asn1.PKIStatus;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tsp.TSPAlgorithms;

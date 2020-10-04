@@ -23,6 +23,7 @@ import org.bouncycastle.util.Arrays;
  *      signature               DER Application specific
  *  }
  * </pre>
+ * @deprecated use org.bouncycastle.eac.asn1.CVCertificate
  */
 public class CVCertificate
     extends ASN1Object

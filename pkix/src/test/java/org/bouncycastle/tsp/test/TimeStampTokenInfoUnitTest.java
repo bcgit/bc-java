@@ -7,11 +7,11 @@ import java.math.BigInteger;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.tsp.TSTInfo;
 import org.bouncycastle.tsp.GenTimeAccuracy;
 import org.bouncycastle.tsp.TSPAlgorithms;
 import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampTokenInfo;
+import org.bouncycastle.tsp.asn1.TSTInfo;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 

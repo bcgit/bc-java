@@ -3,12 +3,12 @@ package org.bouncycastle.cert.crmf;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.cms.EnvelopedData;
-import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
-import org.bouncycastle.asn1.crmf.EncKeyWithID;
-import org.bouncycastle.asn1.crmf.EncryptedKey;
-import org.bouncycastle.asn1.crmf.PKIArchiveOptions;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.cert.crmf.asn1.CRMFObjectIdentifiers;
+import org.bouncycastle.cert.crmf.asn1.EncKeyWithID;
+import org.bouncycastle.cert.crmf.asn1.EncryptedKey;
+import org.bouncycastle.cert.crmf.asn1.PKIArchiveOptions;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;

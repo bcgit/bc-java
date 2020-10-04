@@ -27,6 +27,7 @@ import org.bouncycastle.util.BigIntegers;
  *         extensions                   [4] IMPLICIT Extensions OPTIONAL
  *     }
  * </pre>
+ * @deprecated use org.bouncycastle.dvcs.asn1.DVCSRequestInformationBuilder
  */
 public class DVCSRequestInformationBuilder
 {

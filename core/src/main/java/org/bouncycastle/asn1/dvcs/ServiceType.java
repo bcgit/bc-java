@@ -10,8 +10,8 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 
 /**
  * ServiceType ::= ENUMERATED { cpd(1), vsd(2), cpkc(3), ccpd(4) }
+ *  @deprecated use org.bouncycastle.dvcs.asn1.ServiceType
  */
-
 public class ServiceType
     extends ASN1Object
 {

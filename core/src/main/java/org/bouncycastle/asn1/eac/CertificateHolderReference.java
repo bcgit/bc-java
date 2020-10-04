@@ -2,6 +2,9 @@ package org.bouncycastle.asn1.eac;
 
 import java.io.UnsupportedEncodingException;
 
+/**
+ * @deprecated use org.bouncycastle.eac.asn1.CertificateHolderReference
+ */
 public class CertificateHolderReference
 {
     private static final String ReferenceEncoding = "ISO-8859-1";

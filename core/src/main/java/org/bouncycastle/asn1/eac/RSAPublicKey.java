@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.DERSequence;
  *      DERTaggedObject    accessRights,
  *  }
  * </pre>
+ * @deprecated use org.bouncycastle.eac.asn1.RSAPublicKey
  */
 public class RSAPublicKey
     extends PublicKeyDataObject
