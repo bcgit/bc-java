@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.DERSequence;
  * <pre>
  *      CsrAttrs ::= SEQUENCE SIZE (0..MAX) OF AttrOrOID
  * </pre>
+ * @deprecated use org.bouncycastle.est.asn1.CsrAttrs
  */
 public class CsrAttrs
     extends ASN1Object
