@@ -1,7 +1,7 @@
 package org.bouncycastle.tsp;
 
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.tsp.Accuracy;
+import org.bouncycastle.tsp.asn1.Accuracy;
 
 public class GenTimeAccuracy
 {

@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  *         transactionIdentifier       GeneralName OPTIONAL
  *     }
  * </pre>
+ * @deprecated use  org.bouncycastle.dvcs.asn1.DVCSErrorNotice
  */
 public class DVCSErrorNotice
     extends ASN1Object

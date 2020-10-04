@@ -8,8 +8,11 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.cmc;
     exports org.bouncycastle.cms;
     exports org.bouncycastle.dvcs;
+    exports org.bouncycastle.dvcs.asn1;
     exports org.bouncycastle.eac;
+    exports org.bouncycastle.eac.asn1;
     exports org.bouncycastle.est;
+    exports org.bouncycastle.est.asn1;
     exports org.bouncycastle.mime;
     exports org.bouncycastle.mozilla;
     exports org.bouncycastle.openssl;
@@ -17,10 +20,13 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.pkcs;
     exports org.bouncycastle.pkix;
     exports org.bouncycastle.tsp;
+    exports org.bouncycastle.tsp.asn1;
     exports org.bouncycastle.voms;
     exports org.bouncycastle.cert.bc;
     exports org.bouncycastle.cert.cmp;
+    exports org.bouncycastle.cert.cmp.asn1;
     exports org.bouncycastle.cert.crmf;
+    exports org.bouncycastle.cert.crmf.asn1;
     exports org.bouncycastle.cert.crmf.bc;
     exports org.bouncycastle.cert.crmf.jcajce;
     exports org.bouncycastle.cert.dane;

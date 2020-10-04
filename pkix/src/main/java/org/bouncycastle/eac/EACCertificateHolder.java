@@ -5,8 +5,8 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ParsingException;
-import org.bouncycastle.asn1.eac.CVCertificate;
-import org.bouncycastle.asn1.eac.PublicKeyDataObject;
+import org.bouncycastle.eac.asn1.CVCertificate;
+import org.bouncycastle.eac.asn1.PublicKeyDataObject;
 import org.bouncycastle.eac.operator.EACSignatureVerifier;
 
 public class EACCertificateHolder

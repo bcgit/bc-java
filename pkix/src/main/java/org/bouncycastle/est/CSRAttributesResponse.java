@@ -6,8 +6,8 @@ import java.util.HashMap;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.est.AttrOrOID;
-import org.bouncycastle.asn1.est.CsrAttrs;
+import org.bouncycastle.est.asn1.AttrOrOID;
+import org.bouncycastle.est.asn1.CsrAttrs;
 import org.bouncycastle.util.Encodable;
 
 /**

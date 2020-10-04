@@ -33,6 +33,7 @@ import org.bouncycastle.asn1.x509.Extension;
  *         extension                    Extension
  * }
  * </pre>
+ * @deprecated use  org.bouncycastle.dvcs.asn1.CertEtcToken
  */
 public class CertEtcToken
     extends ASN1Object

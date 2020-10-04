@@ -2,8 +2,8 @@ package org.bouncycastle.tsp.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.tsp.Accuracy;
 import org.bouncycastle.tsp.GenTimeAccuracy;
+import org.bouncycastle.tsp.asn1.Accuracy;
 
 public class GenTimeAccuracyUnitTest
     extends TestCase

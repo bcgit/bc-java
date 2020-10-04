@@ -27,6 +27,7 @@ import org.bouncycastle.util.Arrays;
  *      ASN1TaggedObject    cofactorF;            // OPTIONAL
  *  }
  * </pre>
+ * @deprecated use org.bouncycastle.eac.asn1.ECDSAPublicKey
  */
 public class ECDSAPublicKey
     extends PublicKeyDataObject

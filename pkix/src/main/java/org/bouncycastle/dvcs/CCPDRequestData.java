@@ -1,6 +1,6 @@
 package org.bouncycastle.dvcs;
 
-import org.bouncycastle.asn1.dvcs.Data;
+import org.bouncycastle.dvcs.asn1.Data;
 
 /**
  * Data piece of DVCRequest for CCPD service (Certify Claim of Possession of Data).

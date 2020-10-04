@@ -15,13 +15,13 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSequence;
-import org.bouncycastle.asn1.cmp.PKIFailureInfo;
-import org.bouncycastle.asn1.cmp.PKIFreeText;
-import org.bouncycastle.asn1.cmp.PKIStatus;
-import org.bouncycastle.asn1.cmp.PKIStatusInfo;
 import org.bouncycastle.asn1.cms.ContentInfo;
-import org.bouncycastle.asn1.tsp.TimeStampResp;
 import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.cert.cmp.asn1.PKIFailureInfo;
+import org.bouncycastle.cert.cmp.asn1.PKIFreeText;
+import org.bouncycastle.cert.cmp.asn1.PKIStatus;
+import org.bouncycastle.cert.cmp.asn1.PKIStatusInfo;
+import org.bouncycastle.tsp.asn1.TimeStampResp;
 
 /**
  * Generator for RFC 3161 Time Stamp Responses.
