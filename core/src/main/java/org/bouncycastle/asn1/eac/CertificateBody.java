@@ -37,6 +37,7 @@ import org.bouncycastle.asn1.DEROctetString;
  *      certificateExpirationDate            ASN1ApplicationSpecific
  *  }
  * </pre>
+ * @deprecated use org.bouncycastle.eac.asn1.CertificateBody
  */
 public class CertificateBody
     extends ASN1Object

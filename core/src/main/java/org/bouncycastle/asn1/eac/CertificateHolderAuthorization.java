@@ -23,6 +23,7 @@ import org.bouncycastle.util.Integers;
  *      DERApplicationSpecific    accessRights,
  *  }
  * </pre>
+ * @deprecated use org.bouncycastle.eac.asn1.CertificateHolderAuthorization
  */
 public class CertificateHolderAuthorization
     extends ASN1Object

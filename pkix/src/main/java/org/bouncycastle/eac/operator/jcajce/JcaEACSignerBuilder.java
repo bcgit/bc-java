@@ -16,7 +16,7 @@ import java.util.Hashtable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.eac.asn1.EACObjectIdentifiers;
 import org.bouncycastle.eac.operator.EACSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OperatorStreamException;

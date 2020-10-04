@@ -1,7 +1,7 @@
 package org.bouncycastle.cert.cmp;
 
-import org.bouncycastle.asn1.cmp.CertConfirmContent;
-import org.bouncycastle.asn1.cmp.CertStatus;
+import org.bouncycastle.cert.cmp.asn1.CertConfirmContent;
+import org.bouncycastle.cert.cmp.asn1.CertStatus;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 

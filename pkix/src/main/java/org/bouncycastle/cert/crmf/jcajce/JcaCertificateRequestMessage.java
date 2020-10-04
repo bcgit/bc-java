@@ -7,11 +7,11 @@ import java.security.PublicKey;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.crmf.CertReqMsg;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.cert.crmf.CertificateRequestMessage;
+import org.bouncycastle.cert.crmf.asn1.CertReqMsg;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;

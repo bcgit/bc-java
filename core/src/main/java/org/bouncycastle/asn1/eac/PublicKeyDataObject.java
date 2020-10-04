@@ -4,6 +4,9 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 
+/**
+ * @deprecated use org.bouncycastle.eac.asn1.PublicKeyDataObject
+ */
 public abstract class PublicKeyDataObject
     extends ASN1Object
 {

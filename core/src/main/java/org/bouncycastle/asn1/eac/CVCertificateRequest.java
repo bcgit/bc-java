@@ -14,6 +14,9 @@ import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * @deprecated use org.bouncycastle.eac.asn1.CVCertificateRequest
+ */
 public class CVCertificateRequest
     extends ASN1Object
 {

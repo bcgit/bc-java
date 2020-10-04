@@ -8,13 +8,13 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DLSequence;
-import org.bouncycastle.asn1.cmp.PKIFailureInfo;
-import org.bouncycastle.asn1.cmp.PKIFreeText;
-import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.tsp.TimeStampResp;
+import org.bouncycastle.cert.cmp.asn1.PKIFailureInfo;
+import org.bouncycastle.cert.cmp.asn1.PKIFreeText;
+import org.bouncycastle.cert.cmp.asn1.PKIStatus;
+import org.bouncycastle.tsp.asn1.TimeStampResp;
 import org.bouncycastle.util.Arrays;
 
 /**
