@@ -10,7 +10,6 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * EAC encoding date object
- * @deprecated use org.bouncycastle.eac.asn1.PackedDate
  */
 public class PackedDate
 {

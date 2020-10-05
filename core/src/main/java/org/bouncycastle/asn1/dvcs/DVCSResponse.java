@@ -17,8 +17,8 @@ import org.bouncycastle.asn1.DERTaggedObject;
  *         dvErrorNote        [0] DVCSErrorNotice
  *     }
  * </pre>
- * @deprecated use org.bouncycastle.dvcs.asn1.DVCSResponse
  */
+
 public class DVCSResponse
     extends ASN1Object
     implements ASN1Choice

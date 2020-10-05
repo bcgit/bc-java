@@ -5,11 +5,11 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.cmp.CMPObjectIdentifiers;
+import org.bouncycastle.asn1.cmp.PBMParameter;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cert.cmp.asn1.CMPObjectIdentifiers;
-import org.bouncycastle.cert.cmp.asn1.PBMParameter;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.RuntimeOperatorException;
