@@ -16,7 +16,6 @@ import org.bouncycastle.asn1.cms.ContentInfo;
  *         timeStampToken               ContentInfo
  *     }
  * </pre>
- * @deprecated use org.bouncycastle.dvcs.asn1.DVCSTime
  */
 public class DVCSTime
     extends ASN1Object

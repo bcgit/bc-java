@@ -3,11 +3,10 @@ package org.bouncycastle.asn1.eac;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-/**
- * @deprecated use org.bouncycastle.eac.asn1.Flags
- */
+
 public class Flags
 {
+
     int value = 0;
 
     public Flags()

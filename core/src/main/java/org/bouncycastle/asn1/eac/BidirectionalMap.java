@@ -2,9 +2,6 @@ package org.bouncycastle.asn1.eac;
 
 import java.util.Hashtable;
 
-/**
- * @deprecated use org.bouncycastle.eac.asn1.BidirectionalMap
- */
 public class BidirectionalMap
     extends Hashtable
 {

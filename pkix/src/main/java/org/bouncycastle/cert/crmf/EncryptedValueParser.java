@@ -4,11 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.asn1.crmf.EncryptedValue;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.crmf.asn1.EncryptedValue;
 import org.bouncycastle.operator.InputDecryptor;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;

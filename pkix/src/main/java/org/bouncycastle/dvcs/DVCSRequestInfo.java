@@ -3,10 +3,10 @@ package org.bouncycastle.dvcs;
 import java.math.BigInteger;
 import java.util.Date;
 
+import org.bouncycastle.asn1.dvcs.DVCSRequestInformation;
+import org.bouncycastle.asn1.dvcs.DVCSTime;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.PolicyInformation;
-import org.bouncycastle.dvcs.asn1.DVCSRequestInformation;
-import org.bouncycastle.dvcs.asn1.DVCSTime;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.bouncycastle.util.Arrays;
 

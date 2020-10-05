@@ -3,10 +3,10 @@ package org.bouncycastle.cert.cmp;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.cmp.RevDetails;
+import org.bouncycastle.asn1.crmf.CertTemplateBuilder;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.cmp.asn1.RevDetails;
-import org.bouncycastle.cert.crmf.asn1.CertTemplateBuilder;
 
 public class RevocationDetailsBuilder
 {
