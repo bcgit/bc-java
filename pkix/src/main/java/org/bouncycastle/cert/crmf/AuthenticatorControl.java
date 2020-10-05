@@ -3,7 +3,7 @@ package org.bouncycastle.cert.crmf;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.cert.crmf.asn1.CRMFObjectIdentifiers;
+import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
 
 /**
  * Carrier for an authenticator control.

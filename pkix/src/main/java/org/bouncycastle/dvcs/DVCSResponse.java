@@ -5,8 +5,8 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
+import org.bouncycastle.asn1.dvcs.DVCSObjectIdentifiers;
 import org.bouncycastle.cms.CMSSignedData;
-import org.bouncycastle.dvcs.asn1.DVCSObjectIdentifiers;
 
 /**
  * DVCResponse is general response to DVCS (RFC 3029).
@@ -15,7 +15,7 @@ import org.bouncycastle.dvcs.asn1.DVCSObjectIdentifiers;
 public class DVCSResponse
     extends DVCSMessage
 {
-    private org.bouncycastle.dvcs.asn1.DVCSResponse asn1;
+    private org.bouncycastle.asn1.dvcs.DVCSResponse asn1;
 
     /**
      * Constructs DVCResponse from CMS SignedData object.
@@ -49,11 +49,11 @@ public class DVCSResponse
         {
             if (contentInfo.getContent().toASN1Primitive() instanceof ASN1Sequence)
             {
-                this.asn1 = org.bouncycastle.dvcs.asn1.DVCSResponse.getInstance(contentInfo.getContent());
+                this.asn1 = org.bouncycastle.asn1.dvcs.DVCSResponse.getInstance(contentInfo.getContent());
             }
             else
             {
-                this.asn1 = org.bouncycastle.dvcs.asn1.DVCSResponse.getInstance(ASN1OctetString.getInstance(contentInfo.getContent()).getOctets());
+                this.asn1 = org.bouncycastle.asn1.dvcs.DVCSResponse.getInstance(ASN1OctetString.getInstance(contentInfo.getContent()).getOctets());
             }
         }
         catch (Exception e)
@@ -65,7 +65,7 @@ public class DVCSResponse
     /**
      * Return the ASN.1 DVCSResponse structure making up the body of this response.
      *
-     * @return an org.bouncycastle.dvcs.asn1.DVCSResponse object.
+     * @return an org.bouncycastle.asn1.dvcs.DVCSResponse object.
      */
     public ASN1Encodable getContent()
     {

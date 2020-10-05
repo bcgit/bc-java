@@ -31,8 +31,8 @@ import org.bouncycastle.asn1.x509.PolicyInformation;
  *         extensions          Extensions OPTIONAL
  *     }
  * </pre>
- * @deprecated use  org.bouncycastle.dvcs.asn1.DVCSCertInfo
  */
+
 public class DVCSCertInfo
     extends ASN1Object
 {

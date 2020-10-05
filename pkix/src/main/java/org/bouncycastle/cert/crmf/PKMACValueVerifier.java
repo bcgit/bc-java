@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.cmp.PBMParameter;
+import org.bouncycastle.asn1.crmf.PKMACValue;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.cmp.asn1.PBMParameter;
-import org.bouncycastle.cert.crmf.asn1.PKMACValue;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.util.Arrays;
 

@@ -3,9 +3,9 @@ package org.bouncycastle.cert.cmp;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.cert.cmp.asn1.PKIBody;
-import org.bouncycastle.cert.cmp.asn1.PKIHeader;
-import org.bouncycastle.cert.cmp.asn1.PKIMessage;
+import org.bouncycastle.asn1.cmp.PKIBody;
+import org.bouncycastle.asn1.cmp.PKIHeader;
+import org.bouncycastle.asn1.cmp.PKIMessage;
 import org.bouncycastle.cert.CertIOException;
 
 /**

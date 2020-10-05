@@ -3,9 +3,6 @@ package org.bouncycastle.asn1.eac;
 import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.BERTags;
 
-/**
- * @deprecated use org.bouncycastle.eac.asn1.EACTags
- */
 public class EACTags
 {
     public static final int COUNTRY_CODE_NATIONAL_DATA = 0x01;

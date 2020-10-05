@@ -9,9 +9,6 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
-/**
- * @deprecated use org.bouncycastle.eac.asn1.UnsignedInteger
- */
 public class UnsignedInteger
     extends ASN1Object
 {

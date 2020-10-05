@@ -20,8 +20,8 @@ import org.bouncycastle.asn1.x509.DigestInfo;
  *                         TargetEtcChain
  * }
  * </pre>
- * @deprecated use  org.bouncycastle.dvcs.asn1.Data
  */
+
 public class Data
     extends ASN1Object
     implements ASN1Choice

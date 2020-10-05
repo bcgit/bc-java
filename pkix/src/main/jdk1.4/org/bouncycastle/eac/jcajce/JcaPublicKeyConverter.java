@@ -10,10 +10,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.eac.asn1.EACObjectIdentifiers;
-import org.bouncycastle.eac.asn1.ECDSAPublicKey;
-import org.bouncycastle.eac.asn1.PublicKeyDataObject;
-import org.bouncycastle.eac.asn1.RSAPublicKey;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.eac.ECDSAPublicKey;
+import org.bouncycastle.asn1.eac.PublicKeyDataObject;
+import org.bouncycastle.asn1.eac.RSAPublicKey;
 import org.bouncycastle.eac.EACException;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.spec.ECParameterSpec;

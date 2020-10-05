@@ -15,7 +15,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.eac.asn1.EACObjectIdentifiers;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.eac.operator.EACSignatureVerifier;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OperatorStreamException;

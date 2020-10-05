@@ -18,8 +18,8 @@ import org.bouncycastle.asn1.DERTaggedObject;
  *         pathProcInput                [0] PathProcInput OPTIONAL
  *     }
  * </pre>
- * @deprecated use org.bouncycastle.dvcs.asn1.TargetEtcChain
  */
+
 public class TargetEtcChain
     extends ASN1Object
 {

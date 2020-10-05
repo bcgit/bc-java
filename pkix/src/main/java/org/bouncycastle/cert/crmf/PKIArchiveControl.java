@@ -5,9 +5,9 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
-import org.bouncycastle.cert.crmf.asn1.CRMFObjectIdentifiers;
-import org.bouncycastle.cert.crmf.asn1.EncryptedKey;
-import org.bouncycastle.cert.crmf.asn1.PKIArchiveOptions;
+import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
+import org.bouncycastle.asn1.crmf.EncryptedKey;
+import org.bouncycastle.asn1.crmf.PKIArchiveOptions;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSException;
 
