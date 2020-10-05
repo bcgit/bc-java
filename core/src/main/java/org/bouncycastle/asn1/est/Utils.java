@@ -1,8 +1,5 @@
 package org.bouncycastle.asn1.est;
 
-/**
- * @deprecated use org.bouncycastle.est.asn1.Utils
- */
 class Utils
 {
     static AttrOrOID[] clone(AttrOrOID[] ids)
