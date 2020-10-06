@@ -131,6 +131,7 @@ public class KMACTest
 
         doFinalTest();
         longBlockTest();
+        paddingCheckTest();
 
         checkKMAC(128, new KMAC(128, new byte[0]), Hex.decode("eeaabeef"));
         checkKMAC(256, new KMAC(256, null), Hex.decode("eeaabeef"));
@@ -207,6 +208,26 @@ public class KMACTest
         kmac.doFinal(res, 0);
 
         isTrue(Hex.toHexString(res), Arrays.areEqual(Hex.decode("f9476d9b3e42bf23307af5ccb5287fd6f033b23c400566a2ebc5829bd119aa545cd9b6bde76ef61cd31c3c0f0aaf0945f44481e863b19e9c26fb46c8b2a8a9bb"), res));
+    }
+
+    private void paddingCheckTest()
+    {
+        byte[] data = Hex.decode("01880204187B3E43EDA8D51EC181D37DDE5B17ECCDD8BE84C268DC6C9500700857");
+        byte[] out = new byte[32];
+
+        KMAC k128 = new KMAC(128, new byte[0]);
+        k128.init(new KeyParameter(new byte[163]));
+        k128.update(data, 0, data.length);
+        k128.doOutput(out, 0, out.length);
+
+        isTrue("128 failed", Arrays.areEqual(out, Hex.decode("6e6ab56468c7445f81c679f89f45c90a95a9c01afbaab5f7065b7e2e96f7d2bb")));
+
+        KMAC k256 = new KMAC(256, new byte[0]);
+        k256.init(new KeyParameter(new byte[131]));
+        k256.update(data, 0, data.length);
+        k256.doOutput(out, 0, out.length);
+
+        isTrue("256 failed", Arrays.areEqual(out, Hex.decode("f6302d4f854b4872e811b37993b6bfe027258089b6a9fbb26a755b1ebfc0d830")));
     }
 
     private void checkKMAC(int bitSize, KMAC kmac, byte[] msg)
