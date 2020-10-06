@@ -185,7 +185,7 @@ public class KMAC
 
         int required = w - ((bytes.length + encX.length) % w);
 
-        if (required > 0)
+        if (required > 0 && required != w)
         {
             while (required > padding.length)
             {
