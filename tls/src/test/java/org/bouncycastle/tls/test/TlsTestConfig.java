@@ -75,6 +75,11 @@ public class TlsTestConfig
     public int clientCrypto = CRYPTO_BC;
 
     /**
+     * Configures whether the client will send an empty key_share extension in initial ClientHello.
+     */
+    public boolean clientEmptyKeyShare = false;
+
+    /**
      * Configures whether the client will indicate version fallback via TLS_FALLBACK_SCSV.
      */
     public boolean clientFallback = false;

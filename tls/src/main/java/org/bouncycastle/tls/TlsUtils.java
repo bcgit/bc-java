@@ -4930,6 +4930,19 @@ public class TlsUtils
         }
     }
 
+    static KeyShareEntry selectKeyShare(Vector clientShares, int keyShareGroup)
+    {
+        if (null != clientShares && 1 == clientShares.size())
+        {
+            KeyShareEntry clientShare = (KeyShareEntry)clientShares.elementAt(0);
+            if (null != clientShare && clientShare.getNamedGroup() == keyShareGroup)
+            {
+                return clientShare;
+            }
+        }
+        return null;
+    }
+
     static KeyShareEntry selectKeyShare(TlsCrypto crypto, ProtocolVersion negotiatedVersion, Vector clientShares,
         int[] clientSupportedGroups, int[] serverSupportedGroups)
     {
@@ -4967,6 +4980,42 @@ public class TlsUtils
             }
         }
         return null;
+    }
+
+    static int selectKeyShareGroup(TlsCrypto crypto, ProtocolVersion negotiatedVersion,
+        int[] clientSupportedGroups, int[] serverSupportedGroups)
+    {
+        if (!isNullOrEmpty(clientSupportedGroups) && !isNullOrEmpty(serverSupportedGroups))
+        {
+            for (int i = 0; i < clientSupportedGroups.length; ++i)
+            {
+                int group = clientSupportedGroups[i];
+
+                if (!NamedGroup.canBeNegotiated(group, negotiatedVersion))
+                {
+                    continue;
+                }
+
+                if (!Arrays.contains(serverSupportedGroups, group))
+                {
+                    continue;
+                }
+
+                if (!crypto.hasNamedGroup(group))
+                {
+                    continue;
+                }
+
+                if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
+                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                {
+                    continue;
+                }
+
+                return group;
+            }
+        }
+        return -1;
     }
 
     static byte[] readEncryptedPMS(TlsContext context, InputStream input) throws IOException
