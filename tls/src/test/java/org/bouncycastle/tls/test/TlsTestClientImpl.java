@@ -123,6 +123,16 @@ class TlsTestClientImpl
         return clientExtensions;
     }
 
+    public Vector getEarlyKeyShareGroups()
+    {
+        if (config.clientEmptyKeyShare)
+        {
+            return null;
+        }
+
+        return super.getEarlyKeyShareGroups();
+    }
+
     public boolean isFallback()
     {
         return config.clientFallback;

@@ -148,6 +148,8 @@ public abstract class TlsProtocol
     protected SessionParameters sessionParameters = null;
     protected TlsSecret sessionMasterSecret = null;
 
+    protected byte[] retryCookie = null;
+    protected int retryGroup = -1;
     protected Hashtable clientExtensions = null;
     protected Hashtable serverExtensions = null;
 
@@ -429,6 +431,8 @@ public abstract class TlsProtocol
         this.sessionParameters = null;
         this.sessionMasterSecret = null;
 
+        this.retryCookie = null;
+        this.retryGroup = -1;
         this.clientExtensions = null;
         this.serverExtensions = null;
 
