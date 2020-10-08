@@ -119,6 +119,31 @@ public class TlsServerProtocol
             && (null == keyExchange || keyExchange.requiresCertificateVerify());
     }
 
+    protected ServerHello generate13HelloRetryRequest(ClientHello clientHello) throws IOException
+    {
+        // TODO[tls13] In future there might be other reasons for a HelloRetryRequest.
+        if (retryGroup < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+        ProtocolVersion serverVersion = securityParameters.getNegotiatedVersion();
+
+        Hashtable serverHelloExtensions = new Hashtable();
+        TlsExtensionsUtils.addSupportedVersionsExtensionServer(serverHelloExtensions, serverVersion);
+        if (retryGroup >= 0)
+        {
+            TlsExtensionsUtils.addKeyShareHelloRetryRequest(serverHelloExtensions, retryGroup);
+        }
+        if (null != retryCookie)
+        {
+            TlsExtensionsUtils.addCookieExtension(serverHelloExtensions, retryCookie);
+        }
+
+        return new ServerHello(clientHello.getSessionID(), securityParameters.getCipherSuite(), serverHelloExtensions);
+    }
+
     protected ServerHello generate13ServerHello(ClientHello clientHello, boolean afterHelloRetryRequest)
         throws IOException
     {
@@ -128,149 +153,154 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        ProtocolVersion serverVersion = securityParameters.getNegotiatedVersion();
-        TlsCrypto crypto = tlsServerContext.getCrypto();
 
-        Vector clientShares = TlsExtensionsUtils.getKeyShareClientHello(clientHello.getExtensions());
-        KeyShareEntry clientShare = null;
+        byte[] legacy_session_id = clientHello.getSessionID();
 
-        if (afterHelloRetryRequest)
-        {
-            /*
-             * TODO[tls13] RFC 8446 4.1.2 [..] when the server has responded to its ClientHello with
-             * a HelloRetryRequest [..] the client MUST send the same ClientHello without
-             * modification, except as follows: [key_share, early_data, cookie, pre_shared_key,
-             * padding].
-             */
-
-            // TODO[tls13] Require a single client share for the group specified in the HelloRetryRequest
-            clientShare = null;
-
-            if (null == clientShare)
-            {
-                // TODO[tls13] What type of alert here?
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-        }
-        else
-        {
-            if (null != clientShares && !clientShares.isEmpty())
-            {
-                int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
-                int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
-
-                clientShare = TlsUtils.selectKeyShare(crypto, serverVersion, clientShares, clientSupportedGroups,
-                    serverSupportedGroups);
-
-                if (clientShare != null && clientShare.getNamedGroup() != serverSupportedGroups[0])
-                {
-                    /*
-                     * TODO[tls13] RFC 8446 4.2.7. As of TLS 1.3, servers are permitted to send the
-                     * "supported_groups" extension to the client. Clients MUST NOT act upon any
-                     * information found in "supported_groups" prior to successful completion of the
-                     * handshake but MAY use the information learned from a successfully completed
-                     * handshake to change what groups they use in their "key_share" extension in
-                     * subsequent connections. If the server has a group it prefers to the ones in
-                     * the "key_share" extension but is still willing to accept the ClientHello, it
-                     * SHOULD send "supported_groups" to update the client's view of its
-                     * preferences; this extension SHOULD contain all groups the server supports,
-                     * regardless of whether they are currently supported by the client.
-                     */
-                }
-            }
-
-            if (null == clientShare)
-            {
-                // TODO[tls13] Send HelloRetryRequest
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-        }
-
-        /*
-         * TODO[resumption] Check RFC 7627 5.4. for required behaviour.
-         */
-
-        /*
-         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
-         * extensions appearing in the client hello, and send a server hello containing no
-         * extensions.
-         */
-        this.clientExtensions = clientHello.getExtensions();
-
-        securityParameters.secureRenegotiation = false;
-
-        if (clientExtensions != null)
-        {
-            // NOTE: Validates the padding extension data, if present
-            TlsExtensionsUtils.getPaddingExtension(clientExtensions);
-
-            securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(clientExtensions);
-
-            TlsUtils.establishClientSigAlgs(securityParameters, clientExtensions);
-
-            tlsServer.processClientExtensions(clientExtensions);
-        }
-
-        /*
-         * RFC 8446 4.2.3. Clients which desire the server to authenticate itself via a
-         * certificate MUST send the "signature_algorithms" extension. If a server is authenticating
-         * via a certificate and the client has not sent a "signature_algorithms" extension, then
-         * the server MUST abort the handshake with a "missing_extension" alert.
-         */
-        // TODO[tls13] Revisit this check if we add support for PSK-only key exchange.
-        if (null == securityParameters.getClientSigAlgs())
+        Hashtable clientHelloExtensions = clientHello.getExtensions();
+        if (null == clientHelloExtensions)
         {
             throw new TlsFatalAlert(AlertDescription.missing_extension);
         }
 
-        /*
-         * NOTE: Currently no server support for session resumption
-         * 
-         * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
-         * ONLY when extended_master_secret has been negotiated (otherwise NULL).
-         */
-        byte[] legacy_session_id = clientHello.getSessionID();
 
+        ProtocolVersion serverVersion = securityParameters.getNegotiatedVersion();
+        TlsCrypto crypto = tlsServerContext.getCrypto();
+
+        Vector clientShares = TlsExtensionsUtils.getKeyShareClientHello(clientHelloExtensions);
+        KeyShareEntry clientShare = null;
+
+        if (afterHelloRetryRequest)
         {
-            invalidateSession();
-
-            securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
-
-            this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
-            this.sessionParameters = null;
-            this.sessionMasterSecret = null;
-        }
-
-        TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
-
-        /*
-         * TODO[tls13] Send ServerHello message that MAY be a HelloRetryRequest.
-         * 
-         * For HelloRetryRequest, state => CS_SERVER_HELLO_RETRY_REQUEST instead (and no further
-         * messages), and reset Transcript-Hash to begin with synthetic 'message_hash' message
-         * having Hash(ClientHello) as the message body.
-         */
-
-        {
-            securityParameters.serverRandom = createRandomBlock(false, tlsServerContext);
-
-            if (!serverVersion.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
-            {
-                TlsUtils.writeDowngradeMarker(serverVersion, securityParameters.getServerRandom());
-            }
-        }
-
-        {
-            int cipherSuite = tlsServer.getSelectedCipherSuite();
-
-            if (!TlsUtils.isValidCipherSuiteSelection(offeredCipherSuites, cipherSuite) ||
-                !TlsUtils.isValidVersionForCipherSuite(cipherSuite, serverVersion))
+            if (retryGroup < 0)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
+            /*
+             * TODO[tls13] Confirm fields in the ClientHello haven't changed
+             * 
+             * RFC 8446 4.1.2 [..] when the server has responded to its ClientHello with a
+             * HelloRetryRequest [..] the client MUST send the same ClientHello without
+             * modification, except as follows: [key_share, early_data, cookie, pre_shared_key,
+             * padding].
+             */
+
+            byte[] cookie = TlsExtensionsUtils.getCookieExtension(clientHelloExtensions);
+            if (!Arrays.areEqual(retryCookie, cookie))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+            this.retryCookie = null;
+
+            clientShare = TlsUtils.selectKeyShare(clientShares, retryGroup);
+            if (null == clientShare)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
         }
+        else
+        {
+            this.clientExtensions = clientHelloExtensions;
+
+            securityParameters.secureRenegotiation = false;
+
+            // NOTE: Validates the padding extension data, if present
+            TlsExtensionsUtils.getPaddingExtension(clientHelloExtensions);
+
+            securityParameters.clientServerNames = TlsExtensionsUtils
+                .getServerNameExtensionClient(clientHelloExtensions);
+
+            TlsUtils.establishClientSigAlgs(securityParameters, clientHelloExtensions);
+
+            /*
+             * RFC 8446 4.2.3. If a server is authenticating via a certificate and the client has
+             * not sent a "signature_algorithms" extension, then the server MUST abort the handshake
+             * with a "missing_extension" alert.
+             */
+            // TODO[tls13] Revisit this check if we add support for PSK-only key exchange.
+            if (null == securityParameters.getClientSigAlgs())
+            {
+                throw new TlsFatalAlert(AlertDescription.missing_extension);
+            }
+
+            tlsServer.processClientExtensions(clientHelloExtensions);
+
+            /*
+             * NOTE: Currently no server support for session resumption
+             * 
+             * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
+             * ONLY when extended_master_secret has been negotiated (otherwise NULL).
+             */
+            {
+                invalidateSession();
+
+                securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
+
+                this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
+                this.sessionParameters = null;
+                this.sessionMasterSecret = null;
+            }
+
+            TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
+
+            {
+                securityParameters.serverRandom = createRandomBlock(false, tlsServerContext);
+
+                if (!serverVersion.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
+                {
+                    TlsUtils.writeDowngradeMarker(serverVersion, securityParameters.getServerRandom());
+                }
+            }
+
+            {
+                int cipherSuite = tlsServer.getSelectedCipherSuite();
+
+                if (!TlsUtils.isValidCipherSuiteSelection(offeredCipherSuites, cipherSuite) ||
+                    !TlsUtils.isValidVersionForCipherSuite(cipherSuite, serverVersion))
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
+            }
+
+            int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
+            int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
+
+            clientShare = TlsUtils.selectKeyShare(crypto, serverVersion, clientShares, clientSupportedGroups,
+                serverSupportedGroups);
+
+            if (null == clientShare)
+            {
+                this.retryGroup = TlsUtils.selectKeyShareGroup(crypto, serverVersion, clientSupportedGroups,
+                    serverSupportedGroups);
+                if (retryGroup < 0)
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
+
+                this.retryCookie = tlsServerContext.getNonceGenerator().generateNonce(16);
+
+                return generate13HelloRetryRequest(clientHello);
+            }
+
+            if (clientShare.getNamedGroup() != serverSupportedGroups[0])
+            {
+                /*
+                 * TODO[tls13] RFC 8446 4.2.7. As of TLS 1.3, servers are permitted to send the
+                 * "supported_groups" extension to the client. Clients MUST NOT act upon any
+                 * information found in "supported_groups" prior to successful completion of the
+                 * handshake but MAY use the information learned from a successfully completed
+                 * handshake to change what groups they use in their "key_share" extension in
+                 * subsequent connections. If the server has a group it prefers to the ones in the
+                 * "key_share" extension but is still willing to accept the ClientHello, it SHOULD
+                 * send "supported_groups" to update the client's view of its preferences; this
+                 * extension SHOULD contain all groups the server supports, regardless of whether
+                 * they are currently supported by the client.
+                 */
+            }
+        }
+
 
         Hashtable serverHelloExtensions = new Hashtable();
         Hashtable serverEncryptedExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
@@ -361,7 +391,6 @@ public class TlsServerProtocol
 
             agreement.receivePeerValue(clientShare.getKeyExchange());
             securityParameters.sharedSecret = agreement.calculateSecret();
-            // TODO[tls13] We need the PRF for this i.e. the cipher suite has to have been negotiated 
             TlsUtils.establish13PhaseSecrets(tlsServerContext);
         }
 

@@ -22,6 +22,11 @@ public class ServerHello
     private final int cipherSuite;
     private final Hashtable extensions;
 
+    public ServerHello(byte[] sessionID, int cipherSuite, Hashtable extensions)
+    {
+        this(ProtocolVersion.TLSv12, Arrays.clone(HELLO_RETRY_REQUEST_MAGIC), sessionID, cipherSuite, extensions);
+    }
+
     public ServerHello(ProtocolVersion version, byte[] random, byte[] sessionID, int cipherSuite, Hashtable extensions)
     {
         this.version = version;

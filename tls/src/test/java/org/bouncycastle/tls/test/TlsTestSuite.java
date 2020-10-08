@@ -102,6 +102,14 @@ public class TlsTestSuite extends TestSuite
             addTestCase(testSuite, c, prefix + "GoodDefault");
         }
 
+        if (isTLSv13)
+        {
+            TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
+            c.clientEmptyKeyShare = true;
+
+            addTestCase(testSuite, c, prefix + "GoodEmptyKeyShare");
+        }
+
         /*
          * Server only declares support for SHA1/RSA, client selects MD5/RSA. Since the client is
          * NOT actually tracking MD5 over the handshake, we expect fatal alert from the client.

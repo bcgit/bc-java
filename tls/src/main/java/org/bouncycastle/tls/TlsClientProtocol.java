@@ -22,8 +22,6 @@ public class TlsClientProtocol
 
     protected Hashtable clientAgreements = null;
     protected ClientHello clientHello = null;
-    protected byte[] clientHelloRetryCookie = null;
-    protected int clientHelloRetryGroup = -1;
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
 
@@ -142,8 +140,6 @@ public class TlsClientProtocol
 
         this.clientAgreements = null;
         this.clientHello = null;
-        this.clientHelloRetryCookie = null;
-        this.clientHelloRetryGroup = -1;
         this.keyExchange = null;
         this.authentication = null;
 
@@ -940,8 +936,8 @@ public class TlsClientProtocol
         tlsClient.notifySelectedCipherSuite(cipherSuite);
 
         this.clientAgreements = null;
-        this.clientHelloRetryCookie = cookie;
-        this.clientHelloRetryGroup = selected_group;
+        this.retryCookie = cookie;
+        this.retryGroup = selected_group;
     }
 
     protected void process13ServerHello(ServerHello serverHello, boolean afterHelloRetryRequest)
@@ -1132,8 +1128,8 @@ public class TlsClientProtocol
         int[] offeredCipherSuites = clientHello.getCipherSuites();
 
         this.clientHello = null;
-        this.clientHelloRetryCookie = null;
-        this.clientHelloRetryGroup = -1;
+        this.retryCookie = null;
+        this.retryGroup = -1;
 
         securityParameters.serverRandom = serverHello.getRandom();
 
@@ -1584,10 +1580,10 @@ public class TlsClientProtocol
          * extension received in the HelloRetryRequest into a "cookie" extension in the new
          * ClientHello.
          */
-        if (null != clientHelloRetryCookie)
+        if (null != retryCookie)
         {
-            TlsExtensionsUtils.addCookieExtension(clientHelloExtensions, clientHelloRetryCookie);
-            this.clientHelloRetryCookie = null;
+            TlsExtensionsUtils.addCookieExtension(clientHelloExtensions, retryCookie);
+            this.retryCookie = null;
         }
 
         /*
@@ -1595,13 +1591,13 @@ public class TlsClientProtocol
          * original "key_share" extension with one containing only a new KeyShareEntry for the group
          * indicated in the selected_group field of the triggering HelloRetryRequest.
          */
-        if (clientHelloRetryGroup < 0)
+        if (retryGroup < 0)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         this.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(tlsClientContext, clientHelloExtensions,
-            clientHelloRetryGroup);
+            retryGroup);
 
         /*
          * TODO[tls13] Updating the "pre_shared_key" extension if present by recomputing the
