@@ -822,11 +822,45 @@ public abstract class Ed448
 
 //                assert k == PRECOMP_POINTS;
 
+                int[] cs = F.createTable(PRECOMP_POINTS);
+
+                // TODO[ed448] A single batch inversion across all blocks?
+                {
+                    int[] u = F.create();
+                    F.copy(points[0].z, 0, u, 0);
+                    F.copy(u, 0, cs, 0);
+
+                    int i = 0;
+                    while (++i < PRECOMP_POINTS)
+                    {
+                        F.mul(u, points[i].z, u);
+                        F.copy(u, 0, cs, i * F.SIZE);
+                    }
+
+                    F.invVar(u, u);
+                    --i;
+
+                    int[] t = F.create();
+
+                    while (i > 0)
+                    {
+                        int j = i--;
+                        F.copy(cs, i * F.SIZE, t, 0);
+                        F.mul(t, u, t);
+                        F.copy(t, 0, cs, j * F.SIZE);
+                        F.mul(u, points[j].z, u);
+                    }
+
+                    F.copy(u, 0, cs, 0);
+                }
+
                 for (int i = 0; i < PRECOMP_POINTS; ++i)
                 {
                     PointExt q = points[i];
-                    // TODO[ed448] Batch inversion
-                    F.invVar(q.z, q.z);
+
+//                    F.invVar(q.z, q.z);
+                    F.copy(cs, i * F.SIZE, q.z, 0);
+
                     F.mul(q.x, q.z, q.x);
                     F.mul(q.y, q.z, q.y);
 
