@@ -375,7 +375,7 @@ class RecordStream
                 }
                 else
                 {
-                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message, ContentType.getText(recordType));
                 }
             }
         }
