@@ -21,7 +21,7 @@ public class BCEdDSAPublicKey
 
     transient AsymmetricKeyParameter eddsaPublicKey;
 
-    BCEdDSAPublicKey(AsymmetricKeyParameter pubKey)
+    public BCEdDSAPublicKey(AsymmetricKeyParameter pubKey)
     {
         this.eddsaPublicKey = pubKey;
     }

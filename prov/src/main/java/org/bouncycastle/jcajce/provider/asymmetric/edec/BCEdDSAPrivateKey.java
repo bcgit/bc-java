@@ -29,7 +29,7 @@ public class BCEdDSAPrivateKey
     private final boolean hasPublicKey;
     private final byte[] attributes;
 
-    BCEdDSAPrivateKey(AsymmetricKeyParameter privKey)
+    public BCEdDSAPrivateKey(AsymmetricKeyParameter privKey)
     {
         this.hasPublicKey = true;
         this.attributes = null;
