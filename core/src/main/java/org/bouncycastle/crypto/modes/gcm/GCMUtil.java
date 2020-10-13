@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.modes.gcm;
 
 import org.bouncycastle.math.raw.Interleave;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 public abstract class GCMUtil
@@ -140,24 +141,58 @@ public abstract class GCMUtil
 
     public static void multiply(long[] x, long[] y)
     {
+//        long x0 = x[0], x1 = x[1];
+//        long y0 = y[0], y1 = y[1];
+//        long z0 = 0, z1 = 0, z2 = 0;
+//
+//        for (int j = 0; j < 64; ++j)
+//        {
+//            long m0 = x0 >> 63; x0 <<= 1;
+//            z0 ^= (y0 & m0);
+//            z1 ^= (y1 & m0);
+//
+//            long m1 = x1 >> 63; x1 <<= 1;
+//            z1 ^= (y0 & m1);
+//            z2 ^= (y1 & m1);
+//
+//            long c = (y1 << 63) >> 8;
+//            y1 = (y1 >>> 1) | (y0 << 63);
+//            y0 = (y0 >>> 1) ^ (c & E1L);
+//        }
+//
+//        z0 ^= z2 ^ (z2 >>>  1) ^ (z2 >>>  2) ^ (z2 >>>  7);
+//        z1 ^=      (z2 <<  63) ^ (z2 <<  62) ^ (z2 <<  57);
+//
+//        x[0] = z0;
+//        x[1] = z1;
+
+        /*
+         * "Three-way recursion" as described in "Batch binary Edwards", Daniel J. Bernstein.
+         *
+         * Without access to the high part of a 64x64 product x * y, we use a bit reversal to calculate it:
+         *     rev(x) * rev(y) == rev((x * y) << 1) 
+         */
+
         long x0 = x[0], x1 = x[1];
         long y0 = y[0], y1 = y[1];
-        long z0 = 0, z1 = 0, z2 = 0;
+        long x0r = Longs.reverse(x0), x1r = Longs.reverse(x1);
+        long y0r = Longs.reverse(y0), y1r = Longs.reverse(y1);
 
-        for (int j = 0; j < 64; ++j)
-        {
-            long m0 = x0 >> 63; x0 <<= 1;
-            z0 ^= (y0 & m0);
-            z1 ^= (y1 & m0);
+        long h0  = Longs.reverse(implMul64(x0r, y0r));
+        long h1  = implMul64(x0, y0) << 1;
+        long h2  = Longs.reverse(implMul64(x1r, y1r));
+        long h3  = implMul64(x1, y1) << 1;
+        long h4  = Longs.reverse(implMul64(x0r ^ x1r, y0r ^ y1r));
+        long h5  = implMul64(x0 ^ x1, y0 ^ y1) << 1;
 
-            long m1 = x1 >> 63; x1 <<= 1;
-            z1 ^= (y0 & m1);
-            z2 ^= (y1 & m1);
+        long z0  = h0;
+        long z1  = h1 ^ h0 ^ h2 ^ h4;
+        long z2  = h2 ^ h1 ^ h3 ^ h5;
+        long z3  = h3;
 
-            long c = (y1 << 63) >> 8;
-            y1 = (y1 >>> 1) | (y0 << 63);
-            y0 = (y0 >>> 1) ^ (c & E1L);
-        }
+        z1 ^= z3 ^ (z3 >>>  1) ^ (z3 >>>  2) ^ (z3 >>>  7);
+//      z2 ^=      (z3 <<  63) ^ (z3 <<  62) ^ (z3 <<  57);
+        z2 ^=                    (z3 <<  62) ^ (z3 <<  57);
 
         z0 ^= z2 ^ (z2 >>>  1) ^ (z2 >>>  2) ^ (z2 >>>  7);
         z1 ^=      (z2 <<  63) ^ (z2 <<  62) ^ (z2 <<  57);
@@ -381,5 +416,30 @@ public abstract class GCMUtil
     {
         z[0] = x[0] ^ y[0];
         z[1] = x[1] ^ y[1];
+    }
+
+    private static long implMul64(long x, long y)
+    {
+        long x0 = x & 0x1111111111111111L;
+        long x1 = x & 0x2222222222222222L;
+        long x2 = x & 0x4444444444444444L;
+        long x3 = x & 0x8888888888888888L;
+
+        long y0 = y & 0x1111111111111111L;
+        long y1 = y & 0x2222222222222222L;
+        long y2 = y & 0x4444444444444444L;
+        long y3 = y & 0x8888888888888888L;
+
+        long z0 = (x0 * y0) ^ (x1 * y3) ^ (x2 * y2) ^ (x3 * y1);
+        long z1 = (x0 * y1) ^ (x1 * y0) ^ (x2 * y3) ^ (x3 * y2);
+        long z2 = (x0 * y2) ^ (x1 * y1) ^ (x2 * y0) ^ (x3 * y3);
+        long z3 = (x0 * y3) ^ (x1 * y2) ^ (x2 * y1) ^ (x3 * y0);
+
+        z0 &= 0x1111111111111111L;
+        z1 &= 0x2222222222222222L;
+        z2 &= 0x4444444444444444L;
+        z3 &= 0x8888888888888888L;
+
+        return z0 | z1 | z2 | z3;
     }
 }
