@@ -28,6 +28,20 @@ public class Integers
         return DEBRUIJN_TZ[((i & -i) * 0x04D7651F) >>> 27];
     }
 
+    public static int reverse(int i)
+    {
+        i = bitPermuteStepSimple(i, 0x55555555, 1);
+        i = bitPermuteStepSimple(i, 0x33333333, 2);
+        i = bitPermuteStepSimple(i, 0x0F0F0F0F, 4);
+        return reverseBytes(i);
+    }
+
+    public static int reverseBytes(int i)
+    {
+        return rotateLeft(i & 0xFF00FF00,  8) |
+               rotateLeft(i & 0x00FF00FF, 24);
+    }
+
     public static int rotateLeft(int i, int distance)
     {
         return (i << distance) ^ (i >>> -distance);
@@ -41,5 +55,10 @@ public class Integers
     public static Integer valueOf(int value)
     {
         return new Integer(value);
+    }
+
+    private static int bitPermuteStepSimple(int x, int m, int s)
+    {
+        return ((x & m) << s) | ((x >>> s) & m);
     }
 }
