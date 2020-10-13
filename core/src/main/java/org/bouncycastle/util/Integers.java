@@ -15,6 +15,16 @@ public class Integers
         return Integer.numberOfTrailingZeros(i);
     }
 
+    public static int reverse(int i)
+    {
+        return Integer.reverse(i);
+    }
+
+    public static int reverseBytes(int i)
+    {
+        return Integer.reverseBytes(i);
+    }
+
     public static int rotateLeft(int i, int distance)
     {
         return Integer.rotateLeft(i, distance);

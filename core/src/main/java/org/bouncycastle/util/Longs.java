@@ -2,6 +2,16 @@ package org.bouncycastle.util;
 
 public class Longs
 {
+    public static long reverse(long i)
+    {
+        return Long.reverse(i);
+    }
+
+    public static long reverseBytes(long i)
+    {
+        return Long.reverseBytes(i);
+    }
+
     public static long rotateLeft(long i, int distance)
     {
         return Long.rotateLeft(i, distance);
