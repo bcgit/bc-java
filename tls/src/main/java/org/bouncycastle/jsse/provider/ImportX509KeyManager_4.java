@@ -5,20 +5,22 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 
 import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509Key;
 
-final class ImportX509KeyManager_5
+/*
+ * Note that chooseEngineClientAlias() and chooseEngineServerAlias() are inherited (they return
+ * null), for compatibility with SunJSSE provider.
+ */
+final class ImportX509KeyManager_4
     extends BCX509ExtendedKeyManager
     implements ImportX509KeyManager
 {
-    final X509ExtendedKeyManager x509KeyManager;
+    final X509KeyManager x509KeyManager;
 
-    ImportX509KeyManager_5(X509ExtendedKeyManager x509KeyManager)
+    ImportX509KeyManager_4(X509KeyManager x509KeyManager)
     {
         this.x509KeyManager = x509KeyManager;
     }
@@ -31,18 +33,6 @@ final class ImportX509KeyManager_5
     public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket)
     {
         return x509KeyManager.chooseClientAlias(keyType, issuers, socket);
-    }
-
-    @Override
-    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine)
-    {
-        return x509KeyManager.chooseEngineClientAlias(keyType, issuers, engine);
-    }
-
-    @Override
-    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine)
-    {
-        return x509KeyManager.chooseEngineServerAlias(keyType, issuers, engine);
     }
 
     public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
