@@ -1,12 +1,14 @@
 package org.bouncycastle.util;
 
+import org.bouncycastle.math.raw.Bits;
+
 public class Longs
 {
     public static long reverse(long i)
     {
-        i = bitPermuteStepSimple(i, 0x5555555555555555L, 1);
-        i = bitPermuteStepSimple(i, 0x3333333333333333L, 2);
-        i = bitPermuteStepSimple(i, 0x0F0F0F0F0F0F0F0FL, 4);
+        i = Bits.bitPermuteStepSimple(i, 0x5555555555555555L, 1);
+        i = Bits.bitPermuteStepSimple(i, 0x3333333333333333L, 2);
+        i = Bits.bitPermuteStepSimple(i, 0x0F0F0F0F0F0F0F0FL, 4);
         return reverseBytes(i);
     }
 
@@ -31,10 +33,5 @@ public class Longs
     public static Long valueOf(long value)
     {
         return new Long(value);
-    }
-
-    private static long bitPermuteStepSimple(long x, long m, int s)
-    {
-        return ((x & m) << s) | ((x >>> s) & m);
     }
 }
