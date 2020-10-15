@@ -70,11 +70,10 @@ public class Interleave
     public static long expand32to64(int x)
     {
         // "shuffle" low half to even bits and high half to odd bits
-        int t;
-        t = (x ^ (x >>>  8)) & 0x0000FF00; x ^= (t ^ (t <<  8));
-        t = (x ^ (x >>>  4)) & 0x00F000F0; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>>  2)) & 0x0C0C0C0C; x ^= (t ^ (t <<  2));
-        t = (x ^ (x >>>  1)) & 0x22222222; x ^= (t ^ (t <<  1));
+        x = Bits.bitPermuteStep(x, 0x0000FF00, 8);
+        x = Bits.bitPermuteStep(x, 0x00F000F0, 4);
+        x = Bits.bitPermuteStep(x, 0x0C0C0C0C, 2);
+        x = Bits.bitPermuteStep(x, 0x22222222, 1);
 
         return ((x >>> 1) & M32) << 32 | (x & M32);
     }
@@ -82,12 +81,11 @@ public class Interleave
     public static void expand64To128(long x, long[] z, int zOff)
     {
         // "shuffle" low half to even bits and high half to odd bits
-        long t;
-        t = (x ^ (x >>> 16)) & 0x00000000FFFF0000L; x ^= (t ^ (t << 16));
-        t = (x ^ (x >>>  8)) & 0x0000FF000000FF00L; x ^= (t ^ (t <<  8));
-        t = (x ^ (x >>>  4)) & 0x00F000F000F000F0L; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>>  2)) & 0x0C0C0C0C0C0C0C0CL; x ^= (t ^ (t <<  2));
-        t = (x ^ (x >>>  1)) & 0x2222222222222222L; x ^= (t ^ (t <<  1));
+        x = Bits.bitPermuteStep(x, 0x00000000FFFF0000L, 16);
+        x = Bits.bitPermuteStep(x, 0x0000FF000000FF00L, 8);
+        x = Bits.bitPermuteStep(x, 0x00F000F000F000F0L, 4);
+        x = Bits.bitPermuteStep(x, 0x0C0C0C0C0C0C0C0CL, 2);
+        x = Bits.bitPermuteStep(x, 0x2222222222222222L, 1);
 
         z[zOff    ] = (x      ) & M64;
         z[zOff + 1] = (x >>> 1) & M64;
@@ -97,28 +95,19 @@ public class Interleave
     {
         for (int i = 0; i < xsLen; ++i)
         {
-            // "shuffle" low half to even bits and high half to odd bits
-            long x = xs[xsOff + i], t;
-            t = (x ^ (x >>> 16)) & 0x00000000FFFF0000L; x ^= (t ^ (t << 16));
-            t = (x ^ (x >>>  8)) & 0x0000FF000000FF00L; x ^= (t ^ (t <<  8));
-            t = (x ^ (x >>>  4)) & 0x00F000F000F000F0L; x ^= (t ^ (t <<  4));
-            t = (x ^ (x >>>  2)) & 0x0C0C0C0C0C0C0C0CL; x ^= (t ^ (t <<  2));
-            t = (x ^ (x >>>  1)) & 0x2222222222222222L; x ^= (t ^ (t <<  1));
-
-            zs[zsOff++] = (x      ) & M64;
-            zs[zsOff++] = (x >>> 1) & M64;
+            expand64To128(xs[xsOff + i], zs, zsOff);
+            zsOff += 2;
         }
     }
 
     public static void expand64To128Rev(long x, long[] z, int zOff)
     {
         // "shuffle" low half to even bits and high half to odd bits
-        long t;
-        t = (x ^ (x >>> 16)) & 0x00000000FFFF0000L; x ^= (t ^ (t << 16));
-        t = (x ^ (x >>>  8)) & 0x0000FF000000FF00L; x ^= (t ^ (t <<  8));
-        t = (x ^ (x >>>  4)) & 0x00F000F000F000F0L; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>>  2)) & 0x0C0C0C0C0C0C0C0CL; x ^= (t ^ (t <<  2));
-        t = (x ^ (x >>>  1)) & 0x2222222222222222L; x ^= (t ^ (t <<  1));
+        x = Bits.bitPermuteStep(x, 0x00000000FFFF0000L, 16);
+        x = Bits.bitPermuteStep(x, 0x0000FF000000FF00L, 8);
+        x = Bits.bitPermuteStep(x, 0x00F000F000F000F0L, 4);
+        x = Bits.bitPermuteStep(x, 0x0C0C0C0C0C0C0C0CL, 2);
+        x = Bits.bitPermuteStep(x, 0x2222222222222222L, 1);
 
         z[zOff    ] = (x     ) & M64R;
         z[zOff + 1] = (x << 1) & M64R;
@@ -127,68 +116,62 @@ public class Interleave
     public static int shuffle(int x)
     {
         // "shuffle" low half to even bits and high half to odd bits
-        int t;
-        t = (x ^ (x >>>  8)) & 0x0000FF00; x ^= (t ^ (t <<  8));
-        t = (x ^ (x >>>  4)) & 0x00F000F0; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>>  2)) & 0x0C0C0C0C; x ^= (t ^ (t <<  2));
-        t = (x ^ (x >>>  1)) & 0x22222222; x ^= (t ^ (t <<  1));
+        x = Bits.bitPermuteStep(x, 0x0000FF00, 8);
+        x = Bits.bitPermuteStep(x, 0x00F000F0, 4);
+        x = Bits.bitPermuteStep(x, 0x0C0C0C0C, 2);
+        x = Bits.bitPermuteStep(x, 0x22222222, 1);
         return x;
     }
 
     public static long shuffle(long x)
     {
         // "shuffle" low half to even bits and high half to odd bits
-        long t;
-        t = (x ^ (x >>> 16)) & 0x00000000FFFF0000L; x ^= (t ^ (t << 16));
-        t = (x ^ (x >>>  8)) & 0x0000FF000000FF00L; x ^= (t ^ (t <<  8));
-        t = (x ^ (x >>>  4)) & 0x00F000F000F000F0L; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>>  2)) & 0x0C0C0C0C0C0C0C0CL; x ^= (t ^ (t <<  2));
-        t = (x ^ (x >>>  1)) & 0x2222222222222222L; x ^= (t ^ (t <<  1));
+        x = Bits.bitPermuteStep(x, 0x00000000FFFF0000L, 16);
+        x = Bits.bitPermuteStep(x, 0x0000FF000000FF00L, 8);
+        x = Bits.bitPermuteStep(x, 0x00F000F000F000F0L, 4);
+        x = Bits.bitPermuteStep(x, 0x0C0C0C0C0C0C0C0CL, 2);
+        x = Bits.bitPermuteStep(x, 0x2222222222222222L, 1);
         return x;
     }
 
     public static int shuffle2(int x)
     {
         // "shuffle" (twice) low half to even bits and high half to odd bits
-        int t;
-        t = (x ^ (x >>>  7)) & 0x00AA00AA; x ^= (t ^ (t <<  7));
-        t = (x ^ (x >>> 14)) & 0x0000CCCC; x ^= (t ^ (t << 14));
-        t = (x ^ (x >>>  4)) & 0x00F000F0; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>>  8)) & 0x0000FF00; x ^= (t ^ (t <<  8));
+        x = Bits.bitPermuteStep(x, 0x00AA00AA, 7);
+        x = Bits.bitPermuteStep(x, 0x0000CCCC, 14);
+        x = Bits.bitPermuteStep(x, 0x00F000F0, 4);
+        x = Bits.bitPermuteStep(x, 0x0000FF00, 8);
         return x;
     }
 
     public static int unshuffle(int x)
     {
         // "unshuffle" even bits to low half and odd bits to high half
-        int t;
-        t = (x ^ (x >>>  1)) & 0x22222222; x ^= (t ^ (t <<  1));
-        t = (x ^ (x >>>  2)) & 0x0C0C0C0C; x ^= (t ^ (t <<  2));
-        t = (x ^ (x >>>  4)) & 0x00F000F0; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>>  8)) & 0x0000FF00; x ^= (t ^ (t <<  8));
+        x = Bits.bitPermuteStep(x, 0x22222222, 1);
+        x = Bits.bitPermuteStep(x, 0x0C0C0C0C, 2);
+        x = Bits.bitPermuteStep(x, 0x00F000F0, 4);
+        x = Bits.bitPermuteStep(x, 0x0000FF00, 8);
         return x;
     }
 
     public static long unshuffle(long x)
     {
         // "unshuffle" even bits to low half and odd bits to high half
-        long t;
-        t = (x ^ (x >>>  1)) & 0x2222222222222222L; x ^= (t ^ (t <<  1));
-        t = (x ^ (x >>>  2)) & 0x0C0C0C0C0C0C0C0CL; x ^= (t ^ (t <<  2));
-        t = (x ^ (x >>>  4)) & 0x00F000F000F000F0L; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>>  8)) & 0x0000FF000000FF00L; x ^= (t ^ (t <<  8));
-        t = (x ^ (x >>> 16)) & 0x00000000FFFF0000L; x ^= (t ^ (t << 16));
+        x = Bits.bitPermuteStep(x, 0x2222222222222222L, 1);
+        x = Bits.bitPermuteStep(x, 0x0C0C0C0C0C0C0C0CL, 2);
+        x = Bits.bitPermuteStep(x, 0x00F000F000F000F0L, 4);
+        x = Bits.bitPermuteStep(x, 0x0000FF000000FF00L, 8);
+        x = Bits.bitPermuteStep(x, 0x00000000FFFF0000L, 16);
         return x;
     }
 
     public static int unshuffle2(int x)
     {
         // "unshuffle" (twice) even bits to low half and odd bits to high half
-        int t;
-        t = (x ^ (x >>>  8)) & 0x0000FF00; x ^= (t ^ (t <<  8));
-        t = (x ^ (x >>>  4)) & 0x00F000F0; x ^= (t ^ (t <<  4));
-        t = (x ^ (x >>> 14)) & 0x0000CCCC; x ^= (t ^ (t << 14));
-        t = (x ^ (x >>>  7)) & 0x00AA00AA; x ^= (t ^ (t <<  7));
+        x = Bits.bitPermuteStep(x, 0x0000FF00, 8);
+        x = Bits.bitPermuteStep(x, 0x00F000F0, 4);
+        x = Bits.bitPermuteStep(x, 0x0000CCCC, 14);
+        x = Bits.bitPermuteStep(x, 0x00AA00AA, 7);
         return x;
     }
 }

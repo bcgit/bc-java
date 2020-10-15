@@ -1,5 +1,7 @@
 package org.bouncycastle.util;
 
+import org.bouncycastle.math.raw.Bits;
+
 public class Integers
 {
     private static final byte[] DEBRUIJN_TZ = {
@@ -30,9 +32,9 @@ public class Integers
 
     public static int reverse(int i)
     {
-        i = bitPermuteStepSimple(i, 0x55555555, 1);
-        i = bitPermuteStepSimple(i, 0x33333333, 2);
-        i = bitPermuteStepSimple(i, 0x0F0F0F0F, 4);
+        i = Bits.bitPermuteStepSimple(i, 0x55555555, 1);
+        i = Bits.bitPermuteStepSimple(i, 0x33333333, 2);
+        i = Bits.bitPermuteStepSimple(i, 0x0F0F0F0F, 4);
         return reverseBytes(i);
     }
 
@@ -55,10 +57,5 @@ public class Integers
     public static Integer valueOf(int value)
     {
         return new Integer(value);
-    }
-
-    private static int bitPermuteStepSimple(int x, int m, int s)
-    {
-        return ((x & m) << s) | ((x >>> s) & m);
     }
 }
