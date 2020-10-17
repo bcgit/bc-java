@@ -141,4 +141,11 @@ public interface MiscObjectIdentifiers
     //
     // Scrypt
     ASN1ObjectIdentifier id_scrypt = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.4.11");
+
+    // Composite key/signature oid - prototyping
+    //
+    //    id-alg-composite OBJECT IDENTIFIER ::= {
+    //        iso(1)  identified-organization(3) dod(6) internet(1) private(4)
+    //        enterprise(1) OpenCA(18227) Algorithms(2) id-alg-composite(1) }
+    ASN1ObjectIdentifier id_alg_composite = new ASN1ObjectIdentifier("1.3.6.1.4.1.18227.2.1");
 }
