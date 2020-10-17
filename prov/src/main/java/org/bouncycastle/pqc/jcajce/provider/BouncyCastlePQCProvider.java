@@ -127,6 +127,11 @@ public class BouncyCastlePQCProvider
         }
     }
 
+    public AsymmetricKeyInfoConverter getKeyInfoConverter(ASN1ObjectIdentifier oid)
+    {
+        return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
+    }
+
     public void addAttributes(String key, Map<String, String> attributeMap)
     {
         for (Iterator it = attributeMap.keySet().iterator(); it.hasNext();)

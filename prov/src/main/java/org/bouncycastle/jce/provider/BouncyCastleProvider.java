@@ -100,7 +100,7 @@ public final class BouncyCastleProvider extends Provider
     // later ones configure it.
     private static final String[] ASYMMETRIC_GENERIC =
     {
-        "X509", "IES"
+        "X509", "IES", "COMPOSITE"
     };
 
     private static final String[] ASYMMETRIC_CIPHERS =
@@ -175,6 +175,7 @@ public final class BouncyCastleProvider extends Provider
         loadAlgorithms(SECURE_RANDOM_PACKAGE, SECURE_RANDOMS);
 
         loadPQCKeys();  // so we can handle certificates containing them.
+
         //
         // X509Store
         //
@@ -303,6 +304,11 @@ public final class BouncyCastleProvider extends Provider
         {
             keyInfoConverters.put(oid, keyInfoConverter);
         }
+    }
+
+    public AsymmetricKeyInfoConverter getKeyInfoConverter(ASN1ObjectIdentifier oid)
+    {
+        return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
     }
 
     public void addAttributes(String key, Map<String, String> attributeMap)
