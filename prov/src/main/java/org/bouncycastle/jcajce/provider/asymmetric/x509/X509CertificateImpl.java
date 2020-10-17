@@ -57,6 +57,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.TBSCertificate;
+import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -579,18 +580,50 @@ abstract class X509CertificateImpl
         InvalidKeyException, NoSuchProviderException, SignatureException
     {
         Signature   signature;
-        String      sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-        
-        try
+
+        if (key instanceof CompositePublicKey)
         {
-            signature = bcHelper.createSignature(sigName);
+            List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(
+                DERBitString.getInstance(c.getSignature()).getBytes());
+
+            for (int i = 0; i != pubKeys.size(); i++)
+            {
+                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
+                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
+
+                try
+                {
+                    signature = bcHelper.createSignature(sigName);
+                }
+                catch (Exception e)
+                {
+                    signature = Signature.getInstance(sigName);
+                }
+
+                checkSignature(
+                    pubKeys.get(i), signature,
+                    sigAlg.getParameters(),
+                    DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+            }
         }
-        catch (Exception e)
+        else
         {
-            signature = Signature.getInstance(sigName);
+            String      sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
+
+            try
+            {
+                signature = bcHelper.createSignature(sigName);
+            }
+            catch (Exception e)
+            {
+                signature = Signature.getInstance(sigName);
+            }
+
+            checkSignature(key, signature,
+                c.getSignatureAlgorithm().getParameters(), this.getSignature());
         }
-        
-        checkSignature(key, signature);
     }
     
     public final void verify(
@@ -611,7 +644,8 @@ abstract class X509CertificateImpl
             signature = Signature.getInstance(sigName);
         }
         
-        checkSignature(key, signature);
+        checkSignature(key, signature,
+            c.getSignatureAlgorithm().getParameters(), this.getSignature());
     }
 
     public final void verify(
@@ -632,12 +666,14 @@ abstract class X509CertificateImpl
             signature = Signature.getInstance(sigName);
         }
 
-        checkSignature(key, signature);
+        checkSignature(key, signature, c.getSignatureAlgorithm().getParameters(), this.getSignature());
     }
 
     private void checkSignature(
         PublicKey key, 
-        Signature signature) 
+        Signature signature,
+        ASN1Encodable params,
+        byte[] sigBytes)
         throws CertificateException, NoSuchAlgorithmException, 
             SignatureException, InvalidKeyException
     {
@@ -645,8 +681,6 @@ abstract class X509CertificateImpl
         {
             throw new CertificateException("signature algorithm in TBS cert not same as outer cert");
         }
-
-        ASN1Encodable params = c.getSignatureAlgorithm().getParameters();
 
         // TODO This should go after the initVerify?
         X509SignatureUtil.setSignatureParameters(signature, params);
@@ -666,7 +700,7 @@ abstract class X509CertificateImpl
             throw new CertificateEncodingException(e.toString());
         }
 
-        if (!signature.verify(this.getSignature()))
+        if (!signature.verify(sigBytes))
         {
             throw new SignatureException("certificate does not verify with supplied key");
         }
