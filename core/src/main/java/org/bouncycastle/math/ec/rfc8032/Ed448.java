@@ -692,6 +692,8 @@ public abstract class Ed448
 
     private static void pointLookup(int[] x, int n, int[] table, PointExt r)
     {
+        // TODO This method is currently hardcoded to 4-bit windows and 8 precomputed points
+
         int w = getWindow4(x, n);
 
         int sign = (w >>> (4 - 1)) ^ 1;
@@ -711,7 +713,7 @@ public abstract class Ed448
         F.cnegate(sign, r.x);
     }
 
-    private static int[] pointPrecomp(PointExt p, int count)
+    private static int[] pointPrecompute(PointExt p, int count)
     {
 //        assert count > 0;
 
@@ -740,7 +742,7 @@ public abstract class Ed448
         return table;
     }
 
-    private static PointExt[] pointPrecompVar(PointExt p, int count)
+    private static PointExt[] pointPrecomputeVar(PointExt p, int count)
     {
 //        assert count > 0;
 
@@ -778,7 +780,7 @@ public abstract class Ed448
             F.copy(B_y, 0, p.y, 0);
             pointExtendXY(p);
 
-            precompBaseTable = pointPrecompVar(p, 1 << (WNAF_WIDTH_BASE - 2));
+            precompBaseTable = pointPrecomputeVar(p, 1 << (WNAF_WIDTH_BASE - 2));
 
             precompBase = F.createTable(PRECOMP_BLOCKS * PRECOMP_POINTS * 2);
 
@@ -1174,17 +1176,17 @@ public abstract class Ed448
 
         // Recode the scalar into signed-digit form
         {
-//            int c1 = Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);     assert c1 == 0;
-            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
-//            int c2 = Nat.shiftDownBit(SCALAR_INTS, n, 1);           assert c2 == (1 << 31);
-            Nat.shiftDownBit(SCALAR_INTS, n, 1);
+            //int c1 =
+            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);      //assert c1 == 0;
+            //int c2 =
+            Nat.shiftDownBit(SCALAR_INTS, n, 1);            //assert c2 == (1 << 31);
         }
 
-        int[] table = pointPrecomp(p, 8);
+        int[] table = pointPrecompute(p, 8);
+        PointExt q = new PointExt();
 
         pointLookup(n, 111, table, r);
 
-        PointExt q = new PointExt();
         for (int w = 110; w >= 0; --w)
         {
             for (int i = 0; i < 4; ++i)
@@ -1206,19 +1208,20 @@ public abstract class Ed448
     {
         precompute();
 
-        pointSetNeutral(r);
-
         int[] n = new int[SCALAR_INTS + 1];
         decodeScalar(k, 0, n);
 
         // Recode the scalar into signed-digit form
         {
             n[SCALAR_INTS] = 4 + Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
-//            int c = Nat.shiftDownBit(n.length, n, 0);                           assert c == (1 << 31);
+            //int c =
             Nat.shiftDownBit(n.length, n, 0);
+            //assert c == (1 << 31);
         }
 
         PointPrecomp p = new PointPrecomp();
+
+        pointSetNeutral(r);
 
         int cOff = PRECOMP_SPACING - 1;
         for (;;)
@@ -1300,7 +1303,7 @@ public abstract class Ed448
         byte[] ws_b = getWnafVar(nb, WNAF_WIDTH_BASE);
         byte[] ws_p = getWnafVar(np, width);
 
-        PointExt[] tp = pointPrecompVar(p, 1 << (width - 2));
+        PointExt[] tp = pointPrecomputeVar(p, 1 << (width - 2));
 
         pointSetNeutral(r);
 
