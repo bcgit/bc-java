@@ -59,14 +59,12 @@ public class COMPOSITE
             throw new InvalidKeyException("key not recognized");
         }
 
-        @Override
         public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
             throws IOException
         {
             return baseConverter.generatePrivate(keyInfo);
         }
 
-        @Override
         public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
             throws IOException
         {
@@ -84,7 +82,6 @@ public class COMPOSITE
             this.provider = provider;
         }
 
-        @Override
         public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
             throws IOException
         {
@@ -102,7 +99,6 @@ public class COMPOSITE
             return new CompositePrivateKey(privKeys);
         }
 
-        @Override
         public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
             throws IOException
         {
