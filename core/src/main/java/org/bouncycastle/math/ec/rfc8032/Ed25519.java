@@ -767,15 +767,17 @@ public abstract class Ed25519
 
     private static void pointLookup(int[] x, int n, int[] table, PointExt r)
     {
+        // TODO This method is currently hardcoded to 4-bit windows and 8 precomputed points
+
         int w = getWindow4(x, n);
 
-        int sign = (w >>> (PRECOMP_TEETH - 1)) ^ 1;
-        int abs = (w ^ -sign) & PRECOMP_MASK;
+        int sign = (w >>> (4 - 1)) ^ 1;
+        int abs = (w ^ -sign) & 7;
 
 //        assert sign == 0 || sign == 1;
-//        assert 0 <= abs && abs < PRECOMP_POINTS;
+//        assert 0 <= abs && abs < 8;
 
-        for (int i = 0, off = 0; i < PRECOMP_POINTS; ++i)
+        for (int i = 0, off = 0; i < 8; ++i)
         {
             int cond = ((i ^ abs) - 1) >> 31;
             F.cmov(cond, table, off, r.x, 0);       off += F.SIZE;
@@ -798,7 +800,7 @@ public abstract class Ed25519
         F.copy(table, off, r.t, 0);
     }
 
-    private static int[] pointPrecomp(PointAffine p, int count)
+    private static int[] pointPrecompute(PointAffine p, int count)
     {
 //        assert count > 0;
 
@@ -828,7 +830,7 @@ public abstract class Ed25519
         return table;
     }
 
-    private static PointExt[] pointPrecompVar(PointExt p, int count)
+    private static PointExt[] pointPrecomputeVar(PointExt p, int count)
     {
 //        assert count > 0;
 
@@ -877,7 +879,7 @@ public abstract class Ed25519
                 F.copy(B_y, 0, b.y, 0);
                 pointExtendXY(b);
 
-                precompBaseTable = pointPrecompVar(b, 1 << (WNAF_WIDTH_BASE - 2));
+                precompBaseTable = pointPrecomputeVar(b, 1 << (WNAF_WIDTH_BASE - 2));
             }
 
             PointAccum p = new PointAccum();
@@ -1148,20 +1150,21 @@ public abstract class Ed25519
 
         Nat.shiftDownBits(SCALAR_INTS, n, 3, 1);
 
-//        int c1 = Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);     assert c1 == 0;
-        Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
-//        int c2 = Nat.shiftDownBit(SCALAR_INTS, n, 0);           assert c2 == (1 << 31);
-        Nat.shiftDownBit(SCALAR_INTS, n, 0);
+        // Recode the scalar into signed-digit form
+        {
+            //int c1 =
+            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);      //assert c1 == 0;
+            //int c2 =           
+            Nat.shiftDownBit(SCALAR_INTS, n, 0);            //assert c2 == (1 << 31);
+        }
 
 //        assert 1 == n[SCALAR_INTS - 1] >>> 28;
 
-        pointCopy(p, r);
-
-        int[] table = pointPrecomp(p, 8);
-
+        int[] table = pointPrecompute(p, 8);
         PointExt q = new PointExt();
 
         // Replace first 4 doublings (2^4 * P) with 1 addition (P + 15 * P)
+        pointCopy(p, r);
         pointLookup(table, 7, q);
         pointAdd(q, r);
 
@@ -1188,17 +1191,15 @@ public abstract class Ed25519
     {
         precompute();
 
-        pointSetNeutral(r);
-
         int[] n = new int[SCALAR_INTS];
         decodeScalar(k, 0, n);
 
         // Recode the scalar into signed-digit form, then group comb bits in each block
         {
-//            int c1 = Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);     assert c1 == 0;
-            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
-//            int c2 = Nat.shiftDownBit(SCALAR_INTS, n, 1);           assert c2 == (1 << 31);
-            Nat.shiftDownBit(SCALAR_INTS, n, 1);
+            //int c1 =
+            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);      //assert c1 == 0;
+            //int c2 =
+            Nat.shiftDownBit(SCALAR_INTS, n, 1);            //assert c2 == (1 << 31);
 
             for (int i = 0; i < SCALAR_INTS; ++i)
             {
@@ -1207,6 +1208,8 @@ public abstract class Ed25519
         }
 
         PointPrecomp p = new PointPrecomp();
+
+        pointSetNeutral(r);
 
         int cOff = (PRECOMP_SPACING - 1) * PRECOMP_TEETH;
         for (;;)
@@ -1279,7 +1282,7 @@ public abstract class Ed25519
         byte[] ws_b = getWnafVar(nb, WNAF_WIDTH_BASE);
         byte[] ws_p = getWnafVar(np, width);
 
-        PointExt[] tp = pointPrecompVar(pointCopy(p), 1 << (width - 2));
+        PointExt[] tp = pointPrecomputeVar(pointCopy(p), 1 << (width - 2));
 
         pointSetNeutral(r);
 
