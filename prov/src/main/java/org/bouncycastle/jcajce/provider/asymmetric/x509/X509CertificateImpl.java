@@ -662,8 +662,13 @@ abstract class X509CertificateImpl
             ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
             ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
 
+            boolean success = false;
             for (int i = 0; i != pubKeys.size(); i++)
             {
+                if (pubKeys.get(i) == null)
+                {
+                    continue;
+                }
                 AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
                 String sigName = X509SignatureUtil.getSignatureName(sigAlg);
 
@@ -677,6 +682,7 @@ abstract class X509CertificateImpl
                         pubKeys.get(i), signature,
                         sigAlg.getParameters(),
                         DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                    success = true;
                 }
                 catch (SignatureException e)
                 {
@@ -687,6 +693,11 @@ abstract class X509CertificateImpl
                 {
                     throw sigExc;
                 }
+            }
+
+            if (!success)
+            {
+                throw new InvalidKeyException("no matching key found");
             }
         }
         else if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))

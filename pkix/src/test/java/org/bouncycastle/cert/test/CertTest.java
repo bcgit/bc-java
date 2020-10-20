@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -2860,10 +2861,46 @@ public class CertTest
     public void checkCRLCompositeCreation()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", BC);
+        //
+        // set up the keys
+        //
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpg.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        PrivateKey ecPriv = ecKp.getPrivate();
+        PublicKey ecPub = ecKp.getPublic();
+
+        KeyPairGenerator lmsKpg = KeyPairGenerator.getInstance("LMS", "BCPQC");
+
+        lmsKpg.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+
+        KeyPair lmsKp = lmsKpg.generateKeyPair();
+
+        PrivateKey lmsPriv = lmsKp.getPrivate();
+        PublicKey lmsPub = lmsKp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
+            .add("SHA256withECDSA")
+            .add("LMS")
+            .build();
+        CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
+        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).build(compPrivKey);
 
         Date now = new Date();
-        KeyPair pair = kpGen.generateKeyPair();
+
         X509v2CRLBuilder crlGen = new JcaX509v2CRLBuilder(new X500Principal("CN=Test CA"), now);
 
         crlGen.setNextUpdate(new Date(now.getTime() + 100000));
@@ -2889,17 +2926,27 @@ public class CertTest
 
         JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
-        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(pair.getPublic()));
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(ecKp.getPublic()));
 
-        ContentSigner signer = new JcaContentSignerBuilder(
-            "RSAPSS",
-            new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 20, 1))
-            .setProvider(BC).build(pair.getPrivate());
-        X509CRLHolder crlHolder = crlGen.build(signer);
+        X509CRLHolder crlHolder = crlGen.build(sigGen);
 
         X509CRL crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
 
-        crl.verify(pair.getPublic(), BC);
+        // comp test
+        crl.verify(compPub);
+
+        // null comp test
+        try
+        {
+            crl.verify(new CompositePublicKey(null, null));
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue(e.getMessage().equals("no matching key found"));
+        }
+        
+        // single key test
+        crl.verify(ecPub, BC);
 
         if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
         {
@@ -3795,7 +3842,7 @@ public class CertTest
         try
         {
             vProv = new JcaContentVerifierProviderBuilder()
-                        .build(new CompositePublicKey(null, null));
+                .build(new CompositePublicKey(null, null));
 
             certHldr.isSignatureValid(vProv);
         }
@@ -3820,6 +3867,16 @@ public class CertTest
         // check verifies in general
         //
         cert.verify(compPub);
+
+        // null comp test
+        try
+        {
+            cert.verify(new CompositePublicKey(null, null));
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue(e.getMessage(), e.getMessage().equals("no matching key found"));
+        }
 
         cert.verify(ecPub);      // ec key only
 
