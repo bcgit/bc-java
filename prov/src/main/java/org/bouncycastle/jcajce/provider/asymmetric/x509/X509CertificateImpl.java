@@ -598,7 +598,7 @@ abstract class X509CertificateImpl
     
     public final void verify(
         PublicKey   key,
-        String      sigProvider)
+        final String      sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException, SignatureException
     {
@@ -621,7 +621,7 @@ abstract class X509CertificateImpl
 
     public final void verify(
         PublicKey   key,
-        Provider sigProvider)
+        final Provider sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException
     {
