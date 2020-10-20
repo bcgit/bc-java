@@ -43,7 +43,7 @@ public class BcTlsRSAPSSSigner
             || algorithm.getSignature() != signatureAlgorithm
             || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
         short hash = SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm);
