@@ -608,13 +608,28 @@ class ProvTlsClient
             BCX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
             if (null == x509Key)
             {
+                if (LOG.isLoggable(Level.FINER))
+                {
+                    LOG.finer("Client (1.2) found no credentials for signature scheme '" + signatureSchemeInfo
+                        + "' (keyType '" + keyType + "')");
+                }
+
                 keyManagerMissCache.add(keyType);
                 continue;
+            }
+
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("Client (1.2) selected credentials for signature scheme '" + signatureSchemeInfo
+                    + "' (keyType '" + keyType + "'), with private key algorithm '"
+                    + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
             }
 
             return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key,
                 signatureSchemeInfo.getSignatureAndHashAlgorithm());
         }
+
+        LOG.fine("Client (1.2) did not select any credentials");
 
         return null;
     }
@@ -641,13 +656,28 @@ class ProvTlsClient
             BCX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
             if (null == x509Key)
             {
+                if (LOG.isLoggable(Level.FINER))
+                {
+                    LOG.finer("Client (1.3) found no credentials for signature scheme '" + signatureSchemeInfo
+                        + "' (keyType '" + keyType + "')");
+                }
+
                 keyManagerMissCache.add(keyType);
                 continue;
+            }
+
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("Client (1.3) selected credentials for signature scheme '" + signatureSchemeInfo
+                    + "' (keyType '" + keyType + "'), with private key algorithm '"
+                    + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
             }
 
             return JsseUtils.createCredentialedSigner13(context, getCrypto(), x509Key,
                 signatureSchemeInfo.getSignatureAndHashAlgorithm(), certificateRequestContext);
         }
+
+        LOG.fine("Client (1.3) did not select any credentials");
 
         return null;
     }
