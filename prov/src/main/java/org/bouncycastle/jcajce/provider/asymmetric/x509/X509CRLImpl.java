@@ -177,7 +177,6 @@ abstract class X509CRLImpl
     {
         doVerify(key, new SignatureCreator()
         {
-            @Override
             public Signature createSignature(String sigName)
                 throws NoSuchAlgorithmException, NoSuchProviderException
             {
@@ -193,13 +192,12 @@ abstract class X509CRLImpl
         });
     }
 
-    public void verify(PublicKey key, String sigProvider)
+    public void verify(PublicKey key, final String sigProvider)
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException, SignatureException
     {
         doVerify(key, new SignatureCreator()
         {
-            @Override
             public Signature createSignature(String sigName)
                 throws NoSuchAlgorithmException, NoSuchProviderException
             {
@@ -215,7 +213,7 @@ abstract class X509CRLImpl
         });
     }
 
-    public void verify(PublicKey key, Provider sigProvider)
+    public void verify(PublicKey key, final Provider sigProvider)
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException
     {
@@ -223,7 +221,6 @@ abstract class X509CRLImpl
         {
             doVerify(key, new SignatureCreator()
             {
-                @Override
                 public Signature createSignature(String sigName)
                     throws NoSuchAlgorithmException, NoSuchProviderException
                 {
