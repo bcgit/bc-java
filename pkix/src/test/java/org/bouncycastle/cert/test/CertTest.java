@@ -2857,6 +2857,98 @@ public class CertTest
         }
     }
 
+    public void checkCRLCompositeCreation()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        Date now = new Date();
+        KeyPair pair = kpGen.generateKeyPair();
+        X509v2CRLBuilder crlGen = new JcaX509v2CRLBuilder(new X500Principal("CN=Test CA"), now);
+
+        crlGen.setNextUpdate(new Date(now.getTime() + 100000));
+
+        Vector extOids = new Vector();
+        Vector extValues = new Vector();
+
+        CRLReason crlReason = CRLReason.lookup(CRLReason.privilegeWithdrawn);
+
+        try
+        {
+            extOids.addElement(Extension.reasonCode);
+            extValues.addElement(new Extension(Extension.reasonCode, false, new DEROctetString(crlReason.getEncoded())));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException("error encoding reason: " + e);
+        }
+
+        Extensions entryExtensions = generateExtensions(extOids, extValues);
+
+        crlGen.addCRLEntry(BigInteger.ONE, now, entryExtensions);
+
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(pair.getPublic()));
+
+        ContentSigner signer = new JcaContentSignerBuilder(
+            "RSAPSS",
+            new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 20, 1))
+            .setProvider(BC).build(pair.getPrivate());
+        X509CRLHolder crlHolder = crlGen.build(signer);
+
+        X509CRL crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
+
+        crl.verify(pair.getPublic(), BC);
+
+        if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
+        {
+            fail("failed CRL issuer test");
+        }
+
+        byte[] authExt = crl.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+
+        if (authExt == null)
+        {
+            fail("failed to find CRL extension");
+        }
+
+        AuthorityKeyIdentifier authId = AuthorityKeyIdentifier.getInstance(ASN1OctetString.getInstance(authExt).getOctets());
+
+        X509CRLEntry entry = crl.getRevokedCertificate(BigInteger.ONE);
+
+        if (entry == null)
+        {
+            fail("failed to find CRL entry");
+        }
+
+        if (!entry.getSerialNumber().equals(BigInteger.ONE))
+        {
+            fail("CRL cert serial number does not match");
+        }
+
+        if (!entry.hasExtensions())
+        {
+            fail("CRL entry extension not found");
+        }
+
+        byte[] ext = entry.getExtensionValue(Extension.reasonCode.getId());
+
+        if (ext != null)
+        {
+            ASN1Enumerated reasonCode = (ASN1Enumerated)fromExtensionValue(ext);
+
+            if (reasonCode.intValueExact() != CRLReason.privilegeWithdrawn)
+            {
+                fail("CRL entry reasonCode wrong");
+            }
+        }
+        else
+        {
+            fail("CRL entry reasonCode not found");
+        }
+    }
+
     /*
      * we generate a self signed certificate for the sake of testing - GOST3410
      */
@@ -3661,7 +3753,7 @@ public class CertTest
 
         PrivateKey lmsPriv = lmsKp.getPrivate();
         PublicKey lmsPub = lmsKp.getPublic();
-        
+
         //
         // distinguished name table.
         //
@@ -3687,7 +3779,40 @@ public class CertTest
             new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), issuer,
             compPub);
 
-        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+        X509CertificateHolder certHldr = certGen.build(sigGen);
+
+        ContentVerifierProvider vProv = new JcaContentVerifierProviderBuilder()
+            .build(compPub);
+
+        isTrue("multi failed", certHldr.isSignatureValid(vProv));
+
+        vProv = new JcaContentVerifierProviderBuilder()
+            .build(new CompositePublicKey(ecPub, null));
+
+        isTrue("multi failed with null", certHldr.isSignatureValid(vProv));
+
+
+        try
+        {
+            vProv = new JcaContentVerifierProviderBuilder()
+                        .build(new CompositePublicKey(null, null));
+
+            certHldr.isSignatureValid(vProv);
+        }
+        catch (CertException e)
+        {
+            isTrue(e.getCause().getMessage().equals("no matching signature found in composite"));
+        }
+
+        vProv = new JcaContentVerifierProviderBuilder().build(ecPub);
+
+        isTrue("ec failed", certHldr.isSignatureValid(vProv));
+
+        vProv = new JcaContentVerifierProviderBuilder().build(lmsPub);
+
+        isTrue("lms failed", certHldr.isSignatureValid(vProv));
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certHldr);
 
         cert.checkValidity(new Date());
 
@@ -3695,6 +3820,117 @@ public class CertTest
         // check verifies in general
         //
         cert.verify(compPub);
+
+        cert.verify(ecPub);      // ec key only
+
+        cert.verify(lmsPub);     // lms key only
+
+        cert.verify(ecPub, "BC");      // ec key only
+
+        cert.verify(lmsPub, "BCPQC");     // lms key only
+
+        cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
+
+        cert.verify(lmsPub, new BouncyCastlePQCProvider());     // lms key only
+
+        //
+        // check verifies with contained key
+        //
+        cert.verify(cert.getPublicKey());
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        org.bouncycastle.asn1.x509.Certificate crt = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
+
+        isTrue(MiscObjectIdentifiers.id_alg_composite.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
+        isTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
+
+        KeyFactory kFact = KeyFactory.getInstance("Composite", "BC");
+
+        CompositePublicKey pubKey = (CompositePublicKey)kFact.generatePublic(new X509EncodedKeySpec(compPub.getEncoded()));
+        CompositePrivateKey privKey = (CompositePrivateKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(compPrivKey.getEncoded()));
+
+        isTrue(pubKey.equals(compPub));
+        isTrue(privKey.equals(compPrivKey));
+    }
+
+    private void checkCompositeCertificateVerify()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpg.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        PrivateKey ecPriv = ecKp.getPrivate();
+        PublicKey ecPub = ecKp.getPublic();
+
+        KeyPairGenerator lmsKpg = KeyPairGenerator.getInstance("LMS", "BCPQC");
+
+        lmsKpg.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+
+        KeyPair lmsKp = lmsKpg.generateKeyPair();
+
+        PrivateKey lmsPriv = lmsKp.getPrivate();
+        PublicKey lmsPub = lmsKp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        X500Name issuer = builder.build();
+
+        //
+        // create the certificate - version 3
+        //
+        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
+            .add("SHA256withECDSA")
+            .add("LMS")
+            .build();
+        CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
+        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").build(ecPriv);
+
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            issuer,
+            BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), issuer,
+            compPub);
+
+        X509CertificateHolder ecCertHldr = certGen.build(sigGen);
+
+        ContentVerifierProvider vProv = new JcaContentVerifierProviderBuilder()
+            .build(compPub);
+
+        isTrue("ec multi failed", ecCertHldr.isSignatureValid(vProv));
+
+        vProv = new JcaContentVerifierProviderBuilder().build(ecPub);
+
+        isTrue("ec failed", ecCertHldr.isSignatureValid(vProv));
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(ecCertHldr);
+
+        cert.checkValidity(new Date());
+
+        //
+        // check verifies in general
+        //
+        cert.verify(compPub);
+
+        cert.verify(ecPub);      // ec key only
+
+        cert.verify(ecPub, "BC");      // ec key only
+
+        cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
 
         //
         // check verifies with contained key
@@ -4496,6 +4732,7 @@ public class CertTest
         checkSm3WithSm2Creation();
 
         checkCreationComposite();
+        checkCompositeCertificateVerify();
 
         createECCert("SHA1withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA1);
         createECCert("SHA224withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA224);
@@ -4513,6 +4750,7 @@ public class CertTest
         checkCRLCreation3();
         checkCRLCreation4();
         checkCRLCreation5();
+        checkCRLCompositeCreation();
 
         pemTest();
         pkcs7Test();
