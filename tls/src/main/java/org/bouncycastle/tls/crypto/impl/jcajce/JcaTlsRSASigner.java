@@ -56,7 +56,7 @@ public class JcaTlsRSASigner
             {
                 if (algorithm.getSignature() != SignatureAlgorithm.rsa)
                 {
-                    throw new IllegalStateException();
+                    throw new IllegalStateException("Invalid algorithm: " + algorithm);
                 }
 
                 /*
