@@ -30,7 +30,7 @@ public class BcTlsEd25519Verifier
             || algorithm.getSignature() != SignatureAlgorithm.ed25519
             || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
         Ed25519Signer verifier = new Ed25519Signer();

@@ -138,6 +138,6 @@ public class SignatureAndHashAlgorithm
 
     public String toString()
     {
-        return "{" + HashAlgorithm.getName(hash) + "," + SignatureAlgorithm.getName(signature) + "}";
+        return "{" + HashAlgorithm.getText(hash) + "," + SignatureAlgorithm.getText(signature) + "}";
     }
 }
