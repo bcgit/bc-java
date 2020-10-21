@@ -23,18 +23,23 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLNumber;
 import org.bouncycastle.asn1.x509.CertificateList;
@@ -43,6 +48,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.TBSCertList;
+import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
@@ -52,7 +58,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 /**
  * The following extensions are listed in RFC 2459 as relevant to CRLs
- *
+ * <p>
  * Authority Key Identifier
  * Issuer Alternative Name
  * CRL Number
@@ -169,80 +175,208 @@ abstract class X509CRLImpl
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException, SignatureException
     {
-        Signature sig;
-
-        try
+        doVerify(key, new SignatureCreator()
         {
-            sig = bcHelper.createSignature(getSigAlgName());
-        }
-        catch (Exception e)
-        {
-            sig = Signature.getInstance(getSigAlgName());
-        }
-
-        doVerify(key, sig);
+            public Signature createSignature(String sigName)
+                throws NoSuchAlgorithmException, NoSuchProviderException
+            {
+                try
+                {
+                    return bcHelper.createSignature(sigName);
+                }
+                catch (Exception e)
+                {
+                    return Signature.getInstance(sigName);
+                }
+            }
+        });
     }
 
-    public void verify(PublicKey key, String sigProvider)
+    public void verify(PublicKey key, final String sigProvider)
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException, SignatureException
     {
-        Signature sig;
-
-        if (sigProvider != null)
+        doVerify(key, new SignatureCreator()
         {
-            sig = Signature.getInstance(getSigAlgName(), sigProvider);
-        }
-        else
-        {
-            sig = Signature.getInstance(getSigAlgName());
-        }
-
-        doVerify(key, sig);
+            public Signature createSignature(String sigName)
+                throws NoSuchAlgorithmException, NoSuchProviderException
+            {
+                if (sigProvider != null)
+                {
+                    return Signature.getInstance(sigName, sigProvider);
+                }
+                else
+                {
+                    return Signature.getInstance(sigName);
+                }
+            }
+        });
     }
 
-    public void verify(PublicKey key, Provider sigProvider)
+    public void verify(PublicKey key, final Provider sigProvider)
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException
     {
-        Signature sig;
-
-        if (sigProvider != null)
+        try
         {
-            sig = Signature.getInstance(getSigAlgName(), sigProvider);
+            doVerify(key, new SignatureCreator()
+            {
+                public Signature createSignature(String sigName)
+                    throws NoSuchAlgorithmException, NoSuchProviderException
+                {
+                    if (sigProvider != null)
+                    {
+                        return Signature.getInstance(getSigAlgName(), sigProvider);
+                    }
+                    else
+                    {
+                        return Signature.getInstance(getSigAlgName());
+                    }
+                }
+            });
         }
-        else
+        catch (NoSuchProviderException e)
         {
-            sig = Signature.getInstance(getSigAlgName());
+            // can't happen, but just in case
+            throw new NoSuchAlgorithmException("provider issue: " + e.getMessage());
         }
-
-        doVerify(key, sig);
     }
 
-    private void doVerify(PublicKey key, Signature sig)
+    private void doVerify(PublicKey key, SignatureCreator sigCreator)
         throws CRLException, NoSuchAlgorithmException,
-        InvalidKeyException, SignatureException
+        InvalidKeyException, SignatureException, NoSuchProviderException
     {
         if (!c.getSignatureAlgorithm().equals(c.getTBSCertList().getSignature()))
         {
             throw new CRLException("Signature algorithm on CertificateList does not match TBSCertList.");
         }
 
+        if (key instanceof CompositePublicKey && X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
+        {
+            List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
+
+            boolean success = false;
+            for (int i = 0; i != pubKeys.size(); i++)
+            {
+                if (pubKeys.get(i) == null)
+                {
+                    continue;
+                }
+
+                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
+                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
+
+                Signature signature = sigCreator.createSignature(sigName);
+
+                SignatureException sigExc = null;
+
+                try
+                {
+                    checkSignature(
+                        pubKeys.get(i), signature,
+                        sigAlg.getParameters(),
+                        DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                    success = true;
+                }
+                catch (SignatureException e)
+                {
+                    sigExc = e;
+                }
+
+                if (sigExc != null)
+                {
+                    throw sigExc;
+                }
+            }
+
+            if (!success)
+            {
+                throw new InvalidKeyException("no matching key found");
+            }
+        }
+        else if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
+        {
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
+
+            boolean success = false;
+            for (int i = 0; i != sigSeq.size(); i++)
+            {
+                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
+                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
+
+                SignatureException sigExc = null;
+
+                try
+                {
+                    Signature signature = sigCreator.createSignature(sigName);
+
+                    checkSignature(
+                        key, signature,
+                        sigAlg.getParameters(),
+                        DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+
+                    success = true;
+                }
+                catch (InvalidKeyException e)
+                {
+                    // ignore
+                }
+                catch (NoSuchAlgorithmException e)
+                {
+                    // ignore
+                }
+                catch (SignatureException e)
+                {
+                    sigExc = e;
+                }
+
+                if (sigExc != null)
+                {
+                    throw sigExc;
+                }
+            }
+
+            if (!success)
+            {
+                throw new InvalidKeyException("no matching key found");
+            }
+        }
+        else
+        {
+            Signature sig = sigCreator.createSignature(getSigAlgName());
+
+            if (sigAlgParams == null)
+            {
+                checkSignature(key, sig, null, this.getSignature());
+            }
+            else
+            {
+                try
+                {
+                    checkSignature(key, sig, ASN1Primitive.fromByteArray(sigAlgParams), this.getSignature());
+                }
+                catch (IOException e)
+                {
+                    throw new SignatureException("cannot decode signature parameters: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void checkSignature(PublicKey key, Signature sig, ASN1Encodable sigAlgParams, byte[] encSig)
+        throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CRLException
+    {
         if (sigAlgParams != null)
         {
-            try
-            {
-                // needs to be called before initVerify().
-                X509SignatureUtil.setSignatureParameters(sig, ASN1Primitive.fromByteArray(sigAlgParams));
-            }
-            catch (IOException e)
-            {
-                throw new SignatureException("cannot decode signature parameters: " + e.getMessage());
-            }
+            // needs to be called before initVerify().
+            X509SignatureUtil.setSignatureParameters(sig, sigAlgParams);
         }
 
         sig.initVerify(key);
-        
+
         try
         {
             OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(sig), 512);
@@ -256,7 +390,7 @@ abstract class X509CRLImpl
             throw new CRLException(e.toString());
         }
 
-        if (!sig.verify(this.getSignature()))
+        if (!sig.verify(encSig))
         {
             throw new SignatureException("CRL does not verify with supplied public key.");
         }
@@ -298,7 +432,7 @@ abstract class X509CRLImpl
 
         return null;
     }
- 
+
     private Set loadCRLEntries()
     {
         Set entrySet = new HashSet();
@@ -449,7 +583,7 @@ abstract class X509CRLImpl
 
             while (e.hasMoreElements())
             {
-                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) e.nextElement();
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
                 Extension ext = extensions.getExtension(oid);
 
                 if (ext.getExtnValue() != null)
@@ -472,14 +606,14 @@ abstract class X509CRLImpl
                             buf.append(
                                 "Base CRL: "
                                     + new CRLNumber(ASN1Integer.getInstance(
-                                        dIn.readObject()).getPositiveValue()))
+                                    dIn.readObject()).getPositiveValue()))
                                 .append(nl);
                         }
                         else if (oid
                             .equals(Extension.issuingDistributionPoint))
                         {
                             buf.append(
-                               IssuingDistributionPoint.getInstance(dIn.readObject())).append(nl);
+                                IssuingDistributionPoint.getInstance(dIn.readObject())).append(nl);
                         }
                         else if (oid
                             .equals(Extension.cRLDistributionPoints))
@@ -565,7 +699,7 @@ abstract class X509CRLImpl
                 {
                     X500Name issuer;
 
-                    if (cert instanceof  X509Certificate)
+                    if (cert instanceof X509Certificate)
                     {
                         issuer = X500Name.getInstance(((X509Certificate)cert).getIssuerX500Principal().getEncoded());
                     }

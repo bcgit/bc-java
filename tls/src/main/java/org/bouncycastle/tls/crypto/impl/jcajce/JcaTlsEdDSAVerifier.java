@@ -47,7 +47,7 @@ public class JcaTlsEdDSAVerifier
             || algorithm.getSignature() != algorithmType
             || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
         return crypto.createStreamVerifier(algorithmName, null, signature.getSignature(), publicKey);

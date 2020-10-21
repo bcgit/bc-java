@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
@@ -40,6 +41,11 @@ class X509SignatureUtil
     }
 
     private static final ASN1Null       derNull = DERNull.INSTANCE;
+
+    static boolean isCompositeAlgorithm(AlgorithmIdentifier algorithmIdentifier)
+    {
+        return MiscObjectIdentifiers.id_alg_composite.equals(algorithmIdentifier.getAlgorithm());
+    }
 
     static void setSignatureParameters(
         Signature signature,

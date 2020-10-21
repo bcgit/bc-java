@@ -29,7 +29,7 @@ public class BcTlsEd448Signer
             || algorithm.getSignature() != SignatureAlgorithm.ed448
             || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
         Ed448Signer signer = new Ed448Signer(TlsUtils.EMPTY_BYTES);
