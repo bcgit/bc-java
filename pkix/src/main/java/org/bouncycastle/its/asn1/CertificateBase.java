@@ -19,6 +19,10 @@ import org.bouncycastle.asn1.DERSequence;
 public class CertificateBase
     extends ASN1Object
 {
+    private CertificateType type;
+    private byte[] version;
+
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
