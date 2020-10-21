@@ -141,7 +141,6 @@ public class BcKeyStoreSpi
 
             byte[] salt = new byte[KEY_SALT_SIZE];
 
-            random.setSeed(System.currentTimeMillis());
             random.nextBytes(salt);
 
             int iterationCount = MIN_ITERATIONS + (random.nextInt() & 0x3ff);
