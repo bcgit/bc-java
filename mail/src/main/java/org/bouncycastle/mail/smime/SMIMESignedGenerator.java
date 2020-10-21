@@ -158,14 +158,12 @@ public class SMIMESignedGenerator
     private final String defaultContentTransferEncoding;
     private final Map    micAlgs;
 
-    private List                _certStores = new ArrayList();
     private List                certStores = new ArrayList();
     private List                crlStores = new ArrayList();
     private List                attrCertStores = new ArrayList();
     private List                signerInfoGens = new ArrayList();
     private List                _signers = new ArrayList();
     private List                _oldSigners = new ArrayList();
-    private List                _attributeCerts = new ArrayList();
     private Map                 _digests = new HashMap();
 
     /**

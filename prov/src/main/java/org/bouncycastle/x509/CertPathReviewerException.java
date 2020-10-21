@@ -33,7 +33,7 @@ public class CertPathReviewerException extends LocalizedException
         {
             throw new IllegalArgumentException();
         }
-        if (index < -1 || (certPath != null && index >= certPath.getCertificates().size()))
+        if (index < -1 || index >= certPath.getCertificates().size())
         {
             throw new IndexOutOfBoundsException();
         }
@@ -51,7 +51,7 @@ public class CertPathReviewerException extends LocalizedException
         {
             throw new IllegalArgumentException();
         }
-        if (index < -1 || (certPath != null && index >= certPath.getCertificates().size()))
+        if (index < -1 || index >= certPath.getCertificates().size())
         {
             throw new IndexOutOfBoundsException();
         }
