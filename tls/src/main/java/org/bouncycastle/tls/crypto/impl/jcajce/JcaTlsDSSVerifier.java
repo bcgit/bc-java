@@ -48,7 +48,7 @@ public abstract class JcaTlsDSSVerifier
         SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
         if (algorithm != null && algorithm.getSignature() != algorithmType)
         {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
         try

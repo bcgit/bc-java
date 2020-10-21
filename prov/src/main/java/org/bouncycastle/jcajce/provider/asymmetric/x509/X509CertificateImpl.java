@@ -579,94 +579,207 @@ abstract class X509CertificateImpl
         throws CertificateException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException, SignatureException
     {
-        Signature   signature;
-
-        if (key instanceof CompositePublicKey)
+        doVerify(key, new SignatureCreator()
         {
-            List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(
-                DERBitString.getInstance(c.getSignature()).getBytes());
-
-            for (int i = 0; i != pubKeys.size(); i++)
+            public Signature createSignature(String sigName)
+                throws NoSuchAlgorithmException
             {
-                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
-                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
-
                 try
                 {
-                    signature = bcHelper.createSignature(sigName);
+                    return bcHelper.createSignature(sigName);
                 }
                 catch (Exception e)
                 {
-                    signature = Signature.getInstance(sigName);
+                    return Signature.getInstance(sigName);
                 }
-
-                checkSignature(
-                    pubKeys.get(i), signature,
-                    sigAlg.getParameters(),
-                    DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
             }
-        }
-        else
-        {
-            String      sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-
-            try
-            {
-                signature = bcHelper.createSignature(sigName);
-            }
-            catch (Exception e)
-            {
-                signature = Signature.getInstance(sigName);
-            }
-
-            checkSignature(key, signature,
-                c.getSignatureAlgorithm().getParameters(), this.getSignature());
-        }
+        });
     }
     
     public final void verify(
         PublicKey   key,
-        String      sigProvider)
+        final String      sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException, SignatureException
     {
-        String    sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-        Signature signature;
-
-        if (sigProvider != null)
+        doVerify(key, new SignatureCreator()
         {
-            signature = Signature.getInstance(sigName, sigProvider);
-        }
-        else
-        {
-            signature = Signature.getInstance(sigName);
-        }
-        
-        checkSignature(key, signature,
-            c.getSignatureAlgorithm().getParameters(), this.getSignature());
+            public Signature createSignature(String sigName)
+                throws NoSuchAlgorithmException, NoSuchProviderException
+            {
+                if (sigProvider != null)
+                {
+                    return Signature.getInstance(sigName, sigProvider);
+                }
+                else
+                {
+                    return Signature.getInstance(sigName);
+                }
+            }
+        });
     }
 
     public final void verify(
         PublicKey   key,
-        Provider sigProvider)
+        final Provider sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException
     {
-        String    sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-        Signature signature;
-
-        if (sigProvider != null)
+        try
         {
-            signature = Signature.getInstance(sigName, sigProvider);
+            doVerify(key, new SignatureCreator()
+            {
+                public Signature createSignature(String sigName)
+                    throws NoSuchAlgorithmException
+                {
+                    if (sigProvider != null)
+                    {
+                        return Signature.getInstance(sigName, sigProvider);
+                    }
+                    else
+                    {
+                        return Signature.getInstance(sigName);
+                    }
+                }
+            });
+        }
+        catch (NoSuchProviderException e)
+        {
+            // can't happen, but just in case
+            throw new NoSuchAlgorithmException("provider issue: " + e.getMessage());
+        }
+    }
+
+    private void doVerify(
+        PublicKey key,
+        SignatureCreator signatureCreator)
+        throws CertificateException, NoSuchAlgorithmException,
+        InvalidKeyException, SignatureException, NoSuchProviderException
+    {
+        if (key instanceof CompositePublicKey && X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
+        {
+            List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
+
+            boolean success = false;
+            for (int i = 0; i != pubKeys.size(); i++)
+            {
+                if (pubKeys.get(i) == null)
+                {
+                    continue;
+                }
+                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
+                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
+
+                Signature signature = signatureCreator.createSignature(sigName);
+
+                SignatureException sigExc = null;
+
+                try
+                {
+                    checkSignature(
+                        pubKeys.get(i), signature,
+                        sigAlg.getParameters(),
+                        DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                    success = true;
+                }
+                catch (SignatureException e)
+                {
+                    sigExc = e;
+                }
+
+                if (sigExc != null)
+                {
+                    throw sigExc;
+                }
+            }
+
+            if (!success)
+            {
+                throw new InvalidKeyException("no matching key found");
+            }
+        }
+        else if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
+        {
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
+
+            boolean success = false;
+            for (int i = 0; i != sigSeq.size(); i++)
+            {
+                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
+                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
+
+                SignatureException sigExc = null;
+
+                try
+                {
+                    Signature signature = signatureCreator.createSignature(sigName);
+
+                    checkSignature(
+                        key, signature,
+                        sigAlg.getParameters(),
+                        DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+
+                    success = true;
+                }
+                catch (InvalidKeyException e)
+                {
+                    // ignore
+                }
+                catch (NoSuchAlgorithmException e)
+                {
+                    // ignore
+                }
+                catch (SignatureException e)
+                {
+                    sigExc = e;
+                }
+
+                if (sigExc != null)
+                {
+                    throw sigExc;
+                }
+            }
+
+            if (!success)
+            {
+                throw new InvalidKeyException("no matching key found");
+            }
         }
         else
         {
-            signature = Signature.getInstance(sigName);
-        }
+            String sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
 
-        checkSignature(key, signature, c.getSignatureAlgorithm().getParameters(), this.getSignature());
+            Signature signature = signatureCreator.createSignature(sigName);
+
+            if (key instanceof CompositePublicKey)
+            {
+                List<PublicKey> keys = ((CompositePublicKey)key).getPublicKeys();
+
+                for (int i = 0; i != keys.size(); i++)
+                {
+                    try
+                    {
+                        checkSignature(keys.get(i), signature,
+                            c.getSignatureAlgorithm().getParameters(), this.getSignature());
+                        return;     // found the match!
+                    }
+                    catch (InvalidKeyException e)
+                    {
+                        // continue;
+                    }
+                }
+
+                throw new InvalidKeyException("no matching signature found");
+            }
+            else
+            {
+                checkSignature(key, signature,
+                    c.getSignatureAlgorithm().getParameters(), this.getSignature());
+            }
+        }
     }
 
     private void checkSignature(
