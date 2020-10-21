@@ -28,7 +28,7 @@ public abstract class BcTlsDSSVerifier
         SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
         if (algorithm != null && algorithm.getSignature() != getSignatureAlgorithm())
         {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
         short hashAlgorithm = algorithm == null ? HashAlgorithm.sha1 : algorithm.getHash();

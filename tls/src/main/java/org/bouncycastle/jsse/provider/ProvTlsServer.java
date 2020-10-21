@@ -776,13 +776,28 @@ class ProvTlsServer
             if (null == x509Key
                 || !JsseUtils.isUsableKeyForServer(signatureAlgorithm, x509Key.getPrivateKey()))
             {
+                if (LOG.isLoggable(Level.FINER))
+                {
+                    LOG.finer("Server (1.2) found no credentials for signature scheme '" + signatureSchemeInfo
+                        + "' (keyType '" + keyType + "')");
+                }
+
                 keyManagerMissCache.add(keyType);
                 continue;
+            }
+
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("Server (1.2) selected credentials for signature scheme '" + signatureSchemeInfo
+                    + "' (keyType '" + keyType + "'), with private key algorithm '"
+                    + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
             }
 
             return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key,
                 signatureSchemeInfo.getSignatureAndHashAlgorithm());
         }
+
+        LOG.fine("Server (1.2) did not select any credentials");
 
         return null;
     }
@@ -792,31 +807,46 @@ class ProvTlsServer
     {
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
-        for (SignatureSchemeInfo sigScheme : jsseSecurityParameters.peerSigSchemes)
+        for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
-            String keyType = JsseUtils.getKeyType(sigScheme);
+            String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
             if (keyManagerMissCache.contains(keyType))
             {
                 continue;
             }
 
             // TODO[tls13] Somewhat redundant if we get all active signature schemes later (for CertificateRequest)
-            if (!sigScheme.isActive(algorithmConstraints, false, true, jsseSecurityParameters.namedGroups))
+            if (!signatureSchemeInfo.isActive(algorithmConstraints, false, true, jsseSecurityParameters.namedGroups))
             {
                 continue;
             }
 
             BCX509Key x509Key = manager.chooseServerKey(keyType, issuers);
-            if (null == x509Key
-                || !JsseUtils.isUsableKeyForServer(sigScheme.getSignatureAlgorithm(), x509Key.getPrivateKey()))
+            if (null == x509Key ||
+                !JsseUtils.isUsableKeyForServer(signatureSchemeInfo.getSignatureAlgorithm(), x509Key.getPrivateKey()))
             {
+                if (LOG.isLoggable(Level.FINER))
+                {
+                    LOG.finer("Server (1.3) found no credentials for signature scheme '" + signatureSchemeInfo
+                        + "' (keyType '" + keyType + "')");
+                }
+
                 keyManagerMissCache.add(keyType);
                 continue;
             }
 
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("Server (1.3) selected credentials for signature scheme '" + signatureSchemeInfo
+                    + "' (keyType '" + keyType + "'), with private key algorithm '"
+                    + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
+            }
+
             return JsseUtils.createCredentialedSigner13(context, getCrypto(), x509Key,
-                sigScheme.getSignatureAndHashAlgorithm(), certificateRequestContext);
+                signatureSchemeInfo.getSignatureAndHashAlgorithm(), certificateRequestContext);
         }
+
+        LOG.fine("Server (1.3) did not select any credentials");
 
         return null;
     }

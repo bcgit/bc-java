@@ -44,7 +44,7 @@ public abstract class JcaTlsEdDSASigner
             || algorithm.getSignature() != algorithmType
             || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
         return crypto.createStreamSigner(algorithmName, null, privateKey, false);
