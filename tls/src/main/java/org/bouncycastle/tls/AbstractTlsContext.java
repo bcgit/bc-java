@@ -53,7 +53,7 @@ abstract class AbstractTlsContext
     {
         if (null != securityParametersHandshake)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error, "Handshake already started");
         }
 
         securityParametersHandshake = new SecurityParameters();
@@ -61,9 +61,7 @@ abstract class AbstractTlsContext
 
         if (null != securityParametersConnection)
         {
-            securityParametersHandshake.renegotiating = true;
-            securityParametersHandshake.secureRenegotiation = securityParametersConnection.isSecureRenegotiation();
-            securityParametersHandshake.negotiatedVersion = securityParametersConnection.getNegotiatedVersion();
+            throw new TlsFatalAlert(AlertDescription.internal_error, "Renegotiation not supported");
         }
 
         peer.notifyHandshakeBeginning();

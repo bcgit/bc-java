@@ -215,16 +215,6 @@ public abstract class TlsProtocol
 
     protected abstract TlsPeer getPeer();
 
-    protected int getRenegotiationPolicy()
-    {
-//        SecurityParameters sp = getContext().getSecurityParametersConnection();
-//        if (null != sp && sp.isSecureRenegotiation())
-//        {
-//            return getPeer().getRenegotiationPolicy();
-//        }
-        return RenegotiationPolicy.DENY;
-    }
-
     protected void handleAlertMessage(short alertLevel, short alertDescription)
         throws IOException
     {
@@ -338,28 +328,6 @@ public abstract class TlsProtocol
     protected abstract void handleHandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException;
 
-    protected boolean handleRenegotiation() throws IOException
-    {
-        switch (getRenegotiationPolicy())
-        {
-        case RenegotiationPolicy.ACCEPT:
-        {
-            beginHandshake(true);
-            return true;
-        }
-        case RenegotiationPolicy.IGNORE:
-        {
-            return false;
-        }
-        case RenegotiationPolicy.DENY:
-        default:
-        {
-            refuseRenegotiation();
-            return false;
-        }
-        }
-    }
-
     protected void applyMaxFragmentLengthExtension()
         throws IOException
     {
@@ -399,7 +367,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void beginHandshake(boolean renegotiation)
+    protected void beginHandshake()
         throws IOException
     {
         AbstractTlsContext context = getContextAdmin(); 
@@ -411,10 +379,6 @@ public abstract class TlsProtocol
         context.handshakeBeginning(peer);
 
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        if (renegotiation != securityParameters.isRenegotiating())
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
 
         securityParameters.extendedPadding = peer.shouldUseExtendedPadding();
     }
