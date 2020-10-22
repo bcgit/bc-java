@@ -10,7 +10,6 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class SecurityParameters
 {
     int entity = -1;
-    boolean renegotiating = false;
     boolean secureRenegotiation = false;
     int cipherSuite = CipherSuite.TLS_NULL_WITH_NULL_NULL;
     final short compressionAlgorithm = CompressionMethod._null;
@@ -94,9 +93,12 @@ public class SecurityParameters
         return entity;
     }
 
+    /**
+     * @deprecated Always false.
+     */
     public boolean isRenegotiating()
     {
-        return renegotiating;
+        return false;
     }
 
     public boolean isSecureRenegotiation()
