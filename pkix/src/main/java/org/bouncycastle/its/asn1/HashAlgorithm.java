@@ -5,9 +5,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * CertificateType ::= ENUMERATED {
- *  explicit,
- *  implicit,
- *  ...
+ * explicit,
+ * implicit,
+ * ...
  * }
  */
 public class HashAlgorithm

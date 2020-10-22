@@ -6,15 +6,26 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 
-public class HashedData extends ASN1Object implements ASN1Choice
+/**
+ * <pre>
+ *     HashedData ::= CHOICE {
+ *         sha256HashedData OCTET STRING (SIZE(32))
+ *     }
+ * </pre>
+ */
+public class HashedData
+    extends ASN1Object
+    implements ASN1Choice
 {
     private ASN1OctetString hashData;
 
-    public HashedData(byte[] digest) {
+    public HashedData(byte[] digest)
+    {
         this.hashData = new DEROctetString(digest);
     }
 
-    private HashedData(ASN1OctetString hashData) {
+    private HashedData(ASN1OctetString hashData)
+    {
         this.hashData = hashData;
     }
 

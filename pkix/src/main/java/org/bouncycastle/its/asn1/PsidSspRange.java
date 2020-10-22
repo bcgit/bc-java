@@ -13,7 +13,8 @@ import org.bouncycastle.asn1.DERSequence;
  * sspRange SspRange OPTIONAL
  * }
  */
-public class PsidSspRange extends ASN1Object
+public class PsidSspRange
+    extends ASN1Object
 {
     private ASN1Integer psid;
     private SspRange sspRange;
@@ -79,7 +80,8 @@ public class PsidSspRange extends ASN1Object
     {
         ASN1EncodableVector avec = new ASN1EncodableVector();
         avec.add(psid);
-        if (sspRange != null) {
+        if (sspRange != null)
+        {
             avec.add(sspRange);
         }
         return new DERSequence(avec);

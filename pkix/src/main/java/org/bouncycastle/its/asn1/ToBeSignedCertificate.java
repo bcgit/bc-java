@@ -1,5 +1,8 @@
 package org.bouncycastle.its.asn1;
 
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Primitive;
+
 /**
  * <pre>
  *     ToBeSignedCertificate ::= SEQUENCE {
@@ -19,5 +22,11 @@ package org.bouncycastle.its.asn1;
  * </pre>
  */
 public class ToBeSignedCertificate
+    extends ASN1Object
 {
+    @Override
+    public ASN1Primitive toASN1Primitive()
+    {
+        return null;
+    }
 }
