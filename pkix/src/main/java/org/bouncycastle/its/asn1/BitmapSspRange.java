@@ -5,93 +5,68 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Arrays;
 
+/**
+ * <pre>
+ *     BitmapSspRange ::= SEQUENCE {
+ *         sspValue OCTET STRING (SIZE(1..32)),
+ *         sspBitmask OCTET STRING (SIZE(1..32))
+ *     }
+ * </pre>
+ */
 public class BitmapSspRange
     extends ASN1Object
 {
-    private ASN1OctetString sspValue;
-    private ASN1OctetString sspBitmask;
+    private final byte[] sspValue;
+    private final byte[] sspBitmask;
 
-
-    public static BitmapSspRange getInstance(Object src) {
-        if (src == null) {
-            return null;
-        } else if (src instanceof BitmapSspRange) {
-            return (BitmapSspRange)src;
-        } else if (src instanceof  ASN1Sequence) {
-            if (((ASN1Sequence)src).size() != 2) {
-                throw new IllegalStateException("expected sequence with jValue and value");
-            }
-            BitmapSspRange bssr = new BitmapSspRange();
-            bssr.sspValue = (ASN1OctetString)((ASN1Sequence)src).getObjectAt(0);
-            bssr.sspBitmask = (ASN1OctetString)((ASN1Sequence)src).getObjectAt(1);
-            return bssr;
-        } else {
-            return getInstance(ASN1Sequence.getInstance(src));
+    private BitmapSspRange(ASN1Sequence seq)
+    {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence with sspValue and sspBitmask");
         }
+
+        sspValue = Utils.octetStringFixed(
+            ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets());
+        sspBitmask = Utils.octetStringFixed(
+            ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());
+    }
+
+    public static BitmapSspRange getInstance(Object o)
+    {
+        if (o instanceof BitmapSspRange)
+        {
+            return (BitmapSspRange)o;
+        }
+        else if (o != null)
+        {
+            return new BitmapSspRange(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
+    }
+
+    public byte[] getSspValue()
+    {
+        return Arrays.clone(sspValue);
+    }
+
+    public byte[] getSspBitmask()
+    {
+        return Arrays.clone(sspBitmask);
     }
 
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector avec = new ASN1EncodableVector();
-        avec.add(sspValue);
-        avec.add(sspBitmask);
+
+        avec.add(new DEROctetString(sspValue));
+        avec.add(new DEROctetString(sspBitmask));
+
         return new DERSequence(avec);
-    }
-
-
-    public ASN1OctetString getSspValue()
-    {
-        return sspValue;
-    }
-
-    public void setSspValue(ASN1OctetString sspValue)
-    {
-        this.sspValue = sspValue;
-    }
-
-    public ASN1OctetString getSspBitmask()
-    {
-        return sspBitmask;
-    }
-
-    public void setSspBitmask(ASN1OctetString sspBitmask)
-    {
-        this.sspBitmask = sspBitmask;
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass())
-        {
-            return false;
-        }
-        if (!super.equals(o))
-        {
-            return false;
-        }
-
-        BitmapSspRange that = (BitmapSspRange)o;
-
-        if (sspValue != null ? !sspValue.equals(that.sspValue) : that.sspValue != null)
-        {
-            return false;
-        }
-        return sspBitmask != null ? sspBitmask.equals(that.sspBitmask) : that.sspBitmask == null;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = super.hashCode();
-        result = 31 * result + (sspValue != null ? sspValue.hashCode() : 0);
-        result = 31 * result + (sspBitmask != null ? sspBitmask.hashCode() : 0);
-        return result;
     }
 }

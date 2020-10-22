@@ -4,7 +4,8 @@ import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 
-public class IssuerIdentifier extends ASN1Object
+public class IssuerIdentifier
+    extends ASN1Object
     implements ASN1Choice
 {
 

@@ -1,15 +1,13 @@
 package org.bouncycastle.its.asn1;
 
-import java.io.InputStream;
-
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * CertificateType ::= ENUMERATED {
- *  explicit,
- *  implicit,
- *  ...
+ * explicit,
+ * implicit,
+ * ...
  * }
  */
 public class CertificateType

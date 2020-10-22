@@ -2,10 +2,10 @@ package org.bouncycastle.its.asn1;
 
 import org.bouncycastle.asn1.ASN1Sequence;
 
-public class ImplicitCertificate
+public class ExplicitCertificate
     extends CertificateBase
 {
-    private ImplicitCertificate(ASN1Sequence seq)
+    private ExplicitCertificate(ASN1Sequence seq)
     {
         super(seq);
     }
