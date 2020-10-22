@@ -15,7 +15,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 public class RectangularRegion
     extends ASN1Object
 {
-    public RectangularRegion(ASN1Sequence seq)
+    private RectangularRegion(ASN1Sequence seq)
     {
 
     }
