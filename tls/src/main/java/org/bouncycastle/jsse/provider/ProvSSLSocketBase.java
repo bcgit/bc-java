@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
@@ -60,6 +59,13 @@ abstract class ProvSSLSocketBase
     protected void closeSocket() throws IOException
     {
         super.close();
+    }
+
+    public void connect(String host, int port, int timeout) throws IOException
+    {
+        setHost(host);
+
+        connect(createInetSocketAddress(host, port), timeout);
     }
 
     @Override
@@ -122,28 +128,31 @@ abstract class ProvSSLSocketBase
 //        return super.toString();
 //    }
 
+    protected InetSocketAddress createInetSocketAddress(InetAddress address, int port) throws IOException
+    {
+        return new InetSocketAddress(address, port);
+    }
+
+    protected InetSocketAddress createInetSocketAddress(String host, int port) throws IOException
+    {
+        return null == host
+            ? new InetSocketAddress(InetAddress.getByName(null), port)
+            : new InetSocketAddress(host, port);
+    }
+
     protected void implBind(InetAddress clientAddress, int clientPort) throws IOException
     {
-        InetSocketAddress socketAddress = new InetSocketAddress(clientAddress, clientPort);
-
-        bind(socketAddress);
+        bind(createInetSocketAddress(clientAddress, clientPort));
     }
 
     protected void implConnect(InetAddress address, int port) throws IOException
     {
-        SocketAddress socketAddress = new InetSocketAddress(address, port);
-
-        connect(socketAddress, 0);
+        connect(createInetSocketAddress(address, port), 0);
     }
 
     protected void implConnect(String host, int port) throws IOException, UnknownHostException
     {
-        SocketAddress socketAddress =
-                null == host
-            ?   new InetSocketAddress(InetAddress.getByName(null), port)
-            :   new InetSocketAddress(host, port);
-
-        connect(socketAddress, 0);
+        connect(createInetSocketAddress(host, port), 0);
     }
 
     protected void notifyHandshakeCompletedListeners(final SSLSession eventSession)
