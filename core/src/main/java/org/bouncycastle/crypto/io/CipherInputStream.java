@@ -298,7 +298,11 @@ public class CipherInputStream
             int avail = available();
             if (n <= avail)
             {
-                bufOff += n;
+                if (bufOff > Integer.MAX_VALUE - n)
+                {
+                    throw new IOException("Unable to skip: integer overflow");
+                }
+                bufOff += n;    // lgtm [java/implicit-cast-in-compound-assignment]
 
                 return n;
             }

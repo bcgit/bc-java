@@ -105,7 +105,7 @@ public class KMAC
                 throw new IllegalStateException("KMAC not initialized");
             }
 
-            byte[] encOut = XofUtils.rightEncode(getMacSize() * 8);
+            byte[] encOut = XofUtils.rightEncode(getMacSize() * 8L);
 
             cshake.update(encOut, 0, encOut.length);
         }
@@ -126,7 +126,7 @@ public class KMAC
                 throw new IllegalStateException("KMAC not initialized");
             }
 
-            byte[] encOut = XofUtils.rightEncode(outLen * 8);
+            byte[] encOut = XofUtils.rightEncode(outLen * 8L);
 
             cshake.update(encOut, 0, encOut.length);
         }
@@ -199,6 +199,6 @@ public class KMAC
 
     private static byte[] encode(byte[] X)
     {
-        return Arrays.concatenate(XofUtils.leftEncode(X.length * 8), X);
+        return Arrays.concatenate(XofUtils.leftEncode(X.length * 8L), X);
     }
 }
