@@ -19,7 +19,7 @@ public class SspRange extends ASN1Object
     private ASN1Null all;
     private BitmapSspRange bitmapSspRange;
 
-    public SspRange getInstance(Object src)
+    public static SspRange getInstance(Object src)
     {
         if (src == null)
         {
