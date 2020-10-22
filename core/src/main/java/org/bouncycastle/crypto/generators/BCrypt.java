@@ -368,7 +368,7 @@ public final class BCrypt
             xr ^= P[ROUNDS + 1];
 
             table[s] = xr;
-            table[s + 1] = xl;
+            table[s + 1] = xl;  // lgtm [java/index-out-of-bounds]
 
             xr = xl;            // end of cycle swap
             xl = table[s];
@@ -489,8 +489,9 @@ public final class BCrypt
             }
             xr ^= P[ROUNDS + 1];
 
+            // suppress LGTM warnings index-out-of-bounds since the loop increments s by 4
             table[s] = xr;
-            table[s + 1] = xl;
+            table[s + 1] = xl;  // lgtm [java/index-out-of-bounds]
 
             yl = salt32Bit[2] ^ xr;
             yr = salt32Bit[3] ^ xl;
@@ -508,8 +509,8 @@ public final class BCrypt
             }
             yr ^= P[ROUNDS + 1];
 
-            table[s + 2] = yr;
-            table[s + 3] = yl;
+            table[s + 2] = yr;  // lgtm [java/index-out-of-bounds]
+            table[s + 3] = yl;  // lgtm [java/index-out-of-bounds]
 
             xl = salt32Bit[0] ^ yr;
             xr = salt32Bit[1] ^ yl;

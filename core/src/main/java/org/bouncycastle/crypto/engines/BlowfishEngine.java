@@ -420,8 +420,9 @@ implements BlockCipher
 
             xr ^= P[ROUNDS + 1];
 
+            // suppress LGTM warnings index-out-of-bounds since the loop increments s by 2
             table[s] = xr;
-            table[s + 1] = xl;
+            table[s + 1] = xl;  // lgtm [java/index-out-of-bounds]
 
             xr = xl;            // end of cycle swap
             xl = table[s];
