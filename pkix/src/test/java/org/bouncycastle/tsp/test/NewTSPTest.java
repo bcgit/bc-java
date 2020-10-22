@@ -107,7 +107,7 @@ public class NewTSPTest
         basicTest(origKP.getPrivate(), origCert, certs);
         resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_SECONDS, "19700101000009Z");
         resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_TENTHS_OF_SECONDS, "19700101000009.9Z");
-        resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_MICROSECONDS, "19700101000009.99Z");
+        resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_HUNDREDTHS_OF_SECONDS, "19700101000009.99Z");
         resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_MILLISECONDS, "19700101000009.999Z");
         basicSha256Test(origKP.getPrivate(), origCert, certs);
         basicTestWithTSA(origKP.getPrivate(), origCert, certs);
@@ -335,7 +335,7 @@ public class NewTSPTest
 
         assertEquals("19700101000009Z", tsToken.getTimeStampInfo().toASN1Structure().getGenTime().getTimeString());
 
-        if (resolution > TimeStampTokenGenerator.R_MICROSECONDS)
+        if (resolution > TimeStampTokenGenerator.R_HUNDREDTHS_OF_SECONDS)
         {
             tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date(9990L));
             tsToken = tsResp.getTimeStampToken();
