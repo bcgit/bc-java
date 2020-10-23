@@ -14,7 +14,7 @@ import org.bouncycastle.util.test.SimpleTest;
 /**
  * Test the reading and writing of EncryptedPrivateKeyInfo objects using
  * the test vectors provided at
- * <a href=http://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html>
+ * <a href=https://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html>
  * RSA's PKCS5 Page</a>.
  * <br>
  * The vectors are Base 64 encoded and encrypted using the password "password"

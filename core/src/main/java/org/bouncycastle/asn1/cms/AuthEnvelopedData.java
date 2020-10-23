@@ -12,7 +12,7 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5083">RFC 5083</a>:
+ * <a href="https://tools.ietf.org/html/rfc5083">RFC 5083</a>:
  *
  * CMS AuthEnveloped Data object.
  * <p>

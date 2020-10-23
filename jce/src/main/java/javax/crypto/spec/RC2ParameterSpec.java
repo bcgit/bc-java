@@ -4,7 +4,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the parameters used with the
- * <a href="http://www.rsa.com/rsalabs/newfaq/q75.html"><i>RC2</i></a>
+ * <a href="https://www.rsa.com/rsalabs/newfaq/q75.html"><i>RC2</i></a>
  * algorithm.
  * <p>
  * The parameters consist of an effective key size and optionally

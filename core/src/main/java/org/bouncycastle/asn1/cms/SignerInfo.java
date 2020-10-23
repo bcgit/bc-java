@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-5.3">RFC 5652</a>:
+ * <a href="https://tools.ietf.org/html/rfc5652#section-5.3">RFC 5652</a>:
  * Signature container per Signer, see {@link SignerIdentifier}.
  * <pre>
  * PKCS#7:

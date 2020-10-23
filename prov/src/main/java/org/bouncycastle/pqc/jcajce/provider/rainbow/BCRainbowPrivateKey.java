@@ -25,7 +25,7 @@ import org.bouncycastle.pqc.jcajce.spec.RainbowPrivateKeySpec;
  * </p><p>
  * More detailed information about the private key is to be found in the paper
  * of Jintai Ding, Dieter Schmidt: Rainbow, a New Multivariable Polynomial
- * Signature Scheme. ACNS 2005: 164-175 (http://dx.doi.org/10.1007/11496137_12)
+ * Signature Scheme. ACNS 2005: 164-175 (https://dx.doi.org/10.1007/11496137_12)
  * </p>
  */
 public class BCRainbowPrivateKey

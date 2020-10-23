@@ -29,7 +29,7 @@ import org.bouncycastle.util.test.SimpleTest;
 /**
  * A test class for PKCS5 PBES2 with PBKDF2 (PKCS5 v2.0) using
  * test vectors provider at 
- * <a href=http://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html>
+ * <a href=https://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html>
  * RSA's PKCS5 Page</a>
  * <br>
  * The vectors are Base 64 encoded and encrypted using the password "password"

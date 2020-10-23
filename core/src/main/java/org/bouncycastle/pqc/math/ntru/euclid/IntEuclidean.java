@@ -13,7 +13,7 @@ public class IntEuclidean
 
     /**
      * Runs the EEA on two <code>int</code>s<br>
-     * Implemented from pseudocode on <a href="http://en.wikipedia.org/wiki/Extended_Euclidean_algorithm">Wikipedia</a>.
+     * Implemented from pseudocode on <a href="https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm">Wikipedia</a>.
      *
      * @param a
      * @param b

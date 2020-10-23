@@ -305,7 +305,7 @@ public class DESedeWrapEngine
      * - Compute the 20 octet SHA-1 hash on the key being wrapped.
      * - Use the first 8 octets of this hash as the checksum value.
      *
-     * For details see http://www.w3.org/TR/xmlenc-core/#sec-CMSKeyChecksum.
+     * For details see https://www.w3.org/TR/xmlenc-core/#sec-CMSKeyChecksum.
      *
      * @param key the key to check,
      * @return the CMS checksum.
@@ -325,7 +325,7 @@ public class DESedeWrapEngine
     }
 
     /**
-     * For details see http://www.w3.org/TR/xmlenc-core/#sec-CMSKeyChecksum
+     * For details see https://www.w3.org/TR/xmlenc-core/#sec-CMSKeyChecksum
      *
      * @param key key to be validated.
      * @param checksum the checksum.

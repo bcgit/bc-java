@@ -1,4 +1,4 @@
-// Copyright (c) 2005 The Legion Of The Bouncy Castle (http://www.bouncycastle.org)
+// Copyright (c) 2005 The Legion Of The Bouncy Castle (https://www.bouncycastle.org)
 package org.bouncycastle.mail.smime.test;
 
 import junit.extensions.TestSetup;

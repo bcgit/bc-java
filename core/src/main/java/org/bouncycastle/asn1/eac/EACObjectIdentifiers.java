@@ -5,7 +5,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 /**
  * German Federal Office for Information Security
  * (Bundesamt f&uuml;r Sicherheit in der Informationstechnik)
- * <a href="http://www.bsi.bund.de/">http://www.bsi.bund.de/</a>
+ * <a href="https://www.bsi.bund.de/">https://www.bsi.bund.de/</a>
  * <p>
  * <a href="https://www.bsi.bund.de/EN/Publications/TechnicalGuidelines/TR03110/BSITR03110.html">BSI TR-03110</a>
  * Technical Guideline Advanced Security Mechanisms for Machine Readable Travel Documents

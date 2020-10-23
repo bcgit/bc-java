@@ -317,7 +317,7 @@ public class JPAKEUtil
 
     /**
      * Calculates the MacTag (to be used for key confirmation), as defined by
-     * <a href="http://csrc.nist.gov/publications/nistpubs/800-56A/SP800-56A_Revision1_Mar08-2007.pdf">NIST SP 800-56A Revision 1</a>,
+     * <a href="https://csrc.nist.gov/publications/nistpubs/800-56A/SP800-56A_Revision1_Mar08-2007.pdf">NIST SP 800-56A Revision 1</a>,
      * Section 8.2 Unilateral Key Confirmation for Key Agreement Schemes.
      * <pre>
      * MacTag = HMAC(MacKey, MacLen, MacData)

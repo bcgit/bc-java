@@ -15,7 +15,7 @@ import org.bouncycastle.util.Arrays;
  * A Two-Pass Authenticated-Encryption Scheme Optimized for Simplicity and
  * Efficiency - by M. Bellare, P. Rogaway, D. Wagner.
  *
- * http://www.cs.ucdavis.edu/~rogaway/papers/eax.pdf
+ * https://www.cs.ucdavis.edu/~rogaway/papers/eax.pdf
  *
  * EAX is an AEAD scheme based on CTR and OMAC1/CMAC, that uses a single block
  * cipher to encrypt and authenticate data. It's on-line (the length of a

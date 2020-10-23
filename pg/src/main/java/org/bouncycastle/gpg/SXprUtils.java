@@ -11,7 +11,7 @@ import org.bouncycastle.util.io.Streams;
  * Utility functions for looking a S-expression keys. This class will move when it finds a better home!
  * <p>
  * Format documented here:
- * http://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob;f=agent/keyformat.txt;h=42c4b1f06faf1bbe71ffadc2fee0fad6bec91a97;hb=refs/heads/master
+ * https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob;f=agent/keyformat.txt;h=42c4b1f06faf1bbe71ffadc2fee0fad6bec91a97;hb=refs/heads/master
  * </p>
  */
 class SXprUtils

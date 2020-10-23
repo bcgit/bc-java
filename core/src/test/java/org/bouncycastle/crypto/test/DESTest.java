@@ -151,7 +151,7 @@ class DESParametersTest
 }
 
 /**
- * DES tester - vectors from <a href=http://www.itl.nist.gov/fipspubs/fip81.htm>FIPS 81</a>
+ * DES tester - vectors from <a href=https://www.itl.nist.gov/fipspubs/fip81.htm>FIPS 81</a>
  */
 public class DESTest
     extends CipherTest

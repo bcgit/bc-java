@@ -193,7 +193,7 @@ public class KeyAgreement
      * contain all the algorithm parameters required for this key agreement.
      * <p>
      * If this key agreement requires any random bytes, it will get
-     * them using the <a href="http://java.sun.com/products/jdk/1.2/docs/api/java.security.SecureRandom.html">
+     * them using the <a href="https://java.sun.com/products/jdk/1.2/docs/api/java.security.SecureRandom.html">
      * <code>SecureRandom</code></a> implementation of the highest-priority
      * installed provider as the source of randomness.
      * (If none of the installed providers supply an implementation of
@@ -245,7 +245,7 @@ public class KeyAgreement
      * algorithm parameters.
      * <p>
      * If this key agreement requires any random bytes, it will get
-     * them using the <a href="http://java.sun.com/products/jdk/1.2/docs/api/java.security.SecureRandom.html">
+     * them using the <a href="https://java.sun.com/products/jdk/1.2/docs/api/java.security.SecureRandom.html">
      * <code>SecureRandom</code></a> implementation of the highest-priority
      * installed provider as the source of randomness.
      * (If none of the installed providers supply an implementation of

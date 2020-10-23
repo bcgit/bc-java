@@ -3,7 +3,7 @@ package org.bouncycastle.asn1.dvcs;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
- * OIDs for <a href="http://tools.ietf.org/html/rfc3029">RFC 3029</a>
+ * OIDs for <a href="https://tools.ietf.org/html/rfc3029">RFC 3029</a>
  * Data Validation and Certification Server Protocols
  */
 public interface DVCSObjectIdentifiers

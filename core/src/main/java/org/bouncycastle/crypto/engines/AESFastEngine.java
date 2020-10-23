@@ -10,10 +10,10 @@ import org.bouncycastle.util.Pack;
 /**
  * an implementation of the AES (Rijndael), from FIPS-197.
  * <p>
- * For further details see: <a href="http://csrc.nist.gov/encryption/aes/">http://csrc.nist.gov/encryption/aes/</a>.
+ * For further details see: <a href="https://csrc.nist.gov/encryption/aes/">https://csrc.nist.gov/encryption/aes/</a>.
  *
  * This implementation is based on optimizations from Dr. Brian Gladman's paper and C code at
- * <a href="http://fp.gladman.plus.com/cryptography_technology/rijndael/">http://fp.gladman.plus.com/cryptography_technology/rijndael/</a>
+ * <a href="https://fp.gladman.plus.com/cryptography_technology/rijndael/">https://fp.gladman.plus.com/cryptography_technology/rijndael/</a>
  *
  * There are three levels of tradeoff of speed vs memory
  * Because java has no preprocessor, they are written as three separate classes from which to choose

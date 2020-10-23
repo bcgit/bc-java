@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.engines.Zuc128CoreEngine;
 
 /**
  * Zuc128 Mac implementation.
- * Based on http://www.qtc.jp/3GPP/Specs/eea3eia3specificationv16.pdf
+ * Based on https://www.qtc.jp/3GPP/Specs/eea3eia3specificationv16.pdf
  */
 public final class Zuc128Mac
     implements Mac

@@ -16,7 +16,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * consisting of a 128 bit key applied to an underlying cipher, and a 128 bit key (with 106
  * effective key bits) used in the authenticator.
  * <p>
- * This implementation is adapted from the public domain <a href="http://nacl.cr.yp.to/">nacl</a>
+ * This implementation is adapted from the public domain <a href="https://nacl.cr.yp.to/">nacl</a>
  * <code>ref</code> implementation, and is probably too slow for real usage.
  * 
  * @see Poly1305KeyGenerator

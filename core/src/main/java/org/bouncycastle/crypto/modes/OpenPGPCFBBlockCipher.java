@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.OutputLengthException;
  * to the data stream already, and just accomodates the reset after
  * (blockSize + 2) bytes have been read.
  * <p>
- * For further info see <a href="http://www.ietf.org/rfc/rfc2440.html">RFC 2440</a>.
+ * For further info see <a href="https://www.ietf.org/rfc/rfc2440.html">RFC 2440</a>.
  */
 public class OpenPGPCFBBlockCipher
     implements BlockCipher

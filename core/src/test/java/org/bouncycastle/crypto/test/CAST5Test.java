@@ -6,7 +6,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * cast tester - vectors from http://www.ietf.org/rfc/rfc2144.txt
+ * cast tester - vectors from https://www.ietf.org/rfc/rfc2144.txt
  */
 public class CAST5Test
     extends CipherTest

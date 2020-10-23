@@ -17,7 +17,7 @@ import org.bouncycastle.util.test.SimpleTest;
 /**
  * Test Cases for Zuc128 and Zuc256.
  * Test Vectors taken from https://www.gsma.com/aboutus/wp-content/uploads/2014/12/eea3eia3zucv16.pdf for Zuc128
- * and http://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf for Zuc256.
+ * and https://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf for Zuc256.
  */
 public class ZucTest
     extends SimpleTest

@@ -10,7 +10,7 @@ import org.bouncycastle.util.test.SimpleTest;
 
 /*
  * scrypt test vectors from "Stronger Key Derivation Via Sequential Memory-hard Functions" Appendix B.
- * (http://www.tarsnap.com/scrypt/scrypt.pdf)
+ * (https://www.tarsnap.com/scrypt/scrypt.pdf)
  */
 public class SCryptTest
     extends SimpleTest

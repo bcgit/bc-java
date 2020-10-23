@@ -13,10 +13,10 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 /**
- * An implementation of <a href="http://tools.ietf.org/html/rfc7253">RFC 7253 on The OCB
+ * An implementation of <a href="https://tools.ietf.org/html/rfc7253">RFC 7253 on The OCB
  * Authenticated-Encryption Algorithm</a>, licensed per:
  * <p>
- * <blockquote> <a href="http://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf">License for
+ * <blockquote> <a href="https://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf">License for
  * Open-Source Software Implementations of OCB</a> (Jan 9, 2013) &mdash; &ldquo;License 1&rdquo; <br>
  * Under this license, you are authorized to make, use, and distribute open-source software
  * implementations of OCB. This license terminates for you if you sue someone over their open-source

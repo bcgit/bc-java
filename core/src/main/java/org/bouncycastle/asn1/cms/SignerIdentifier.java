@@ -9,7 +9,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-5.3">RFC 5652</a>:
+ * <a href="https://tools.ietf.org/html/rfc5652#section-5.3">RFC 5652</a>:
  * Identify who signed the containing {@link SignerInfo} object.
  * <p>
  * The certificates referred to by this are at containing {@link SignedData} structure.

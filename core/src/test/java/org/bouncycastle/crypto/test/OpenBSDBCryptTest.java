@@ -8,7 +8,7 @@ public class OpenBSDBCryptTest
     extends SimpleTest
 {
 
-    private final static String[][] bcryptTest1 = // vectors from http://cvsweb.openwall.com/cgi/cvsweb.cgi/Owl/packages/glibc/crypt_blowfish/wrapper.c?rev=HEAD
+    private final static String[][] bcryptTest1 = // vectors from https://cvsweb.openwall.com/cgi/cvsweb.cgi/Owl/packages/glibc/crypt_blowfish/wrapper.c?rev=HEAD
         {
             {"$2a$05$CCCCCCCCCCCCCCCCCCCCC.E5YPO9kmyuRGyh0XouQYb4YMJKvyOeW",
                 "U*U"},
@@ -24,11 +24,11 @@ public class OpenBSDBCryptTest
                     + "chars after 72 are ignored"},
         };
 
-    private final static String[] bcryptTest2 = { // from: http://openwall.info/wiki/john/sample-hashes
+    private final static String[] bcryptTest2 = { // from: https://openwall.info/wiki/john/sample-hashes
         "$2a$05$bvIG6Nmid91Mu9RcmmWZfO5HJIMCT8riNW0hEp8f6/FuA2/mHZFpe", "password"
     };
 
-    private final static String[] bcryptTest2b = { // from: http://stackoverflow.com/questions/11654684/verifying-a-bcrypt-hash
+    private final static String[] bcryptTest2b = { // from: https://stackoverflow.com/questions/11654684/verifying-a-bcrypt-hash
         "$2a$10$.TtQJ4Jr6isd4Hp.mVfZeuh6Gws4rOQ/vdBczhDx.19NFK0Y84Dle", "\u03c0\u03c0\u03c0\u03c0\u03c0\u03c0\u03c0\u03c0"
     };
 

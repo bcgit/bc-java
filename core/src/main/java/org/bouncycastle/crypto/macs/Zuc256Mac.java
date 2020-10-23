@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.engines.Zuc256CoreEngine;
 
 /**
  * Zuc256 Mac implementation.
- * Based on http://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf
+ * Based on https://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf
  */
 public final class Zuc256Mac
     implements Mac
