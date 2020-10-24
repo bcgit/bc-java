@@ -93,7 +93,7 @@ public class TimeStampTokenGenerator
     public static final int R_HUNDREDTHS_OF_SECONDS = 2;
 
     /**
-     * @deprecated use R_HUNDREDTHS_OF_SECONDS
+     * @deprecated use R_HUNDREDTHS_OF_SECONDS - this field will be deleted!!
      */
     public static final int R_MICROSECONDS = 2;
 
