@@ -2,6 +2,7 @@ package org.bouncycastle.its.asn1;
 
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 
 /**
  * <pre>
@@ -24,7 +25,28 @@ import org.bouncycastle.asn1.ASN1Primitive;
 public class ToBeSignedCertificate
     extends ASN1Object
 {
-    @Override
+//    private final CertificateId certificateId;
+
+    private ToBeSignedCertificate(ASN1Sequence seq)
+    {
+  //TODO:      this.certificateId = CertificateId.
+    }
+
+    public static ToBeSignedCertificate getInstance(Object src)
+    {
+        if (src instanceof ToBeSignedCertificate)
+        {
+            return (ToBeSignedCertificate)src;
+        }
+        else if (src != null)
+        {
+            // TODO: need choice processing here
+            return new ToBeSignedCertificate(ASN1Sequence.getInstance(src));
+        }
+
+        return null;
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
         return null;

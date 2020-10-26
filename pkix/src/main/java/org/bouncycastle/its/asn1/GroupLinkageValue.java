@@ -33,7 +33,7 @@ public class GroupLinkageValue
         value = Utils.octetStringFixed(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets(), 9);
     }
 
-    public GroupLinkageValue getInstance(Object src)
+    public static GroupLinkageValue getInstance(Object src)
     {
         if (src instanceof GroupLinkageValue)
         {
@@ -41,7 +41,7 @@ public class GroupLinkageValue
         }
         else if (src != null)
         {
-            return getInstance(ASN1Sequence.getInstance(src));
+            return new GroupLinkageValue(ASN1Sequence.getInstance(src));
         }
 
         return null;
