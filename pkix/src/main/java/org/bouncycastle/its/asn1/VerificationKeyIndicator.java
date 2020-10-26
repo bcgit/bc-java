@@ -6,19 +6,17 @@ import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * <pre>
- *     IssuerIdentifier ::= CHOICE {
- *         sha256AndDigest HashedId8,
- *         self HashAlgorithm,
- *         ...,
- *         sha384AndDigest HashedId8
+ *     VerificationKeyIndicator ::= CHOICE {
+ *         verificationKey PublicVerificationKey,
+ *         reconstructionValue EccP256CurvePoint,
+ *         ...
  *     }
  * </pre>
  */
-public class IssuerIdentifier
+public class VerificationKeyIndicator
     extends ASN1Object
     implements ASN1Choice
 {
-
     public ASN1Primitive toASN1Primitive()
     {
         return null;

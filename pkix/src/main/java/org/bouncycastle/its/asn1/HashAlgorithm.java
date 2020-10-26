@@ -47,27 +47,4 @@ public class HashAlgorithm
     {
         return enumerated;
     }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass())
-        {
-            return false;
-        }
-
-        HashAlgorithm that = (HashAlgorithm)o;
-
-        return enumerated != null ? enumerated.equals(that.enumerated) : that.enumerated == null;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return enumerated != null ? enumerated.hashCode() : 0;
-    }
 }
