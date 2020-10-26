@@ -144,6 +144,25 @@ public class Interleave
         return x;
     }
 
+    public static long shuffle2(long x)
+    {
+        // "shuffle" (twice) low half to even bits and high half to odd bits
+        x = Bits.bitPermuteStep(x, 0x00000000FF00FF00L, 24);
+        x = Bits.bitPermuteStep(x, 0x00CC00CC00CC00CCL, 6);
+        x = Bits.bitPermuteStep(x, 0x0000F0F00000F0F0L, 12);
+        x = Bits.bitPermuteStep(x, 0x0A0A0A0A0A0A0A0AL, 3);
+        return x;
+    }
+
+    public static long shuffle3(long x)
+    {
+        // "shuffle" (thrice) low half to even bits and high half to odd bits
+        x = Bits.bitPermuteStep(x, 0x00AA00AA00AA00AAL, 7);
+        x = Bits.bitPermuteStep(x, 0x0000CCCC0000CCCCL, 14);
+        x = Bits.bitPermuteStep(x, 0x00000000F0F0F0F0L, 28);
+        return x;
+    }
+
     public static int unshuffle(int x)
     {
         // "unshuffle" even bits to low half and odd bits to high half
@@ -173,5 +192,21 @@ public class Interleave
         x = Bits.bitPermuteStep(x, 0x0000CCCC, 14);
         x = Bits.bitPermuteStep(x, 0x00AA00AA, 7);
         return x;
+    }
+
+    public static long unshuffle2(long x)
+    {
+        // "unshuffle" (twice) even bits to low half and odd bits to high half
+        x = Bits.bitPermuteStep(x, 0x0A0A0A0A0A0A0A0AL, 3);
+        x = Bits.bitPermuteStep(x, 0x0000F0F00000F0F0L, 12);
+        x = Bits.bitPermuteStep(x, 0x00CC00CC00CC00CCL, 6);
+        x = Bits.bitPermuteStep(x, 0x00000000FF00FF00L, 24);
+        return x;
+    }
+
+    public static long unshuffle3(long x)
+    {
+        // "unshuffle" (thrice) even bits to low half and odd bits to high half
+        return shuffle3(x);
     }
 }

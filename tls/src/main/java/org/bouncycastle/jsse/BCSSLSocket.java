@@ -1,5 +1,7 @@
 package org.bouncycastle.jsse;
 
+import java.io.IOException;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 
@@ -9,6 +11,8 @@ import javax.net.ssl.SSLSocket;
  */
 public interface BCSSLSocket
 {
+    void connect(String host, int port, int timeout) throws IOException;
+
     String getApplicationProtocol();
 
     BCApplicationProtocolSelector<SSLSocket> getBCHandshakeApplicationProtocolSelector();
