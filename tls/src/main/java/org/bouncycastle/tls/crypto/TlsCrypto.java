@@ -150,6 +150,17 @@ public interface TlsCrypto
     TlsCertificate createCertificate(byte[] encoding) throws IOException;
 
     /**
+     * Create a TlsCertificate from a ASN.1 binary encoding of a certificate.
+     *
+     * @param type Certificate type as per IANA TLS Certificate Types registry
+     * @param encoding DER/BER encoding of the certificate of interest.
+     * @return a TlsCertificate.
+     *
+     * @throws IOException if there is an issue on decoding or constructing the certificate.
+     */
+    TlsCertificate createCertificate(short type, byte[] encoding) throws IOException;
+
+    /**
      * Create a cipher for the specified encryption and MAC algorithms.
      * <p>
      * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values.
@@ -256,7 +267,7 @@ public interface TlsCrypto
 
     /**
      * Setup an initial "secret" for a chain of HKDF calls (RFC 5869), containing a string of HashLen zeroes.
-     * 
+     *
      * @param cryptoHashAlgorithm the hash algorithm to instantiate HMAC with. See {@link CryptoHashAlgorithm} for values.
      */
     TlsSecret hkdfInit(int cryptoHashAlgorithm);

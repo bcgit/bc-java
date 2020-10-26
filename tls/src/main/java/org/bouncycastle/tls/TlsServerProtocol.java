@@ -204,7 +204,7 @@ public class TlsServerProtocol
 
             /*
              * TODO[tls13] Confirm fields in the ClientHello haven't changed
-             * 
+             *
              * RFC 8446 4.1.2 [..] when the server has responded to its ClientHello with a
              * HelloRetryRequest [..] the client MUST send the same ClientHello without
              * modification, except as follows: [key_share, early_data, cookie, pre_shared_key,
@@ -252,7 +252,7 @@ public class TlsServerProtocol
 
             /*
              * NOTE: Currently no server support for session resumption
-             * 
+             *
              * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
              * ONLY when extended_master_secret has been negotiated (otherwise NULL).
              */
@@ -364,7 +364,7 @@ public class TlsServerProtocol
 
         /*
          * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
-         * 
+         *
          * OCSP information is carried in an extension for a CertificateEntry.
          */
         securityParameters.statusRequestVersion = clientHelloExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
@@ -385,7 +385,7 @@ public class TlsServerProtocol
         TlsSecret sharedSecret;
         {
             int namedGroup = clientShare.getNamedGroup();
-    
+
             TlsAgreement agreement;
             if (NamedGroup.refersToASpecificCurve(namedGroup))
             {
@@ -433,7 +433,7 @@ public class TlsServerProtocol
         this.offeredCipherSuites = clientHello.getCipherSuites();
 
 
- 
+
         SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
 
         tlsServerContext.setClientSupportedVersions(
@@ -454,7 +454,7 @@ public class TlsServerProtocol
             clientVersion = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
-        // Set the legacy_record_version to use for early alerts 
+        // Set the legacy_record_version to use for early alerts
         recordStream.setWriteVersion(clientVersion);
 
         if (!ProtocolVersion.SERVER_EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(clientVersion))
@@ -528,7 +528,7 @@ public class TlsServerProtocol
         {
             /*
              * RFC 5746 3.7. Server Behavior: Secure Renegotiation
-             * 
+             *
              * This text applies if the connection's "secure_renegotiation" flag is set to TRUE.
              */
             if (!securityParameters.isSecureRenegotiation())
@@ -838,7 +838,7 @@ public class TlsServerProtocol
         {
             /*
              * TODO[tls13] Abbreviated handshakes (PSK resumption)
-             * 
+             *
              * NOTE: No CertificateRequest, Certificate, CertificateVerify messages, but client
              * might now send EndOfEarlyData after receiving server Finished message.
              */
@@ -1222,7 +1222,7 @@ public class TlsServerProtocol
                     /*
                      * RFC 5246 If no suitable certificate is available, the client MUST send a
                      * certificate message containing no certificates.
-                     * 
+                     *
                      * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                      */
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -1391,6 +1391,7 @@ public class TlsServerProtocol
         }
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setCertificateType(TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509))
             .setMaxChainLength(tlsServer.getMaxCertificateChainLength());
 
         Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);
@@ -1432,6 +1433,7 @@ public class TlsServerProtocol
         }
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setCertificateType(TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509))
             .setMaxChainLength(tlsServer.getMaxCertificateChainLength());
 
         Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);
@@ -1531,20 +1533,20 @@ public class TlsServerProtocol
                     {
                         throw new TlsFatalAlert(AlertDescription.internal_error);
                     }
-    
+
                     TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
-    
+
                     sendCertificateRequestMessage(certificateRequest);
                     this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
                 }
             }
-    
+
             TlsCredentialedSigner serverCredentials = TlsUtils.establish13ServerCredentials(tlsServer);
             if (null == serverCredentials)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
-    
+
             // Certificate
             {
                 /*
@@ -1561,7 +1563,7 @@ public class TlsServerProtocol
                 securityParameters.tlsServerEndPoint = null;
                 this.connection_state = CS_SERVER_CERTIFICATE;
             }
-    
+
             // CertificateVerify
             {
                 DigitallySigned certificateVerify = TlsUtils.generate13CertificateVerify(tlsServerContext,

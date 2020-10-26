@@ -283,7 +283,7 @@ public class DTLSClientProtocol
             /*
              * RFC 5246 If no suitable certificate is available, the client MUST send a certificate
              * message containing no certificates.
-             * 
+             *
              * NOTE: In previous RFCs, this was SHOULD instead of MUST.
              */
 
@@ -302,7 +302,7 @@ public class DTLSClientProtocol
         if (null != state.clientCredentials)
         {
             state.keyExchange.processClientCredentials(state.clientCredentials);
-            
+
             if (state.clientCredentials instanceof TlsCredentialedSigner)
             {
                 credentialedSigner = (TlsCredentialedSigner)state.clientCredentials;
@@ -570,6 +570,7 @@ public class DTLSClientProtocol
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         CertificateRequest certificateRequest = CertificateRequest.parse(state.clientContext, buf);
+        certificateRequest.certificateType = TlsExtensionsUtils.getClientCertificateTypeExtensionServer(state.serverExtensions, CertificateType.X509);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -630,7 +631,7 @@ public class DTLSClientProtocol
         throws IOException
     {
         state.authentication = TlsUtils.receiveServerCertificate(state.clientContext, state.client,
-            new ByteArrayInputStream(body));
+            new ByteArrayInputStream(body), state.serverExtensions);
     }
 
     protected void processServerHello(ClientHandshakeState state, byte[] body)
@@ -702,7 +703,7 @@ public class DTLSClientProtocol
         /*
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
-         * 
+         *
          * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
          * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
          * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
@@ -736,7 +737,7 @@ public class DTLSClientProtocol
         }
 
         /*
-         * 
+         *
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message. However, see RFC 5746 exception below. We always include
          * the SCSV, so an Extended Server Hello is always allowed.

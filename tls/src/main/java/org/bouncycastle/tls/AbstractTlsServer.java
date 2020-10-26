@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Base class for a TLS server.
@@ -229,6 +230,16 @@ public abstract class AbstractTlsServer
         return true;
     }
 
+    protected boolean preferLocalClientCertificateTypes()
+    {
+        return false;
+    }
+
+    protected short[] getAllowedClientCertificateTypes()
+    {
+        return null;
+    }
+
     public void init(TlsServerContext context)
     {
         this.context = context;
@@ -335,7 +346,7 @@ public abstract class AbstractTlsServer
         if (null != clientExtensions)
         {
             this.clientProtocolNames = TlsExtensionsUtils.getALPNExtensionClient(clientExtensions);
-            
+
             if (shouldSelectProtocolNameEarly())
             {
                 if (null != clientProtocolNames && !clientProtocolNames.isEmpty())
@@ -455,7 +466,7 @@ public abstract class AbstractTlsServer
             {
                 /*
                  * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
-                 * 
+                 *
                  * OCSP information is carried in an extension for a CertificateEntry.
                  */
             }
@@ -521,6 +532,63 @@ public abstract class AbstractTlsServer
         if (this.maxFragmentLengthOffered >= 0 && MaxFragmentLength.isValid(maxFragmentLengthOffered))
         {
             TlsExtensionsUtils.addMaxFragmentLengthExtension(serverExtensions, this.maxFragmentLengthOffered);
+        }
+
+        // RFC 7250 4.2 for server_certificate_type
+        short[] serverCertTypes = TlsExtensionsUtils.getServerCertificateTypeExtensionClient(clientExtensions);
+        if (serverCertTypes != null)
+        {
+            TlsCredentials credentials = getCredentials();
+
+            if (credentials == null || !Arrays.contains(serverCertTypes, credentials.getCertificate().getCertificateType()))
+            {
+                // outcome 2: we support the extension but have no common types
+                throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            }
+
+            // outcome 3: we support the extension and have a common type
+            TlsExtensionsUtils.addServerCertificateTypeExtensionServer(serverExtensions, credentials.getCertificate().getCertificateType());
+        }
+
+        // RFC 7250 4.2 for client_certificate_type
+        short[] remoteClientCertTypes = TlsExtensionsUtils.getClientCertificateTypeExtensionClient(clientExtensions);
+        if (remoteClientCertTypes != null)
+        {
+            short[] localClientCertTypes = getAllowedClientCertificateTypes();
+            if (localClientCertTypes != null)
+            {
+                short[] preferredTypes;
+                short[] nonPreferredTypes;
+                if (preferLocalClientCertificateTypes())
+                {
+                    preferredTypes = localClientCertTypes;
+                    nonPreferredTypes = remoteClientCertTypes;
+                }
+                else
+                {
+                    preferredTypes = remoteClientCertTypes;
+                    nonPreferredTypes = localClientCertTypes;
+                }
+
+                short selectedType = -1;
+                for (int i = 0; i < preferredTypes.length; i++)
+                {
+                    if (Arrays.contains(nonPreferredTypes, preferredTypes[i]))
+                    {
+                        selectedType = preferredTypes[i];
+                        break;
+                    }
+                }
+
+                if (selectedType == -1)
+                {
+                    // outcome 2: we support the extension but have no common types
+                    throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+                }
+
+                // outcome 3: we support the extension and have a common type
+                TlsExtensionsUtils.addClientCertificateTypeExtensionServer(serverExtensions, selectedType);
+            } // else outcome 1: we don't support the extension
         }
 
         return serverExtensions;

@@ -130,7 +130,7 @@ public class TlsClientProtocol
     {
         return tlsClientContext;
     }
-    
+
     protected TlsPeer getPeer()
     {
         return tlsClient;
@@ -403,7 +403,7 @@ public class TlsClientProtocol
                  * NOTE: Certificate processing (including authentication) is delayed to allow for a
                  * possible CertificateStatus message.
                  */
-                this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf);
+                this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf, serverExtensions);
                 break;
             }
             default:
@@ -581,7 +581,7 @@ public class TlsClientProtocol
                         /*
                          * RFC 5246 If no suitable certificate is available, the client MUST send a
                          * certificate message containing no certificates.
-                         * 
+                         *
                          * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                          */
                     }
@@ -986,7 +986,7 @@ public class TlsClientProtocol
 
         /*
          * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
-         * 
+         *
          * OCSP information is carried in an extension for a CertificateEntry.
          */
         securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request) ? 1 : 0;
@@ -1183,7 +1183,7 @@ public class TlsClientProtocol
         /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message.
-         * 
+         *
          * However, see RFC 5746 exception below. We always include the SCSV, so an Extended Server
          * Hello is always allowed.
          */
@@ -1240,7 +1240,7 @@ public class TlsClientProtocol
         {
             /*
              * RFC 5746 3.5. Client Behavior: Secure Renegotiation
-             * 
+             *
              * This text applies if the connection's "secure_renegotiation" flag is set to TRUE.
              */
             if (!securityParameters.isSecureRenegotiation())
@@ -1314,7 +1314,7 @@ public class TlsClientProtocol
         /*
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
-         * 
+         *
          * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
          * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
          * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
@@ -1438,7 +1438,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        /* 
+        /*
          * RFC 8446 4.3.2. A server which is authenticating with a certificate MAY optionally
          * request a certificate from the client.
          */
@@ -1449,6 +1449,7 @@ public class TlsClientProtocol
         }
 
         CertificateRequest certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
+        certificateRequest.certificateType = TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);
 
         assertEmpty(buf);
 
@@ -1520,7 +1521,7 @@ public class TlsClientProtocol
 
         /*
          * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
-         * 
+         *
          * OCSP information is carried in an extension for a CertificateEntry.
          */
         securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
@@ -1570,7 +1571,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf);
+        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf, serverExtensions);
 
         // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message.
         handleServerCertificate();
@@ -1611,6 +1612,7 @@ public class TlsClientProtocol
         }
 
         CertificateRequest certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
+        certificateRequest.certificateType = TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);
 
         assertEmpty(buf);
 
@@ -1816,7 +1818,7 @@ public class TlsClientProtocol
         this.clientBinders = TlsUtils.addPreSharedKeyToClientHello(tlsClientContext, tlsClient, clientExtensions,
             offeredCipherSuites);
 
-        // TODO[tls13-psk] Perhaps don't add key_share if external PSK(s) offered and 'psk_dhe_ke' not offered  
+        // TODO[tls13-psk] Perhaps don't add key_share if external PSK(s) offered and 'psk_dhe_ke' not offered
         this.clientAgreements = TlsUtils.addKeyShareToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
         if (TlsUtils.isExtendedMasterSecretOptionalTLS(supportedVersions)
@@ -1840,7 +1842,7 @@ public class TlsClientProtocol
         {
             /*
              * RFC 5746 3.5. Client Behavior: Secure Renegotiation
-             * 
+             *
              * This text applies if the connection's "secure_renegotiation" flag is set to TRUE.
              */
             if (!securityParameters.isSecureRenegotiation())

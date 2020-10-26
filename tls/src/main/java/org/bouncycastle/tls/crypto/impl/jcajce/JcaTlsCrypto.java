@@ -17,6 +17,7 @@ import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -149,6 +150,15 @@ public class JcaTlsCrypto
         throws IOException
     {
         return new JcaTlsCertificate(this, encoding);
+    }
+
+    public TlsCertificate createCertificate(short type, byte[] encoding) throws IOException
+    {
+        if (type != CertificateType.X509)
+        {
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+        }
+        return createCertificate(encoding);
     }
 
     public TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
@@ -391,7 +401,7 @@ public class JcaTlsCrypto
             {
             /*
              * TODO Return AlgorithmParameters to check against disabled algorithms
-             * 
+             *
              * NOTE: The JDK doesn't even support AlgorithmParameters for XDH, so SunJSSE also winds
              * up using null AlgorithmParameters when checking algorithm constraints.
              */
