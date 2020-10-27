@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.engines.AESWrapPadEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -161,6 +162,58 @@ public class AESWrapPadTest
             byte[] keyToWrap = new byte[keyToWrapSize];
             rnd.nextBytes(keyToWrap);
             wrapAndUnwrap(kek, keyToWrap);
+        }
+
+        performFailTests();
+    }
+
+    private void performFailTests() {
+        // Tests of specific failure modes. Each failure mode should produce an InvalidCipherTextException
+        byte[] kek = Hex.decode("5840df6e29b02af1ab493b705bf16ea1ae8338f4dcc176a8");
+        Wrapper wrapper = new AESWrapPadEngine();
+        wrapper.init(false, new KeyParameter(kek));
+
+        try {
+            // not a multiple of 8 bytes, so invalid
+            wrapper.unwrap(new byte[23],0,23);
+            fail("Data which was not a multiple of 8 bytes was accepted");
+        } catch ( InvalidCipherTextException e ) {
+            // correct behaviour
+        }
+
+        try {
+            // zero bytes is too short
+            wrapper.unwrap(new byte[0],0,0);
+            fail("Data of zero bytes was accepted");
+        } catch ( InvalidCipherTextException e ) {
+            // correct behaviour
+        }
+
+        try {
+            // only 8 bytes - so too short
+            wrapper.unwrap(new byte[8],0,8);
+            fail("Data which was not a multiple of 8 bytes was accepted");
+        } catch ( InvalidCipherTextException e ) {
+            // correct behaviour
+        }
+
+        try {
+            // usable number of bytes, but cannot be decrypted.
+            // This value produces a negative MLI.
+            wrapper.unwrap(Hex.decode("000000000000000000000000000000000000000000000000"),0,24);
+            fail("Invalid data was accepted");
+        } catch ( InvalidCipherTextException e ) {
+            // correct behaviour
+        }
+
+
+        try {
+            // usable number of bytes, but cannot be decrypted.
+            // This value produces a large positive MLI
+            wrapper.unwrap(Hex.decode("000000000000000000000000000000000000000000000002"),0,24);
+            fail("Invalid data was accepted");
+        } catch ( InvalidCipherTextException e ) {
+            // correct behaviour
         }
     }
 
