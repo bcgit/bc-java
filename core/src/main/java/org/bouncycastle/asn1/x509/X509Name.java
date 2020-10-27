@@ -374,7 +374,7 @@ public class X509Name
     public static X509Name getInstance(
         Object  obj)
     {
-        if (obj == null || obj instanceof X509Name)
+        if (obj instanceof X509Name)
         {
             return (X509Name)obj;
         }
@@ -382,9 +382,12 @@ public class X509Name
         {
             return new X509Name(ASN1Sequence.getInstance(((X500Name)obj).toASN1Primitive()));
         }
-        else {
+        else if (obj != null)
+        {
             return new X509Name(ASN1Sequence.getInstance(obj));
         }
+
+        return null;
     }
 
     protected X509Name()
