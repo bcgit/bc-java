@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
@@ -199,6 +201,24 @@ public class OpenBSDBCryptTest
                 fail("twoBVec mismatch: " + "[" + i + "] " + password);
             }
         }
+
+
+        int costFactor = 4;
+        SecureRandom random = new SecureRandom();
+        salt = new byte[16];
+        for (int i = 0; i < 1000; i++)
+        {
+            random.nextBytes(salt);
+            final String tokenString = OpenBSDBCrypt
+                .generate("test-token".toCharArray(), salt, costFactor);
+
+            isTrue(OpenBSDBCrypt.checkPassword(tokenString, "test-token".toCharArray()));
+            isTrue(!OpenBSDBCrypt.checkPassword(tokenString, "wrong-token".toCharArray()));
+        }
     }
+
+
+
+
 }
 
