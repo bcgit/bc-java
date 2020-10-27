@@ -326,11 +326,7 @@ class ProvX509KeyManager
                 Key key = keyStore.getKey(alias, passwordProtection.getPassword());
                 if (key instanceof PrivateKey)
                 {
-                    PrivateKey privateKey = (PrivateKey)key;
-                    if (null != privateKey)
-                    {
-                        return new ProvX509Key(privateKey, certificateChain);
-                    }
+                    return new ProvX509Key((PrivateKey) key, certificateChain);
                 }
             }
         }

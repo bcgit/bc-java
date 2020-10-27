@@ -1527,12 +1527,6 @@ public class CBZip2OutputStream extends OutputStream implements BZip2Constants {
         zptr = new int[n];
         ftab = new int[65537];
 
-        if (block == null || quadrant == null || zptr == null
-            || ftab == null) {
-            //int totalDraw = (n + 1 + NUM_OVERSHOOT_BYTES) + (n + NUM_OVERSHOOT_BYTES) + n + 65537;
-            //compressOutOfMemory ( totalDraw, n );
-        }
-
         /*
           The back end needs a place to store the MTF values
           whilst it calculates the coding tables.  We could
