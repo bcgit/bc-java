@@ -309,7 +309,7 @@ public class OpenBSDBCrypt
         boolean isEqual = sLength == newBcryptString.length();
         for (int i = 0; i != sLength; i++)
         {
-            isEqual &= (bcryptString.indexOf(i) == newBcryptString.indexOf(i));
+            isEqual &= (bcryptString.charAt(i) == newBcryptString.charAt(i));
         }
         return isEqual;
     }
