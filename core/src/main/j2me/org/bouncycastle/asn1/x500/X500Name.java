@@ -245,9 +245,9 @@ public class X500Name
             return hashCodeValue;
         }
 
-        isHashCodeCalculated = true;
-
         hashCodeValue = style.calculateHashCode(this);
+
+        isHashCodeCalculated = true;
 
         return hashCodeValue;
     }
