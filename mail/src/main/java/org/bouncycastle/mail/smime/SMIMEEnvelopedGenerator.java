@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.activation.CommandMap;
 import javax.activation.MailcapCommandMap;
@@ -68,7 +66,6 @@ public class SMIMEEnvelopedGenerator
     private static final String ENCRYPTED_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7m\"; smime-type=enveloped-data";
     
     private EnvelopedGenerator fact;
-    private List               recipients = new ArrayList();
 
     static
     {

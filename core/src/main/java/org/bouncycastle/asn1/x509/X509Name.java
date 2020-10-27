@@ -382,12 +382,9 @@ public class X509Name
         {
             return new X509Name(ASN1Sequence.getInstance(((X500Name)obj).toASN1Primitive()));
         }
-        else if (obj != null)
-        {
+        else {
             return new X509Name(ASN1Sequence.getInstance(obj));
         }
-
-        return null;
     }
 
     protected X509Name()
