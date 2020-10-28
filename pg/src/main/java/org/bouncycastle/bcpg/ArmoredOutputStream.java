@@ -255,6 +255,9 @@ public class ArmoredOutputStream
         case HashAlgorithmTags.RIPEMD160:
             hash = "RIPEMD160";
             break;
+        case HashAlgorithmTags.SHA224:
+            hash = "SHA224";
+            break;
         default:
             throw new IOException("unknown hash algorithm tag in beginClearText: " + hashAlgorithm);
         }
