@@ -2994,6 +2994,15 @@ public class CertTest
         {
             fail("CRL entry reasonCode not found");
         }
+
+        sigGen = new JcaContentSignerBuilder("SHA256withECDSA", compAlgSpec).build(compPrivKey);
+
+        crlHolder = crlGen.build(sigGen);
+
+        crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
+
+        // comp test - single key
+        crl.verify(compPub);
     }
 
     /*
