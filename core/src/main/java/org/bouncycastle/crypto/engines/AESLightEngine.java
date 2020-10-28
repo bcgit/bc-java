@@ -187,7 +187,7 @@ public class AESLightEngine
             throw new IllegalArgumentException("Key length not 128/192/256 bits.");
         }
 
-        int KC = keyLen >> 2;
+        int KC = keyLen >>> 2;
         ROUNDS = KC + 6;  // This is not always true for the generalized Rijndael that allows larger block sizes
         int[][] W = new int[ROUNDS+1][4];   // 4 words in a block
 
@@ -195,98 +195,97 @@ public class AESLightEngine
         {
         case 4:
         {
-            int t0 = Pack.littleEndianToInt(key,  0); W[0][0] = t0;
-            int t1 = Pack.littleEndianToInt(key,  4); W[0][1] = t1;
-            int t2 = Pack.littleEndianToInt(key,  8); W[0][2] = t2;
-            int t3 = Pack.littleEndianToInt(key, 12); W[0][3] = t3;
+            int col0 = Pack.littleEndianToInt(key,  0);     W[0][0] = col0;
+            int col1 = Pack.littleEndianToInt(key,  4);     W[0][1] = col1;
+            int col2 = Pack.littleEndianToInt(key,  8);     W[0][2] = col2;
+            int col3 = Pack.littleEndianToInt(key, 12);     W[0][3] = col3;
 
             for (int i = 1; i <= 10; ++i)
             {
-                int u = subWord(shift(t3, 8)) ^ rcon[i - 1];
-                t0 ^= u;  W[i][0] = t0;
-                t1 ^= t0; W[i][1] = t1;
-                t2 ^= t1; W[i][2] = t2;
-                t3 ^= t2; W[i][3] = t3;
+                int colx = subWord(shift(col3, 8)) ^ rcon[i - 1];
+                col0 ^= colx;       W[i][0] = col0;
+                col1 ^= col0;       W[i][1] = col1;
+                col2 ^= col1;       W[i][2] = col2;
+                col3 ^= col2;       W[i][3] = col3;
             }
 
             break;
         }
         case 6:
         {
-            int t0 = Pack.littleEndianToInt(key,  0); W[0][0] = t0;
-            int t1 = Pack.littleEndianToInt(key,  4); W[0][1] = t1;
-            int t2 = Pack.littleEndianToInt(key,  8); W[0][2] = t2;
-            int t3 = Pack.littleEndianToInt(key, 12); W[0][3] = t3;
-            int t4 = Pack.littleEndianToInt(key, 16); W[1][0] = t4;
-            int t5 = Pack.littleEndianToInt(key, 20); W[1][1] = t5;
+            int col0 = Pack.littleEndianToInt(key,  0);     W[0][0] = col0;
+            int col1 = Pack.littleEndianToInt(key,  4);     W[0][1] = col1;
+            int col2 = Pack.littleEndianToInt(key,  8);     W[0][2] = col2;
+            int col3 = Pack.littleEndianToInt(key, 12);     W[0][3] = col3;
 
-            int rcon = 1;
-            int u = subWord(shift(t5, 8)) ^ rcon; rcon <<= 1;
-            t0 ^= u;  W[1][2] = t0;
-            t1 ^= t0; W[1][3] = t1;
-            t2 ^= t1; W[2][0] = t2;
-            t3 ^= t2; W[2][1] = t3;
-            t4 ^= t3; W[2][2] = t4;
-            t5 ^= t4; W[2][3] = t5;
+            int col4 = Pack.littleEndianToInt(key, 16);
+            int col5 = Pack.littleEndianToInt(key, 20);
 
-            for (int i = 3; i < 12; i += 3)
+            int i = 1, rcon = 1, colx;
+            for (;;)
             {
-                u = subWord(shift(t5, 8)) ^ rcon; rcon <<= 1;
-                t0 ^= u;  W[i    ][0] = t0;
-                t1 ^= t0; W[i    ][1] = t1;
-                t2 ^= t1; W[i    ][2] = t2;
-                t3 ^= t2; W[i    ][3] = t3;
-                t4 ^= t3; W[i + 1][0] = t4;
-                t5 ^= t4; W[i + 1][1] = t5;
-                u = subWord(shift(t5, 8)) ^ rcon; rcon <<= 1;
-                t0 ^= u;  W[i + 1][2] = t0;
-                t1 ^= t0; W[i + 1][3] = t1;
-                t2 ^= t1; W[i + 2][0] = t2;
-                t3 ^= t2; W[i + 2][1] = t3;
-                t4 ^= t3; W[i + 2][2] = t4;
-                t5 ^= t4; W[i + 2][3] = t5;
-            }
+                                    W[i    ][0] = col4;
+                                    W[i    ][1] = col5;
+                colx = subWord(shift(col5, 8)) ^ rcon; rcon <<= 1;
+                col0 ^= colx;       W[i    ][2] = col0;
+                col1 ^= col0;       W[i    ][3] = col1;
 
-            u = subWord(shift(t5, 8)) ^ rcon;
-            t0 ^= u;  W[12][0] = t0;
-            t1 ^= t0; W[12][1] = t1;
-            t2 ^= t1; W[12][2] = t2;
-            t3 ^= t2; W[12][3] = t3;
+                col2 ^= col1;       W[i + 1][0] = col2;
+                col3 ^= col2;       W[i + 1][1] = col3;
+                col4 ^= col3;       W[i + 1][2] = col4;
+                col5 ^= col4;       W[i + 1][3] = col5;
+
+                colx = subWord(shift(col5, 8)) ^ rcon; rcon <<= 1;
+                col0 ^= colx;       W[i + 2][0] = col0;
+                col1 ^= col0;       W[i + 2][1] = col1;
+                col2 ^= col1;       W[i + 2][2] = col2;
+                col3 ^= col2;       W[i + 2][3] = col3;
+
+                if ((i += 3) >= 13)
+                {
+                    break;
+                }
+
+                col4 ^= col3;
+                col5 ^= col4;
+            }
 
             break;
         }
         case 8:
         {
-            int t0 = Pack.littleEndianToInt(key,  0); W[0][0] = t0;
-            int t1 = Pack.littleEndianToInt(key,  4); W[0][1] = t1;
-            int t2 = Pack.littleEndianToInt(key,  8); W[0][2] = t2;
-            int t3 = Pack.littleEndianToInt(key, 12); W[0][3] = t3;
-            int t4 = Pack.littleEndianToInt(key, 16); W[1][0] = t4;
-            int t5 = Pack.littleEndianToInt(key, 20); W[1][1] = t5;
-            int t6 = Pack.littleEndianToInt(key, 24); W[1][2] = t6;
-            int t7 = Pack.littleEndianToInt(key, 28); W[1][3] = t7;
+            int col0 = Pack.littleEndianToInt(key,  0);     W[0][0] = col0;
+            int col1 = Pack.littleEndianToInt(key,  4);     W[0][1] = col1;
+            int col2 = Pack.littleEndianToInt(key,  8);     W[0][2] = col2;
+            int col3 = Pack.littleEndianToInt(key, 12);     W[0][3] = col3;
 
-            int u, rcon = 1;
+            int col4 = Pack.littleEndianToInt(key, 16);     W[1][0] = col4;
+            int col5 = Pack.littleEndianToInt(key, 20);     W[1][1] = col5;
+            int col6 = Pack.littleEndianToInt(key, 24);     W[1][2] = col6;
+            int col7 = Pack.littleEndianToInt(key, 28);     W[1][3] = col7;
 
-            for (int i = 2; i < 14; i += 2)
+            int i = 2, rcon = 1, colx;
+            for (;;)
             {
-                u = subWord(shift(t7, 8)) ^ rcon; rcon <<= 1;
-                t0 ^= u;  W[i    ][0] = t0;
-                t1 ^= t0; W[i    ][1] = t1;
-                t2 ^= t1; W[i    ][2] = t2;
-                t3 ^= t2; W[i    ][3] = t3;
-                u = subWord(t3);
-                t4 ^= u;  W[i + 1][0] = t4;
-                t5 ^= t4; W[i + 1][1] = t5;
-                t6 ^= t5; W[i + 1][2] = t6;
-                t7 ^= t6; W[i + 1][3] = t7;
-            }
+                colx = subWord(shift(col7, 8)) ^ rcon; rcon <<= 1;
+                col0 ^= colx;       W[i][0] = col0;
+                col1 ^= col0;       W[i][1] = col1;
+                col2 ^= col1;       W[i][2] = col2;
+                col3 ^= col2;       W[i][3] = col3;
+                ++i;
 
-            u = subWord(shift(t7, 8)) ^ rcon;
-            t0 ^= u;  W[14][0] = t0;
-            t1 ^= t0; W[14][1] = t1;
-            t2 ^= t1; W[14][2] = t2;
-            t3 ^= t2; W[14][3] = t3;
+                if (i >= 15)
+                {
+                    break;
+                }
+
+                colx = subWord(col3);
+                col4 ^= colx;       W[i][0] = col4;
+                col5 ^= col4;       W[i][1] = col5;
+                col6 ^= col5;       W[i][2] = col6;
+                col7 ^= col6;       W[i][3] = col7;
+                ++i;
+            }
 
             break;
         }
