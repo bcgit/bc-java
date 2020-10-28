@@ -52,7 +52,7 @@ public class TlsTestSuite extends TestSuite
         addVersionTests(testSuite, ProtocolVersion.TLSv10, clientCrypto, serverCrypto);
         addVersionTests(testSuite, ProtocolVersion.TLSv11, clientCrypto, serverCrypto);
         addVersionTests(testSuite, ProtocolVersion.TLSv12, clientCrypto, serverCrypto);
-        addVersionTests(testSuite, ProtocolVersion.TLSv13, clientCrypto, serverCrypto);
+//        addVersionTests(testSuite, ProtocolVersion.TLSv13, clientCrypto, serverCrypto);
     }
 
     private static void addFallbackTests(TestSuite testSuite, int clientCrypto, int serverCrypto)
@@ -267,15 +267,15 @@ public class TlsTestSuite extends TestSuite
          * Server generates downgraded (RFC 8446) 1.1 ServerHello. We expect fatal alert
          * (illegal_parameter) from the client.
          */
-        if (!isTLSv13)
-        {
-            TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
-            c.serverNegotiateVersion = version;
-            c.serverSupportedVersions = ProtocolVersion.TLSv13.downTo(version);
-            c.expectClientFatalAlert(AlertDescription.illegal_parameter);
-
-            addTestCase(testSuite, c, prefix + "BadDowngrade");
-        }
+//        if (!isTLSv13)
+//        {
+//            TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
+//            c.serverNegotiateVersion = version;
+//            c.serverSupportedVersions = ProtocolVersion.TLSv13.downTo(version);
+//            c.expectClientFatalAlert(AlertDescription.illegal_parameter);
+//
+//            addTestCase(testSuite, c, prefix + "BadDowngrade");
+//        }
     }
 
     private static void addTestCase(TestSuite testSuite, TlsTestConfig config, String name)
@@ -287,7 +287,8 @@ public class TlsTestSuite extends TestSuite
     {
         TlsTestConfig c = new TlsTestConfig();
         c.clientCrypto = clientCrypto;
-        c.clientSupportedVersions = ProtocolVersion.TLSv13.downTo(ProtocolVersion.SSLv3);
+//        c.clientSupportedVersions = ProtocolVersion.TLSv13.downTo(ProtocolVersion.SSLv3);
+        c.clientSupportedVersions = ProtocolVersion.TLSv12.downTo(ProtocolVersion.SSLv3);
         c.serverCrypto = serverCrypto;
         c.serverSupportedVersions = serverMaxVersion.downTo(ProtocolVersion.SSLv3);
         return c;
