@@ -163,17 +163,13 @@ public class XMSSTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("SHA256withXMSS", "BCPQC");
-
-        assertTrue(sig instanceof StateAwareSignature);
-
-        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+        Signature xmssSig = Signature.getInstance("SHA256withXMSS", "BCPQC");
 
         xmssSig.initSign(kp.getPrivate());
 
         xmssSig.update(msg, 0, msg.length);
 
-        byte[] s = sig.sign();
+        byte[] s = xmssSig.sign();
 
         xmssSig.initVerify(kp.getPublic());
 
@@ -191,17 +187,13 @@ public class XMSSTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("SHA512withXMSS", "BCPQC");
-
-        assertTrue(sig instanceof StateAwareSignature);
-
-        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+        Signature xmssSig = Signature.getInstance("SHA512withXMSS", "BCPQC");
 
         xmssSig.initSign(kp.getPrivate());
 
         xmssSig.update(msg, 0, msg.length);
 
-        byte[] s = sig.sign();
+        byte[] s = xmssSig.sign();
 
         xmssSig.initVerify(kp.getPublic());
 
@@ -219,17 +211,13 @@ public class XMSSTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("SHAKE128withXMSS", "BCPQC");
-
-        assertTrue(sig instanceof StateAwareSignature);
-
-        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+        Signature xmssSig = Signature.getInstance("SHAKE128withXMSS", "BCPQC");
 
         xmssSig.initSign(kp.getPrivate());
 
         xmssSig.update(msg, 0, msg.length);
 
-        byte[] s = sig.sign();
+        byte[] s = xmssSig.sign();
 
         xmssSig.initVerify(kp.getPublic());
 
@@ -247,17 +235,13 @@ public class XMSSTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("SHAKE256withXMSS", "BCPQC");
-
-        assertTrue(sig instanceof StateAwareSignature);
-
-        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+        Signature xmssSig = Signature.getInstance("SHAKE256withXMSS", "BCPQC");
 
         xmssSig.initSign(kp.getPrivate());
 
         xmssSig.update(msg, 0, msg.length);
 
-        byte[] s = sig.sign();
+        byte[] s = xmssSig.sign();
 
         xmssSig.initVerify(kp.getPublic());
 
@@ -275,17 +259,19 @@ public class XMSSTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        StateAwareSignature sig1 = (StateAwareSignature)Signature.getInstance("SHA256withXMSS", "BCPQC");
+        Signature sig1 = Signature.getInstance("SHA256withXMSS", "BCPQC");
 
-        StateAwareSignature sig2 = (StateAwareSignature)Signature.getInstance("SHA256withXMSS", "BCPQC");
+        Signature sig2 = Signature.getInstance("SHA256withXMSS", "BCPQC");
 
-        StateAwareSignature sig3 = (StateAwareSignature)Signature.getInstance("SHA256withXMSS", "BCPQC");
+        Signature sig3 = Signature.getInstance("SHA256withXMSS", "BCPQC");
 
-        sig1.initSign(kp.getPrivate());
+        XMSSPrivateKey xmsPrivKey = (XMSSPrivateKey)kp.getPrivate();
 
-        sig2.initSign(sig1.getUpdatedPrivateKey());
+        sig1.initSign(xmsPrivKey.extractKeyShard(1));
 
-        sig3.initSign(sig2.getUpdatedPrivateKey());
+        sig2.initSign(xmsPrivKey.extractKeyShard(1));
+
+        sig3.initSign(xmsPrivKey.extractKeyShard(1));
 
         sig1.update(msg, 0, msg.length);
 
@@ -447,8 +433,6 @@ public class XMSSTest
         KeyPair kp = kpg.generateKeyPair();
 
         Signature sig = Signature.getInstance("SHA256withXMSS", "BCPQC");
-
-        assertTrue(sig instanceof StateAwareSignature);
 
         StateAwareSignature xmssSig = (StateAwareSignature)sig;
 
