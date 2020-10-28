@@ -86,6 +86,11 @@ public class CMSTypedStream
 
         public int read(byte[] buf, int off, int len) throws IOException
         {
+            if (len == 0)
+            {
+                return 0;
+            }
+
             int totalRead = Streams.readFully(super.in, buf, off, len);
             return totalRead > 0 ? totalRead : -1;
         }
