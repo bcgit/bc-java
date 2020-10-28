@@ -66,7 +66,7 @@ public class KeyFactorySpi
         Class spec)
         throws InvalidKeySpecException
     {
-        if (spec.isAssignableFrom(java.security.spec.ECPublicKeySpec.class) && key instanceof ECPublicKey)
+        if ((spec.isAssignableFrom(KeySpec.class) || spec.isAssignableFrom(java.security.spec.ECPublicKeySpec.class)) && key instanceof ECPublicKey)
         {
             ECPublicKey k = (ECPublicKey)key;
             if (k.getParams() != null)
@@ -80,7 +80,7 @@ public class KeyFactorySpi
                 return new java.security.spec.ECPublicKeySpec(k.getW(), EC5Util.convertSpec(EC5Util.convertCurve(implicitSpec.getCurve(), implicitSpec.getSeed()), implicitSpec));
             }
         }
-        else if (spec.isAssignableFrom(java.security.spec.ECPrivateKeySpec.class) && key instanceof ECPrivateKey)
+        else if ((spec.isAssignableFrom(KeySpec.class) || spec.isAssignableFrom(java.security.spec.ECPrivateKeySpec.class)) && key instanceof ECPrivateKey)
         {
             ECPrivateKey k = (ECPrivateKey)key;
 
