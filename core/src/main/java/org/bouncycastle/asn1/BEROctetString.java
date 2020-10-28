@@ -39,13 +39,7 @@ public class BEROctetString
         {
             try
             {
-                DEROctetString o = (DEROctetString)octs[i];
-
-                bOut.write(o.getOctets());
-            }
-            catch (ClassCastException e)
-            {
-                throw new IllegalArgumentException(octs[i].getClass().getName() + " found in input should only contain DEROctetString");
+                bOut.write(octs[i].getOctets());
             }
             catch (IOException e)
             {
