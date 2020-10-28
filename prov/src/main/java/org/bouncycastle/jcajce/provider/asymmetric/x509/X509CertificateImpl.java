@@ -494,17 +494,24 @@ abstract class X509CertificateImpl
 
         byte[]  sig = this.getSignature();
 
-        buf.append("            Signature: ").append(new String(Hex.encode(sig, 0, 20))).append(nl);
-        for (int i = 20; i < sig.length; i += 20)
+        if (sig.length > 20)
         {
-            if (i < sig.length - 20)
+            buf.append("            Signature: ").append(Hex.toHexString(sig, 0, 20)).append(nl);
+            for (int i = 20; i < sig.length; i += 20)
             {
-                buf.append("                       ").append(new String(Hex.encode(sig, i, 20))).append(nl);
+                if (i < sig.length - 20)
+                {
+                    buf.append("                       ").append(Hex.toHexString(sig, i, 20)).append(nl);
+                }
+                else
+                {
+                    buf.append("                       ").append(Hex.toHexString(sig, i, sig.length - i)).append(nl);
+                }
             }
-            else
-            {
-                buf.append("                       ").append(new String(Hex.encode(sig, i, sig.length - i))).append(nl);
-            }
+        }
+        else
+        {
+            buf.append("            Signature: ").append(Hex.toHexString(sig)).append(nl);
         }
 
         Extensions extensions = c.getTBSCertificate().getExtensions();
