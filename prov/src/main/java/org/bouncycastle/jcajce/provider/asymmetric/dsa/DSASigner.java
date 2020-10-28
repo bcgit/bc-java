@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.dsa;
 
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -127,6 +128,11 @@ public class DSASigner
         }
 
         return signer.verifySignature(hash, sig[0], sig[1]);
+    }
+
+    protected AlgorithmParameters engineGetParameters()
+    {
+        return null;
     }
 
     protected void engineSetParameter(
