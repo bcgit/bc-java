@@ -7,11 +7,15 @@ import java.io.OutputStream;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1StreamParser;
+import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BEROctetStringGenerator;
 import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.BERTags;
@@ -19,6 +23,7 @@ import org.bouncycastle.asn1.DERSequenceGenerator;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.CompressedDataParser;
 import org.bouncycastle.asn1.cms.ContentInfoParser;
+import org.bouncycastle.util.Arrays;
 
 public class OctetStringTest 
     extends TestCase 
@@ -127,7 +132,28 @@ public class OctetStringTest
     
        assertEquals(14, count);
     }
-    
+
+    public void testReadingWritingNestedDirect()
+        throws Exception
+    {
+        ASN1OctetString str = new BEROctetString(
+            new BEROctetString[]{
+                new BEROctetString(new byte[10]),
+                new BEROctetString(new byte[20])
+            });
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
+
+        aOut.writeObject(str);
+
+        aOut.close();
+
+        ASN1InputStream aIn = new ASN1InputStream(bOut.toByteArray());
+
+        assertTrue(Arrays.areEqual(new byte[30], ASN1OctetString.getInstance(aIn.readObject()).getOctets()));
+    }
+
     public void testNestedStructure()
         throws Exception
     {
