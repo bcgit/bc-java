@@ -46,13 +46,7 @@ public class KeyFactorySpi
 
             return new RSAPublicKeySpec(k.getModulus(), k.getPublicExponent());
         }
-        else if (spec.isAssignableFrom(RSAPrivateKeySpec.class) && key instanceof java.security.interfaces.RSAPrivateKey)
-        {
-            java.security.interfaces.RSAPrivateKey k = (java.security.interfaces.RSAPrivateKey)key;
-
-            return new RSAPrivateKeySpec(k.getModulus(), k.getPrivateExponent());
-        }
-        else if (spec.isAssignableFrom(RSAPrivateCrtKeySpec.class) && key instanceof RSAPrivateCrtKey)
+        else if (spec.isAssignableFrom(RSAPrivateKeySpec.class) && key instanceof RSAPrivateCrtKey)
         {
             RSAPrivateCrtKey k = (RSAPrivateCrtKey)key;
 
@@ -62,6 +56,12 @@ public class KeyFactorySpi
                 k.getPrimeP(), k.getPrimeQ(),
                 k.getPrimeExponentP(), k.getPrimeExponentQ(),
                 k.getCrtCoefficient());
+        }
+        else if (spec.isAssignableFrom(RSAPrivateKeySpec.class) && key instanceof java.security.interfaces.RSAPrivateKey)
+        {
+            java.security.interfaces.RSAPrivateKey k = (java.security.interfaces.RSAPrivateKey)key;
+
+            return new RSAPrivateKeySpec(k.getModulus(), k.getPrivateExponent());
         }
         else if (spec.isAssignableFrom(OpenSSHPublicKeySpec.class) && key instanceof RSAPublicKey)
         {
