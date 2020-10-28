@@ -40,13 +40,13 @@ public class KeyFactorySpi
         Class spec)
         throws InvalidKeySpecException
     {
-        if (spec.isAssignableFrom(RSAPublicKeySpec.class) && key instanceof RSAPublicKey)
+        if ((spec.isAssignableFrom(KeySpec.class) || spec.isAssignableFrom(RSAPublicKeySpec.class)) && key instanceof RSAPublicKey)
         {
             RSAPublicKey k = (RSAPublicKey)key;
 
             return new RSAPublicKeySpec(k.getModulus(), k.getPublicExponent());
         }
-        else if (spec.isAssignableFrom(RSAPrivateKeySpec.class) && key instanceof RSAPrivateCrtKey)
+        else if ((spec.isAssignableFrom(KeySpec.class) || spec.isAssignableFrom(RSAPrivateCrtKeySpec.class)) && key instanceof RSAPrivateCrtKey)
         {
             RSAPrivateCrtKey k = (RSAPrivateCrtKey)key;
 
@@ -57,7 +57,7 @@ public class KeyFactorySpi
                 k.getPrimeExponentP(), k.getPrimeExponentQ(),
                 k.getCrtCoefficient());
         }
-        else if (spec.isAssignableFrom(RSAPrivateKeySpec.class) && key instanceof java.security.interfaces.RSAPrivateKey)
+        else if ((spec.isAssignableFrom(KeySpec.class) || spec.isAssignableFrom(RSAPrivateKeySpec.class)) && key instanceof java.security.interfaces.RSAPrivateKey)
         {
             java.security.interfaces.RSAPrivateKey k = (java.security.interfaces.RSAPrivateKey)key;
 
