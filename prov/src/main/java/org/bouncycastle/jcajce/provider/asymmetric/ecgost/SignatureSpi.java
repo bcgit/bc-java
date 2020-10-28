@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost;
 
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -208,6 +209,11 @@ public class SignatureSpi
         String      param)
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
+    }
+
+    protected AlgorithmParameters engineGetParameters()
+    {
+        return null;
     }
 
     static AsymmetricKeyParameter generatePublicKeyParameter(

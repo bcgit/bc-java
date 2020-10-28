@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -200,6 +201,11 @@ public class ECGOST2012SignatureSpi512
         AlgorithmParameterSpec params)
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
+    }
+
+    protected AlgorithmParameters engineGetParameters()
+    {
+        return null;
     }
 
     /**

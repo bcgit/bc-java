@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.dstu;
 
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -171,6 +172,11 @@ public class SignatureSpi
         AlgorithmParameterSpec params)
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
+    }
+
+    protected AlgorithmParameters engineGetParameters()
+    {
+        return null;
     }
 
     /**
