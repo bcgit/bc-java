@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.edec;
 
+import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.PrivateKey;
@@ -135,6 +136,11 @@ public class SignatureSpi
         throws InvalidParameterException
     {
         throw new UnsupportedOperationException("engineGetParameter unsupported");
+    }
+
+    protected AlgorithmParameters engineGetParameters()
+    {
+        return null;
     }
 
     public final static class EdDSA
