@@ -18,7 +18,10 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAKeyGenParameterSpec;
@@ -47,6 +50,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
+import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -153,6 +158,29 @@ public class RSATest
         
         PrivateKey  priv2048Key = fact.generatePrivate(priv2048KeySpec);
         PublicKey   pub2048Key = fact.generatePublic(pub2048KeySpec);
+
+        // getKeySpec tests
+        isTrue(fact.getKeySpec(privKey, KeySpec.class) instanceof RSAPrivateCrtKeySpec);
+        isTrue(fact.getKeySpec(privKey, RSAPrivateKeySpec.class) instanceof RSAPrivateCrtKeySpec);
+        isTrue(fact.getKeySpec(privKey, RSAPrivateCrtKeySpec.class) instanceof RSAPrivateCrtKeySpec);
+        isTrue(fact.getKeySpec(privKey, OpenSSHPrivateKeySpec.class) instanceof OpenSSHPrivateKeySpec);
+
+        RSAPrivateKey simpPriv = (RSAPrivateKey)fact.generatePrivate(new RSAPrivateKeySpec(privKeySpec.getPrivateExponent(), privKeySpec.getModulus()));
+
+        isTrue(fact.getKeySpec(simpPriv, KeySpec.class) instanceof RSAPrivateKeySpec);
+        isTrue(fact.getKeySpec(simpPriv, RSAPrivateKeySpec.class) instanceof RSAPrivateKeySpec);
+        try
+        {
+            fact.getKeySpec(simpPriv, RSAPrivateCrtKeySpec.class);
+        }
+        catch (InvalidKeySpecException e)
+        {
+            // ignore
+        }
+
+        isTrue(fact.getKeySpec(pubKey, KeySpec.class) instanceof RSAPublicKeySpec);
+        isTrue(fact.getKeySpec(pubKey, RSAPublicKeySpec.class) instanceof RSAPublicKeySpec);
+        isTrue(fact.getKeySpec(pubKey, OpenSSHPublicKeySpec.class) instanceof OpenSSHPublicKeySpec);
 
         //
         // key without CRT coefficients
