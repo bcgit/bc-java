@@ -30,7 +30,12 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, TBD.
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
+<li>Performance of Argon2 has been improved.</li>
+<li>Performance of Noekeon has been improved.</li>
 <li>A setSessionKeyObfuscation() method has been added to PublicKeyKeyEncryptionMethodGenerator to allow turning off of session key obfuscation (default is on, method primarily to get around early version GPG issues with AES-128 keys).</li>
+<li>Implemented 'safegcd' constant-time modular inversion (as well as a variable-time variant). It has replaced Fermat inversion in all our EC code, and BigInteger.modInverse in several other places, particularly signers. This improves side-channel protection, and also gives a significant performance boost.</li>
+<li>Performance of custom binary ECC curves has been improved.</li>
+<li>BCJSSE: New boolean system property 'org.bouncycastle.jsse.keyManager.checkEKU' allows to disable ExtendedKeyUsage restrictions when selecting credentials (although the peer may still complain).</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
