@@ -383,8 +383,8 @@ public class OpenBSDBCrypt
         for (i = 0; i < len; i += 3)
         {
             a1 = data[i] & 0xff;
-            a2 = data[i + 1] & 0xff;
-            a3 = data[i + 2] & 0xff;
+            a2 = data[i + 1] & 0xff;    // lgtm [java/index-out-of-bounds]
+            a3 = data[i + 2] & 0xff;    // lgtm [java/index-out-of-bounds]
 
             sb.append((char)encodingTable[(a1 >>> 2) & 0x3f]);
             sb.append((char)encodingTable[((a1 << 4) | (a2 >>> 4)) & 0x3f]);
@@ -444,10 +444,11 @@ public class OpenBSDBCrypt
 
         for (int i = 0; i < len; i += 4)
         {
+            // suppress LGTM warnings index-out-of-bounds since the loop increments i by 4
             b1 = decodingTable[saltChars[i]];
-            b2 = decodingTable[saltChars[i + 1]];
-            b3 = decodingTable[saltChars[i + 2]];
-            b4 = decodingTable[saltChars[i + 3]];
+            b2 = decodingTable[saltChars[i + 1]];   // lgtm [java/index-out-of-bounds]
+            b3 = decodingTable[saltChars[i + 2]];   // lgtm [java/index-out-of-bounds]
+            b4 = decodingTable[saltChars[i + 3]];   // lgtm [java/index-out-of-bounds]
 
             out.write((b1 << 2) | (b2 >> 4));
             out.write((b2 << 4) | (b3 >> 2));
