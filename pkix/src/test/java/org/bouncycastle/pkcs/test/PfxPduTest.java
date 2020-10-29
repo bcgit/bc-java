@@ -840,7 +840,13 @@ public class PfxPduTest
         KeyFactory fact = KeyFactory.getInstance("RSA", BC);
         PrivateKey privKey = fact.generatePrivate(privKeySpec);
         EncryptedPrivateKeyInfo encPKInfo = new EncryptedPrivateKeyInfo(encodedEncPKInfo);
+        AlgorithmParameters algParams = encPKInfo.getAlgParameters();
 
+        if (algParams == null)
+        {
+            return; // this PBE type is not supported on the JVM
+        }
+        
         Cipher cipher = Cipher.getInstance(encPKInfo.getAlgName(), "BC");
 
         PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
@@ -849,7 +855,6 @@ public class PfxPduTest
 
         Key pbeKey = skFac.generateSecret(pbeKeySpec);
 
-        AlgorithmParameters algParams = encPKInfo.getAlgParameters();
 
         cipher.init(Cipher.DECRYPT_MODE, pbeKey, algParams);
 
