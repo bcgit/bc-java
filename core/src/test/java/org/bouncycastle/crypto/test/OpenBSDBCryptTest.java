@@ -1,8 +1,10 @@
 package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -104,9 +106,113 @@ public class OpenBSDBCryptTest
         return "OpenBSDBCrypt";
     }
 
+
+    public void testPermutations()
+        throws Exception
+    {
+
+        byte[] rootPassword = Strings.toByteArray("aabcc");
+        byte[] buf = null;
+
+        byte[][] salts = new byte[3][];
+
+        salts[0] = new byte[16];
+        salts[1] = new byte[16];
+        salts[2] = new byte[16];
+        for (int t = 0; t < 16; t++)
+        {
+            salts[1][t] = (byte)t;
+            salts[2][t] = (byte)(16 - t);
+        }
+
+
+
+        //
+        // Permutation, starting with a shorter array, same length then one longer.
+        //
+        for (int j = rootPassword.length - 1; j < rootPassword.length + 2; j++)
+        {
+            buf = new byte[j];
+
+            for (int a = 0; a < rootPassword.length; a++)
+            {
+                for (int b = 0; b < buf.length; b++)
+                {
+                    buf[b] = rootPassword[(a + b) % rootPassword.length];
+                }
+
+
+                ArrayList<byte[]> permutations = new ArrayList<byte[]>();
+                permute(permutations, buf, 0, buf.length - 1);
+
+                for (byte[] candidate: permutations)
+                {
+                    for (byte[] salt : salts)
+                    {
+                        String expected = OpenBSDBCrypt.generate(rootPassword, salt, 4);
+                        String testValue = OpenBSDBCrypt.generate(candidate, salt, 4);
+
+                        //
+                        // If the passwords are the same for the same salt we should have the same string.
+                        //
+                        boolean sameAsRoot = Arrays.areEqual(rootPassword, candidate);
+                        isTrue("expected same result", sameAsRoot == expected.equals(testValue));
+
+                        //
+                        // check that the test password passes against itself.
+                        //
+                        isTrue("candidate valid with self", OpenBSDBCrypt.checkPassword(testValue, candidate));
+
+                        //
+                        // Check against expected, it should always track sameAsRoot.
+                        //
+                        boolean candidateRootValid = OpenBSDBCrypt.checkPassword(expected, candidate);
+                        isTrue("candidate valid with root", sameAsRoot == candidateRootValid);
+                    }
+
+                }
+            }
+        }
+    }
+
+
+    private void swap(byte[] buf, int i, int j)
+    {
+        byte b = buf[i];
+        buf[i] = buf[j];
+        buf[j] = b;
+    }
+
+    private void permute(ArrayList<byte[]> permutation, byte[] a, int l, int r)
+    {
+        if (l == r)
+        {
+            permutation.add(Arrays.clone(a));
+        }
+        else
+        {
+
+            for (int i = l; i <= r; i++)
+            {
+                // Swapping done
+                swap(a, l, i);
+
+                // Recursion called
+                permute(permutation, a, l + 1, r);
+
+                //backtrack
+                swap(a, l, i);
+            }
+        }
+    }
+
+
     public void performTest()
         throws Exception
     {
+
+        testPermutations();
+
         byte[] salt = new byte[16];
         for (int i = 0; i < bcryptTest1.length; i++)
         {
@@ -216,8 +322,6 @@ public class OpenBSDBCryptTest
             isTrue(!OpenBSDBCrypt.checkPassword(tokenString, "wrong-token".toCharArray()));
         }
     }
-
-
 
 
 }
