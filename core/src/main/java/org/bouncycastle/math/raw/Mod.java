@@ -97,15 +97,18 @@ public abstract class Mod
 //        assert -1 == signF | 0 == signF;
 
         cnegate30(len30, signF, F);
-        cnegate30(len30, signF, D);
 
-        decode30(bits, D, 0, z, 0);
-
-        int signD = D[len30 - 1] >> 31;
+        int signD = cnegate30(len30, signF, D);
 //        assert -1 == signD | 0 == signD;
 
-        signD += Nat.cadd(len32, signD, z, m, z);
-//        assert 0 == signD & 0 != Nat.lessThan(len32, z, m);
+        // TODO 'D' should already be in [P, -P), but absent a proof we support [-2P, 2P)  
+        signD = csub30(len30, ~signD, D, M);
+        signD = cadd30(len30,  signD, D, M);
+        signD = cadd30(len30,  signD, D, M);
+//        assert 0 == signD;
+
+        decode30(bits, D, 0, z, 0);
+//        assert 0 != Nat.lessThan(len32, z, m);
 
         return Nat.equalTo(len30, F, 1) & Nat.equalToZero(len30, G);
     }
@@ -181,16 +184,26 @@ public abstract class Mod
             return false;
         }
 
-        decode30(bits, D, 0, z, 0);
-
         int signD = D[lenDE - 1] >> 31;
 //        assert -1 == signD || 0 == signD;
 
+        // TODO 'D' should already be in [P, -P), but absent a proof we support [-2P, 2P)  
         if (signD < 0)
         {
-            signD += Nat.addTo(len32, m, z);
+            signD = add30(len30, D, M);
         }
-//        assert 0 == signD && !Nat.gte(len32, z, m);
+        else
+        {
+            signD = sub30(len30, D, M);
+        }
+        if (signD < 0)
+        {
+            signD = add30(len30, D, M);
+        }
+//        assert 0 == signD;
+
+        decode30(bits, D, 0, z, 0);
+//        assert !Nat.gte(len32, z, m);
 
         return true;
     }
@@ -232,22 +245,71 @@ public abstract class Mod
         }
     }
 
-    private static void cnegate30(int len, int cond, int[] D)
+    private static int add30(int len30, int[] D, int[] M)
     {
-//        assert len > 0;
-//        assert D.length >= len;
+//        assert len30 > 0;
+//        assert D.length >= len30;
+//        assert M.length >= len30;
 
-        int last = len - 1;
-        long cd = 0L;
-
+        int c = 0, last = len30 - 1;
         for (int i = 0; i < last; ++i)
         {
-            cd +=  (D[i] ^ cond) - cond;
-            D[i] = (int)cd & M30; cd >>= 30;
+            c += D[i] + M[i];
+            D[i] = c & M30; c >>= 30;
         }
+        c += D[last] + M[last];
+        D[last] = c; c >>= 30;
+        return c;
+    }
 
-        cd += (D[last] ^ cond) - cond;
-        D[last] = (int)cd;
+    private static int cadd30(int len30, int cond, int[] D, int[] M)
+    {
+//        assert len30 > 0;
+//        assert D.length >= len30;
+//        assert M.length >= len30;
+
+        int c = 0, last = len30 - 1;
+        for (int i = 0; i < last; ++i)
+        {
+            c += D[i] + (M[i] & cond);
+            D[i] = c & M30; c >>= 30;
+        }
+        c += D[last] + (M[last] & cond);
+        D[last] = c; c >>= 30;
+        return c;
+    }
+
+    private static int cnegate30(int len30, int cond, int[] D)
+    {
+//        assert len30 > 0;
+//        assert D.length >= len30;
+
+        int c = 0, last = len30 - 1;
+        for (int i = 0; i < last; ++i)
+        {
+            c += (D[i] ^ cond) - cond;
+            D[i] = c & M30; c >>= 30;
+        }
+        c += (D[last] ^ cond) - cond;
+        D[last] = c; c >>= 30;
+        return c;
+    }
+
+    private static int csub30(int len30, int cond, int[] D, int[] M)
+    {
+//        assert len30 > 0;
+//        assert D.length >= len30;
+//        assert M.length >= len30;
+
+        int c = 0, last = len30 - 1;
+        for (int i = 0; i < last; ++i)
+        {
+            c += D[i] - (M[i] & cond);
+            D[i] = c & M30; c >>= 30;
+        }
+        c += D[last] - (M[last] & cond);
+        D[last] = c; c >>= 30;
+        return c;
     }
 
     private static void decode30(int bits, int[] x, int xOff, int[] z, int zOff)
@@ -406,30 +468,45 @@ public abstract class Mod
         return (49 * bits + (bits < 46 ? 80 : 47)) / 17;
     }
 
-    private static void negate30(int len, int[] D)
+    private static int negate30(int len30, int[] D)
     {
-//        assert len > 0;
-//        assert D.length >= len;
+//        assert len30 > 0;
+//        assert D.length >= len30;
 
-        int last = len - 1;
-        long cd = 0L;
-
+        int c = 0, last = len30 - 1;
         for (int i = 0; i < last; ++i)
         {
-            cd -= D[i];
-            D[i] = (int)cd & M30; cd >>= 30;
+            c -= D[i];
+            D[i] = c & M30; c >>= 30;
         }
-
-        cd -= D[last];
-        D[last] = (int)cd;
+        c -= D[last];
+        D[last] = c; c >>= 30;
+        return c;
     }
 
-    private static void updateDE30(int len, int[] D, int[] E, int[] t, int m0Inv30x4, int[] M)
+    private static int sub30(int len30, int[] D, int[] M)
     {
-//        assert len > 0;
-//        assert D.length >= len;
-//        assert E.length >= len;
-//        assert M.length >= len;
+//        assert len30 > 0;
+//        assert D.length >= len30;
+//        assert M.length >= len30;
+
+        int c = 0, last = len30 - 1;
+        for (int i = 0; i < last; ++i)
+        {
+            c += D[i] - M[i];
+            D[i] = c & M30; c >>= 30;
+        }
+        c += D[last] - M[last];
+        D[last] = c; c >>= 30;
+        return c;
+    }
+
+    private static void updateDE30(int len30, int[] D, int[] E, int[] t, int m0Inv30x4, int[] M)
+    {
+//        assert len30 > 0;
+//        assert D.length >= len30;
+//        assert E.length >= len30;
+//        assert M.length >= len30;
 //        assert m0Inv30x4 * M[0] == -1 << 2;
 
         final int u = t[0], v = t[1], q = t[2], r = t[3];
@@ -454,7 +531,7 @@ public abstract class Mod
         cd >>= 30;
         ce >>= 30;
 
-        for (i = 1; i < len; ++i)
+        for (i = 1; i < len30; ++i)
         {
             di = D[i];
             ei = E[i];
@@ -469,15 +546,15 @@ public abstract class Mod
             E[i - 1] = (int)ce & M30; ce >>= 30;
         }
 
-        D[len - 1] = (int)cd;
-        E[len - 1] = (int)ce;
+        D[len30 - 1] = (int)cd;
+        E[len30 - 1] = (int)ce;
     }
 
-    private static void updateFG30(int len, int[] F, int[] G, int[] t)
+    private static void updateFG30(int len30, int[] F, int[] G, int[] t)
     {
-//        assert len > 0;
-//        assert F.length >= len;
-//        assert G.length >= len;
+//        assert len30 > 0;
+//        assert F.length >= len30;
+//        assert G.length >= len30;
 
         final int u = t[0], v = t[1], q = t[2], r = t[3];
         int fi, gi, i;
@@ -495,7 +572,7 @@ public abstract class Mod
         cf >>= 30;
         cg >>= 30;
 
-        for (i = 1; i < len; ++i)
+        for (i = 1; i < len30; ++i)
         {
             fi = F[i];
             gi = G[i];
@@ -507,7 +584,7 @@ public abstract class Mod
             G[i - 1] = (int)cg & M30; cg >>= 30;
         }
 
-        F[len - 1] = (int)cf;
-        G[len - 1] = (int)cg;
+        F[len30 - 1] = (int)cf;
+        G[len30 - 1] = (int)cg;
     }
 }
