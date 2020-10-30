@@ -38,20 +38,10 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
+        AsymmetricKeyParameter pub;
         if (publicKey instanceof BCEdDSAPublicKey)
         {
-            AsymmetricKeyParameter pub = ((BCEdDSAPublicKey)publicKey).engineGetKeyParameters();
-         
-            if (pub instanceof Ed448PublicKeyParameters)
-            {
-                signer = getSigner("Ed448");
-            }
-            else
-            {
-                signer = getSigner("Ed25519");
-            }
-
-            signer.init(false, pub);
+            pub = ((BCEdDSAPublicKey)publicKey).engineGetKeyParameters();
         }
         else if (publicKey instanceof EdECPublicKey)
         {
@@ -59,43 +49,39 @@ public class SignatureSpi
 
             byte[] keyData = Arrays.reverse(BigIntegers.asUnsignedByteArray(jcaPub.getPoint().getY()));
 
-            AsymmetricKeyParameter pub;
             if (keyData.length == Ed448PublicKeyParameters.KEY_SIZE)
             {
                 pub = new Ed448PublicKeyParameters(keyData, 0);
-                signer = getSigner("Ed448");
             }
             else
             {
                 pub = new Ed25519PublicKeyParameters(keyData, 0);
-                signer = getSigner("Ed25519");
             }
-
-            signer.init(false, pub);
         }
         else
         {
             throw new InvalidKeyException("cannot identify EdDSA public key");
         }
+
+        if (pub instanceof Ed448PublicKeyParameters)
+        {
+            signer = getSigner("Ed448");
+        }
+        else
+        {
+            signer = getSigner("Ed25519");
+        }
+
+        signer.init(false, pub);
     }
 
     protected void engineInitSign(PrivateKey privateKey)
         throws InvalidKeyException
     {
+        AsymmetricKeyParameter priv;
         if (privateKey instanceof BCEdDSAPrivateKey)
         {
-            AsymmetricKeyParameter priv = ((BCEdDSAPrivateKey)privateKey).engineGetKeyParameters();
-
-            if (priv instanceof Ed448PrivateKeyParameters)
-            {
-                signer = getSigner("Ed448");
-            }
-            else
-            {
-                signer = getSigner("Ed25519");
-            }
-
-            signer.init(true, priv);
+            priv = ((BCEdDSAPrivateKey)privateKey).engineGetKeyParameters();
         }
         else if (privateKey instanceof EdECPrivateKey)
         {
@@ -105,19 +91,14 @@ public class SignatureSpi
             {
                 byte[] keyData = jcaPriv.getBytes().get();
 
-                AsymmetricKeyParameter priv;
                 if (keyData.length == Ed448PrivateKeyParameters.KEY_SIZE)
                 {
                     priv = new Ed448PrivateKeyParameters(keyData, 0);
-                    signer = getSigner("Ed448");
                 }
                 else
                 {
                     priv = new Ed25519PrivateKeyParameters(keyData, 0);
-                    signer = getSigner("Ed25519");
                 }
-
-                signer.init(true, priv);
             }
             else
             {
@@ -128,6 +109,17 @@ public class SignatureSpi
         {
             throw new InvalidKeyException("cannot identify EdDSA private key");
         }
+
+        if (priv instanceof Ed448PrivateKeyParameters)
+        {
+            signer = getSigner("Ed448");
+        }
+        else
+        {
+            signer = getSigner("Ed25519");
+        }
+
+        signer.init(true, priv);
     }
 
     private Signer getSigner(String alg)
