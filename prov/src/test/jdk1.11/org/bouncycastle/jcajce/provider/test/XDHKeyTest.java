@@ -12,6 +12,8 @@ import java.security.spec.NamedParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import javax.crypto.KeyAgreement;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -138,6 +140,32 @@ public class XDHKeyTest
             publicKey instanceof XECPublicKey);
         assertTrue(
             privateKey instanceof XECPrivateKey);
+    }
+
+    public void testBCAgreement()
+        throws Exception
+    {
+        KeyPairGenerator kpGen1 = KeyPairGenerator.getInstance("X25519", "SunEC");
+        KeyPairGenerator kpGen2 = KeyPairGenerator.getInstance("X25519", "BC");
+
+        KeyAgreement keyAgreement = KeyAgreement.getInstance("XDH", "BC");
+
+        KeyPair kp1 = kpGen1.generateKeyPair();
+        KeyPair kp2 = kpGen2.generateKeyPair();
+
+        keyAgreement.init(kp1.getPrivate());
+
+        keyAgreement.doPhase(kp2.getPublic(), true);
+
+        byte[] sec1 = keyAgreement.generateSecret();
+
+        keyAgreement.init(kp2.getPrivate());
+
+        keyAgreement.doPhase(kp1.getPublic(), true);
+
+        byte[] sec2 = keyAgreement.generateSecret();
+
+        assertTrue(Arrays.areEqual(sec1, sec2));
     }
 
     public static void main(String args[])
