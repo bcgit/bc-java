@@ -109,19 +109,19 @@ class X509Util
         //
         // explicit params
         //
-        AlgorithmIdentifier sha1AlgId = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, new DERNull());
+        AlgorithmIdentifier sha1AlgId = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
         params.put("SHA1WITHRSAANDMGF1", creatPSSParams(sha1AlgId, 20));
 
-        AlgorithmIdentifier sha224AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224, new DERNull());
+        AlgorithmIdentifier sha224AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224, DERNull.INSTANCE);
         params.put("SHA224WITHRSAANDMGF1", creatPSSParams(sha224AlgId, 28));
 
-        AlgorithmIdentifier sha256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, new DERNull());
+        AlgorithmIdentifier sha256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
         params.put("SHA256WITHRSAANDMGF1", creatPSSParams(sha256AlgId, 32));
 
-        AlgorithmIdentifier sha384AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, new DERNull());
+        AlgorithmIdentifier sha384AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
         params.put("SHA384WITHRSAANDMGF1", creatPSSParams(sha384AlgId, 48));
 
-        AlgorithmIdentifier sha512AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, new DERNull());
+        AlgorithmIdentifier sha512AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
         params.put("SHA512WITHRSAANDMGF1", creatPSSParams(sha512AlgId, 64));
     }
 
@@ -164,7 +164,7 @@ class X509Util
         }
         else
         {
-            return new AlgorithmIdentifier(sigOid, new DERNull());
+            return new AlgorithmIdentifier(sigOid, DERNull.INSTANCE);
         }
     }
     

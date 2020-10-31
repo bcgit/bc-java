@@ -93,6 +93,30 @@ public class Properties
         return false;
     }
 
+    /**
+     * Return whether a particular override has been set to false.
+     *
+     * @param propertyName the property name for the override.
+     * @param isTrue true if the override should be true, false otherwise.
+     * @return true if the property is set to the value of isTrue, false otherwise.
+     */
+    public static boolean isOverrideSetTo(String propertyName, boolean isTrue)
+    {
+        try
+        {
+            String propertyValue = getPropertyValue(propertyName);
+            if (isTrue)
+            {
+                return isSetTrue(propertyValue);
+            }
+            return isSetFalse(propertyValue);
+        }
+        catch (AccessControlException e)
+        {
+            return false;
+        }
+    }
+
     public static BigInteger asBigInteger(String propertyName)
     {
         String p = getPropertyValue(propertyName);
@@ -154,5 +178,32 @@ public class Properties
                 return System.getProperty(propertyName);
             }
         });
+    }
+
+    private static boolean isSetFalse(String p)
+    {
+        if (p == null || p.length() != 5)
+        {
+            return false;
+        }
+
+        return (p.charAt(0) == 'f' || p.charAt(0) == 'F')
+            && (p.charAt(1) == 'a' || p.charAt(1) == 'A')
+            && (p.charAt(2) == 'l' || p.charAt(2) == 'L')
+            && (p.charAt(3) == 's' || p.charAt(3) == 'S')
+            && (p.charAt(4) == 'e' || p.charAt(4) == 'E');
+    }
+
+    private static boolean isSetTrue(String p)
+    {
+        if (p == null || p.length() != 4)
+        {
+            return false;
+        }
+
+        return (p.charAt(0) == 't' || p.charAt(0) == 'T')
+            && (p.charAt(1) == 'r' || p.charAt(1) == 'R')
+            && (p.charAt(2) == 'u' || p.charAt(2) == 'U')
+            && (p.charAt(3) == 'e' || p.charAt(3) == 'E');
     }
 }

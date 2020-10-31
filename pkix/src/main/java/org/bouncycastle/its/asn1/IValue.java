@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * <pre>
@@ -20,7 +21,7 @@ public class IValue
 
     private IValue(ASN1Integer value)
     {
-        int i = value.getValue().intValueExact();
+        int i = BigIntegers.intValueExact(value.getValue());
 
         if (i < 0 || i > 65535)
         {

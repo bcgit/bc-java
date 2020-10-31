@@ -63,6 +63,7 @@ import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509CRLEntryHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -2620,11 +2621,11 @@ public class CertTest
         PublicKey pubKey = pair.getPublic();
         PrivateKey privKey = pair.getPrivate();
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
-        JcaX509v3CertificateBuilder  certGen = new JcaX509v3CertificateBuilder(new X500Name("CN=Test"),BigInteger.valueOf(1),new Date(System.currentTimeMillis() - 50000),new Date(System.currentTimeMillis() + 50000),new X500Name("CN=Test"),pubKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(privKey);
+        JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(new X500Name("CN=Test"), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), new X500Name("CN=Test"), pubKey);
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
-        X509CertificateStructure struct = X509CertificateStructure.getInstance(ASN1Primitive.fromByteArray(cert.getEncoded()));
+        org.bouncycastle.asn1.x509.Certificate struct = org.bouncycastle.asn1.x509.Certificate.getInstance(ASN1Primitive.fromByteArray(cert.getEncoded()));
 
         ASN1Encodable tbsCertificate = struct.getTBSCertificate();
         AlgorithmIdentifier sig = struct.getSignatureAlgorithm();
@@ -2636,22 +2637,56 @@ public class CertTest
         v.add(struct.getSignature());
 
         // verify
-        ByteArrayInputStream    bIn;
-        String                  dump = "";
+        ByteArrayInputStream bIn;
+        String dump = "";
 
         try
         {
             bIn = new ByteArrayInputStream(new DERSequence(v).getEncoded());
 
-            CertificateFactory  fact = CertificateFactory.getInstance("X.509", BC);
+            CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
 
             cert = (X509Certificate)fact.generateCertificate(bIn);
 
+            try
+            {
+                cert.verify(cert.getPublicKey());
+                fail("no exception - X509Cert");
+            }
+            catch (CertificateException e)
+            {
+                isTrue(e.getMessage().equals("signature algorithm in TBS cert not same as outer cert"));
+            }
+
+            try
+            {
+                X509CertificateHolder x509CertHldr = new JcaX509CertificateHolder(cert);
+
+                x509CertHldr.isSignatureValid(new JcaContentVerifierProviderBuilder()
+                    .setProvider("BC").build(cert));
+                fail("no exception - CertHolder");
+            }
+            catch (CertException e)
+            {
+                isTrue(e.getMessage().equals("signature invalid - algorithm identifier mismatch"));
+            }
+
+            System.setProperty("org.bouncycastle.x509.allow_absent_equiv_NULL", "true");
+
             cert.verify(cert.getPublicKey());
+
+            X509CertificateHolder x509CertHldr = new JcaX509CertificateHolder(cert);
+
+            x509CertHldr.isSignatureValid(new JcaContentVerifierProviderBuilder()
+                .setProvider("BC").build(cert));
         }
         catch (Exception e)
         {
             fail(dump + Strings.lineSeparator() + getName() + ": testNullDerNull failed - exception " + e.toString(), e);
+        }
+        finally
+        {
+            System.setProperty("org.bouncycastle.x509.allow_absent_equiv_NULL", "false");
         }
     }
 

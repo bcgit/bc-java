@@ -250,9 +250,9 @@ public class KeccakDigest
     {
         byte[] out = new byte[state.length * 8];
         int p = 0;
-        for (long item : state)
+        for (int i = 0; i != state.length; i++)
         {
-            Pack.longToLittleEndian(item, out, p);
+            Pack.longToLittleEndian(state[i], out, p);
             p += 8;
         }
 

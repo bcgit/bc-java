@@ -145,10 +145,12 @@ public class OpenBSDBCryptTest
                 ArrayList<byte[]> permutations = new ArrayList<byte[]>();
                 permute(permutations, buf, 0, buf.length - 1);
 
-                for (byte[] candidate: permutations)
+                for (int i = 0; i != permutations.size(); i++)
                 {
-                    for (byte[] salt : salts)
+                    byte[] candidate = (byte[])permutations.get(i);
+                    for (int k = 0; k != salts.length; k++)
                     {
+                        byte[] salt = salts[k];
                         String expected = OpenBSDBCrypt.generate(rootPassword, salt, 4);
                         String testValue = OpenBSDBCrypt.generate(candidate, salt, 4);
 

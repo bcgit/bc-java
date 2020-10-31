@@ -90,7 +90,7 @@ public class TimeStampTokenGenerator
     /**
      * Create time-stamps with a resolution of 1 microsecond.
      */
-    public static final int R_MICROSECONDS = 2;
+    public static final int R_HUNDREDTHS_OF_SECONDS = 2;
 
     /**
      * Create time-stamps with a resolution of 1 millisecond.
@@ -508,7 +508,7 @@ public class TimeStampTokenGenerator
                 sBuild.delete(dotIndex + 2, sBuild.length());
             }
             break;
-        case R_MICROSECONDS:
+        case R_HUNDREDTHS_OF_SECONDS:
             if (sBuild.length() > dotIndex + 3)
             {
                 sBuild.delete(dotIndex + 3, sBuild.length());

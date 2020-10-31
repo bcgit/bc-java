@@ -9,7 +9,7 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -276,7 +276,7 @@ public class X509CertificateHolder
             verifier = verifierProvider.get((tbsCert.getSignature()));
 
             OutputStream sOut = verifier.getOutputStream();
-            DEROutputStream dOut = new DEROutputStream(sOut);
+            ASN1OutputStream dOut = ASN1OutputStream.create(sOut, ASN1Encoding.DER);
 
             dOut.writeObject(tbsCert);
 
