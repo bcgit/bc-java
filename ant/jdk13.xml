@@ -136,6 +136,7 @@
                 <exclude name="**/HSS*.java" />
                 <exclude name="**/LMS*.java" />
                 <exclude name="**/lms/*.java" />
+                <exclude name="**/NISTECCTest.java" />
                 <exclude name="**/crypto/engines/test/BitStringTest.java" />
                 <exclude name="**/crypto/engines/test/AllTests.java" />
                 <exclude name="**/crypto/signers/test/AllTests.java" />
