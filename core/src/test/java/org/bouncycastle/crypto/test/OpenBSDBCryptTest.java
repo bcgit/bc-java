@@ -96,6 +96,20 @@ public class OpenBSDBCryptTest
         {"ABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXY", "$2b$12$QwAt5kuG68nW7v.87q0QPuwdki3romFc/RU/RV3Qqk4FPw6WdbQzu"}
     };
 
+    private static final String[][] twoVec = new String[][]{
+        {"a", "$2$12$DB3BUbYa/SsEL7kCOVji0OauTkPkB5Y1OeyfxJHM7jvMrbml5sgD2"},
+        {"abc", "$2$12$p.xODEbFcXUlHGbNxWZqAe6AA5FWupqXmN9tZea2ACDhwIx4EA2a6"},
+        {"hello world", "$2$12$wfkxITYXjNLVpEi9nOjz7uXMhCXKSTY7O2y7X4bwY89aGSvRziguq"},
+        {"ABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXY", "$2$12$QwAt5kuG68nW7v.87q0QPuwdki3romFc/RU/RV3Qqk4FPw6WdbQzu"}
+    };
+
+    private static final String[][] twoXVec = new String[][]{
+        {"a", "$2x$12$DB3BUbYa/SsEL7kCOVji0OauTkPkB5Y1OeyfxJHM7jvMrbml5sgD2"},
+        {"abc", "$2x$12$p.xODEbFcXUlHGbNxWZqAe6AA5FWupqXmN9tZea2ACDhwIx4EA2a6"},
+        {"hello world", "$2x$12$wfkxITYXjNLVpEi9nOjz7uXMhCXKSTY7O2y7X4bwY89aGSvRziguq"},
+        {"ABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXY", "$2x$12$QwAt5kuG68nW7v.87q0QPuwdki3romFc/RU/RV3Qqk4FPw6WdbQzu"}
+    };
+
     public static void main(String[] args)
     {
         runTest(new OpenBSDBCryptTest());
@@ -265,7 +279,6 @@ public class OpenBSDBCryptTest
             }
         }
 
-
         for (int i = 0; i < bcryptTest4.length; i++)
         {
             String[] testString = bcryptTest4[i];
@@ -288,28 +301,11 @@ public class OpenBSDBCryptTest
             }
         }
 
-        for (int i = 0; i < twoBVec.length; i++)
-        {
-            password = twoBVec[i][0];
-            encoded = twoBVec[i][1];
+        oldPrefixTest(twoBVec);
 
-            if (!OpenBSDBCrypt.checkPassword(encoded, password.toCharArray()))
-            {
-                fail("twoBVec mismatch: " + "[" + i + "] " + password);
-            }
-        }
+        oldPrefixTest(twoXVec);
 
-        for (int i = 0; i < twoBVec.length; i++)
-        {
-            password = twoBVec[i][0];
-            encoded = twoBVec[i][1];
-
-            if (!OpenBSDBCrypt.checkPassword(encoded, Strings.toUTF8ByteArray(password)))
-            {
-                fail("twoBVec mismatch: " + "[" + i + "] " + password);
-            }
-        }
-
+        oldPrefixTest(twoVec);
 
         int costFactor = 4;
         SecureRandom random = new SecureRandom();
@@ -325,6 +321,31 @@ public class OpenBSDBCryptTest
         }
     }
 
+    private void oldPrefixTest(String[][] twoXVec)
+    {
+        String password;
+        String encoded;
+        for (int i = 0; i < twoXVec.length; i++)
+        {
+            password = twoXVec[i][0];
+            encoded = twoXVec[i][1];
 
+            if (!OpenBSDBCrypt.checkPassword(encoded, password.toCharArray()))
+            {
+                fail("twoBVec mismatch: " + "[" + i + "] " + password);
+            }
+        }
+
+        for (int i = 0; i < twoXVec.length; i++)
+        {
+            password = twoXVec[i][0];
+            encoded = twoXVec[i][1];
+
+            if (!OpenBSDBCrypt.checkPassword(encoded, Strings.toUTF8ByteArray(password)))
+            {
+                fail("twoBVec mismatch: " + "[" + i + "] " + password);
+            }
+        }
+    }
 }
 
