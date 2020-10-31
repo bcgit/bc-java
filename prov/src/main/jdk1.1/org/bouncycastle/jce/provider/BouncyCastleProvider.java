@@ -43,7 +43,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.66";
+    private static String info = "BouncyCastle Security Provider v1.67";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -118,7 +118,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.66, info);
+        super(PROVIDER_NAME, 1.67, info);
 
         setup();
     }
@@ -268,6 +268,11 @@ public final class BouncyCastleProvider extends Provider
     public void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter)
     {
         keyInfoConverters.put(oid, keyInfoConverter);
+    }
+
+    public AsymmetricKeyInfoConverter getKeyInfoConverter(ASN1ObjectIdentifier oid)
+    {
+        return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
     }
 
     public static PublicKey getPublicKey(SubjectPublicKeyInfo publicKeyInfo)

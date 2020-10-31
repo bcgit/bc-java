@@ -8,7 +8,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.util.ASN1Dump;
 
 /**
@@ -66,7 +66,7 @@ import org.bouncycastle.asn1.util.ASN1Dump;
  * Uses {@link org.bouncycastle.asn1.ASN1InputStream ASN1InputStream},
  * {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
  * {@link org.bouncycastle.asn1.ASN1ObjectIdentifier ASN1ObjectIdentifier},
- * {@link org.bouncycastle.asn1.DEROutputStream DEROutputStream},
+ * {@link org.bouncycastle.asn1.ASN1OutputStream DEROutputStream},
  * {@link org.bouncycastle.asn1.ASN1Object ASN1Object}
  */
 public final class PolicyQualifierInfo
@@ -84,7 +84,7 @@ public final class PolicyQualifierInfo
      * Uses {@link org.bouncycastle.asn1.ASN1InputStream ASN1InputStream},
      * {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
      * {@link org.bouncycastle.asn1.ASN1ObjectIdentifier ASN1ObjectIdentifier} and
-     * {@link org.bouncycastle.asn1.DEROutputStream DEROutputStream}
+     * {@link org.bouncycastle.asn1.ASN1OutputStream DEROutputStream}
      * 
      * @param encoded
      *            a byte array containing the qualifier in DER encoding
@@ -104,7 +104,7 @@ public final class PolicyQualifierInfo
             ASN1Sequence obj = (ASN1Sequence)derInStream.readObject();
             id = ((ASN1ObjectIdentifier)obj.getObjectAt(0)).getId();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            DEROutputStream derOutStream = new DEROutputStream(outStream);
+            ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
 
             derOutStream.writeObject(obj.getObjectAt(1));
             derOutStream.close();

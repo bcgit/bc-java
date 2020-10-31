@@ -26,7 +26,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
 class SignatureUtil
 {
-    private static final ASN1Null derNull = new DERNull();
+    private static final ASN1Null derNull = DERNull.INSTANCE;
     
     static String getSignatureName(
         AlgorithmIdentifier sigAlgId)

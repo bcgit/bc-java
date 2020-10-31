@@ -36,7 +36,6 @@ public class COMPOSITE
     public static class KeyFactory
         extends BaseKeyFactorySpi
     {
-        @Override
         protected Key engineTranslateKey(Key key)
             throws InvalidKeyException
         {

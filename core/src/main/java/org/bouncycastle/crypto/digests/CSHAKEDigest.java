@@ -1,8 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Customizable SHAKE function.
@@ -71,17 +69,6 @@ public class CSHAKEDigest
     public String getAlgorithmName()
     {
         return "CSHAKE" + fixedOutputLength;
-    }
-
-
-    byte[] getState() {
-        byte[] out = new byte[state.length*8];
-        int p =0;
-        for (long item:state) {
-            Pack.longToBigEndian(item,out,p);
-            p+=8;
-        }
-        return out;
     }
 
     public int doOutput(byte[] out, int outOff, int outLen)

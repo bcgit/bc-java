@@ -139,10 +139,12 @@ public class Argon2Test
                 ArrayList<byte[]> permutations = new ArrayList<byte[]>();
                 permute(permutations, buf, 0, buf.length - 1);
 
-                for (byte[] candidate : permutations)
+                for (int i = 0; i != permutations.size(); i++)
                 {
-                    for (byte[] salt : salts)
+                    byte[] candidate = (byte[])permutations.get(i);
+                    for (int k = 0; k != salts.length; k++)
                     {
+                        byte[] salt = salts[k];
                         byte[] expected = generate(Argon2Parameters.ARGON2_VERSION_10, 1, 8, 2, rootPassword, salt, 32);
                         byte[] testValue = generate(Argon2Parameters.ARGON2_VERSION_10, 1, 8, 2, candidate, salt, 32);
 

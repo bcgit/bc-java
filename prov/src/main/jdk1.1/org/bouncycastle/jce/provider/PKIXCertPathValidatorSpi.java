@@ -48,7 +48,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BERConstructedOctetString;
+import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.DERIA5String;
@@ -1340,7 +1340,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                                         permittedSubtreesDN = intersectDN(permittedSubtreesDN, (ASN1Sequence)base.getName());
                                         break;
                                     case 7:
-                                        permittedSubtreesIP = intersectIP(permittedSubtreesIP, BERConstructedOctetString.fromSequence((ASN1Sequence)base.getName()).getOctets());
+                                        permittedSubtreesIP = intersectIP(permittedSubtreesIP, fromSequence((ASN1Sequence)base.getName()).getOctets());
                                         break;
                                 }
                             }
@@ -1366,7 +1366,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                                     excludedSubtreesDN = unionDN(excludedSubtreesDN, (ASN1Sequence)base.getName());
                                     break;
                                 case 7:
-                                    excludedSubtreesIP = unionIP(excludedSubtreesIP, BERConstructedOctetString.fromSequence((ASN1Sequence)base.getName()).getOctets());
+                                    excludedSubtreesIP = unionIP(excludedSubtreesIP, fromSequence((ASN1Sequence)base.getName()).getOctets());
                                     break;
                                 }
                             }
@@ -2178,5 +2178,16 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
         {
             throw new AnnotatedException("can't get subject principal.", e);
         }
+    }
+
+    static BEROctetString fromSequence(ASN1Sequence seq)
+    {
+        int count = seq.size();
+        ASN1OctetString[] v = new ASN1OctetString[count];
+        for (int i = 0; i < count; ++i)
+        {
+            v[i] = ASN1OctetString.getInstance(seq.getObjectAt(i));
+        }
+        return new BEROctetString(v);
     }
 }

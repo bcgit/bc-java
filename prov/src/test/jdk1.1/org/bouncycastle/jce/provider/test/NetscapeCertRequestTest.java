@@ -8,7 +8,8 @@ import java.security.Security;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.netscape.NetscapeCertRequest;
@@ -70,7 +71,7 @@ public class NetscapeCertRequestTest
             nscr.sign (kp.getPrivate());
             
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DEROutputStream deros = new DEROutputStream (baos);
+            ASN1OutputStream deros = ASN1OutputStream.create(baos, ASN1Encoding.DER);
             deros.writeObject (nscr);
             deros.close();
 

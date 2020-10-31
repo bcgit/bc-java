@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AttributeCertificate;
@@ -74,7 +74,7 @@ class CertUtils
         throws IOException
     {
         OutputStream sOut = signer.getOutputStream();
-        DEROutputStream dOut = new DEROutputStream(sOut);
+        ASN1OutputStream dOut = ASN1OutputStream.create(sOut, ASN1Encoding.DER);
 
         dOut.writeObject(tbsObj);
 

@@ -24,11 +24,12 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
@@ -79,7 +80,7 @@ import org.bouncycastle.util.Integers;
  * Uses {@link org.bouncycastle.asn1.ASN1InputStream ASN1InputStream},
  * {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
  * {@link org.bouncycastle.asn1.ASN1ObjectIdentifier ASN1ObjectIdentifier},
- * {@link org.bouncycastle.asn1.DEROutputStream DEROutputStream},
+ * {@link org.bouncycastle.asn1.ASN1OutputStream DEROutputStream},
  * {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
  * {@link org.bouncycastle.asn1.OIDTokenizer OIDTokenizer},
  * {@link org.bouncycastle.asn1.x509.X509Name X509Name},
@@ -1363,7 +1364,7 @@ public class X509CertSelector implements CertSelector
      * Note that the byte array returned is cloned to protect against subsequent
      * modifications.<br />
      * <br />
-     * Uses {@link org.bouncycastle.asn1.DEROutputStream DEROutputStream},
+     * Uses {@link org.bouncycastle.asn1.ASN1OutputStream DEROutputStream},
      * {@link org.bouncycastle.asn1.x509.X509Name X509Name} to gnerate byte[]
      * output for String issuerDN.
      * 
@@ -1382,7 +1383,7 @@ public class X509CertSelector implements CertSelector
         else if (issuerDNX509 != null)
         {
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            DEROutputStream derOutStream = new DEROutputStream(outStream);
+            ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
 
             derOutStream.writeObject(issuerDNX509.toASN1Primitive());
             derOutStream.close();
@@ -1436,7 +1437,7 @@ public class X509CertSelector implements CertSelector
      * Note that the byte array returned is cloned to protect against subsequent
      * modifications.<br />
      * <br />
-     * Uses {@link org.bouncycastle.asn1.DEROutputStream DEROutputStream},
+     * Uses {@link org.bouncycastle.asn1.ASN1OutputStream DEROutputStream},
      * {@link org.bouncycastle.asn1.x509.X509Name X509Name} to gnerate byte[]
      * output for String subjectDN.
      * 
@@ -1455,7 +1456,7 @@ public class X509CertSelector implements CertSelector
         else if (subjectDNX509 != null)
         {
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            DEROutputStream derOutStream = new DEROutputStream(outStream);
+            ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
 
             derOutStream.writeObject(subjectDNX509.toASN1Primitive());
             derOutStream.close();
@@ -2334,7 +2335,7 @@ public class X509CertSelector implements CertSelector
                 List testList;
                 ASN1Object derData;
                 ByteArrayOutputStream outStream;
-                DEROutputStream derOutStream;
+                ASN1OutputStream derOutStream;
                 while (altNamesSequence.hasMoreElements() && !test)
                 {
                     altNameObject = (ASN1TaggedObject)altNamesSequence
@@ -2343,7 +2344,7 @@ public class X509CertSelector implements CertSelector
                     testList.add(Integers.valueOf(altNameObject.getTagNo()));
                     derData = altNameObject.getObject();
                     outStream = new ByteArrayOutputStream();
-                    derOutStream = new DEROutputStream(outStream);
+                    derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
                     derOutStream.writeObject(derData);
                     derOutStream.close();
                     testList.add(outStream.toByteArray());

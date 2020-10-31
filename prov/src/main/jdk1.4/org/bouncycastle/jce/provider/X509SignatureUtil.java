@@ -19,7 +19,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 class X509SignatureUtil
 {
-    private static final ASN1Null       derNull = new DERNull();
+    private static final ASN1Null       derNull = DERNull.INSTANCE;
     
     static void setSignatureParameters(
         Signature signature,

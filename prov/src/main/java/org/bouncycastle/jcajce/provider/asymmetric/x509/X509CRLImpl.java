@@ -275,7 +275,7 @@ abstract class X509CRLImpl
                 try
                 {
                     checkSignature(
-                        pubKeys.get(i), signature,
+                        (PublicKey)pubKeys.get(i), signature,
                         sigAlg.getParameters(),
                         DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
                     success = true;

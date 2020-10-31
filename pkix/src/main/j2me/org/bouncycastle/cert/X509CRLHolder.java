@@ -15,7 +15,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.asn1.x509.Extension;
@@ -294,7 +294,7 @@ public class X509CRLHolder
             verifier = verifierProvider.get((tbsCRL.getSignature()));
 
             OutputStream sOut = verifier.getOutputStream();
-            DEROutputStream dOut = new DEROutputStream(sOut);
+            ASN1OutputStream dOut = ASN1OutputStream.create(sOut, ASN1Encoding.DER);
 
             dOut.writeObject(tbsCRL);
 
