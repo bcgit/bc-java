@@ -406,6 +406,20 @@ class ProvSSLSocketDirect
     }
 
     @Override
+    public void shutdownInput() throws IOException
+    {
+        // TODO[tls13]
+        throw new UnsupportedOperationException("shutdownInput() not supported in TLS");
+    }
+
+    @Override
+    public void shutdownOutput() throws IOException
+    {
+        // TODO[tls13]
+        throw new UnsupportedOperationException("shutdownOutput() not supported in TLS");
+    }
+
+    @Override
     public synchronized void startHandshake() throws IOException
     {
         startHandshake(true);
