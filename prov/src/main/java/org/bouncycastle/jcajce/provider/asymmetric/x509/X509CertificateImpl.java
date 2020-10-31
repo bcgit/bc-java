@@ -67,7 +67,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 
 abstract class X509CertificateImpl
     extends X509Certificate
@@ -492,27 +491,7 @@ abstract class X509CertificateImpl
         buf.append("           Public Key: ").append(this.getPublicKey()).append(nl);
         buf.append("  Signature Algorithm: ").append(this.getSigAlgName()).append(nl);
 
-        byte[]  sig = this.getSignature();
-
-        if (sig.length > 20)
-        {
-            buf.append("            Signature: ").append(Hex.toHexString(sig, 0, 20)).append(nl);
-            for (int i = 20; i < sig.length; i += 20)
-            {
-                if (i < sig.length - 20)
-                {
-                    buf.append("                       ").append(Hex.toHexString(sig, i, 20)).append(nl);
-                }
-                else
-                {
-                    buf.append("                       ").append(Hex.toHexString(sig, i, sig.length - i)).append(nl);
-                }
-            }
-        }
-        else
-        {
-            buf.append("            Signature: ").append(Hex.toHexString(sig)).append(nl);
-        }
+        X509SignatureUtil.prettyPrintSignature(this.getSignature(), buf, nl);
 
         Extensions extensions = c.getTBSCertificate().getExtensions();
 
