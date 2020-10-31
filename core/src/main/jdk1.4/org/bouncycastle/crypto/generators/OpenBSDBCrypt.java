@@ -263,22 +263,48 @@ public class OpenBSDBCrypt
             throw new IllegalArgumentException("Missing bcryptString.");
         }
 
+        if (bcryptString.charAt(1) != '2')   // check for actual Bcrypt type.
+        {
+            throw new IllegalArgumentException("not a Bcrypt string");
+        }
+
         // validate bcryptString:
         final int sLength = bcryptString.length();
-        if (sLength != 60)
+        if (sLength != 60 && !(sLength == 59 && bcryptString.charAt(2) == '$'))   // check for $2$
         {
-            throw new DataLengthException("Bcrypt String length: "
-                + sLength + ", 60 required.");
+            throw new DataLengthException("Bcrypt String length: " + sLength + ", 60 required.");
         }
 
-        if (bcryptString.charAt(0) != '$'
-            || bcryptString.charAt(3) != '$'
-            || bcryptString.charAt(6) != '$')
+        if (bcryptString.charAt(2) == '$')
         {
-            throw new IllegalArgumentException("Invalid Bcrypt String format.");
+            if (bcryptString.charAt(0) != '$'
+                || bcryptString.charAt(5) != '$')
+            {
+                throw new IllegalArgumentException("Invalid Bcrypt String format.");
+            }
+        }
+        else
+        {
+            if (bcryptString.charAt(0) != '$'
+                || bcryptString.charAt(3) != '$'
+                || bcryptString.charAt(6) != '$')
+            {
+                throw new IllegalArgumentException("Invalid Bcrypt String format.");
+            }
         }
 
-        String version = bcryptString.substring(1, 3);
+        String version;
+        int base;
+        if (bcryptString.charAt(2) == '$')
+        {
+            version = bcryptString.substring(1, 2);
+            base = 3;
+        }
+        else
+        {
+            version = bcryptString.substring(1, 3);
+            base = 4;
+        }
 
         if (!allowedVersions.contains(version))
         {
@@ -286,7 +312,7 @@ public class OpenBSDBCrypt
         }
 
         int cost = 0;
-        String costStr = bcryptString.substring(4, 6);
+        String costStr = bcryptString.substring(base, base + 2);
         try
         {
             cost = Integer.parseInt(costStr);
