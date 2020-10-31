@@ -90,5 +90,5 @@ cp build/artifacts/jdk1.5/jars/$jarName module.tmp/$jarName
 )
 cp module.tmp/$jarName build/artifacts/jdk1.5/jars/$jarName
 
-bcsign build/artifacts/jdk1.5/jars/$jarName
+bcsign-oracle build/artifacts/jdk1.5/jars/$jarName
 done

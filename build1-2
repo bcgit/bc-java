@@ -82,12 +82,14 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/pkix/jcajce/X509RevocationChecker.java
     rm org/bouncycastle/pkix/jcajce/RFC3280*.java
     rm org/bouncycastle/cms/jcajce/JceKeyTransAuthEnvelopedRecipient.java
+    rm -rf org/bouncycastle/jce/provider/test/SimpleTestTest.java
     rm -rf org/bouncycastle/sasn1/test
     rm -rf org/bouncycastle/i18n/test
     rm -rf org/bouncycastle/i18n/filter/test
     rm -rf org/bouncycastle/math/ec/test
     rm -rf org/bouncycastle/crypto/tls/test
     rm -rf org/bouncycastle/crypto/test/GCMReorderTest.java
+    rm -rf org/bouncycastle/crypto/test/NISTECCTest.java
     rm -rf org/bouncycastle/jce/ECPointUtil.java
     rm -rf org/bouncycastle/jce/X509LDAP*.java
     rm -rf org/bouncycastle/jce/provider/X509LDAP*.java
@@ -128,7 +130,6 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -f org/bouncycastle/jce/provider/WrappedRevocationChecker.java
     rm -f org/bouncycastle/jce/provider/ProvRevocationChecker.java
     rm -f org/bouncycastle/jce/provider/OcspCache.java
-    rm -f org/bouncycastle/jce/provider/test/SimpleTestTest.java
     rm -f org/bouncycastle/jce/provider/ProvOcspRevocationChecker.java
     rm -rf org/bouncycastle/x509/PKIXAttrCert*.java
     rm -rf org/bouncycastle/jce/provider/RFC3281*.java

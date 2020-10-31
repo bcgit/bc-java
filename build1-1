@@ -70,8 +70,6 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/jcajce/provider/LMS*
     rm -rf org/bouncycastle/pqc/crypto/*/LMS*
     rm org/bouncycastle/pqc/jcajce/spec/LMS*
-    rm -f org/bouncycastle/jce/provider/test/SimpleTestTest.java
-    rm -f org/bouncycastle/jce/provider/ProvCrlRevocationChecker.java
     rm -rf org/bouncycastle/pqc/crypto/*/HSS*
     rm -rf org/bouncycastle/pqc/math/ntru
     rm -rf org/bouncycastle/pqc/crypto/ntru
@@ -82,9 +80,11 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
     rm -rf org/bouncycastle/pqc/crypto/test/QT*
     rm -rf org/bouncycastle/crypto/*/test
+    rm -rf org/bouncycastle/crypto//test/NISTECCTest.java
     rm -rf org/bouncycastle/crypto/*/IndexGenerator*
     rm -rf org/bouncycastle/util/utiltest
     rm -rf org/bouncycastle/i18n/test
+    rm -rf org/bouncycastle/jce/provider/test/SimpleTestTest.java
     rm -f org/bouncycastle/jce/provider/PKIXCertPathValidatorSpi_8.java
     rm -f org/bouncycastle/jce/provider/PKIXCertPathBuilderSpi_8.java
     rm -f org/bouncycastle/jce/provider/WrappedRevocationChecker.java
