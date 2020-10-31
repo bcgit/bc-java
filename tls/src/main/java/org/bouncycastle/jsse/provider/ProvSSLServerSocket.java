@@ -3,7 +3,6 @@ package org.bouncycastle.jsse.provider;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.channels.ServerSocketChannel;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
@@ -63,12 +62,6 @@ class ProvSSLServerSocket
         socket.notifyConnected();
 
         return socket;
-    }
-
-    @Override
-    public ServerSocketChannel getChannel()
-    {
-        throw new UnsupportedOperationException();
     }
 
     @Override
