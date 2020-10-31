@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.channels.SocketChannel;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -69,16 +68,10 @@ abstract class ProvSSLSocketBase
     }
 
     @Override
-    public SocketChannel getChannel()
+    public final boolean getOOBInline() throws SocketException
     {
-//        return super.getChannel();
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean getOOBInline() throws SocketException
-    {
-        return false;
+        throw new SocketException(
+            "This method is ineffective, since sending urgent data is not supported by SSLSockets");
     }
 
     @Override
@@ -95,30 +88,15 @@ abstract class ProvSSLSocketBase
     }
 
     @Override
-    public void sendUrgentData(int data) throws IOException
+    public final void sendUrgentData(int data) throws IOException
     {
-        throw new UnsupportedOperationException("Urgent data not supported in TLS");
+        throw new SocketException("This method is not supported by SSLSockets");
     }
 
     @Override
-    public void setOOBInline(boolean on) throws SocketException
+    public final void setOOBInline(boolean on) throws SocketException
     {
-        if (on)
-        {
-            throw new UnsupportedOperationException("Urgent data not supported in TLS");
-        }
-    }
-    
-    @Override
-    public void shutdownInput() throws IOException
-    {
-        throw new UnsupportedOperationException("shutdownInput() not supported in TLS");
-    }
-
-    @Override
-    public void shutdownOutput() throws IOException
-    {
-        throw new UnsupportedOperationException("shutdownOutput() not supported in TLS");
+        throw new SocketException("This method is ineffective, since sending urgent data is not supported by SSLSockets");
     }
 
     // TODO[jsse] Proper toString for sockets

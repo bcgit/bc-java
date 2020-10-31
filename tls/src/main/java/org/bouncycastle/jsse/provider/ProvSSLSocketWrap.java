@@ -578,6 +578,18 @@ class ProvSSLSocketWrap
     }
 
     @Override
+    public void shutdownInput() throws IOException
+    {
+        wrapSocket.shutdownInput();
+    }
+
+    @Override
+    public void shutdownOutput() throws IOException
+    {
+        wrapSocket.shutdownOutput();
+    }
+
+    @Override
     public synchronized void startHandshake() throws IOException
     {
         startHandshake(true);
