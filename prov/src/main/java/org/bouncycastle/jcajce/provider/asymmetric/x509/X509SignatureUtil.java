@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
 
 class X509SignatureUtil
 {
@@ -40,7 +41,7 @@ class X509SignatureUtil
         algNames.put(X9ObjectIdentifiers.id_dsa_with_sha1, "SHA1withDSA");
     }
 
-    private static final ASN1Null       derNull = DERNull.INSTANCE;
+    private static final ASN1Null derNull = DERNull.INSTANCE;
 
     static boolean isCompositeAlgorithm(AlgorithmIdentifier algorithmIdentifier)
     {
@@ -54,8 +55,8 @@ class X509SignatureUtil
     {
         if (params != null && !derNull.equals(params))
         {
-            AlgorithmParameters  sigParams = AlgorithmParameters.getInstance(signature.getAlgorithm(), signature.getProvider());
-            
+            AlgorithmParameters sigParams = AlgorithmParameters.getInstance(signature.getAlgorithm(), signature.getProvider());
+
             try
             {
                 sigParams.init(params.toASN1Primitive().getEncoded());
@@ -64,7 +65,7 @@ class X509SignatureUtil
             {
                 throw new SignatureException("IOException decoding parameters: " + e.getMessage());
             }
-            
+
             if (signature.getAlgorithm().endsWith("MGF1"))
             {
                 try
@@ -78,24 +79,24 @@ class X509SignatureUtil
             }
         }
     }
-    
+
     static String getSignatureName(
-        AlgorithmIdentifier sigAlgId) 
+        AlgorithmIdentifier sigAlgId)
     {
         ASN1Encodable params = sigAlgId.getParameters();
-        
+
         if (params != null && !derNull.equals(params))
         {
             if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
             {
                 RSASSAPSSparams rsaParams = RSASSAPSSparams.getInstance(params);
-                
+
                 return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "withRSAandMGF1";
             }
             if (sigAlgId.getAlgorithm().equals(X9ObjectIdentifiers.ecdsa_with_SHA2))
             {
                 ASN1Sequence ecDsaParams = ASN1Sequence.getInstance(params);
-                
+
                 return getDigestAlgName((ASN1ObjectIdentifier)ecDsaParams.getObjectAt(0)) + "withECDSA";
             }
         }
@@ -109,7 +110,7 @@ class X509SignatureUtil
 
         return findAlgName(sigAlgId.getAlgorithm());
     }
-    
+
     /**
      * Return the digest algorithm using one of the standard JCA string
      * representations rather the the algorithm identifier (if possible).
@@ -160,7 +161,7 @@ class X509SignatureUtil
 
     private static String lookupAlg(Provider prov, ASN1ObjectIdentifier algOid)
     {
-        String      algName = prov.getProperty("Alg.Alias.Signature." + algOid);
+        String algName = prov.getProperty("Alg.Alias.Signature." + algOid);
 
         if (algName != null)
         {
@@ -176,4 +177,28 @@ class X509SignatureUtil
 
         return null;
     }
+
+    static void prettyPrintSignature(byte[] sig, StringBuffer buf, String nl)
+    {
+        if (sig.length > 20)
+        {
+            buf.append("            Signature: ").append(Hex.toHexString(sig, 0, 20)).append(nl);
+            for (int i = 20; i < sig.length; i += 20)
+            {
+                if (i < sig.length - 20)
+                {
+                    buf.append("                       ").append(Hex.toHexString(sig, i, 20)).append(nl);
+                }
+                else
+                {
+                    buf.append("                       ").append(Hex.toHexString(sig, i, sig.length - i)).append(nl);
+                }
+            }
+        }
+        else
+        {
+            buf.append("            Signature: ").append(Hex.toHexString(sig)).append(nl);
+        }
+    }
+
 }
