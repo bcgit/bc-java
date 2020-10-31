@@ -305,156 +305,167 @@ public class BaseBlockCipher
         }
         modeName = Strings.toUpperCase(mode);
 
-        if (modeName.equals("ECB"))
+        try
         {
-            ivLength = 0;
-            cipher = new BufferedGenericBlockCipher(baseEngine);
-        }
-        else if (modeName.equals("CBC"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            cipher = new BufferedGenericBlockCipher(
-                new CBCBlockCipher(baseEngine));
-        }
-        else if (modeName.startsWith("OFB"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            if (modeName.length() != 3)
+            if (modeName.equals("ECB"))
             {
-                int wordSize = Integer.parseInt(modeName.substring(3));
-
+                ivLength = 0;
+                cipher = new BufferedGenericBlockCipher(baseEngine);
+            }
+            else if (modeName.equals("CBC"))
+            {
+                ivLength = baseEngine.getBlockSize();
                 cipher = new BufferedGenericBlockCipher(
-                    new OFBBlockCipher(baseEngine, wordSize));
+                    new CBCBlockCipher(baseEngine));
             }
-            else
+            else if (modeName.startsWith("OFB"))
             {
-                cipher = new BufferedGenericBlockCipher(
-                    new OFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
-            }
-        }
-        else if (modeName.startsWith("CFB"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            if (modeName.length() != 3)
-            {
-                int wordSize = Integer.parseInt(modeName.substring(3));
+                ivLength = baseEngine.getBlockSize();
+                if (modeName.length() != 3)
+                {
+                    int wordSize = Integer.parseInt(modeName.substring(3));
 
-                cipher = new BufferedGenericBlockCipher(
-                    new CFBBlockCipher(baseEngine, wordSize));
+                    cipher = new BufferedGenericBlockCipher(
+                        new OFBBlockCipher(baseEngine, wordSize));
+                }
+                else
+                {
+                    cipher = new BufferedGenericBlockCipher(
+                        new OFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
+                }
             }
-            else
+            else if (modeName.startsWith("CFB"))
             {
-                cipher = new BufferedGenericBlockCipher(
-                    new CFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
-            }
-        }
-        else if (modeName.startsWith("PGPCFB"))
-        {
-            boolean inlineIV = modeName.equals("PGPCFBWITHIV");
+                ivLength = baseEngine.getBlockSize();
+                if (modeName.length() != 3)
+                {
+                    int wordSize = Integer.parseInt(modeName.substring(3));
 
-            if (!inlineIV && modeName.length() != 6)
-            {
-                throw new NoSuchAlgorithmException("no mode support for " + modeName);
+                    cipher = new BufferedGenericBlockCipher(
+                        new CFBBlockCipher(baseEngine, wordSize));
+                }
+                else
+                {
+                    cipher = new BufferedGenericBlockCipher(
+                        new CFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
+                }
             }
+            else if (modeName.startsWith("PGPCFB"))
+            {
+                boolean inlineIV = modeName.equals("PGPCFBWITHIV");
 
-            ivLength = baseEngine.getBlockSize();
-            cipher = new BufferedGenericBlockCipher(
-                new PGPCFBBlockCipher(baseEngine, inlineIV));
-        }
-        else if (modeName.equals("OPENPGPCFB"))
-        {
-            ivLength = 0;
-            cipher = new BufferedGenericBlockCipher(
-                new OpenPGPCFBBlockCipher(baseEngine));
-        }
-        else if (modeName.equals("SIC"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            if (ivLength < 16)
-            {
-                throw new IllegalArgumentException("Warning: SIC-Mode can become a twotime-pad if the blocksize of the cipher is too small. Use a cipher with a block size of at least 128 bits (e.g. AES)");
+                if (!inlineIV && modeName.length() != 6)
+                {
+                    throw new NoSuchAlgorithmException("no mode support for " + modeName);
+                }
+
+                ivLength = baseEngine.getBlockSize();
+                cipher = new BufferedGenericBlockCipher(
+                    new PGPCFBBlockCipher(baseEngine, inlineIV));
             }
-            fixedIv = false;
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                new SICBlockCipher(baseEngine)));
-        }
-        else if (modeName.equals("CTR"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            fixedIv = false;
-            if (baseEngine instanceof DSTU7624Engine)
+            else if (modeName.equals("OPENPGPCFB"))
             {
-                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                    new KCTRBlockCipher(baseEngine)));
+                ivLength = 0;
+                cipher = new BufferedGenericBlockCipher(
+                    new OpenPGPCFBBlockCipher(baseEngine));
             }
-            else
+            else if (modeName.equals("SIC"))
             {
+                ivLength = baseEngine.getBlockSize();
+                if (ivLength < 16)
+                {
+                    throw new IllegalArgumentException("Warning: SIC-Mode can become a twotime-pad if the blocksize of the cipher is too small. Use a cipher with a block size of at least 128 bits (e.g. AES)");
+                }
+                fixedIv = false;
                 cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                     new SICBlockCipher(baseEngine)));
             }
-        }
-        else if (modeName.equals("GOFB"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                new GOFBBlockCipher(baseEngine)));
-        }
-        else if (modeName.equals("GCFB"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                new GCFBBlockCipher(baseEngine)));
-        }
-        else if (modeName.equals("CTS"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            cipher = new BufferedGenericBlockCipher(new CTSBlockCipher(new CBCBlockCipher(baseEngine)));
-        }
-        else if (modeName.equals("CCM"))
-        {
-            ivLength = 12; // CCM nonce 7..13 bytes
-            if (baseEngine instanceof DSTU7624Engine)
+            else if (modeName.equals("CTR"))
             {
-                cipher = new AEADGenericBlockCipher(new KCCMBlockCipher(baseEngine));
+                ivLength = baseEngine.getBlockSize();
+                fixedIv = false;
+                if (baseEngine instanceof DSTU7624Engine)
+                {
+                    cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                        new KCTRBlockCipher(baseEngine)));
+                }
+                else
+                {
+                    cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                        new SICBlockCipher(baseEngine)));
+                }
             }
-            else
+            else if (modeName.equals("GOFB"))
             {
-                cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+                ivLength = baseEngine.getBlockSize();
+                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                    new GOFBBlockCipher(baseEngine)));
             }
-        }
-        else if (modeName.equals("OCB"))
-        {
-            if (engineProvider != null)
+            else if (modeName.equals("GCFB"))
             {
-                /*
-                 * RFC 7253 4.2. Nonce is a string of no more than 120 bits
-                 */
-                ivLength = 15;
-                cipher = new AEADGenericBlockCipher(new OCBBlockCipher(baseEngine, engineProvider.get()));
+                ivLength = baseEngine.getBlockSize();
+                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                    new GCFBBlockCipher(baseEngine)));
+            }
+            else if (modeName.equals("CTS"))
+            {
+                ivLength = baseEngine.getBlockSize();
+                cipher = new BufferedGenericBlockCipher(new CTSBlockCipher(new CBCBlockCipher(baseEngine)));
+            }
+            else if (modeName.equals("CCM"))
+            {
+                ivLength = 12; // CCM nonce 7..13 bytes
+                if (baseEngine instanceof DSTU7624Engine)
+                {
+                    cipher = new AEADGenericBlockCipher(new KCCMBlockCipher(baseEngine));
+                }
+                else
+                {
+                    cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+                }
+            }
+            else if (modeName.equals("OCB"))
+            {
+                if (engineProvider != null)
+                {
+                    /*
+                     * RFC 7253 4.2. Nonce is a string of no more than 120 bits
+                     */
+                    ivLength = 15;
+                    cipher = new AEADGenericBlockCipher(new OCBBlockCipher(baseEngine, engineProvider.get()));
+                }
+                else
+                {
+                    throw new NoSuchAlgorithmException("can't support mode " + mode);
+                }
+            }
+            else if (modeName.equals("EAX"))
+            {
+                ivLength = baseEngine.getBlockSize();
+                cipher = new AEADGenericBlockCipher(new EAXBlockCipher(baseEngine));
+            }
+            else if (modeName.equals("GCM"))
+            {
+                ivLength = baseEngine.getBlockSize();
+                if (baseEngine instanceof DSTU7624Engine)
+                {
+                    cipher = new AEADGenericBlockCipher(new KGCMBlockCipher(baseEngine));
+                }
+                else
+                {
+                    cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+                }
             }
             else
             {
                 throw new NoSuchAlgorithmException("can't support mode " + mode);
             }
         }
-        else if (modeName.equals("EAX"))
+        catch (NumberFormatException e)
         {
-            ivLength = baseEngine.getBlockSize();
-            cipher = new AEADGenericBlockCipher(new EAXBlockCipher(baseEngine));
+            throw new NoSuchAlgorithmException("can't support mode " + mode);
         }
-        else if (modeName.equals("GCM"))
-        {
-            ivLength = baseEngine.getBlockSize();
-            if (baseEngine instanceof DSTU7624Engine)
-            {
-                cipher = new AEADGenericBlockCipher(new KGCMBlockCipher(baseEngine));
-            }
-            else
-            {
-                cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
-            }
-        }
-        else
+        catch (IllegalArgumentException e)
         {
             throw new NoSuchAlgorithmException("can't support mode " + mode);
         }

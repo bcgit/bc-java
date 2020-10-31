@@ -13,10 +13,12 @@ import javax.crypto.spec.RC2ParameterSpec;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.misc.CAST5CBCParameters;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
@@ -445,7 +447,7 @@ public abstract class JDKAlgorithmParameters
         protected byte[] engineGetEncoded() 
         {
             ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            DEROutputStream         dOut = new DEROutputStream(bOut);
+            ASN1OutputStream         dOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
 
             try
             {
@@ -539,7 +541,7 @@ public abstract class JDKAlgorithmParameters
         protected byte[] engineGetEncoded() 
         {
             ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            DEROutputStream         dOut = new DEROutputStream(bOut);
+            ASN1OutputStream         dOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
 
             try
             {

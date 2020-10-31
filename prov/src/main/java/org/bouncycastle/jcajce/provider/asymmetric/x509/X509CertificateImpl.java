@@ -686,7 +686,7 @@ abstract class X509CertificateImpl
                 try
                 {
                     checkSignature(
-                        pubKeys.get(i), signature,
+                        (PublicKey)pubKeys.get(i), signature,
                         sigAlg.getParameters(),
                         DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
                     success = true;
@@ -769,7 +769,7 @@ abstract class X509CertificateImpl
                 {
                     try
                     {
-                        checkSignature(keys.get(i), signature,
+                        checkSignature((PublicKey)keys.get(i), signature,
                             c.getSignatureAlgorithm().getParameters(), this.getSignature());
                         return;     // found the match!
                     }

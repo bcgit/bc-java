@@ -151,9 +151,9 @@ public class JcaContentVerifierProviderBuilder
                     {
                         try
                         {
-                            Signature sig = createSignature(algorithm, keys.get(i));
+                            Signature sig = createSignature(algorithm, (PublicKey)keys.get(i));
 
-                            Signature rawSig = createRawSig(algorithm, keys.get(i));
+                            Signature rawSig = createRawSig(algorithm, (PublicKey)keys.get(i));
 
                             if (rawSig != null)
                             {
@@ -210,7 +210,7 @@ public class JcaContentVerifierProviderBuilder
                 AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
                 if (pubKeys.get(i) != null)
                 {
-                    sigs[i] = createSignature(sigAlg, pubKeys.get(i));
+                    sigs[i] = createSignature(sigAlg, (PublicKey)pubKeys.get(i));
                 }
                 else
                 {

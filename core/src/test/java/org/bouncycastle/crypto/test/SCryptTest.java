@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -83,10 +82,12 @@ public class SCryptTest
                 ArrayList<byte[]> permutations = new ArrayList<byte[]>();
                 permute(permutations, buf, 0, buf.length - 1);
 
-                for (byte[] candidate : permutations)
+                for (int i = 0; i != permutations.size(); i++)
                 {
-                    for (byte[] salt : salts)
+                    byte[] candidate = (byte[])permutations.get(i);
+                    for (int k = 0; k != salts.length; k++)
                     {
+                        byte[] salt = salts[k];
                         byte[] expected = SCrypt.generate(rootPassword,salt,   2,1,1,32);
                         byte[] testValue = SCrypt.generate(candidate,salt,   2,1,1,32);
 

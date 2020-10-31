@@ -1610,7 +1610,10 @@ public class BlockCipherTest
             }
             catch (NoSuchAlgorithmException e)
             {
-                isEquals("No such algorithm: AES/" + cipherModes[i] + "NOT_REAL/NoPadding", e.getMessage());
+                if (!(e.getMessage().indexOf("can't support mode ") >= 0))      // old JVM
+                {
+                    isEquals("1 got: " + e.getMessage(), "No such algorithm: AES/" + cipherModes[i] + "NOT_REAL/NoPadding", e.getMessage());
+                }
             }
             catch (NoSuchPaddingException e)
             {
@@ -1631,7 +1634,10 @@ public class BlockCipherTest
             }
             catch (NoSuchAlgorithmException e)
             {
-                isEquals("No such algorithm: AES/" + cipherModes[i] + "256/NoPadding", e.getMessage());
+                if (!(e.getMessage().indexOf("can't support mode ") >= 0))      // old JVM
+                {
+                    isEquals("2 got: " + e.getMessage(), "No such algorithm: AES/" + cipherModes[i] + "256/NoPadding", e.getMessage());
+                }
             }
             catch (NoSuchPaddingException e)
             {
@@ -1652,7 +1658,10 @@ public class BlockCipherTest
             }
             catch (NoSuchAlgorithmException e)
             {
-                isEquals("No such algorithm: AES/" + cipherModes[i] + "2/NoPadding", e.getMessage());
+                if (!(e.getMessage().indexOf("can't support mode ") >= 0))      // old JVM
+                {
+                    isEquals("3 got: " + e.getMessage(), "No such algorithm: AES/" + cipherModes[i] + "2/NoPadding", e.getMessage());
+                }
             }
             catch (NoSuchPaddingException e)
             {
@@ -1673,7 +1682,10 @@ public class BlockCipherTest
             }
             catch (NoSuchAlgorithmException e)
             {
-                isEquals("No such algorithm: AES/" + cipherModes[i] + "9/NoPadding", e.getMessage());
+                if (!(e.getMessage().indexOf("can't support mode ") >= 0))      // old JVM
+                {
+                    isEquals("No such algorithm: AES/" + cipherModes[i] + "9/NoPadding", e.getMessage());
+                }
             }
             catch (NoSuchPaddingException e)
             {

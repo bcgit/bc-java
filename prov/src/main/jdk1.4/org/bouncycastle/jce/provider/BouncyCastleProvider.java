@@ -49,7 +49,7 @@ import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.66";
+    private static String info = "BouncyCastle Security Provider v1.67";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -133,7 +133,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.66, info);
+        super(PROVIDER_NAME, 1.67, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
@@ -270,6 +270,11 @@ public final class BouncyCastleProvider extends Provider
         {
             keyInfoConverters.put(oid, keyInfoConverter);
         }
+    }
+
+    public AsymmetricKeyInfoConverter getKeyInfoConverter(ASN1ObjectIdentifier oid)
+    {
+        return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
     }
 
     public void addAttributes(String key, Map<String, String> attributeMap)

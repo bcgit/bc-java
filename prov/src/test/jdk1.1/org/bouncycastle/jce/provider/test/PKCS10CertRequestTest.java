@@ -9,7 +9,8 @@ import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.X509Principal;
@@ -56,7 +57,7 @@ public class PKCS10CertRequestTest
                                                         kp.getPrivate());
                                 
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-            DEROutputStream dOut = new DEROutputStream(bOut);
+            ASN1OutputStream dOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
 
             dOut.writeObject(req1);
             dOut.close();

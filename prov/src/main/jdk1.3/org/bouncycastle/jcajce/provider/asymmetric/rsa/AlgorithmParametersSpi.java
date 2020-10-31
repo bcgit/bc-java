@@ -6,7 +6,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 
@@ -125,7 +125,7 @@ public abstract class AlgorithmParametersSpi
             throws IOException
         {
             ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            DEROutputStream         dOut = new DEROutputStream(bOut);
+            ASN1OutputStream         dOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
             PSSParamSpec    pssSpec = (PSSParamSpec)currentSpec;
             RSASSAPSSparams     pssP = new RSASSAPSSparams(RSASSAPSSparams.DEFAULT_HASH_ALGORITHM, RSASSAPSSparams.DEFAULT_MASK_GEN_FUNCTION, new ASN1Integer(pssSpec.getSaltLength()), RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
 
