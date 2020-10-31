@@ -6,9 +6,10 @@ import java.security.*;
 import java.security.spec.*;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -88,7 +89,7 @@ public class EncryptedPrivateKeyInfo
             throw new NullPointerException("parameters null");
         }
 
-        org.bouncycastle.asn1.x509.AlgorithmIdentifier      kAlgId = new AlgorithmIdentifier(new DERObjectIdentifier(algName), null);
+        org.bouncycastle.asn1.x509.AlgorithmIdentifier      kAlgId = new AlgorithmIdentifier(new ASN1ObjectIdentifier(algName), null);
 
         infoObj = new org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo(kAlgId, (byte[])encryptedData.clone());
         algP = this.getParameters();
@@ -128,7 +129,7 @@ public class EncryptedPrivateKeyInfo
             ASN1InputStream          dIn = new ASN1InputStream(bIn);
 
             kAlgId = new AlgorithmIdentifier(
-                    new DERObjectIdentifier(algParams.getAlgorithm()), dIn.readObject());
+                    new ASN1ObjectIdentifier(algParams.getAlgorithm()), dIn.readObject());
         }
         catch (IOException e)
         {
@@ -154,7 +155,7 @@ public class EncryptedPrivateKeyInfo
     {
         AlgorithmParameters     ap = AlgorithmParameters.getInstance(this.getAlgName());
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        DEROutputStream         dOut = new DEROutputStream(bOut);
+        ASN1OutputStream         dOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
 
         try
         {
@@ -224,7 +225,7 @@ public class EncryptedPrivateKeyInfo
         throws IOException
     {
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        DEROutputStream         dOut = new DEROutputStream(bOut);
+        ASN1OutputStream         dOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
 
         dOut.writeObject(infoObj);
         dOut.close();

@@ -438,3 +438,9 @@ g/private.*final.*;/s/final//
 w
 q
 %
+
+ed org/bouncycastle/jcajce/spec/CompositeAlgorithmSpec.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
