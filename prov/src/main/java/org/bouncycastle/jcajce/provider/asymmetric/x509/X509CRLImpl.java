@@ -54,7 +54,6 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * The following extensions are listed in RFC 2459 as relevant to CRLs
@@ -552,23 +551,7 @@ abstract class X509CRLImpl
         buf.append("  Signature Algorithm: ").append(this.getSigAlgName())
             .append(nl);
 
-        byte[] sig = this.getSignature();
-
-        buf.append("            Signature: ").append(
-            new String(Hex.encode(sig, 0, 20))).append(nl);
-        for (int i = 20; i < sig.length; i += 20)
-        {
-            if (i < sig.length - 20)
-            {
-                buf.append("                       ").append(
-                    new String(Hex.encode(sig, i, 20))).append(nl);
-            }
-            else
-            {
-                buf.append("                       ").append(
-                    new String(Hex.encode(sig, i, sig.length - i))).append(nl);
-            }
-        }
+        X509SignatureUtil.prettyPrintSignature(this.getSignature(), buf, nl);
 
         Extensions extensions = c.getTBSCertList().getExtensions();
 
