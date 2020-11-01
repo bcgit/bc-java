@@ -295,7 +295,6 @@ public class ESTResponse
             throws IOException
         {
             int i = src.read();
-            System.out.print(String.valueOf((char)i));
             return i;
         }
 
