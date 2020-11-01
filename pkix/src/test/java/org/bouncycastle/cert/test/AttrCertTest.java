@@ -628,7 +628,7 @@ public class AttrCertTest
         Set exts = aCert.getCriticalExtensionOIDs();
         
         if (exts.size() != 1 || !exts.contains(new ASN1ObjectIdentifier("1.1")))
-        {               System.err.println(exts);
+        {
             fail("critical extension test failed");
         }
 
