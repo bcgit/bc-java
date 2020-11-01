@@ -45,6 +45,7 @@ then
         rm src/org/bouncycastle/crypto/test/AllTests.java
         rm src/org/bouncycastle/crypto/test/SHA3DigestTest.java
         rm src/org/bouncycastle/crypto/test/SHAKEDigestTest.java
+	rm src/org/bouncycastle/crypto/test/NISTECCTest.java
         rm src/org/bouncycastle/crypto/CryptoServicesPermission.java
         rm src/org/bouncycastle/util/StreamParser.java
         rm src/org/bouncycastle/util/StreamParsingException.java
@@ -240,7 +241,6 @@ then
     org.bouncycastle.crypto.paddings \
     org.bouncycastle.crypto.signers \
     org.bouncycastle.crypto.prng \
-    org.bouncycastle.crypto.tls \
     org.bouncycastle.crypto.test \
     org.bouncycastle.crypto.util \
     org.bouncycastle.crypto.examples \
