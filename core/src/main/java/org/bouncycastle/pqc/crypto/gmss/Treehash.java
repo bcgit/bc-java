@@ -181,8 +181,7 @@ public class Treehash
     {
         if (!this.seedInitialized)
         {
-            System.err.println("Seed " + this.maxHeight + " not initialized");
-            return;
+            throw new IllegalStateException("Seed " + this.maxHeight + " not initialized");
         }
 
         this.heightOfNodes = new Vector();

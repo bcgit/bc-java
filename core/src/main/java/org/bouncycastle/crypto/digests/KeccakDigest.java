@@ -38,25 +38,6 @@ public class KeccakDigest
     }
 
 
-    public static void main(String[] args)
-        throws Exception
-    {
-        KeccakDigest dig = new KeccakDigest(256);
-        byte[] res = new byte[dig.getDigestSize()];
-
-        byte[] m = new byte[2041];
-        for (int t=0; t<m.length;t++) {
-            m[t] = (byte)t;
-        }
-        dig.update(m, 0, m.length);
-
-        dig.doFinal(res, 0);
-
-        String r = Hex.toHexString(res);
-        System.out.println(r);
-    }
-
-
     public KeccakDigest(KeccakDigest source)
     {
         System.arraycopy(source.state, 0, this.state, 0, source.state.length);
