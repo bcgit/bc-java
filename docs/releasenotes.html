@@ -24,10 +24,18 @@ to conform the algorithms to the JCE framework.
 
 <h3>2.1.1 Version</h3>
 Release: 1.67<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, TBD.
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, November 1st.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>BCJSSE: SunJSSE compatibility fix - override of getChannel() removed and 'urgent data' behaviour should now conform to what the SunJSSE expects.
 <li>Nested BER data could sometimes cause issues in octet strings. This has been fixed.</li>
+<li>Certificates/CRLs with short signatures could cause an exception in toString() in the BC X509 Certificate implmentation. This has been fixed.</li>
+<li>In line with latest changes in the JVM, SignatureSpis which don't require parameters now return null on engineGetParameters().</li>
+<li>The RSA KeyFactory now always preferentially produces RSAPrivateCrtKey where it can on requests for a KeySpec based on an RSAPrivateKey.</li>
+<li>CMSTypedStream$FullReaderStream now handles zero length reads correctly.</li>
+<li>Unecessary padding was added on cSHAKE and associated algorithms when the function and customization strings resulted in a heading encoding that was block aligned. This has been fixed.</li>
+<li>Zero length data would cause an unexpected exception from RFC5649WrapEngine. This has been fixed.</li>
+<li>OpenBSDBcrypt was failing to handle some valid prefixes. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -35,8 +43,17 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, TBD.
 <li>Performance of Noekeon has been improved.</li>
 <li>A setSessionKeyObfuscation() method has been added to PublicKeyKeyEncryptionMethodGenerator to allow turning off of session key obfuscation (default is on, method primarily to get around early version GPG issues with AES-128 keys).</li>
 <li>Implemented 'safegcd' constant-time modular inversion (as well as a variable-time variant). It has replaced Fermat inversion in all our EC code, and BigInteger.modInverse in several other places, particularly signers. This improves side-channel protection, and also gives a significant performance boost.</li>
-<li>Performance of custom binary ECC curves has been improved.</li>
+<li>Performance of custom binary ECC curves and Edwards Curves has been improved.</li>
 <li>BCJSSE: New boolean system property 'org.bouncycastle.jsse.keyManager.checkEKU' allows to disable ExtendedKeyUsage restrictions when selecting credentials (although the peer may still complain).</li>
+<li>Initial support has been added for "Composite Keys and Signatures For Use In Internet PKI" using the test OID. Please note there will be further refinements to this as the draft is standardised.</li>
+<li>The BC EdDSA signature API now supports keys implementing all methods on the EdECKey and XECKey interfaces directly.</li>
+<li>Work has begun on classes to support the ETSI TS 103 097, Intelligent Transport Systems (ITS) in the bcpkix package.</li>
+<li>Further optimization work has been done on GCM.</li>
+<li>A NewHope based processor, similar to the one for Key Agreement has been added for trying to "quantum hard" KEM algorithms.</li>
+<li>PGP clear signed signatures now support SHA-224.</li>
+<li>Treating absent vs NULL as equivalent can now be configured by a system property. By default this is not enabled.</li>
+<li>Mode name checks in Cipher strings should now make sure an improper mode name always results in a NoSuchAlgorithmException.</li>
+<li>In line with changes in OpenSSL, the OpenSSLPBKDF now uses UTF8 encoding.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
