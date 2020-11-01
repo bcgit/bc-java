@@ -57,7 +57,6 @@ public final class XMSSPublicKeyParameters
             }
             else
             {
-                System.err.println(publicKey.length + " " + (oidSize + rootSize + publicSeedSize));
                 throw new IllegalArgumentException("public key has wrong size");
             }
         }
