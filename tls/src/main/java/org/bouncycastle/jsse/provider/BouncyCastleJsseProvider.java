@@ -21,7 +21,7 @@ public class BouncyCastleJsseProvider
     public static final String PROVIDER_NAME = "BCJSSE";
 
     // TODO[tls13]
-    static final boolean PROVIDER_TLS13_ENABLED = false;
+    static final boolean PROVIDER_TLS13_ENABLED = true;
 
     private static final double PROVIDER_VERSION = 1.0011;
     private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.11";
