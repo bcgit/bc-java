@@ -43,7 +43,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, November 1st.
 <li>In line with latest changes in the JVM, SignatureSpis which don't require parameters now return null on engineGetParameters().</li>
 <li>The RSA KeyFactory now always preferentially produces RSAPrivateCrtKey where it can on requests for a KeySpec based on an RSAPrivateKey.</li>
 <li>CMSTypedStream$FullReaderStream now handles zero length reads correctly.</li>
-<li>Unecessary padding was added on cSHAKE and associated algorithms when the function and customization strings resulted in a heading encoding that was block aligned. This has been fixed.</li>
+<li>Unecessary padding was added on KMAC when the key length was block aligned. This has been fixed.</li>
 <li>Zero length data would cause an unexpected exception from RFC5649WrapEngine. This has been fixed.</li>
 <li>OpenBSDBcrypt was failing to handle some valid prefixes. This has been fixed.</li>
 </ul>
