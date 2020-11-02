@@ -65,6 +65,8 @@ import org.bouncycastle.jsse.BCSSLSocket;
  */
 class TestUtils
 {
+    static final SecureRandom RANDOM = new SecureRandom();
+
     private static AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
     private static Map<String, AlgorithmIdentifier> algIDs = createAlgIds();
 
@@ -190,7 +192,7 @@ class TestUtils
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DSA", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(1024, new SecureRandom());
+        kpGen.initialize(1024, RANDOM);
 
         return kpGen.generateKeyPair();
     }
@@ -203,7 +205,7 @@ class TestUtils
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(1024, new SecureRandom());
+        kpGen.initialize(1024, RANDOM);
 
         return kpGen.generateKeyPair();
     }
@@ -216,7 +218,7 @@ class TestUtils
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSASSA-PSS", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(1024, new SecureRandom());
+        kpGen.initialize(1024, RANDOM);
 
         return kpGen.generateKeyPair();
     }
@@ -226,7 +228,7 @@ class TestUtils
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(256, new SecureRandom());
+        kpGen.initialize(256, RANDOM);
 
         return kpGen.generateKeyPair();
     }
@@ -236,7 +238,7 @@ class TestUtils
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed25519", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(255, new SecureRandom());
+        kpGen.initialize(255, RANDOM);
 
         return kpGen.generateKeyPair();
     }
@@ -246,7 +248,7 @@ class TestUtils
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed448", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(448, new SecureRandom());
+        kpGen.initialize(448, RANDOM);
 
         return kpGen.generateKeyPair();
     }
