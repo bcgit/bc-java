@@ -125,7 +125,7 @@ public class JcaContentSignerBuilder
 
             return new ContentSigner()
             {
-                private OutputStream stream = OutputStreamFactory.createStream(sig);
+                private final OutputStream stream = OutputStreamFactory.createStream(sig);
 
                 public AlgorithmIdentifier getAlgorithmIdentifier()
                 {
@@ -147,6 +147,12 @@ public class JcaContentSignerBuilder
                     {
                         throw new RuntimeOperatorException("exception obtaining signature: " + e.getMessage(), e);
                     }
+                }
+
+                @Override
+                public void close() throws IOException
+                {
+                    stream.close();
                 }
             };
         }
@@ -189,7 +195,7 @@ public class JcaContentSignerBuilder
 
             return new ContentSigner()
             {
-                OutputStream stream = sigStream;
+                final OutputStream stream = sigStream;
 
                 public AlgorithmIdentifier getAlgorithmIdentifier()
                 {
@@ -221,6 +227,15 @@ public class JcaContentSignerBuilder
                     catch (SignatureException e)
                     {
                         throw new RuntimeOperatorException("exception obtaining signature: " + e.getMessage(), e);
+                    }
+                }
+
+                @Override
+                public void close() throws Exception
+                {
+                    if (stream != null)
+                    {
+                        stream.close();
                     }
                 }
             };

@@ -67,4 +67,14 @@ public class BufferingContentSigner
     {
         return contentSigner.getSignature();
     }
+
+    @Override
+    public void close() throws Exception
+    {
+        output.close();
+        if (contentSigner != null)
+        {
+            contentSigner.close();
+        }
+    }
 }
