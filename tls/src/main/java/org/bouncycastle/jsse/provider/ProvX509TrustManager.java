@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
+import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
 import java.security.cert.Certificate;
@@ -120,8 +121,7 @@ class ProvX509TrustManager
         }
         else if (baseParameters instanceof PKIXBuilderParameters)
         {
-            this.pkixParametersTemplate = (PKIXBuilderParameters)baseParameters.clone();
-            this.pkixParametersTemplate.setTargetCertConstraints(null);
+            this.pkixParametersTemplate = (PKIXBuilderParameters)baseParameters;
         }
         else
         {
@@ -216,9 +216,6 @@ class ProvX509TrustManager
             certStore = CertStore.getInstance("Collection", certStoreParameters);
         }
 
-        X509CertSelector certSelector = new X509CertSelector();
-        certSelector.setCertificate(eeCert);
-
         CertPathBuilder pkixBuilder;
         try
         {
@@ -232,7 +229,8 @@ class ProvX509TrustManager
         PKIXBuilderParameters pkixParameters = (PKIXBuilderParameters)pkixParametersTemplate.clone();
         pkixParameters.addCertPathChecker(new ProvAlgorithmChecker(helper, algorithmConstraints));
         pkixParameters.addCertStore(certStore);
-        pkixParameters.setTargetCertConstraints(certSelector);
+        pkixParameters.setTargetCertConstraints(
+            createTargetCertConstraints(eeCert, pkixParameters.getTargetCertConstraints()));
 
         if (!statusResponses.isEmpty())
         {
@@ -439,6 +437,23 @@ class ProvX509TrustManager
         }
 
         checkEndpointID(peerHost, certificate, endpointIDAlg);
+    }
+
+    private static X509CertSelector createTargetCertConstraints(final X509Certificate eeCert,
+        final CertSelector userConstraints)
+    {
+        return new X509CertSelector()
+        {
+            {
+                setCertificate(eeCert);
+            }
+
+            @Override
+            public boolean match(Certificate cert)
+            {
+                return super.match(cert) && (null == userConstraints || userConstraints.match(cert));
+            }
+        };
     }
 
     private static X509Certificate getTrustedCert(TrustAnchor trustAnchor) throws CertificateException
