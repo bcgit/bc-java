@@ -1729,6 +1729,44 @@ public class TlsUtils
         securityParameters.baseKeyServer = securityParameters.getTrafficSecretServer();
     }
 
+    static void update13TrafficSecretLocal(TlsContext context) throws IOException
+    {
+        update13TrafficSecret(context, context.isServer());
+    }
+
+    static void update13TrafficSecretPeer(TlsContext context) throws IOException
+    {
+        update13TrafficSecret(context, !context.isServer());
+    }
+
+    private static void update13TrafficSecret(TlsContext context, boolean forServer) throws IOException
+    {
+        SecurityParameters securityParameters = context.getSecurityParametersConnection();
+
+        TlsSecret current;
+        if (forServer)
+        {
+            current = securityParameters.getTrafficSecretServer();
+            securityParameters.trafficSecretServer = update13TrafficSecret(securityParameters, current);
+        }
+        else
+        {
+            current = securityParameters.getTrafficSecretClient();
+            securityParameters.trafficSecretClient = update13TrafficSecret(securityParameters, current);
+        }
+
+        if (null != current)
+        {
+            current.destroy();
+        }
+    }
+
+    private static TlsSecret update13TrafficSecret(SecurityParameters securityParameters, TlsSecret secret) throws IOException
+    {
+        return TlsCryptoUtils.hkdfExpandLabel(secret, securityParameters.getPRFHashAlgorithm(), "traffic upd",
+            EMPTY_BYTES, securityParameters.getPRFHashLength());
+    }
+
     public static short getHashAlgorithmForHMACAlgorithm(int macAlgorithm)
     {
         switch (macAlgorithm)

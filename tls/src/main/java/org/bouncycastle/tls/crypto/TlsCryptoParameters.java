@@ -21,6 +21,11 @@ public class TlsCryptoParameters
         this.context = context;
     }
 
+    public SecurityParameters getSecurityParametersConnection()
+    {
+        return context.getSecurityParametersConnection();
+    }
+
     public SecurityParameters getSecurityParametersHandshake()
     {
         return context.getSecurityParametersHandshake();

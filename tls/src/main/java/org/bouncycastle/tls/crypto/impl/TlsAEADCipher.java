@@ -78,10 +78,11 @@ public class TlsAEADCipher
         this.decryptNonce = new byte[fixed_iv_length];
         this.encryptNonce = new byte[fixed_iv_length];
 
+        final boolean isServer = cryptoParams.isServer();
         if (isTLSv13)
         {
-            rekeyDecoder();
-            rekeyEncoder();
+            rekeyCipher(securityParameters, decryptCipher, decryptNonce, !isServer);
+            rekeyCipher(securityParameters, encryptCipher, encryptNonce, isServer);
             return;
         }
 
@@ -89,7 +90,7 @@ public class TlsAEADCipher
         byte[] keyBlock = TlsImplUtils.calculateKeyBlock(cryptoParams, keyBlockSize);
         int pos = 0;
 
-        if (cryptoParams.isServer())
+        if (isServer)
         {
             decryptCipher.setKey(keyBlock, pos, keySize); pos += keySize;
             encryptCipher.setKey(keyBlock, pos, keySize); pos += keySize;
@@ -287,12 +288,12 @@ public class TlsAEADCipher
 
     public void rekeyDecoder() throws IOException
     {
-        rekeyCipher(decryptCipher, decryptNonce, !cryptoParams.isServer());
+        rekeyCipher(cryptoParams.getSecurityParametersConnection(), decryptCipher, decryptNonce, !cryptoParams.isServer());
     }
 
     public void rekeyEncoder() throws IOException
     {
-        rekeyCipher(encryptCipher, encryptNonce, cryptoParams.isServer());
+        rekeyCipher(cryptoParams.getSecurityParametersConnection(), encryptCipher, encryptNonce, cryptoParams.isServer());
     }
 
     public boolean usesOpaqueRecordType()
@@ -328,14 +329,13 @@ public class TlsAEADCipher
         }
     }
 
-    protected void rekeyCipher(TlsAEADCipherImpl cipher, byte[] nonce, boolean serverSecret) throws IOException
+    protected void rekeyCipher(SecurityParameters securityParameters, TlsAEADCipherImpl cipher, byte[] nonce,
+        boolean serverSecret) throws IOException
     {
         if (!isTLSv13)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-
-        SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
 
         TlsSecret secret = serverSecret
             ?   securityParameters.getTrafficSecretServer()
