@@ -3,24 +3,33 @@ package org.bouncycastle.tls;
 public final class RecordPreview
 {
     private final int recordSize;
-    private final int applicationDataLimit;
+    private final int contentLimit;
 
-    static RecordPreview combine(RecordPreview a, RecordPreview b)
+    static RecordPreview combineAppData(RecordPreview a, RecordPreview b)
     {
-        return new RecordPreview(
-            a.getRecordSize() + b.getRecordSize(),
-            a.getApplicationDataLimit() + b.getApplicationDataLimit());
+        return new RecordPreview(a.getRecordSize() + b.getRecordSize(), a.getContentLimit() + b.getContentLimit());
     }
 
-    RecordPreview(int recordSize, int applicationDataLimit)
+    static RecordPreview extendRecordSize(RecordPreview a, int recordSize)
+    {
+        return new RecordPreview(a.getRecordSize() + recordSize, a.getContentLimit());
+    }
+
+    RecordPreview(int recordSize, int contentLimit)
     {
         this.recordSize = recordSize;
-        this.applicationDataLimit = applicationDataLimit;
+        this.contentLimit = contentLimit;
     }
-    
+
+    /** @deprecated Use {@link #getContentLimit} instead */
     public int getApplicationDataLimit()
     {
-        return applicationDataLimit;
+        return contentLimit;
+    }
+
+    public int getContentLimit()
+    {
+        return contentLimit;
     }
 
     public int getRecordSize()

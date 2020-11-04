@@ -836,7 +836,7 @@ public class TlsServerProtocol
             {
             case CS_END:
             {
-                receive13ClientKeyUpdate(buf);
+                receive13KeyUpdate(buf);
                 break;
             }
             default:
@@ -867,7 +867,7 @@ public class TlsServerProtocol
     protected void handleHandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException
     {
-        final SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+        final SecurityParameters securityParameters = tlsServerContext.getSecurityParameters();
 
         if (connection_state > CS_CLIENT_HELLO
             && TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
@@ -1278,13 +1278,6 @@ public class TlsServerProtocol
     protected void receive13ClientFinished(ByteArrayInputStream buf) throws IOException
     {
         processFinishedMessage(buf);
-    }
-
-    protected void receive13ClientKeyUpdate(ByteArrayInputStream buf)
-        throws IOException
-    {
-        // TODO[tls13]
-        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected void receiveCertificateMessage(ByteArrayInputStream buf)

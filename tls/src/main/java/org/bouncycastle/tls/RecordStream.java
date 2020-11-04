@@ -19,13 +19,13 @@ class RecordStream
     private static int DEFAULT_PLAINTEXT_LIMIT = (1 << 14);
 
     private final Record inputRecord = new Record();
+    private final SequenceNumber readSeqNo = new SequenceNumber(), writeSeqNo = new SequenceNumber();
 
     private TlsProtocol handler;
     private InputStream input;
     private OutputStream output;
 //    private TlsContext context = null;
     private TlsCipher pendingCipher = null, readCipher = null, readCipherDeferred = null, writeCipher = null;
-    private SequenceNumber readSeqNo = new SequenceNumber(), writeSeqNo = new SequenceNumber();
 
     private ProtocolVersion writeVersion = null;
 
@@ -65,7 +65,7 @@ class RecordStream
         this.writeVersion = writeVersion;
     }
 
-    public void setIgnoreChangeCipherSpec(boolean ignoreChangeCipherSpec)
+    void setIgnoreChangeCipherSpec(boolean ignoreChangeCipherSpec)
     {
         this.ignoreChangeCipherSpec = ignoreChangeCipherSpec;
     }
@@ -105,7 +105,7 @@ class RecordStream
         {
             this.readCipher = pendingCipher;
             this.ciphertextLimit = readCipher.getCiphertextDecodeLimit(plaintextLimit);
-            this.readSeqNo = new SequenceNumber();
+            readSeqNo.reset();
         }
     }
 
@@ -117,7 +117,7 @@ class RecordStream
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         this.writeCipher = this.pendingCipher;
-        this.writeSeqNo = new SequenceNumber();
+        writeSeqNo.reset();
     }
 
     void finaliseHandshake()
@@ -128,6 +128,18 @@ class RecordStream
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
         this.pendingCipher = null;
+    }
+
+    void notifyKeyUpdateReceived() throws IOException
+    {
+        readCipher.rekeyDecoder();
+        readSeqNo.reset();
+    }
+
+    void notifyKeyUpdateSent() throws IOException
+    {
+        writeCipher.rekeyEncoder();
+        writeSeqNo.reset();
     }
 
     RecordPreview previewRecordHeader(byte[] recordHeader) throws IOException
@@ -152,14 +164,17 @@ class RecordStream
         return new RecordPreview(recordSize, applicationDataLimit);
     }
 
-    RecordPreview previewOutputRecord(int applicationDataSize)
+    RecordPreview previewOutputRecord(int contentLength)
     {
-        int applicationDataLimit = Math.max(0, Math.min(plaintextLimit, applicationDataSize));
+        int contentLimit = Math.max(0, Math.min(plaintextLimit, contentLength));
+        int recordSize = previewOutputRecordSize(contentLimit);
+        return new RecordPreview(recordSize, contentLimit);
+    }
 
-        int recordSize = RecordFormat.FRAGMENT_OFFSET
-            + writeCipher.getCiphertextEncodeLimit(applicationDataLimit, plaintextLimit);
-
-        return new RecordPreview(recordSize, applicationDataLimit);
+    int previewOutputRecordSize(int contentLength)
+    {
+//        assert contentLength <= plaintextLimit
+        return RecordFormat.FRAGMENT_OFFSET + writeCipher.getCiphertextEncodeLimit(contentLength, plaintextLimit);
     }
 
     boolean readFullRecord(byte[] input, int inputOff, int inputLen)
@@ -363,7 +378,7 @@ class RecordStream
             this.readCipher = readCipherDeferred;
             this.readCipherDeferred = null;
             this.ciphertextLimit = readCipher.getCiphertextDecodeLimit(plaintextLimit);
-            this.readSeqNo = new SequenceNumber();
+            readSeqNo.reset();
         }
         else if (readCipher.usesOpaqueRecordType())
         {
@@ -511,6 +526,12 @@ class RecordStream
                 exhausted = true;
             }
             return result;
+        }
+
+        synchronized void reset()
+        {
+            this.value = 0L;
+            this.exhausted = false;
         }
     }
 }

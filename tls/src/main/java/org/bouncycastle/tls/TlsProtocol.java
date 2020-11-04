@@ -141,6 +141,8 @@ public abstract class TlsProtocol
     private volatile boolean failedWithError = false;
     private volatile boolean appDataReady = false;
     private volatile boolean appDataSplitEnabled = true;
+//    private volatile boolean keyUpdatePendingReceive = false;
+    private volatile boolean keyUpdatePendingSend = false;
     private volatile boolean resumableHandshake = false;
     private volatile int appDataSplitMode = ADS_MODE_1_Nsub1;
 
@@ -918,6 +920,11 @@ public abstract class TlsProtocol
 
             if (len > 0)
             {
+                if (keyUpdatePendingSend)
+                {
+                    send13KeyUpdate(false);
+                }
+
                 // Fragment data according to the current fragment limit.
                 int toWrite = Math.min(len, recordStream.getPlaintextLimit());
                 safeWriteRecord(ContentType.application_data, buf, offset, toWrite);
@@ -1086,7 +1093,7 @@ public abstract class TlsProtocol
                 {
                     RecordPreview a = recordStream.previewOutputRecord(0);
                     RecordPreview b = recordStream.previewOutputRecord(applicationDataSize);
-                    return RecordPreview.combine(a, b);
+                    return RecordPreview.combineAppData(a, b);
                 }
                 case ADS_MODE_1_Nsub1:
                 default:
@@ -1095,7 +1102,7 @@ public abstract class TlsProtocol
                     if (applicationDataSize > 1)
                     {
                         RecordPreview b = recordStream.previewOutputRecord(applicationDataSize - 1);
-                        a = RecordPreview.combine(a, b);
+                        a = RecordPreview.combineAppData(a, b);
                     }
                     return a;
                 }
@@ -1103,7 +1110,14 @@ public abstract class TlsProtocol
         }
         else
         {
-            return recordStream.previewOutputRecord(applicationDataSize);
+            RecordPreview a = recordStream.previewOutputRecord(applicationDataSize);
+            if (keyUpdatePendingSend)
+            {
+                int keyUpdateLength = HandshakeMessageOutput.getLength(1);
+                int recordSize = recordStream.previewOutputRecordSize(keyUpdateLength);
+                a = RecordPreview.extendRecordSize(a, recordSize);
+            }
+            return a;
         }
     }
 
@@ -1370,6 +1384,33 @@ public abstract class TlsProtocol
         safeWriteRecord(ContentType.alert, alert, 0, 2);
     }
 
+    protected void receive13KeyUpdate(ByteArrayInputStream buf) throws IOException
+    {
+        // TODO[tls13] This is interesting enough to notify the TlsPeer for possible logging/vetting
+
+        if (!appDataReady)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        short requestUpdate = TlsUtils.readUint8(buf);
+
+        assertEmpty(buf);
+
+        if (!KeyUpdateRequest.isValid(requestUpdate))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        boolean updateRequested = (KeyUpdateRequest.update_requested == requestUpdate);
+
+        TlsUtils.update13TrafficSecretPeer(getContext());
+        recordStream.notifyKeyUpdateReceived();
+
+//        this.keyUpdatePendingReceive &= updateRequested;
+        this.keyUpdatePendingSend |= updateRequested;
+    }
+
     protected void sendCertificateMessage(Certificate certificate, OutputStream endPointHash)
         throws IOException
     {
@@ -1482,6 +1523,28 @@ public abstract class TlsProtocol
         }
 
         HandshakeMessageOutput.send(this, HandshakeType.finished, verify_data);
+    }
+
+    protected void send13KeyUpdate(boolean updateRequested) throws IOException
+    {
+        // TODO[tls13] This is interesting enough to notify the TlsPeer for possible logging/vetting
+
+        if (!appDataReady)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        short requestUpdate = updateRequested
+            ? KeyUpdateRequest.update_requested
+            : KeyUpdateRequest.update_not_requested;
+
+        HandshakeMessageOutput.send(this, HandshakeType.key_update, TlsUtils.encodeUint8(requestUpdate));
+
+        TlsUtils.update13TrafficSecretLocal(getContext());
+        recordStream.notifyKeyUpdateSent();
+
+//        this.keyUpdatePendingReceive |= updateRequested;
+        this.keyUpdatePendingSend &= updateRequested;
     }
 
     protected void sendSupplementalDataMessage(Vector supplementalData)

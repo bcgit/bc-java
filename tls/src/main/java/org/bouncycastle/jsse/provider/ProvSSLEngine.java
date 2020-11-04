@@ -451,7 +451,7 @@ class ProvSSLEngine
                 {
                     resultStatus = Status.BUFFER_UNDERFLOW;
                 }
-                else if (hasInsufficientSpace(dsts, offset, length, preview.getApplicationDataLimit()))
+                else if (hasInsufficientSpace(dsts, offset, length, preview.getContentLimit()))
                 {
                     resultStatus = Status.BUFFER_OVERFLOW;
                 }
@@ -596,7 +596,7 @@ class ProvSSLEngine
                     {
                         RecordPreview preview = protocol.previewOutputRecord(srcRemaining);
 
-                        int srcLimit = preview.getApplicationDataLimit();
+                        int srcLimit = preview.getContentLimit();
                         int dstLimit = preview.getRecordSize();
 
                         if (dst.remaining() < dstLimit)
