@@ -6,6 +6,11 @@ import java.io.IOException;
 class HandshakeMessageOutput
     extends ByteArrayOutputStream
 {
+    static int getLength(int bodyLength)
+    {
+        return 4 + bodyLength;
+    }
+
     static void send(TlsProtocol protocol, short handshakeType, byte[] body)
         throws IOException
     {
@@ -19,9 +24,9 @@ class HandshakeMessageOutput
         this(handshakeType, 60);
     }
 
-    HandshakeMessageOutput(short handshakeType, int length) throws IOException
+    HandshakeMessageOutput(short handshakeType, int bodyLength) throws IOException
     {
-        super(length + 4);
+        super(getLength(bodyLength));
         TlsUtils.checkUint8(handshakeType);
         TlsUtils.writeUint8(handshakeType, this);
         // Reserve space for length
@@ -31,9 +36,9 @@ class HandshakeMessageOutput
     void send(TlsProtocol protocol) throws IOException
     {
         // Patch actual length back in
-        int length = count - 4;
-        TlsUtils.checkUint24(length);
-        TlsUtils.writeUint24(length, buf, 1);
+        int bodyLength = count - 4;
+        TlsUtils.checkUint24(bodyLength);
+        TlsUtils.writeUint24(bodyLength, buf, 1);
         protocol.writeHandshakeMessage(buf, 0, count);
         buf = null;
     }

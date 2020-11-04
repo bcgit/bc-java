@@ -336,7 +336,7 @@ public class TlsClientProtocol
             {
             case CS_END:
             {
-                receive13ServerKeyUpdate(buf);
+                receive13KeyUpdate(buf);
                 break;
             }
             default:
@@ -671,8 +671,7 @@ public class TlsClientProtocol
                     establishMasterSecret(tlsClientContext, keyExchange);
                 }
 
-                tlsClientContext.getSecurityParametersHandshake().sessionHash =
-                    TlsUtils.getCurrentPRFHash(handshakeHash);
+                securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(handshakeHash);
 
                 if (!isSSL)
                 {
@@ -1477,13 +1476,6 @@ public class TlsClientProtocol
         throws IOException
     {
         processFinishedMessage(buf);
-    }
-
-    protected void receive13ServerKeyUpdate(ByteArrayInputStream buf)
-        throws IOException
-    {
-        // TODO[tls13]
-        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected void receiveCertificateRequest(ByteArrayInputStream buf) throws IOException

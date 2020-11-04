@@ -147,13 +147,21 @@ abstract class ProvSSLSessionBase
          * It would be nice to dynamically check with the underlying RecordStream, which might know a tighter limit, e.g.
          * when the max_fragment_length extension has been negotiated. (Compression is not supported, so no expansion needed).
          */
-        // Header size + Fragment length limit + Cipher expansion
-//        return RecordFormat.FRAGMENT_OFFSET + (1 << 14) + 1024;
 
-        /*
-         * Worst case accounts for possible application data splitting (before TLS 1.1)
-         */
-        return (1 << 14) + 1 + 2 * (RecordFormat.FRAGMENT_OFFSET + 1024);
+        ProtocolVersion protocolVersion = getProtocolTLS();
+        if (null == protocolVersion || !TlsUtils.isTLSv12(protocolVersion))
+        {
+            // Worst case accounts for possible application data splitting (before TLS 1.1)
+            return (1 << 14) + 1 + (RecordFormat.FRAGMENT_OFFSET + 1024) * 2;
+        }
+
+        if (TlsUtils.isTLSv13(protocolVersion))
+        {
+            // Worst case accounts for possible key_update message (from TLS 1.3)
+            return (1 << 14) + 5 + (RecordFormat.FRAGMENT_OFFSET + 256) * 2;
+        }
+
+        return (1 << 14) + (RecordFormat.FRAGMENT_OFFSET + 1024);
     }
 
     @SuppressWarnings("deprecation")
