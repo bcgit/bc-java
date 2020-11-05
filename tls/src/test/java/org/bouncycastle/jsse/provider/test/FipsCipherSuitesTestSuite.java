@@ -129,6 +129,11 @@ public class FipsCipherSuitesTestSuite
         return Collections.unmodifiableSet(cs);
     }
 
+    static boolean isFipsSupportedCipherSuites(String cipherSuite)
+    {
+        return FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
+    }
+
     public FipsCipherSuitesTestSuite()
     {
         super("FIPS CipherSuites");
@@ -146,7 +151,7 @@ public class FipsCipherSuitesTestSuite
 
             public boolean isPermitted(String cipherSuite)
             {
-                return FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
+                return isFipsSupportedCipherSuites(cipherSuite);
             }
         });
     }
