@@ -78,8 +78,6 @@ public class TlsClientProtocol
         this.tlsClientContext = new TlsClientContextImpl(tlsClient.getCrypto());
 
         tlsClient.init(tlsClientContext);
-        recordStream.init(tlsClientContext);
-
         tlsClient.notifyCloseHandle(this);
 
         beginHandshake();

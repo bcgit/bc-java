@@ -24,29 +24,22 @@ class RecordStream
     private TlsProtocol handler;
     private InputStream input;
     private OutputStream output;
-//    private TlsContext context = null;
-    private TlsCipher pendingCipher = null, readCipher = null, readCipherDeferred = null, writeCipher = null;
+    private TlsCipher pendingCipher = null;
+    private TlsCipher readCipher = TlsNullNullCipher.INSTANCE;
+    private TlsCipher readCipherDeferred = null;
+    private TlsCipher writeCipher = TlsNullNullCipher.INSTANCE;
 
     private ProtocolVersion writeVersion = null;
 
-    private int plaintextLimit, ciphertextLimit;
-    private boolean ignoreChangeCipherSpec;
+    private int plaintextLimit = DEFAULT_PLAINTEXT_LIMIT;
+    private int ciphertextLimit = DEFAULT_PLAINTEXT_LIMIT;
+    private boolean ignoreChangeCipherSpec = false;
 
     RecordStream(TlsProtocol handler, InputStream input, OutputStream output)
     {
         this.handler = handler;
         this.input = input;
         this.output = output;
-    }
-
-    void init(TlsContext context)
-    {
-//        this.context = context;
-        this.readCipher = TlsNullNullCipher.INSTANCE;
-        this.writeCipher = this.readCipher;
-        this.ignoreChangeCipherSpec = false;
-
-        setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }
 
     int getPlaintextLimit()
