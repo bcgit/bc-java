@@ -829,16 +829,7 @@ public class TlsServerProtocol
         }
         case HandshakeType.key_update:
         {
-            switch (this.connection_state)
-            {
-            case CS_END:
-            {
-                receive13KeyUpdate(buf);
-                break;
-            }
-            default:
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
+            receive13KeyUpdate(buf);
             break;
         }
 
@@ -888,12 +879,17 @@ public class TlsServerProtocol
         {
         case HandshakeType.client_hello:
         {
+            if (isApplicationDataReady())
+            {
+                refuseRenegotiation();
+                break;
+            }
+
             switch (this.connection_state)
             {
             case CS_END:
             {
-                refuseRenegotiation();
-                break;
+                throw new TlsFatalAlert(AlertDescription.internal_error);
             }
             case CS_START:
             {

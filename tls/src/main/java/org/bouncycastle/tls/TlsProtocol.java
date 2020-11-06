@@ -282,7 +282,7 @@ public abstract class TlsProtocol
 
             raiseAlertWarning(AlertDescription.close_notify, "Connection closed");
 
-            if (connection_state != CS_END)
+            if (!appDataReady)
             {
                 cleanupHandshake();
             }
@@ -319,7 +319,7 @@ public abstract class TlsProtocol
         // TODO This isn't quite in the right place. Also, as of TLS 1.1 the above is obsolete.
         invalidateSession();
 
-        if (connection_state != CS_END)
+        if (!appDataReady)
         {
             cleanupHandshake();
         }
@@ -1165,7 +1165,7 @@ public abstract class TlsProtocol
         {
             if (closed)
             {
-                if (connection_state != CS_END)
+                if (!appDataReady)
                 {
                     // NOTE: Any close during the handshake should have raised an exception.
                     throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -1197,7 +1197,7 @@ public abstract class TlsProtocol
 
             if (closed)
             {
-                if (connection_state != CS_END)
+                if (!appDataReady)
                 {
                     // NOTE: Any close during the handshake should have raised an exception.
                     throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -1390,7 +1390,7 @@ public abstract class TlsProtocol
 
         if (!appDataReady)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
         short requestUpdate = TlsUtils.readUint8(buf);
