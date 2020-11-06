@@ -330,30 +330,12 @@ public class TlsClientProtocol
         }
         case HandshakeType.key_update:
         {
-            switch (this.connection_state)
-            {
-            case CS_END:
-            {
-                receive13KeyUpdate(buf);
-                break;
-            }
-            default:
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
+            receive13KeyUpdate(buf);
             break;
         }
         case HandshakeType.new_session_ticket:
         {
-            switch (this.connection_state)
-            {
-            case CS_END:
-            {
-                receive13NewSessionTicket(buf);
-                break;
-            }
-            default:
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
+            receive13NewSessionTicket(buf);
             break;
         }
         case HandshakeType.server_hello:
@@ -808,7 +790,7 @@ public class TlsClientProtocol
              * if it does not wish to renegotiate a session, or the client may, if it wishes,
              * respond with a no_renegotiation alert.
              */
-            if (this.connection_state == CS_END)
+            if (isApplicationDataReady())
             {
                 refuseRenegotiation();
             }
@@ -1426,6 +1408,11 @@ public class TlsClientProtocol
     protected void receive13NewSessionTicket(ByteArrayInputStream buf)
         throws IOException
     {
+        if (!isApplicationDataReady())
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
         // TODO[tls13] Do something more than just ignore them
 
 //        struct {
