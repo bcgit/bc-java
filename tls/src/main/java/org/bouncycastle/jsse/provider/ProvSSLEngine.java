@@ -605,21 +605,22 @@ class ProvSSLEngine
                         }
                         else
                         {
-                            for (int srcIndex = 0; srcIndex < length && srcLimit > 0; ++srcIndex)
+                            // TODO Support writing application data using ByteBuffer array directly
+
+                            byte[] applicationData = new byte[srcLimit];
+
+                            for (int srcIndex = 0; srcIndex < length && bytesConsumed < srcLimit; ++srcIndex)
                             {
                                 ByteBuffer src = srcs[offset + srcIndex];
-                                int count = Math.min(src.remaining(), srcLimit);
+                                int count = Math.min(src.remaining(), srcLimit - bytesConsumed);
                                 if (count > 0)
                                 {
-                                    byte[] input = new byte[count];
-                                    src.get(input);
-    
-                                    protocol.writeApplicationData(input, 0, count);
-    
+                                    src.get(applicationData, bytesConsumed, count);
                                     bytesConsumed += count;
-                                    srcLimit -= count;
                                 }
                             }
+
+                            protocol.writeApplicationData(applicationData, 0, bytesConsumed);
                         }
                     }
                 }
