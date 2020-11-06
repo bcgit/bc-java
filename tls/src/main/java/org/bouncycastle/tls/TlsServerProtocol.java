@@ -59,8 +59,7 @@ public class TlsServerProtocol
      * @param tlsServer
      * @throws IOException If in blocking mode and handshake was not successful.
      */
-    public void accept(TlsServer tlsServer)
-        throws IOException
+    public void accept(TlsServer tlsServer) throws IOException
     {
         if (tlsServer == null)
         {
@@ -74,9 +73,7 @@ public class TlsServerProtocol
         this.tlsServer = tlsServer;
         this.tlsServerContext = new TlsServerContextImpl(tlsServer.getCrypto());
 
-        this.tlsServer.init(tlsServerContext);
-        this.recordStream.init(tlsServerContext);
-
+        tlsServer.init(tlsServerContext);
         tlsServer.notifyCloseHandle(this);
 
         beginHandshake();
