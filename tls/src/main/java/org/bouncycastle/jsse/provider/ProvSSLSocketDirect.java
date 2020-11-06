@@ -615,10 +615,7 @@ class ProvSSLSocketDirect
         @Override
         public void write(int b) throws IOException
         {
-            handshakeIfNecessary(true);
-
-            byte[] buf = new byte[]{ (byte)b };
-            protocol.writeApplicationData(buf, 0, 1);
+            write(new byte[]{ (byte)b }, 0, 1);
         }
 
         @Override
