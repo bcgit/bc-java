@@ -613,18 +613,6 @@ class ProvSSLSocketDirect
         }
 
         @Override
-        public void flush() throws IOException
-        {
-            synchronized (ProvSSLSocketDirect.this)
-            {
-                if (protocol != null)
-                {
-                    protocol.flush();
-                }
-            }
-        }
-
-        @Override
         public void write(int b) throws IOException
         {
             handshakeIfNecessary(true);
