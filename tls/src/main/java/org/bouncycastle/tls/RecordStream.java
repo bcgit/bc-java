@@ -346,12 +346,6 @@ class RecordStream
         }
     }
 
-    void flush()
-        throws IOException
-    {
-        output.flush();
-    }
-
     private void checkChangeCipherSpec(byte[] buf, int off, int len)
         throws IOException
     {

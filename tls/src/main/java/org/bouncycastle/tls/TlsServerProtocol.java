@@ -801,12 +801,12 @@ public class TlsServerProtocol
             case CS_SERVER_FINISHED:
             {
                 skip13ClientCertificate();
-                // Fall through
+                // NB: Fall through to next case label
             }
             case CS_CLIENT_CERTIFICATE:
             {
                 skip13ClientCertificateVerify();
-                // Fall through
+                // NB: Fall through to next case label
             }
             case CS_CLIENT_CERTIFICATE_VERIFY:
             {
