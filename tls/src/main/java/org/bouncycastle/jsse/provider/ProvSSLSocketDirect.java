@@ -565,6 +565,26 @@ class ProvSSLSocketDirect
     class AppDataInput extends InputStream
     {
         @Override
+        public int read() throws IOException
+        {
+            byte[] buf = new byte[1];
+            int ret = read(buf, 0, 1);
+            return ret <= 0 ? -1 : buf[0] & 0xFF;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException
+        {
+            if (len < 1)
+            {
+                return 0;
+            }
+
+            handshakeIfNecessary(true);
+            return protocol.readApplicationData(b, off, len);
+        }
+
+        @Override
         public int available() throws IOException
         {
             synchronized (ProvSSLSocketDirect.this)
@@ -580,38 +600,10 @@ class ProvSSLSocketDirect
         {
             ProvSSLSocketDirect.this.close();
         }
-
-        @Override
-        public int read() throws IOException
-        {
-            handshakeIfNecessary(true);
-
-            byte[] buf = new byte[1];
-            int ret = protocol.readApplicationData(buf, 0, 1);
-            return ret < 0 ? -1 : buf[0] & 0xFF;
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException
-        {
-            if (len < 1)
-            {
-                return 0;
-            }
-
-            handshakeIfNecessary(true);
-            return protocol.readApplicationData(b, off, len);
-        }
     }
 
     class AppDataOutput extends OutputStream
     {
-        @Override
-        public void close() throws IOException
-        {
-            ProvSSLSocketDirect.this.close();
-        }
-
         @Override
         public void write(int b) throws IOException
         {
@@ -626,6 +618,12 @@ class ProvSSLSocketDirect
                 handshakeIfNecessary(true);
                 protocol.writeApplicationData(b, off, len);
             }
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            ProvSSLSocketDirect.this.close();
         }
     }
 }

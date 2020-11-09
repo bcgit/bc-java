@@ -188,7 +188,7 @@ public class TlsClientProtocol
             case CS_SERVER_ENCRYPTED_EXTENSIONS:
             {
                 skip13CertificateRequest();
-                // Fall through
+                // NB: Fall through to next case label
             }
             case CS_SERVER_CERTIFICATE_REQUEST:
             {
@@ -265,12 +265,12 @@ public class TlsClientProtocol
             case CS_SERVER_ENCRYPTED_EXTENSIONS:
             {
                 skip13CertificateRequest();
-                // Fall through
+                // NB: Fall through to next case label
             }
             case CS_SERVER_CERTIFICATE_REQUEST:
             {
                 skip13ServerCertificate();
-                // Fall through
+                // NB: Fall through to next case label
             }
             case CS_SERVER_CERTIFICATE_VERIFY:
             {
