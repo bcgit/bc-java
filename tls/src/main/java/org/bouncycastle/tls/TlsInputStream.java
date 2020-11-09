@@ -4,43 +4,35 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * An InputStream for an TLS 1.0 connection.
+ * An InputStream for a TLS connection.
  */
-class TlsInputStream
-    extends InputStream
+class TlsInputStream extends InputStream
 {
-    private byte[] buf = new byte[1];
-    private TlsProtocol handler = null;
+    private final TlsProtocol handler;
 
     TlsInputStream(TlsProtocol handler)
     {
         this.handler = handler;
     }
 
-    public int available()
-        throws IOException
+    public int read() throws IOException
     {
-        return this.handler.applicationDataAvailable();
+        byte[] buf = new byte[1];
+        int ret = read(buf, 0, 1);
+        return ret <= 0 ? -1 : buf[0] & 0xFF;
     }
 
-    public int read(byte[] buf, int offset, int len)
-        throws IOException
+    public int read(byte[] buf, int offset, int len) throws IOException
     {
-        return this.handler.readApplicationData(buf, offset, len);
+        return handler.readApplicationData(buf, offset, len);
     }
 
-    public int read()
-        throws IOException
+    public int available() throws IOException
     {
-        if (this.read(buf) < 0)
-        {
-            return -1;
-        }
-        return buf[0] & 0xff;
+        return handler.applicationDataAvailable();
     }
 
-    public void close()
-        throws IOException
+    public void close() throws IOException
     {
         handler.close();
     }

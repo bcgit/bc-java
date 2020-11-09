@@ -131,7 +131,9 @@ public abstract class TlsProtocol
     private ByteQueue handshakeQueue = new ByteQueue(0);
 //    private ByteQueue heartbeatQueue = new ByteQueue();
 
-    RecordStream recordStream;
+    final RecordStream recordStream;
+    final Object recordWriteLock = new Object();
+
     TlsHandshakeHash handshakeHash;
 
     private TlsInputStream tlsInputStream = null;
@@ -412,18 +414,18 @@ public abstract class TlsProtocol
     {
         try
         {
-            this.recordStream.finaliseHandshake();
-            this.connection_state = CS_END;
-
             AbstractTlsContext context = getContextAdmin();
             SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-            // Sanity check that Finished messages were exchanged
-            if (null == securityParameters.getLocalVerifyData()
-                || null == securityParameters.getPeerVerifyData())
+            if (appDataReady ||
+                null == securityParameters.getLocalVerifyData() ||
+                null == securityParameters.getPeerVerifyData())
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
+
+            this.recordStream.finaliseHandshake();
+            this.connection_state = CS_END;
 
             // TODO Prefer to set to null, but would need guards elsewhere
             this.handshakeHash = new DeferredHash(context);
@@ -432,19 +434,12 @@ public abstract class TlsProtocol
             this.handshakeQueue.shrink();
 
             this.appDataSplitEnabled = !TlsUtils.isTLSv11(context);
+            this.appDataReady = true;
 
-            /*
-             * If this was an initial handshake, we are now ready to send and receive application data.
-             */
-            if (!appDataReady)
+            if (blocking)
             {
-                this.appDataReady = true;
-
-                if (blocking)
-                {
-                    this.tlsInputStream = new TlsInputStream(this);
-                    this.tlsOutputStream = new TlsOutputStream(this);
-                }
+                this.tlsInputStream = new TlsInputStream(this);
+                this.tlsOutputStream = new TlsOutputStream(this);
             }
 
             if (this.sessionParameters == null)
@@ -876,53 +871,61 @@ public abstract class TlsProtocol
     public void writeApplicationData(byte[] buf, int offset, int len)
         throws IOException
     {
-        if (this.closed)
-        {
-            throw new IOException("Cannot write application data on closed/failed TLS connection");
-        }
         if (!appDataReady)
         {
             throw new IllegalStateException("Cannot write application data until initial handshake completed.");
         }
 
-        while (len > 0)
+        synchronized (recordWriteLock)
         {
-            /*
-             * RFC 5246 6.2.1. Zero-length fragments of Application data MAY be sent as they are
-             * potentially useful as a traffic analysis countermeasure.
-             * 
-             * NOTE: Actually, implementations appear to have settled on 1/n-1 record splitting.
-             */
-
-            if (this.appDataSplitEnabled)
+            while (len > 0)
             {
-                /*
-                 * Protect against known IV attack!
-                 * 
-                 * DO NOT REMOVE THIS CODE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
-                 */
-                switch (getAppDataSplitMode())
+                if (closed)
                 {
-                    case ADS_MODE_0_N_FIRSTONLY:
-                        this.appDataSplitEnabled = false;
-                        // fall through intended!
-                    case ADS_MODE_0_N:
-                        safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
-                        break;
-                    case ADS_MODE_1_Nsub1:
-                    default:
-                        safeWriteRecord(ContentType.application_data, buf, offset, 1);
-                        ++offset;
-                        --len;
-                        break;
+                    throw new IOException("Cannot write application data on closed/failed TLS connection");
                 }
-            }
-
-            if (len > 0)
-            {
                 if (keyUpdatePendingSend)
                 {
                     send13KeyUpdate(false);
+                }
+
+                /*
+                 * RFC 5246 6.2.1. Zero-length fragments of Application data MAY be sent as they are
+                 * potentially useful as a traffic analysis countermeasure.
+                 * 
+                 * NOTE: Actually, implementations appear to have settled on 1/n-1 record splitting.
+                 */
+                if (appDataSplitEnabled)
+                {
+                    /*
+                     * Protect against known IV attack!
+                     * 
+                     * DO NOT REMOVE THIS CODE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
+                     */
+                    switch (appDataSplitMode)
+                    {
+                    case ADS_MODE_0_N_FIRSTONLY:
+                    {
+                        this.appDataSplitEnabled = false;
+                        // NB: Fall through to next case label
+                    }
+                    case ADS_MODE_0_N:
+                    {
+                        safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
+                        break;
+                    }
+                    case ADS_MODE_1_Nsub1:
+                    default:
+                    {
+                        if (len > 1)
+                        {
+                            safeWriteRecord(ContentType.application_data, buf, offset, 1);
+                            ++offset;
+                            --len;
+                        }
+                        break;
+                    }
+                    }
                 }
 
                 // Fragment data according to the current fragment limit.
@@ -1084,28 +1087,28 @@ public abstract class TlsProtocol
             return new RecordPreview(0, 0);
         }
 
-        if (this.appDataSplitEnabled)
+        if (appDataSplitEnabled)
         {
-            switch (getAppDataSplitMode())
+            switch (appDataSplitMode)
             {
-                case ADS_MODE_0_N_FIRSTONLY:
-                case ADS_MODE_0_N:
+            case ADS_MODE_0_N_FIRSTONLY:
+            case ADS_MODE_0_N:
+            {
+                RecordPreview a = recordStream.previewOutputRecord(0);
+                RecordPreview b = recordStream.previewOutputRecord(applicationDataSize);
+                return RecordPreview.combineAppData(a, b);
+            }
+            case ADS_MODE_1_Nsub1:
+            default:
+            {
+                RecordPreview a = recordStream.previewOutputRecord(1);
+                if (applicationDataSize > 1)
                 {
-                    RecordPreview a = recordStream.previewOutputRecord(0);
-                    RecordPreview b = recordStream.previewOutputRecord(applicationDataSize);
-                    return RecordPreview.combineAppData(a, b);
+                    RecordPreview b = recordStream.previewOutputRecord(applicationDataSize - 1);
+                    a = RecordPreview.combineAppData(a, b);
                 }
-                case ADS_MODE_1_Nsub1:
-                default:
-                {
-                    RecordPreview a = recordStream.previewOutputRecord(1);
-                    if (applicationDataSize > 1)
-                    {
-                        RecordPreview b = recordStream.previewOutputRecord(applicationDataSize - 1);
-                        a = RecordPreview.combineAppData(a, b);
-                    }
-                    return a;
-                }
+                return a;
+            }
             }
         }
         else
@@ -1569,7 +1572,6 @@ public abstract class TlsProtocol
     public void flush()
         throws IOException
     {
-        recordStream.flush();
     }
 
     boolean isApplicationDataReady()
