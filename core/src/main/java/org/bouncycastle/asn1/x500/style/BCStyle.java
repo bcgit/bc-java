@@ -76,6 +76,8 @@ public class BCStyle
     public static final ASN1ObjectIdentifier GENERATION = new ASN1ObjectIdentifier("2.5.4.44").intern();
     public static final ASN1ObjectIdentifier UNIQUE_IDENTIFIER = new ASN1ObjectIdentifier("2.5.4.45").intern();
 
+    public static final ASN1ObjectIdentifier DESCRIPTION = new ASN1ObjectIdentifier("2.5.4.13").intern();
+
     /**
      * businessCategory - DirectoryString(SIZE(1..128)
      */
@@ -96,6 +98,7 @@ public class BCStyle
      */
     public static final ASN1ObjectIdentifier PSEUDONYM = new ASN1ObjectIdentifier("2.5.4.65").intern();
 
+    public static final ASN1ObjectIdentifier ROLE = new ASN1ObjectIdentifier("2.5.4.72").intern();
 
     /**
      * RFC 3039 DateOfBirth - GeneralizedTime - YYYYMMDD000000Z
@@ -213,6 +216,8 @@ public class BCStyle
         DefaultSymbols.put(GIVENNAME, "GIVENNAME");
         DefaultSymbols.put(INITIALS, "INITIALS");
         DefaultSymbols.put(GENERATION, "GENERATION");
+        DefaultSymbols.put(DESCRIPTION, "DESCRIPTION");
+        DefaultSymbols.put(ROLE, "ROLE");
         DefaultSymbols.put(UnstructuredAddress, "unstructuredAddress");
         DefaultSymbols.put(UnstructuredName, "unstructuredName");
         DefaultSymbols.put(UNIQUE_IDENTIFIER, "UniqueIdentifier");
@@ -249,6 +254,8 @@ public class BCStyle
         DefaultLookUp.put("givenname", GIVENNAME);
         DefaultLookUp.put("initials", INITIALS);
         DefaultLookUp.put("generation", GENERATION);
+        DefaultLookUp.put("description", DESCRIPTION);
+        DefaultLookUp.put("role", ROLE);
         DefaultLookUp.put("unstructuredaddress", UnstructuredAddress);
         DefaultLookUp.put("unstructuredname", UnstructuredName);
         DefaultLookUp.put("uniqueidentifier", UNIQUE_IDENTIFIER);
