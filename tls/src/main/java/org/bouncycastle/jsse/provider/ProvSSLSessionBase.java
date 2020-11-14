@@ -342,6 +342,7 @@ abstract class ProvSSLSessionBase
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static class X509CertificateWrapper extends javax.security.cert.X509Certificate
     {
         private final X509Certificate c;
