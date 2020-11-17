@@ -14,6 +14,7 @@ import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -111,7 +112,8 @@ public class PKIXCertPathValidatorSpi
         //
         // (b)
         //
-        // Date validDate = CertPathValidatorUtilities.getValidDate(paramsPKIX);
+        final Date currentDate = new Date();
+        final Date validityDate = CertPathValidatorUtilities.getValidityDate(paramsPKIX, currentDate);
 
         //
         // (c)
@@ -330,8 +332,8 @@ public class PKIXCertPathValidatorSpi
             // 6.1.3
             //
 
-            RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, revocationChecker, index, workingPublicKey,
-                verificationAlreadyPerformed, workingIssuerName, sign);
+            RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, validityDate, revocationChecker, index,
+                workingPublicKey, verificationAlreadyPerformed, workingIssuerName, sign);
 
             RFC3280CertPathUtilities.processCertBC(certPath, index, nameConstraintValidator, isForCRLCheck);
 

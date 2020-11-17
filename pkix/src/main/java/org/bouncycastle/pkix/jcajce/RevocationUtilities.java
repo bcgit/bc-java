@@ -273,16 +273,11 @@ class RevocationUtilities
         }
     }
 
-    protected static Date getValidDate(PKIXExtendedParameters paramsPKIX)
+    protected static Date getValidityDate(PKIXExtendedParameters paramsPKIX, Date currentDate)
     {
-        Date validDate = paramsPKIX.getDate();
+        Date validityDate = paramsPKIX.getValidityDate();
 
-        if (validDate == null)
-        {
-            validDate = new Date();
-        }
-
-        return validDate;
+        return null == validityDate ? currentDate : validityDate;
     }
 
     protected static boolean isSelfIssued(X509Certificate cert)

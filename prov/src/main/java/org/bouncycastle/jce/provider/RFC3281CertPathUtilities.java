@@ -322,13 +322,12 @@ class RFC3281CertPathUtilities
         }
     }
 
-    protected static void processAttrCert5(X509AttributeCertificate attrCert,
-        PKIXExtendedParameters pkixParams) throws CertPathValidatorException
+    protected static void processAttrCert5(X509AttributeCertificate attrCert, Date validityDate)
+        throws CertPathValidatorException
     {
         try
         {
-            attrCert.checkValidity(CertPathValidatorUtilities
-                .getValidDate(pkixParams));
+            attrCert.checkValidity(validityDate);
         }
         catch (CertificateExpiredException e)
         {
