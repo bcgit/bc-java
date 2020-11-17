@@ -2,9 +2,7 @@ package org.bouncycastle.jcajce;
 
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertSelector;
-import java.security.cert.CertStore;
 import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -22,36 +20,33 @@ public class PKIXExtendedParameters
     implements CertPathParameters
 {
     /**
-     * This is the default PKIX validity model. Actually there are two variants
-     * of this: The PKIX model and the modified PKIX model. The PKIX model
-     * verifies that all involved certificates must have been valid at the
-     * current time. The modified PKIX model verifies that all involved
-     * certificates were valid at the signing time. Both are indirectly choosen
-     * with the {@link java.security.cert.PKIXParameters#setDate(java.util.Date)} method, so this
-     * methods sets the Date when <em>all</em> certificates must have been
-     * valid.
+     * This is the default PKIX validity model. Actually there are two variants of this: The PKIX
+     * model and the modified PKIX model. The PKIX model verifies that all involved certificates
+     * must have been valid at the current time. The modified PKIX model verifies that all involved
+     * certificates were valid at the signing time. Both are indirectly chosen with the
+     * {@link PKIXParameters#setDate(Date)} method, so this methods sets the Date when <em>all</em>
+     * certificates must have been valid.
      */
     public static final int PKIX_VALIDITY_MODEL = 0;
 
     /**
-     * This model uses the following validity model. Each certificate must have
-     * been valid at the moment where is was used. That means the end
-     * certificate must have been valid at the time the signature was done. The
-     * CA certificate which signed the end certificate must have been valid,
-     * when the end certificate was signed. The CA (or Root CA) certificate must
-     * have been valid, when the CA certificate was signed and so on. So the
-     * {@link java.security.cert.PKIXParameters#setDate(java.util.Date)} method sets the time, when
-     * the <em>end certificate</em> must have been valid.
-     * <p>
-     * It is used e.g.
+     * This model uses the following validity model. Each certificate must have been valid at the
+     * moment when it was used. That means the end certificate must have been valid at the time the
+     * signature was done. The CA certificate which signed the end certificate must have been valid,
+     * when the end certificate was signed. The CA (or Root CA) certificate must have been valid
+     * when the CA certificate was signed, and so on. So the {@link PKIXParameters#setDate(Date)}
+     * method sets the time, when the <em>end certificate</em> must have been valid. It is used e.g.
      * in the German signature law.
-     * </p>
      */
     public static final int CHAIN_VALIDITY_MODEL = 1;
 
+    /**
+     * Builder for a PKIXExtendedParameters object.
+     */
     public static class Builder
     {
         private PKIXParameters baseParameters;
+        private Date validityDate;
         private Date date;
 
         private PKIXCertStoreSelector targetConstraints;
@@ -72,8 +67,8 @@ public class PKIXExtendedParameters
             {
                 this.targetConstraints = new PKIXCertStoreSelector.Builder(constraints).build();
             }
-            Date checkDate = baseParameters.getDate();
-            this.date = (checkDate == null) ? new Date() : checkDate;
+            this.validityDate = baseParameters.getDate();
+            this.date = (validityDate == null) ? new Date() : validityDate;
             this.revocationEnabled = baseParameters.isRevocationEnabled();
             this.trustAnchors = baseParameters.getTrustAnchors();
         }
@@ -81,6 +76,7 @@ public class PKIXExtendedParameters
         public Builder(PKIXExtendedParameters baseParameters)
         {
             this.baseParameters = baseParameters.baseParameters;
+            this.validityDate = baseParameters.validityDate;
             this.date = baseParameters.date;
             this.targetConstraints = baseParameters.targetConstraints;
             this.extraCertStores = new ArrayList(baseParameters.extraCertStores);
@@ -196,6 +192,7 @@ public class PKIXExtendedParameters
 
     private PKIXParameters baseParameters;
     private PKIXCertStoreSelector targetConstraints;
+    private Date validityDate;
     private Date date;
     private List extraCertStores;
     private Map namedCertificateStoreMap;
@@ -209,6 +206,7 @@ public class PKIXExtendedParameters
     private PKIXExtendedParameters(Builder builder)
     {
         this.baseParameters = builder.baseParameters;
+        this.validityDate = builder.validityDate;
         this.date = builder.date;
         this.extraCertStores = Collections.unmodifiableList(builder.extraCertStores);
         this.namedCertificateStoreMap = Collections.unmodifiableMap(new HashMap(builder.namedCertificateStoreMap));
@@ -242,13 +240,24 @@ public class PKIXExtendedParameters
         return namedCRLStoreMap;
     }
 
+    /**
+     * Returns the time at which to check the validity of the certification path. If {@code null},
+     * the current time is used.
+     *
+     * @return the {@code Date}, or {@code null} if not set
+     */
+    public Date getValidityDate()
+    {
+        return null == validityDate ? null : new Date(validityDate.getTime());
+    }
+
+    /**
+     * @deprecated Use 'getValidityDate' instead (which can return null).
+     */
     public Date getDate()
     {
         return new Date(date.getTime());
     }
-
-
-
 
     /**
      * Defaults to <code>false</code>.
@@ -259,8 +268,6 @@ public class PKIXExtendedParameters
     {
         return useDeltas;
     }
-
-
 
     /**
      * @return Returns the validity model.
@@ -337,4 +344,8 @@ public class PKIXExtendedParameters
         return revocationEnabled;
     }
 
+    public boolean getPolicyQualifiersRejected()
+    {
+        return baseParameters.getPolicyQualifiersRejected();
+    }
 }
