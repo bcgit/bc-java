@@ -174,7 +174,7 @@ public class TlsServerProtocol
 
             /*
              * TODO[tls13] Confirm fields in the ClientHello haven't changed
-             * 
+             *
              * RFC 8446 4.1.2 [..] when the server has responded to its ClientHello with a
              * HelloRetryRequest [..] the client MUST send the same ClientHello without
              * modification, except as follows: [key_share, early_data, cookie, pre_shared_key,
@@ -223,7 +223,7 @@ public class TlsServerProtocol
 
             /*
              * NOTE: Currently no server support for session resumption
-             * 
+             *
              * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
              * ONLY when extended_master_secret has been negotiated (otherwise NULL).
              */
@@ -366,7 +366,7 @@ public class TlsServerProtocol
 
         {
             int namedGroup = clientShare.getNamedGroup();
-    
+
             TlsAgreement agreement;
             if (NamedGroup.refersToASpecificCurve(namedGroup))
             {
@@ -407,7 +407,7 @@ public class TlsServerProtocol
         this.offeredCipherSuites = clientHello.getCipherSuites();
 
 
- 
+
         SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
 
         tlsServerContext.setClientSupportedVersions(
@@ -428,7 +428,7 @@ public class TlsServerProtocol
             clientVersion = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
-        // Set the legacy_record_version to use for early alerts 
+        // Set the legacy_record_version to use for early alerts
         recordStream.setWriteVersion(clientVersion);
 
         if (!ProtocolVersion.SERVER_EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(clientVersion))
@@ -562,7 +562,7 @@ public class TlsServerProtocol
 
         /*
          * NOTE: Currently no server support for session resumption
-         * 
+         *
          * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
          * ONLY when extended_master_secret has been negotiated (otherwise NULL).
          */
@@ -731,7 +731,7 @@ public class TlsServerProtocol
         {
             /*
              * TODO[tls13] Abbreviated handshakes (PSK resumption)
-             * 
+             *
              * NOTE: No CertificateRequest, Certificate, CertificateVerify messages, but client
              * might now send EndOfEarlyData after receiving server Finished message.
              */
@@ -1094,7 +1094,7 @@ public class TlsServerProtocol
                     /*
                      * RFC 5246 If no suitable certificate is available, the client MUST send a
                      * certificate message containing no certificates.
-                     * 
+                     *
                      * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                      */
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -1250,7 +1250,11 @@ public class TlsServerProtocol
     {
         // TODO[tls13] This currently just duplicates 'receiveCertificateMessage'
 
-        Certificate clientCertificate = Certificate.parse(tlsServerContext, buf, null);
+        Certificate clientCertificate = Certificate.parse(
+                TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509),
+                tlsServerContext,
+                buf,
+                null);
 
         assertEmpty(buf);
 
@@ -1290,7 +1294,11 @@ public class TlsServerProtocol
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        Certificate clientCertificate = Certificate.parse(tlsServerContext, buf, null);
+        Certificate clientCertificate = Certificate.parse(
+                TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509),
+                tlsServerContext,
+                buf,
+                null);
 
         assertEmpty(buf);
 

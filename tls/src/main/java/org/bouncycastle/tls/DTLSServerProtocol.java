@@ -122,7 +122,7 @@ public class DTLSServerProtocol
 
         /*
          * NOTE: Currently no server support for session resumption
-         * 
+         *
          * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
          * ONLY when extended_master_secret has been negotiated (otherwise NULL).
          */
@@ -272,7 +272,7 @@ public class DTLSServerProtocol
                     /*
                      * RFC 5246 If no suitable certificate is available, the client MUST send a
                      * certificate message containing no certificates.
-                     * 
+                     *
                      * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                      */
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -442,7 +442,7 @@ public class DTLSServerProtocol
         }
 
         /*
-         * RFC 5746 3.6. Server Behavior: Initial Handshake 
+         * RFC 5746 3.6. Server Behavior: Initial Handshake
          */
         if (securityParameters.isSecureRenegotiation())
         {
@@ -471,7 +471,7 @@ public class DTLSServerProtocol
         /*
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
-         * 
+         *
          * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
          * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
          * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
@@ -602,7 +602,11 @@ public class DTLSServerProtocol
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        Certificate clientCertificate = Certificate.parse(state.serverContext, buf, null);
+        Certificate clientCertificate = Certificate.parse(
+                TlsExtensionsUtils.getClientCertificateTypeExtensionServer(state.clientExtensions, CertificateType.X509),
+                state.serverContext,
+                buf,
+                null);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -649,8 +653,8 @@ public class DTLSServerProtocol
          */
         state.clientExtensions = clientHello.getExtensions();
 
-    
-    
+
+
         TlsServerContextImpl context = state.serverContext;
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
@@ -695,7 +699,7 @@ public class DTLSServerProtocol
         state.server.notifyOfferedCipherSuites(state.offeredCipherSuites);
 
         /*
-         * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
+         * TODO[resumption] Check RFC 7627 5.4. for required behaviour
          */
 
         /*

@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Base class for a TLS server.
@@ -227,6 +228,16 @@ public abstract class AbstractTlsServer
         return true;
     }
 
+    protected boolean preferLocalClientCertificateTypes()
+    {
+        return false;
+    }
+
+    protected short[] getAllowedClientCertificateTypes()
+    {
+        return null;
+    }
+
     public void init(TlsServerContext context)
     {
         this.context = context;
@@ -319,7 +330,7 @@ public abstract class AbstractTlsServer
         if (null != clientExtensions)
         {
             this.clientProtocolNames = TlsExtensionsUtils.getALPNExtensionClient(clientExtensions);
-            
+
             if (shouldSelectProtocolNameEarly())
             {
                 if (null != clientProtocolNames && !clientProtocolNames.isEmpty())
@@ -487,12 +498,69 @@ public abstract class AbstractTlsServer
             TlsExtensionsUtils.addTrustedCAKeysExtensionServer(checkServerExtensions());
         }
 
+        // RFC 7250 4.2 for server_certificate_type
+        short[] serverCertTypes = TlsExtensionsUtils.getServerCertificateTypeExtensionClient(clientExtensions);
+        if (serverCertTypes != null)
+        {
+            TlsCredentials credentials = getCredentials();
+
+            if (credentials == null || !Arrays.contains(serverCertTypes, credentials.getCertificate().getCertificateType()))
+            {
+                // outcome 2: we support the extension but have no common types
+                throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            }
+
+            // outcome 3: we support the extension and have a common type
+            TlsExtensionsUtils.addServerCertificateTypeExtensionServer(checkServerExtensions(), credentials.getCertificate().getCertificateType());
+        }
+
+        // RFC 7250 4.2 for client_certificate_type
+        short[] remoteClientCertTypes = TlsExtensionsUtils.getClientCertificateTypeExtensionClient(clientExtensions);
+        if (remoteClientCertTypes != null)
+        {
+            short[] localClientCertTypes = getAllowedClientCertificateTypes();
+            if (localClientCertTypes != null)
+            {
+                short[] preferredTypes;
+                short[] nonPreferredTypes;
+                if (preferLocalClientCertificateTypes())
+                {
+                    preferredTypes = localClientCertTypes;
+                    nonPreferredTypes = remoteClientCertTypes;
+                }
+                else
+                {
+                    preferredTypes = remoteClientCertTypes;
+                    nonPreferredTypes = localClientCertTypes;
+                }
+
+                short selectedType = -1;
+                for (int i = 0; i < preferredTypes.length; i++)
+                {
+                    if (Arrays.contains(nonPreferredTypes, preferredTypes[i]))
+                    {
+                        selectedType = preferredTypes[i];
+                        break;
+                    }
+                }
+
+                if (selectedType == -1)
+                {
+                    // outcome 2: we support the extension but have no common types
+                    throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+                }
+
+                // outcome 3: we support the extension and have a common type
+                TlsExtensionsUtils.addClientCertificateTypeExtensionServer(checkServerExtensions(), selectedType);
+            } // else outcome 1: we don't support the extension
+        }
+
         /*
          * TODO[tls13] RFC 8446 4.2.7 If the server has a group it prefers to the ones in the "key_share"
          * extension but is still willing to accept the ClientHello, it SHOULD send "supported_groups" to
          * update the client's view of its preferences; this extension SHOULD contain all groups the server
          * supports, regardless of whether they are currently supported by the client.
-         * 
+         *
          * (NOTE: The server would put a supported_groups extension in the EncryptedExtensions message)
          */
         return serverExtensions;

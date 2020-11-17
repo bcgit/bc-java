@@ -1081,13 +1081,13 @@ public class TlsUtils
         /*
          * RFC 5246 7.4.1.4.1. If the client does not send the signature_algorithms extension,
          * the server MUST do the following:
-         * 
+         *
          * - If the negotiated key exchange algorithm is one of (RSA, DHE_RSA, DH_RSA, RSA_PSK,
          * ECDH_RSA, ECDHE_RSA), behave as if client had sent the value {sha1,rsa}.
-         * 
+         *
          * - If the negotiated key exchange algorithm is one of (DHE_DSS, DH_DSS), behave as if
          * the client had sent the value {sha1,dsa}.
-         * 
+         *
          * - If the negotiated key exchange algorithm is one of (ECDH_ECDSA, ECDHE_ECDSA),
          * behave as if the client had sent value {sha1,ecdsa}.
          */
@@ -1539,7 +1539,7 @@ public class TlsUtils
         {
             TlsHash hash = context.getCrypto().createHash(hashAlgorithm);
             if (hash != null)
-            {                
+            {
                 hash.update(enc, encOff, encLen);
                 return hash.calculateHash();
             }
@@ -4427,7 +4427,7 @@ public class TlsUtils
                 short signatureAlgorithm = getLegacySignatureAlgorithmServerCert(
                     securityParameters.getKeyExchangeAlgorithm());
 
-                valid = (signatureAlgorithm == sigAndHashAlg.getSignature()); 
+                valid = (signatureAlgorithm == sigAndHashAlg.getSignature());
             }
             else
             {
@@ -4767,7 +4767,7 @@ public class TlsUtils
     }
 
     static TlsAuthentication receiveServerCertificate(TlsClientContext clientContext, TlsClient client,
-        ByteArrayInputStream buf) throws IOException
+        ByteArrayInputStream buf, Hashtable serverExtensions) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         if (null != securityParameters.getPeerCertificate())
@@ -4777,7 +4777,11 @@ public class TlsUtils
 
         ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
 
-        Certificate serverCertificate = Certificate.parse(clientContext, buf, endPointHash);
+        Certificate serverCertificate = Certificate.parse(
+                TlsExtensionsUtils.getServerCertificateTypeExtensionServer(serverExtensions, CertificateType.X509),
+                clientContext,
+                buf,
+                endPointHash);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -4872,7 +4876,7 @@ public class TlsUtils
 
         if (clientAgreements.isEmpty() || clientShares.isEmpty())
         {
-            // NOTE: Probable cause is declaring an unsupported NamedGroup in supported_groups extension 
+            // NOTE: Probable cause is declaring an unsupported NamedGroup in supported_groups extension
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
@@ -4971,7 +4975,7 @@ public class TlsUtils
                 }
 
                 if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()))
                 {
                     continue;
                 }

@@ -46,6 +46,7 @@ public class CertificateRequest
     protected final Vector supportedSignatureAlgorithms;
     protected final Vector supportedSignatureAlgorithmsCert;
     protected final Vector certificateAuthorities;
+    protected short certificateType;
 
     /**
      * @param certificateTypes       see {@link ClientCertificateType} for valid constants.
@@ -57,7 +58,7 @@ public class CertificateRequest
         this(null, certificateTypes, supportedSignatureAlgorithms, null, certificateAuthorities);
     }
 
-    // TODO[tls13] Prefer to manage the certificateRequestContext internally only? 
+    // TODO[tls13] Prefer to manage the certificateRequestContext internally only?
     public CertificateRequest(byte[] certificateRequestContext, Vector supportedSignatureAlgorithms,
         Vector supportedSignatureAlgorithmsCert, Vector certificateAuthorities)
     {
@@ -89,6 +90,7 @@ public class CertificateRequest
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
         this.supportedSignatureAlgorithmsCert = supportedSignatureAlgorithmsCert;
         this.certificateAuthorities = certificateAuthorities;
+        this.certificateType = CertificateType.X509;
     }
 
     public byte[] getCertificateRequestContext()
@@ -133,6 +135,14 @@ public class CertificateRequest
     public boolean hasCertificateRequestContext(byte[] certificateRequestContext)
     {
         return Arrays.areEqual(this.certificateRequestContext, certificateRequestContext);
+    }
+
+    /**
+     * @return The {@link CertificateType} selected by the server.
+     */
+    public short getCertificateType()
+    {
+        return certificateType;
     }
 
     /**
@@ -217,7 +227,7 @@ public class CertificateRequest
 
     /**
      * Parse a {@link CertificateRequest} from an {@link InputStream}.
-     * 
+     *
      * @param context
      *            the {@link TlsContext} of the current connection.
      * @param input
