@@ -330,16 +330,11 @@ class CertPathValidatorUtilities
         }
     }
 
-    protected static Date getValidDate(PKIXExtendedParameters paramsPKIX)
+    protected static Date getValidityDate(PKIXExtendedParameters paramsPKIX, Date currentDate)
     {
-        Date validDate = paramsPKIX.getDate();
+        Date validityDate = paramsPKIX.getValidityDate();
 
-        if (validDate == null)
-        {
-            validDate = new Date();
-        }
-
-        return validDate;
+        return null == validityDate ? currentDate : validityDate;
     }
 
     protected static boolean isSelfIssued(X509Certificate cert)
@@ -1257,12 +1252,7 @@ class CertPathValidatorUtilities
 
         PKIXCRLStoreSelector crlSelect = new PKIXCRLStoreSelector.Builder(baseCrlSelect).setCompleteCRLEnabled(true).build();
 
-        Date validityDate = currentDate;
-
-        if (paramsPKIX.getDate() != null)
-        {
-            validityDate = paramsPKIX.getDate();
-        }
+        Date validityDate = getValidityDate(paramsPKIX, currentDate);
 
         Set crls = CRL_UTIL.findCRLs(crlSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
 
@@ -1271,13 +1261,13 @@ class CertPathValidatorUtilities
         return crls;
     }
 
-    protected static Date getValidCertDateFromValidityModel(PKIXExtendedParameters paramsPKIX, CertPath certPath,
+    protected static Date getValidCertDateFromValidityModel(Date validityDate, int validityModel, CertPath certPath,
         int index) throws AnnotatedException
     {
-        if (PKIXExtendedParameters.CHAIN_VALIDITY_MODEL != paramsPKIX.getValidityModel() || index <= 0)
+        if (PKIXExtendedParameters.CHAIN_VALIDITY_MODEL != validityModel || index <= 0)
         {
             // use given signing/encryption/... time (or current date)
-            return getValidDate(paramsPKIX);
+            return validityDate;
         }
 
         X509Certificate issuedCert = (X509Certificate)certPath.getCertificates().get(index - 1);
