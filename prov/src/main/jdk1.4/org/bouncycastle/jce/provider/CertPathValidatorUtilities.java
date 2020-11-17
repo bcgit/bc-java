@@ -1278,68 +1278,52 @@ class CertPathValidatorUtilities
         return crls;
     }
 
-    protected static Date getValidCertDateFromValidityModel(
-        PKIXExtendedParameters paramsPKIX, CertPath certPath, int index)
-        throws AnnotatedException
+    protected static Date getValidCertDateFromValidityModel(PKIXExtendedParameters paramsPKIX, CertPath certPath,
+        int index) throws AnnotatedException
     {
-        if (paramsPKIX.getValidityModel() == PKIXExtendedParameters.CHAIN_VALIDITY_MODEL)
+        if (PKIXExtendedParameters.CHAIN_VALIDITY_MODEL != paramsPKIX.getValidityModel() || index <= 0)
         {
-            // if end cert use given signing/encryption/... time
-            if (index <= 0)
-            {
-                return CertPathValidatorUtilities.getValidDate(paramsPKIX);
-                // else use time when previous cert was created
-            }
-            else
-            {
-                if (index - 1 == 0)
-                {
-                    ASN1GeneralizedTime dateOfCertgen = null;
-                    try
-                    {
-                        byte[] extBytes = ((X509Certificate)certPath.getCertificates().get(index - 1)).getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
-                        if (extBytes != null)
-                        {
-                            dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        throw new AnnotatedException(
-                            "Date of cert gen extension could not be read.");
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        throw new AnnotatedException(
-                            "Date of cert gen extension could not be read.");
-                    }
-                    if (dateOfCertgen != null)
-                    {
-                        try
-                        {
-                            return dateOfCertgen.getDate();
-                        }
-                        catch (ParseException e)
-                        {
-                            throw new AnnotatedException(
-                                "Date from date of cert gen extension could not be parsed.",
-                                e);
-                        }
-                    }
-                    return ((X509Certificate)certPath.getCertificates().get(
-                        index - 1)).getNotBefore();
-                }
-                else
-                {
-                    return ((X509Certificate)certPath.getCertificates().get(
-                        index - 1)).getNotBefore();
-                }
-            }
-        }
-        else
-        {
+            // use given signing/encryption/... time (or current date)
             return getValidDate(paramsPKIX);
         }
+
+        X509Certificate issuedCert = (X509Certificate)certPath.getCertificates().get(index - 1);
+
+        if (index - 1 == 0)
+        {
+            // use time when cert was issued, if available
+            ASN1GeneralizedTime dateOfCertgen = null;
+            try
+            {
+                byte[] extBytes = ((X509Certificate)certPath.getCertificates().get(index - 1))
+                    .getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
+                if (extBytes != null)
+                {
+                    dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
+                }
+            }
+            catch (IOException e)
+            {
+                throw new AnnotatedException("Date of cert gen extension could not be read.");
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new AnnotatedException("Date of cert gen extension could not be read.");
+            }
+            if (dateOfCertgen != null)
+            {
+                try
+                {
+                    return dateOfCertgen.getDate();
+                }
+                catch (ParseException e)
+                {
+                    throw new AnnotatedException("Date from date of cert gen extension could not be parsed.", e);
+                }
+            }
+        }
+
+        return issuedCert.getNotBefore();
     }
 
     /**
