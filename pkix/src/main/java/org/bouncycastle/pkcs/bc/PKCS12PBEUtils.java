@@ -46,7 +46,7 @@ class PKCS12PBEUtils
         noIvAlgs.add(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC4);
         noIvAlgs.add(PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC4);
 
-        desAlgs.add(PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC);
+        desAlgs.add(PKCSObjectIdentifiers.pbeWithSHAAnd2_KeyTripleDES_CBC);
         desAlgs.add(PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC);
     }
 
