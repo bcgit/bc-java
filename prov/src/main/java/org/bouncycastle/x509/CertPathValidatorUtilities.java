@@ -100,9 +100,6 @@ class CertPathValidatorUtilities
         "privilegeWithdrawn",
         "aACompromise"};
 
-
-
-
     /**
      * Returns the issuer of an attribute certificate or certificate.
      *
@@ -122,16 +119,11 @@ class CertPathValidatorUtilities
         }
     }
 
-    protected static Date getValidDate(PKIXParameters paramsPKIX)
+    protected static Date getValidityDate(PKIXParameters paramsPKIX, Date currentDate)
     {
-        Date validDate = paramsPKIX.getDate();
+        Date validityDate = paramsPKIX.getDate();
 
-        if (validDate == null)
-        {
-            validDate = new Date();
-        }
-
-        return validDate;
+        return null == validityDate ? currentDate : validityDate;
     }
 
     protected static X500Principal getSubjectPrincipal(X509Certificate cert)
