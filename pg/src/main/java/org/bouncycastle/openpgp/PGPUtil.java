@@ -208,7 +208,7 @@ public class PGPUtil
         int tag = bIn.nextPacketTag();
 
         return tag == PacketTags.PUBLIC_KEY || tag == PacketTags.PUBLIC_SUBKEY
-            || tag == PacketTags.SECRET_KEY || tag == PacketTags.SECRET_KEY;
+            || tag == PacketTags.SECRET_KEY || tag == PacketTags.SECRET_SUBKEY;
     }
 
     /**
