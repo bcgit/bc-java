@@ -95,6 +95,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
     protected PKIXParameters pkixParams;
 
+    protected Date currentDate;
     protected Date validDate;
 
     // state variables
@@ -152,7 +153,8 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
         // b)
 
-        validDate = getValidDate(pkixParams);
+        currentDate = new Date();
+        validDate = getValidityDate(pkixParams, currentDate);
 
         // c) part of pkixParams
 
@@ -699,7 +701,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         // validation date
         {
             ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.certPathValidDate",
-                    new Object[] {new TrustedInput(validDate), new TrustedInput(new Date())});
+                    new Object[] {new TrustedInput(validDate), new TrustedInput(currentDate)});
             addNotification(msg);
         }
         
@@ -2065,7 +2067,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                             Integers.valueOf(numbOfCrls)});
                 addNotification(msg,index);
             }
-
         }
         catch (AnnotatedException ae)
         {
@@ -2074,35 +2075,35 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             addError(msg,index);
             crl_iter = new ArrayList().iterator();
         }
+
         boolean validCrlFound = false;
         X509CRL crl = null;
         while (crl_iter.hasNext())
         {
             crl = (X509CRL)crl_iter.next();
-            
-            if (crl.getNextUpdate() == null
-                || paramsPKIX.getDate().before(crl.getNextUpdate()))
+
+            Date thisUpdate = crl.getThisUpdate();
+            Date nextUpdate = crl.getNextUpdate();
+            Object[] arguments = new Object[]{ new TrustedInput(thisUpdate), new TrustedInput(nextUpdate) };
+
+            if (nextUpdate == null || validDate.before(crl.getNextUpdate()))
             {
                 validCrlFound = true;
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
-                        "CertPathReviewer.localValidCRL",
-                        new Object[] {new TrustedInput(crl.getThisUpdate()), new TrustedInput(crl.getNextUpdate())});
+                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.localValidCRL", arguments);
                 addNotification(msg,index);
                 break;
             }
-            else
-            {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
-                        "CertPathReviewer.localInvalidCRL",
-                        new Object[] {new TrustedInput(crl.getThisUpdate()), new TrustedInput(crl.getNextUpdate())});
-                addNotification(msg,index);
-            }
+
+            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.localInvalidCRL", arguments);
+            addNotification(msg,index);
         }
-        
+
         // if no valid crl was found in the CertStores try to get one from a
         // crl distribution point
         if (!validCrlFound)
         {
+            X500Principal certIssuer = cert.getIssuerX500Principal();
+
             X509CRL onlineCRL = null;
             Iterator urlIt = crlDistPointUrls.iterator();
             while (urlIt.hasNext())
@@ -2113,40 +2114,36 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     onlineCRL = getCRL(location);
                     if (onlineCRL != null)
                     {
+                        X500Principal crlIssuer = onlineCRL.getIssuerX500Principal();
+
                         // check if crl issuer is correct
-                        if (!cert.getIssuerX500Principal().equals(onlineCRL.getIssuerX500Principal()))
+                        if (!certIssuer.equals(crlIssuer))
                         {
-                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
-                                        "CertPathReviewer.onlineCRLWrongCA",
-                                        new Object[] {new UntrustedInput(onlineCRL.getIssuerX500Principal().getName()),
-                                                      new UntrustedInput(cert.getIssuerX500Principal().getName()),
-                                                      new UntrustedUrlInput(location)});
+                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.onlineCRLWrongCA",
+                                new Object[]{ new UntrustedInput(crlIssuer.getName()), new UntrustedInput(certIssuer.getName()),
+                                    new UntrustedUrlInput(location) });
                             addNotification(msg,index);
                             continue;
                         }
-                        
-                        if (onlineCRL.getNextUpdate() == null
-                            || pkixParams.getDate().before(onlineCRL.getNextUpdate()))
+
+                        Date thisUpdate = onlineCRL.getThisUpdate();
+                        Date nextUpdate = onlineCRL.getNextUpdate();
+                        Object[] arguments = new Object[]{ new TrustedInput(thisUpdate), new TrustedInput(nextUpdate),
+                            new UntrustedUrlInput(location) };
+
+                        if (nextUpdate == null || validDate.before(nextUpdate))
                         {
                             validCrlFound = true;
-                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
-                                    "CertPathReviewer.onlineValidCRL",
-                                    new Object[] {new TrustedInput(onlineCRL.getThisUpdate()),
-                                                  new TrustedInput(onlineCRL.getNextUpdate()),
-                                                  new UntrustedUrlInput(location)});
-                            addNotification(msg,index);
+                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.onlineValidCRL",
+                                arguments);
+                            addNotification(msg, index);
                             crl = onlineCRL;
                             break;
                         }
-                        else
-                        {
-                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
-                                    "CertPathReviewer.onlineInvalidCRL",
-                                    new Object[] {new TrustedInput(onlineCRL.getThisUpdate()),
-                                                  new TrustedInput(onlineCRL.getNextUpdate()),
-                                                  new UntrustedUrlInput(location)});
-                            addNotification(msg,index);
-                        }
+
+                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.onlineInvalidCRL",
+                            arguments);
+                        addNotification(msg, index);
                     }
                 }
                 catch (CertPathReviewerException cpre)
@@ -2242,11 +2239,12 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             //
             // warn if a new crl is available
             //
-            if (crl.getNextUpdate() != null && crl.getNextUpdate().before(pkixParams.getDate()))
+            Date nextUpdate = crl.getNextUpdate();
+            if (!(nextUpdate == null || validDate.before(nextUpdate)))
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlUpdateAvailable",
-                        new Object[] {new TrustedInput(crl.getNextUpdate())});
-                addNotification(msg,index);
+                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.crlUpdateAvailable",
+                    new Object[]{ new TrustedInput(nextUpdate) });
+                addNotification(msg, index);
             }
             
             //
@@ -2388,7 +2386,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noValidCrlFound");
             throw new CertPathReviewerException(msg);
         }
-    
     }
     
     protected Vector getCRLDistUrls(CRLDistPoint crlDistPoints)
