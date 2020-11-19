@@ -33,10 +33,10 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 public class ArchiveTimeStamp
     extends ASN1Object
 {
-    private AlgorithmIdentifier digestAlgorithm;
-    private Attributes attributes;
-    private ASN1Sequence reducedHashTree;
-    private ContentInfo timeStamp;
+    private final AlgorithmIdentifier digestAlgorithm;
+    private final Attributes attributes;
+    private final ASN1Sequence reducedHashTree;
+    private final ContentInfo timeStamp;
 
     /**
      * Return an ArchiveTimestamp from the given object.
@@ -64,9 +64,13 @@ public class ArchiveTimeStamp
         PartialHashtree[] reducedHashTree,
         ContentInfo timeStamp)
     {
-        this.digestAlgorithm = digestAlgorithm;
-        this.reducedHashTree = new DERSequence(reducedHashTree);
-        this.timeStamp = timeStamp;
+        this(digestAlgorithm, null, reducedHashTree, timeStamp);
+    }
+
+    public ArchiveTimeStamp(
+        ContentInfo timeStamp)
+    {
+        this(null, null, null, timeStamp);
     }
 
     public ArchiveTimeStamp(
@@ -77,13 +81,14 @@ public class ArchiveTimeStamp
     {
         this.digestAlgorithm = digestAlgorithm;
         this.attributes = attributes;
-        this.reducedHashTree = new DERSequence(reducedHashTree);
-        this.timeStamp = timeStamp;
-    }
-
-    public ArchiveTimeStamp(
-        ContentInfo timeStamp)
-    {
+        if (reducedHashTree != null)
+        {
+            this.reducedHashTree = new DERSequence(reducedHashTree);
+        }
+        else
+        {
+            this.reducedHashTree = null;
+        }
         this.timeStamp = timeStamp;
     }
 
@@ -94,6 +99,9 @@ public class ArchiveTimeStamp
             throw new IllegalArgumentException("wrong sequence size in constructor: " + sequence.size());
         }
 
+        AlgorithmIdentifier digAlg = null;
+        Attributes attrs = null;
+        ASN1Sequence rHashTree = null;
         for (int i = 0; i < sequence.size() - 1; i++)
         {
             Object obj = sequence.getObjectAt(i);
@@ -105,13 +113,13 @@ public class ArchiveTimeStamp
                 switch (taggedObject.getTagNo())
                 {
                 case 0:
-                    digestAlgorithm = AlgorithmIdentifier.getInstance(taggedObject, false);
+                    digAlg = AlgorithmIdentifier.getInstance(taggedObject, false);
                     break;
                 case 1:
-                    attributes = Attributes.getInstance(taggedObject, false);
+                    attrs = Attributes.getInstance(taggedObject, false);
                     break;
                 case 2:
-                    reducedHashTree = ASN1Sequence.getInstance(taggedObject, false);
+                    rHashTree = ASN1Sequence.getInstance(taggedObject, false);
                     break;
                 default:
                     throw new IllegalArgumentException("invalid tag no in constructor: "
@@ -120,6 +128,9 @@ public class ArchiveTimeStamp
             }
         }
 
+        digestAlgorithm = digAlg;
+        attributes = attrs;
+        reducedHashTree = rHashTree;
         timeStamp = ContentInfo.getInstance(sequence.getObjectAt(sequence.size() - 1));
     }
 
