@@ -18,7 +18,7 @@ public class PKIXTest
 {
     /*
      * The following certs and crls are described in:
-     * http://www.ietf.org/internet-drafts/draft-ietf-pkix-new-part1-08.txt
+     * https://www.ietf.org/internet-drafts/draft-ietf-pkix-new-part1-08.txt
      *
      *   This section contains four examples: three certificates and a CRL.
      *   The first two certificates and the CRL comprise a minimal
@@ -150,8 +150,8 @@ public class PKIXTest
         * (g)  the certificate is an end entity certificate (not a CA
         * certificate);
         * (h)  the certificate includes an alternative subject name of
-     *    "<http://www.itl.nist.gov/div893/staff/polk/index.html>" and an
-        * alternative issuer name of "<http://www.nist.gov/>" - both are URLs;
+     *    "<https://www.itl.nist.gov/div893/staff/polk/index.html>" and an
+        * alternative issuer name of "<https://www.nist.gov/>" - both are URLs;
         * (i)  the certificate include an authority key identifier extension
         * and a certificate policies extension psecifying the policy OID
         * 2.16.840.1.101.3.2.1.48.9; and

@@ -15,7 +15,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Elliptic curves defined in "ECC Brainpool Standard Curves and Curve Generation"
- * http://www.ecc-brainpool.org/download/draft_pkix_additional_ecc_dp.txt
+ * https://www.ecc-brainpool.org/download/draft_pkix_additional_ecc_dp.txt
  */
 public class TeleTrusTNamedCurves
 {

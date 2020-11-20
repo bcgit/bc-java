@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
  * Parameters for NaccacheStern public private key generation. For details on
  * this cipher, please see
  * 
- * http://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf
+ * https://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf
  */
 public class NaccacheSternKeyGenerationParameters extends KeyGenerationParameters
 {

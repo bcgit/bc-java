@@ -8,7 +8,7 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * An implementation of the CBC mode for GOST 3412 2015 cipher.
- * See  <a href="http://www.tc26.ru/standard/gost/GOST_R_3413-2015.pdf">GOST R 3413 2015</a>
+ * See  <a href="https://www.tc26.ru/standard/gost/GOST_R_3413-2015.pdf">GOST R 3413 2015</a>
  */
 public class G3413CBCBlockCipher
     implements BlockCipher

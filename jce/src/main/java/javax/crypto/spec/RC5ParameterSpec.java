@@ -4,7 +4,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the parameters used with the
- *  <a href="http://www.rsa.com/rsalabs/newfaq/q76.html"><i>RC5</i></a>
+ *  <a href="https://www.rsa.com/rsalabs/newfaq/q76.html"><i>RC5</i></a>
  *  algorithm.
  *  <p>
  *  The parameters consist of a version number, a rounds count, a word
@@ -12,7 +12,7 @@ import java.security.spec.AlgorithmParameterSpec;
  *  <p>
  *  This class can be used to initialize a <code>Cipher</code> object that
  *  implements the <i>RC5</i> algorithm as supplied by
- *  <a href="http://www.rsa.com">RSA Data Security, Inc.</a> (RSA DSI),
+ *  <a href="https://www.rsa.com">RSA Data Security, Inc.</a> (RSA DSI),
  *  or any parties authorized by RSA DSI.
  */
 public class RC5ParameterSpec

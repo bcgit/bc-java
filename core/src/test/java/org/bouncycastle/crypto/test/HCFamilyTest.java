@@ -12,8 +12,8 @@ import org.bouncycastle.util.test.SimpleTest;
  * HC-128 and HC-256 Tests. Based on the test vectors in the official reference
  * papers, respectively:
  * <pre>
- * http://www.ecrypt.eu.org/stream/p3ciphers/hc/hc128_p3.pdf
- * http://www.ecrypt.eu.org/stream/p3ciphers/hc/hc256_p3.pdf
+ * https://www.ecrypt.eu.org/stream/p3ciphers/hc/hc128_p3.pdf
+ * https://www.ecrypt.eu.org/stream/p3ciphers/hc/hc256_p3.pdf
  * </pre>
  * See HCFamilyVecTest for a more exhaustive test based on the ecrypt vectors.
  */

@@ -10,7 +10,7 @@ import org.bouncycastle.util.Pack;
  * Serpent was designed by Ross Anderson, Eli Biham and Lars Knudsen as a
  * candidate algorithm for the NIST AES Quest.
  * <p>
- * For full details see <a href="http://www.cl.cam.ac.uk/~rja14/serpent.html">The Serpent home page</a>
+ * For full details see <a href="https://www.cl.cam.ac.uk/~rja14/serpent.html">The Serpent home page</a>
  */
 public final class SerpentEngine
     extends SerpentEngineBase

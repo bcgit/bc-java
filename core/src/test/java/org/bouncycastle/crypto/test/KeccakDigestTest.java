@@ -66,7 +66,7 @@ public class KeccakDigestTest
         "3e122edaf37398231cfaca4c7c216c9d66d5b899ec1d7ac617c40c7261906a45fc01617a021e5da3bd8d4182695b5cb785a28237cbb167590e34718e56d8aab8"
     };
 
-    // test vectors from  http://www.di-mgt.com.au/hmac_sha3_testvectors.html
+    // test vectors from  https://www.di-mgt.com.au/hmac_sha3_testvectors.html
     final static byte[][] macKeys =
     {
         Hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),

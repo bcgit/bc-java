@@ -4,7 +4,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the set of parameters used with password-based encryption (PBE), as defined in the
- * <a href="http://www.rsa.com/rsalabs/pubs/PKCS/html/pkcs-5.html">PKCS #5</a> standard.
+ * <a href="https://www.rsa.com/rsalabs/pubs/PKCS/html/pkcs-5.html">PKCS #5</a> standard.
  */
 public class PBEParameterSpec
     implements AlgorithmParameterSpec

@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.DERSequence;
  *      subjectDomainPolicy     CertPolicyId }
  * </pre>
  *
- * @see <a href="http://www.faqs.org/rfc/rfc3280.txt">RFC 3280, section 4.2.1.6</a>
+ * @see <a href="https://www.faqs.org/rfc/rfc3280.txt">RFC 3280, section 4.2.1.6</a>
  */
 public class PolicyMappings
     extends ASN1Object
