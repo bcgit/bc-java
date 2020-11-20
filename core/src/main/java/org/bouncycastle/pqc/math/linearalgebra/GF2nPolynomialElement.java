@@ -9,7 +9,7 @@ import java.util.Random;
  * This class implements elements of finite binary fields <i>GF(2<sup>n</sup>)</i>
  * using polynomial representation. For more information on the arithmetic see
  * for example IEEE Standard 1363 or <a
- * href=http://www.certicom.com/research/online.html> Certicom online-tutorial</a>.
+ * href=https://www.certicom.com/research/online.html> Certicom online-tutorial</a>.
  *
  * @see "GF2nField"
  * @see GF2nPolynomialField

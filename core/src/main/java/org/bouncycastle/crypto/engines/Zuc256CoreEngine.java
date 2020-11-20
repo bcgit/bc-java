@@ -4,7 +4,7 @@ import org.bouncycastle.util.Memoable;
 
 /**
  * Zuc256 implementation.
- * Based on http://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf
+ * Based on https://www.is.cas.cn/ztzl2016/zouchongzhi/201801/W020180126529970733243.pdf
  */
 public class Zuc256CoreEngine
     extends Zuc128CoreEngine

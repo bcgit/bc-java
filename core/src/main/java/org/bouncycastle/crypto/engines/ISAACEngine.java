@@ -9,7 +9,7 @@ import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of Bob Jenkin's ISAAC (Indirection Shift Accumulate Add and Count).
- * see: http://www.burtleburtle.net/bob/rand/isaacafa.html
+ * see: https://www.burtleburtle.net/bob/rand/isaacafa.html
 */
 public class ISAACEngine
     implements StreamCipher

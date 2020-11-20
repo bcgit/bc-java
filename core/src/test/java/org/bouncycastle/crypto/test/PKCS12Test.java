@@ -13,8 +13,8 @@ import org.bouncycastle.util.test.TestResult;
 
 /**
  * test for PKCS12 key generation - vectors from 
- * <a href=http://www.drh-consultancy.demon.co.uk/test.txt>
- * http://www.drh-consultancy.demon.co.uk/test.txt</a>
+ * <a href=https://www.drh-consultancy.demon.co.uk/test.txt>
+ * https://www.drh-consultancy.demon.co.uk/test.txt</a>
  */
 public class PKCS12Test
     implements Test

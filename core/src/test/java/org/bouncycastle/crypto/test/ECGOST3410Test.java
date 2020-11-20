@@ -100,7 +100,7 @@ public class ECGOST3410Test
 
     /**
      * Test Sign & Verify with test parameters
-     * see: http://www.ietf.org/internet-drafts/draft-popov-cryptopro-cpalgs-01.txt
+     * see: https://www.ietf.org/internet-drafts/draft-popov-cryptopro-cpalgs-01.txt
      * gostR3410-2001-TestParamSet  P.46
      */
     private void ecGOST3410_TestParam()
@@ -157,7 +157,7 @@ public class ECGOST3410Test
 
     /**
      * Test Sign & Verify with A parameters
-     * see: http://www.ietf.org/internet-drafts/draft-popov-cryptopro-cpalgs-01.txt
+     * see: https://www.ietf.org/internet-drafts/draft-popov-cryptopro-cpalgs-01.txt
      * gostR3410-2001-CryptoPro-A-ParamSet  P.47
      */
     public void ecGOST3410_AParam()
@@ -207,7 +207,7 @@ public class ECGOST3410Test
 
     /**
      * Test Sign & Verify with B parameters
-     * see: http://www.ietf.org/internet-drafts/draft-popov-cryptopro-cpalgs-01.txt
+     * see: https://www.ietf.org/internet-drafts/draft-popov-cryptopro-cpalgs-01.txt
      * gostR3410-2001-CryptoPro-B-ParamSet  P.47-48
      */
     private void ecGOST3410_BParam()
@@ -257,7 +257,7 @@ public class ECGOST3410Test
 
     /**
      * Test Sign & Verify with C parameters
-     * see: http://www.ietf.org/internet-drafts/draft-popov-cryptopro-cpalgs-01.txt
+     * see: https://www.ietf.org/internet-drafts/draft-popov-cryptopro-cpalgs-01.txt
      * gostR3410-2001-CryptoPro-C-ParamSet  P.48
      */
     private void ecGOST3410_CParam()

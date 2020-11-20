@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
-import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -29,7 +28,7 @@ import org.bouncycastle.util.test.SimpleTest;
 /**
  * A test class for PKCS5 PBES2 with PBKDF2 (PKCS5 v2.0) using
  * test vectors provider at 
- * <a href=http://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html>
+ * <a href=https://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html>
  * RSA's PKCS5 Page</a>
  * <br>
  * The vectors are Base 64 encoded and encrypted using the password "password"

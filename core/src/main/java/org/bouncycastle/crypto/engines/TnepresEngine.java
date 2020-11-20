@@ -12,7 +12,7 @@ import org.bouncycastle.util.Pack;
  * with test vectors in the AES submission and the resulting confusion lead to the Tnepres cipher
  * as well, which is a byte swapped version of Serpent.
  * <p>
- * For full details see <a href="http://www.cl.cam.ac.uk/~rja14/serpent.html">The Serpent home page</a>
+ * For full details see <a href="https://www.cl.cam.ac.uk/~rja14/serpent.html">The Serpent home page</a>
  */
 public final class TnepresEngine
     extends SerpentEngineBase

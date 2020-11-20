@@ -52,7 +52,7 @@ public class DESParameters
      * if the given DES key material is weak or semi-weak.
      * Key material that is too short is regarded as weak.
      * <p>
-     * See <a href="http://www.counterpane.com/applied.html">"Applied
+     * See <a href="https://www.counterpane.com/applied.html">"Applied
      * Cryptography"</a> by Bruce Schneier for more information.
      *
      * @return true if the given DES key material is weak or semi-weak,

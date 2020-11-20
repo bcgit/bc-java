@@ -6,7 +6,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * TEA tester - based on C implementation results from http://www.simonshepherd.supanet.com/tea.htm
+ * TEA tester - based on C implementation results from https://www.simonshepherd.supanet.com/tea.htm
  */
 public class TEATest
     extends CipherTest

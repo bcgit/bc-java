@@ -5,7 +5,7 @@ import org.bouncycastle.util.Memoable;
 
 /**
  * implementation of RIPEMD see,
- * http://www.esat.kuleuven.ac.be/~bosselae/ripemd160.html
+ * https://www.esat.kuleuven.ac.be/~bosselae/ripemd160.html
  */
 public class RIPEMD160Digest
     extends GeneralDigest

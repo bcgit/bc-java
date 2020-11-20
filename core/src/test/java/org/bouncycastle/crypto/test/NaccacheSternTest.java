@@ -17,7 +17,7 @@ import org.bouncycastle.util.test.SimpleTest;
 /**
  * Test case for NaccacheStern cipher. For details on this cipher, please see
  * 
- * http://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf
+ * https://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf
  *
  * Performs the following tests: 
  *  <ul>
@@ -91,7 +91,7 @@ public class NaccacheSternTest
         decryptEng.setDebug(debug);
 
         // First the Parameters from the NaccacheStern Paper
-        // (see http://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf )
+        // (see https://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf )
 
         smallPrimes.addElement(u1);
         smallPrimes.addElement(u2);

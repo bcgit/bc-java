@@ -123,12 +123,12 @@ public class KeyPurposeId
 
 
     /**
-     * Microsoft Server Gated Crypto (msSGC) see http://www.alvestrand.no/objectid/1.3.6.1.4.1.311.10.3.3.html
+     * Microsoft Server Gated Crypto (msSGC) see https://www.alvestrand.no/objectid/1.3.6.1.4.1.311.10.3.3.html
      */
     public static final KeyPurposeId id_kp_msSGC = new KeyPurposeId(new ASN1ObjectIdentifier("1.3.6.1.4.1.311.10.3.3"));
 
     /**
-     * Netscape Server Gated Crypto (nsSGC) see http://www.alvestrand.no/objectid/2.16.840.1.113730.4.1.html
+     * Netscape Server Gated Crypto (nsSGC) see https://www.alvestrand.no/objectid/2.16.840.1.113730.4.1.html
      */
     public static final KeyPurposeId id_kp_nsSGC = new KeyPurposeId(new ASN1ObjectIdentifier("2.16.840.1.113730.4.1"));
 

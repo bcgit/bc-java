@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.generators.DESKeyGenerator;
@@ -11,8 +13,6 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.security.SecureRandom;
 
 class DESParityTest
     extends SimpleTest
@@ -151,7 +151,7 @@ class DESParametersTest
 }
 
 /**
- * DES tester - vectors from <a href=http://www.itl.nist.gov/fipspubs/fip81.htm>FIPS 81</a>
+ * DES tester - vectors from <a href=https://www.itl.nist.gov/fipspubs/fip81.htm>FIPS 81</a>
  */
 public class DESTest
     extends CipherTest

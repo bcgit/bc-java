@@ -2,7 +2,7 @@ package javax.crypto.spec;
 
 /**
  * This class specifies the source for encoding input P in OAEP Padding, as
- * defined in the {@link http://www.ietf.org/rfc/rfc3447.txt PKCS #1} standard.
+ * defined in the {@link https://www.ietf.org/rfc/rfc3447.txt PKCS #1} standard.
  * 
  * <pre>
  *  

@@ -15,7 +15,7 @@ import org.bouncycastle.util.BigIntegers;
 /**
  * Key generation parameters for NaccacheStern cipher. For details on this cipher, please see
  * 
- * http://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf
+ * https://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf
  */
 public class NaccacheSternKeyPairGenerator 
     implements AsymmetricCipherKeyPairGenerator 

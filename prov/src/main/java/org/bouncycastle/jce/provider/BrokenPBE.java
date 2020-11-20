@@ -24,7 +24,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
  * use it (it won't be staying around).
  * <p>
  * The document this implementation is based on can be found at
- * <a href=http://www.rsasecurity.com/rsalabs/pkcs/pkcs-12/index.html>
+ * <a href=https://www.rsasecurity.com/rsalabs/pkcs/pkcs-12/index.html>
  * RSA's PKCS12 Page</a>
  */
 class OldPKCS12ParametersGenerator

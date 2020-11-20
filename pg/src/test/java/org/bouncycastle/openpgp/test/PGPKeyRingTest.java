@@ -1148,7 +1148,7 @@ public class PGPKeyRingTest
         "POOoD7oxdRmJSU5hSspOCHrCwCa3");
 
 
-    // Key from http://www.angelfire.com/pr/pgpf/pgpoddities.html
+    // Key from https://www.angelfire.com/pr/pgpf/pgpoddities.html
     private static final char[] v3KeyPass = "test@key.test".toCharArray();
 
     private static final byte[] pubv3 = Base64.decode(
