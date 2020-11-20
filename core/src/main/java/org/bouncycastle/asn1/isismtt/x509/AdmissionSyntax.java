@@ -67,8 +67,8 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * component namingAuthorityId are grouped under the OID-branch
  * id-isis-at-namingAuthorities and must be applied for.
  * <li>See
- * http://www.teletrust.de/anwend.asp?Id=30200&amp;Sprache=E_&amp;HomePG=0 for
- * an application form and http://www.teletrust.de/links.asp?id=30220,11
+ * https://www.teletrust.de/anwend.asp?Id=30200&amp;Sprache=E_&amp;HomePG=0 for
+ * an application form and https://www.teletrust.de/links.asp?id=30220,11
  * for an overview of registered naming authorities.
  * <li> By means of the data type ProfessionInfo certain professions,
  * specializations, disciplines, fields of activity, etc. are identified. A

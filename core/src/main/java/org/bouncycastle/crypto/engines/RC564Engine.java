@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.params.RC5Parameters;
 /**
  * The specification for RC5 came from the <code>RC5 Encryption Algorithm</code>
  * publication in RSA CryptoBytes, Spring of 1995. 
- * <em>http://www.rsasecurity.com/rsalabs/cryptobytes</em>.
+ * <em>https://www.rsasecurity.com/rsalabs/cryptobytes</em>.
  * <p>
  * This implementation is set to work with a 64 bit word size.
  * <p>

@@ -56,7 +56,7 @@ import org.bouncycastle.x509.X509CertificatePair;
  * </p><p>
  * For the used schemes see:
  * <ul>
- * <li><a href="http://www.ietf.org/rfc/rfc2587.txt">RFC 2587</a>
+ * <li><a href="https://www.ietf.org/rfc/rfc2587.txt">RFC 2587</a>
  * <li><a
  * href="http://www3.ietf.org/proceedings/01mar/I-D/pkix-ldap-schema-01.txt">Internet
  * X.509 Public Key Infrastructure Additional LDAP Schema for PKIs and PMIs</a>

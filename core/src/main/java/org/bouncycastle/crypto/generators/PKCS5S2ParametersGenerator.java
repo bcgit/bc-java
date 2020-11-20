@@ -14,7 +14,7 @@ import org.bouncycastle.crypto.util.DigestFactory;
  * This generator uses a SHA-1 HMac as the calculation function.
  * <p>
  * The document this implementation is based on can be found at
- * <a href=http://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html>
+ * <a href=https://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html>
  * RSA's PKCS5 Page</a>
  */
 public class PKCS5S2ParametersGenerator

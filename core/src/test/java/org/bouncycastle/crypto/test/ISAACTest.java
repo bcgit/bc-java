@@ -6,7 +6,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * ISAAC Test - see http://www.burtleburtle.net/bob/rand/isaacafa.html
+ * ISAAC Test - see https://www.burtleburtle.net/bob/rand/isaacafa.html
  */
 public class ISAACTest
     extends SimpleTest

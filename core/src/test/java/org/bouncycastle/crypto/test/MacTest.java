@@ -5,16 +5,16 @@ import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.macs.CBCBlockCipherMac;
 import org.bouncycastle.crypto.macs.CFBBlockCipherMac;
+import org.bouncycastle.crypto.paddings.PKCS7Padding;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.crypto.paddings.PKCS7Padding;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * MAC tester - vectors from 
- * <a href=http://www.itl.nist.gov/fipspubs/fip81.htm>FIP 81</a> and 
- * <a href=http://www.itl.nist.gov/fipspubs/fip113.htm>FIP 113</a>.
+ * <a href=https://www.itl.nist.gov/fipspubs/fip81.htm>FIP 81</a> and 
+ * <a href=https://www.itl.nist.gov/fipspubs/fip113.htm>FIP 113</a>.
  */
 public class MacTest
     extends SimpleTest

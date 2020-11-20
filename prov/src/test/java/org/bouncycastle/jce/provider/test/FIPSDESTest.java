@@ -23,7 +23,7 @@ import org.bouncycastle.util.test.TestResult;
 
 /**
  * basic FIPS test class for a block cipher, just to make sure ECB/CBC/OFB/CFB are behaving
- * correctly. Tests from <a href=http://www.itl.nist.gov/fipspubs/fip81.htm>FIPS 81</a>.
+ * correctly. Tests from <a href=https://www.itl.nist.gov/fipspubs/fip81.htm>FIPS 81</a>.
  */
 public class FIPSDESTest
     implements Test

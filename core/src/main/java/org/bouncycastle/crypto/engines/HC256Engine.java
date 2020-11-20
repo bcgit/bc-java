@@ -12,13 +12,13 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * generates keystream from a 256-bit secret key and a 256-bit initialization 
  * vector.
  * <p>
- * http://www.ecrypt.eu.org/stream/p3ciphers/hc/hc256_p3.pdf
+ * https://www.ecrypt.eu.org/stream/p3ciphers/hc/hc256_p3.pdf
  * </p><p>
  * Its brother, HC-128, is a third phase candidate in the eStream contest.
  * The algorithm is patent-free. No attacks are known as of today (April 2007). 
  * See
  * 
- * http://www.ecrypt.eu.org/stream/hcp3.html
+ * https://www.ecrypt.eu.org/stream/hcp3.html
  * </p>
  */
 public class HC256Engine

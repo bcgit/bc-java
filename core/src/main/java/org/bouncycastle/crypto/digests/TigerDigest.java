@@ -5,8 +5,8 @@ import org.bouncycastle.util.Memoable;
 
 /**
  * implementation of Tiger based on:
- * <a href="http://www.cs.technion.ac.il/~biham/Reports/Tiger">
- *  http://www.cs.technion.ac.il/~biham/Reports/Tiger</a>
+ * <a href="https://www.cs.technion.ac.il/~biham/Reports/Tiger">
+ *  https://www.cs.technion.ac.il/~biham/Reports/Tiger</a>
  */
 public class TigerDigest
     implements ExtendedDigest, Memoable

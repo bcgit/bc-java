@@ -6,7 +6,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * SEED tester - vectors http://www.ietf.org/rfc/rfc4009.txt
+ * SEED tester - vectors https://www.ietf.org/rfc/rfc4009.txt
  */
 public class SEEDTest
     extends CipherTest
