@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>
+ * <a href="https://tools.ietf.org/html/rfc5544">RFC 5544</a>
  * Binding Documents with Time-Stamps; TimeStampTokenEvidence object.
  * <pre>
  * TimeStampTokenEvidence ::=

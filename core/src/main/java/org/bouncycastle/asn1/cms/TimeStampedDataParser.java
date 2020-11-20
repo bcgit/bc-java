@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.DERIA5String;
 
 /**
- * Parser for <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
+ * Parser for <a href="https://tools.ietf.org/html/rfc5544">RFC 5544</a>:
  * {@link TimeStampedData} object.
  * <p>
  * <pre>

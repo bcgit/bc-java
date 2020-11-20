@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> EnvelopedData object.
+ * <a href="https://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> EnvelopedData object.
  * <pre>
  * EnvelopedData ::= SEQUENCE {
  *     version CMSVersion,

@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-8">RFC 5652</a> EncryptedData object.
+ * <a href="https://tools.ietf.org/html/rfc5652#section-8">RFC 5652</a> EncryptedData object.
  * <p>
  * <pre>
  * EncryptedData ::= SEQUENCE {

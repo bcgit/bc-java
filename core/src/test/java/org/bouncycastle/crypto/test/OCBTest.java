@@ -16,7 +16,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * Test vectors from <a href="http://tools.ietf.org/html/rfc7253">RFC 7253 on The OCB
+ * Test vectors from <a href="https://tools.ietf.org/html/rfc7253">RFC 7253 on The OCB
  * Authenticated-Encryption Algorithm</a>
  */
 public class OCBTest

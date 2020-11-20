@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5084">RFC 5084</a>: GCMParameters object.
+ * <a href="https://tools.ietf.org/html/rfc5084">RFC 5084</a>: GCMParameters object.
  * <p>
  * <pre>
  GCMParameters ::= SEQUENCE {
