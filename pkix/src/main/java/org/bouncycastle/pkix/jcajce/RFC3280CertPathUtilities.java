@@ -666,12 +666,7 @@ class RFC3280CertPathUtilities
 
         PKIXCRLStoreSelector extSelect = new PKIXCRLStoreSelector.Builder(crlselect).setCompleteCRLEnabled(true).build();
 
-        Date validityDate = currentDate;
-
-        if (paramsPKIX.getDate() != null)
-        {
-            validityDate = paramsPKIX.getDate();
-        }
+        Date validityDate = RevocationUtilities.getValidityDate(paramsPKIX, currentDate);
 
         Set completeSet = CRL_UTIL.findCRLs(extSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
 
@@ -881,12 +876,7 @@ class RFC3280CertPathUtilities
          * getAdditionalStore()
          */
 
-        Date validityDate = currentDate;
-
-        if (paramsPKIX.getDate() != null)
-        {
-            validityDate = paramsPKIX.getDate();
-        }
+        Date validityDate = RevocationUtilities.getValidityDate(paramsPKIX, currentDate);
 
         Set crls = RevocationUtilities.getCompleteCRLs(dp, cert, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
         boolean validCrlFound = false;

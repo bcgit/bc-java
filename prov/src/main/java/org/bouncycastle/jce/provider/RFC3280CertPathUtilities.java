@@ -1381,6 +1381,7 @@ class RFC3280CertPathUtilities
     protected static void processCertA(
         CertPath certPath,
         PKIXExtendedParameters paramsPKIX,
+        Date validityDate,
         PKIXCertRevocationChecker revocationChecker,
         int index,
         PublicKey workingPublicKey,
@@ -1409,12 +1410,22 @@ class RFC3280CertPathUtilities
             }
         }
 
+        final Date validCertDate;
         try
         {
-            // (a) (2)
-            //
-            cert.checkValidity(CertPathValidatorUtilities
-                .getValidCertDateFromValidityModel(paramsPKIX, certPath, index));
+            validCertDate = CertPathValidatorUtilities.getValidCertDateFromValidityModel(validityDate,
+                paramsPKIX.getValidityModel(), certPath, index);
+        }
+        catch (AnnotatedException e)
+        {
+            throw new ExtCertPathValidatorException("Could not validate time of certificate.", e, certPath, index);
+        }
+
+        // (a) (2)
+        //
+        try
+        {
+            cert.checkValidity(validCertDate);
         }
         catch (CertificateExpiredException e)
         {
@@ -1424,35 +1435,16 @@ class RFC3280CertPathUtilities
         {
             throw new ExtCertPathValidatorException("Could not validate certificate: " + e.getMessage(), e, certPath, index);
         }
-        catch (AnnotatedException e)
-        {
-            throw new ExtCertPathValidatorException("Could not validate time of certificate.", e, certPath, index);
-        }
 
         //
         // (a) (3)
         //
         if (revocationChecker != null)
         {
+            revocationChecker.initialize(new PKIXCertRevocationCheckerParameters(paramsPKIX, validCertDate, certPath,
+                index, sign, workingPublicKey));
 
-            try
-            {
-                Date validDate = CertPathValidatorUtilities.getValidCertDateFromValidityModel(paramsPKIX, certPath, index);
-
-                revocationChecker.initialize(
-                        new PKIXCertRevocationCheckerParameters(paramsPKIX, validDate, certPath, index, sign, workingPublicKey));
-
-                revocationChecker.check(cert);
-            }
-            catch (AnnotatedException e)
-            {
-                Throwable cause = e;
-                if (null != e.getCause())
-                {
-                    cause = e.getCause();
-                }
-                throw new ExtCertPathValidatorException(e.getMessage(), cause, certPath, index);
-            }
+            revocationChecker.check(cert);
         }
 
         //
@@ -1719,12 +1711,7 @@ class RFC3280CertPathUtilities
 
                 X509CRL deltaCRL = null;
 
-                Date validityDate = currentDate;
-
-                if (paramsPKIX.getDate() != null)
-                {
-                    validityDate = paramsPKIX.getDate();
-                }
+                Date validityDate = CertPathValidatorUtilities.getValidityDate(paramsPKIX, currentDate);
 
                 if (paramsPKIX.isUseDeltasEnabled())
                 {
