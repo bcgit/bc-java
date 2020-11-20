@@ -4,7 +4,7 @@ package org.bouncycastle.crypto.engines;
  * an implementation of the ARIA Key Wrapper from the NIST Key Wrap
  * Specification.
  * <p>
- * For further details see: <a href="http://csrc.nist.gov/encryption/kms/key-wrap.pdf">http://csrc.nist.gov/encryption/kms/key-wrap.pdf</a>.
+ * For further details see: <a href="https://csrc.nist.gov/encryption/kms/key-wrap.pdf">https://csrc.nist.gov/encryption/kms/key-wrap.pdf</a>.
  */
 public class ARIAWrapEngine
     extends RFC3394WrapEngine
