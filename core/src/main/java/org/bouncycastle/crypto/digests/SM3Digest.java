@@ -5,7 +5,7 @@ import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of Chinese SM3 digest as described at
- * http://tools.ietf.org/html/draft-shen-sm3-hash-01
+ * https://tools.ietf.org/html/draft-shen-sm3-hash-01
  * and at .... ( Chinese PDF )
  * <p>
  * The specification says "process a bit stream",

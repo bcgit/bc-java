@@ -9,7 +9,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.tsp.EvidenceRecord;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
+ * <a href="https://tools.ietf.org/html/rfc5544">RFC 5544</a>:
  * Binding Documents with Time-Stamps; Evidence object.
  * <p>
  * <pre>

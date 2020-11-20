@@ -5,7 +5,7 @@ import org.bouncycastle.util.Strings;
 /**
  * The Bouncy Castle License
  *
- * Copyright (c) 2000-2019 The Legion Of The Bouncy Castle Inc. (http://www.bouncycastle.org)
+ * Copyright (c) 2000-2019 The Legion Of The Bouncy Castle Inc. (https://www.bouncycastle.org)
  * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
  * and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -26,7 +26,7 @@ import org.bouncycastle.util.Strings;
 public class LICENSE
 {
     public static final String licenseText =
-      "Copyright (c) 2000-2019 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org) "
+      "Copyright (c) 2000-2019 The Legion of the Bouncy Castle Inc. (https://www.bouncycastle.org) "
       + Strings.lineSeparator()
       + Strings.lineSeparator()
       + "Permission is hereby granted, free of charge, to any person obtaining a copy of this software "

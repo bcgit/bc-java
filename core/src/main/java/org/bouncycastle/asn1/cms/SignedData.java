@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-5.1">RFC 5652</a>:
+ * <a href="https://tools.ietf.org/html/rfc5652#section-5.1">RFC 5652</a>:
  * <p>
  * A signed data object containing multitude of {@link SignerInfo}s.
  * <pre>
