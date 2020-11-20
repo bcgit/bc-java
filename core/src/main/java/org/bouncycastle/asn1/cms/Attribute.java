@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#page-14">RFC 5652</a>:
+ * <a href="https://tools.ietf.org/html/rfc5652#page-14">RFC 5652</a>:
  * Attribute is a pair of OID (as type identifier) + set of values.
  * <p>
  * <pre>

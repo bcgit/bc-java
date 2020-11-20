@@ -1,12 +1,13 @@
-// Copyright (c) 2005 The Legion Of The Bouncy Castle (http://www.bouncycastle.org)
+// Copyright (c) 2005 The Legion Of The Bouncy Castle (https://www.bouncycastle.org)
 package org.bouncycastle.mail.smime.test;
 
-import junit.extensions.TestSetup;
-import junit.framework.Test;
+import java.security.Security;
 
 import javax.activation.CommandMap;
 import javax.activation.MailcapCommandMap;
-import java.security.Security;
+
+import junit.extensions.TestSetup;
+import junit.framework.Test;
 
 class SMIMETestSetup extends TestSetup 
 {
