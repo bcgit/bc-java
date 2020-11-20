@@ -258,7 +258,7 @@ public class DualECDRBGTest
                             "815B6D34E29F2603526CE186576F4CCA3FEDF7F8ACDB37C9" +
                             "9D762706ABE4967D44739C8CFCFCC76C58B1ED243AC394C0"
                         }),
-                // From http://csrc.nist.gov/groups/STM/cavp/documents/drbg/drbgtestvectors.zip
+                // From https://csrc.nist.gov/groups/STM/cavp/documents/drbg/drbgtestvectors.zip
                 // modified to test partial block processing.
                 new DRBGTestVector(
                     new SHA256Digest(),

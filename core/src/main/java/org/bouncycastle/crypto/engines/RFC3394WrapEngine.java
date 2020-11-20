@@ -15,7 +15,7 @@ import org.bouncycastle.util.Arrays;
  * Specification as described in RFC 3394.
  * <p>
  * For further details see: <a href="https://www.ietf.org/rfc/rfc3394.txt">https://www.ietf.org/rfc/rfc3394.txt</a>
- * and  <a href="http://csrc.nist.gov/encryption/kms/key-wrap.pdf">http://csrc.nist.gov/encryption/kms/key-wrap.pdf</a>.
+ * and  <a href="https://csrc.nist.gov/encryption/kms/key-wrap.pdf">https://csrc.nist.gov/encryption/kms/key-wrap.pdf</a>.
  */
 public class RFC3394WrapEngine
     implements Wrapper

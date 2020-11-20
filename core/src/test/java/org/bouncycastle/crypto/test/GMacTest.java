@@ -12,7 +12,7 @@ import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * Test vectors for AES-GMAC, extracted from <a
- * href="http://csrc.nist.gov/groups/STM/cavp/documents/mac/gcmtestvectors.zip">NIST CAVP GCM test
+ * href="https://csrc.nist.gov/groups/STM/cavp/documents/mac/gcmtestvectors.zip">NIST CAVP GCM test
  * vectors</a>.
  *
  */
