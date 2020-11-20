@@ -54,7 +54,7 @@ import org.bouncycastle.util.Arrays;
  * </p>
  * <p>
  * The key confirmation process is implemented as specified in
- * <a href="http://csrc.nist.gov/publications/nistpubs/800-56A/SP800-56A_Revision1_Mar08-2007.pdf">NIST SP 800-56A Revision 1</a>,
+ * <a href="https://csrc.nist.gov/publications/nistpubs/800-56A/SP800-56A_Revision1_Mar08-2007.pdf">NIST SP 800-56A Revision 1</a>,
  * Section 8.2 Unilateral Key Confirmation for Key Agreement Schemes.
  * </p>
  * <p>

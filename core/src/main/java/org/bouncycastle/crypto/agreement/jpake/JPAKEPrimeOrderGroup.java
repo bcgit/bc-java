@@ -10,7 +10,7 @@ import java.math.BigInteger;
  * <p>
  * See {@link JPAKEPrimeOrderGroups} for convenient standard groups.
  * <p>
- * NIST <a href="http://csrc.nist.gov/groups/ST/toolkit/documents/Examples/DSA2_All.pdf">publishes</a>
+ * NIST <a href="https://csrc.nist.gov/groups/ST/toolkit/documents/Examples/DSA2_All.pdf">publishes</a>
  * many groups that can be used for the desired level of security.
  */
 public class JPAKEPrimeOrderGroup

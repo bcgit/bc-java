@@ -26,7 +26,7 @@ import org.bouncycastle.util.test.SimpleTest;
 
 /*
  * These tests are taken from the NIST X.509 Validation Test Suite
- * available at: http://csrc.nist.gov/pki/testing/x509paths.html
+ * available at: https://csrc.nist.gov/pki/testing/x509paths.html
  * 
  * Only the relevant certificate and crl data has been kept, in order
  * to keep the class size to a minimum.

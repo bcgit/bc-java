@@ -11,7 +11,7 @@ import java.math.BigInteger;
  * <p>
  * The prime order groups below are taken from Sun's JDK JavaDoc (docs/guide/security/CryptoSpec.html#AppB),
  * and from the prime order groups
- * <a href="http://csrc.nist.gov/groups/ST/toolkit/documents/Examples/DSA2_All.pdf">published by NIST</a>.
+ * <a href="https://csrc.nist.gov/groups/ST/toolkit/documents/Examples/DSA2_All.pdf">published by NIST</a>.
  */
 public class JPAKEPrimeOrderGroups
 {

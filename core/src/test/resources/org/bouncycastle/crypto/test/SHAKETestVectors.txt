@@ -1,6 +1,6 @@
 # Test vectors for FIPS 202 - SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions
 #
-# Downloaded 6th August, 2015 from http://csrc.nist.gov/groups/ST/toolkit/examples.html#aHashing
+# Downloaded 6th August, 2015 from https://csrc.nist.gov/groups/ST/toolkit/examples.html#aHashing
 
 SHAKE-128 sample of 0-bit message
 

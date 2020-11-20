@@ -4,7 +4,7 @@
 Test vectors for the NIST elliptic curves P192, P224, P256, P384, P521,
 B163, B233, B283, B409, B571, K163, K233, K283, K409 and K571. For more
 information about the curves see
-      http://csrc.nist.gov/encryption/dss/ecdsa/NISTReCur.pdf
+      https://csrc.nist.gov/encryption/dss/ecdsa/NISTReCur.pdf
 
 For a given curve and a given base point P the point Q = kP was calcaluted for
 several values k. The x and y coordinates of Q are given in the table below.
