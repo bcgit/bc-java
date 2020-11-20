@@ -97,6 +97,9 @@ public class PKIXAttrCertPathValidatorSpi
             paramsPKIX = (PKIXExtendedParameters)params;
         }
 
+        final Date currentDate = new Date();
+        final Date validityDate = CertPathValidatorUtilities.getValidityDate(paramsPKIX, currentDate);
+
         Selector certSelect = paramsPKIX.getTargetConstraints();
         if (!(certSelect instanceof X509AttributeCertStoreSelector))
         {
@@ -115,14 +118,15 @@ public class PKIXAttrCertPathValidatorSpi
             .getCertificates().get(0);
         RFC3281CertPathUtilities.processAttrCert3(issuerCert, paramsPKIX);
         RFC3281CertPathUtilities.processAttrCert4(issuerCert, trustedACIssuers);
-        RFC3281CertPathUtilities.processAttrCert5(attrCert, paramsPKIX);
+        RFC3281CertPathUtilities.processAttrCert5(attrCert, validityDate);
         // 6 already done in X509AttributeCertStoreSelector
         RFC3281CertPathUtilities.processAttrCert7(attrCert, certPath, holderCertPath, paramsPKIX, attrCertCheckers);
         RFC3281CertPathUtilities.additionalChecks(attrCert, prohibitedACAttrbiutes, necessaryACAttributes);
         Date date = null;
         try
         {
-            date = CertPathValidatorUtilities.getValidCertDateFromValidityModel(paramsPKIX, null, -1);
+            date = CertPathValidatorUtilities.getValidCertDateFromValidityModel(validityDate,
+                paramsPKIX.getValidityModel(), null, -1);
         }
         catch (AnnotatedException e)
         {

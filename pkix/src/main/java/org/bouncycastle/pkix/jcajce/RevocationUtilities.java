@@ -6,7 +6,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.cert.CRLException;
-import java.security.cert.CertPath;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
@@ -21,7 +20,6 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,14 +34,12 @@ import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Enumerated;
-import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.isismtt.ISISMTTObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -277,16 +273,11 @@ class RevocationUtilities
         }
     }
 
-    protected static Date getValidDate(PKIXExtendedParameters paramsPKIX)
+    protected static Date getValidityDate(PKIXExtendedParameters paramsPKIX, Date currentDate)
     {
-        Date validDate = paramsPKIX.getDate();
+        Date validityDate = paramsPKIX.getValidityDate();
 
-        if (validDate == null)
-        {
-            validDate = new Date();
-        }
-
-        return validDate;
+        return null == validityDate ? currentDate : validityDate;
     }
 
     protected static boolean isSelfIssued(X509Certificate cert)
@@ -807,70 +798,6 @@ class RevocationUtilities
         checkCRLsNotEmpty(crls, cert);
 
         return crls;
-    }
-
-    protected static Date getValidCertDateFromValidityModel(
-        PKIXExtendedParameters paramsPKIX, CertPath certPath, int index)
-        throws AnnotatedException
-    {
-        if (paramsPKIX.getValidityModel() == PKIXExtendedParameters.CHAIN_VALIDITY_MODEL)
-        {
-            // if end cert use given signing/encryption/... time
-            if (index <= 0)
-            {
-                return RevocationUtilities.getValidDate(paramsPKIX);
-                // else use time when previous cert was created
-            }
-            else
-            {
-                if (index - 1 == 0)
-                {
-                    ASN1GeneralizedTime dateOfCertgen = null;
-                    try
-                    {
-                        byte[] extBytes = ((X509Certificate)certPath.getCertificates().get(index - 1)).getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
-                        if (extBytes != null)
-                        {
-                            dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        throw new AnnotatedException(
-                            "Date of cert gen extension could not be read.");
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        throw new AnnotatedException(
-                            "Date of cert gen extension could not be read.");
-                    }
-                    if (dateOfCertgen != null)
-                    {
-                        try
-                        {
-                            return dateOfCertgen.getDate();
-                        }
-                        catch (ParseException e)
-                        {
-                            throw new AnnotatedException(
-                                "Date from date of cert gen extension could not be parsed.",
-                                e);
-                        }
-                    }
-                    return ((X509Certificate)certPath.getCertificates().get(
-                        index - 1)).getNotBefore();
-                }
-                else
-                {
-                    return ((X509Certificate)certPath.getCertificates().get(
-                        index - 1)).getNotBefore();
-                }
-            }
-        }
-        else
-        {
-            return getValidDate(paramsPKIX);
-        }
     }
 
     /**
