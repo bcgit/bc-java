@@ -597,6 +597,7 @@
 
         <compile target="${tls.target}">
             <jarFileSet>
+                <exclude name="**/test/*.class" />
                 <include name="**/*.class"/>
                 <include name="**/*.properties"/>
             </jarFileSet>
