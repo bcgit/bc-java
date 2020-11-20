@@ -48,6 +48,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.TBSCertList;
+import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -424,12 +425,9 @@ abstract class X509CRLImpl
 
     public Date getNextUpdate()
     {
-        if (c.getNextUpdate() != null)
-        {
-            return c.getNextUpdate().getDate();
-        }
+        Time nextUpdate = c.getNextUpdate();
 
-        return null;
+        return null == nextUpdate ? null : nextUpdate.getDate();
     }
 
     private Set loadCRLEntries()

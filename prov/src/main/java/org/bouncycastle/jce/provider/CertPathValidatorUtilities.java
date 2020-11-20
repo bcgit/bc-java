@@ -330,16 +330,11 @@ class CertPathValidatorUtilities
         }
     }
 
-    protected static Date getValidDate(PKIXExtendedParameters paramsPKIX)
+    protected static Date getValidityDate(PKIXExtendedParameters paramsPKIX, Date currentDate)
     {
-        Date validDate = paramsPKIX.getDate();
+        Date validityDate = paramsPKIX.getValidityDate();
 
-        if (validDate == null)
-        {
-            validDate = new Date();
-        }
-
-        return validDate;
+        return null == validityDate ? currentDate : validityDate;
     }
 
     protected static boolean isSelfIssued(X509Certificate cert)
@@ -1257,12 +1252,7 @@ class CertPathValidatorUtilities
 
         PKIXCRLStoreSelector crlSelect = new PKIXCRLStoreSelector.Builder(baseCrlSelect).setCompleteCRLEnabled(true).build();
 
-        Date validityDate = currentDate;
-
-        if (paramsPKIX.getDate() != null)
-        {
-            validityDate = paramsPKIX.getDate();
-        }
+        Date validityDate = getValidityDate(paramsPKIX, currentDate);
 
         Set crls = CRL_UTIL.findCRLs(crlSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
 
@@ -1271,68 +1261,52 @@ class CertPathValidatorUtilities
         return crls;
     }
 
-    protected static Date getValidCertDateFromValidityModel(
-        PKIXExtendedParameters paramsPKIX, CertPath certPath, int index)
-        throws AnnotatedException
+    protected static Date getValidCertDateFromValidityModel(Date validityDate, int validityModel, CertPath certPath,
+        int index) throws AnnotatedException
     {
-        if (paramsPKIX.getValidityModel() == PKIXExtendedParameters.CHAIN_VALIDITY_MODEL)
+        if (PKIXExtendedParameters.CHAIN_VALIDITY_MODEL != validityModel || index <= 0)
         {
-            // if end cert use given signing/encryption/... time
-            if (index <= 0)
+            // use given signing/encryption/... time (or current date)
+            return validityDate;
+        }
+
+        X509Certificate issuedCert = (X509Certificate)certPath.getCertificates().get(index - 1);
+
+        if (index - 1 == 0)
+        {
+            // use time when cert was issued, if available
+            ASN1GeneralizedTime dateOfCertgen = null;
+            try
             {
-                return CertPathValidatorUtilities.getValidDate(paramsPKIX);
-                // else use time when previous cert was created
-            }
-            else
-            {
-                if (index - 1 == 0)
+                byte[] extBytes = ((X509Certificate)certPath.getCertificates().get(index - 1))
+                    .getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
+                if (extBytes != null)
                 {
-                    ASN1GeneralizedTime dateOfCertgen = null;
-                    try
-                    {
-                        byte[] extBytes = ((X509Certificate)certPath.getCertificates().get(index - 1)).getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
-                        if (extBytes != null)
-                        {
-                            dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        throw new AnnotatedException(
-                            "Date of cert gen extension could not be read.");
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        throw new AnnotatedException(
-                            "Date of cert gen extension could not be read.");
-                    }
-                    if (dateOfCertgen != null)
-                    {
-                        try
-                        {
-                            return dateOfCertgen.getDate();
-                        }
-                        catch (ParseException e)
-                        {
-                            throw new AnnotatedException(
-                                "Date from date of cert gen extension could not be parsed.",
-                                e);
-                        }
-                    }
-                    return ((X509Certificate)certPath.getCertificates().get(
-                        index - 1)).getNotBefore();
+                    dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
                 }
-                else
+            }
+            catch (IOException e)
+            {
+                throw new AnnotatedException("Date of cert gen extension could not be read.");
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new AnnotatedException("Date of cert gen extension could not be read.");
+            }
+            if (dateOfCertgen != null)
+            {
+                try
                 {
-                    return ((X509Certificate)certPath.getCertificates().get(
-                        index - 1)).getNotBefore();
+                    return dateOfCertgen.getDate();
+                }
+                catch (ParseException e)
+                {
+                    throw new AnnotatedException("Date from date of cert gen extension could not be parsed.", e);
                 }
             }
         }
-        else
-        {
-            return getValidDate(paramsPKIX);
-        }
+
+        return issuedCert.getNotBefore();
     }
 
     /**
