@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 /**
  * Definite length SEQUENCE, encoding tells explicit number of bytes

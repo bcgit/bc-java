@@ -876,6 +876,25 @@ public final class Arrays
         return r;
     }
 
+    public static short[] concatenate(short[] a, short[] b)
+    {
+        if (null == a)
+        {
+            // b might also be null
+            return clone(b);
+        }
+        if (null == b)
+        {
+            // a might also be null
+            return clone(a);
+        }
+
+        short[] r = new short[a.length + b.length];
+        System.arraycopy(a, 0, r, 0, a.length);
+        System.arraycopy(b, 0, r, a.length, b.length);
+        return r;
+    }
+
     public static byte[] concatenate(byte[] a, byte[] b, byte[] c)
     {
         if (null == a)
