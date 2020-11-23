@@ -71,6 +71,11 @@ public class TimeStampedDataParser
         return null;
     }
 
+    public int getVersion()
+    {
+        return version.getValue().intValue();
+    }
+    
     public DERIA5String getDataUri()
     {
         return dataUri;
