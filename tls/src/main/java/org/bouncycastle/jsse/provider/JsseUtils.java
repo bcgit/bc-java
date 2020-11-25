@@ -275,11 +275,16 @@ abstract class JsseUtils
     static Vector<X500Name> getCertificateAuthorities(BCX509ExtendedTrustManager x509TrustManager)
     {
         Set<X500Principal> caSubjects = new HashSet<X500Principal>();
-        for (X509Certificate caCert : x509TrustManager.getAcceptedIssuers())
+        for (X509Certificate acceptedIssuer : x509TrustManager.getAcceptedIssuers())
         {
-            if (caCert.getBasicConstraints() >= 0)
+            if (acceptedIssuer.getBasicConstraints() >= 0)
             {
-                caSubjects.add(caCert.getSubjectX500Principal());
+                caSubjects.add(acceptedIssuer.getSubjectX500Principal());
+            }
+            else
+            {
+                // Trusting a non-CA certificate, so include its issuer as a CA
+                caSubjects.add(acceptedIssuer.getIssuerX500Principal());
             }
         }
 
