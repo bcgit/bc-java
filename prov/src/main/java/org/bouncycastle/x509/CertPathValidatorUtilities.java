@@ -61,8 +61,6 @@ import org.bouncycastle.util.StoreException;
 
 class CertPathValidatorUtilities
 {
-    protected static final PKIXCRLUtil CRL_UTIL = new PKIXCRLUtil();
-
     protected static final String CERTIFICATE_POLICIES = Extension.certificatePolicies.getId();
     protected static final String BASIC_CONSTRAINTS = Extension.basicConstraints.getId();
     protected static final String POLICY_MAPPINGS = Extension.policyMappings.getId();
@@ -73,13 +71,12 @@ class CertPathValidatorUtilities
     protected static final String ISSUING_DISTRIBUTION_POINT = Extension.issuingDistributionPoint.getId();
     protected static final String DELTA_CRL_INDICATOR = Extension.deltaCRLIndicator.getId();
     protected static final String POLICY_CONSTRAINTS = Extension.policyConstraints.getId();
-    protected static final String FRESHEST_CRL = Extension.freshestCRL.getId();
-    protected static final String CRL_DISTRIBUTION_POINTS = Extension.cRLDistributionPoints.getId();
-    protected static final String AUTHORITY_KEY_IDENTIFIER = Extension.authorityKeyIdentifier.getId();
+//    protected static final String FRESHEST_CRL = Extension.freshestCRL.getId();
+//    protected static final String CRL_DISTRIBUTION_POINTS = Extension.cRLDistributionPoints.getId();
+//    protected static final String AUTHORITY_KEY_IDENTIFIER = Extension.authorityKeyIdentifier.getId();
+    protected static final String CRL_NUMBER = Extension.cRLNumber.getId();
 
     protected static final String ANY_POLICY = "2.5.29.32.0";
-
-    protected static final String CRL_NUMBER = Extension.cRLNumber.getId();
 
     /*
     * key usage bits

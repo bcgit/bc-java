@@ -11,9 +11,9 @@ import java.util.Set;
 import org.bouncycastle.jce.provider.AnnotatedException;
 import org.bouncycastle.util.StoreException;
 
-class PKIXCRLUtil
+abstract class PKIXCRLUtil
 {
-    public Set findCRLs(X509CRLStoreSelector crlselect, PKIXParameters paramsPKIX)
+    static Set findCRLs(X509CRLStoreSelector crlselect, PKIXParameters paramsPKIX)
         throws AnnotatedException
     {
         HashSet completeSet = new HashSet();
@@ -32,20 +32,18 @@ class PKIXCRLUtil
     }
 
     /**
-     * Add to a HashSet all CRLs found in the X509Store's that are matching the crlSelect criteria.
+     * Add to a HashSet any and all CRLs found in the X509Store's that are matching the crlSelect
+     * criteria.
      *
-     * @param the
-     *            {@link HashSet} to add the CRLs to.
+     * @param crls
+     *            the {@link HashSet} to add the CRLs to.
      * @param crlSelect
      *            a {@link X509CRLStoreSelector} object that will be used to select the CRLs
      * @param crlStores
      *            a List containing only {@link org.bouncycastle.x509.X509Store X509Store} objects.
      *            These are used to search for CRLs
-     *
-     * @return a Collection of all found {@link java.security.cert.X509CRL X509CRL} objects. May be
-     *         empty but never <code>null</code>.
      */
-    private final void findCRLs(HashSet crls, X509CRLStoreSelector crlSelect, List crlStores) throws AnnotatedException
+    private static void findCRLs(HashSet crls, X509CRLStoreSelector crlSelect, List crlStores) throws AnnotatedException
     {
         AnnotatedException lastException = null;
         boolean foundValidStore = false;

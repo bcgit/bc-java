@@ -7,7 +7,8 @@ public interface PKIXCertRevocationChecker
 {
     void setParameter(String name, Object value);
 
-    void initialize(PKIXCertRevocationCheckerParameters params);
+    void initialize(PKIXCertRevocationCheckerParameters params)
+        throws CertPathValidatorException;
 
     void check(Certificate cert)
         throws CertPathValidatorException;
