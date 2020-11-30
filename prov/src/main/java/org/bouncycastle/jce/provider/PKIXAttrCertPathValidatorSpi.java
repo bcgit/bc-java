@@ -122,18 +122,9 @@ public class PKIXAttrCertPathValidatorSpi
         // 6 already done in X509AttributeCertStoreSelector
         RFC3281CertPathUtilities.processAttrCert7(attrCert, certPath, holderCertPath, paramsPKIX, attrCertCheckers);
         RFC3281CertPathUtilities.additionalChecks(attrCert, prohibitedACAttrbiutes, necessaryACAttributes);
-        Date date = null;
-        try
-        {
-            date = CertPathValidatorUtilities.getValidCertDateFromValidityModel(validityDate,
-                paramsPKIX.getValidityModel(), null, -1);
-        }
-        catch (AnnotatedException e)
-        {
-            throw new ExtCertPathValidatorException(
-                "Could not get validity date from attribute certificate.", e);
-        }
-        RFC3281CertPathUtilities.checkCRLs(attrCert, paramsPKIX, issuerCert, date, certPath.getCertificates(), helper);
+
+        RFC3281CertPathUtilities.checkCRLs(attrCert, paramsPKIX, currentDate, validityDate, issuerCert,
+            certPath.getCertificates(), helper);
         return result;
     }
 }
