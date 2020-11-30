@@ -139,7 +139,6 @@ class ProvOcspRevocationChecker
     public void initialize(PKIXCertRevocationCheckerParameters parameters)
     {
         this.parameters = parameters;
-
         this.isEnabledOCSP = Properties.isOverrideSet("ocsp.enable");
         this.ocspURL = Properties.getPropertyValue("ocsp.responderURL");
     }
@@ -156,6 +155,10 @@ class ProvOcspRevocationChecker
         {
             throw new CertPathValidatorException("forward checking not supported");
         }
+
+        this.parameters = null;
+        this.isEnabledOCSP = Properties.isOverrideSet("ocsp.enable");
+        this.ocspURL = Properties.getPropertyValue("ocsp.responderURL");
     }
 
     public boolean isForwardCheckingSupported()

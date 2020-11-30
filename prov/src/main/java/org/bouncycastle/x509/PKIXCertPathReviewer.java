@@ -75,6 +75,7 @@ import org.bouncycastle.jce.provider.PKIXNameConstraintValidator;
 import org.bouncycastle.jce.provider.PKIXNameConstraintValidatorException;
 import org.bouncycastle.jce.provider.PKIXPolicyNode;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Objects;
 
 /**
  * PKIXCertPathReviewer<br>
@@ -2046,13 +2047,13 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         Iterator crl_iter;
         try 
         {
-            Collection crl_coll = CRL_UTIL.findCRLs(crlselect, paramsPKIX);
+            Collection crl_coll = PKIXCRLUtil.findCRLs(crlselect, paramsPKIX);
             crl_iter = crl_coll.iterator();
             
             if (crl_coll.isEmpty())
             {
-                // notifcation - no local crls found
-                crl_coll = CRL_UTIL.findCRLs(new X509CRLStoreSelector(),paramsPKIX);
+                // notification - no local crls found
+                crl_coll = PKIXCRLUtil.findCRLs(new X509CRLStoreSelector(),paramsPKIX);
                 Iterator it = crl_coll.iterator();
                 List nonMatchingCrlNames = new ArrayList();
                 while (it.hasNext())
@@ -2300,7 +2301,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 Iterator it;
                 try 
                 {
-                    it  = CRL_UTIL.findCRLs(baseSelect, paramsPKIX).iterator();
+                    it  = PKIXCRLUtil.findCRLs(baseSelect, paramsPKIX).iterator();
                 }
                 catch (AnnotatedException ae)
                 {
@@ -2321,25 +2322,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.distrPtExtError");
                         throw new CertPathReviewerException(msg,ae);
                     }
-                    
-                    if (idp == null)
+
+                    if (Objects.areEqual(idp, baseIdp))
                     {
-                        if (baseIdp == null)
-                        {
-                            foundBase = true;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        if (idp.equals(baseIdp))
-                        {
-                            foundBase = true;
-                            break;
-                        }
+                        foundBase = true;
+                        break;
                     }
                 }
-                
+
                 if (!foundBase)
                 {
                     ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noBaseCRL");

@@ -108,7 +108,9 @@ class ProvRevocationChecker
     public void init(boolean forForward)
         throws CertPathValidatorException
     {
+        this.parameters = null;
          crlChecker.init(forForward);
+         ocspChecker.init(forForward);
     }
 
     public boolean isForwardCheckingSupported()
