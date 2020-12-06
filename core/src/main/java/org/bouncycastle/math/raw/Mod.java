@@ -94,21 +94,17 @@ public abstract class Mod
         }
 
         int signF = F[len30 - 1] >> 31;
+        cnegate30(len30, signF, F);
 
         /*
          * D is in the range (-2.M, M). First, conditionally add M if D is negative, to bring it
          * into the range (-M, M). Then normalize by conditionally negating (according to signF)
          * and/or then adding M, to bring it into the range [0, M).
          */
-        int signD = D[len30 - 1] >> 31;
-        signD = cadd30(len30, signD, D, M);
         cnormalize30(len30, signF, D, M);
 
         decode30(bits, D, 0, z, 0);
 //        assert 0 != Nat.lessThan(len32, z, m);
-
-        signF = cnegate30(len30, signF, F);
-//        assert 0 == signF;
 
         return Nat.equalTo(len30, F, 1) & Nat.equalToZero(len30, G);
     }
@@ -260,24 +256,7 @@ public abstract class Mod
         return c;
     }
 
-    private static int cadd30(int len30, int cond, int[] D, int[] M)
-    {
-//        assert len30 > 0;
-//        assert D.length >= len30;
-//        assert M.length >= len30;
-
-        int c = 0, last = len30 - 1;
-        for (int i = 0; i < last; ++i)
-        {
-            c += D[i] + (M[i] & cond);
-            D[i] = c & M30; c >>= 30;
-        }
-        c += D[last] + (M[last] & cond);
-        D[last] = c; c >>= 30;
-        return c;
-    }
-
-    private static int cnegate30(int len30, int cond, int[] D)
+    private static void cnegate30(int len30, int cond, int[] D)
     {
 //        assert len30 > 0;
 //        assert D.length >= len30;
@@ -289,8 +268,7 @@ public abstract class Mod
             D[i] = c & M30; c >>= 30;
         }
         c += (D[last] ^ cond) - cond;
-        D[last] = c; c >>= 30;
-        return c;
+        D[last] = c;
     }
 
     private static void cnormalize30(int len30, int condNegate, int[] D, int[] M)
@@ -299,16 +277,36 @@ public abstract class Mod
 //        assert D.length >= len30;
 //        assert M.length >= len30;
 
-        int c = 0, last = len30 - 1;
-        int condAdd = (D[last] >> 31) ^ condNegate; 
-        for (int i = 0; i < last; ++i)
+        int last = len30 - 1;
+
         {
-            c += (D[i] ^ condNegate) - condNegate + (M[i] & condAdd);
-            D[i] = c & M30; c >>= 30;
+            int c = 0, condAdd = D[last] >> 31;
+            for (int i = 0; i < last; ++i)
+            {
+                int di = D[i] + (M[i] & condAdd);
+                di = (di ^ condNegate) - condNegate;
+                c += di; D[i] = c & M30; c >>= 30;
+            }
+            {
+                int di = D[last] + (M[last] & condAdd);
+                di = (di ^ condNegate) - condNegate;
+                c += di; D[last] = c;
+            }
         }
-        c += (D[last] ^ condNegate) - condNegate + (M[last] & condAdd);
-        D[last] = c;
-//        assert c >> 30 == 0;
+
+        {
+            int c = 0, condAdd = D[last] >> 31;
+            for (int i = 0; i < last; ++i)
+            {
+                int di = D[i] + (M[i] & condAdd);
+                c += di; D[i] = c & M30; c >>= 30;
+            }
+            {
+                int di = D[last] + (M[last] & condAdd);
+                c += di; D[last] = c;
+            }
+//            assert c >> 30 == 0;
+        }
     }
 
     private static void decode30(int bits, int[] x, int xOff, int[] z, int zOff)
@@ -518,8 +516,8 @@ public abstract class Mod
          * intermediate D/E values will be 0, allowing clean division by 2^30. The final D/E are
          * thus in the range (-2.M, M), consistent with the input constraint.
          */
-        md -= ((m0Inv32 * (int)cd + md) & M30);
-        me -= ((m0Inv32 * (int)ce + me) & M30);
+        md -= (m0Inv32 * (int)cd + md) & M30;
+        me -= (m0Inv32 * (int)ce + me) & M30;
 
         cd += (long)mi * md;
         ce += (long)mi * me;
