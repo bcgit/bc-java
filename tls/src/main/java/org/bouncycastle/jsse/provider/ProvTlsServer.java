@@ -678,6 +678,12 @@ class ProvTlsServer
     }
 
     @Override
+    public boolean requiresCloseNotify()
+    {
+        return JsseUtils.requireCloseNotify();
+    }
+
+    @Override
     public boolean requiresExtendedMasterSecret()
     {
         return !JsseUtils.allowLegacyMasterSecret();

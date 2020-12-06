@@ -67,6 +67,11 @@ public abstract class AbstractTlsPeer
         return false;
     }
 
+    public boolean requiresCloseNotify()
+    {
+        return true;
+    }
+
     public boolean requiresExtendedMasterSecret()
     {
         return false;
