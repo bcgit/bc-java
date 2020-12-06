@@ -224,6 +224,19 @@ public class X509RevocationChecker
         }
 
         /**
+         * @param validityModel
+         *            The validity model to set.
+         * @see #CHAIN_VALIDITY_MODEL
+         * @see #PKIX_VALIDITY_MODEL
+         */
+        public Builder setValidityModel(int validityModel)
+        {
+            this.validityModel = validityModel;
+
+            return this;
+        }
+
+        /**
          * Configure to use the installed provider with name ProviderName.
          *
          * @param provider provider to use.
@@ -267,6 +280,7 @@ public class X509RevocationChecker
     private final Map<X500Principal, Long> failures = new HashMap<X500Principal, Long>();
     private final Set<TrustAnchor> trustAnchors;
     private final boolean isCheckEEOnly;
+    private final int validityModel;
     private final List<Store<CRL>> crls;
     private final List<CertStore> crlCertStores;
     private final JcaJceHelper helper;
@@ -274,6 +288,7 @@ public class X509RevocationChecker
     private final long failLogMaxTime;
     private final long failHardMaxTime;
 
+    private Date currentDate;
     private X500Principal workingIssuerName;
     private PublicKey workingPublicKey;
     private X509Certificate signingCert;
@@ -283,6 +298,7 @@ public class X509RevocationChecker
         this.crls = new ArrayList<Store<CRL>>(bldr.crls);
         this.crlCertStores = new ArrayList<CertStore>(bldr.crlCertStores);
         this.isCheckEEOnly = bldr.isCheckEEOnly;
+        this.validityModel = bldr.validityModel;
         this.trustAnchors = bldr.trustAnchors;
         this.canSoftFail = bldr.canSoftFail;
         this.failLogMaxTime = bldr.failLogMaxTime;
@@ -294,11 +310,11 @@ public class X509RevocationChecker
         }
         else if (bldr.providerName != null)
         {
-            helper = new NamedJcaJceHelper(bldr.providerName);
+            this.helper = new NamedJcaJceHelper(bldr.providerName);
         }
         else
         {
-            helper = new DefaultJcaJceHelper();
+            this.helper = new DefaultJcaJceHelper();
         }
     }
 
@@ -309,6 +325,8 @@ public class X509RevocationChecker
         {
             throw new IllegalArgumentException("forward processing not supported");
         }
+
+        this.currentDate = new Date();
         this.workingIssuerName = null;
     }
 
@@ -362,31 +380,31 @@ public class X509RevocationChecker
             this.workingPublicKey = signingCert.getPublicKey();
         }
 
-        PKIXParameters baseParams;
         List<X500Principal> issuerList = new ArrayList<X500Principal>();
 
+        PKIXExtendedParameters.Builder pkixBuilder;
         try
         {
-            baseParams = new PKIXParameters(trustAnchors);
+            PKIXParameters pkixParams = new PKIXParameters(trustAnchors);
+            pkixParams.setRevocationEnabled(false);
+            pkixParams.setDate(currentDate);
 
-            baseParams.setRevocationEnabled(false);
-            baseParams.setDate(new Date());
-            
             for (int i = 0; i != crlCertStores.size(); i++)
             {
                 if (LOG.isLoggable(Level.INFO))
                 {
                     addIssuers(issuerList, crlCertStores.get(i));
                 }
-                baseParams.addCertStore(crlCertStores.get(i));
+                pkixParams.addCertStore(crlCertStores.get(i));
             }
+
+            pkixBuilder = new PKIXExtendedParameters.Builder(pkixParams);
+            pkixBuilder.setValidityModel(validityModel);
         }
         catch (GeneralSecurityException e)
         {
             throw new RuntimeException("error setting up baseParams: " + e.getMessage());
         }
-
-        PKIXExtendedParameters.Builder pkixParamsBldr = new PKIXExtendedParameters.Builder(baseParams);
 
         for (int i = 0; i != crls.size(); i++)
         {
@@ -394,7 +412,7 @@ public class X509RevocationChecker
             {
                 addIssuers(issuerList, crls.get(i));
             }
-            pkixParamsBldr.addCRLStore(new LocalCRLStore(crls.get(i)));
+            pkixBuilder.addCRLStore(new LocalCRLStore(crls.get(i)));
         }
 
         if (issuerList.isEmpty())
@@ -415,10 +433,14 @@ public class X509RevocationChecker
                 LOG.log(Level.INFO, "configured with " + issuerList.size() + " pre-loaded CRLs");
             }
         }
-        
+
+        PKIXExtendedParameters pkixParams = pkixBuilder.build();
+
+        Date validityDate = RevocationUtilities.getValidityDate(pkixParams, currentDate);
+
         try
         {
-            checkCRLs(pkixParamsBldr.build(), cert, baseParams.getDate(), signingCert, workingPublicKey, new ArrayList(), helper);
+            checkCRLs(pkixParams, currentDate, validityDate, cert, signingCert, workingPublicKey, new ArrayList(), helper);
         }
         catch (AnnotatedException e)
         {
@@ -426,68 +448,70 @@ public class X509RevocationChecker
         }
         catch (CRLNotFoundException e)
         {
-            if (cert.getExtensionValue(Extension.cRLDistributionPoints.getId()) != null)
+            if (null == cert.getExtensionValue(Extension.cRLDistributionPoints.getId()))
             {
-                CRL crl = null;
+                throw e;
+            }
+
+            CRL crl;
+            try
+            {
+                crl = downloadCRLs(cert.getIssuerX500Principal(), currentDate,
+                    RevocationUtilities.getExtensionValue(cert, Extension.cRLDistributionPoints), helper);
+            }
+            catch(AnnotatedException e1)
+            {
+                throw new CertPathValidatorException(e.getMessage(), e.getCause());
+            }
+
+            if (crl != null)
+            {
                 try
                 {
-                    crl = downloadCRLs(cert.getIssuerX500Principal(), baseParams.getDate(), RevocationUtilities.getExtensionValue(cert, Extension.cRLDistributionPoints), helper);
+                    pkixBuilder.addCRLStore(new LocalCRLStore(new CollectionStore<CRL>(Collections.singleton(crl))));
+
+                    pkixParams = pkixBuilder.build();
+
+                    validityDate = RevocationUtilities.getValidityDate(pkixParams, currentDate);
+
+                    checkCRLs(pkixParams, currentDate, validityDate, cert, signingCert, workingPublicKey,
+                        new ArrayList(), helper);
                 }
                 catch(AnnotatedException e1)
                 {
                     throw new CertPathValidatorException(e.getMessage(), e.getCause());
                 }
-
-                if (crl != null)
-                {
-                    try
-                    {
-                        pkixParamsBldr.addCRLStore(new LocalCRLStore(
-                            new CollectionStore<CRL>(Collections.singleton(crl))));
-                        checkCRLs(pkixParamsBldr.build(), cert, new Date(), signingCert, workingPublicKey, new ArrayList(), helper);
-                    }
-                    catch(AnnotatedException e1)
-                    {
-                        throw new CertPathValidatorException(e.getMessage(), e.getCause());
-                    }
-                }
-                else
-                {
-                    if (canSoftFail)
-                    {
-                        X500Principal issuer = cert.getIssuerX500Principal();
-
-                        Long initial = failures.get(issuer);
-                        if (initial != null)
-                        {
-                             long period = System.currentTimeMillis() - initial.longValue();
-                             if (failHardMaxTime != -1 && failHardMaxTime < period)
-                             {
-                                 throw e;
-                             }
-                             if (period < failLogMaxTime)
-                             {
-                                 LOG.log(Level.WARNING, "soft failing for issuer: \"" + issuer + "\"");
-                             }
-                             else
-                             {
-                                 LOG.log(Level.SEVERE, "soft failing for issuer: \"" + issuer + "\"");
-                             }
-                        }
-                        else
-                        {
-                            failures.put(issuer, System.currentTimeMillis());
-                        }
-                    }
-                    else
-                    {
-                        throw e;
-                    }
-                }
             }
             else
             {
-                throw e;
+                if (!canSoftFail)
+                {
+                    throw e;
+                }
+
+                X500Principal issuer = cert.getIssuerX500Principal();
+
+                Long initial = failures.get(issuer);
+                if (initial != null)
+                {
+                     long period = System.currentTimeMillis() - initial.longValue();
+                     if (failHardMaxTime != -1 && failHardMaxTime < period)
+                     {
+                         throw e;
+                     }
+                     if (period < failLogMaxTime)
+                     {
+                         LOG.log(Level.WARNING, "soft failing for issuer: \"" + issuer + "\"");
+                     }
+                     else
+                     {
+                         LOG.log(Level.SEVERE, "soft failing for issuer: \"" + issuer + "\"");
+                     }
+                }
+                else
+                {
+                    failures.put(issuer, System.currentTimeMillis());
+                }
             }
         }
 
@@ -548,7 +572,7 @@ public class X509RevocationChecker
             DistributionPoint dp = points[i];
 
             DistributionPointName dpn = dp.getDistributionPoint();
-            if (dpn.getType() == DistributionPointName.FULL_NAME)
+            if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
             {
                 GeneralName[] names = GeneralNames.getInstance(dpn.getName()).getNames();
 
@@ -623,59 +647,52 @@ public class X509RevocationChecker
         "privilegeWithdrawn",
         "aACompromise"};
 
-    static List<PKIXCRLStore> getAdditionalStoresFromCRLDistributionPoint(CRLDistPoint crldp, Map<GeneralName, PKIXCRLStore> namedCRLStoreMap)
-        throws AnnotatedException
+    static List<PKIXCRLStore> getAdditionalStoresFromCRLDistributionPoint(CRLDistPoint crldp,
+        Map<GeneralName, PKIXCRLStore> namedCRLStoreMap) throws AnnotatedException
     {
-        if (crldp != null)
+        if (crldp == null)
         {
-            DistributionPoint dps[] = null;
-            try
-            {
-                dps = crldp.getDistributionPoints();
-            }
-            catch (Exception e)
-            {
-                throw new AnnotatedException(
-                    "could not read distribution points could not be read", e);
-            }
-            List<PKIXCRLStore> stores = new ArrayList<PKIXCRLStore>();
+            return Collections.emptyList();
+        }
 
-            for (int i = 0; i < dps.length; i++)
+        DistributionPoint dps[];
+        try
+        {
+            dps = crldp.getDistributionPoints();
+        }
+        catch (Exception e)
+        {
+            throw new AnnotatedException("could not read distribution points could not be read", e);
+        }
+
+        List<PKIXCRLStore> stores = new ArrayList<PKIXCRLStore>();
+
+        for (int i = 0; i < dps.length; i++)
+        {
+            DistributionPointName dpn = dps[i].getDistributionPoint();
+            // look for URIs in fullName
+            if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
             {
-                DistributionPointName dpn = dps[i].getDistributionPoint();
-                // look for URIs in fullName
-                if (dpn != null)
+                GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
+
+                for (int j = 0; j < genNames.length; j++)
                 {
-                    if (dpn.getType() == DistributionPointName.FULL_NAME)
+                    PKIXCRLStore store = namedCRLStoreMap.get(genNames[j]);
+                    if (store != null)
                     {
-                        GeneralName[] genNames = GeneralNames.getInstance(
-                            dpn.getName()).getNames();
-
-                        for (int j = 0; j < genNames.length; j++)
-                        {
-                            PKIXCRLStore store = namedCRLStoreMap.get(genNames[j]);
-                            if (store != null)
-                            {
-                                stores.add(store);
-                            }
-                        }
+                        stores.add(store);
                     }
                 }
             }
+        }
 
-            return stores;
-        }
-        else
-        {
-            return Collections.EMPTY_LIST;
-        }
+        return stores;
     }
-
 
     /**
      * Checks a certificate if it is revoked.
      *
-     * @param paramsPKIX       PKIX parameters.
+     * @param pkixParams       PKIX parameters.
      * @param cert             Certificate to check if it is revoked.
      * @param validDate        The date when the certificate revocation status should be
      *                         checked.
@@ -686,17 +703,17 @@ public class X509RevocationChecker
      * or some error occurs.
      */
     protected void checkCRLs(
-        PKIXExtendedParameters paramsPKIX,
+        PKIXExtendedParameters pkixParams,
+        Date currentDate,
+        Date validityDate,
         X509Certificate cert,
-        Date validDate,
         X509Certificate sign,
         PublicKey workingPublicKey,
         List certPathCerts,
         JcaJceHelper helper)
         throws AnnotatedException, CertPathValidatorException
     {
-        AnnotatedException lastException = null;
-        CRLDistPoint crldp = null;
+        CRLDistPoint crldp;
         try
         {
             crldp = CRLDistPoint.getInstance(RevocationUtilities.getExtensionValue(cert, Extension.cRLDistributionPoints));
@@ -706,29 +723,15 @@ public class X509RevocationChecker
             throw new AnnotatedException("cannot read CRL distribution point extension", e);
         }
 
-        PKIXExtendedParameters.Builder paramsBldr = new PKIXExtendedParameters.Builder(paramsPKIX);
-        try
-        {
-            List extras = getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap());
-            for (Iterator it = extras.iterator(); it.hasNext(); )
-            {
-                paramsBldr.addCRLStore((PKIXCRLStore)it.next());
-            }
-        }
-        catch (AnnotatedException e)
-        {
-            throw new AnnotatedException(
-                "no additional CRL locations could be decoded from CRL distribution point extension", e);
-        }
         CertStatus certStatus = new CertStatus();
         ReasonsMask reasonsMask = new ReasonsMask();
-        PKIXExtendedParameters finalParams = paramsBldr.build();
-
+        AnnotatedException lastException = null;
         boolean validCrlFound = false;
+
         // for each distribution point
         if (crldp != null)
         {
-            DistributionPoint dps[] = null;
+            DistributionPoint dps[];
             try
             {
                 dps = crldp.getDistributionPoints();
@@ -737,13 +740,33 @@ public class X509RevocationChecker
             {
                 throw new AnnotatedException("cannot read distribution points", e);
             }
+
             if (dps != null)
             {
+                PKIXExtendedParameters.Builder pkixBuilder = new PKIXExtendedParameters.Builder(pkixParams);
+                try
+                {
+                    List extras = getAdditionalStoresFromCRLDistributionPoint(crldp, pkixParams.getNamedCRLStoreMap());
+                    for (Iterator it = extras.iterator(); it.hasNext(); )
+                    {
+                        pkixBuilder.addCRLStore((PKIXCRLStore)it.next());
+                    }
+                }
+                catch (AnnotatedException e)
+                {
+                    throw new AnnotatedException(
+                        "no additional CRL locations could be decoded from CRL distribution point extension", e);
+                }
+
+                PKIXExtendedParameters pkixParamsFinal = pkixBuilder.build();
+                Date validityDateFinal = RevocationUtilities.getValidityDate(pkixParamsFinal, currentDate);
+
                 for (int i = 0; i < dps.length && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons(); i++)
                 {
                     try
                     {
-                        RFC3280CertPathUtilities.checkCRL(dps[i], finalParams, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
+                        RFC3280CertPathUtilities.checkCRL(dps[i], pkixParamsFinal, currentDate, validityDateFinal, cert,
+                            sign, workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
@@ -773,9 +796,9 @@ public class X509RevocationChecker
 
                 DistributionPoint dp = new DistributionPoint(new DistributionPointName(0, new GeneralNames(
                     new GeneralName(GeneralName.directoryName, X500Name.getInstance(issuer.getEncoded())))), null, null);
-                PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters)paramsPKIX.clone();
-                RFC3280CertPathUtilities.checkCRL(dp, paramsPKIXClone, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask,
-                    certPathCerts, helper);
+                PKIXExtendedParameters pkixParamsClone = (PKIXExtendedParameters)pkixParams.clone();
+                RFC3280CertPathUtilities.checkCRL(dp, pkixParamsClone, currentDate, validityDate, cert, sign,
+                    workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
                 validCrlFound = true;
             }
             catch (AnnotatedException e)
@@ -817,8 +840,8 @@ public class X509RevocationChecker
         return this;
     }
 
-    private class LocalCRLStore<T extends CRL>
-        implements PKIXCRLStore, Iterable<CRL>
+    private class LocalCRLStore
+        implements PKIXCRLStore<CRL>, Iterable<CRL>
     {
         private Collection<CRL> _local;
 
@@ -827,8 +850,7 @@ public class X509RevocationChecker
          *
          * @param collection - initial contents for the store, this is copied.
          */
-        public LocalCRLStore(
-            Store<CRL> collection)
+        public LocalCRLStore(Store<CRL> collection)
         {
             _local = new ArrayList<CRL>(collection.getMatches(null));
         }
@@ -839,29 +861,27 @@ public class X509RevocationChecker
          * @param selector the selector to match against.
          * @return a possibly empty collection of matching objects.
          */
-        public Collection getMatches(Selector selector)
+        public Collection<CRL> getMatches(Selector<CRL> selector)
         {
             if (selector == null)
             {
                 return new ArrayList<CRL>(_local);
             }
-            else
+
+            List<CRL> col = new ArrayList<CRL>();
+            Iterator<CRL> iter = _local.iterator();
+
+            while (iter.hasNext())
             {
-                List<CRL> col = new ArrayList<CRL>();
-                Iterator<CRL> iter = _local.iterator();
+                CRL obj = iter.next();
 
-                while (iter.hasNext())
+                if (selector.match(obj))
                 {
-                    CRL obj = iter.next();
-
-                    if (selector.match(obj))
-                    {
-                        col.add(obj);
-                    }
+                    col.add(obj);
                 }
-
-                return col;
             }
+
+            return col;
         }
 
         public Iterator<CRL> iterator()

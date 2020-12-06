@@ -23,8 +23,9 @@ class WrappedRevocationChecker
     }
 
     public void initialize(PKIXCertRevocationCheckerParameters params)
+        throws CertPathValidatorException
     {
-         // ignore.
+        checker.init(false);
     }
 
     public void check(Certificate cert)

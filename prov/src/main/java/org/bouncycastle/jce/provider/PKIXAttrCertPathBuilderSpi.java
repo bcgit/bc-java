@@ -1,6 +1,5 @@
 package org.bouncycastle.jce.provider;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Principal;
@@ -10,10 +9,6 @@ import java.security.cert.CertPathBuilderResult;
 import java.security.cert.CertPathBuilderSpi;
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertPathValidator;
-import java.security.cert.CertStore;
-import java.security.cert.CertStoreException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.PKIXBuilderParameters;
@@ -24,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -32,8 +28,8 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
+import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
-import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
@@ -42,7 +38,6 @@ import org.bouncycastle.x509.ExtendedPKIXParameters;
 import org.bouncycastle.x509.X509AttributeCertStoreSelector;
 import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509CertStoreSelector;
-import org.bouncycastle.x509.X509Store;
 
 public class PKIXAttrCertPathBuilderSpi
     extends CertPathBuilderSpi
@@ -98,7 +93,8 @@ public class PKIXAttrCertPathBuilderSpi
 
         // search target certificates
 
-        Selector certSelect = paramsPKIX.getBaseParameters().getTargetConstraints();
+        PKIXExtendedParameters baseParams = paramsPKIX.getBaseParameters();
+        Selector certSelect = baseParams.getTargetConstraints();
         if (!(certSelect instanceof X509AttributeCertStoreSelector))
         {
             throw new CertPathBuilderException(
@@ -133,7 +129,7 @@ public class PKIXAttrCertPathBuilderSpi
             
             X509CertStoreSelector selector = new X509CertStoreSelector();
             Principal[] principals = cert.getIssuer().getPrincipals();
-            Set issuers = new HashSet();
+            LinkedHashSet issuers = new LinkedHashSet();
             for (int i = 0; i < principals.length; i++)
             {
                 try
@@ -143,8 +139,8 @@ public class PKIXAttrCertPathBuilderSpi
                         selector.setSubject(((X500Principal)principals[i]).getEncoded());
                     }
                     PKIXCertStoreSelector certStoreSelector = new PKIXCertStoreSelector.Builder(selector).build();
-                    issuers.addAll(CertPathValidatorUtilities.findCertificates(certStoreSelector, paramsPKIX.getBaseParameters().getCertStores()));
-                    issuers.addAll(CertPathValidatorUtilities.findCertificates(certStoreSelector, paramsPKIX.getBaseParameters().getCertificateStores()));
+                    CertPathValidatorUtilities.findCertificates(issuers, certStoreSelector, baseParams.getCertStores());
+                    CertPathValidatorUtilities.findCertificates(issuers, certStoreSelector, baseParams.getCertificateStores());
                 }
                 catch (AnnotatedException e)
                 {
@@ -236,82 +232,78 @@ public class PKIXAttrCertPathBuilderSpi
         try
         {
             // check whether the issuer of <tbvCert> is a TrustAnchor
-            if (CertPathValidatorUtilities.isIssuerTrustAnchor(tbvCert, pkixParams.getBaseParameters().getTrustAnchors(),
-                pkixParams.getBaseParameters().getSigProvider()))
+            PKIXExtendedParameters baseParams = pkixParams.getBaseParameters();
+            if (CertPathValidatorUtilities.isIssuerTrustAnchor(tbvCert, baseParams.getTrustAnchors(),
+                baseParams.getSigProvider()))
             {
                 CertPath certPath;
-                PKIXCertPathValidatorResult result;
                 try
                 {
                     certPath = cFact.generateCertPath(tbvPath);
                 }
                 catch (Exception e)
                 {
-                    throw new AnnotatedException(
-                                            "Certification path could not be constructed from certificate list.",
-                                            e);
+                    throw new AnnotatedException("Certification path could not be constructed from certificate list.",
+                        e);
                 }
 
+                PKIXCertPathValidatorResult result;
                 try
                 {
-                    result = (PKIXCertPathValidatorResult) validator.validate(
-                            certPath, pkixParams);
+                    result = (PKIXCertPathValidatorResult)validator.validate(certPath, pkixParams);
                 }
                 catch (Exception e)
                 {
-                    throw new AnnotatedException(
-                                            "Certification path could not be validated.",
-                                            e);
+                    throw new AnnotatedException("Certification path could not be validated.", e);
                 }
 
-                return new PKIXCertPathBuilderResult(certPath, result
-                        .getTrustAnchor(), result.getPolicyTree(), result
-                        .getPublicKey());
+                return new PKIXCertPathBuilderResult(certPath, result.getTrustAnchor(), result.getPolicyTree(),
+                    result.getPublicKey());
 
             }
             else
             {
                 List stores = new ArrayList();
+                stores.addAll(baseParams.getCertificateStores());
 
-                stores.addAll(pkixParams.getBaseParameters().getCertificateStores());
                 // add additional X.509 stores from locations in certificate
                 try
                 {
-                    stores.addAll(CertPathValidatorUtilities.getAdditionalStoresFromAltNames(tbvCert.getExtensionValue(Extension.issuerAlternativeName.getId()), pkixParams.getBaseParameters().getNamedCertificateStoreMap()));
+                    stores.addAll(CertPathValidatorUtilities.getAdditionalStoresFromAltNames(
+                        tbvCert.getExtensionValue(Extension.issuerAlternativeName.getId()),
+                        baseParams.getNamedCertificateStoreMap()));
                 }
                 catch (CertificateParsingException e)
                 {
-                    throw new AnnotatedException(
-                                            "No additional X.509 stores can be added from certificate locations.",
-                                            e);
+                    throw new AnnotatedException("No additional X.509 stores can be added from certificate locations.",
+                        e);
                 }
+
                 Collection issuers = new HashSet();
                 // try to get the issuer certificate from one
                 // of the stores
                 try
                 {
-                    issuers.addAll(CertPathValidatorUtilities.findIssuerCerts(tbvCert, pkixParams.getBaseParameters().getCertStores(), stores));
+                    issuers.addAll(CertPathValidatorUtilities.findIssuerCerts(tbvCert, baseParams.getCertStores(), stores));
                 }
                 catch (AnnotatedException e)
                 {
                     throw new AnnotatedException(
-                                            "Cannot find issuer certificate for certificate in certification path.",
-                                            e);
+                        "Cannot find issuer certificate for certificate in certification path.", e);
                 }
                 if (issuers.isEmpty())
                 {
                     throw new AnnotatedException(
                             "No issuer certificate for certificate in certification path found.");
                 }
-                Iterator it = issuers.iterator();
 
+                Iterator it = issuers.iterator();
                 while (it.hasNext() && builderResult == null)
                 {
                     X509Certificate issuer = (X509Certificate) it.next();
                     // TODO Use CertPathValidatorUtilities.isSelfIssued(issuer)?
                     // if untrusted self signed certificate continue
-                    if (issuer.getIssuerX500Principal().equals(
-                            issuer.getSubjectX500Principal()))
+                    if (issuer.getIssuerX500Principal().equals(issuer.getSubjectX500Principal()))
                     {
                         continue;
                     }
@@ -321,8 +313,7 @@ public class PKIXAttrCertPathBuilderSpi
         }
         catch (AnnotatedException e)
         {
-            certPathException = new AnnotatedException(
-                            "No valid certification path could be build.", e);
+            certPathException = new AnnotatedException("No valid certification path could be build.", e);
         }
         if (builderResult == null)
         {
@@ -331,17 +322,15 @@ public class PKIXAttrCertPathBuilderSpi
         return builderResult;
     }
 
-    protected static Collection findCertificates(X509AttributeCertStoreSelector certSelect,
-                                                     List certStores)
+    protected static Collection findCertificates(X509AttributeCertStoreSelector certSelect, List certStores)
         throws AnnotatedException
     {
         Set certs = new HashSet();
-        Iterator iter = certStores.iterator();
 
+        Iterator iter = certStores.iterator();
         while (iter.hasNext())
         {
             Object obj = iter.next();
-
             if (obj instanceof Store)
             {
                 Store certStore = (Store)obj;
@@ -351,11 +340,11 @@ public class PKIXAttrCertPathBuilderSpi
                 }
                 catch (StoreException e)
                 {
-                    throw new AnnotatedException(
-                            "Problem while picking certificates from X.509 store.", e);
+                    throw new AnnotatedException("Problem while picking certificates from X.509 store.", e);
                 }
             }
         }
+
         return certs;
     }
 }
