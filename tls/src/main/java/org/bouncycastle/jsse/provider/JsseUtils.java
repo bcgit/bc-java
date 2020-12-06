@@ -63,6 +63,8 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedDecrypto
 
 abstract class JsseUtils
 {
+    private static final boolean provRequireCloseNotify =
+        PropertyUtils.getBooleanSystemProperty("com.sun.net.ssl.requireCloseNotify", true);
     private static final boolean provTlsAllowLegacyMasterSecret =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyMasterSecret", true);
     private static final boolean provTlsAllowLegacyResumption =
@@ -804,6 +806,11 @@ abstract class JsseUtils
             }
         }
         return null;
+    }
+
+    static boolean requireCloseNotify()
+    {
+        return provRequireCloseNotify;
     }
 
     static String stripDoubleQuotes(String s)

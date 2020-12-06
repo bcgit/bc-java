@@ -771,6 +771,12 @@ public abstract class TlsProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
+
+            if (!getPeer().requiresCloseNotify())
+            {
+                handleClose(false);
+                return;
+            }
         }
         catch (TlsFatalAlertReceived e)
         {
@@ -1043,6 +1049,14 @@ public abstract class TlsProtocol
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
+
+        if (!getPeer().requiresCloseNotify())
+        {
+            handleClose(false);
+            return;
+        }
+
+        handleFailure();
 
         throw new TlsNoCloseNotifyException();
     }

@@ -42,6 +42,13 @@ public interface TlsPeer
     boolean allowLegacyResumption();
 
     /**
+     * This option is provided as a last resort for interoperability with TLS peers that fail to
+     * correctly send a close_notify alert at end of stream. Implementations SHOULD return true;
+     * caution is advised if returning false without a full understanding of the implications.
+     */
+    boolean requiresCloseNotify();
+
+    /**
      * This implementation supports RFC 7627 and will always negotiate the extended_master_secret
      * extension where possible. When connecting to a peer that does not offer/accept this
      * extension, it is recommended to abort the handshake. This option is provided for
