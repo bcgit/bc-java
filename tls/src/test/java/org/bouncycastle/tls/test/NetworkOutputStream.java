@@ -24,6 +24,7 @@ class NetworkOutputStream extends FilterOutputStream
     public synchronized void close() throws IOException
     {
         closed = true;
+        out.close();
     }
 
     public void write(int b) throws IOException
