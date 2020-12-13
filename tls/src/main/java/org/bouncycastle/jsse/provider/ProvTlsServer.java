@@ -76,11 +76,6 @@ class ProvTlsServer
 
         this.manager = manager;
         this.sslParameters = sslParameters.copyForConnection();
-
-        if (!manager.getEnableSessionCreation())
-        {
-            throw new SSLException("Session resumption not implemented yet and session creation is disabled");
-        }
     }
 
     @Override
@@ -379,30 +374,6 @@ class ProvTlsServer
         final ContextData contextData = manager.getContextData();
         final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-        /*
-         * TODO[jsse] Ideally, setting the handshake session would be done in getSessionToResume, but
-         * that is currently never called.
-         */
-        {
-            ProvSSLSessionContext sslSessionContext = contextData.getServerSessionContext();
-            String peerHost = manager.getPeerHost();
-            int peerPort = manager.getPeerPort();
-
-            ProvSSLSessionHandshake handshakeSession;
-            if (null == sslSession)
-            {
-                handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort,
-                    securityParameters, jsseSecurityParameters);
-            }
-            else
-            {
-                handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
-                    jsseSecurityParameters, sslSession.getTlsSession(), sslSession.getJsseSessionParameters());
-            }
-
-            manager.notifyHandshakeSession(handshakeSession);
-        }
-
         // Setup the peer supported groups
         {
             int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
@@ -473,7 +444,13 @@ class ProvTlsServer
     @Override
     public TlsSession getSessionToResume(byte[] sessionID)
     {
-        ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        ContextData contextData = manager.getContextData();
+        String peerHost = manager.getPeerHost();
+        int peerPort = manager.getPeerPort();
+
+        ProvSSLSessionContext sslSessionContext = contextData.getServerSessionContext();
         ProvSSLSession availableSSLSession = sslSessionContext.getSessionImpl(sessionID);
 
         if (null != availableSSLSession)
@@ -482,6 +459,13 @@ class ProvTlsServer
             if (null != sessionToResume && isResumable(availableSSLSession))
             {
                 this.sslSession = availableSSLSession;
+
+                ProvSSLSessionHandshake handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost,
+                    peerPort, securityParameters, jsseSecurityParameters, sessionToResume,
+                    sslSession.getJsseSessionParameters());
+
+                manager.notifyHandshakeSession(handshakeSession);
+
                 return sessionToResume;
             }
         }
@@ -491,6 +475,13 @@ class ProvTlsServer
             throw new IllegalStateException("No resumable sessions and session creation is disabled");
         }
 
+        ProvSSLSessionHandshake handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort,
+            securityParameters, jsseSecurityParameters);
+
+        manager.notifyHandshakeSession(handshakeSession);
+
+        // TODO[resumption]
+//        return TlsUtils.importSession(context.getNonceGenerator().generateNonce(32), null);
         return null;
     }
 
