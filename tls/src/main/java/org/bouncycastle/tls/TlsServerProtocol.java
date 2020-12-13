@@ -225,6 +225,9 @@ public class TlsServerProtocol
              * ONLY when extended_master_secret has been negotiated (otherwise NULL).
              */
             {
+                // TODO[tls13] Resumption/PSK
+                tlsServer.getSessionToResume(null);
+
                 invalidateSession();
 
                 securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
@@ -564,6 +567,9 @@ public class TlsServerProtocol
          * ONLY when extended_master_secret has been negotiated (otherwise NULL).
          */
         {
+            // TODO[resumption]
+            tlsServer.getSessionToResume(null);
+
             invalidateSession();
 
             securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
