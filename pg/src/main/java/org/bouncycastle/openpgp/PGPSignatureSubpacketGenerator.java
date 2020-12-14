@@ -33,116 +33,25 @@ import org.bouncycastle.bcpg.sig.TrustSignature;
  */
 public class PGPSignatureSubpacketGenerator
 {
-    private SignatureCreationTime signatureCreationTime;
-    private SignatureExpirationTime signatureExpirationTime;
-    private Exportable exportableCertification;
-    private TrustSignature trustSignature;
-    private Revocable revocable;
-    private KeyExpirationTime keyExpirationTime;
-    private PreferredAlgorithms preferredSymmetricAlgorithms;
-    private final List<RevocationKey> revocationKeys = new ArrayList<RevocationKey>();
-    private IssuerKeyID issuerKeyID;
-    private final List<NotationData> notations = new ArrayList<NotationData>();
-    private PreferredAlgorithms preferredHashAlgorithms;
-    private PreferredAlgorithms preferredCompressionAlgorithms;
-    private PrimaryUserID primaryUserID;
-    private KeyFlags keyFlags;
-    private final List<SignerUserID> signerUserIDs = new ArrayList<SignerUserID>();
-    private RevocationReason revocationReason;
-    private Features features;
-    private SignatureTarget signatureTarget;
-    private final List<EmbeddedSignature> embeddedSignatures = new ArrayList<EmbeddedSignature>();
-    private IssuerFingerprint issuerFingerprint;
-    private final List<IntendedRecipientFingerprint> intendedRecipientFingerprints = new ArrayList<IntendedRecipientFingerprint>();
-    private final List<SignatureSubpacket> miscellaneousSubpackets = new ArrayList<SignatureSubpacket>();
+    List packets = new ArrayList();
 
+    /**
+     * Base constructor, creates an empty generator.
+     */
     public PGPSignatureSubpacketGenerator()
     {
     }
 
     /**
-     * Create a new signature subpacket generator that preserves the (known) subpackets of the given vector.
+     * Constructor for pre-initialising the generator from an existing one.
      *
-     * @param vector signature subpacket vector
-     * @throws PGPException in case an unsupported critical subpacket is encountered.
+     * @param sigSubV an initial set of subpackets.
      */
-    public PGPSignatureSubpacketGenerator(PGPSignatureSubpacketVector vector) throws PGPException {
-        for (SignatureSubpacket subpacket : vector.packets) {
-            addSubpacket(subpacket);
-        }
-    }
-
-    public void addSubpacket(SignatureSubpacket subpacket) throws PGPException {
-        switch (subpacket.getType()) {
-            case SignatureSubpacketTags.CREATION_TIME:
-                signatureCreationTime = (SignatureCreationTime) subpacket;
-                break;
-            case SignatureSubpacketTags.EXPIRE_TIME:
-                signatureExpirationTime = (SignatureExpirationTime) subpacket;
-                break;
-            case SignatureSubpacketTags.EXPORTABLE:
-                exportableCertification = (Exportable) subpacket;
-                break;
-            case SignatureSubpacketTags.TRUST_SIG:
-                trustSignature = (TrustSignature) subpacket;
-                break;
-            case SignatureSubpacketTags.REVOCABLE:
-                revocable = (Revocable) subpacket;
-                break;
-            case SignatureSubpacketTags.KEY_EXPIRE_TIME:
-                keyExpirationTime = (KeyExpirationTime) subpacket;
-                break;
-            case SignatureSubpacketTags.PREFERRED_SYM_ALGS:
-                preferredSymmetricAlgorithms = (PreferredAlgorithms) subpacket;
-                break;
-            case SignatureSubpacketTags.REVOCATION_KEY:
-                revocationKeys.add((RevocationKey) subpacket);
-                break;
-            case SignatureSubpacketTags.ISSUER_KEY_ID:
-                issuerKeyID = (IssuerKeyID) subpacket;
-                break;
-            case SignatureSubpacketTags.NOTATION_DATA:
-                notations.add((NotationData) subpacket);
-                break;
-            case SignatureSubpacketTags.PREFERRED_HASH_ALGS:
-                preferredHashAlgorithms = (PreferredAlgorithms) subpacket;
-                break;
-            case SignatureSubpacketTags.PREFERRED_COMP_ALGS:
-                preferredCompressionAlgorithms = (PreferredAlgorithms) subpacket;
-                break;
-            case SignatureSubpacketTags.PRIMARY_USER_ID:
-                primaryUserID = (PrimaryUserID) subpacket;
-                break;
-            case SignatureSubpacketTags.KEY_FLAGS:
-                keyFlags = (KeyFlags) subpacket;
-                break;
-            case SignatureSubpacketTags.SIGNER_USER_ID:
-                signerUserIDs.add((SignerUserID) subpacket);
-                break;
-            case SignatureSubpacketTags.REVOCATION_REASON:
-                revocationReason = (RevocationReason) subpacket;
-                break;
-            case SignatureSubpacketTags.FEATURES:
-                features = (Features) subpacket;
-                break;
-            case SignatureSubpacketTags.SIGNATURE_TARGET:
-                signatureTarget = (SignatureTarget) subpacket;
-                break;
-            case SignatureSubpacketTags.EMBEDDED_SIGNATURE:
-                embeddedSignatures.add((EmbeddedSignature) subpacket);
-                break;
-            case SignatureSubpacketTags.ISSUER_FINGERPRINT:
-                issuerFingerprint = (IssuerFingerprint) subpacket;
-                break;
-            case SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT:
-                intendedRecipientFingerprints.add((IntendedRecipientFingerprint) subpacket);
-                break;
-            default:
-                if (subpacket.isCritical()) {
-                    throw new PGPException("Critical unknown subpacket detected (" + subpacket.getType() + ")");
-                } else {
-                    addMiscellaneousSubpacket(subpacket);
-                }
+    public PGPSignatureSubpacketGenerator(PGPSignatureSubpacketVector sigSubV)
+    {
+        for (int i = 0; i != sigSubV.packets.length; i++)
+        {
+            packets.add(sigSubV.packets[i]);
         }
     }
 
@@ -154,7 +63,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setRevocable(boolean isCritical, boolean isRevocable)
     {
-        revocable = new Revocable(isCritical, isRevocable);
+        packets.add(new Revocable(isCritical, isRevocable));
     }
 
     /**
@@ -166,7 +75,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setExportable(boolean isCritical, boolean isExportable)
     {
-        exportableCertification = new Exportable(isCritical, isExportable);
+        packets.add(new Exportable(isCritical, isExportable));
     }
 
     /**
@@ -177,7 +86,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setFeature(boolean isCritical, byte feature)
     {
-        features = new Features(isCritical, feature);
+        packets.add(new Features(isCritical, feature));
     }
 
     /**
@@ -191,15 +100,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setTrust(boolean isCritical, int depth, int trustAmount)
     {
-        trustSignature = new TrustSignature(isCritical, depth, trustAmount);
-    }
-
-    /**
-     * Set the trust packet of the signature to {@code null}.
-     */
-    public void clearTrust()
-    {
-        trustSignature = null;
+        packets.add(new TrustSignature(isCritical, depth, trustAmount));
     }
 
     /**
@@ -207,19 +108,11 @@ public class PGPSignatureSubpacketGenerator
      * value of zero means the key never expires.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
-     * @param seconds seconds that the key is valid for after creation
+     * @param seconds
      */
     public void setKeyExpirationTime(boolean isCritical, long seconds)
     {
-        keyExpirationTime = new KeyExpirationTime(isCritical, seconds);
-    }
-
-    /**
-     * Set the expiration time subpacket of the signature to {@code null}.
-     */
-    public void clearKeyExpirationTime()
-    {
-        keyExpirationTime = null;
+        packets.add(new KeyExpirationTime(isCritical, seconds));
     }
 
     /**
@@ -227,19 +120,11 @@ public class PGPSignatureSubpacketGenerator
      * A value of zero means the signature never expires.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
-     * @param seconds seconds that the signature is valid for after creation
+     * @param seconds
      */
     public void setSignatureExpirationTime(boolean isCritical, long seconds)
     {
-        signatureExpirationTime = new SignatureExpirationTime(isCritical, seconds);
-    }
-
-    /**
-     * Set the expiration time subpacket of the signature to {@code null}.
-     */
-    public void clearSignatureExpirationTime()
-    {
-        signatureExpirationTime = null;
+        packets.add(new SignatureExpirationTime(isCritical, seconds));
     }
 
     /**
@@ -247,23 +132,10 @@ public class PGPSignatureSubpacketGenerator
      * <p>
      * Note: this overrides the generation of a creation time when the signature is
      * generated.
-     *
-     * @param isCritical true if should be treated as critical, false otherwise.
-     * @param date date on which the signature was created
      */
     public void setSignatureCreationTime(boolean isCritical, Date date)
     {
-        signatureCreationTime = new SignatureCreationTime(isCritical, date);
-    }
-
-    /**
-     * Set the creation time of the signature to {@code null}.
-     * <p>
-     * Note: This does not prevent a creation time packet from being set automatically.
-     */
-    public void clearSignatureCreationTime()
-    {
-        signatureExpirationTime = null;
+        packets.add(new SignatureCreationTime(isCritical, date));
     }
 
     /**
@@ -275,16 +147,8 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setPreferredHashAlgorithms(boolean isCritical, int[] algorithms)
     {
-        preferredHashAlgorithms = new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_HASH_ALGS,
-                isCritical, algorithms);
-    }
-
-    /**
-     * Set the preferred hash algorithms subpacket to {@code null}.
-     */
-    public void clearPreferredHashAlgorithms()
-    {
-        preferredHashAlgorithms = null;
+        packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_HASH_ALGS, isCritical,
+            algorithms));
     }
 
     /**
@@ -296,16 +160,8 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setPreferredSymmetricAlgorithms(boolean isCritical, int[] algorithms)
     {
-        preferredSymmetricAlgorithms = new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_SYM_ALGS,
-                isCritical, algorithms);
-    }
-
-    /**
-     * Set the preferred symmetric algorithms subpacket to {@code null}.
-     */
-    public void clearPreferredSymmetricAlgorithms()
-    {
-        preferredSymmetricAlgorithms = null;
+        packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_SYM_ALGS, isCritical,
+            algorithms));
     }
 
     /**
@@ -317,16 +173,8 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setPreferredCompressionAlgorithms(boolean isCritical, int[] algorithms)
     {
-        preferredCompressionAlgorithms = new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_COMP_ALGS,
-                isCritical, algorithms);
-    }
-
-    /**
-     * Set the preferred compression algorithms subpacket to {@code null}.
-     */
-    public void clearPreferredCompressionAlgorithms()
-    {
-        preferredCompressionAlgorithms = null;
+        packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_COMP_ALGS, isCritical,
+            algorithms));
     }
 
     /**
@@ -338,15 +186,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setKeyFlags(boolean isCritical, int flags)
     {
-        keyFlags = new KeyFlags(isCritical, flags);
-    }
-
-    /**
-     * Set the key flags subpacket to {@code null}.
-     */
-    public void clearKeyFlags()
-    {
-        keyFlags = null;
+        packets.add(new KeyFlags(isCritical, flags));
     }
 
     /**
@@ -376,45 +216,17 @@ public class PGPSignatureSubpacketGenerator
             throw new IllegalArgumentException("attempt to set null SignerUserID");
         }
 
-        signerUserIDs.add(new SignerUserID(isCritical, userID));
+        packets.add(new SignerUserID(isCritical, userID));
     }
 
-    /**
-     * Add a signer user-id to the signature.
-     *
-     * @param isCritical true if should be treated as critical, false otherwise.
-     * @param rawUserID signer user-id
-     *
-     * @deprecated use {@link #addSignerUserID(boolean, byte[])} instead.
-     */
-    @Deprecated
     public void setSignerUserID(boolean isCritical, byte[] rawUserID)
-    {
-        addSignerUserID(isCritical, rawUserID);
-    }
-
-    /**
-     * Add a signer user-id to the signature.
-     *
-     * @param isCritical true if should be treated as critical, false otherwise.
-     * @param rawUserID signer user-id
-     */
-    public void addSignerUserID(boolean isCritical, byte[] rawUserID)
     {
         if (rawUserID == null)
         {
             throw new IllegalArgumentException("attempt to set null SignerUserID");
         }
 
-        signerUserIDs.add(new SignerUserID(isCritical, false, rawUserID));
-    }
-
-    /**
-     * Clear the list of signer user-ids.
-     */
-    public void clearSignerUserIDs()
-    {
-        signerUserIDs.clear();
+        packets.add(new SignerUserID(isCritical, false, rawUserID));
     }
 
     /**
@@ -428,7 +240,7 @@ public class PGPSignatureSubpacketGenerator
      */
     @Deprecated
     public void setEmbeddedSignature(boolean isCritical, PGPSignature pgpSignature)
-            throws IOException
+        throws IOException
     {
         addEmbeddedSignature(isCritical, pgpSignature);
     }
@@ -457,34 +269,12 @@ public class PGPSignatureSubpacketGenerator
 
         System.arraycopy(sig, sig.length - data.length, data, 0, data.length);
 
-        embeddedSignatures.add(new EmbeddedSignature(isCritical, false, data));
+        packets.add(new EmbeddedSignature(isCritical, false, data));
     }
 
-    /**
-     * Clear the list of embedded signatures.
-     */
-    public void clearEmbeddedSignatures()
-    {
-        embeddedSignatures.clear();
-    }
-
-    /**
-     * Specify, whether or not the self-signature marks the primary userID of the key.
-     *
-     * @param isCritical true if should be treated as critical, false otherwise.
-     * @param isPrimaryUserID true if the user-id is primary, false otherwise
-     */
     public void setPrimaryUserID(boolean isCritical, boolean isPrimaryUserID)
     {
-        primaryUserID = new PrimaryUserID(isCritical, isPrimaryUserID);
-    }
-
-    /**
-     * Set the primary user-id subpacket of the signature to {@code null}.
-     */
-    public void clearPrimaryUserID()
-    {
-        primaryUserID = null;
+        packets.add(new PrimaryUserID(isCritical, isPrimaryUserID));
     }
 
     /**
@@ -515,15 +305,7 @@ public class PGPSignatureSubpacketGenerator
     public void addNotationData(boolean isCritical, boolean isHumanReadable, String notationName,
                                 String notationValue)
     {
-        notations.add(new NotationData(isCritical, isHumanReadable, notationName, notationValue));
-    }
-
-    /**
-     * Clear the list of notations on the signature.
-     */
-    public void clearNotationData()
-    {
-        notations.clear();
+        packets.add(new NotationData(isCritical, isHumanReadable, notationName, notationValue));
     }
 
     /**
@@ -536,14 +318,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setRevocationReason(boolean isCritical, byte reason, String description)
     {
-        revocationReason = new RevocationReason(isCritical, reason, description);
-    }
-
-    /**
-     * Set the revocation reason subpacket of the signature to {@code null}.
-     */
-    public void clearRevocationReason() {
-        revocationReason = null;
+        packets.add(new RevocationReason(isCritical, reason, description));
     }
 
     /**
@@ -555,7 +330,6 @@ public class PGPSignatureSubpacketGenerator
      *
      * @deprecated use {@link #addRevocationKey(boolean, int, byte[])} instead.
      */
-    @Deprecated
     public void setRevocationKey(boolean isCritical, int keyAlgorithm, byte[] fingerprint)
     {
         addRevocationKey(isCritical, keyAlgorithm, fingerprint);
@@ -570,16 +344,8 @@ public class PGPSignatureSubpacketGenerator
      */
     public void addRevocationKey(boolean isCritical, int keyAlgorithm, byte[] fingerprint)
     {
-        revocationKeys.add(new RevocationKey(isCritical, RevocationKeyTags.CLASS_DEFAULT, keyAlgorithm,
+        packets.add(new RevocationKey(isCritical, RevocationKeyTags.CLASS_DEFAULT, keyAlgorithm,
             fingerprint));
-    }
-
-    /**
-     * Clear the list of revocation keys.
-     */
-    public void clearRevocationKeys()
-    {
-        revocationKeys.clear();
     }
 
     /**
@@ -590,15 +356,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setIssuerKeyID(boolean isCritical, long keyID)
     {
-        issuerKeyID = new IssuerKeyID(isCritical, keyID);
-    }
-
-    /**
-     * Set the issuer key-id subpacket to {@code null}.
-     */
-    public void clearIssuerKeyID()
-    {
-        issuerKeyID = null;
+        packets.add(new IssuerKeyID(isCritical, keyID));
     }
 
     /**
@@ -611,15 +369,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setSignatureTarget(boolean isCritical, int publicKeyAlgorithm, int hashAlgorithm, byte[] hashData)
     {
-        signatureTarget = new SignatureTarget(isCritical, publicKeyAlgorithm, hashAlgorithm, hashData);
-    }
-
-    /**
-     * Set the signature target subpacket to {@code null}.
-     */
-    public void clearSignatureTarget()
-    {
-        signatureTarget = null;
+        packets.add(new SignatureTarget(isCritical, publicKeyAlgorithm, hashAlgorithm, hashData));
     }
 
     /**
@@ -641,15 +391,7 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setIssuerFingerprint(boolean isCritical, PGPPublicKey publicKey)
     {
-        issuerFingerprint = new IssuerFingerprint(isCritical, publicKey.getVersion(), publicKey.getFingerprint());
-    }
-
-    /**
-     * Set the issuer fingerprint subpacket to {@code null}.
-     */
-    public void clearIssuerFingerprint()
-    {
-        issuerFingerprint = null;
+        packets.add(new IssuerFingerprint(isCritical, publicKey.getVersion(), publicKey.getFingerprint()));
     }
 
     /**
@@ -660,7 +402,6 @@ public class PGPSignatureSubpacketGenerator
      *
      * @deprecated use {@link #addIntendedRecipientFingerprint(boolean, PGPPublicKey)} instead.
      */
-    @Deprecated
     public void setIntendedRecipientFingerprint(boolean isCritical, PGPPublicKey publicKey)
     {
         addIntendedRecipientFingerprint(isCritical, publicKey);
@@ -674,70 +415,78 @@ public class PGPSignatureSubpacketGenerator
      */
     public void addIntendedRecipientFingerprint(boolean isCritical, PGPPublicKey publicKey)
     {
-        intendedRecipientFingerprints.add(new IntendedRecipientFingerprint(isCritical,
+        packets.add(new IntendedRecipientFingerprint(isCritical,
                 publicKey.getVersion(), publicKey.getFingerprint()));
     }
 
     /**
-     * Clear the list of intended recipient fingerprint subpackets.
-     */
-    public void clearIntendedRecipientFingerprints()
-    {
-        intendedRecipientFingerprints.clear();
-    }
-
-    /**
-     * Add a miscellaneous subpacket.
+     * Add a custom subpacket.
      * Miscellaneous subpackets are subpackets that Bouncycastle does not recognize or
      * doesn't have first class support for.
      *
      * @param subpacket subpacket
      */
-    private void addMiscellaneousSubpacket(SignatureSubpacket subpacket)
+    public void addCustomSubpacket(SignatureSubpacket subpacket)
     {
-        miscellaneousSubpackets.add(subpacket);
+        packets.add(subpacket);
     }
 
     /**
-     * Clear the list of miscellaneous subpackets.
-     */
-    public void clearMiscellaneousSubpackets()
-    {
-        miscellaneousSubpackets.clear();
-    }
-
-    /**
-     * Generate the subpacket vector.
+     * Remove a previously set packet from the generator.
      *
-     * @return signature subpacket vector.
+     * @param packet the signature subpacket to remove.
      */
+    public boolean removePacket(SignatureSubpacket packet)
+    {
+        return packets.remove(packet);
+    }
+
+    /**
+     * Return true if a particular subpacket type exists.
+     *
+     * @param type type to look for.
+     * @return true if present, false otherwise.
+     */
+    public boolean hasSubpacket(
+        int type)
+    {
+        for (int i = 0; i != packets.size(); i++)
+        {
+            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Return all signature subpackets of the passed in type currently in
+     * the generator.
+     *
+     * @param type subpacket type code
+     * @return an array of zero or more matching subpackets.
+     */
+    public SignatureSubpacket[] getSubpackets(
+        int    type)
+    {
+        List list = new ArrayList();
+
+        for (int i = 0; i != packets.size(); i++)
+        {
+            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            {
+                list.add(packets.get(i));
+            }
+        }
+
+        return (SignatureSubpacket[])list.toArray(new SignatureSubpacket[]{});
+    }
+
     public PGPSignatureSubpacketVector generate()
     {
-        List<SignatureSubpacket> subpacketList = new ArrayList<SignatureSubpacket>();
-        if (signatureCreationTime != null) subpacketList.add(signatureCreationTime);
-        if (signatureExpirationTime != null) subpacketList.add(signatureExpirationTime);
-        if (exportableCertification != null) subpacketList.add(exportableCertification);
-        if (trustSignature != null) subpacketList.add(trustSignature);
-        if (revocable != null) subpacketList.add(revocable);
-        if (keyExpirationTime != null) subpacketList.add(keyExpirationTime);
-        if (preferredSymmetricAlgorithms != null) subpacketList.add(preferredSymmetricAlgorithms);
-        subpacketList.addAll(revocationKeys);
-        if (issuerKeyID != null) subpacketList.add(issuerKeyID);
-        subpacketList.addAll(notations);
-        if (preferredHashAlgorithms != null) subpacketList.add(preferredHashAlgorithms);
-        if (preferredCompressionAlgorithms != null) subpacketList.add(preferredCompressionAlgorithms);
-        if (primaryUserID != null) subpacketList.add(primaryUserID);
-        if (keyFlags != null) subpacketList.add(keyFlags);
-        subpacketList.addAll(signerUserIDs);
-        if (revocationReason != null) subpacketList.add(revocationReason);
-        if (features != null) subpacketList.add(features);
-        if (signatureTarget != null) subpacketList.add(signatureTarget);
-        subpacketList.addAll(embeddedSignatures);
-        if (issuerFingerprint != null) subpacketList.add(issuerFingerprint);
-        subpacketList.addAll(intendedRecipientFingerprints);
-        subpacketList.addAll(miscellaneousSubpackets);
-
         return new PGPSignatureSubpacketVector(
-                subpacketList.toArray(new SignatureSubpacket[subpacketList.size()]));
+            (SignatureSubpacket[])packets.toArray(new SignatureSubpacket[packets.size()]));
     }
 }
