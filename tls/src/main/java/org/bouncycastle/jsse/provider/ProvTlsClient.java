@@ -29,6 +29,7 @@ import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
+import org.bouncycastle.tls.SessionParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
@@ -363,7 +364,7 @@ class ProvTlsClient
             if (null != availableSSLSession)
             {
                 TlsSession sessionToResume = availableSSLSession.getTlsSession();
-                if (null != sessionToResume && isResumable(availableSSLSession.getJsseSessionParameters()))
+                if (isResumable(availableSSLSession, sessionToResume))
                 {
                     this.sslSession = availableSSLSession;
                     return sessionToResume;
@@ -583,14 +584,37 @@ class ProvTlsClient
         return keyTypes;
     }
 
-    protected boolean isResumable(JsseSessionParameters jsseSessionParameters)
+    protected boolean isResumable(ProvSSLSession provSSLSession, TlsSession tlsSession)
     {
-        // TODO[jsse] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
+        if (null == tlsSession || !tlsSession.isResumable())
+        {
+            return false;
+        }
+
+        {
+            // TODO[resumption] Avoid the copy somehow?
+            SessionParameters sessionParameters = tlsSession.exportSessionParameters();
+
+            // TODO[resumption] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
+            if (null == sessionParameters ||
+                !ProtocolVersion.contains(getProtocolVersions(), sessionParameters.getNegotiatedVersion()) ||
+                !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
+            {
+                return false;
+            }
+
+            // TODO[tls13] Resumption/PSK 
+            if (TlsUtils.isTLSv13(sessionParameters.getNegotiatedVersion()))
+            {
+                return false;
+            }
+        }
 
         {
             String connectionEndpointID = sslParameters.getEndpointIdentificationAlgorithm();
             if (null != connectionEndpointID)
             {
+                JsseSessionParameters jsseSessionParameters = provSSLSession.getJsseSessionParameters();
                 String sessionEndpointID = jsseSessionParameters.getEndpointIDAlgorithm();
                 if (!connectionEndpointID.equalsIgnoreCase(sessionEndpointID))
                 {
