@@ -5,6 +5,7 @@ import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -33,6 +34,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsDHGroupVerifier;
+import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
@@ -533,6 +535,21 @@ class ProvTlsClient
             }
 
             manager.notifyHandshakeSession(handshakeSession);
+        }
+    }
+
+    @Override
+    public void processServerExtensions(@SuppressWarnings("rawtypes") Hashtable serverExtensions) throws IOException
+    {
+        super.processServerExtensions(serverExtensions);
+
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        if (null != securityParameters.getClientServerNames())
+        {
+            boolean sniAccepted = TlsExtensionsUtils.hasServerNameExtensionServer(serverExtensions);
+
+            LOG.finer("Server accepted SNI?: " + sniAccepted);
         }
     }
 
