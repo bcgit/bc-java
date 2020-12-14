@@ -15,6 +15,7 @@ import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.SignatureSubpacketInputStream;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
@@ -825,6 +826,7 @@ public class PGPSignatureTest
     }
 
     private void testSubpacketGenerator()
+        throws IOException
     {
         PGPSignatureSubpacketGenerator sGen = new PGPSignatureSubpacketGenerator();
 
@@ -886,6 +888,12 @@ public class PGPSignatureTest
         checkNd = sGen2.getSubpackets(SignatureSubpacketTags.NOTATION_DATA);
         isTrue(checkNd.length == 1);
         isTrue(nd[1].equals(checkNd[0]));
+
+        ByteArrayOutputStream ndOut = new ByteArrayOutputStream();
+        nd[1].encode(ndOut);
+        SignatureSubpacketInputStream sIn = new SignatureSubpacketInputStream(
+            new ByteArrayInputStream(ndOut.toByteArray()));
+        isTrue(sIn.readPacket().equals(checkNd[0])); // force equals check
 
         PGPSignatureSubpacketVector v2 = sGen2.generate();
 
