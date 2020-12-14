@@ -831,7 +831,7 @@ public class PGPSignatureTest
         String name1 = genString(64);
         String value1 = genString(72);
 
-        sGen.setNotationData(true, true, name1, value1);
+        sGen.addNotationData(true, true, name1, value1);
 
         PGPSignatureSubpacketVector sVec = sGen.generate();
 
@@ -850,7 +850,7 @@ public class PGPSignatureTest
         String name2 = genString(256);
         String value2 = genString(264);
 
-        sGen.setNotationData(true, false, name2, value2);
+        sGen.addNotationData(true, false, name2, value2);
 
         sVec = sGen.generate();
 
@@ -871,10 +871,33 @@ public class PGPSignatureTest
             fail("name/value test 2.2 failed");
         }
 
+        isTrue(sGen.hasSubpacket(SignatureSubpacketTags.NOTATION_DATA));
+
+        // test editing of generator.
+        PGPSignatureSubpacketGenerator sGen2 = new PGPSignatureSubpacketGenerator(sVec);
+
+        SignatureSubpacket[] checkNd = sGen2.getSubpackets(SignatureSubpacketTags.NOTATION_DATA);
+
+        isTrue(nd[0].equals(checkNd[0]));
+        isTrue(nd[1].equals(checkNd[1]));
+
+        sGen2.removePacket(nd[0]);
+
+        checkNd = sGen2.getSubpackets(SignatureSubpacketTags.NOTATION_DATA);
+        isTrue(checkNd.length == 1);
+        isTrue(nd[1].equals(checkNd[0]));
+
+        PGPSignatureSubpacketVector v2 = sGen2.generate();
+
+        isTrue(v2.size() == 1);
+        isTrue(v2.getSubpackets(SignatureSubpacketTags.NOTATION_DATA)[0].equals(nd[1]));
+
+        // add another packet to our original one.
+
         String name3 = genString(0xffff);
         String value3 = genString(0xffff);
 
-        sGen.setNotationData(true, false, name3, value3);
+        sGen.addNotationData(true, false, name3, value3);
 
         sVec = sGen.generate();
 
