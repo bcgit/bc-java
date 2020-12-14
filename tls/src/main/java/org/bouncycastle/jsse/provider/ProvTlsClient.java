@@ -363,7 +363,7 @@ class ProvTlsClient
             if (null != availableSSLSession)
             {
                 TlsSession sessionToResume = availableSSLSession.getTlsSession();
-                if (null != sessionToResume && isResumable(availableSSLSession))
+                if (null != sessionToResume && isResumable(availableSSLSession.getJsseSessionParameters()))
                 {
                     this.sslSession = availableSSLSession;
                     return sessionToResume;
@@ -442,7 +442,7 @@ class ProvTlsClient
             String peerHost = manager.getPeerHost();
             int peerPort = manager.getPeerPort();
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
-                sslParameters.getEndpointIdentificationAlgorithm());
+                sslParameters.getEndpointIdentificationAlgorithm(), null);
             boolean addToCache = provClientEnableSessionResumption;
 
             this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
@@ -583,21 +583,21 @@ class ProvTlsClient
         return keyTypes;
     }
 
-    protected boolean isResumable(ProvSSLSession availableSSLSession)
+    protected boolean isResumable(JsseSessionParameters jsseSessionParameters)
     {
         // TODO[jsse] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
 
-        JsseSessionParameters jsseSessionParameters = availableSSLSession.getJsseSessionParameters();
-
-        String endpointIDAlgorithm = sslParameters.getEndpointIdentificationAlgorithm();
-        if (null != endpointIDAlgorithm)
         {
-            String identificationProtocol = jsseSessionParameters.getIdentificationProtocol();
-            if (!endpointIDAlgorithm.equalsIgnoreCase(identificationProtocol))
+            String connectionEndpointID = sslParameters.getEndpointIdentificationAlgorithm();
+            if (null != connectionEndpointID)
             {
-                LOG.finest("Session not resumed - endpoint ID algorithm mismatch; requested: " + endpointIDAlgorithm
-                    + ", session: " + identificationProtocol);
-                return false;
+                String sessionEndpointID = jsseSessionParameters.getEndpointIDAlgorithm();
+                if (!connectionEndpointID.equalsIgnoreCase(sessionEndpointID))
+                {
+                    LOG.finest("Session not resumable - endpoint ID algorithm mismatch; connection: "
+                        + connectionEndpointID + ", session: " + sessionEndpointID);
+                    return false;
+                }
             }
         }
 

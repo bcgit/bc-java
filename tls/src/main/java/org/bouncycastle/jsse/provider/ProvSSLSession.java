@@ -14,7 +14,7 @@ class ProvSSLSession
     // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
     // TODO[jsse] This would make more sense as a ProvSSLSessionHandshake
     static final ProvSSLSession NULL_SESSION = new ProvSSLSession(null, null, -1, null,
-        new JsseSessionParameters(null));
+        new JsseSessionParameters(null, null));
 
     protected final TlsSession tlsSession;
     protected final SessionParameters sessionParameters;
