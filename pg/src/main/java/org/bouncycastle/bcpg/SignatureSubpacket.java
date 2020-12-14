@@ -3,6 +3,8 @@ package org.bouncycastle.bcpg;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * Basic type for a PGP Signature sub-packet.
  */
@@ -95,5 +97,30 @@ public class SignatureSubpacket
         }
         
         out.write(data);
+    }
+
+    public int hashCode()
+    {
+        return (this.critical ? 1 : 0) + 7 * this.type + 49 * Arrays.hashCode(data);
+    }
+
+    public boolean equals(Object other)
+    {
+        if (other == this)
+        {
+            return true;
+        }
+
+        if (other instanceof SignatureSubpacket)
+        {
+             SignatureSubpacket ot = (SignatureSubpacket)other;
+
+             if (this.type == ot.type && this.critical == ot.critical)
+             {
+                 return Arrays.areEqual(this.data, ot.data);
+             }
+        }
+
+        return false;
     }
 }
