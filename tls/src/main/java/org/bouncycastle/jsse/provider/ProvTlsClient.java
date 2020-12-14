@@ -53,6 +53,9 @@ class ProvTlsClient
     private static final boolean provClientEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
         "jdk.tls.client.enableStatusRequestExtension", true);
 
+    private static final boolean provClientEnableSessionResumption = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableSessionResumption", true);
+
     private static final boolean provClientEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableTrustedCAKeysExtension", false);
 
@@ -346,20 +349,23 @@ class ProvTlsClient
     @Override
     public TlsSession getSessionToResume()
     {
-        ProvSSLSession availableSSLSession = sslParameters.getSessionToResume();
-        if (null == availableSSLSession)
+        if (provClientEnableSessionResumption)
         {
-            ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
-            availableSSLSession = sslSessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
-        }
-
-        if (null != availableSSLSession)
-        {
-            TlsSession sessionToResume = availableSSLSession.getTlsSession();
-            if (null != sessionToResume && isResumable(availableSSLSession))
+            ProvSSLSession availableSSLSession = sslParameters.getSessionToResume();
+            if (null == availableSSLSession)
             {
-                this.sslSession = availableSSLSession;
-                return sessionToResume;
+                ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
+                availableSSLSession = sslSessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
+            }
+
+            if (null != availableSSLSession)
+            {
+                TlsSession sessionToResume = availableSSLSession.getTlsSession();
+                if (null != sessionToResume && isResumable(availableSSLSession))
+                {
+                    this.sslSession = availableSSLSession;
+                    return sessionToResume;
+                }
             }
         }
 
@@ -435,9 +441,10 @@ class ProvTlsClient
             int peerPort = manager.getPeerPort();
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
                 sslParameters.getEndpointIdentificationAlgorithm());
+            boolean addToCache = provClientEnableSessionResumption;
 
             this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
-                jsseSessionParameters);
+                jsseSessionParameters, addToCache);
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
