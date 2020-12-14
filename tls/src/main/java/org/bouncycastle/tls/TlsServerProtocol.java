@@ -225,6 +225,9 @@ public class TlsServerProtocol
              * ONLY when extended_master_secret has been negotiated (otherwise NULL).
              */
             {
+                // TODO[tls13] Resumption/PSK
+                tlsServer.getSessionToResume(null);
+
                 invalidateSession();
 
                 securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
@@ -564,6 +567,9 @@ public class TlsServerProtocol
          * ONLY when extended_master_secret has been negotiated (otherwise NULL).
          */
         {
+            // TODO[resumption]
+            tlsServer.getSessionToResume(null);
+
             invalidateSession();
 
             securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
@@ -724,7 +730,7 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (this.resumedSession)
+        if (resumedSession)
         {
             /*
              * TODO[tls13] Abbreviated handshakes (PSK resumption)
@@ -869,10 +875,18 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (this.resumedSession)
+        if (resumedSession)
         {
-            // TODO Abbreviated handshakes for legacy TLS (session resumption)
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            if (type != HandshakeType.finished || this.connection_state != CS_SERVER_FINISHED)
+            {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+
+            processFinishedMessage(buf);
+            this.connection_state = CS_CLIENT_FINISHED;
+
+            completeHandshake();
+            return;
         }
 
         switch (type)
@@ -925,6 +939,14 @@ public class TlsServerProtocol
 
                 sendServerHelloMessage(serverHello);
                 this.connection_state = CS_SERVER_HELLO;
+
+                if (resumedSession)
+                {
+                    sendChangeCipherSpec();
+                    sendFinishedMessage();
+                    this.connection_state = CS_SERVER_FINISHED;
+                    break;
+                }
 
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
