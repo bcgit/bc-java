@@ -174,6 +174,11 @@ abstract class JsseUtils
         return new JcaDefaultTlsCredentialedSigner(cryptoParams, crypto, privateKey, certificate, sigAndHashAlg);
     }
 
+    static boolean equals(Object a, Object b)
+    {
+        return a == b || (null != a && null != b && a.equals(b));
+    }
+
     static String[] resize(String[] data, int count)
     {
         if (count < data.length)

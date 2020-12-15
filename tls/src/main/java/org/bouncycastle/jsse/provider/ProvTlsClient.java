@@ -5,6 +5,7 @@ import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -28,11 +29,13 @@ import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
+import org.bouncycastle.tls.SessionParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsDHGroupVerifier;
+import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
@@ -52,6 +55,9 @@ class ProvTlsClient
     private static final boolean provEnableSNIExtension = PropertyUtils.getBooleanSystemProperty("jsse.enableSNIExtension", true);
     private static final boolean provClientEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
         "jdk.tls.client.enableStatusRequestExtension", true);
+
+    private static final boolean provClientEnableSessionResumption = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableSessionResumption", true);
 
     private static final boolean provClientEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableTrustedCAKeysExtension", false);
@@ -346,20 +352,23 @@ class ProvTlsClient
     @Override
     public TlsSession getSessionToResume()
     {
-        ProvSSLSession availableSSLSession = sslParameters.getSessionToResume();
-        if (null == availableSSLSession)
+        if (provClientEnableSessionResumption)
         {
-            ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
-            availableSSLSession = sslSessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
-        }
-
-        if (null != availableSSLSession)
-        {
-            TlsSession sessionToResume = availableSSLSession.getTlsSession();
-            if (null != sessionToResume && isResumable(availableSSLSession))
+            ProvSSLSession availableSSLSession = sslParameters.getSessionToResume();
+            if (null == availableSSLSession)
             {
-                this.sslSession = availableSSLSession;
-                return sessionToResume;
+                ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
+                availableSSLSession = sslSessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
+            }
+
+            if (null != availableSSLSession)
+            {
+                TlsSession sessionToResume = availableSSLSession.getTlsSession();
+                if (isResumable(availableSSLSession, sessionToResume))
+                {
+                    this.sslSession = availableSSLSession;
+                    return sessionToResume;
+                }
             }
         }
 
@@ -434,10 +443,11 @@ class ProvTlsClient
             String peerHost = manager.getPeerHost();
             int peerPort = manager.getPeerPort();
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
-                sslParameters.getEndpointIdentificationAlgorithm());
+                sslParameters.getEndpointIdentificationAlgorithm(), null);
+            boolean addToCache = provClientEnableSessionResumption;
 
             this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
-                jsseSessionParameters);
+                jsseSessionParameters, addToCache);
         }
 
         manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
@@ -530,6 +540,21 @@ class ProvTlsClient
     }
 
     @Override
+    public void processServerExtensions(@SuppressWarnings("rawtypes") Hashtable serverExtensions) throws IOException
+    {
+        super.processServerExtensions(serverExtensions);
+
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        if (null != securityParameters.getClientServerNames())
+        {
+            boolean sniAccepted = TlsExtensionsUtils.hasServerNameExtensionServer(serverExtensions);
+
+            LOG.finer("Server accepted SNI?: " + sniAccepted);
+        }
+    }
+
+    @Override
     public boolean requiresCloseNotify()
     {
         return JsseUtils.requireCloseNotify();
@@ -559,21 +584,44 @@ class ProvTlsClient
         return keyTypes;
     }
 
-    protected boolean isResumable(ProvSSLSession availableSSLSession)
+    protected boolean isResumable(ProvSSLSession provSSLSession, TlsSession tlsSession)
     {
-        // TODO[jsse] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
-
-        JsseSessionParameters jsseSessionParameters = availableSSLSession.getJsseSessionParameters();
-
-        String endpointIDAlgorithm = sslParameters.getEndpointIdentificationAlgorithm();
-        if (null != endpointIDAlgorithm)
+        if (null == tlsSession || !tlsSession.isResumable())
         {
-            String identificationProtocol = jsseSessionParameters.getIdentificationProtocol();
-            if (!endpointIDAlgorithm.equalsIgnoreCase(identificationProtocol))
+            return false;
+        }
+
+        {
+            // TODO[resumption] Avoid the copy somehow?
+            SessionParameters sessionParameters = tlsSession.exportSessionParameters();
+
+            // TODO[resumption] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
+            if (null == sessionParameters ||
+                !ProtocolVersion.contains(getProtocolVersions(), sessionParameters.getNegotiatedVersion()) ||
+                !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
             {
-                LOG.finest("Session not resumed - endpoint ID algorithm mismatch; requested: " + endpointIDAlgorithm
-                    + ", session: " + identificationProtocol);
                 return false;
+            }
+
+            // TODO[tls13] Resumption/PSK 
+            if (TlsUtils.isTLSv13(sessionParameters.getNegotiatedVersion()))
+            {
+                return false;
+            }
+        }
+
+        {
+            String connectionEndpointID = sslParameters.getEndpointIdentificationAlgorithm();
+            if (null != connectionEndpointID)
+            {
+                JsseSessionParameters jsseSessionParameters = provSSLSession.getJsseSessionParameters();
+                String sessionEndpointID = jsseSessionParameters.getEndpointIDAlgorithm();
+                if (!connectionEndpointID.equalsIgnoreCase(sessionEndpointID))
+                {
+                    LOG.finest("Session not resumable - endpoint ID algorithm mismatch; connection: "
+                        + connectionEndpointID + ", session: " + sessionEndpointID);
+                    return false;
+                }
             }
         }
 
