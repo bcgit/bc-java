@@ -17,13 +17,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
@@ -81,12 +85,14 @@ class ProvAlgorithmChecker
         return Collections.unmodifiableSet(noParams);
     }
 
+    @SuppressWarnings("unused")
+    private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final BCAlgorithmConstraints algorithmConstraints;
 
     private X509Certificate issuerCert;
 
-    ProvAlgorithmChecker(JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints)
+    ProvAlgorithmChecker(boolean isInFipsMode, JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints)
     {
         if (null == helper)
         {
@@ -97,6 +103,7 @@ class ProvAlgorithmChecker
             throw new NullPointerException("'algorithmConstraints' cannot be null");
         }
 
+        this.isInFipsMode = isInFipsMode;
         this.helper = helper;
         this.algorithmConstraints = algorithmConstraints;
 
@@ -136,6 +143,11 @@ class ProvAlgorithmChecker
 
         X509Certificate subjectCert = (X509Certificate)cert;
 
+        if (isInFipsMode && !isValidFIPSPublicKey(subjectCert.getPublicKey()))
+        {
+            throw new CertPathValidatorException("non-FIPS public key found");
+        }
+
         if (null == issuerCert)
         {
             // NOTE: This would be redundant with the 'taCert' check in 'checkCertPathExtras'
@@ -164,7 +176,7 @@ class ProvAlgorithmChecker
         checkEndEntity(helper, algorithmConstraints, eeCert, ekuOID, kuBit);
     }
 
-    static void checkChain(JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
+    static void checkChain(boolean isInFipsMode, JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
         Set<X509Certificate> trustedCerts, X509Certificate[] chain, KeyPurposeId ekuOID, int kuBit)
         throws CertPathValidatorException
     {
@@ -188,7 +200,7 @@ class ProvAlgorithmChecker
             checkIssued(helper, algorithmConstraints, chain[taPos - 1]);
         }
 
-        ProvAlgorithmChecker algorithmChecker = new ProvAlgorithmChecker(helper, algorithmConstraints);
+        ProvAlgorithmChecker algorithmChecker = new ProvAlgorithmChecker(isInFipsMode, helper, algorithmConstraints);
         algorithmChecker.init(false);
 
         for (int i = taPos - 1; i >= 0; --i)
@@ -430,6 +442,41 @@ class ProvAlgorithmChecker
         }
 
         return sigAlgParams;
+    }
+
+    static boolean isValidFIPSPublicKey(PublicKey publicKey)
+    {
+        /*
+         * Require that 'id-ecPublicKey' algorithm is used only with 'namedCurve' parameters.
+         */
+        try
+        {
+            SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+            AlgorithmIdentifier algID = spki.getAlgorithm();
+            if (!X9ObjectIdentifiers.id_ecPublicKey.equals(algID.getAlgorithm()))
+            {
+                return true;
+            }
+
+            ASN1Encodable parameters = algID.getParameters().toASN1Primitive();
+            if (null != parameters)
+            {
+                ASN1Primitive primitive = parameters.toASN1Primitive();
+                if (primitive instanceof ASN1ObjectIdentifier)
+                {
+                    // TODO[fips] Consider further constraints here
+//                    ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)primitive;
+//                    int curve = NamedGroupInfo.getCurve(oid);
+//                    return NamedGroup.refersToASpecificCurve(curve) && FipsUtils.isFipsNamedGroup(curve);
+                    return true;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+        }
+
+        return false;
     }
 
     static boolean permitsKeyUsage(PublicKey publicKey, boolean[] ku, int kuBit, BCAlgorithmConstraints algorithmConstraints)
