@@ -42,6 +42,7 @@ class ProvX509KeyManagerSimple
 {
     private static final Logger LOG = Logger.getLogger(ProvX509KeyManagerSimple.class.getName());
 
+    private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final Map<String, Credential> credentials;
 
@@ -181,9 +182,10 @@ class ProvX509KeyManagerSimple
         return Collections.unmodifiableMap(credentials);
     }
 
-    ProvX509KeyManagerSimple(JcaJceHelper helper, KeyStore ks, char[] password)
+    ProvX509KeyManagerSimple(boolean isInFipsMode, JcaJceHelper helper, KeyStore ks, char[] password)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
+        this.isInFipsMode = isInFipsMode;
         this.helper = helper;
         this.credentials = loadCredentials(ks, password);
     }
@@ -440,7 +442,8 @@ class ProvX509KeyManagerSimple
             KeyPurposeId ekuOID = ProvX509KeyManager.getRequiredExtendedKeyUsage(forServer);
             int kuBit = -1; // i.e. no checks; we handle them in isSuitableEECert
 
-            ProvAlgorithmChecker.checkChain(helper, algorithmConstraints, trustedCerts, chain, ekuOID, kuBit);
+            ProvAlgorithmChecker.checkChain(isInFipsMode, helper, algorithmConstraints, trustedCerts, chain, ekuOID,
+                kuBit);
         }
         catch (CertPathValidatorException e)
         {

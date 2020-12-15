@@ -51,6 +51,8 @@ class ProvX509KeyManager
         .getBooleanSystemProperty("org.bouncycastle.jsse.keyManager.checkEKU", true);
 
     private final AtomicLong versions = new AtomicLong();
+
+    private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final List<KeyStore.Builder> builders;
 
@@ -165,8 +167,9 @@ class ProvX509KeyManager
         return keyTypes;
     }
 
-    ProvX509KeyManager(JcaJceHelper helper, List<KeyStore.Builder> builders)
+    ProvX509KeyManager(boolean isInFipsMode, JcaJceHelper helper, List<KeyStore.Builder> builders)
     {
+        this.isInFipsMode = isInFipsMode;
         this.helper = helper;
         this.builders = builders;
     }
@@ -532,7 +535,8 @@ class ProvX509KeyManager
             KeyPurposeId ekuOID = getRequiredExtendedKeyUsage(forServer);
             int kuBit = -1; // i.e. no checks; we handle them in isSuitableEECert
 
-            ProvAlgorithmChecker.checkChain(helper, algorithmConstraints, trustedCerts, chain, ekuOID, kuBit);
+            ProvAlgorithmChecker.checkChain(isInFipsMode, helper, algorithmConstraints, trustedCerts, chain, ekuOID,
+                kuBit);
         }
         catch (CertPathValidatorException e)
         {
