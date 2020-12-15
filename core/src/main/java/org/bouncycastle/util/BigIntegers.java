@@ -30,7 +30,7 @@ public final class BigIntegers
     {
         byte[] bytes = value.toByteArray();
         
-        if (bytes[0] == 0)
+        if (bytes[0] == 0 && bytes.length != 1)
         {
             byte[] tmp = new byte[bytes.length - 1];
             
@@ -60,7 +60,7 @@ public final class BigIntegers
             return bytes;
         }
 
-        int start = bytes[0] == 0 ? 1 : 0;
+        int start = (bytes[0] == 0 && bytes.length != 1) ? 1 : 0;
         int count = bytes.length - start;
 
         if (count > length)
@@ -95,7 +95,7 @@ public final class BigIntegers
             return;
         }
 
-        int start = bytes[0] == 0 ? 1 : 0;
+        int start = (bytes[0] == 0 && bytes.length != 1) ? 1 : 0;
         int count = bytes.length - start;
 
         if (count > len)
@@ -252,6 +252,11 @@ public final class BigIntegers
 
     public static int getUnsignedByteLength(BigInteger n)
     {
+        if (n.equals(ZERO))
+        {
+            return 1;
+        }
+
         return (n.bitLength() + 7) / 8;
     }
 
