@@ -18,7 +18,7 @@ abstract class X509TrustManagerUtil
         return new ExportX509TrustManager_7(x509TrustManager);
     }
 
-    static BCX509ExtendedTrustManager importX509TrustManager(JcaJceHelper helper, X509TrustManager x509TrustManager)
+    static BCX509ExtendedTrustManager importX509TrustManager(boolean isInFipsMode, JcaJceHelper helper, X509TrustManager x509TrustManager)
     {
         if (x509TrustManager instanceof BCX509ExtendedTrustManager)
         {
@@ -35,6 +35,6 @@ abstract class X509TrustManagerUtil
             return new ImportX509TrustManager_7((X509ExtendedTrustManager)x509TrustManager);
         }
 
-        return new ImportX509TrustManager_5(helper, x509TrustManager);
+        return new ImportX509TrustManager_5(isInFipsMode, helper, x509TrustManager);
     }
 }
