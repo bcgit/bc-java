@@ -726,10 +726,15 @@ class ProvTlsServer
             // TODO[resumption] Avoid the copy somehow?
             SessionParameters sessionParameters = tlsSession.exportSessionParameters();
 
-            // TODO[resumption] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
             if (null == sessionParameters ||
                 !securityParameters.getNegotiatedVersion().equals(sessionParameters.getNegotiatedVersion()) ||
                 !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
+            {
+                return false;
+            }
+
+            // TODO[resumption] Consider support for related system properties
+            if (!sessionParameters.isExtendedMasterSecret())
             {
                 return false;
             }
