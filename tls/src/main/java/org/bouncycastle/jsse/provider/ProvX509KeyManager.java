@@ -52,7 +52,6 @@ class ProvX509KeyManager
 
     private final AtomicLong versions = new AtomicLong();
 
-    @SuppressWarnings("unused")
     private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final List<KeyStore.Builder> builders;
@@ -536,7 +535,8 @@ class ProvX509KeyManager
             KeyPurposeId ekuOID = getRequiredExtendedKeyUsage(forServer);
             int kuBit = -1; // i.e. no checks; we handle them in isSuitableEECert
 
-            ProvAlgorithmChecker.checkChain(helper, algorithmConstraints, trustedCerts, chain, ekuOID, kuBit);
+            ProvAlgorithmChecker.checkChain(isInFipsMode, helper, algorithmConstraints, trustedCerts, chain, ekuOID,
+                kuBit);
         }
         catch (CertPathValidatorException e)
         {

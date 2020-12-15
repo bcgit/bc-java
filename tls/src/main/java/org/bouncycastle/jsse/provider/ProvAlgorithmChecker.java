@@ -81,12 +81,14 @@ class ProvAlgorithmChecker
         return Collections.unmodifiableSet(noParams);
     }
 
+    @SuppressWarnings("unused")
+    private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final BCAlgorithmConstraints algorithmConstraints;
 
     private X509Certificate issuerCert;
 
-    ProvAlgorithmChecker(JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints)
+    ProvAlgorithmChecker(boolean isInFipsMode, JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints)
     {
         if (null == helper)
         {
@@ -97,6 +99,7 @@ class ProvAlgorithmChecker
             throw new NullPointerException("'algorithmConstraints' cannot be null");
         }
 
+        this.isInFipsMode = isInFipsMode;
         this.helper = helper;
         this.algorithmConstraints = algorithmConstraints;
 
@@ -164,7 +167,7 @@ class ProvAlgorithmChecker
         checkEndEntity(helper, algorithmConstraints, eeCert, ekuOID, kuBit);
     }
 
-    static void checkChain(JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
+    static void checkChain(boolean isInFipsMode, JcaJceHelper helper, BCAlgorithmConstraints algorithmConstraints,
         Set<X509Certificate> trustedCerts, X509Certificate[] chain, KeyPurposeId ekuOID, int kuBit)
         throws CertPathValidatorException
     {
@@ -188,7 +191,7 @@ class ProvAlgorithmChecker
             checkIssued(helper, algorithmConstraints, chain[taPos - 1]);
         }
 
-        ProvAlgorithmChecker algorithmChecker = new ProvAlgorithmChecker(helper, algorithmConstraints);
+        ProvAlgorithmChecker algorithmChecker = new ProvAlgorithmChecker(isInFipsMode, helper, algorithmConstraints);
         algorithmChecker.init(false);
 
         for (int i = taPos - 1; i >= 0; --i)

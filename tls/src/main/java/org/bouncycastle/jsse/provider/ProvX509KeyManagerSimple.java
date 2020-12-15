@@ -42,7 +42,6 @@ class ProvX509KeyManagerSimple
 {
     private static final Logger LOG = Logger.getLogger(ProvX509KeyManagerSimple.class.getName());
 
-    @SuppressWarnings("unused")
     private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final Map<String, Credential> credentials;
@@ -443,7 +442,8 @@ class ProvX509KeyManagerSimple
             KeyPurposeId ekuOID = ProvX509KeyManager.getRequiredExtendedKeyUsage(forServer);
             int kuBit = -1; // i.e. no checks; we handle them in isSuitableEECert
 
-            ProvAlgorithmChecker.checkChain(helper, algorithmConstraints, trustedCerts, chain, ekuOID, kuBit);
+            ProvAlgorithmChecker.checkChain(isInFipsMode, helper, algorithmConstraints, trustedCerts, chain, ekuOID,
+                kuBit);
         }
         catch (CertPathValidatorException e)
         {
