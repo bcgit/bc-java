@@ -20,11 +20,13 @@ class ImportX509TrustManager_5
     extends BCX509ExtendedTrustManager
     implements ImportX509TrustManager
 {
+    final boolean isInFipsMode;
     final JcaJceHelper helper;
     final X509TrustManager x509TrustManager;
 
-    ImportX509TrustManager_5(JcaJceHelper helper, X509TrustManager x509TrustManager)
+    ImportX509TrustManager_5(boolean isInFipsMode, JcaJceHelper helper, X509TrustManager x509TrustManager)
     {
+        this.isInFipsMode = isInFipsMode;
         this.helper = helper;
         this.x509TrustManager = x509TrustManager;
     }
@@ -100,7 +102,7 @@ class ImportX509TrustManager_5
 
         try
         {
-            ProvAlgorithmChecker.checkChain(helper, algorithmConstraints, trustedCerts, chain, ekuOID, kuBit);
+            ProvAlgorithmChecker.checkChain(isInFipsMode, helper, algorithmConstraints, trustedCerts, chain, ekuOID, kuBit);
         }
         catch (GeneralSecurityException e)
         {
