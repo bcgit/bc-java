@@ -83,7 +83,6 @@ class ProvX509TrustManager
         return Collections.unmodifiableMap(keyUsages);
     }
 
-    @SuppressWarnings("unused")
     private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final Set<X509Certificate> trustedCerts;
@@ -231,7 +230,7 @@ class ProvX509TrustManager
         }
 
         PKIXBuilderParameters pkixParameters = (PKIXBuilderParameters)pkixParametersTemplate.clone();
-        pkixParameters.addCertPathChecker(new ProvAlgorithmChecker(helper, algorithmConstraints));
+        pkixParameters.addCertPathChecker(new ProvAlgorithmChecker(isInFipsMode, helper, algorithmConstraints));
         pkixParameters.addCertStore(certStore);
         pkixParameters.setTargetCertConstraints(
             createTargetCertConstraints(eeCert, pkixParameters.getTargetCertConstraints()));

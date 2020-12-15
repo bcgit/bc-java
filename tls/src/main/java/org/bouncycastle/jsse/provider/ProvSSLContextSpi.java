@@ -837,7 +837,7 @@ class ProvSSLContextSpi
             {
                 if (tm instanceof X509TrustManager)
                 {
-                    return X509TrustManagerUtil.importX509TrustManager(helper, (X509TrustManager)tm);
+                    return X509TrustManagerUtil.importX509TrustManager(isInFipsMode, helper, (X509TrustManager)tm);
                 }
             }
         }
