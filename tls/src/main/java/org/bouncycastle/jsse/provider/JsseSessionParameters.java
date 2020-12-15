@@ -1,16 +1,25 @@
 package org.bouncycastle.jsse.provider;
 
+import org.bouncycastle.jsse.BCSNIServerName;
+
 class JsseSessionParameters
 {
-    private final String identificationProtocol;
+    private final String endpointIDAlgorithm;
+    private final BCSNIServerName matchedSNIServerName;
 
-    JsseSessionParameters(String identificationProtocol)
+    JsseSessionParameters(String endpointIDAlgorithm, BCSNIServerName matchedSNIServerName)
     {
-        this.identificationProtocol = identificationProtocol;
+        this.endpointIDAlgorithm = endpointIDAlgorithm;
+        this.matchedSNIServerName = matchedSNIServerName;
     }
 
-    public String getIdentificationProtocol()
+    public String getEndpointIDAlgorithm()
     {
-        return identificationProtocol;
+        return endpointIDAlgorithm;
+    }
+
+    public BCSNIServerName getMatchedSNIServerName()
+    {
+        return matchedSNIServerName;
     }
 }

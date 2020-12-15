@@ -95,9 +95,14 @@ class ProvSSLSessionContext
     }
 
     synchronized ProvSSLSession reportSession(String peerHost, int peerPort, TlsSession tlsSession,
-        JsseSessionParameters jsseSessionParameters)
+        JsseSessionParameters jsseSessionParameters, boolean addToCache)
     {
         processQueue();
+
+        if (!addToCache)
+        {
+            return new ProvSSLSession(this, peerHost, peerPort, tlsSession, jsseSessionParameters);
+        }
 
         SessionID sessionID = makeSessionID(tlsSession.getSessionID());
         SessionEntry sessionEntry = mapGet(sessionsByID, sessionID);
