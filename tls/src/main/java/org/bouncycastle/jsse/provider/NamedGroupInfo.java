@@ -4,6 +4,7 @@ import java.security.AlgorithmParameters;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import java.util.TreeMap;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.NamedGroup;
@@ -141,6 +144,20 @@ class NamedGroupInfo
         }
     }
 
+    private static final Map<ASN1ObjectIdentifier, All> CURVES_BY_OID = createCurvesByOid();
+
+    private static Map<ASN1ObjectIdentifier, All> createCurvesByOid()
+    {
+        Map<ASN1ObjectIdentifier, All> m = new HashMap<ASN1ObjectIdentifier, All>();
+
+        // TODO[jsse] This is currently only used to find FIPS curves, but we will eventually want OIDs for all curves
+        m.put(SECObjectIdentifiers.secp256r1, All.secp256r1);
+        m.put(SECObjectIdentifiers.secp384r1, All.secp384r1);
+        m.put(SECObjectIdentifiers.secp521r1, All.secp521r1);
+
+        return Collections.unmodifiableMap(m);
+    }
+
     static PerConnection createPerConnection(PerContext perContext, ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
     {
         Map<Integer, NamedGroupInfo> local = createLocal(perContext, sslParameters, activeProtocolVersions);
@@ -175,6 +192,19 @@ class NamedGroupInfo
             maxBits = Math.max(maxBits, namedGroupInfo.getBitsFFDHE());
         }
         return maxBits;
+    }
+
+    static int getCurve(ASN1ObjectIdentifier oid)
+    {
+        if (null != oid)
+        {
+            All all = CURVES_BY_OID.get(oid);
+            if (null != all)
+            {
+                return all.namedGroup;
+            }
+        }
+        return -1;
     }
 
     static NamedGroupInfo getNamedGroup(PerContext perContext, int namedGroup)
