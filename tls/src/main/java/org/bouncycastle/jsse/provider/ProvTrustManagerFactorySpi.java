@@ -119,12 +119,14 @@ class ProvTrustManagerFactorySpi
         return ks;
     }
 
+    protected final boolean isInFipsMode;
     protected final JcaJceHelper helper;
 
     protected ProvX509TrustManager x509TrustManager;
 
-    ProvTrustManagerFactorySpi(JcaJceHelper helper)
+    ProvTrustManagerFactorySpi(boolean isInFipsMode, JcaJceHelper helper)
     {
+        this.isInFipsMode = isInFipsMode;
         this.helper = helper;
     }
 
@@ -175,7 +177,7 @@ class ProvTrustManagerFactorySpi
 
         try
         {
-            this.x509TrustManager = new ProvX509TrustManager(helper, trustAnchors);
+            this.x509TrustManager = new ProvX509TrustManager(isInFipsMode, helper, trustAnchors);
         }
         catch (InvalidAlgorithmParameterException e)
         {
@@ -195,7 +197,7 @@ class ProvTrustManagerFactorySpi
                 throw new InvalidAlgorithmParameterException("parameters must inherit from PKIXParameters");
             }
 
-            this.x509TrustManager = new ProvX509TrustManager(helper, (PKIXParameters)certPathParameters);
+            this.x509TrustManager = new ProvX509TrustManager(isInFipsMode, helper, (PKIXParameters)certPathParameters);
         }
         else if (null == spec)
         {

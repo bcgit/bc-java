@@ -154,7 +154,7 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvKeyManagerFactorySpi(cryptoProvider.getHelper());
+                return new ProvKeyManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
             }
         });
         addAlias("Alg.Alias.KeyManagerFactory.X509", "X.509");
@@ -164,7 +164,7 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvTrustManagerFactorySpi(cryptoProvider.getHelper());
+                return new ProvTrustManagerFactorySpi(fipsMode, cryptoProvider.getHelper());
             }
         });
         addAlias("Alg.Alias.TrustManagerFactory.X.509", "PKIX");
