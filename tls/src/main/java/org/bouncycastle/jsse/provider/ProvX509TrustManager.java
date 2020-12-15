@@ -83,14 +83,17 @@ class ProvX509TrustManager
         return Collections.unmodifiableMap(keyUsages);
     }
 
+    @SuppressWarnings("unused")
+    private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final Set<X509Certificate> trustedCerts;
     private final PKIXBuilderParameters pkixParametersTemplate;
     private final X509TrustManager exportX509TrustManager;
 
-    ProvX509TrustManager(JcaJceHelper helper, Set<TrustAnchor> trustAnchors)
+    ProvX509TrustManager(boolean isInFipsMode, JcaJceHelper helper, Set<TrustAnchor> trustAnchors)
         throws InvalidAlgorithmParameterException
     {
+        this.isInFipsMode = isInFipsMode;
         this.helper = helper;
         this.trustedCerts = getTrustedCerts(trustAnchors);
 
@@ -108,9 +111,10 @@ class ProvX509TrustManager
         this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
     }
 
-    ProvX509TrustManager(JcaJceHelper helper, PKIXParameters baseParameters)
+    ProvX509TrustManager(boolean isInFipsMode, JcaJceHelper helper, PKIXParameters baseParameters)
         throws InvalidAlgorithmParameterException
     {
+        this.isInFipsMode = isInFipsMode;
         this.helper = helper;
         this.trustedCerts = getTrustedCerts(baseParameters.getTrustAnchors());
 
