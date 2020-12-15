@@ -17,13 +17,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
@@ -138,6 +142,11 @@ class ProvAlgorithmChecker
         }
 
         X509Certificate subjectCert = (X509Certificate)cert;
+
+        if (isInFipsMode && !isValidFIPSPublicKey(subjectCert.getPublicKey()))
+        {
+            throw new CertPathValidatorException("non-FIPS public key found");
+        }
 
         if (null == issuerCert)
         {
@@ -433,6 +442,41 @@ class ProvAlgorithmChecker
         }
 
         return sigAlgParams;
+    }
+
+    static boolean isValidFIPSPublicKey(PublicKey publicKey)
+    {
+        /*
+         * Require that 'id-ecPublicKey' algorithm is used only with 'namedCurve' parameters.
+         */
+        try
+        {
+            SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+            AlgorithmIdentifier algID = spki.getAlgorithm();
+            if (!X9ObjectIdentifiers.id_ecPublicKey.equals(algID.getAlgorithm()))
+            {
+                return true;
+            }
+
+            ASN1Encodable parameters = algID.getParameters().toASN1Primitive();
+            if (null != parameters)
+            {
+                ASN1Primitive primitive = parameters.toASN1Primitive();
+                if (primitive instanceof ASN1ObjectIdentifier)
+                {
+                    // TODO[fips] Consider further constraints here
+//                    ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)primitive;
+//                    int curve = NamedGroupInfo.getCurve(oid);
+//                    return NamedGroup.refersToASpecificCurve(curve) && FipsUtils.isFipsNamedGroup(curve);
+                    return true;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+        }
+
+        return false;
     }
 
     static boolean permitsKeyUsage(PublicKey publicKey, boolean[] ku, int kuBit, BCAlgorithmConstraints algorithmConstraints)
