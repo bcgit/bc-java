@@ -495,16 +495,13 @@ class ProvTlsServer
 
         manager.notifyHandshakeSession(handshakeSession);
 
-        if (provServerEnableSessionResumption)
+        // TODO[tls13] Resumption/PSK
+        if (!provServerEnableSessionResumption || TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
         {
-            // TODO[tls13] Resumption/PSK
-            if (!TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
-            {
-                return TlsUtils.importSession(context.getNonceGenerator().generateNonce(32), null);
-            }
+            return null;
         }
 
-        return null;
+        return TlsUtils.importSession(context.getNonceGenerator().generateNonce(32), null);
     }
 
     @Override
@@ -626,7 +623,8 @@ class ProvTlsServer
             String peerHost = manager.getPeerHost();
             int peerPort = manager.getPeerPort();
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(null, matchedSNIServerName);
-            boolean addToCache = provServerEnableSessionResumption;
+            // TODO[tls13] Resumption/PSK
+            boolean addToCache = provServerEnableSessionResumption && !TlsUtils.isTLSv13(context);
 
             this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
                 jsseSessionParameters, addToCache);
