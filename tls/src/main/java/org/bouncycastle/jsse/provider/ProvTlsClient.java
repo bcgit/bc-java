@@ -444,7 +444,8 @@ class ProvTlsClient
             int peerPort = manager.getPeerPort();
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
                 sslParameters.getEndpointIdentificationAlgorithm(), null);
-            boolean addToCache = provClientEnableSessionResumption;
+            // TODO[tls13] Resumption/PSK
+            boolean addToCache = provClientEnableSessionResumption && !TlsUtils.isTLSv13(context);
 
             this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
                 jsseSessionParameters, addToCache);
