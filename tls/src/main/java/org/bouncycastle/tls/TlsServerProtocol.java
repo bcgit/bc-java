@@ -645,8 +645,23 @@ public class TlsServerProtocol
          */
         if (resumedSession)
         {
-            // TODO[resumption]
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            if (!sessionParameters.isExtendedMasterSecret())
+            {
+                /*
+                 * TODO[resumption] ProvTlsServer currently only resumes EMS sessions. Revisit this
+                 * in relation to 'tlsServer.allowLegacyResumption()'.
+                 */
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            if (!offeredExtendedMasterSecret)
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+
+            securityParameters.extendedMasterSecret = true;
+
+            TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
         }
         else
         {
@@ -661,10 +676,6 @@ public class TlsServerProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
-//            else if (resumedSession && !tlsServer.allowLegacyResumption())
-//            {
-//                throw new TlsFatalAlert(AlertDescription.internal_error);
-//            }
         }
 
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);

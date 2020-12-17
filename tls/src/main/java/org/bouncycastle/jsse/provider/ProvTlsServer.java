@@ -642,7 +642,8 @@ class ProvTlsServer
             int peerPort = manager.getPeerPort();
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(null, matchedSNIServerName);
             // TODO[tls13] Resumption/PSK
-            boolean addToCache = provServerEnableSessionResumption && !TlsUtils.isTLSv13(context);
+            boolean addToCache = provServerEnableSessionResumption && !TlsUtils.isTLSv13(context)
+                && context.getSecurityParametersHandshake().isExtendedMasterSecret();
 
             this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
                 jsseSessionParameters, addToCache);
