@@ -26,6 +26,7 @@ import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsProtocol;
@@ -681,9 +682,23 @@ class ProvSSLSocketWrap
         notifyHandshakeCompletedListeners(connection.getSession().exportSSLSession);
     }
 
-    public synchronized void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession)
+    public synchronized void notifyHandshakeSession(ProvSSLSessionContext sslSessionContext,
+        SecurityParameters securityParameters, JsseSecurityParameters jsseSecurityParameters,
+        ProvSSLSession resumedSession)
     {
-        this.handshakeSession = handshakeSession;
+        String peerHost = getPeerHost();
+        int peerPort = getPeerPort();
+
+        if (null != resumedSession)
+        {
+            this.handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
+                jsseSecurityParameters, resumedSession.getTlsSession(), resumedSession.getJsseSessionParameters());
+        }
+        else
+        {
+            this.handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort,
+                securityParameters, jsseSecurityParameters);
+        }
     }
 
     public synchronized String selectApplicationProtocol(List<String> protocols)

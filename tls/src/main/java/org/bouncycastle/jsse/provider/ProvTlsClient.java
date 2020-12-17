@@ -503,6 +503,8 @@ class ProvTlsClient
         }
         else
         {
+            this.sslSession = null;
+
             if (sessionID == null || sessionID.length < 1)
             {
                 LOG.fine("Server did not specify a session ID");
@@ -518,26 +520,8 @@ class ProvTlsClient
             }
         }
 
-        {
-            ProvSSLSessionContext sslSessionContext = manager.getContextData().getClientSessionContext();
-            String peerHost = manager.getPeerHost();
-            int peerPort = manager.getPeerPort();
-            SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-
-            ProvSSLSessionHandshake handshakeSession;
-            if (!isResumed)
-            {
-                handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort,
-                    securityParameters, jsseSecurityParameters);
-            }
-            else
-            {
-                handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost, peerPort, securityParameters,
-                    jsseSecurityParameters, sslSession.getTlsSession(), sslSession.getJsseSessionParameters());
-            }
-
-            manager.notifyHandshakeSession(handshakeSession);
-        }
+        manager.notifyHandshakeSession(manager.getContextData().getClientSessionContext(),
+            context.getSecurityParametersHandshake(), jsseSecurityParameters, sslSession);
     }
 
     @Override
