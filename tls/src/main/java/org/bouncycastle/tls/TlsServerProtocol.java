@@ -228,13 +228,13 @@ public class TlsServerProtocol
                 // TODO[tls13] Resumption/PSK
                 tlsServer.getSessionToResume(null);
 
-                invalidateSession();
-
-                securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
-
-                this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
+                this.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
                 this.sessionParameters = null;
                 this.sessionMasterSecret = null;
+
+                securityParameters.sessionID = tlsSession.getSessionID();
+
+                tlsServer.notifySession(tlsSession);
             }
 
             TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
@@ -560,23 +560,17 @@ public class TlsServerProtocol
             tlsServer.processClientExtensions(clientExtensions);
         }
 
-        /*
-         * NOTE: Currently no server support for session resumption
-         * 
-         * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
-         * ONLY when extended_master_secret has been negotiated (otherwise NULL).
-         */
         {
             // TODO[resumption]
             tlsServer.getSessionToResume(null);
 
-            invalidateSession();
-
-            securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
-
-            this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
+            this.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
             this.sessionParameters = null;
             this.sessionMasterSecret = null;
+
+            securityParameters.sessionID = tlsSession.getSessionID();
+
+            tlsServer.notifySession(tlsSession);
         }
 
         TlsUtils.negotiatedVersionTLSServer(tlsServerContext);

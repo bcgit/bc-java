@@ -42,6 +42,7 @@ import org.bouncycastle.tls.TrustedAuthority;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 class ProvTlsServer
     extends DefaultTlsServer
@@ -451,21 +452,11 @@ class ProvTlsServer
     @Override
     public TlsSession getSessionToResume(byte[] sessionID)
     {
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-
-        ContextData contextData = manager.getContextData();
-        String peerHost = manager.getPeerHost();
-        int peerPort = manager.getPeerPort();
-
-        ProvSSLSessionContext sslSessionContext = contextData.getServerSessionContext();
+        ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
 
         if (provServerEnableSessionResumption)
         {
-            ProvSSLSession availableSSLSession = sslParameters.getSessionToResume();
-            if (null == availableSSLSession)
-            {
-                availableSSLSession = sslSessionContext.getSessionImpl(sessionID);
-            }
+            ProvSSLSession availableSSLSession = sslSessionContext.getSessionImpl(sessionID);
 
             if (null != availableSSLSession)
             {
@@ -473,13 +464,6 @@ class ProvTlsServer
                 if (isResumable(availableSSLSession, sessionToResume))
                 {
                     this.sslSession = availableSSLSession;
-    
-                    ProvSSLSessionHandshake handshakeSession = new ProvSSLSessionResumed(sslSessionContext, peerHost,
-                        peerPort, securityParameters, jsseSecurityParameters, sessionToResume,
-                        sslSession.getJsseSessionParameters());
-    
-                    manager.notifyHandshakeSession(handshakeSession);
-    
                     return sessionToResume;
                 }
             }
@@ -487,21 +471,55 @@ class ProvTlsServer
 
         if (!manager.getEnableSessionCreation())
         {
-            throw new IllegalStateException("No resumable sessions and session creation is disabled");
+            throw new IllegalStateException("Cannot resume session and session creation is disabled");
         }
 
-        ProvSSLSessionHandshake handshakeSession = new ProvSSLSessionHandshake(sslSessionContext, peerHost, peerPort,
-            securityParameters, jsseSecurityParameters);
+        return null;
+    }
 
-        manager.notifyHandshakeSession(handshakeSession);
-
+    @Override
+    public byte[] getNewSessionID()
+    {
         // TODO[tls13] Resumption/PSK
-        if (!provServerEnableSessionResumption || TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
+        if (!provServerEnableSessionResumption || TlsUtils.isTLSv13(context))
         {
             return null;
         }
 
-        return TlsUtils.importSession(context.getNonceGenerator().generateNonce(32), null);
+        return context.getNonceGenerator().generateNonce(32);
+    }
+
+    @Override
+    public void notifySession(TlsSession session)
+    {
+        byte[] sessionID = session.getSessionID();
+
+        boolean isResumed = (null != sslSession && sslSession.getTlsSession() == session);
+        if (isResumed)
+        {
+            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+        }
+        else
+        {
+            this.sslSession = null;
+
+            if (sessionID == null || sessionID.length < 1)
+            {
+                LOG.fine("Server did not specify a session ID");
+            }
+            else
+            {
+                LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+            }
+
+            if (!manager.getEnableSessionCreation())
+            {
+                throw new IllegalStateException("Cannot resume session and session creation is disabled");
+            }
+        }
+
+        manager.notifyHandshakeSession(manager.getContextData().getServerSessionContext(),
+            context.getSecurityParametersHandshake(), jsseSecurityParameters, sslSession);
     }
 
     @Override
