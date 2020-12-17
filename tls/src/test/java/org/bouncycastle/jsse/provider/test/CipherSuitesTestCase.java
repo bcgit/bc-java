@@ -70,8 +70,17 @@ public class CipherSuitesTestCase extends TestCase
 
         int port = PORT_NO.incrementAndGet();
 
-        SimpleServer server = new SimpleServer(port, config);
-        SimpleClient client = new SimpleClient(port, config);
+        SSLContext clientContext = createClientContext();
+        SSLContext serverContext = createServerContext();
+
+        runTestConnection(port, clientContext, serverContext);
+        runTestConnection(port, clientContext, serverContext);
+    }
+
+    private void runTestConnection(int port, SSLContext clientContext, SSLContext serverContext) throws Throwable
+    {
+        SimpleServer server = new SimpleServer(serverContext, port, config);
+        SimpleClient client = new SimpleClient(clientContext, port, config);
 
         TestProtocolUtil.runClientAndServer(server, client);
 
@@ -80,19 +89,50 @@ public class CipherSuitesTestCase extends TestCase
         TestCase.assertTrue(Arrays.areEqual(server.tlsUnique, client.tlsUnique));
     }
 
+    private SSLContext createClientContext() throws Exception
+    {
+        TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+            ProviderUtils.PROVIDER_NAME_BCJSSE);
+
+        trustMgrFact.init(config.clientTrustStore);
+
+        SSLContext clientContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+
+        clientContext.init(null, trustMgrFact.getTrustManagers(),
+            SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+        return clientContext;
+    }
+
+    private SSLContext createServerContext() throws Exception
+    {
+        KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE);
+
+        keyMgrFact.init(config.serverKeyStore, config.serverPassword);
+
+        SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+
+        serverContext.init(keyMgrFact.getKeyManagers(), null,
+            SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+        return serverContext;
+    }
+
     private static final String HOST = "localhost";
     private static final AtomicInteger PORT_NO = new AtomicInteger(9100);
 
     static class SimpleClient
         implements TestProtocolUtil.BlockingCallable
     {
+        private final SSLContext clientContext;
         private final int port;
         private final CipherSuitesTestConfig config;
         private final CountDownLatch latch;
         private byte[] tlsUnique = null;
 
-        SimpleClient(int port, CipherSuitesTestConfig config)
+        SimpleClient(SSLContext clientContext, int port, CipherSuitesTestConfig config)
         {
+            this.clientContext = clientContext;
             this.port = port;
             this.config = config;
             this.latch = new CountDownLatch(1);
@@ -102,16 +142,6 @@ public class CipherSuitesTestCase extends TestCase
         {
             try
             {
-                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-
-                trustMgrFact.init(config.clientTrustStore);
-
-                SSLContext clientContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-
-                clientContext.init(null, trustMgrFact.getTrustManagers(),
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-
                 SSLSocketFactory fact = clientContext.getSocketFactory();
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
 
@@ -155,13 +185,15 @@ public class CipherSuitesTestCase extends TestCase
     static class SimpleServer
         implements TestProtocolUtil.BlockingCallable
     {
+        private final SSLContext serverContext;
         private final int port;
         private final CipherSuitesTestConfig config;
         private final CountDownLatch latch;
         private byte[] tlsUnique = null;
 
-        SimpleServer(int port, CipherSuitesTestConfig config)
+        SimpleServer(SSLContext serverContext, int port, CipherSuitesTestConfig config)
         {
+            this.serverContext = serverContext;
             this.port = port;
             this.config = config;
             this.latch = new CountDownLatch(1);
@@ -171,16 +203,6 @@ public class CipherSuitesTestCase extends TestCase
         {
             try
             {
-                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                    ProviderUtils.PROVIDER_NAME_BCJSSE);
-
-                keyMgrFact.init(config.serverKeyStore, config.serverPassword);
-
-                SSLContext serverContext = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
-
-                serverContext.init(keyMgrFact.getKeyManagers(), null,
-                    SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
-
                 SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
                 SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(port);
 
