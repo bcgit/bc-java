@@ -5305,4 +5305,20 @@ public class TlsUtils
         return TlsCryptoUtils.hkdfExpandLabel(secret, securityParameters.getPRFHashAlgorithm(), label, transcriptHash,
             securityParameters.getPRFHashLength());
     }
+
+    static TlsSecret getSessionMasterSecret(TlsCrypto crypto, TlsSecret masterSecret)
+    {
+        if (null != masterSecret)
+        {
+            synchronized (masterSecret)
+            {
+                if (masterSecret.isAlive())
+                {
+                    return crypto.adoptSecret(masterSecret);
+                }
+            }
+        }
+
+        return null;
+    }
 }

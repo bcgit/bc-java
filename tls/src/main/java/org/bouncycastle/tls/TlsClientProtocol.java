@@ -102,31 +102,7 @@ public class TlsClientProtocol
     {
         super.beginHandshake();
 
-        TlsSession sessionToResume = tlsClient.getSessionToResume();
-        if (sessionToResume != null && sessionToResume.isResumable())
-        {
-            SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
-
-            /*
-             * NOTE: If we ever enable session resumption without extended_master_secret, then
-             * renegotiation MUST be disabled (see RFC 7627 5.4).
-             */
-            if (sessionParameters != null
-                && (sessionParameters.isExtendedMasterSecret()
-                    || (!tlsClient.requiresExtendedMasterSecret() && tlsClient.allowLegacyResumption())))
-            {
-                TlsSecret masterSecret = sessionParameters.getMasterSecret();
-                synchronized (masterSecret)
-                {
-                    if (masterSecret.isAlive())
-                    {
-                        this.tlsSession = sessionToResume;
-                        this.sessionParameters = sessionParameters;
-                        this.sessionMasterSecret = tlsClientContext.getCrypto().adoptSecret(masterSecret);
-                    }
-                }
-            }
-        }
+        establishSession(tlsClient.getSessionToResume());
 
         sendClientHello();
         this.connection_state = CS_CLIENT_HELLO;
@@ -1645,7 +1621,8 @@ public class TlsClientProtocol
         this.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
         if (TlsUtils.isExtendedMasterSecretOptionalTLS(tlsClientContext.getClientSupportedVersions())
-            && tlsClient.shouldUseExtendedMasterSecret())
+            && (tlsClient.shouldUseExtendedMasterSecret() ||
+                (null != sessionParameters && sessionParameters.isExtendedMasterSecret())))
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
         }
