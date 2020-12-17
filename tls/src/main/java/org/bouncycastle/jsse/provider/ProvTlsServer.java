@@ -744,7 +744,8 @@ class ProvTlsServer
 
             if (null == sessionParameters ||
                 !securityParameters.getNegotiatedVersion().equals(sessionParameters.getNegotiatedVersion()) ||
-                !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
+                !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()) ||
+                !Arrays.contains(offeredCipherSuites, sessionParameters.getCipherSuite()))
             {
                 return false;
             }

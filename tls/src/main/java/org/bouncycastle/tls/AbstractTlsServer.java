@@ -423,19 +423,6 @@ public abstract class AbstractTlsServer
     public Hashtable getServerExtensions()
         throws IOException
     {
-        if (!shouldSelectProtocolNameEarly())
-        {
-            if (null != clientProtocolNames && !clientProtocolNames.isEmpty())
-            {
-                this.selectedProtocolName = selectProtocolName();
-            }
-        }
-
-        if (null != selectedProtocolName)
-        {
-            TlsExtensionsUtils.addALPNExtensionServer(checkServerExtensions(), selectedProtocolName);
-        }
-
         if (this.encryptThenMACOffered && allowEncryptThenMAC())
         {
             /*
@@ -505,6 +492,31 @@ public abstract class AbstractTlsServer
          * (NOTE: The server would put a supported_groups extension in the EncryptedExtensions message)
          */
         return serverExtensions;
+    }
+
+    public void getServerExtensionsForConnection(Hashtable serverExtensions) throws IOException
+    {
+        if (!shouldSelectProtocolNameEarly())
+        {
+            if (null != clientProtocolNames && !clientProtocolNames.isEmpty())
+            {
+                this.selectedProtocolName = selectProtocolName();
+            }
+        }
+
+        /*
+         * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
+         * contents of this extension are irrelevant, and only the values in the new handshake
+         * messages are considered.
+         */
+        if (null == selectedProtocolName)
+        {
+            serverExtensions.remove(TlsExtensionsUtils.EXT_application_layer_protocol_negotiation);
+        }
+        else
+        {
+            TlsExtensionsUtils.addALPNExtensionServer(serverExtensions, selectedProtocolName);
+        }
     }
 
     public Vector getServerSupplementalData()

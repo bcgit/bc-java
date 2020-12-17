@@ -63,6 +63,12 @@ public class CipherSuitesEngineTestCase extends TestCase
             return;
         }
 
+        runTestConnection();
+        runTestConnection();
+    }
+
+    private void runTestConnection() throws Throwable
+    {
         SSLContext clientContext = createSSLContextClient();
         SSLContext serverContext = createSSLContextServer();
 

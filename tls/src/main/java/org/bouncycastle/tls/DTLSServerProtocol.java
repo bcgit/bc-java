@@ -127,14 +127,16 @@ public class DTLSServerProtocol
          * ONLY when extended_master_secret has been negotiated (otherwise NULL).
          */
         {
-            invalidateSession(state);
+            // TODO[resumption]
 
-            securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
-
-            state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
+            state.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
             state.sessionParameters = null;
             state.sessionMasterSecret = null;
         }
+
+        securityParameters.sessionID = state.tlsSession.getSessionID();
+
+        state.server.notifySession(state.tlsSession);
 
         {
             byte[] serverHelloBody = generateServerHello(state, recordLayer);

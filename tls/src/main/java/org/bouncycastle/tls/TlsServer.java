@@ -53,6 +53,10 @@ public interface TlsServer
     Hashtable getServerExtensions()
         throws IOException;
 
+    // Hashtable is (Integer -> byte[])
+    void getServerExtensionsForConnection(Hashtable serverExtensions)
+        throws IOException;
+
     // Vector is (SupplementalDataEntry)
     Vector getServerSupplementalData()
         throws IOException;
