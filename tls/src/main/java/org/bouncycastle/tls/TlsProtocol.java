@@ -1318,6 +1318,48 @@ public abstract class TlsProtocol
         return bytesToRead;
     }
 
+    protected boolean establishSession(TlsSession sessionToResume)
+    {
+        if (null == sessionToResume || !sessionToResume.isResumable())
+        {
+            return false;
+        }
+
+        SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
+        if (null == sessionParameters)
+        {
+            return false;
+        }
+
+        if (!sessionParameters.isExtendedMasterSecret())
+        {
+            TlsPeer peer = getPeer();
+            if (!peer.allowLegacyResumption() || peer.requiresExtendedMasterSecret())
+            {
+                return false;
+            }
+
+            /*
+             * NOTE: For session resumption without extended_master_secret, renegotiation MUST be
+             * disabled (see RFC 7627 5.4). We currently do not implement renegotiation and it is
+             * unlikely we ever would since it was removed in TLS 1.3.
+             */
+        }
+
+        TlsSecret sessionMasterSecret = TlsUtils.getSessionMasterSecret(getContext().getCrypto(),
+            sessionParameters.getMasterSecret());
+        if (null == sessionMasterSecret)
+        {
+            return false;
+        }
+
+        this.tlsSession = sessionToResume;
+        this.sessionParameters = sessionParameters;
+        this.sessionMasterSecret = sessionMasterSecret;
+
+        return true;
+    }
+
     protected void invalidateSession()
     {
         if (this.sessionMasterSecret != null)

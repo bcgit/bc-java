@@ -226,16 +226,15 @@ public class TlsServerProtocol
              */
             {
                 // TODO[tls13] Resumption/PSK
-                tlsServer.getSessionToResume(null);
 
                 this.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
                 this.sessionParameters = null;
                 this.sessionMasterSecret = null;
-
-                securityParameters.sessionID = tlsSession.getSessionID();
-
-                tlsServer.notifySession(tlsSession);
             }
+
+            securityParameters.sessionID = tlsSession.getSessionID();
+
+            tlsServer.notifySession(tlsSession);
 
             TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
 
@@ -484,11 +483,6 @@ public class TlsServerProtocol
          * TODO[resumption] Check RFC 7627 5.4. for required behaviour.
          */
 
-        /*
-         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
-         * extensions appearing in the client hello, and send a server hello containing no
-         * extensions.
-         */
         this.clientExtensions = clientHello.getExtensions();
 
         byte[] clientRenegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
@@ -560,18 +554,24 @@ public class TlsServerProtocol
             tlsServer.processClientExtensions(clientExtensions);
         }
 
-        {
-            // TODO[resumption]
-            tlsServer.getSessionToResume(null);
+        this.resumedSession = establishSession(tlsServer.getSessionToResume(clientHello.getSessionID()));
 
-            this.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
+        if (!resumedSession)
+        {
+            byte[] newSessionID = tlsServer.getNewSessionID();
+            if (null == newSessionID)
+            {
+                newSessionID = TlsUtils.EMPTY_BYTES;
+            }
+
+            this.tlsSession = TlsUtils.importSession(newSessionID, null);
             this.sessionParameters = null;
             this.sessionMasterSecret = null;
-
-            securityParameters.sessionID = tlsSession.getSessionID();
-
-            tlsServer.notifySession(tlsSession);
         }
+
+        securityParameters.sessionID = tlsSession.getSessionID();
+
+        tlsServer.notifySession(tlsSession);
 
         TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
 
@@ -587,7 +587,7 @@ public class TlsServerProtocol
         }
 
         {
-            int cipherSuite = tlsServer.getSelectedCipherSuite();
+            int cipherSuite = resumedSession ? sessionParameters.getCipherSuite() : tlsServer.getSelectedCipherSuite();
 
             if (!TlsUtils.isValidCipherSuiteSelection(offeredCipherSuites, cipherSuite) ||
                 !TlsUtils.isValidVersionForCipherSuite(cipherSuite, serverVersion))
@@ -600,7 +600,15 @@ public class TlsServerProtocol
 
         tlsServerContext.setRSAPreMasterSecretVersion(clientLegacyVersion);
 
-        this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
+        {
+            Hashtable sessionServerExtensions = resumedSession
+                ?   sessionParameters.readServerExtensions()
+                :   tlsServer.getServerExtensions();
+
+            this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(sessionServerExtensions);
+        }
+
+        tlsServer.getServerExtensionsForConnection(serverExtensions);
 
         // NOT renegotiating
         {
@@ -635,6 +643,12 @@ public class TlsServerProtocol
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
          * master secret [..]. (and see 5.2, 5.3)
          */
+        if (resumedSession)
+        {
+            // TODO[resumption]
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        else
         {
             securityParameters.extendedMasterSecret = offeredExtendedMasterSecret && !serverVersion.isSSL()
                 && tlsServer.shouldUseExtendedMasterSecret();
@@ -647,25 +661,14 @@ public class TlsServerProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
-            else if (resumedSession && !tlsServer.allowLegacyResumption())
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
+//            else if (resumedSession && !tlsServer.allowLegacyResumption())
+//            {
+//                throw new TlsFatalAlert(AlertDescription.internal_error);
+//            }
         }
 
-        /*
-         * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
-         * contents of this extension are irrelevant, and only the values in the new handshake
-         * messages are considered.
-         */
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);
         securityParameters.applicationProtocolSet = true;
-
-        /*
-         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
-         * extensions appearing in the client hello, and send a server hello containing no
-         * extensions.
-         */
 
         if (!this.serverExtensions.isEmpty())
         {
@@ -936,6 +939,9 @@ public class TlsServerProtocol
 
                 if (resumedSession)
                 {
+                    securityParameters.masterSecret = sessionMasterSecret;
+                    recordStream.setPendingCipher(TlsUtils.initCipher(tlsServerContext));
+
                     sendChangeCipherSpec();
                     sendFinishedMessage();
                     this.connection_state = CS_SERVER_FINISHED;
