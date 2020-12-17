@@ -266,6 +266,15 @@ public abstract class AbstractTlsServer
         return null;
     }
 
+    public byte[] getNewSessionID()
+    {
+        return null;
+    }
+
+    public void notifySession(TlsSession session)
+    {
+    }
+
     public void notifyClientVersion(ProtocolVersion clientVersion)
         throws IOException
     {

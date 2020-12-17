@@ -25,6 +25,10 @@ public interface TlsServer
      */
     TlsSession getSessionToResume(byte[] sessionID);
 
+    byte[] getNewSessionID();
+
+    void notifySession(TlsSession session);
+
     void notifyClientVersion(ProtocolVersion clientVersion) throws IOException;
 
     void notifyFallback(boolean isFallback) throws IOException;

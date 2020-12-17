@@ -6,6 +6,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 import org.bouncycastle.jsse.BCX509Key;
+import org.bouncycastle.tls.SecurityParameters;
 
 interface ProvTlsManager
 {
@@ -29,7 +30,8 @@ interface ProvTlsManager
 
     void notifyHandshakeComplete(ProvSSLConnection connection);
 
-    void notifyHandshakeSession(ProvSSLSessionHandshake handshakeSession);
+    void notifyHandshakeSession(ProvSSLSessionContext sslSessionContext, SecurityParameters securityParameters,
+        JsseSecurityParameters jsseSecurityParameters, ProvSSLSession resumedSession);
 
     String selectApplicationProtocol(List<String> protocols);
 }
