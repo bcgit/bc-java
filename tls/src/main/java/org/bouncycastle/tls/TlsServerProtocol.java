@@ -300,6 +300,8 @@ public class TlsServerProtocol
         Hashtable serverHelloExtensions = new Hashtable();
         Hashtable serverEncryptedExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
 
+        tlsServer.getServerExtensionsForConnection(serverEncryptedExtensions);
+
         ProtocolVersion serverLegacyVersion = ProtocolVersion.TLSv12;
         TlsExtensionsUtils.addSupportedVersionsExtensionServer(serverHelloExtensions, serverVersion);
 
