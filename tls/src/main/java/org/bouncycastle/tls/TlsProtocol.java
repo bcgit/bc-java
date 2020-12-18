@@ -567,10 +567,6 @@ public abstract class TlsProtocol
 
             default:
             {
-                /*
-                 * TODO[tls13] No CCS required, but accept one for compatibility purposes. Search
-                 * RFC 8446 for "change_cipher_spec" for details.
-                 */
                 ProtocolVersion negotiatedVersion = getContext().getServerVersion();
                 if (null != negotiatedVersion && TlsUtils.isTLSv13(negotiatedVersion))
                 {
