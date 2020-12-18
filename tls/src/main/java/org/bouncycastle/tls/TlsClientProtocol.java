@@ -9,7 +9,6 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
-import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -1365,7 +1364,11 @@ public class TlsClientProtocol
 
         this.serverExtensions = readExtensionsData(extBytes);
 
-        // TODO[tls13] Check permitted types and request/response consistency
+
+        final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
+        final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
+        // TODO[tls13] Check permitted extension types and request/response consistency
 
         /*
          * TODO[tls13] Review all extensions that are processed in processServerHello (i.e. pre-1.3)
@@ -1373,12 +1376,37 @@ public class TlsClientProtocol
          */
 
         /*
+         * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
+         * contents of this extension are irrelevant, and only the values in the new handshake
+         * messages are considered.
+         */
+        securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);
+        securityParameters.applicationProtocolSet = true;
+
+        Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
+        if (resumedSession)
+        {
+            if (securityParameters.getCipherSuite() != sessionParameters.getCipherSuite()
+                || CompressionMethod._null != sessionParameters.getCompressionAlgorithm()
+                || !negotiatedVersion.equals(sessionParameters.getNegotiatedVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            sessionClientExtensions = null;
+            sessionServerExtensions = sessionParameters.readServerExtensions();
+        }
+
+        /*
          * TODO[tls13] This is supposed to be negotiated independently for client (CH extension)
          * and server (CR extension). It is not present in SH or EE for 1.3; set based on CH/CR only. 
          */
 //        securityParameters.statusRequestVersion = 1;
 
-        tlsClient.processServerExtensions(serverExtensions);
+        if (null != sessionClientExtensions)
+        {
+            tlsClient.processServerExtensions(serverExtensions);
+        }
     }
 
     protected void receive13NewSessionTicket(ByteArrayInputStream buf)
