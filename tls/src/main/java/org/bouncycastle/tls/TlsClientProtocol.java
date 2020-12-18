@@ -146,7 +146,7 @@ public class TlsClientProtocol
         if (this.resumedSession)
         {
             /*
-             * TODO[tls13] Abbreviated handshakes (PSK resumption)
+             * TODO[tls13] Resumption/PSK
              * 
              * NOTE: No CertificateRequest, Certificate, CertificateVerify messages, but client
              * might now send EndOfEarlyData after receiving server Finished message.
@@ -223,9 +223,6 @@ public class TlsClientProtocol
             {
                 receive13EncryptedExtensions(buf);
                 this.connection_state = CS_SERVER_ENCRYPTED_EXTENSIONS;
-
-                // TODO[tls13] Post-negotiation derivations
-
                 break;
             }
             default:
@@ -1164,7 +1161,7 @@ public class TlsClientProtocol
         // NOT renegotiating
         {
             /*
-             * RFC 5746 3.4. Client Behavior: Initial Handshake
+             * RFC 5746 3.4. Client Behavior: Initial Handshake (both full and session-resumption)
              */
 
             /*
@@ -1668,7 +1665,7 @@ public class TlsClientProtocol
         // NOT renegotiating
         {
             /*
-             * RFC 5746 3.4. Client Behavior: Initial Handshake
+             * RFC 5746 3.4. Client Behavior: Initial Handshake (both full and session-resumption)
              */
 
             /*

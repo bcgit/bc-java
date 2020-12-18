@@ -763,10 +763,6 @@ class ProvTlsServer
         {
             JsseSessionParameters jsseSessionParameters = provSSLSession.getJsseSessionParameters();
 
-            /*
-             * TODO[resumption] Confirm that processClientExtensions is called before
-             * getSessionToResume, so that 'matchedSNIServerName' has a meaningful value here.
-             */
             BCSNIServerName connectionSNI = matchedSNIServerName;
             BCSNIServerName sessionSNI = jsseSessionParameters.getMatchedSNIServerName();
 

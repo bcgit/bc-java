@@ -26,7 +26,6 @@ public class Certificate
     private static final TlsCertificate[] EMPTY_CERTS = new TlsCertificate[0];
     private static final CertificateEntry[] EMPTY_CERT_ENTRIES = new CertificateEntry[0];
 
-    // TODO[tls13] Review references, this won't work for TLS 1.3
     public static final Certificate EMPTY_CHAIN = new Certificate(EMPTY_CERTS);
     public static final Certificate EMPTY_CHAIN_TLS13 = new Certificate(TlsUtils.EMPTY_BYTES, EMPTY_CERT_ENTRIES);
 

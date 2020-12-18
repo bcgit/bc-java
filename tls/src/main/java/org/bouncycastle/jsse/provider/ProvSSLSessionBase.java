@@ -300,7 +300,7 @@ abstract class ProvSSLSessionBase
             return false;
         }
 
-        // TODO[tls13] TLS 1.3 doesn't need a session ID for resumption?
+        // TODO[tls13] Resumption/PSK. TLS 1.3 doesn't need a session ID for resumption?
 //        if (ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(getProtocolTLS()))
 //        {
 //            return true;

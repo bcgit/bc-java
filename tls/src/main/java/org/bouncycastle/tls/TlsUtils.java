@@ -4523,7 +4523,7 @@ public class TlsUtils
         boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
         if (isTLSv13)
         {
-            // TODO[tls13] Review whether any alternative checks needed here.
+            // 'keyExchange' not used
         }
         else if (clientCertificate.isEmpty())
         {
