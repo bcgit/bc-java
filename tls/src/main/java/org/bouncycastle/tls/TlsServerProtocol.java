@@ -481,10 +481,6 @@ public class TlsServerProtocol
 
         recordStream.setWriteVersion(serverVersion);
 
-        /*
-         * TODO[resumption] Check RFC 7627 5.4. for required behaviour.
-         */
-
         this.clientExtensions = clientHello.getExtensions();
 
         byte[] clientRenegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
@@ -492,7 +488,7 @@ public class TlsServerProtocol
         // NOT renegotiating
         {
             /*
-             * RFC 5746 3.6. Server Behavior: Initial Handshake
+             * RFC 5746 3.6. Server Behavior: Initial Handshake (both full and session-resumption)
              */
 
             /*
@@ -615,7 +611,7 @@ public class TlsServerProtocol
         // NOT renegotiating
         {
             /*
-             * RFC 5746 3.6. Server Behavior: Initial Handshake
+             * RFC 5746 3.6. Server Behavior: Initial Handshake (both full and session-resumption)
              */
             if (securityParameters.isSecureRenegotiation())
             {

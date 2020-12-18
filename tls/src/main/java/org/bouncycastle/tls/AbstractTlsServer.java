@@ -485,14 +485,6 @@ public abstract class AbstractTlsServer
             TlsExtensionsUtils.addTrustedCAKeysExtensionServer(serverExtensions);
         }
 
-        /*
-         * TODO[tls13] RFC 8446 4.2.7 If the server has a group it prefers to the ones in the "key_share"
-         * extension but is still willing to accept the ClientHello, it SHOULD send "supported_groups" to
-         * update the client's view of its preferences; this extension SHOULD contain all groups the server
-         * supports, regardless of whether they are currently supported by the client.
-         * 
-         * (NOTE: The server would put a supported_groups extension in the EncryptedExtensions message)
-         */
         return serverExtensions;
     }
 
