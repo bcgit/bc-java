@@ -380,18 +380,26 @@ class OperatorHelper
     Signature createSignature(AlgorithmIdentifier sigAlgId)
         throws GeneralSecurityException
     {
+        String sigName = getSignatureName(sigAlgId);
         Signature sig;
 
         try
         {
-            sig = helper.createSignature(getSignatureName(sigAlgId));
+            sig = helper.createSignature(sigName);
         }
         catch (NoSuchAlgorithmException e)
         {
             //
             // try an alternate
             //
-            if (oids.get(sigAlgId.getAlgorithm()) != null)
+            if (sigName.endsWith("WITHRSAANDMGF1"))
+            {
+                String signatureAlgorithm =
+                    sigName.substring(0, sigName.indexOf('W')) + "WITHRSASSA-PSS";
+
+                sig = helper.createSignature(signatureAlgorithm);
+            }
+            else if (oids.get(sigAlgId.getAlgorithm()) != null)
             {
                 String signatureAlgorithm = (String)oids.get(sigAlgId.getAlgorithm());
 
