@@ -430,17 +430,13 @@ class ProvTlsServer
     {
         super.getServerExtensions();
 
-        // TODO[resumption] Double-check whether this method is even called during session resumption
-        if (null == sslSession)
+        /*
+         * RFC 6066 When resuming a session, the server MUST NOT include a server_name extension
+         * in the server hello.
+         */
+        if (null != matchedSNIServerName)
         {
-            /*
-             * RFC 6066 When resuming a session, the server MUST NOT include a server_name extension
-             * in the server hello.
-             */
-            if (null != matchedSNIServerName)
-            {
-                TlsExtensionsUtils.addServerNameExtensionServer(checkServerExtensions());
-            }
+            TlsExtensionsUtils.addServerNameExtensionServer(serverExtensions);
         }
 
         @SuppressWarnings("unchecked")
