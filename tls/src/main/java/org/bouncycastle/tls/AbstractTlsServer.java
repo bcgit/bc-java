@@ -33,7 +33,8 @@ public abstract class AbstractTlsServer
     protected int selectedCipherSuite;
     protected Vector clientProtocolNames;
     protected ProtocolName selectedProtocolName;
-    protected Hashtable serverExtensions;
+
+    protected final Hashtable serverExtensions = new Hashtable();
 
     public AbstractTlsServer(TlsCrypto crypto)
     {
@@ -65,9 +66,10 @@ public abstract class AbstractTlsServer
         return false;
     }
 
+    /** @deprecated Use 'serverExtensions' directly, it is now never null */
     protected Hashtable checkServerExtensions()
     {
-        return this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.serverExtensions);
+        return serverExtensions;
     }
 
     protected int getMaximumNegotiableCurveBits()
@@ -258,7 +260,7 @@ public abstract class AbstractTlsServer
         this.certificateStatusRequest = null;
         this.selectedCipherSuite = -1;
         this.selectedProtocolName = null;
-        this.serverExtensions = null;
+        this.serverExtensions.clear();
     }
 
     public TlsSession getSessionToResume(byte[] sessionID)
@@ -433,18 +435,18 @@ public abstract class AbstractTlsServer
              */
             if (TlsUtils.isBlockCipherSuite(this.selectedCipherSuite))
             {
-                TlsExtensionsUtils.addEncryptThenMACExtension(checkServerExtensions());
+                TlsExtensionsUtils.addEncryptThenMACExtension(serverExtensions);
             }
         }
 
         if (this.maxFragmentLengthOffered >= 0 && MaxFragmentLength.isValid(maxFragmentLengthOffered))
         {
-            TlsExtensionsUtils.addMaxFragmentLengthExtension(checkServerExtensions(), this.maxFragmentLengthOffered);
+            TlsExtensionsUtils.addMaxFragmentLengthExtension(serverExtensions, this.maxFragmentLengthOffered);
         }
 
         if (this.truncatedHMacOffered && allowTruncatedHMac())
         {
-            TlsExtensionsUtils.addTruncatedHMacExtension(checkServerExtensions());
+            TlsExtensionsUtils.addTruncatedHMacExtension(serverExtensions);
         }
 
         if (this.clientSentECPointFormats && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
@@ -454,7 +456,7 @@ public abstract class AbstractTlsServer
              * message including a Supported Point Formats Extension appends this extension (along
              * with others) to its ServerHello message, enumerating the point formats it can parse.
              */
-            TlsExtensionsUtils.addSupportedPointFormatsExtension(checkServerExtensions(),
+            TlsExtensionsUtils.addSupportedPointFormatsExtension(serverExtensions,
                 new short[]{ ECPointFormat.uncompressed });
         }
 
@@ -466,7 +468,7 @@ public abstract class AbstractTlsServer
              * "status_request_v2" request, then the server MUST have included an extension of type
              * "status_request_v2" with empty "extension_data" in the extended server hello..
              */
-            TlsExtensionsUtils.addEmptyExtensionData(checkServerExtensions(), TlsExtensionsUtils.EXT_status_request_v2);
+            TlsExtensionsUtils.addEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request_v2);
         }
         else if (null != this.certificateStatusRequest && allowCertificateStatus())
         {
@@ -475,12 +477,12 @@ public abstract class AbstractTlsServer
              * have included an extension of type "status_request" with empty "extension_data" in
              * the extended server hello.
              */
-            TlsExtensionsUtils.addEmptyExtensionData(checkServerExtensions(), TlsExtensionsUtils.EXT_status_request);
+            TlsExtensionsUtils.addEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request);
         }
 
         if (null != this.trustedCAKeys && allowTrustedCAIndication())
         {
-            TlsExtensionsUtils.addTrustedCAKeysExtensionServer(checkServerExtensions());
+            TlsExtensionsUtils.addTrustedCAKeysExtensionServer(serverExtensions);
         }
 
         /*
