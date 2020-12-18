@@ -435,6 +435,8 @@ public class DTLSServerProtocol
 
         state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.server.getServerExtensions());
 
+        state.server.getServerExtensionsForConnection(state.serverExtensions);
+
         ProtocolVersion legacy_version = server_version;
         if (server_version.isLaterVersionOf(ProtocolVersion.DTLSv12))
         {
