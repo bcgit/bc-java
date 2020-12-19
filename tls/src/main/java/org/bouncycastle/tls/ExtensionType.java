@@ -220,7 +220,7 @@ public class ExtensionType
         }
     }
 
-    public static String getText(short extensionType)
+    public static String getText(int extensionType)
     {
         return getName(extensionType) + "(" + extensionType + ")";
     }
