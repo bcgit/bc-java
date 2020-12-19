@@ -123,6 +123,11 @@ class RecordStream
         this.pendingCipher = null;
     }
 
+    boolean needsKeyUpdate()
+    {
+        return writeSeqNo.currentValue() >= (1L << 20);
+    }
+
     void notifyKeyUpdateReceived() throws IOException
     {
         readCipher.rekeyDecoder();
@@ -500,6 +505,11 @@ class RecordStream
     {
         private long value = 0L;
         private boolean exhausted = false;
+
+        synchronized long currentValue()
+        {
+            return value;
+        }
 
         synchronized long nextValue(short alertDescription) throws TlsFatalAlert
         {
