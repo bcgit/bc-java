@@ -41,6 +41,16 @@ import org.bouncycastle.util.Arrays;
  */
 public class CertificateRequest
 {
+    private static Vector checkSupportedSignatureAlgorithms(Vector supportedSignatureAlgorithms, short alertDescription)
+        throws IOException
+    {
+        if (null == supportedSignatureAlgorithms)
+        {
+            throw new TlsFatalAlert(alertDescription, "'signature_algorithms' is required");
+        }
+        return supportedSignatureAlgorithms;
+    }
+
     protected final byte[] certificateRequestContext;
     protected final short[] certificateTypes;
     protected final Vector supportedSignatureAlgorithms;
@@ -59,7 +69,7 @@ public class CertificateRequest
 
     // TODO[tls13] Prefer to manage the certificateRequestContext internally only? 
     public CertificateRequest(byte[] certificateRequestContext, Vector supportedSignatureAlgorithms,
-        Vector supportedSignatureAlgorithmsCert, Vector certificateAuthorities)
+        Vector supportedSignatureAlgorithmsCert, Vector certificateAuthorities) throws IOException
     {
         /*
          * TODO[tls13] Removed certificateTypes, added certificate_request_context, added extensions
@@ -67,8 +77,9 @@ public class CertificateRequest
          * certificate_authorities, oid_filters, signature_algorithms_cert)
          */
 
-        this(certificateRequestContext, null, supportedSignatureAlgorithms, supportedSignatureAlgorithmsCert,
-            certificateAuthorities);
+        this(certificateRequestContext, null,
+            checkSupportedSignatureAlgorithms(supportedSignatureAlgorithms, AlertDescription.internal_error),
+            supportedSignatureAlgorithmsCert, certificateAuthorities);
     }
 
     private CertificateRequest(byte[] certificateRequestContext, short[] certificateTypes, Vector supportedSignatureAlgorithms,
@@ -245,8 +256,8 @@ public class CertificateRequest
 
             Hashtable extensions = TlsProtocol.readExtensionsData(extEncoding);
 
-            // TODO[tls13] The "signature_algorithms" extension MUST be specified
-            Vector supportedSignatureAlgorithms = TlsExtensionsUtils.getSignatureAlgorithmsExtension(extensions);
+            Vector supportedSignatureAlgorithms = checkSupportedSignatureAlgorithms(
+                TlsExtensionsUtils.getSignatureAlgorithmsExtension(extensions), AlertDescription.missing_extension);
             Vector supportedSignatureAlgorithmsCert = TlsExtensionsUtils
                 .getSignatureAlgorithmsCertExtension(extensions);
             Vector certificateAuthorities = TlsExtensionsUtils.getCertificateAuthoritiesExtension(extensions);
