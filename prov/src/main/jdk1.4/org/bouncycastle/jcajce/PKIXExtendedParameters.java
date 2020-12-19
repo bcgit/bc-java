@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce;
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertSelector;
 import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;

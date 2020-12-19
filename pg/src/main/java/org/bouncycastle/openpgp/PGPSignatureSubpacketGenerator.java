@@ -197,7 +197,6 @@ public class PGPSignatureSubpacketGenerator
      *
      * @deprecated use {@link #addSignerUserID(boolean, String)} instead.
      */
-    @Deprecated
     public void setSignerUserID(boolean isCritical, String userID)
     {
         addSignerUserID(isCritical, userID);
@@ -238,7 +237,6 @@ public class PGPSignatureSubpacketGenerator
      *
      * @deprecated use {@link #addEmbeddedSignature(boolean, PGPSignature)} instead.
      */
-    @Deprecated
     public void setEmbeddedSignature(boolean isCritical, PGPSignature pgpSignature)
         throws IOException
     {
@@ -287,7 +285,6 @@ public class PGPSignatureSubpacketGenerator
      *
      * @deprecated use {@link #addNotationData(boolean, boolean, String, String)} instead.
      */
-    @Deprecated
     public void setNotationData(boolean isCritical, boolean isHumanReadable, String notationName,
                                 String notationValue)
     {
