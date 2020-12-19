@@ -886,10 +886,6 @@ public abstract class TlsProtocol
                 {
                     throw new IOException("Cannot write application data on closed/failed TLS connection");
                 }
-                if (keyUpdatePendingSend)
-                {
-                    send13KeyUpdate(false);
-                }
 
                 /*
                  * RFC 5246 6.2.1. Zero-length fragments of Application data MAY be sent as they are
@@ -928,6 +924,14 @@ public abstract class TlsProtocol
                         break;
                     }
                     }
+                }
+                else if (keyUpdatePendingSend)
+                {
+                    send13KeyUpdate(false);
+                }
+                else if (recordStream.needsKeyUpdate())
+                {
+                    send13KeyUpdate(true);
                 }
 
                 // Fragment data according to the current fragment limit.
@@ -1124,7 +1128,7 @@ public abstract class TlsProtocol
         else
         {
             RecordPreview a = recordStream.previewOutputRecord(applicationDataSize);
-            if (keyUpdatePendingSend)
+            if (keyUpdatePendingSend || recordStream.needsKeyUpdate())
             {
                 int keyUpdateLength = HandshakeMessageOutput.getLength(1);
                 int recordSize = recordStream.previewOutputRecordSize(keyUpdateLength);
