@@ -1758,18 +1758,60 @@ public abstract class TlsProtocol
 
             do
             {
-                Integer extension_type = Integers.valueOf(TlsUtils.readUint16(buf));
+                int extension_type = TlsUtils.readUint16(buf);
                 byte[] extension_data = TlsUtils.readOpaque16(buf);
 
                 /*
                  * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
                  */
-                if (null != extensions.put(extension_type, extension_data))
+                if (null != extensions.put(Integers.valueOf(extension_type), extension_data))
                 {
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                        "Repeated extension: " + ExtensionType.getText(extension_type));
                 }
             }
             while (buf.available() > 0);
+        }
+
+        return extensions;
+    }
+
+    protected static Hashtable readExtensionsDataClientHello(byte[] extBytes)
+        throws IOException
+    {
+        // Integer -> byte[]
+        Hashtable extensions = new Hashtable();
+
+        if (extBytes.length > 0)
+        {
+            ByteArrayInputStream buf = new ByteArrayInputStream(extBytes);
+
+            int extension_type = -1;
+            boolean pre_shared_key_found = false;
+
+            do
+            {
+                extension_type = TlsUtils.readUint16(buf);
+                byte[] extension_data = TlsUtils.readOpaque16(buf);
+
+                /*
+                 * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
+                 */
+                if (null != extensions.put(Integers.valueOf(extension_type), extension_data))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                        "Repeated extension: " + ExtensionType.getText(extension_type));
+                }
+
+                pre_shared_key_found |= (ExtensionType.pre_shared_key == extension_type);
+            }
+            while (buf.available() > 0);
+
+            if (pre_shared_key_found && (ExtensionType.pre_shared_key != extension_type))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                    "'pre_shared_key' MUST be last in ClientHello");
+            }
         }
 
         return extensions;
