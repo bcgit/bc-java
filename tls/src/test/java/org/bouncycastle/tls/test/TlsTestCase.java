@@ -11,6 +11,7 @@ import java.security.SecureRandom;
 import junit.framework.TestCase;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsProtocol;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
 public class TlsTestCase extends TestCase
@@ -120,8 +121,11 @@ public class TlsTestCase extends TestCase
 
             assertTrue(Arrays.areEqual(clientImpl.tlsServerEndPoint, serverImpl.tlsServerEndPoint));
 
-            assertNotNull(clientImpl.tlsUnique);
-            assertNotNull(serverImpl.tlsUnique);
+            if (!TlsUtils.isTLSv13(clientImpl.negotiatedVersion))
+            {
+                assertNotNull(clientImpl.tlsUnique);
+                assertNotNull(serverImpl.tlsUnique);
+            }
             assertTrue(Arrays.areEqual(clientImpl.tlsUnique, serverImpl.tlsUnique));
 
             output.close();

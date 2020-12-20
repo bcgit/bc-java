@@ -272,7 +272,7 @@ public class TlsClientProtocol
                         clientCertificate = Certificate.EMPTY_CHAIN_TLS13;
                     }
 
-                    send13CertificateMessage(clientCertificate, null);
+                    send13CertificateMessage(clientCertificate);
                     this.connection_state = CS_CLIENT_CERTIFICATE;
 
                     if (null != clientCredentials)
@@ -1471,7 +1471,7 @@ public class TlsClientProtocol
     protected void receive13ServerCertificate(ByteArrayInputStream buf)
         throws IOException
     {
-        this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf);
+        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf);
 
         // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message.
         handleServerCertificate();
@@ -1497,7 +1497,7 @@ public class TlsClientProtocol
     protected void receive13ServerFinished(ByteArrayInputStream buf)
         throws IOException
     {
-        processFinishedMessage(buf);
+        process13FinishedMessage(buf);
     }
 
     protected void receiveCertificateRequest(ByteArrayInputStream buf) throws IOException
