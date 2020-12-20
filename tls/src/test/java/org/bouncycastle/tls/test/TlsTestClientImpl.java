@@ -73,6 +73,7 @@ class TlsTestClientImpl
     protected int firstFatalAlertConnectionEnd = -1;
     protected short firstFatalAlertDescription = -1;
 
+    ProtocolVersion negotiatedVersion = null;
     byte[] tlsServerEndPoint = null;
     byte[] tlsUnique = null;
 
@@ -195,6 +196,8 @@ class TlsTestClientImpl
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
         super.notifyServerVersion(serverVersion);
+
+        this.negotiatedVersion = serverVersion;
 
         if (TlsTestConfig.DEBUG)
         {

@@ -84,8 +84,11 @@ public class CipherSuitesTestCase extends TestCase
 
         TestProtocolUtil.runClientAndServer(server, client);
 
-        TestCase.assertNotNull(server.tlsUnique);
-        TestCase.assertNotNull(client.tlsUnique);
+        if (!"TLSv1.3".equals(config.protocol))
+        {
+            TestCase.assertNotNull(server.tlsUnique);
+            TestCase.assertNotNull(client.tlsUnique);
+        }
         TestCase.assertTrue(Arrays.areEqual(server.tlsUnique, client.tlsUnique));
     }
 
