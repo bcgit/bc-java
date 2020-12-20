@@ -436,6 +436,7 @@ class ProvTlsServer
          */
         if (null != matchedSNIServerName)
         {
+            // TODO[tls13] Resumption/PSK. SNI is always negotiated per-connection in TLS 1.3
             TlsExtensionsUtils.addServerNameExtensionServer(serverExtensions);
         }
 
@@ -761,6 +762,18 @@ class ProvTlsServer
         }
 
         {
+            /*
+             * TODO[tls13] RFC 8446 4.2.11. In TLS versions prior to TLS 1.3, the Server Name
+             * Identification (SNI) value was intended to be associated with the session (Section 3
+             * of [RFC6066]), with the server being required to enforce that the SNI value
+             * associated with the session matches the one specified in the resumption handshake.
+             * However, in reality the implementations were not consistent on which of two supplied
+             * SNI values they would use, leading to the consistency requirement being de facto
+             * enforced by the clients. In TLS 1.3, the SNI value is always explicitly specified in
+             * the resumption handshake, and there is no need for the server to associate an SNI
+             * value with the ticket. Clients, however, SHOULD store the SNI with the PSK to fulfill
+             * the requirements of Section 4.6.1.
+             */
             JsseSessionParameters jsseSessionParameters = provSSLSession.getJsseSessionParameters();
 
             BCSNIServerName connectionSNI = matchedSNIServerName;
