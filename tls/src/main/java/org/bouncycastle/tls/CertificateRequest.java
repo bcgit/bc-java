@@ -254,7 +254,7 @@ public class CertificateRequest
 
             byte[] extEncoding = TlsUtils.readOpaque16(input);
 
-            Hashtable extensions = TlsProtocol.readExtensionsData(extEncoding);
+            Hashtable extensions = TlsProtocol.readExtensionsData13(HandshakeType.certificate_request, extEncoding);
 
             Vector supportedSignatureAlgorithms = checkSupportedSignatureAlgorithms(
                 TlsExtensionsUtils.getSignatureAlgorithmsExtension(extensions), AlertDescription.missing_extension);

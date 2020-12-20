@@ -332,15 +332,13 @@ public abstract class TlsProtocol
     protected abstract void handleHandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException;
 
-    protected void applyMaxFragmentLengthExtension()
-        throws IOException
+    protected void applyMaxFragmentLengthExtension(short maxFragmentLength) throws IOException
     {
-        short maxFragmentLength = getContext().getSecurityParametersHandshake().getMaxFragmentLength();
         if (maxFragmentLength >= 0)
         {
             if (!MaxFragmentLength.isValid(maxFragmentLength))
             {
-                throw new TlsFatalAlert(AlertDescription.internal_error); 
+                throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
             int plainTextLimit = 1 << (8 + maxFragmentLength);
@@ -1746,10 +1744,6 @@ public abstract class TlsProtocol
         return readExtensionsData(extBytes);
     }
 
-    /*
-     * TODO[tls13] Need a general mechanism for extensions contexts to enforce TLS 1.3 restrictions
-     * on which extensions can appear where (review all callers).
-     */
     protected static Hashtable readExtensionsData(byte[] extBytes)
         throws IOException
     {
@@ -1780,9 +1774,53 @@ public abstract class TlsProtocol
         return extensions;
     }
 
+    protected static Hashtable readExtensionsData13(int handshakeType, byte[] extBytes)
+        throws IOException
+    {
+        // Integer -> byte[]
+        Hashtable extensions = new Hashtable();
+
+        if (extBytes.length > 0)
+        {
+            ByteArrayInputStream buf = new ByteArrayInputStream(extBytes);
+
+            do
+            {
+                int extension_type = TlsUtils.readUint16(buf);
+
+                if (!TlsUtils.isPermittedExtensionType13(handshakeType, extension_type))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                        "Invalid extension: " + ExtensionType.getText(extension_type));
+                }
+
+                byte[] extension_data = TlsUtils.readOpaque16(buf);
+
+                /*
+                 * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
+                 */
+                if (null != extensions.put(Integers.valueOf(extension_type), extension_data))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                        "Repeated extension: " + ExtensionType.getText(extension_type));
+                }
+            }
+            while (buf.available() > 0);
+        }
+
+        return extensions;
+    }
+
     protected static Hashtable readExtensionsDataClientHello(byte[] extBytes)
         throws IOException
     {
+        /*
+         * TODO[tls13] We are currently allowing any extensions to appear in ClientHello. It is
+         * somewhat complicated to restrict what can appear based on the specific set of versions
+         * the client is offering, and anyway could be fragile since clients may take a
+         * "kitchen sink" approach to adding extensions independently of the offered versions.
+         */
+
         // Integer -> byte[]
         Hashtable extensions = new Hashtable();
 
