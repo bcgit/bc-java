@@ -69,6 +69,8 @@ public class ServerHello
     /**
      * Encode this {@link ServerHello} to an {@link OutputStream}.
      * 
+     * @param context
+     *            the {@link TlsContext} of the current connection.
      * @param output
      *            the {@link OutputStream} to encode to.
      * @throws IOException
@@ -91,7 +93,7 @@ public class ServerHello
     /**
      * Parse a {@link ServerHello} from a {@link ByteArrayInputStream}.
      *
-     * @param messageInput
+     * @param input
      *            the {@link ByteArrayInputStream} to parse from.
      * @return a {@link ServerHello} object.
      * @throws IOException
