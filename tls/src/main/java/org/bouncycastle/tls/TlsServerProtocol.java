@@ -138,6 +138,9 @@ public class TlsServerProtocol
             TlsExtensionsUtils.addCookieExtension(serverHelloExtensions, retryCookie);
         }
 
+        TlsUtils.checkExtensionData13(serverHelloExtensions, HandshakeType.hello_retry_request,
+            AlertDescription.internal_error);
+
         return new ServerHello(clientHello.getSessionID(), securityParameters.getCipherSuite(), serverHelloExtensions);
     }
 
@@ -368,6 +371,9 @@ public class TlsServerProtocol
         this.serverExtensions = serverEncryptedExtensions;
 
         applyMaxFragmentLengthExtension(securityParameters.getMaxFragmentLength());
+
+        TlsUtils.checkExtensionData13(serverHelloExtensions, HandshakeType.server_hello,
+            AlertDescription.internal_error);
 
         return new ServerHello(serverLegacyVersion, securityParameters.getServerRandom(), legacy_session_id,
             securityParameters.getCipherSuite(), serverHelloExtensions);
