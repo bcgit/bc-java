@@ -5321,4 +5321,128 @@ public class TlsUtils
 
         return null;
     }
+
+    static boolean isPermittedExtensionType13(int handshakeType, int extensionType)
+    {
+        switch (extensionType)
+        {
+        case ExtensionType.server_name:
+        case ExtensionType.max_fragment_length:
+        case ExtensionType.supported_groups:
+        case ExtensionType.use_srtp:
+        case ExtensionType.heartbeat:
+        case ExtensionType.application_layer_protocol_negotiation:
+        case ExtensionType.client_certificate_type:
+        case ExtensionType.server_certificate_type:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+            case HandshakeType.encrypted_extensions:
+                return true;
+            default:
+                return false;
+            }
+        }
+        case ExtensionType.status_request:
+        case ExtensionType.signed_certificate_timestamp:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+            case HandshakeType.certificate_request:
+            case HandshakeType.certificate:
+                return true;
+            default:
+                return false;
+            }
+        }
+        case ExtensionType.signature_algorithms:
+        case ExtensionType.certificate_authorities:
+        case ExtensionType.signature_algorithms_cert:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+            case HandshakeType.certificate_request:
+                return true;
+            default:
+                return false;
+            }
+        }
+        case ExtensionType.padding:
+        case ExtensionType.psk_key_exchange_modes:
+        case ExtensionType.post_handshake_auth:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+                return true;
+            default:
+                return false;
+            }
+        }
+        case ExtensionType.key_share:
+        case ExtensionType.supported_versions:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+            case HandshakeType.server_hello:
+            case HandshakeType.hello_retry_request:
+                return true;
+            default:
+                return false;
+            }
+        }
+        case ExtensionType.pre_shared_key:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+            case HandshakeType.server_hello:
+                return true;
+            default:
+                return false;
+            }
+        }
+        case ExtensionType.early_data:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+            case HandshakeType.encrypted_extensions:
+            case HandshakeType.new_session_ticket:
+                return true;
+            default:
+                return false;
+            }
+        }
+        case ExtensionType.cookie:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+            case HandshakeType.hello_retry_request:
+                return true;
+            default:
+                return false;
+            }
+        }
+        case ExtensionType.oid_filters:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.certificate_request:
+                return true;
+            default:
+                return false;
+            }
+        }
+        default:
+        {
+            return !ExtensionType.isRecognized(extensionType);
+        }
+        }
+    }
 }

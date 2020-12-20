@@ -23,12 +23,12 @@ public class HandshakeType
     public static final short certificate_status = 22;
 
     /*
-     *  (DTLS) RFC 4347 4.3.2
+     * (DTLS) RFC 4347 4.3.2
      */
     public static final short hello_verify_request = 3;
 
     /*
-     * RFC 4680 
+     * RFC 4680
      */
     public static final short supplemental_data = 23;
 
@@ -36,8 +36,9 @@ public class HandshakeType
      * RFC 8446
      */
     public static final short new_session_ticket = 4;
-    public static final short end_of_early_data = 5; 
-    public static final short encrypted_extensions = 8; 
-    public static final short key_update = 24; 
-    public static final short message_hash = 254; 
+    public static final short end_of_early_data = 5;
+    public static final short hello_retry_request = 6;
+    public static final short encrypted_extensions = 8;
+    public static final short key_update = 24;
+    public static final short message_hash = 254;
 }
