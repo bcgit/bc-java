@@ -1482,10 +1482,6 @@ public class TlsUtils
         return calculateEndPointHash(context, certificate, enc, 0, enc.length);
     }
 
-    /*
-     * TODO[tls13] Check relevance of endpoint hash in TLS 1.3; if still exists, what about
-     * signature schemes using Intrinsic hash?
-     */
     static byte[] calculateEndPointHash(TlsContext context, TlsCertificate certificate, byte[] enc, int encOff,
         int encLen) throws IOException
     {
@@ -4819,12 +4815,39 @@ public class TlsUtils
 
         TlsProtocol.assertEmpty(buf);
 
-        if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
+        if (serverCertificate.isEmpty())
         {
-            if (serverCertificate.getCertificateRequestContext().length > 0)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        securityParameters.peerCertificate = serverCertificate;
+        securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
+
+        TlsAuthentication authentication = client.getAuthentication();
+        if (null == authentication)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return authentication;
+    }
+
+    static TlsAuthentication receive13ServerCertificate(TlsClientContext clientContext, TlsClient client,
+        ByteArrayInputStream buf) throws IOException
+    {
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+        if (null != securityParameters.getPeerCertificate())
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        Certificate serverCertificate = Certificate.parse(clientContext, buf, null);
+
+        TlsProtocol.assertEmpty(buf);
+
+        if (serverCertificate.getCertificateRequestContext().length > 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         if (serverCertificate.isEmpty())
@@ -4833,7 +4856,7 @@ public class TlsUtils
         }
 
         securityParameters.peerCertificate = serverCertificate;
-        securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
+        securityParameters.tlsServerEndPoint = null;
 
         TlsAuthentication authentication = client.getAuthentication();
         if (null == authentication)

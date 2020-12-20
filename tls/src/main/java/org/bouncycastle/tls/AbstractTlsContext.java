@@ -172,24 +172,29 @@ abstract class AbstractTlsContext
 
     public byte[] exportChannelBinding(int channelBinding)
     {
-        SecurityParameters sp = getSecurityParametersConnection();
-        if (null == sp)
+        SecurityParameters securityParameters = getSecurityParametersConnection();
+        if (null == securityParameters)
         {
             throw new IllegalStateException("Export of channel bindings unavailable before handshake completion");
+        }
+
+        if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
+        {
+            return null;
         }
 
         switch (channelBinding)
         {
         case ChannelBinding.tls_server_end_point:
         {
-            byte[] tlsServerEndPoint = sp.getTLSServerEndPoint();
+            byte[] tlsServerEndPoint = securityParameters.getTLSServerEndPoint();
 
             return TlsUtils.isNullOrEmpty(tlsServerEndPoint) ? null : Arrays.clone(tlsServerEndPoint);
         }
 
         case ChannelBinding.tls_unique:
         {
-            return Arrays.clone(sp.getTLSUnique());
+            return Arrays.clone(securityParameters.getTLSUnique());
         }
 
         case ChannelBinding.tls_unique_for_telnet:

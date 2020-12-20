@@ -1282,7 +1282,7 @@ public class TlsServerProtocol
 
     protected void receive13ClientFinished(ByteArrayInputStream buf) throws IOException
     {
-        processFinishedMessage(buf);
+        process13FinishedMessage(buf);
     }
 
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
@@ -1406,15 +1406,9 @@ public class TlsServerProtocol
              * "status_request" extension instead.
              */
 
-            ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
             Certificate serverCertificate = serverCredentials.getCertificate();
-            send13CertificateMessage(serverCertificate, endPointHash);
-            securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
-            /*
-             * TODO[tls13] This is supposed to be negotiated independently for client (CH extension)
-             * and server (CR extension).
-             */
-            securityParameters.statusRequestVersion = 1;
+            send13CertificateMessage(serverCertificate);
+            securityParameters.tlsServerEndPoint = null;
             this.connection_state = CS_SERVER_CERTIFICATE;
         }
 

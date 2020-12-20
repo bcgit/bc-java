@@ -1414,6 +1414,34 @@ public abstract class TlsProtocol
         }
     }
 
+    protected void process13FinishedMessage(ByteArrayInputStream buf)
+        throws IOException
+    {
+        TlsContext context = getContext();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        boolean isServerContext = context.isServer();
+
+        byte[] verify_data = TlsUtils.readFully(securityParameters.getVerifyDataLength(), buf);
+
+        assertEmpty(buf);
+
+        byte[] expected_verify_data = TlsUtils.calculateVerifyData(context, handshakeHash, !isServerContext);
+
+        /*
+         * Compare both checksums.
+         */
+        if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data))
+        {
+            /*
+             * Wrong checksum in the finished message.
+             */
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
+        }
+
+        securityParameters.peerVerifyData = expected_verify_data;
+        securityParameters.tlsUnique = null;
+    }
+
     protected void raiseAlertFatal(short alertDescription, String message, Throwable cause)
         throws IOException
     {
@@ -1498,7 +1526,7 @@ public abstract class TlsProtocol
         securityParameters.localCertificate = certificate;
     }
 
-    protected void send13CertificateMessage(Certificate certificate, OutputStream endPointHash) throws IOException
+    protected void send13CertificateMessage(Certificate certificate) throws IOException
     {
         if (null == certificate)
         {
@@ -1513,7 +1541,7 @@ public abstract class TlsProtocol
         }
 
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.certificate);
-        certificate.encode(context, message, endPointHash);
+        certificate.encode(context, message, null);
         message.send(this);
 
         securityParameters.localCertificate = certificate;
@@ -1573,11 +1601,7 @@ public abstract class TlsProtocol
         byte[] verify_data = TlsUtils.calculateVerifyData(context, handshakeHash, isServerContext);
 
         securityParameters.localVerifyData = verify_data;
-
-        if (null == securityParameters.getPeerVerifyData())
-        {
-            securityParameters.tlsUnique = verify_data;
-        }
+        securityParameters.tlsUnique = null;
 
         HandshakeMessageOutput.send(this, HandshakeType.finished, verify_data);
     }
