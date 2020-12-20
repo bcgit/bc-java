@@ -32,15 +32,20 @@ public class SRPTlsClient
         return TlsUtils.getSupportedCipherSuites(getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+    }
+
     protected boolean requireSRPServerExtension()
     {
         // No explicit guidance in RFC 5054; by default an (empty) extension from server is optional
         return false;
     }
 
+    /** @deprecated Unused; will be removed */
     public ProtocolVersion getClientVersion()
     {
-        // TODO[tls13] Consider whether this class should offer TLSv13
         return ProtocolVersion.TLSv12;
     }
 

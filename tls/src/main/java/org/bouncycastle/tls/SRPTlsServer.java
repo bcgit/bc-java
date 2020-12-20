@@ -42,14 +42,19 @@ public class SRPTlsServer
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
+    protected ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+    }
+
     protected int[] getSupportedCipherSuites()
     {
         return TlsUtils.getSupportedCipherSuites(getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
+    /** @deprecated Unused; will be removed */
     public ProtocolVersion getMaximumVersion()
     {
-        // TODO[tls13] Consider whether this class should offer TLSv13
         return ProtocolVersion.TLSv12;
     }
 
