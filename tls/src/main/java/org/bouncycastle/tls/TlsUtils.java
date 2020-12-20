@@ -5445,4 +5445,17 @@ public class TlsUtils
         }
         }
     }
+
+    static void checkExtensionData13(Hashtable extensions, int handshakeType, short alertDescription) throws IOException
+    {
+        Enumeration e = extensions.keys();
+        while (e.hasMoreElements())
+        {
+            Integer extensionType = (Integer)e.nextElement();
+            if (null == extensionType || !isPermittedExtensionType13(handshakeType, extensionType.intValue()))
+            {
+                throw new TlsFatalAlert(alertDescription, "Invalid extension: " + ExtensionType.getText(extensionType));
+            }
+        }
+    }
 }

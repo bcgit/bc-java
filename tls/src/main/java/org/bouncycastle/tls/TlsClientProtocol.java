@@ -799,7 +799,7 @@ public class TlsClientProtocol
         this.keyExchange = TlsUtils.initKeyExchangeClient(tlsClientContext, tlsClient);
     }
 
-    protected void process13HelloRetryRequest(ServerHello serverHello)
+    protected void process13HelloRetryRequest(ServerHello helloRetryRequest)
         throws IOException
     {
         final ProtocolVersion legacy_record_version = ProtocolVersion.TLSv12;
@@ -813,9 +813,9 @@ public class TlsClientProtocol
          * specified in Section 4.1.3 and then process the extensions, starting with determining the
          * version using "supported_versions".
          */
-        final ProtocolVersion legacy_version = serverHello.getVersion();
-        final byte[] legacy_session_id_echo = serverHello.getSessionID();
-        final int cipherSuite = serverHello.getCipherSuite();
+        final ProtocolVersion legacy_version = helloRetryRequest.getVersion();
+        final byte[] legacy_session_id_echo = helloRetryRequest.getSessionID();
+        final int cipherSuite = helloRetryRequest.getCipherSuite();
         // NOTE: legacy_compression_method checked during ServerHello parsing
 
         if (!ProtocolVersion.TLSv12.equals(legacy_version) ||
@@ -832,14 +832,14 @@ public class TlsClientProtocol
          * - supported_versions
          * - any unrecognized (MUST ignore)
          */
-        final Hashtable serverHelloExtensions = serverHello.getExtensions();
-        if (null == serverHelloExtensions)
+        final Hashtable extensions = helloRetryRequest.getExtensions();
+        if (null == extensions)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
+        TlsUtils.checkExtensionData13(extensions, HandshakeType.hello_retry_request, AlertDescription.illegal_parameter);
 
-        final ProtocolVersion server_version = TlsExtensionsUtils
-            .getSupportedVersionsExtensionServer(serverHelloExtensions);
+        final ProtocolVersion server_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(extensions);
         if (null == server_version)
         {
             throw new TlsFatalAlert(AlertDescription.missing_extension);
@@ -860,7 +860,7 @@ public class TlsClientProtocol
          * extension in the original ClientHello. If either of these checks fails, then the client
          * MUST abort the handshake with an "illegal_parameter" alert.
          */
-        final int selected_group = TlsExtensionsUtils.getKeyShareHelloRetryRequest(serverHelloExtensions);
+        final int selected_group = TlsExtensionsUtils.getKeyShareHelloRetryRequest(extensions);
 
         if (!TlsUtils.isValidKeyShareSelection(server_version, securityParameters.getClientSupportedGroups(),
             clientAgreements, selected_group))
@@ -868,7 +868,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        final byte[] cookie = TlsExtensionsUtils.getCookieExtension(serverHelloExtensions);
+        final byte[] cookie = TlsExtensionsUtils.getCookieExtension(extensions);
 
 
 
@@ -903,23 +903,16 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        /*
-         * TODO[tls13] Extensions permitted in ServerHello:
-         * - key_share
-         * - pre_shared_key
-         * - supported_versions
-         * - any unrecognized (MUST ignore)
-         */
-        final Hashtable serverHelloExtensions = serverHello.getExtensions();
-        if (null == serverHelloExtensions)
+        final Hashtable extensions = serverHello.getExtensions();
+        if (null == extensions)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
+        TlsUtils.checkExtensionData13(extensions, HandshakeType.server_hello, AlertDescription.illegal_parameter);
 
         if (afterHelloRetryRequest)
         {
-            final ProtocolVersion server_version = TlsExtensionsUtils
-                .getSupportedVersionsExtensionServer(serverHelloExtensions);
+            final ProtocolVersion server_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(extensions);
             if (null == server_version)
             {
                 throw new TlsFatalAlert(AlertDescription.missing_extension);
@@ -961,8 +954,15 @@ public class TlsClientProtocol
          */
         securityParameters.extendedMasterSecret = true;
 
+        /*
+         * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
+         * 
+         * OCSP information is carried in an extension for a CertificateEntry.
+         */
+        securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request) ? 1 : 0;
+
         {
-            KeyShareEntry keyShareEntry = TlsExtensionsUtils.getKeyShareServerHello(serverHelloExtensions);
+            KeyShareEntry keyShareEntry = TlsExtensionsUtils.getKeyShareServerHello(extensions);
             if (null == keyShareEntry)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -1291,11 +1291,10 @@ public class TlsClientProtocol
                 {
                     securityParameters.statusRequestVersion = 1;
                 }
-            }
 
-            this.expectSessionTicket = !this.resumedSession
-                && TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions, TlsProtocol.EXT_SessionTicket,
-                    AlertDescription.illegal_parameter);
+                this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
+                    TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
+            }
         }
 
         if (sessionClientExtensions != null)
@@ -1303,7 +1302,7 @@ public class TlsClientProtocol
             tlsClient.processServerExtensions(sessionServerExtensions);
         }
 
-        applyMaxFragmentLengthExtension();
+        applyMaxFragmentLengthExtension(securityParameters.getMaxFragmentLength());
 
         if (this.resumedSession)
         {
@@ -1359,24 +1358,19 @@ public class TlsClientProtocol
 
         assertEmpty(buf);
 
-        this.serverExtensions = readExtensionsData(extBytes);
+        this.serverExtensions = readExtensionsData13(HandshakeType.encrypted_extensions, extBytes);
 
 
         final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
         final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
-        // TODO[tls13] Check permitted extension types and request/response consistency
+        // TODO[tls13] Check request/response consistency
 
         /*
          * TODO[tls13] Review all extensions that are processed in processServerHello (i.e. pre-1.3)
          * and explicitly set all extension-related values (even if ignored from 1.3).
          */
 
-        /*
-         * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
-         * contents of this extension are irrelevant, and only the values in the new handshake
-         * messages are considered.
-         */
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);
         securityParameters.applicationProtocolSet = true;
 
@@ -1394,16 +1388,15 @@ public class TlsClientProtocol
             sessionServerExtensions = sessionParameters.readServerExtensions();
         }
 
-        /*
-         * TODO[tls13] This is supposed to be negotiated independently for client (CH extension)
-         * and server (CR extension). It is not present in SH or EE for 1.3; set based on CH/CR only. 
-         */
-//        securityParameters.statusRequestVersion = 1;
+        securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(sessionClientExtensions,
+            sessionServerExtensions, AlertDescription.illegal_parameter);
 
         if (null != sessionClientExtensions)
         {
             tlsClient.processServerExtensions(serverExtensions);
         }
+
+        applyMaxFragmentLengthExtension(securityParameters.getMaxFragmentLength());
     }
 
     protected void receive13NewSessionTicket(ByteArrayInputStream buf)

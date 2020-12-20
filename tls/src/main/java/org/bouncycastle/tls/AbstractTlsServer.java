@@ -340,22 +340,19 @@ public abstract class AbstractTlsServer
             }
 
             this.encryptThenMACOffered = TlsExtensionsUtils.hasEncryptThenMACExtension(clientExtensions);
+            this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
+            this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
+            this.statusRequestV2 = TlsExtensionsUtils.getStatusRequestV2Extension(clientExtensions);
+            this.trustedCAKeys = TlsExtensionsUtils.getTrustedCAKeysExtensionClient(clientExtensions);
+
+            // We only support uncompressed format, this is just to validate the extension, and note its presence.
+            this.clientSentECPointFormats = (null != TlsExtensionsUtils.getSupportedPointFormatsExtension(clientExtensions));
 
             this.maxFragmentLengthOffered = TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions);
             if (maxFragmentLengthOffered >= 0 && !MaxFragmentLength.isValid(maxFragmentLengthOffered))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-
-            this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
-
-            // We only support uncompressed format, this is just to validate the extension, and note its presence.
-            this.clientSentECPointFormats = (null != TlsExtensionsUtils.getSupportedPointFormatsExtension(clientExtensions));
-
-            // TODO[tls13] These three extensions need review
-            this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
-            this.statusRequestV2 = TlsExtensionsUtils.getStatusRequestV2Extension(clientExtensions);
-            this.trustedCAKeys = TlsExtensionsUtils.getTrustedCAKeysExtensionClient(clientExtensions);
         }
     }
 
@@ -425,64 +422,80 @@ public abstract class AbstractTlsServer
     public Hashtable getServerExtensions()
         throws IOException
     {
-        if (this.encryptThenMACOffered && allowEncryptThenMAC())
+        final boolean isTLSv13 = TlsUtils.isTLSv13(context);
+
+        if (isTLSv13)
         {
-            /*
-             * RFC 7366 3. If a server receives an encrypt-then-MAC request extension from a client
-             * and then selects a stream or Authenticated Encryption with Associated Data (AEAD)
-             * ciphersuite, it MUST NOT send an encrypt-then-MAC response extension back to the
-             * client.
-             */
-            if (TlsUtils.isBlockCipherSuite(this.selectedCipherSuite))
+            if (null != this.certificateStatusRequest && allowCertificateStatus())
             {
-                TlsExtensionsUtils.addEncryptThenMACExtension(serverExtensions);
+                /*
+                 * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
+                 * 
+                 * OCSP information is carried in an extension for a CertificateEntry.
+                 */
+            }
+        }
+        else
+        {
+            if (this.encryptThenMACOffered && allowEncryptThenMAC())
+            {
+                /*
+                 * RFC 7366 3. If a server receives an encrypt-then-MAC request extension from a client
+                 * and then selects a stream or Authenticated Encryption with Associated Data (AEAD)
+                 * ciphersuite, it MUST NOT send an encrypt-then-MAC response extension back to the
+                 * client.
+                 */
+                if (TlsUtils.isBlockCipherSuite(this.selectedCipherSuite))
+                {
+                    TlsExtensionsUtils.addEncryptThenMACExtension(serverExtensions);
+                }
+            }
+
+            if (this.truncatedHMacOffered && allowTruncatedHMac())
+            {
+                TlsExtensionsUtils.addTruncatedHMacExtension(serverExtensions);
+            }
+
+            if (this.clientSentECPointFormats && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
+            {
+                /*
+                 * RFC 4492 5.2. A server that selects an ECC cipher suite in response to a ClientHello
+                 * message including a Supported Point Formats Extension appends this extension (along
+                 * with others) to its ServerHello message, enumerating the point formats it can parse.
+                 */
+                TlsExtensionsUtils.addSupportedPointFormatsExtension(serverExtensions,
+                    new short[]{ ECPointFormat.uncompressed });
+            }
+
+            // TODO[tls13] See RFC 8446 4.4.2.1
+            if (null != this.statusRequestV2 && allowMultiCertStatus())
+            {
+                /*
+                 * RFC 6961 2.2. If a server returns a "CertificateStatus" message in response to a
+                 * "status_request_v2" request, then the server MUST have included an extension of type
+                 * "status_request_v2" with empty "extension_data" in the extended server hello..
+                 */
+                TlsExtensionsUtils.addEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request_v2);
+            }
+            else if (null != this.certificateStatusRequest && allowCertificateStatus())
+            {
+                /*
+                 * RFC 6066 8. If a server returns a "CertificateStatus" message, then the server MUST
+                 * have included an extension of type "status_request" with empty "extension_data" in
+                 * the extended server hello.
+                 */
+                TlsExtensionsUtils.addEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request);
+            }
+
+            if (null != this.trustedCAKeys && allowTrustedCAIndication())
+            {
+                TlsExtensionsUtils.addTrustedCAKeysExtensionServer(serverExtensions);
             }
         }
 
         if (this.maxFragmentLengthOffered >= 0 && MaxFragmentLength.isValid(maxFragmentLengthOffered))
         {
             TlsExtensionsUtils.addMaxFragmentLengthExtension(serverExtensions, this.maxFragmentLengthOffered);
-        }
-
-        if (this.truncatedHMacOffered && allowTruncatedHMac())
-        {
-            TlsExtensionsUtils.addTruncatedHMacExtension(serverExtensions);
-        }
-
-        if (this.clientSentECPointFormats && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
-        {
-            /*
-             * RFC 4492 5.2. A server that selects an ECC cipher suite in response to a ClientHello
-             * message including a Supported Point Formats Extension appends this extension (along
-             * with others) to its ServerHello message, enumerating the point formats it can parse.
-             */
-            TlsExtensionsUtils.addSupportedPointFormatsExtension(serverExtensions,
-                new short[]{ ECPointFormat.uncompressed });
-        }
-
-        // TODO[tls13] See RFC 8446 4.4.2.1
-        if (null != this.statusRequestV2 && allowMultiCertStatus())
-        {
-            /*
-             * RFC 6961 2.2. If a server returns a "CertificateStatus" message in response to a
-             * "status_request_v2" request, then the server MUST have included an extension of type
-             * "status_request_v2" with empty "extension_data" in the extended server hello..
-             */
-            TlsExtensionsUtils.addEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request_v2);
-        }
-        else if (null != this.certificateStatusRequest && allowCertificateStatus())
-        {
-            /*
-             * RFC 6066 8. If a server returns a "CertificateStatus" message, then the server MUST
-             * have included an extension of type "status_request" with empty "extension_data" in
-             * the extended server hello.
-             */
-            TlsExtensionsUtils.addEmptyExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request);
-        }
-
-        if (null != this.trustedCAKeys && allowTrustedCAIndication())
-        {
-            TlsExtensionsUtils.addTrustedCAKeysExtensionServer(serverExtensions);
         }
 
         return serverExtensions;
