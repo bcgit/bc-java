@@ -825,19 +825,36 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        /*
-         * TODO[tls13] Extensions permitted in HelloRetryRequest:
-         * - key_share
-         * - cookie
-         * - supported_versions
-         * - any unrecognized (MUST ignore)
-         */
         final Hashtable extensions = helloRetryRequest.getExtensions();
         if (null == extensions)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
         TlsUtils.checkExtensionData13(extensions, HandshakeType.hello_retry_request, AlertDescription.illegal_parameter);
+
+        {
+            /*
+             * RFC 8446 4.2. Implementations MUST NOT send extension responses if the remote
+             * endpoint did not send the corresponding extension requests, with the exception of the
+             * "cookie" extension in the HelloRetryRequest. Upon receiving such an extension, an
+             * endpoint MUST abort the handshake with an "unsupported_extension" alert.
+             */
+            Enumeration e = extensions.keys();
+            while (e.hasMoreElements())
+            {
+                Integer extType = (Integer)e.nextElement();
+
+                if (ExtensionType.cookie == extType.intValue())
+                {
+                    continue;
+                }
+
+                if (null == TlsUtils.getExtensionData(clientExtensions, extType))
+                {
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+                }
+            }
+        }
 
         final ProtocolVersion server_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(extensions);
         if (null == server_version)
@@ -1358,18 +1375,31 @@ public class TlsClientProtocol
 
         assertEmpty(buf);
 
+
         this.serverExtensions = readExtensionsData13(HandshakeType.encrypted_extensions, extBytes);
+
+        {
+            /*
+             * RFC 8446 4.2. Implementations MUST NOT send extension responses if the remote
+             * endpoint did not send the corresponding extension requests, with the exception of the
+             * "cookie" extension in the HelloRetryRequest. Upon receiving such an extension, an
+             * endpoint MUST abort the handshake with an "unsupported_extension" alert.
+             */
+            Enumeration e = serverExtensions.keys();
+            while (e.hasMoreElements())
+            {
+                Integer extType = (Integer)e.nextElement();
+
+                if (null == TlsUtils.getExtensionData(clientExtensions, extType))
+                {
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+                }
+            }
+        }
 
 
         final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
         final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
-
-        // TODO[tls13] Check request/response consistency
-
-        /*
-         * TODO[tls13] Review all extensions that are processed in processServerHello (i.e. pre-1.3)
-         * and explicitly set all extension-related values (even if ignored from 1.3).
-         */
 
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);
         securityParameters.applicationProtocolSet = true;
@@ -1390,6 +1420,19 @@ public class TlsClientProtocol
 
         securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(sessionClientExtensions,
             sessionServerExtensions, AlertDescription.illegal_parameter);
+
+        securityParameters.encryptThenMAC = false;
+        securityParameters.truncatedHMac = false;
+
+        /*
+         * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
+         * 
+         * OCSP information is carried in an extension for a CertificateEntry.
+         */
+        securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
+            ? 1 : 0;
+
+        this.expectSessionTicket = false;
 
         if (null != sessionClientExtensions)
         {
