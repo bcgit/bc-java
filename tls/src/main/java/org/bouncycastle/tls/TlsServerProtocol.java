@@ -320,50 +320,24 @@ public class TlsServerProtocol
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverEncryptedExtensions);
         securityParameters.applicationProtocolSet = true;
 
-        /*
-         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
-         * extensions appearing in the client hello, and send a server hello containing no
-         * extensions.
-         */
-
-        // TODO Retain the syntax-checking part of these?
         if (!serverEncryptedExtensions.isEmpty())
         {
-//            securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(clientExtensions,
-//                serverExtensions, AlertDescription.internal_error);
-//
-//            securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
-//
-//            if (!resumedSession)
-//            {
-//                // TODO[tls13] See RFC 8446 4.4.2.1
-//                if (TlsUtils.hasExpectedEmptyExtensionData(serverEncryptedExtensions,
-//                    TlsExtensionsUtils.EXT_status_request_v2, AlertDescription.internal_error))
-//                {
-//                    securityParameters.statusRequestVersion = 2;
-//                }
-//                else
-//                if (TlsUtils.hasExpectedEmptyExtensionData(serverEncryptedExtensions,
-//                    TlsExtensionsUtils.EXT_status_request, AlertDescription.internal_error))
-//                {
-//                    securityParameters.statusRequestVersion = 1;
-//                }
-//            }
+            securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(clientHelloExtensions,
+                serverEncryptedExtensions, AlertDescription.internal_error);
         }
 
         securityParameters.encryptThenMAC = false;
         securityParameters.truncatedHMac = false;
 
         /*
-         * TODO[tls13] This is supposed to be negotiated independently for client (CH extension)
-         * and server (CR extension).
+         * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
+         * 
+         * OCSP information is carried in an extension for a CertificateEntry.
          */
-        securityParameters.statusRequestVersion = 1;
+        securityParameters.statusRequestVersion = clientHelloExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
+            ? 1 : 0;
 
         this.expectSessionTicket = false;
-
-        // TODO[tls13] Review this extension
-//        applyMaxFragmentLengthExtension();
 
         {
             int namedGroup = clientShare.getNamedGroup();
@@ -392,6 +366,8 @@ public class TlsServerProtocol
         }
 
         this.serverExtensions = serverEncryptedExtensions;
+
+        applyMaxFragmentLengthExtension(securityParameters.getMaxFragmentLength());
 
         return new ServerHello(serverLegacyVersion, securityParameters.getServerRandom(), legacy_session_id,
             securityParameters.getCipherSuite(), serverHelloExtensions);
@@ -700,14 +676,13 @@ public class TlsServerProtocol
                 {
                     securityParameters.statusRequestVersion = 1;
                 }
-            }
 
-            this.expectSessionTicket = !resumedSession
-                && TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsProtocol.EXT_SessionTicket,
-                    AlertDescription.internal_error);
+                this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
+                    TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
+            }
         }
 
-        applyMaxFragmentLengthExtension();
+        applyMaxFragmentLengthExtension(securityParameters.getMaxFragmentLength());
 
         return new ServerHello(serverVersion, securityParameters.getServerRandom(), tlsSession.getSessionID(),
             securityParameters.getCipherSuite(), serverExtensions);

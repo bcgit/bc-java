@@ -239,7 +239,7 @@ public class Certificate
             {
                 byte[] extEncoding = TlsUtils.readOpaque16(buf);
 
-                extensions = TlsProtocol.readExtensionsData(extEncoding);
+                extensions = TlsProtocol.readExtensionsData13(HandshakeType.certificate, extEncoding);
             }
 
             certificate_list.addElement(new CertificateEntry(cert, extensions));
