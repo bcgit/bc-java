@@ -380,32 +380,42 @@ public abstract class AbstractTlsClient
             return;
         }
 
-        // TODO[tls13] Adapt for when TLS 1.3 is negotiated
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
 
-        /*
-         * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
-         */
-        checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_signature_algorithms);
-        checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_signature_algorithms_cert);
-
-        checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
-
-        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-
-        if (TlsECCUtils.isECCCipherSuite(selectedCipherSuite))
+        if (isTLSv13)
         {
-            // We only support uncompressed format, this is just to validate the extension, if present.
-            TlsExtensionsUtils.getSupportedPointFormatsExtension(serverExtensions);
+            /*
+             * NOTE: From TLS 1.3 the protocol classes are strict about what extensions can appear.
+             */
         }
         else
         {
-            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_ec_point_formats);
-        }
+            /*
+             * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
+             */
+            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_signature_algorithms);
+            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_signature_algorithms_cert);
 
-        /*
-         * RFC 7685 3. The server MUST NOT echo the extension.
-         */
-        checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_padding);
+            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
+
+            int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
+
+            if (TlsECCUtils.isECCCipherSuite(selectedCipherSuite))
+            {
+                // We only support uncompressed format, this is just to validate the extension, if present.
+                TlsExtensionsUtils.getSupportedPointFormatsExtension(serverExtensions);
+            }
+            else
+            {
+                checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_ec_point_formats);
+            }
+
+            /*
+             * RFC 7685 3. The server MUST NOT echo the extension.
+             */
+            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_padding);
+        }
     }
 
     public void processServerSupplementalData(Vector serverSupplementalData)
