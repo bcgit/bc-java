@@ -30,7 +30,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
-<li>BCJSSE: Added support for system property com.sun.net.ssl.requireCloseNotify. Note that we are using a default value of 'true'.
+<li>BCJSSE: Added support for system property com.sun.net.ssl.requireCloseNotify. Note that we are using a default value of 'true'.</li>
+<li>BCJSSE: 'TLSv1.3' is now a supported protocol for both client and server. For this release it is only enabled by default for the 'TLSv1.3' SSLContext, but can be explicitly enabled using 'setEnabledProtocols' on an SSLSocket or SSLEngine, or via SSLParameters.</li>
+<li>BCJSSE: Session resumption is now also supported for servers in TLS 1.2 and earlier. For this release it is disabled by default, and can be enabled by setting the boolean system property org.bouncycastle.jsse.server.enableSessionResumption to 'true'.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
