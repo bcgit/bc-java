@@ -66,7 +66,7 @@ public class McEliecePKCSCipherSpi
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            throw new IllegalBlockSizeException(e.getMessage());
         }
         return output;
     }
@@ -81,7 +81,7 @@ public class McEliecePKCSCipherSpi
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            throw new IllegalBlockSizeException(e.getMessage());
         }
         return output;
     }
