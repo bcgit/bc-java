@@ -17,7 +17,6 @@ import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -65,8 +64,6 @@ import org.bouncycastle.util.Arrays;
 
 class RFC3280CertPathUtilities
 {
-    private static final PKIXCRLUtil CRL_UTIL = new PKIXCRLUtil();
-
     private static final Class revChkClass = ClassUtil.loadClass(RFC3280CertPathUtilities.class, "java.security.cert.PKIXRevocationChecker");
 
     /**
@@ -472,11 +469,11 @@ class RFC3280CertPathUtilities
         PKIXCertStoreSelector selector = new PKIXCertStoreSelector.Builder(certSelector).build();
 
         // get CRL signing certs
-        Collection coll;
+        HashSet coll = new HashSet();
         try
         {
-            coll = CertPathValidatorUtilities.findCertificates(selector, paramsPKIX.getCertificateStores());
-            coll.addAll(CertPathValidatorUtilities.findCertificates(selector, paramsPKIX.getCertStores()));
+            CertPathValidatorUtilities.findCertificates(coll, selector, paramsPKIX.getCertificateStores());
+            CertPathValidatorUtilities.findCertificates(coll, selector, paramsPKIX.getCertStores());
         }
         catch (AnnotatedException e)
         {
@@ -506,7 +503,7 @@ class RFC3280CertPathUtilities
             }
             try
             {
-                CertPathBuilderSpi builder = new PKIXCertPathBuilderSpi(); //true);
+                CertPathBuilderSpi builder = new PKIXCertPathBuilderSpi();
                 X509CertSelector tmpCertSelector = new X509CertSelector();
                 tmpCertSelector.setCertificate(signingCert);
 
@@ -1380,6 +1377,7 @@ class RFC3280CertPathUtilities
     protected static void processCertA(
         CertPath certPath,
         PKIXExtendedParameters paramsPKIX,
+        Date validityDate,
         PKIXCertRevocationChecker revocationChecker,
         int index,
         PublicKey workingPublicKey,
@@ -1408,12 +1406,22 @@ class RFC3280CertPathUtilities
             }
         }
 
+        final Date validCertDate;
         try
         {
-            // (a) (2)
-            //
-            cert.checkValidity(CertPathValidatorUtilities
-                .getValidCertDateFromValidityModel(paramsPKIX, certPath, index));
+            validCertDate = CertPathValidatorUtilities.getValidCertDateFromValidityModel(validityDate,
+                paramsPKIX.getValidityModel(), certPath, index);
+        }
+        catch (AnnotatedException e)
+        {
+            throw new ExtCertPathValidatorException("Could not validate time of certificate.", e, certPath, index);
+        }
+
+        // (a) (2)
+        //
+        try
+        {
+            cert.checkValidity(validCertDate);
         }
         catch (CertificateExpiredException e)
         {
@@ -1423,35 +1431,16 @@ class RFC3280CertPathUtilities
         {
             throw new ExtCertPathValidatorException("Could not validate certificate: " + e.getMessage(), e, certPath, index);
         }
-        catch (AnnotatedException e)
-        {
-            throw new ExtCertPathValidatorException("Could not validate time of certificate.", e, certPath, index);
-        }
 
         //
         // (a) (3)
         //
         if (revocationChecker != null)
         {
+            revocationChecker.initialize(new PKIXCertRevocationCheckerParameters(paramsPKIX, validCertDate, certPath,
+                index, sign, workingPublicKey));
 
-            try
-            {
-                Date validDate = CertPathValidatorUtilities.getValidCertDateFromValidityModel(paramsPKIX, certPath, index);
-
-                revocationChecker.initialize(
-                        new PKIXCertRevocationCheckerParameters(paramsPKIX, validDate, certPath, index, sign, workingPublicKey));
-
-                revocationChecker.check(cert);
-            }
-            catch (AnnotatedException e)
-            {
-                Throwable cause = e;
-                if (null != e.getCause())
-                {
-                    cause = e.getCause();
-                }
-                throw new ExtCertPathValidatorException(e.getMessage(), cause, certPath, index);
-            }
+            revocationChecker.check(cert);
         }
 
         //
@@ -1640,29 +1629,39 @@ class RFC3280CertPathUtilities
     }
 
     /**
-     * Checks a distribution point for revocation information for the
-     * certificate <code>cert</code>.
+     * Checks a distribution point for revocation information for the certificate <code>cert</code>.
      *
-     * @param dp                 The distribution point to consider.
-     * @param paramsPKIX         PKIX parameters.
-     * @param cert               Certificate to check if it is revoked.
-     * @param validDate          The date when the certificate revocation status should be
-     *                           checked.
-     * @param defaultCRLSignCert The issuer certificate of the certificate <code>cert</code>.
-     * @param defaultCRLSignKey  The public key of the issuer certificate
-     *                           <code>defaultCRLSignCert</code>.
-     * @param certStatus         The current certificate revocation status.
-     * @param reasonMask         The reasons mask which is already checked.
-     * @param certPathCerts      The certificates of the certification path.
-     * @throws AnnotatedException if the certificate is revoked or the status cannot be checked
-     *                            or some error occurs.
+     * @param dp
+     *            The distribution point to consider.
+     * @param paramsPKIX
+     *            PKIX parameters.
+     * @param currentDate
+     *            The date at which this check is being run.
+     * @param validityDate
+     *            The date when the certificate revocation status should be checked.
+     * @param cert
+     *            Certificate to check if it is revoked.
+     * @param defaultCRLSignCert
+     *            The issuer certificate of the certificate <code>cert</code>.
+     * @param defaultCRLSignKey
+     *            The public key of the issuer certificate <code>defaultCRLSignCert</code>.
+     * @param certStatus
+     *            The current certificate revocation status.
+     * @param reasonMask
+     *            The reasons mask which is already checked.
+     * @param certPathCerts
+     *            The certificates of the certification path.
+     * @throws AnnotatedException
+     *             if the certificate is revoked or the status cannot be checked or some error
+     *             occurs.
      */
     private static void checkCRL(
         PKIXCertRevocationCheckerParameters params,
         DistributionPoint dp,
         PKIXExtendedParameters paramsPKIX,
+        Date currentDate,
+        Date validityDate,
         X509Certificate cert,
-        Date validDate,
         X509Certificate defaultCRLSignCert,
         PublicKey defaultCRLSignKey,
         CertStatus certStatus,
@@ -1671,8 +1670,11 @@ class RFC3280CertPathUtilities
         JcaJceHelper helper)
         throws AnnotatedException, RecoverableCertPathValidatorException
     {
-        Date currentDate = new Date(System.currentTimeMillis());
-        if (validDate.getTime() > currentDate.getTime())
+        if (currentDate == null)
+        {
+            boolean debug = true;
+        }
+        if (validityDate.getTime() > currentDate.getTime())
         {
             throw new AnnotatedException("Validation time is in future.");
         }
@@ -1685,7 +1687,7 @@ class RFC3280CertPathUtilities
          * getAdditionalStore()
          */
 
-        Set crls = CertPathValidatorUtilities.getCompleteCRLs(params, dp, cert, currentDate, paramsPKIX);
+        Set crls = CertPathValidatorUtilities.getCompleteCRLs(params, dp, cert, paramsPKIX, validityDate);
         boolean validCrlFound = false;
         AnnotatedException lastException = null;
         Iterator crl_iter = crls.iterator();
@@ -1717,13 +1719,6 @@ class RFC3280CertPathUtilities
                 PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
 
                 X509CRL deltaCRL = null;
-
-                Date validityDate = currentDate;
-
-                if (paramsPKIX.getDate() != null)
-                {
-                    validityDate = paramsPKIX.getDate();
-                }
 
                 if (paramsPKIX.isUseDeltasEnabled())
                 {
@@ -1769,10 +1764,10 @@ class RFC3280CertPathUtilities
                 RFC3280CertPathUtilities.processCRLC(deltaCRL, crl, paramsPKIX);
 
                 // (i)
-                RFC3280CertPathUtilities.processCRLI(validDate, deltaCRL, cert, certStatus, paramsPKIX);
+                RFC3280CertPathUtilities.processCRLI(validityDate, deltaCRL, cert, certStatus, paramsPKIX);
 
                 // (j)
-                RFC3280CertPathUtilities.processCRLJ(validDate, crl, cert, certStatus);
+                RFC3280CertPathUtilities.processCRLJ(validityDate, crl, cert, certStatus);
 
                 // (k)
                 if (certStatus.getCertStatus() == CRLReason.removeFromCRL)
@@ -1827,21 +1822,30 @@ class RFC3280CertPathUtilities
     /**
      * Checks a certificate if it is revoked.
      *
-     * @param paramsPKIX       PKIX parameters.
-     * @param cert             Certificate to check if it is revoked.
-     * @param validDate        The date when the certificate revocation status should be
-     *                         checked.
-     * @param sign             The issuer certificate of the certificate <code>cert</code>.
-     * @param workingPublicKey The public key of the issuer certificate <code>sign</code>.
-     * @param certPathCerts    The certificates of the certification path.
-     * @throws AnnotatedException if the certificate is revoked or the status cannot be checked
-     *                            or some error occurs.
+     * @param paramsPKIX
+     *            PKIX parameters.
+     * @param currentDate
+     *            The date at which this check is being run.
+     * @param validityDate
+     *            The date when the certificate revocation status should be checked.
+     * @param cert
+     *            Certificate to check if it is revoked.
+     * @param sign
+     *            The issuer certificate of the certificate <code>cert</code>.
+     * @param workingPublicKey
+     *            The public key of the issuer certificate <code>sign</code>.
+     * @param certPathCerts
+     *            The certificates of the certification path.
+     * @throws AnnotatedException
+     *             if the certificate is revoked or the status cannot be checked or some error
+     *             occurs.
      */
     protected static void checkCRLs(
         PKIXCertRevocationCheckerParameters params,
         PKIXExtendedParameters paramsPKIX,
+        Date currentDate,
+        Date validityDate,
         X509Certificate cert,
-        Date validDate,
         X509Certificate sign,
         PublicKey workingPublicKey,
         List certPathCerts,
@@ -1863,7 +1867,8 @@ class RFC3280CertPathUtilities
         PKIXExtendedParameters.Builder paramsBldr = new PKIXExtendedParameters.Builder(paramsPKIX);
         try
         {
-            List extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap(), validDate, helper);
+            List extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp,
+                paramsPKIX.getNamedCRLStoreMap(), validityDate, helper);
             for (Iterator it = extras.iterator(); it.hasNext();)
             {
                 paramsBldr.addCRLStore((PKIXCRLStore)it.next());
@@ -1897,7 +1902,8 @@ class RFC3280CertPathUtilities
                 {
                     try
                     {
-                        checkCRL(params, dps[i], finalParams, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
+                        checkCRL(params, dps[i], finalParams, currentDate, validityDate, cert, sign, workingPublicKey,
+                            certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
@@ -1935,8 +1941,8 @@ class RFC3280CertPathUtilities
                 DistributionPoint dp = new DistributionPoint(new DistributionPointName(0, new GeneralNames(
                     new GeneralName(GeneralName.directoryName, issuer))), null, null);
                 PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters)paramsPKIX.clone();
-                checkCRL(params, dp, paramsPKIXClone, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask,
-                    certPathCerts, helper);
+                checkCRL(params, dp, paramsPKIXClone, currentDate, validityDate, cert, sign, workingPublicKey,
+                    certStatus, reasonsMask, certPathCerts, helper);
                 validCrlFound = true;
             }
             catch (AnnotatedException e)
