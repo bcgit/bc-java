@@ -57,6 +57,12 @@ w
 q
 %
 
+ed org/bouncycastle/asn1/tsp/ArchiveTimeStamp.java <<%
+g/private final /s/final//
+w
+q
+%
+
 ed org/bouncycastle/asn1/pkcs/PBKDF2Params.java <<%
 g/private final ASN1OctetString octStr;/s/final//
 g/private final ASN1Integer iterationCount;/s/final//
@@ -143,6 +149,13 @@ q
 
 ed org/bouncycastle/cms/CMSTypedStream.java <<%
 g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/cms/SignerInformation.java <<%
+g/private final .*;/s/final//
+g/protected final .*;/s/final//
 w
 q
 %
