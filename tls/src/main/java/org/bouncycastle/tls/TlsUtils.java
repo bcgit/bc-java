@@ -5477,7 +5477,7 @@ public class TlsUtils
             Integer extensionType = (Integer)e.nextElement();
             if (null == extensionType || !isPermittedExtensionType13(handshakeType, extensionType.intValue()))
             {
-                throw new TlsFatalAlert(alertDescription, "Invalid extension: " + ExtensionType.getText(extensionType));
+                throw new TlsFatalAlert(alertDescription, "Invalid extension: " + ExtensionType.getText(extensionType.intValue()));
             }
         }
     }
