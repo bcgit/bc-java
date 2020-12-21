@@ -1600,7 +1600,7 @@ public class PKCS12KeyStoreSpi
         }
         else
         {
-            asn1Out = ASN1OutputStream.create(bOut, ASN1Encoding.BER);
+            asn1Out = ASN1OutputStream.create(stream, ASN1Encoding.BER);
         }
 
         asn1Out.writeObject(pfx);

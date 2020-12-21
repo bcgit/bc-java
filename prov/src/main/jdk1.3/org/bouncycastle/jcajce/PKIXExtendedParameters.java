@@ -3,7 +3,7 @@ package org.bouncycastle.jcajce;
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertSelector;
 import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
+import org.bouncycastle.jce.cert.TrustAnchor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -46,9 +46,9 @@ public class PKIXExtendedParameters
      */
     public static class Builder
     {
-        private PKIXParameters baseParameters;
-        private Date validityDate;
-        private Date date;
+        private final PKIXParameters baseParameters;
+        private final Date validityDate;
+        private final Date date;
 
         private PKIXCertStoreSelector targetConstraints;
         private List extraCertStores = new ArrayList();
@@ -191,18 +191,18 @@ public class PKIXExtendedParameters
         }
     }
 
-    private PKIXParameters baseParameters;
-    private PKIXCertStoreSelector targetConstraints;
-    private Date validityDate;
-    private Date date;
-    private List extraCertStores;
-    private Map namedCertificateStoreMap;
-    private List extraCRLStores;
-    private Map namedCRLStoreMap;
-    private boolean revocationEnabled;
-    private boolean useDeltas;
-    private int validityModel;
-    private Set trustAnchors;
+    private final PKIXParameters baseParameters;
+    private final PKIXCertStoreSelector targetConstraints;
+    private final Date validityDate;
+    private final Date date;
+    private final List extraCertStores;
+    private final Map namedCertificateStoreMap;
+    private final List extraCRLStores;
+    private final Map namedCRLStoreMap;
+    private final boolean revocationEnabled;
+    private final boolean useDeltas;
+    private final int validityModel;
+    private final Set trustAnchors;
 
     private PKIXExtendedParameters(Builder builder)
     {
