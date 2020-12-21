@@ -30,10 +30,7 @@ public class CertChainUtil
 {
     public static String BC = "BC";
 
-
-    
     private static final AtomicLong serialNumber = new AtomicLong(1);
-
 
     /*
      * we generate the CA's certificate
