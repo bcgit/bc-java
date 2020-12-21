@@ -93,7 +93,7 @@ public class JcaTlsCertificate
 
     protected DHPublicKey pubKeyDH = null;
     protected ECPublicKey pubKeyEC = null;
-    protected RSAPublicKey pubKeyRSA = null;
+    protected PublicKey pubKeyRSA = null;
 
     public JcaTlsCertificate(JcaTlsCrypto crypto, byte[] encoding)
         throws IOException
@@ -238,72 +238,70 @@ public class JcaTlsCertificate
         return publicKey;
     }
 
-    RSAPublicKey getPubKeyRSA() throws IOException
+    PublicKey getPubKeyRSA() throws IOException
     {
-        try
-        {
-            return (RSAPublicKey)getPublicKey();
-        }
-        catch (ClassCastException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
-        }
+        return getPublicKey();
     }
 
     public short getLegacySignatureAlgorithm() throws IOException
     {
-         PublicKey publicKey = getPublicKey();
+        PublicKey publicKey = getPublicKey();
 
-         if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE))
-         {
-             return -1;
-         }
+        if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE))
+        {
+            return -1;
+        }
 
-         /*
-          * RFC 5246 7.4.6. Client Certificate
-          */
+        /*
+         * RFC 5246 7.4.6. Client Certificate
+         */
 
-         /*
-          * RSA public key; the certificate MUST allow the key to be used for signing with the
-          * signature scheme and hash algorithm that will be employed in the certificate verify
-          * message.
-          */
-         if (publicKey instanceof RSAPublicKey)
-         {
-             return SignatureAlgorithm.rsa;
-         }
+        /*
+         * RSA public key; the certificate MUST allow the key to be used for signing with the
+         * signature scheme and hash algorithm that will be employed in the certificate verify
+         * message.
+         */
+        if (publicKey instanceof RSAPublicKey)
+        {
+            return SignatureAlgorithm.rsa;
+        }
 
-         /*
-          * DSA public key; the certificate MUST allow the key to be used for signing with the
-          * hash algorithm that will be employed in the certificate verify message.
-          */
-         if (publicKey instanceof DSAPublicKey)
-         {
-             return SignatureAlgorithm.dsa;
-         }
+        /*
+         * DSA public key; the certificate MUST allow the key to be used for signing with the hash
+         * algorithm that will be employed in the certificate verify message.
+         */
+        if (publicKey instanceof DSAPublicKey)
+        {
+            return SignatureAlgorithm.dsa;
+        }
 
-         /*
-          * ECDSA-capable public key; the certificate MUST allow the key to be used for signing
-          * with the hash algorithm that will be employed in the certificate verify message; the
-          * public key MUST use a curve and point format supported by the server.
-          */
-         if (publicKey instanceof ECPublicKey)
-         {
-             // TODO Check the curve and point format
-             return SignatureAlgorithm.ecdsa;
-         }
+        /*
+         * ECDSA-capable public key; the certificate MUST allow the key to be used for signing with
+         * the hash algorithm that will be employed in the certificate verify message; the public
+         * key MUST use a curve and point format supported by the server.
+         */
+        if (publicKey instanceof ECPublicKey)
+        {
+            // TODO Check the curve and point format
+            return SignatureAlgorithm.ecdsa;
+        }
 
-         return -1;
+        return -1;
     }
 
     public boolean supportsSignatureAlgorithm(short signatureAlgorithm) throws IOException
     {
-        return supportsSignatureAlgorithm(signatureAlgorithm, KU_DIGITAL_SIGNATURE);
+        if (!supportsKeyUsageBit(KU_DIGITAL_SIGNATURE))
+        {
+            return false;
+        }
+
+        return implSupportsSignatureAlgorithm(signatureAlgorithm);
     }
 
     public boolean supportsSignatureAlgorithmCA(short signatureAlgorithm) throws IOException
     {
-        return supportsSignatureAlgorithm(signatureAlgorithm, KU_KEY_CERT_SIGN);
+        return implSupportsSignatureAlgorithm(signatureAlgorithm);
     }
 
     public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
@@ -342,6 +340,45 @@ public class JcaTlsCertificate
         }
 
         throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+    }
+
+    protected boolean implSupportsSignatureAlgorithm(short signatureAlgorithm) throws IOException
+    {
+        PublicKey publicKey = getPublicKey();
+
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+            return supportsRSA_PKCS1()
+                && publicKey instanceof RSAPublicKey;
+
+        case SignatureAlgorithm.dsa:
+            return publicKey instanceof DSAPublicKey;
+
+        case SignatureAlgorithm.ecdsa:
+            return publicKey instanceof ECPublicKey;
+
+        case SignatureAlgorithm.ed25519:
+            return "Ed25519".equals(publicKey.getAlgorithm());
+
+        case SignatureAlgorithm.ed448:
+            return "Ed448".equals(publicKey.getAlgorithm());
+
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return supportsRSA_PSS_RSAE()
+                && publicKey instanceof RSAPublicKey;
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return supportsRSA_PSS_PSS(signatureAlgorithm)
+                && publicKey instanceof RSAPublicKey;
+
+        default:
+            return false;
+        }
     }
 
     protected PublicKey getPublicKey() throws IOException
@@ -392,50 +429,6 @@ public class JcaTlsCertificate
     {
         AlgorithmIdentifier pubKeyAlgID = getSubjectPublicKeyInfo().getAlgorithm();
         return RSAUtil.supportsPSS_RSAE(pubKeyAlgID);
-    }
-
-    protected boolean supportsSignatureAlgorithm(short signatureAlgorithm, int keyUsageBit) throws IOException
-    {
-        if (!supportsKeyUsageBit(keyUsageBit))
-        {
-            return false;
-        }
-
-        PublicKey publicKey = getPublicKey();
-
-        switch (signatureAlgorithm)
-        {
-        case SignatureAlgorithm.rsa:
-            return supportsRSA_PKCS1()
-                && publicKey instanceof RSAPublicKey;
-
-        case SignatureAlgorithm.dsa:
-            return publicKey instanceof DSAPublicKey;
-
-        case SignatureAlgorithm.ecdsa:
-            return publicKey instanceof ECPublicKey;
-
-        case SignatureAlgorithm.ed25519:
-            return "Ed25519".equals(publicKey.getAlgorithm());
-
-        case SignatureAlgorithm.ed448:
-            return "Ed448".equals(publicKey.getAlgorithm());
-
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return supportsRSA_PSS_RSAE()
-                && publicKey instanceof RSAPublicKey;
-
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return supportsRSA_PSS_PSS(signatureAlgorithm)
-                && publicKey instanceof RSAPublicKey;
-
-        default:
-            return false;
-        }
     }
 
     protected void validateKeyUsageBit(int keyUsageBit)
