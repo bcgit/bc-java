@@ -24,16 +24,24 @@ to conform the algorithms to the JCE framework.
 
 <h3>2.1.1 Version</h3>
 Release: 1.68<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, December 21st.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>Some BigIntegers utility methods would fail for BigInteger.ZERO. This has been fixed.</li>
+<li>PGPUtil.isKeyRing() was not detecting secret sub-keys in its input. This has been fixed.</li>
+<li>The ASN.1 class, ArchiveTimeStamp was insisting on a value for the optional reducedHashTree field. This has been fixed.</li>
+<li>BCJSSE: Lock against multiple writers - a possible synchronization issue has been removed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>BCJSSE: Added support for system property com.sun.net.ssl.requireCloseNotify. Note that we are using a default value of 'true'.</li>
 <li>BCJSSE: 'TLSv1.3' is now a supported protocol for both client and server. For this release it is only enabled by default for the 'TLSv1.3' SSLContext, but can be explicitly enabled using 'setEnabledProtocols' on an SSLSocket or SSLEngine, or via SSLParameters.</li>
 <li>BCJSSE: Session resumption is now also supported for servers in TLS 1.2 and earlier. For this release it is disabled by default, and can be enabled by setting the boolean system property org.bouncycastle.jsse.server.enableSessionResumption to 'true'.</li>
+<li>The provider RSA-PSS signature names that follow the JCA naming convention.</li>
+<li>FIPS mode for the BCJSSE now enforces namedCurves for any presented certificates.</li>
+<li>PGPSignatureSubpacketGenerator now supports editing of a pre-existing sub-packet list.</li>
 </ul>
+
 
 <h3>2.2.1 Version</h3>
 Release: 1.67<br/>
@@ -67,6 +75,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, November 1st.
 <li>Treating absent vs NULL as equivalent can now be configured by a system property. By default this is not enabled.</li>
 <li>Mode name checks in Cipher strings should now make sure an improper mode name always results in a NoSuchAlgorithmException.</li>
 <li>In line with changes in OpenSSL, the OpenSSLPBKDF now uses UTF8 encoding.</li>
+</ul>
+<h3>2.2.4 Security Advisory</h3>
+<ul>
+<li>As described in CVE-2020-28052, the OpenBSDBCrypt.checkPassword() method had a flaw in it due to a change for BC 1.65. BC 1.66 is also affected. The issue is fixed in BC 1.67. If you are using OpenBSDBCrypt.checkPassword() and you are using BC 1.65 or BC 1.66 we strongly advise moving to BC 1.67 or later.</li>
 </ul>
 
 <h3>2.3.1 Version</h3>
