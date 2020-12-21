@@ -11,6 +11,7 @@ import java.security.PrivateKey;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -30,6 +31,7 @@ import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
@@ -203,7 +205,7 @@ public class TlsTestUtils
         String keyResource) throws IOException
     {
         TlsCrypto crypto = context.getCrypto();
-        Certificate certificate = loadCertificateChain(crypto, certResources);
+        Certificate certificate = loadCertificateChain(context, certResources);
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
         if (crypto instanceof BcTlsCrypto)
@@ -225,7 +227,7 @@ public class TlsTestUtils
         String keyResource) throws IOException
     {
         TlsCrypto crypto = context.getCrypto();
-        Certificate certificate = loadCertificateChain(crypto, certResources);
+        Certificate certificate = loadCertificateChain(context, certResources);
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
         if (crypto instanceof BcTlsCrypto)
@@ -247,7 +249,7 @@ public class TlsTestUtils
         SignatureAndHashAlgorithm signatureAndHashAlgorithm) throws IOException
     {
         TlsCrypto crypto = context.getCrypto();
-        Certificate certificate = loadCertificateChain(crypto, certResources);
+        Certificate certificate = loadCertificateChain(context, certResources);
         TlsCryptoParameters cryptoParams = new TlsCryptoParameters(context);
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
@@ -316,15 +318,38 @@ public class TlsTestUtils
         return loadSignerCredentials(context, supportedSignatureAlgorithms, signatureAlgorithm, certResource, keyResource);
     }
 
-    static Certificate loadCertificateChain(TlsCrypto crypto, String[] resources)
+    static Certificate loadCertificateChain(TlsContext context, String[] resources)
         throws IOException
     {
-        TlsCertificate[] chain = new TlsCertificate[resources.length];
-        for (int i = 0; i < resources.length; ++i)
+        TlsCrypto crypto = context.getCrypto();
+
+        if (TlsUtils.isTLSv13(context))
         {
-            chain[i] = loadCertificateResource(crypto, resources[i]);
+            CertificateEntry[] certificateEntryList = new CertificateEntry[resources.length];
+            for (int i = 0; i < resources.length; ++i)
+            {
+                TlsCertificate certificate = loadCertificateResource(crypto, resources[i]);
+
+                // TODO[tls13] Add possibility of specifying e.g. CertificateStatus 
+                Hashtable extensions = null;
+
+                certificateEntryList[i] = new CertificateEntry(certificate, extensions);
+            }
+
+            // TODO[tls13] Support for non-empty request context
+            byte[] certificateRequestContext = TlsUtils.EMPTY_BYTES;
+
+            return new Certificate(certificateRequestContext, certificateEntryList);
         }
-        return new Certificate(chain);
+        else
+        {
+            TlsCertificate[] chain = new TlsCertificate[resources.length];
+            for (int i = 0; i < resources.length; ++i)
+            {
+                chain[i] = loadCertificateResource(crypto, resources[i]);
+            }
+            return new Certificate(chain);
+        }
     }
 
     static org.bouncycastle.asn1.x509.Certificate loadBcCertificateResource(String resource)
