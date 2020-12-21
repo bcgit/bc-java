@@ -2300,7 +2300,6 @@ public class X509CertSelector implements CertSelector
             }
             catch (Exception ex)
             {
-                ex.printStackTrace();
                 return false;
             }
         }
@@ -2360,7 +2359,6 @@ public class X509CertSelector implements CertSelector
             }
             catch (Exception ex)
             {
-                ex.printStackTrace();
                 return false;
             }
         }

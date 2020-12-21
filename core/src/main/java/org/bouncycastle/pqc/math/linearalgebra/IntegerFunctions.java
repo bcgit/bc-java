@@ -1355,8 +1355,6 @@ public final class IntegerFunctions
         {
             if (a[i - 1] >= a[i])
             {
-                System.out.println("a[" + (i - 1) + "] = " + a[i - 1] + " >= "
-                    + a[i] + " = a[" + i + "]");
                 return false;
             }
         }
