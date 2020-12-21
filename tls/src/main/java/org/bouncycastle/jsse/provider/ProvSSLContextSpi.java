@@ -65,9 +65,7 @@ class ProvSSLContextSpi
     private static final List<String> DEFAULT_CIPHERSUITE_LIST = createDefaultCipherSuiteList(SUPPORTED_CIPHERSUITE_MAP.keySet());
     private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS = createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST);
 
-//    private static final String[] DEFAULT_ENABLED_PROTOCOLS = BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED
-//        ?   new String[]{ "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" }
-//        :   new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" };
+    // TODO[tls13] Enable TLSv1.3 by default in due course
     private static final String[] DEFAULT_ENABLED_PROTOCOLS = new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" };
 
     private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
@@ -94,13 +92,12 @@ class ProvSSLContextSpi
     {
         ArrayList<String> cs = new ArrayList<String>();
 
-        if (BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED)
-        {
-            cs.add("TLS_CHACHA20_POLY1305_SHA256");
-            cs.add("TLS_AES_256_GCM_SHA384");
-            cs.add("TLS_AES_128_GCM_SHA256");
-        }
+        // TLS 1.3+
+        cs.add("TLS_CHACHA20_POLY1305_SHA256");
+        cs.add("TLS_AES_256_GCM_SHA384");
+        cs.add("TLS_AES_128_GCM_SHA256");
 
+        // TLS 1.2-
         cs.add("TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256");
         cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");
         cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
@@ -139,15 +136,14 @@ class ProvSSLContextSpi
     {
         Map<String, CipherSuiteInfo> cs = new TreeMap<String, CipherSuiteInfo>();
 
-        if (BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED)
-        {
-            addCipherSuite13(cs, "TLS_AES_128_CCM_8_SHA256", CipherSuite.TLS_AES_128_CCM_8_SHA256);
-            addCipherSuite13(cs, "TLS_AES_128_CCM_SHA256", CipherSuite.TLS_AES_128_CCM_SHA256);
-            addCipherSuite13(cs, "TLS_AES_128_GCM_SHA256", CipherSuite.TLS_AES_128_GCM_SHA256);
-            addCipherSuite13(cs, "TLS_AES_256_GCM_SHA384", CipherSuite.TLS_AES_256_GCM_SHA384);
-            addCipherSuite13(cs, "TLS_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
-        }
+        // TLS 1.3+
+        addCipherSuite13(cs, "TLS_AES_128_CCM_8_SHA256", CipherSuite.TLS_AES_128_CCM_8_SHA256);
+        addCipherSuite13(cs, "TLS_AES_128_CCM_SHA256", CipherSuite.TLS_AES_128_CCM_SHA256);
+        addCipherSuite13(cs, "TLS_AES_128_GCM_SHA256", CipherSuite.TLS_AES_128_GCM_SHA256);
+        addCipherSuite13(cs, "TLS_AES_256_GCM_SHA384", CipherSuite.TLS_AES_256_GCM_SHA384);
+        addCipherSuite13(cs, "TLS_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
 
+        // TLS 1.2-
         addCipherSuite(cs, "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA);
         addCipherSuite(cs, "TLS_DHE_DSS_WITH_AES_128_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA);
         addCipherSuite(cs, "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256);
@@ -267,10 +263,7 @@ class ProvSSLContextSpi
     private static Map<String, ProtocolVersion> createSupportedProtocolMap()
     {
         Map<String, ProtocolVersion> ps = new LinkedHashMap<String, ProtocolVersion>();
-        if (BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED)
-        {
-            ps.put("TLSv1.3", ProtocolVersion.TLSv13);
-        }
+        ps.put("TLSv1.3", ProtocolVersion.TLSv13);
         ps.put("TLSv1.2", ProtocolVersion.TLSv12);
         ps.put("TLSv1.1", ProtocolVersion.TLSv11);
         ps.put("TLSv1", ProtocolVersion.TLSv10);
@@ -487,16 +480,11 @@ class ProvSSLContextSpi
         String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
-        boolean post13Active = false;
-        boolean pre13Active = true;
-        if (BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED)
-        {
-            ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
-            ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
+        ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
+        ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
 
-            post13Active = TlsUtils.isTLSv13(latest);
-            pre13Active = !TlsUtils.isTLSv13(earliest);
-        }
+        boolean post13Active = TlsUtils.isTLSv13(latest);
+        boolean pre13Active = !TlsUtils.isTLSv13(earliest);
 
         int[] candidates = new int[enabledCipherSuites.length];
 
@@ -508,21 +496,18 @@ class ProvSSLContextSpi
             {
                 continue;
             }
-            if (BouncyCastleJsseProvider.PROVIDER_TLS13_ENABLED)
+            if (candidate.isTLSv13())
             {
-                if (candidate.isTLSv13())
+                if (!post13Active)
                 {
-                    if (!post13Active)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
-                else
+            }
+            else
+            {
+                if (!pre13Active)
                 {
-                    if (!pre13Active)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
             }
             if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES_BC, enabledCipherSuite, null))
