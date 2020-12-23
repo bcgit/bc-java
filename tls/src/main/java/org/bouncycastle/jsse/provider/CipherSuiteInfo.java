@@ -14,7 +14,7 @@ import org.bouncycastle.tls.TlsUtils;
 
 class CipherSuiteInfo
 {
-    static CipherSuiteInfo forCipherSuite(int cipherSuite, String name, boolean isTLSv13)
+    static CipherSuiteInfo forCipherSuite(int cipherSuite, String name)
     {
         if (!name.startsWith("TLS_"))
         {
@@ -34,6 +34,8 @@ class CipherSuiteInfo
         decomposeEncryptionAlgorithm(decompositionTLS, encryptionAlgorithm);
         decomposeHashAlgorithm(decompositionTLS, hashAlgorithm);
         decomposeMACAlgorithm(decompositionTLS, encryptionAlgorithmType, macAlgorithm);
+
+        boolean isTLSv13 = (KeyExchangeAlgorithm.NULL == keyExchangeAlgorithm);
 
         return new CipherSuiteInfo(cipherSuite, name, isTLSv13, Collections.unmodifiableSet(decompositionTLS),
             Collections.unmodifiableSet(decompositionX509));
