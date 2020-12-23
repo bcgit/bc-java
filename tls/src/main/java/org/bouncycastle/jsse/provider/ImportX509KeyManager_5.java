@@ -73,6 +73,6 @@ final class ImportX509KeyManager_5
 
     public String[] getServerAliases(String keyType, Principal[] issuers)
     {
-        return x509KeyManager.getClientAliases(keyType, issuers);
+        return x509KeyManager.getServerAliases(keyType, issuers);
     }
 }
