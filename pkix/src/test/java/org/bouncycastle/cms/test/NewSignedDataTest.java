@@ -1542,6 +1542,60 @@ public class NewSignedDataTest
         rsaPSSTest("SHA3-384withRSAandMGF1");
     }
 
+    public void testSHA1WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA1withRSA");
+    }
+
+    public void testSHA224WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA224withRSA");
+    }
+
+    public void testSHA256WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA256withRSA");
+    }
+
+    public void testSHA384WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA384withRSA");
+    }
+
+    public void testSHA3_224WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA3-224withRSA");
+    }
+
+    public void testSHA3_256WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA3-256withRSA");
+    }
+
+    public void testSHA3_384WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA3-384withRSA");
+    }
+
+    public void testSHA512_224ithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA512(224)withRSA");
+    }
+
+    public void testSHA512_256ithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA512(256)withRSA");
+    }
+
     public void testEd25519()
         throws Exception
     {
@@ -1929,6 +1983,38 @@ public class NewSignedDataTest
         JcaSignerInfoGeneratorBuilder siBuilder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
 
         siBuilder.setDirectSignature(true);
+
+        gen.addSignerInfoGenerator(siBuilder.build(contentSigner, _origCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, false);
+
+        //
+        // compute expected content digest
+        //
+        String digestName = signatureAlgorithmName.substring(0, signatureAlgorithmName.indexOf('w'));
+        MessageDigest md = MessageDigest.getInstance(digestName, BC);
+
+        verifySignatures(s, md.digest("Hello world!".getBytes()));
+    }
+
+    private void rsaDigestTest(String signatureAlgorithmName)
+        throws Exception
+    {
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray("Hello world!".getBytes());
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        ContentSigner contentSigner = new JcaContentSignerBuilder(signatureAlgorithmName).setProvider(BC).build(_origKP.getPrivate());
+
+        JcaSignerInfoGeneratorBuilder siBuilder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
 
         gen.addSignerInfoGenerator(siBuilder.build(contentSigner, _origCert));
 

@@ -61,6 +61,8 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         addEntries(PKCSObjectIdentifiers.sha256WithRSAEncryption, "SHA256", "RSA");
         addEntries(PKCSObjectIdentifiers.sha384WithRSAEncryption, "SHA384", "RSA");
         addEntries(PKCSObjectIdentifiers.sha512WithRSAEncryption, "SHA512", "RSA");
+        addEntries(PKCSObjectIdentifiers.sha512_224WithRSAEncryption, "SHA512(224)", "RSA");
+        addEntries(PKCSObjectIdentifiers.sha512_256WithRSAEncryption, "SHA512(256)", "RSA");
 
         addEntries(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd128, "RIPEMD128", "RSA");
         addEntries(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd160, "RIPEMD160", "RSA");
@@ -120,6 +122,8 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         digestAlgs.put(NISTObjectIdentifiers.id_sha256, "SHA256");
         digestAlgs.put(NISTObjectIdentifiers.id_sha384, "SHA384");
         digestAlgs.put(NISTObjectIdentifiers.id_sha512, "SHA512");
+        digestAlgs.put(NISTObjectIdentifiers.id_sha512_224, "SHA512(224)");
+        digestAlgs.put(NISTObjectIdentifiers.id_sha512_256, "SHA512(256)");
         digestAlgs.put(NISTObjectIdentifiers.id_sha3_224, "SHA3-224");
         digestAlgs.put(NISTObjectIdentifiers.id_sha3_256, "SHA3-256");
         digestAlgs.put(NISTObjectIdentifiers.id_sha3_384, "SHA3-384");
