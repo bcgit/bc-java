@@ -159,11 +159,15 @@ public class SHA512
             provider.addAlgorithm("Alg.Alias.MessageDigest." + NISTObjectIdentifiers.id_sha512, "SHA-512");
 
             provider.addAlgorithm("MessageDigest.SHA-512/224", PREFIX + "$DigestT224");
-            provider.addAlgorithm("Alg.Alias.MessageDigest.SHA512/224", "SHA-512/224");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.SHA512224", "SHA-512/224");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.SHA-512(224)", "SHA-512/224");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.SHA512(224)", "SHA-512/224");
             provider.addAlgorithm("Alg.Alias.MessageDigest." + NISTObjectIdentifiers.id_sha512_224, "SHA-512/224");
 
             provider.addAlgorithm("MessageDigest.SHA-512/256", PREFIX + "$DigestT256");
             provider.addAlgorithm("Alg.Alias.MessageDigest.SHA512256", "SHA-512/256");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.SHA-512(256)", "SHA512256");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.SHA512(256)", "SHA512256");
             provider.addAlgorithm("Alg.Alias.MessageDigest." + NISTObjectIdentifiers.id_sha512_256, "SHA-512/256");
 
             provider.addAlgorithm("Mac.OLDHMACSHA512", PREFIX + "$OldSHA512");
