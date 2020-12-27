@@ -34,4 +34,6 @@ public interface PGPDataEncryptorBuilder
      * constructed and retained by the this builder.</p>
      */
     SecureRandom getSecureRandom();
+
+    PGPDataEncryptorBuilder setWithIntegrityPacket(boolean withIntegrityPacket);
 }
