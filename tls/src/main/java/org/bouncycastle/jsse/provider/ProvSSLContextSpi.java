@@ -70,17 +70,7 @@ class ProvSSLContextSpi
 
     private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
     {
-        addCipherSuite(cs, name, cipherSuite, false);
-    }
-
-    private static void addCipherSuite13(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
-    {
-        addCipherSuite(cs, name, cipherSuite, true);
-    }
-
-    private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite, boolean isTLSv13)
-    {
-        CipherSuiteInfo cipherSuiteInfo = CipherSuiteInfo.forCipherSuite(cipherSuite, name, isTLSv13);
+        CipherSuiteInfo cipherSuiteInfo = CipherSuiteInfo.forCipherSuite(cipherSuite, name);
 
         if (null != cs.put(name, cipherSuiteInfo))
         {
@@ -137,11 +127,11 @@ class ProvSSLContextSpi
         Map<String, CipherSuiteInfo> cs = new TreeMap<String, CipherSuiteInfo>();
 
         // TLS 1.3+
-        addCipherSuite13(cs, "TLS_AES_128_CCM_8_SHA256", CipherSuite.TLS_AES_128_CCM_8_SHA256);
-        addCipherSuite13(cs, "TLS_AES_128_CCM_SHA256", CipherSuite.TLS_AES_128_CCM_SHA256);
-        addCipherSuite13(cs, "TLS_AES_128_GCM_SHA256", CipherSuite.TLS_AES_128_GCM_SHA256);
-        addCipherSuite13(cs, "TLS_AES_256_GCM_SHA384", CipherSuite.TLS_AES_256_GCM_SHA384);
-        addCipherSuite13(cs, "TLS_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+        addCipherSuite(cs, "TLS_AES_128_CCM_8_SHA256", CipherSuite.TLS_AES_128_CCM_8_SHA256);
+        addCipherSuite(cs, "TLS_AES_128_CCM_SHA256", CipherSuite.TLS_AES_128_CCM_SHA256);
+        addCipherSuite(cs, "TLS_AES_128_GCM_SHA256", CipherSuite.TLS_AES_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_AES_256_GCM_SHA384", CipherSuite.TLS_AES_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_CHACHA20_POLY1305_SHA256", CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
 
         // TLS 1.2-
         addCipherSuite(cs, "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA);
