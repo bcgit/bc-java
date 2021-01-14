@@ -472,13 +472,14 @@ public class BaseBlockCipher
         }
         else if (modeName.equals("GCM"))
         {
-            ivLength = 12;
             if (baseEngine instanceof DSTU7624Engine)
             {
+                ivLength = baseEngine.getBlockSize();
                 cipher = new AEADGenericBlockCipher(new KGCMBlockCipher(baseEngine));
             }
             else
             {
+                ivLength = 12;
                 cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
             }
         }
