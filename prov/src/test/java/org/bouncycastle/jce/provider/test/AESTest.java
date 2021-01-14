@@ -15,10 +15,13 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import junit.framework.TestCase;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.TestRandomData;
+import org.junit.Assert;
 
 /**
  * basic test class for the AES cipher vectors from FIPS-197
@@ -317,6 +320,51 @@ public class AESTest
         }
     }
 
+    private void gcmTestWithRandom()
+        throws Exception
+    {
+        byte[] K = Hex.decode(
+            "feffe9928665731c6d6a8f9467308308"
+                + "feffe9928665731c6d6a8f9467308308");
+        byte[] P = Hex.decode(
+            "d9313225f88406e5a55909c5aff5269a"
+                + "86a7a9531534f7da2e4c303d8a318a72"
+                + "1c3c0c95956809532fcf0e2449a6b525"
+                + "b16aedf5aa0de657ba637b391aafd255");
+
+        Key key;
+        Cipher in, out;
+
+        key = new SecretKeySpec(K, "AES");
+
+        in = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+        out = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+
+        in.init(Cipher.ENCRYPT_MODE, key, new TestRandomData("d0effdb2ec15369ff27a02bff3f800ef"));
+
+        byte[] enc = in.doFinal(P);
+
+        Assert.assertArrayEquals(Hex.decode("d0effdb2ec15369ff27a02bf"), in.getIV());
+
+        Assert.assertEquals(12, in.getIV().length);
+
+        out.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(in.getIV()));
+
+        byte[] dec = out.doFinal(enc);
+        Assert.assertArrayEquals("plaintext doesn't match in GCM", P, dec);
+
+        try
+        {
+            in = Cipher.getInstance("AES/GCM/PKCS5Padding", "BC");
+
+            TestCase.fail("bad padding missed in GCM");
+        }
+        catch (NoSuchPaddingException e)
+        {
+            // expected
+        }
+    }
+
     private void ocbTest()
         throws Exception
     {
@@ -446,6 +494,7 @@ public class AESTest
         eaxTest();
         ccmTest();
         gcmTest();
+        gcmTestWithRandom();
         ocbTest();
     }
 
