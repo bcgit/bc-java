@@ -131,7 +131,7 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
 
         try
         {
-            cipher.init(cipherMode, cipherKey, new IvParameterSpec(nonce));
+            cipher.init(cipherMode, cipherKey, new IvParameterSpec(nonce), null);
         }
         catch (GeneralSecurityException e)
         {
