@@ -53,7 +53,7 @@ public class JceBlockCipherWithCBCImplicitIVImpl
     {
         try
         {
-            cipher.init(isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, new IvParameterSpec(nextIV));
+            cipher.init(isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, new IvParameterSpec(nextIV), null);
 
             nextIV = null;
 

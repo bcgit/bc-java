@@ -47,7 +47,7 @@ public class JceBlockCipherImpl
     {
         try
         {
-            cipher.init(cipherMode, key, new IvParameterSpec(iv, ivOff, ivLen));
+            cipher.init(cipherMode, key, new IvParameterSpec(iv, ivOff, ivLen), null);
         }
         catch (GeneralSecurityException e)
         {

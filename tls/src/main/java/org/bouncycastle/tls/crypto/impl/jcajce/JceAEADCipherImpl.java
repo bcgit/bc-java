@@ -102,7 +102,7 @@ public class JceAEADCipherImpl
                 // fortunately CCM and GCM parameters have the same ASN.1 structure
                 algParams.init(new GCMParameters(nonce, macSize).getEncoded());
 
-                cipher.init(cipherMode, key, algParams);
+                cipher.init(cipherMode, key, algParams, null);
 
                 if (additionalData != null && additionalData.length > 0)
                 {
@@ -112,7 +112,7 @@ public class JceAEADCipherImpl
             else
             {
                 // Otherwise fall back to the BC-specific AEADParameterSpec
-                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData));
+                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData), null);
             }
         }
         catch (Exception e)
