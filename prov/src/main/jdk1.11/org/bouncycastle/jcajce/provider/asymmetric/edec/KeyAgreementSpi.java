@@ -151,10 +151,12 @@ public class KeyAgreementSpi
         else if (key instanceof XECPublicKey)
         {
             XECPublicKey jcePub = (XECPublicKey)key;
+            boolean isX448 = jcePub.getAlgorithm().equals("X448");
+            int keyLen = isX448 ? X448PublicKeyParameters.KEY_SIZE : X25519PublicKeyParameters.KEY_SIZE;
 
-            byte[] keyData = Arrays.reverse(BigIntegers.asUnsignedByteArray(jcePub.getU()));
+            byte[] keyData = Arrays.reverse(BigIntegers.asUnsignedByteArray(keyLen, jcePub.getU()));
 
-            if (keyData.length == X448PublicKeyParameters.KEY_SIZE)
+            if (isX448)
             {
                 pub = new X448PublicKeyParameters(keyData, 0);
             }
