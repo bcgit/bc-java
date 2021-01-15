@@ -731,12 +731,11 @@ public class BcTlsCrypto
         public void setKey(byte[] key, int keyOff, int keyLen)
         {
             this.key = new KeyParameter(key, keyOff, keyLen);
-            cipher.init(isEncrypting, new ParametersWithIV(this.key, new byte[cipher.getBlockSize()]));
         }
 
         public void init(byte[] iv, int ivOff, int ivLen)
         {
-            cipher.init(isEncrypting, new ParametersWithIV(null, iv, ivOff, ivLen));
+            cipher.init(isEncrypting, new ParametersWithIV(key, iv, ivOff, ivLen));
         }
 
         public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
