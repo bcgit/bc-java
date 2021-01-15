@@ -46,10 +46,12 @@ public class SignatureSpi
         else if (publicKey instanceof EdECPublicKey)
         {
             EdECPublicKey jcaPub = (EdECPublicKey)publicKey;
+            boolean isEd448 = jcaPub.getAlgorithm().equals("Ed448");
+            int keyLen = isEd448 ? Ed448PublicKeyParameters.KEY_SIZE : Ed25519PublicKeyParameters.KEY_SIZE;
 
-            byte[] keyData = Arrays.reverse(BigIntegers.asUnsignedByteArray(jcaPub.getPoint().getY()));
+            byte[] keyData = Arrays.reverse(BigIntegers.asUnsignedByteArray(keyLen, jcaPub.getPoint().getY()));
 
-            if (keyData.length == Ed448PublicKeyParameters.KEY_SIZE)
+            if (isEd448)
             {
                 pub = new Ed448PublicKeyParameters(keyData, 0);
             }
