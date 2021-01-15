@@ -101,12 +101,20 @@ public class TlsBlockCipher
         serverCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
 
-        if (!useExplicitIV)
+        int clientIVLength = clientCipher.getBlockSize();
+        int serverIVLength = serverCipher.getBlockSize();
+
+        if (useExplicitIV)
         {
-            clientCipher.init(key_block, offset, clientCipher.getBlockSize());
-            offset += clientCipher.getBlockSize();
-            serverCipher.init(key_block, offset, serverCipher.getBlockSize());
-            offset += serverCipher.getBlockSize();
+            clientCipher.init(new byte[clientIVLength], 0, clientIVLength);
+            serverCipher.init(new byte[serverIVLength], 0, serverIVLength);
+        }
+        else
+        {
+            clientCipher.init(key_block, offset, clientIVLength);
+            offset += clientIVLength;
+            serverCipher.init(key_block, offset, serverIVLength);
+            offset += serverIVLength;
         }
 
         if (offset != key_block_size)
@@ -207,15 +215,11 @@ public class TlsBlockCipher
 
         if (useExplicitIV)
         {
+            // Technically the explicit IV will be the encryption of this nonce
             byte[] explicitIV = cryptoParams.getNonceGenerator().generateNonce(blockSize);
-
-            encryptCipher.init(explicitIV, 0, blockSize);
-
             System.arraycopy(explicitIV, 0, outBuf, outOff, blockSize);
             outOff += blockSize;
         }
-
-        int blocks_start = outOff;
 
         System.arraycopy(plaintext, offset, outBuf, outOff, len);
         outOff += len;
@@ -233,7 +237,7 @@ public class TlsBlockCipher
             outBuf[outOff++] = padByte;
         }
 
-        encryptCipher.doFinal(outBuf, blocks_start, outOff - blocks_start, outBuf, blocks_start);
+        encryptCipher.doFinal(outBuf, headerAllocation, outOff - headerAllocation, outBuf, headerAllocation);
 
         if (encryptThenMAC)
         {
@@ -307,15 +311,13 @@ public class TlsBlockCipher
             }
         }
 
+        decryptCipher.doFinal(ciphertext, offset, blocks_length, ciphertext, offset);
+
         if (useExplicitIV)
         {
-            decryptCipher.init(ciphertext, offset, blockSize);
-
             offset += blockSize;
             blocks_length -= blockSize;
         }
-
-        decryptCipher.doFinal(ciphertext, offset, blocks_length, ciphertext, offset);
 
         // If there's anything wrong with the padding, this will return zero
         int totalPad = checkPaddingConstantTime(ciphertext, offset, blocks_length, blockSize, encryptThenMAC ? 0 : macSize);
