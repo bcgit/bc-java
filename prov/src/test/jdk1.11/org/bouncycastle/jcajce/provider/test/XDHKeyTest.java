@@ -142,30 +142,45 @@ public class XDHKeyTest
             privateKey instanceof XECPrivateKey);
     }
 
-    public void testBCAgreement()
+    public void testBCAgreementX25519()
         throws Exception
     {
-        KeyPairGenerator kpGen1 = KeyPairGenerator.getInstance("X25519", "SunEC");
-        KeyPairGenerator kpGen2 = KeyPairGenerator.getInstance("X25519", "BC");
+        implTestBCAgreement("X25519");
+    }
+
+    public void testBCAgreementX448()
+        throws Exception
+    {
+        implTestBCAgreement("X448");
+    }
+
+    private void implTestBCAgreement(String algorithm)
+        throws Exception
+    {
+        KeyPairGenerator kpGen1 = KeyPairGenerator.getInstance(algorithm, "SunEC");
+        KeyPairGenerator kpGen2 = KeyPairGenerator.getInstance(algorithm, "BC");
 
         KeyAgreement keyAgreement = KeyAgreement.getInstance("XDH", "BC");
 
-        KeyPair kp1 = kpGen1.generateKeyPair();
-        KeyPair kp2 = kpGen2.generateKeyPair();
+        for (int i = 0; i < 10; ++i)
+        {
+            KeyPair kp1 = kpGen1.generateKeyPair();
+            KeyPair kp2 = kpGen2.generateKeyPair();
 
-        keyAgreement.init(kp1.getPrivate());
+            keyAgreement.init(kp1.getPrivate());
 
-        keyAgreement.doPhase(kp2.getPublic(), true);
+            keyAgreement.doPhase(kp2.getPublic(), true);
 
-        byte[] sec1 = keyAgreement.generateSecret();
+            byte[] sec1 = keyAgreement.generateSecret();
 
-        keyAgreement.init(kp2.getPrivate());
+            keyAgreement.init(kp2.getPrivate());
 
-        keyAgreement.doPhase(kp1.getPublic(), true);
+            keyAgreement.doPhase(kp1.getPublic(), true);
 
-        byte[] sec2 = keyAgreement.generateSecret();
+            byte[] sec2 = keyAgreement.generateSecret();
 
-        assertTrue(Arrays.areEqual(sec1, sec2));
+            assertTrue(Arrays.areEqual(sec1, sec2));
+        }
     }
 
     public static void main(String args[])
