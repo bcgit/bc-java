@@ -1,13 +1,19 @@
 package org.bouncycastle.jcajce.provider.asymmetric.edec;
 
+import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
+import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.interfaces.EdECPrivateKey;
 import java.security.interfaces.EdECPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.EdECPoint;
+import java.security.spec.NamedParameterSpec;
+import java.util.Optional;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
@@ -38,40 +44,19 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        AsymmetricKeyParameter pub;
-        if (publicKey instanceof BCEdDSAPublicKey)
-        {
-            pub = ((BCEdDSAPublicKey)publicKey).engineGetKeyParameters();
-        }
-        else if (publicKey instanceof EdECPublicKey)
-        {
-            EdECPublicKey jcaPub = (EdECPublicKey)publicKey;
-            boolean isEd448 = jcaPub.getAlgorithm().equals("Ed448");
-            int keyLen = isEd448 ? Ed448PublicKeyParameters.KEY_SIZE : Ed25519PublicKeyParameters.KEY_SIZE;
+        AsymmetricKeyParameter pub = getLwEdDSAKeyPublic(publicKey);
 
-            byte[] keyData = Arrays.reverse(BigIntegers.asUnsignedByteArray(keyLen, jcaPub.getPoint().getY()));
-
-            if (isEd448)
-            {
-                pub = new Ed448PublicKeyParameters(keyData, 0);
-            }
-            else
-            {
-                pub = new Ed25519PublicKeyParameters(keyData, 0);
-            }
-        }
-        else
+        if (pub instanceof Ed25519PublicKeyParameters)
         {
-            throw new InvalidKeyException("cannot identify EdDSA public key");
+            signer = getSigner("Ed25519");
         }
-
-        if (pub instanceof Ed448PublicKeyParameters)
+        else if (pub instanceof Ed448PublicKeyParameters)
         {
             signer = getSigner("Ed448");
         }
         else
         {
-            signer = getSigner("Ed25519");
+            throw new IllegalStateException("unsupported public key type");
         }
 
         signer.init(false, pub);
@@ -80,48 +65,199 @@ public class SignatureSpi
     protected void engineInitSign(PrivateKey privateKey)
         throws InvalidKeyException
     {
-        AsymmetricKeyParameter priv;
-        if (privateKey instanceof BCEdDSAPrivateKey)
-        {
-            priv = ((BCEdDSAPrivateKey)privateKey).engineGetKeyParameters();
-        }
-        else if (privateKey instanceof EdECPrivateKey)
-        {
-            EdECPrivateKey jcaPriv = (EdECPrivateKey)privateKey;
+        AsymmetricKeyParameter priv = getLwEdDSAKeyPrivate(privateKey);
 
-            if (jcaPriv.getBytes().isPresent())
-            {
-                byte[] keyData = jcaPriv.getBytes().get();
-
-                if (keyData.length == Ed448PrivateKeyParameters.KEY_SIZE)
-                {
-                    priv = new Ed448PrivateKeyParameters(keyData, 0);
-                }
-                else
-                {
-                    priv = new Ed25519PrivateKeyParameters(keyData, 0);
-                }
-            }
-            else
-            {
-                throw new InvalidKeyException("cannot use other provider EdDSA private key");
-            }
-        }
-        else
+        if (priv instanceof Ed25519PrivateKeyParameters)
         {
-            throw new InvalidKeyException("cannot identify EdDSA private key");
+            signer = getSigner("Ed25519");
         }
-
-        if (priv instanceof Ed448PrivateKeyParameters)
+        else if (priv instanceof Ed448PrivateKeyParameters)
         {
             signer = getSigner("Ed448");
         }
         else
         {
-            signer = getSigner("Ed25519");
+            throw new IllegalStateException("unsupported private key type");
         }
 
         signer.init(true, priv);
+    }
+
+    private static Ed25519PrivateKeyParameters getEd25519PrivateKey(byte[] keyData)
+        throws InvalidKeyException
+    {
+        if (Ed25519PrivateKeyParameters.KEY_SIZE != keyData.length)
+        {
+            throw new InvalidKeyException("cannot use EdEC private key (Ed25519) with bytes of incorrect length");
+        }
+
+        return new Ed25519PrivateKeyParameters(keyData, 0);
+    }
+
+    private static Ed25519PublicKeyParameters getEd25519PublicKey(EdECPoint point)
+        throws InvalidKeyException
+    {
+        byte[] keyData = getPublicKeyData(Ed25519PublicKeyParameters.KEY_SIZE, point);
+
+        return new Ed25519PublicKeyParameters(keyData, 0);
+    }
+
+    private static Ed448PrivateKeyParameters getEd448PrivateKey(byte[] keyData)
+        throws InvalidKeyException
+    {
+        if (Ed448PrivateKeyParameters.KEY_SIZE != keyData.length)
+        {
+            throw new InvalidKeyException("cannot use EdEC private key (Ed448) with bytes of incorrect length");
+        }
+
+        return new Ed448PrivateKeyParameters(keyData, 0);
+    }
+
+    private static Ed448PublicKeyParameters getEd448PublicKey(EdECPoint point)
+        throws InvalidKeyException
+    {
+        byte[] keyData = getPublicKeyData(Ed448PublicKeyParameters.KEY_SIZE, point);
+
+        return new Ed448PublicKeyParameters(keyData, 0);
+    }
+
+    private static AsymmetricKeyParameter getLwEdDSAKeyPrivate(Key key)
+        throws InvalidKeyException
+    {
+        if (key instanceof BCEdDSAPrivateKey)
+        {
+            return ((BCEdDSAPrivateKey)key).engineGetKeyParameters();
+        }
+
+        if (key instanceof EdECPrivateKey)
+        {
+            EdECPrivateKey jcaPriv = (EdECPrivateKey)key;
+
+            Optional<byte[]> bytes = jcaPriv.getBytes();
+            if (!bytes.isPresent())
+            {
+                throw new InvalidKeyException("cannot use EdEC private key without bytes");
+            }
+
+            String algorithm = jcaPriv.getAlgorithm();
+
+            if ("Ed25519".equals(algorithm))
+            {
+                return getEd25519PrivateKey(bytes.get());
+            }
+
+            if ("Ed448".equals(algorithm))
+            {
+                return getEd448PrivateKey(bytes.get());
+            }
+
+            if ("EdDSA".equals(algorithm))
+            {
+                AlgorithmParameterSpec params = jcaPriv.getParams();
+                if (params instanceof NamedParameterSpec)
+                {
+                    NamedParameterSpec namedParams = (NamedParameterSpec)params;
+
+                    String name = namedParams.getName();
+
+                    if ("Ed25519".equals(name))
+                    {
+                        return getEd25519PrivateKey(bytes.get());
+                    }
+
+                    if ("Ed448".equals(name))
+                    {
+                        return getEd448PrivateKey(bytes.get());
+                    }
+                }
+            }
+
+            throw new InvalidKeyException("cannot use EdEC private key with unknown algorithm");
+        }
+
+        throw new InvalidKeyException("cannot identify EdDSA private key");
+    }
+
+    private static AsymmetricKeyParameter getLwEdDSAKeyPublic(Key key)
+        throws InvalidKeyException
+    {
+        if (key instanceof BCEdDSAPublicKey)
+        {
+            return ((BCEdDSAPublicKey)key).engineGetKeyParameters();
+        }
+
+        if (key instanceof EdECPublicKey)
+        {
+            EdECPublicKey jcaPub = (EdECPublicKey)key;
+
+            EdECPoint point = jcaPub.getPoint();
+
+            String algorithm = jcaPub.getAlgorithm();
+
+            if ("Ed25519".equals(algorithm))
+            {
+                return getEd25519PublicKey(point);
+            }
+
+            if ("Ed448".equals(algorithm))
+            {
+                return getEd448PublicKey(point);
+            }
+
+            if ("EdDSA".equals(algorithm))
+            {
+                AlgorithmParameterSpec params = jcaPub.getParams();
+                if (params instanceof NamedParameterSpec)
+                {
+                    NamedParameterSpec namedParams = (NamedParameterSpec)params;
+
+                    String name = namedParams.getName();
+
+                    if ("Ed25519".equals(name))
+                    {
+                        return getEd25519PublicKey(point);
+                    }
+
+                    if ("Ed448".equals(name))
+                    {
+                        return getEd448PublicKey(point);
+                    }
+                }
+            }
+
+            throw new InvalidKeyException("cannot use EdEC public key with unknown algorithm");
+        }
+
+        throw new InvalidKeyException("cannot identify EdDSA public key");
+    }
+
+    private static byte[] getPublicKeyData(int length, EdECPoint point)
+        throws InvalidKeyException
+    {
+        BigInteger y = point.getY();
+        if (y.signum() < 0)
+        {
+            throw new InvalidKeyException("cannot use EdEC public key with negative Y value");
+        }
+
+        try
+        {
+            byte[] keyData = BigIntegers.asUnsignedByteArray(length, y);
+            if ((keyData[0] & 0x80) == 0)
+            {
+                if (point.isXOdd())
+                {
+                    keyData[0] |= 0x80;
+                }
+
+                return Arrays.reverseInPlace(keyData);
+            }
+        }
+        catch (RuntimeException e)
+        {
+        }        
+
+        throw new InvalidKeyException("cannot use EdEC public key with invalid Y value");
     }
 
     private Signer getSigner(String alg)

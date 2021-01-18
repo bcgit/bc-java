@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.agreement.XDHUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.XDHUPrivateParameters;
 import org.bouncycastle.crypto.params.XDHUPublicParameters;
@@ -47,25 +48,22 @@ public class KeyAgreementSpi
     protected void engineInit(Key key, SecureRandom secureRandom)
         throws InvalidKeyException
     {
-        if (key instanceof BCXDHPrivateKey)
+        AsymmetricKeyParameter priv = getLwXDHKeyPrivate(key);
+
+        if (priv instanceof X25519PrivateKeyParameters)
         {
-            AsymmetricKeyParameter priv = ((BCXDHPrivateKey)key).engineGetKeyParameters();
-
-            if (priv instanceof X448PrivateKeyParameters)
-            {
-                agreement = getAgreement("X448");
-            }
-            else
-            {
-                agreement = getAgreement("X25519");
-            }
-
-            agreement.init(priv);
+            agreement = getAgreement("X25519");
+        }
+        else if (priv instanceof X448PrivateKeyParameters)
+        {
+            agreement = getAgreement("X448");
         }
         else
         {
-            throw new InvalidKeyException("cannot identify XDH private key");
+            throw new IllegalStateException("unsupported private key type");
         }
+
+        agreement.init(priv);
 
         if (kdf != null)
         {
@@ -80,24 +78,19 @@ public class KeyAgreementSpi
     protected void engineInit(Key key, AlgorithmParameterSpec params, SecureRandom secureRandom)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        AsymmetricKeyParameter priv;
+        AsymmetricKeyParameter priv = getLwXDHKeyPrivate(key);
 
-        if (key instanceof BCXDHPrivateKey)
+        if (priv instanceof X25519PrivateKeyParameters)
         {
-            priv = ((BCXDHPrivateKey)key).engineGetKeyParameters();
-
-            if (priv instanceof X448PrivateKeyParameters)
-            {
-                agreement = getAgreement("X448");
-            }
-            else
-            {
-                agreement = getAgreement("X25519");
-            }
+            agreement = getAgreement("X25519");
+        }
+        else if (priv instanceof X448PrivateKeyParameters)
+        {
+            agreement = getAgreement("X448");
         }
         else
         {
-            throw new InvalidKeyException("cannot identify XDH private key");
+            throw new IllegalStateException("unsupported private key type");
         }
 
         ukmParameters = null;
@@ -111,7 +104,7 @@ public class KeyAgreementSpi
             dhuSpec = (DHUParameterSpec)params;
 
             ukmParameters = dhuSpec.getUserKeyingMaterial();
-            
+
             agreement.init(new XDHUPrivateParameters(
                 priv, ((BCXDHPrivateKey)dhuSpec.getEphemeralPrivateKey()).engineGetKeyParameters(),
                 ((BCXDHPublicKey)dhuSpec.getEphemeralPublicKey()).engineGetKeyParameters()));
@@ -153,12 +146,7 @@ public class KeyAgreementSpi
             throw new IllegalStateException(kaAlgorithm + " can only be between two parties.");
         }
 
-        if (!(key instanceof BCXDHPublicKey))
-        {
-            throw new InvalidKeyException("cannot identify XDH private key");
-        }
-
-        AsymmetricKeyParameter pub = ((BCXDHPublicKey)key).engineGetKeyParameters();
+        AsymmetricKeyParameter pub = getLwXDHKeyPublic(key);
 
         result = new byte[agreement.getAgreementSize()];
 
@@ -204,6 +192,28 @@ public class KeyAgreementSpi
                 return new X25519Agreement();
             }
         }
+    }
+
+    private static AsymmetricKeyParameter getLwXDHKeyPrivate(Key key)
+        throws InvalidKeyException
+    {
+        if (key instanceof BCXDHPrivateKey)
+        {
+            return ((BCXDHPrivateKey)key).engineGetKeyParameters();
+        }
+
+        throw new InvalidKeyException("cannot identify XDH private key");
+    }
+
+    private AsymmetricKeyParameter getLwXDHKeyPublic(Key key)
+        throws InvalidKeyException
+    {
+        if (key instanceof BCXDHPublicKey)
+        {
+            return ((BCXDHPublicKey)key).engineGetKeyParameters();
+        }
+
+        throw new InvalidKeyException("cannot identify XDH public key");
     }
 
     public final static class XDH
