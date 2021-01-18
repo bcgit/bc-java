@@ -8,6 +8,7 @@ import java.security.spec.NamedParameterSpec;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
@@ -41,10 +42,15 @@ class BC15EdDSAPublicKey
         }
         else
         {
-            keyData = ((Ed448PublicKeyParameters)eddsaPublicKey).getEncoded();
+            keyData = ((Ed25519PublicKeyParameters)eddsaPublicKey).getEncoded();
         }
-        return new EdECPoint(keyData[keyData.length - 1] != 0x00,
-            new BigInteger(1, Arrays.reverse(Arrays.copyOfRange(keyData, 0, keyData.length - 1))));
+
+        Arrays.reverseInPlace(keyData);
+
+        boolean xOdd = (keyData[0] & 0x80) != 0;
+        keyData[0] &= 0x7f;
+
+        return new EdECPoint(xOdd, new BigInteger(1, keyData));
     }
 
     @Override
