@@ -1063,6 +1063,24 @@ public final class Arrays
         return result;
     }
 
+    public static byte[] reverseInPlace(byte[] a)
+    {
+        if (null == a)
+        {
+            throw new NullPointerException("'a' cannot be null");
+        }
+
+        int p1 = 0, p2 = a.length - 1;
+        while (p1 < p2)
+        {
+            byte t1 = a[p1], t2 = a[p2];
+            a[p1++] = t2;
+            a[p2--] = t1;
+        }
+
+        return a;
+    }
+
     /**
      * Iterator backed by a specific array.
      */

@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.edec;
 
+import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -7,6 +8,8 @@ import java.security.SecureRandom;
 import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.NamedParameterSpec;
+import java.util.Optional;
 
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.RawAgreement;
@@ -54,18 +57,23 @@ public class KeyAgreementSpi
     protected void engineInit(Key key, SecureRandom secureRandom)
         throws InvalidKeyException
     {
-        AsymmetricKeyParameter priv = getLwXDHKey(key);
+        AsymmetricKeyParameter priv = getLwXDHKeyPrivate(key);
 
-        if (priv instanceof X448PrivateKeyParameters)
+        if (priv instanceof X25519PrivateKeyParameters)
+        {
+            agreement = getAgreement("X25519");
+        }
+        else if (priv instanceof X448PrivateKeyParameters)
         {
             agreement = getAgreement("X448");
         }
         else
         {
-            agreement = getAgreement("X25519");
+            throw new IllegalStateException("unsupported private key type");
         }
 
         agreement.init(priv);
+
         if (kdf != null)
         {
             ukmParameters = new byte[0];
@@ -79,15 +87,19 @@ public class KeyAgreementSpi
     protected void engineInit(Key key, AlgorithmParameterSpec params, SecureRandom secureRandom)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        AsymmetricKeyParameter priv = getLwXDHKey(key);
+        AsymmetricKeyParameter priv = getLwXDHKeyPrivate(key);
 
-        if (priv instanceof X448PrivateKeyParameters)
+        if (priv instanceof X25519PrivateKeyParameters)
+        {
+            agreement = getAgreement("X25519");
+        }
+        else if (priv instanceof X448PrivateKeyParameters)
         {
             agreement = getAgreement("X448");
         }
         else
         {
-            agreement = getAgreement("X25519");
+            throw new IllegalStateException("unsupported private key type");
         }
 
         ukmParameters = null;
@@ -143,30 +155,7 @@ public class KeyAgreementSpi
             throw new IllegalStateException(kaAlgorithm + " can only be between two parties.");
         }
 
-        AsymmetricKeyParameter pub;
-        if (key instanceof BCXDHPublicKey)
-        {
-            pub = ((BCXDHPublicKey)key).engineGetKeyParameters();
-        }
-        else if (key instanceof XECPublicKey)
-        {
-            XECPublicKey jcePub = (XECPublicKey)key;
-
-            byte[] keyData = Arrays.reverse(BigIntegers.asUnsignedByteArray(jcePub.getU()));
-
-            if (keyData.length == X448PublicKeyParameters.KEY_SIZE)
-            {
-                pub = new X448PublicKeyParameters(keyData, 0);
-            }
-            else
-            {
-                pub = new X25519PublicKeyParameters(keyData, 0);
-            }
-        }
-        else
-        {
-            throw new InvalidKeyException("cannot identify XDH private key");
-        }
+        AsymmetricKeyParameter pub = getLwXDHKeyPublic(key);
 
         result = new byte[agreement.getAgreementSize()];
 
@@ -214,41 +203,169 @@ public class KeyAgreementSpi
         }
     }
 
-    private AsymmetricKeyParameter getLwXDHKey(Key key)
+    private static AsymmetricKeyParameter getLwXDHKeyPrivate(Key key)
         throws InvalidKeyException
     {
-        AsymmetricKeyParameter priv;
         if (key instanceof BCXDHPrivateKey)
         {
-            priv = ((BCXDHPrivateKey)key).engineGetKeyParameters();
+            return ((BCXDHPrivateKey)key).engineGetKeyParameters();
         }
-        else if (key instanceof XECPrivateKey)
+
+        if (key instanceof XECPrivateKey)
         {
             XECPrivateKey jcePriv = (XECPrivateKey)key;
 
-            if (jcePriv.getScalar().isPresent())
+            Optional<byte[]> scalar = jcePriv.getScalar();
+            if (!scalar.isPresent())
             {
-                byte[] keyData = jcePriv.getScalar().get();
+                throw new InvalidKeyException("cannot use XEC private key without scalar");
+            }
 
-                if (keyData.length == X448PrivateKeyParameters.KEY_SIZE)
-                {
-                    priv = new X448PrivateKeyParameters(keyData, 0);
-                }
-                else
-                {
-                    priv = new X25519PrivateKeyParameters(keyData, 0);
-                }
-            }
-            else
+            String algorithm = jcePriv.getAlgorithm();
+
+            if ("X25519".equals(algorithm))
             {
-                throw new InvalidKeyException("cannot use other provider XEC private key");
+                return getX25519PrivateKey(scalar.get());
             }
+
+            if ("X448".equals(algorithm))
+            {
+                return getX448PrivateKey(scalar.get());
+            }
+
+            if ("XDH".equals(algorithm))
+            {
+                AlgorithmParameterSpec params = jcePriv.getParams();
+                if (params instanceof NamedParameterSpec)
+                {
+                    NamedParameterSpec namedParams = (NamedParameterSpec)params;
+
+                    String name = namedParams.getName();
+
+                    if ("X25519".equals(name))
+                    {
+                        return getX25519PrivateKey(scalar.get());
+                    }
+
+                    if ("X448".equals(name))
+                    {
+                        return getX448PrivateKey(scalar.get());
+                    }
+                }
+            }
+
+            throw new InvalidKeyException("cannot use XEC private key with unknown algorithm");
         }
-        else
+
+        throw new InvalidKeyException("cannot identify XDH private key");
+    }
+
+    private AsymmetricKeyParameter getLwXDHKeyPublic(Key key)
+        throws InvalidKeyException
+    {
+        if (key instanceof BCXDHPublicKey)
         {
-            throw new InvalidKeyException("cannot identify XDH private key");
+            return ((BCXDHPublicKey)key).engineGetKeyParameters();
         }
-        return priv;
+
+        if (key instanceof XECPublicKey)
+        {
+            XECPublicKey jcePub = (XECPublicKey)key;
+
+            BigInteger u = jcePub.getU();
+            if (u.signum() < 0)
+            {
+                throw new InvalidKeyException("cannot use XEC public key with negative U value");
+            }
+
+            String algorithm = jcePub.getAlgorithm();
+
+            if ("X25519".equals(algorithm))
+            {
+                return getX25519PublicKey(u);
+            }
+
+            if ("X448".equals(algorithm))
+            {
+                return getX448PublicKey(u);
+            }
+
+            if ("XDH".equals(algorithm))
+            {
+                AlgorithmParameterSpec params = jcePub.getParams();
+                if (params instanceof NamedParameterSpec)
+                {
+                    NamedParameterSpec namedParams = (NamedParameterSpec)params;
+
+                    String name = namedParams.getName();
+
+                    if ("X25519".equals(name))
+                    {
+                        return getX25519PublicKey(u);
+                    }
+
+                    if ("X448".equals(name))
+                    {
+                        return getX448PublicKey(u);
+                    }
+                }
+            }
+
+            throw new InvalidKeyException("cannot use XEC public key with unknown algorithm");
+        }
+
+        throw new InvalidKeyException("cannot identify XDH public key");
+    }
+
+    private static byte[] getPublicKeyData(int length, BigInteger u)
+        throws InvalidKeyException
+    {
+        try
+        {
+            return Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(length, u));
+        }
+        catch (RuntimeException e)
+        {
+            throw new InvalidKeyException("cannot use XEC public key with invalid U value");
+        }
+    }
+
+    private static X25519PrivateKeyParameters getX25519PrivateKey(byte[] keyData)
+        throws InvalidKeyException
+    {
+        if (X25519PrivateKeyParameters.KEY_SIZE != keyData.length)
+        {
+            throw new InvalidKeyException("cannot use XEC private key (X25519) with scalar of incorrect length");
+        }
+
+        return new X25519PrivateKeyParameters(keyData, 0);
+    }
+
+    private static X25519PublicKeyParameters getX25519PublicKey(BigInteger u)
+        throws InvalidKeyException
+    {
+        byte[] keyData = getPublicKeyData(X25519PublicKeyParameters.KEY_SIZE, u);
+
+        return new X25519PublicKeyParameters(keyData, 0);
+    }
+
+    private static X448PrivateKeyParameters getX448PrivateKey(byte[] keyData)
+        throws InvalidKeyException
+    {
+        if (X448PrivateKeyParameters.KEY_SIZE != keyData.length)
+        {
+            throw new InvalidKeyException("cannot use XEC private key (X448) with scalar of incorrect length");
+        }
+
+        return new X448PrivateKeyParameters(keyData, 0);
+    }
+
+    private static X448PublicKeyParameters getX448PublicKey(BigInteger u)
+        throws InvalidKeyException
+    {
+        byte[] keyData = getPublicKeyData(X448PublicKeyParameters.KEY_SIZE, u);
+
+        return new X448PublicKeyParameters(keyData, 0);
     }
 
     public final static class XDH
