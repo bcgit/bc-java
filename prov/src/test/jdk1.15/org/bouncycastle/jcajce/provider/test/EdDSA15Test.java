@@ -4,15 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.Security;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
 
-import junit.framework.TestCase;
-import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import junit.framework.TestCase;
 
 public class EdDSA15Test
     extends TestCase
@@ -33,25 +32,88 @@ public class EdDSA15Test
         }
     }
 
-    public void testBCSig()
+    public void testBCSigEd25519()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed25519", "SunEC");
+        implTestBCSig("Ed25519");
+    }
 
-        KeyPair kp = kpGen.generateKeyPair();
+    public void testBCSigEd448()
+        throws Exception
+    {
+        implTestBCSig("Ed448");
+    }
 
-        Signature signature = Signature.getInstance("Ed25519", new BouncyCastleProvider());
+    public void testInteropEd25519()
+        throws Exception
+    {
+        implTestInterop("Ed25519");
+    }
 
-        signature.initSign(kp.getPrivate());
+    public void testInteropEd448()
+        throws Exception
+    {
+        implTestInterop("Ed448");
+    }
 
-        signature.update(new byte[32]);
+    private void implTestBCSig(String algorithm)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, "SunEC");
+        Signature signature = Signature.getInstance(algorithm, new BouncyCastleProvider());
 
-        byte[] sig = signature.sign();
+        for (int i = 0; i < 10; ++i)
+        {
+            KeyPair kp = kpGen.generateKeyPair();
 
-        signature.initVerify(kp.getPublic());
+            signature.initSign(kp.getPrivate());
 
-        signature.update(new byte[32]);
+            signature.update(new byte[32]);
 
-        assertTrue(signature.verify(sig));
+            byte[] sig = signature.sign();
+
+            signature.initVerify(kp.getPublic());
+
+            signature.update(new byte[32]);
+
+            assertTrue(signature.verify(sig));
+        }
+    }
+
+    private void implTestInterop(String algorithm)
+        throws Exception
+    {
+        BouncyCastleProvider bc = new BouncyCastleProvider();
+
+        KeyPairGenerator kpGenBC = KeyPairGenerator.getInstance(algorithm, bc);
+        KeyPairGenerator kpGenSunEC = KeyPairGenerator.getInstance(algorithm, "SunEC");
+
+        Signature sigBC = Signature.getInstance(algorithm, bc);
+        Signature sigSunEC = Signature.getInstance(algorithm, "SunEC");
+
+        for (int i = 0; i < 10; ++i)
+        {
+            KeyPair kpBC = kpGenBC.generateKeyPair();
+            KeyPair kpSunEC = kpGenSunEC.generateKeyPair();
+
+            implTestInteropCase(kpBC, sigBC, sigSunEC);
+            implTestInteropCase(kpBC, sigSunEC, sigBC);
+            implTestInteropCase(kpSunEC, sigBC, sigSunEC);
+            implTestInteropCase(kpSunEC, sigSunEC, sigBC);
+        }
+    }
+
+    private void implTestInteropCase(KeyPair kp, Signature signer, Signature verifier)
+        throws Exception
+    {
+        signer.initSign(kp.getPrivate());
+        signer.update(new byte[32]);
+
+        byte[] sig = signer.sign();
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(new byte[32]);
+
+        assertTrue(verifier.verify(sig));
     }
 }

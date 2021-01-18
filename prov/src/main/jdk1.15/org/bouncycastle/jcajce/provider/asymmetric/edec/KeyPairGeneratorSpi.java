@@ -31,227 +31,229 @@ public class KeyPairGeneratorSpi
     private static final int EdDSA = -1;
     private static final int XDH = -2;
 
-    private static final int Ed448 = 0;
     private static final int Ed25519 = 1;
-    private static final int X448 = 2;
+    private static final int Ed448 = 2;
     private static final int X25519 = 3;
+    private static final int X448 = 4;
 
-    private int algorithm;
-    private AsymmetricCipherKeyPairGenerator generator;
+    private final int algorithmDeclared;
 
-    private boolean initialised;
+    private int algorithmInitialized;
     private SecureRandom secureRandom;
 
-    KeyPairGeneratorSpi(int algorithm, AsymmetricCipherKeyPairGenerator generator)
+    private AsymmetricCipherKeyPairGenerator generator;
+
+    KeyPairGeneratorSpi(int algorithmDeclared)
     {
-        this.algorithm = algorithm;
-        this.generator = generator;
+        this.algorithmDeclared = algorithmDeclared;
+
+        if (getAlgorithmFamily(algorithmDeclared) != algorithmDeclared)
+        {
+            this.algorithmInitialized = algorithmDeclared;
+        }
     }
 
     public void initialize(int strength, SecureRandom secureRandom)
     {
+        int algorithm = getAlgorithmForStrength(strength);
+
+        this.algorithmInitialized = algorithm;
         this.secureRandom = secureRandom;
-        try
-        {
-            switch (strength)
-            {
-            case 255:
-            case 256:
-                switch (algorithm)
-                {
-                case EdDSA:
-                case Ed25519:
-                    algorithmCheck(Ed25519);
-                    this.generator = new Ed25519KeyPairGenerator();
-                    setupGenerator(Ed25519);
-                    break;
-                case XDH:
-                case X25519:
-                    algorithmCheck(X25519);
-                    this.generator = new X25519KeyPairGenerator();
-                    setupGenerator(X25519);
-                    break;
-                default:
-                    throw new InvalidParameterException("key size not configurable");
-                }
-                break;
-            case 448:
-                switch (algorithm)
-                {
-                case EdDSA:
-                case Ed448:
-                    algorithmCheck(Ed448);
-                    this.generator = new Ed448KeyPairGenerator();
-                    setupGenerator(Ed448);
-                    break;
-                case XDH:
-                case X448:
-                    algorithmCheck(X448);
-                    this.generator = new X448KeyPairGenerator();
-                    setupGenerator(X448);
-                    break;
-                default:
-                    throw new InvalidParameterException("key size not configurable");
-                }
-                break;
-            default:
-                throw new InvalidParameterException("unknown key size");
-            }
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            throw new InvalidParameterException(e.getMessage());
-        }
+
+        this.generator = null;
     }
 
     public void initialize(AlgorithmParameterSpec paramSpec, SecureRandom secureRandom)
         throws InvalidAlgorithmParameterException
     {
+        String name = getNameFromParams(paramSpec);
+        if (null == name)
+        {
+            throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + paramSpec);
+        }
+
+        int algorithm = getAlgorithmForName(name);
+
+        if (algorithmDeclared != algorithm &&
+            algorithmDeclared != getAlgorithmFamily(algorithm))
+        {
+            throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
+        }
+
+        this.algorithmInitialized = algorithm;
         this.secureRandom = secureRandom;
 
-        if (paramSpec instanceof ECGenParameterSpec)
-        {
-            initializeGenerator(((ECGenParameterSpec)paramSpec).getName());
-        }
-        else if (paramSpec instanceof ECNamedCurveGenParameterSpec)
-        {
-            initializeGenerator(((ECNamedCurveGenParameterSpec)paramSpec).getName());
-        }
-        else if (paramSpec instanceof NamedParameterSpec)
-        {
-            initializeGenerator(((NamedParameterSpec)paramSpec).getName());
-        }
-        else if (paramSpec instanceof EdDSAParameterSpec)
-        {
-            initializeGenerator(((EdDSAParameterSpec)paramSpec).getCurveName());
-        }
-        else if (paramSpec instanceof XDHParameterSpec)
-        {
-            initializeGenerator(((XDHParameterSpec)paramSpec).getCurveName());
-        }
-        else
-        {
-            String name = ECUtil.getNameFrom(paramSpec);
-
-            if (name != null)
-            {
-                initializeGenerator(name);
-            }
-            else
-            {
-                throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + paramSpec);
-            }
-        }
-    }
-
-    private void algorithmCheck(int algorithm)
-        throws InvalidAlgorithmParameterException
-    {
-        if (this.algorithm != algorithm)
-        {
-            if (this.algorithm == Ed25519 || this.algorithm == Ed448)
-            {
-                throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
-            }
-            if (this.algorithm == EdDSA && (algorithm != Ed25519 && algorithm != Ed448))
-            {
-                throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
-            }
-            if (this.algorithm == X25519 || this.algorithm == X448)
-            {
-                throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
-            }
-            if (this.algorithm == XDH && (algorithm != X25519 && algorithm != X448))
-            {
-                throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
-            }
-            this.algorithm = algorithm;
-        }
-    }
-
-    private void initializeGenerator(String name)
-        throws InvalidAlgorithmParameterException
-    {
-        if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed448) || name.equals(EdECObjectIdentifiers.id_Ed448.getId()))
-        {
-            algorithmCheck(Ed448);
-            this.generator = new Ed448KeyPairGenerator();
-            setupGenerator(Ed448);
-        }
-        else if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed25519) || name.equals(EdECObjectIdentifiers.id_Ed25519.getId()))
-        {
-            algorithmCheck(Ed25519);
-            this.generator = new Ed25519KeyPairGenerator();
-            setupGenerator(Ed25519);
-        }
-        else if (name.equalsIgnoreCase(XDHParameterSpec.X448) || name.equals(EdECObjectIdentifiers.id_X448.getId()))
-        {
-            algorithmCheck(X448);
-            this.generator = new X448KeyPairGenerator();
-            setupGenerator(X448);
-        }
-        else if (name.equalsIgnoreCase(XDHParameterSpec.X25519) || name.equals(EdECObjectIdentifiers.id_X25519.getId()))
-        {
-            algorithmCheck(X25519);
-            this.generator = new X25519KeyPairGenerator();
-            setupGenerator(X25519);
-        }
+        this.generator = null;
     }
 
     public KeyPair generateKeyPair()
     {
-        if (generator == null)
+        if (algorithmInitialized == 0)
         {
             throw new IllegalStateException("generator not correctly initialized");
         }
 
-        if (!initialised)
+        if (null == generator)
         {
-            setupGenerator(algorithm);
+            this.generator = setupGenerator();
         }
 
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
 
-        switch (algorithm)
+        switch (algorithmInitialized)
         {
+        case Ed25519:
         case Ed448:
             return new KeyPair(new BC15EdDSAPublicKey(kp.getPublic()), new BC15EdDSAPrivateKey(kp.getPrivate()));
-        case Ed25519:
-            return new KeyPair(new BC15EdDSAPublicKey(kp.getPublic()), new BC15EdDSAPrivateKey(kp.getPrivate()));
+        case X25519:
         case X448:
             return new KeyPair(new BC11XDHPublicKey(kp.getPublic()), new BC11XDHPrivateKey(kp.getPrivate()));
-        case X25519:
-            return new KeyPair(new BC11XDHPublicKey(kp.getPublic()), new BC11XDHPrivateKey(kp.getPrivate()));
+        default:
+            throw new IllegalStateException("generator not correctly initialized");
         }
-
-        throw new IllegalStateException("generator not correctly initialized");
     }
 
-    private void setupGenerator(int algorithm)
+    private int getAlgorithmForStrength(int strength)
     {
-        initialised = true;
-
-        if (secureRandom == null)
+        switch (strength)
         {
-            secureRandom = CryptoServicesRegistrar.getSecureRandom();
+        case 255:
+        case 256:
+        {
+            switch (algorithmDeclared)
+            {
+            case EdDSA:
+            case Ed25519:
+                return Ed25519;
+            case XDH:
+            case X25519:
+                return X25519;
+            default:
+                throw new InvalidParameterException("key size not configurable");
+            }
+        }
+        case 448:
+        {
+            switch (algorithmDeclared)
+            {
+            case EdDSA:
+            case Ed448:
+                return Ed448;
+            case XDH:
+            case X448:
+                return X448;
+            default:
+                throw new InvalidParameterException("key size not configurable");
+            }
+        }
+        default:
+            throw new InvalidParameterException("unknown key size");
+        }
+    }
+
+    private AsymmetricCipherKeyPairGenerator setupGenerator()
+    {
+        if (null == secureRandom)
+        {
+            this.secureRandom = CryptoServicesRegistrar.getSecureRandom();
         }
 
+        switch (algorithmInitialized)
+        {
+        case Ed25519:
+        {
+            Ed25519KeyPairGenerator generator = new Ed25519KeyPairGenerator();
+            generator.init(new Ed25519KeyGenerationParameters(secureRandom));
+            return generator;
+        }
+        case Ed448:
+        {
+            Ed448KeyPairGenerator generator = new Ed448KeyPairGenerator();
+            generator.init(new Ed448KeyGenerationParameters(secureRandom));
+            return generator;
+        }
+        case X25519:
+        {
+            X25519KeyPairGenerator generator = new X25519KeyPairGenerator();
+            generator.init(new X25519KeyGenerationParameters(secureRandom));
+            return generator;
+        }
+        case X448:
+        {
+            X448KeyPairGenerator generator = new X448KeyPairGenerator();
+            generator.init(new X448KeyGenerationParameters(secureRandom));
+            return generator;
+        }
+        default:
+        {
+            throw new IllegalStateException("generator not correctly initialized");
+        }
+        }
+    }
+
+    private static int getAlgorithmFamily(int algorithm)
+    {
         switch (algorithm)
         {
-        case Ed448:
-            generator.init(new Ed448KeyGenerationParameters(secureRandom));
-            break;
-        case EdDSA:
         case Ed25519:
-            generator.init(new Ed25519KeyGenerationParameters(secureRandom));
-            break;
-        case X448:
-            generator.init(new X448KeyGenerationParameters(secureRandom));
-            break;
-        case XDH:
+        case Ed448:
+            return EdDSA;
         case X25519:
-            generator.init(new X25519KeyGenerationParameters(secureRandom));
-            break;
+        case X448:
+            return XDH;
+        default:
+            return algorithm;
+        }
+    }
+
+    private static int getAlgorithmForName(String name)
+        throws InvalidAlgorithmParameterException
+    {
+        if (name.equalsIgnoreCase(XDHParameterSpec.X25519) || name.equals(EdECObjectIdentifiers.id_X25519.getId()))
+        {
+            return X25519;
+        }
+        else if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed25519) || name.equals(EdECObjectIdentifiers.id_Ed25519.getId()))
+        {
+            return Ed25519;
+        }
+        else if (name.equalsIgnoreCase(XDHParameterSpec.X448) || name.equals(EdECObjectIdentifiers.id_X448.getId()))
+        {
+            return X448;
+        }
+        else if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed448) || name.equals(EdECObjectIdentifiers.id_Ed448.getId()))
+        {
+            return Ed448;
+        }
+        throw new InvalidAlgorithmParameterException("invalid parameterSpec name: " + name);
+    }
+
+    private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
+        throws InvalidAlgorithmParameterException
+    {
+        if (paramSpec instanceof ECGenParameterSpec)
+        {
+            return ((ECGenParameterSpec)paramSpec).getName();
+        }
+        else if (paramSpec instanceof ECNamedCurveGenParameterSpec)
+        {
+            return ((ECNamedCurveGenParameterSpec)paramSpec).getName();
+        }
+        else if (paramSpec instanceof NamedParameterSpec)
+        {
+            return ((NamedParameterSpec)paramSpec).getName();
+        }
+        else if (paramSpec instanceof EdDSAParameterSpec)
+        {
+            return ((EdDSAParameterSpec)paramSpec).getCurveName();
+        }
+        else if (paramSpec instanceof XDHParameterSpec)
+        {
+            return ((XDHParameterSpec)paramSpec).getCurveName();
+        }
+        else
+        {
+            return ECUtil.getNameFrom(paramSpec);
         }
     }
 
@@ -260,7 +262,7 @@ public class KeyPairGeneratorSpi
     {
         public EdDSA()
         {
-            super(EdDSA, null);
+            super(EdDSA);
         }
     }
 
@@ -269,7 +271,7 @@ public class KeyPairGeneratorSpi
     {
         public Ed448()
         {
-            super(Ed448, new Ed448KeyPairGenerator());
+            super(Ed448);
         }
     }
 
@@ -278,7 +280,7 @@ public class KeyPairGeneratorSpi
     {
         public Ed25519()
         {
-            super(Ed25519, new Ed25519KeyPairGenerator());
+            super(Ed25519);
         }
     }
 
@@ -287,7 +289,7 @@ public class KeyPairGeneratorSpi
     {
         public XDH()
         {
-            super(XDH, null);
+            super(XDH);
         }
     }
 
@@ -296,7 +298,7 @@ public class KeyPairGeneratorSpi
     {
         public X448()
         {
-            super(X448, new X448KeyPairGenerator());
+            super(X448);
         }
     }
 
@@ -305,7 +307,7 @@ public class KeyPairGeneratorSpi
     {
         public X25519()
         {
-            super(X25519, new X25519KeyPairGenerator());
+            super(X25519);
         }
     }
 }
