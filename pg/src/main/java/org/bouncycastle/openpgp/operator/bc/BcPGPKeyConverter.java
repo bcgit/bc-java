@@ -118,7 +118,7 @@ public class BcPGPKeyConverter
                     // 'reverse' because the native format for X25519 private keys is little-endian
                     return implGetPrivateKeyPKCS8(new PrivateKeyInfo(
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
-                        new DEROctetString(Arrays.reverse(BigIntegers.asUnsignedByteArray(ecdhK.getX())))));
+                        new DEROctetString(Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(ecdhK.getX())))));
                 }
                 else
                 {
@@ -279,7 +279,7 @@ public class BcPGPKeyConverter
             {
                 // 'reverse' because the native format for X25519 private keys is little-endian
                 X25519PrivateKeyParameters xK = (X25519PrivateKeyParameters)privKey;
-                return new ECSecretBCPGKey(new BigInteger(1, Arrays.reverse(xK.getEncoded())));
+                return new ECSecretBCPGKey(new BigInteger(1, Arrays.reverseInPlace(xK.getEncoded())));
             }
         }
 

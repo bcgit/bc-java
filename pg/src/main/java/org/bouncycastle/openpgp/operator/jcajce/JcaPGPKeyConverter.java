@@ -192,7 +192,7 @@ public class JcaPGPKeyConverter
                     // 'reverse' because the native format for X25519 private keys is little-endian
                     return implGetPrivateKeyPKCS8("XDH", new PrivateKeyInfo(
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
-                        new DEROctetString(Arrays.reverse(BigIntegers.asUnsignedByteArray(ecdhK.getX())))));
+                        new DEROctetString(Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(ecdhK.getX())))));
                 }
                 else
                 {
