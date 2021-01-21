@@ -1067,13 +1067,31 @@ public final class Arrays
     {
         if (null == a)
         {
-            throw new NullPointerException("'a' cannot be null");
+            return null;
         }
 
         int p1 = 0, p2 = a.length - 1;
         while (p1 < p2)
         {
             byte t1 = a[p1], t2 = a[p2];
+            a[p1++] = t2;
+            a[p2--] = t1;
+        }
+
+        return a;
+    }
+
+    public static int[] reverseInPlace(int[] a)
+    {
+        if (null == a)
+        {
+            return null;
+        }
+
+        int p1 = 0, p2 = a.length - 1;
+        while (p1 < p2)
+        {
+            int t1 = a[p1], t2 = a[p2];
             a[p1++] = t2;
             a[p2--] = t1;
         }
