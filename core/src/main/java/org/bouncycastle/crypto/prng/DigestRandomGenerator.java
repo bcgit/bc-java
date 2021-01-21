@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.prng;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Random generation based on the digest with counter. Calling addSeedMaterial will
@@ -37,7 +38,10 @@ public class DigestRandomGenerator
     {
         synchronized (this)
         {
-            digestUpdate(inSeed);
+            if (!Arrays.isNullOrEmpty(inSeed))
+            {
+                digestUpdate(inSeed);
+            }
             digestUpdate(seed);
             digestDoFinal(seed);
         }
