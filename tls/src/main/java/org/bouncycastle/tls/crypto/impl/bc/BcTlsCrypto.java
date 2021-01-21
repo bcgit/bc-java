@@ -223,13 +223,10 @@ public class BcTlsCrypto
     {
         final DigestRandomGenerator nonceGen = new DigestRandomGenerator(createDigest(HashAlgorithm.sha256));
 
-        if (additionalSeedMaterial != null && additionalSeedMaterial.length > 0)
-        {
-            nonceGen.addSeedMaterial(additionalSeedMaterial);
-        }
+        nonceGen.addSeedMaterial(additionalSeedMaterial);
 
         byte[] seed = new byte[createDigest(HashAlgorithm.sha256).getDigestSize()];
-        entropySource.nextBytes(seed);
+        getSecureRandom().nextBytes(seed);
 
         nonceGen.addSeedMaterial(seed);
 
@@ -353,7 +350,7 @@ public class BcTlsCrypto
     public TlsSecret generateRSAPreMasterSecret(ProtocolVersion version)
     {
         byte[] data = new byte[48];
-        entropySource.nextBytes(data);
+        getSecureRandom().nextBytes(data);
         TlsUtils.writeVersion(version, data, 0);
         return adoptLocalSecret(data);
     }
