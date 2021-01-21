@@ -205,7 +205,7 @@ public class JcaPublicKeyConverter
         {
             Polynomial poly = ((PolynomialExtensionField)field).getMinimalPolynomial();
             int[] exponents = poly.getExponentsPresent();
-            int[] ks = Arrays.reverse(Arrays.copyOfRange(exponents, 1, exponents.length - 1));
+            int[] ks = Arrays.reverseInPlace(Arrays.copyOfRange(exponents, 1, exponents.length - 1));
             return new ECFieldF2m(poly.getDegree(), ks);
         }
     }
