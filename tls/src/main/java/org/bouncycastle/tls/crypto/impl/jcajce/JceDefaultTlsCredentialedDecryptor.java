@@ -97,7 +97,7 @@ public class JceDefaultTlsCredentialedDecryptor
         try
         {
             Cipher c = crypto.createRSAEncryptionCipher();
-            c.init(Cipher.DECRYPT_MODE, rsaServerPrivateKey);
+            c.init(Cipher.DECRYPT_MODE, rsaServerPrivateKey, secureRandom);
             byte[] m = c.doFinal(encryptedPreMasterSecret);
             if (m != null && m.length == 48)
             {
