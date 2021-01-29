@@ -210,7 +210,7 @@ public class BcTlsCertificate
         {
             return (DHPublicKeyParameters)getPublicKey();
         }
-        catch (RuntimeException e)
+        catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
