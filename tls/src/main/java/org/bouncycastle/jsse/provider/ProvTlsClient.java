@@ -494,8 +494,8 @@ class ProvTlsClient
     @Override
     public void notifySessionID(byte[] sessionID)
     {
-        final boolean isResumed = (null != sessionID && sessionID.length > 0 && null != sslSession
-            && Arrays.areEqual(sessionID, sslSession.getId()));
+        final boolean isResumed = !TlsUtils.isNullOrEmpty(sessionID) && null != sslSession
+            && Arrays.areEqual(sessionID, sslSession.getId());
 
         if (isResumed)
         {
@@ -505,7 +505,7 @@ class ProvTlsClient
         {
             this.sslSession = null;
 
-            if (sessionID == null || sessionID.length < 1)
+            if (TlsUtils.isNullOrEmpty(sessionID))
             {
                 LOG.fine("Server did not specify a session ID");
             }
@@ -603,7 +603,7 @@ class ProvTlsClient
                 String sessionEndpointID = jsseSessionParameters.getEndpointIDAlgorithm();
                 if (!connectionEndpointID.equalsIgnoreCase(sessionEndpointID))
                 {
-                    LOG.finest("Session not resumable - endpoint ID algorithm mismatch; connection: "
+                    LOG.finer("Session not resumable - endpoint ID algorithm mismatch; connection: "
                         + connectionEndpointID + ", session: " + sessionEndpointID);
                     return false;
                 }

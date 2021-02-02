@@ -55,6 +55,6 @@ final class DummyX509TrustManager
 
     public X509Certificate[] getAcceptedIssuers()
     {
-        return new X509Certificate[0];
+        return JsseUtils.EMPTY_X509CERTIFICATES;
     }
 }

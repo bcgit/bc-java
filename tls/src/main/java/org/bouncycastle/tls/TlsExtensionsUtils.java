@@ -589,7 +589,7 @@ public class TlsExtensionsUtils
 
     public static byte[] createCertificateTypeExtensionClient(short[] certificateTypes) throws IOException
     {
-        if (certificateTypes == null || certificateTypes.length < 1 || certificateTypes.length > 255)
+        if (TlsUtils.isNullOrEmpty(certificateTypes) || certificateTypes.length > 255)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -609,7 +609,7 @@ public class TlsExtensionsUtils
 
     public static byte[] createCookieExtension(byte[] cookie) throws IOException
     {
-        if (cookie == null || cookie.length < 1 || cookie.length >= (1 << 16))
+        if (TlsUtils.isNullOrEmpty(cookie) || cookie.length >= (1 << 16))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -778,7 +778,7 @@ public class TlsExtensionsUtils
 
     public static byte[] createPSKKeyExchangeModesExtension(short[] modes) throws IOException
     {
-        if (modes == null || modes.length < 1 || modes.length > 255)
+        if (TlsUtils.isNullOrEmpty(modes) || modes.length > 255)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -909,7 +909,7 @@ public class TlsExtensionsUtils
 
     public static byte[] createSupportedVersionsExtensionClient(ProtocolVersion[] versions) throws IOException
     {
-        if (versions == null || versions.length < 1 || versions.length > 127)
+        if (TlsUtils.isNullOrEmpty(versions) || versions.length > 127)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

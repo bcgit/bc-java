@@ -141,6 +141,7 @@ public class TlsUtils
     public static final short[] EMPTY_SHORTS = new short[0];
     public static final int[] EMPTY_INTS = new int[0];
     public static final long[] EMPTY_LONGS = new long[0];
+    public static final String[] EMPTY_STRINGS = new String[0];
 
     protected static short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
     protected static short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
@@ -937,7 +938,7 @@ public class TlsUtils
     public static short[] readUint8ArrayWithUint8Length(InputStream input, int minLength)
         throws IOException
     {
-        int length = TlsUtils.readUint8(input);
+        int length = readUint8(input);
         if (length < minLength)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
@@ -1205,6 +1206,11 @@ public class TlsUtils
         return null == array || array.length < 1;
     }
 
+    public static boolean isNullOrEmpty(short[] array)
+    {
+        return null == array || array.length < 1;
+    }
+
     public static boolean isNullOrEmpty(int[] array)
     {
         return null == array || array.length < 1;
@@ -1213,6 +1219,11 @@ public class TlsUtils
     public static boolean isNullOrEmpty(Object[] array)
     {
         return null == array || array.length < 1;
+    }
+
+    public static boolean isNullOrEmpty(String s)
+    {
+        return null == s || s.length() < 1;
     }
 
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion version)
@@ -1451,6 +1462,11 @@ public class TlsUtils
         return null == data ? (byte[])null : data.length == 0 ? EMPTY_BYTES : (byte[])data.clone();
     }
 
+    public static String[] clone(String[] s)
+    {
+        return null == s ? (String[])null : s.length < 1 ? EMPTY_STRINGS : (String[])s.clone();
+    }
+
     public static boolean constantTimeAreEqual(int len, byte[] a, int aOff, byte[] b, int bOff)
     {
         int d = 0;
@@ -1595,7 +1611,7 @@ public class TlsUtils
                 ?   securityParameters.getBaseKeyServer()
                 :   securityParameters.getBaseKeyClient();
 
-            TlsSecret finishedKey = deriveSecret(securityParameters, baseKey, "finished", TlsUtils.EMPTY_BYTES);
+            TlsSecret finishedKey = deriveSecret(securityParameters, baseKey, "finished", EMPTY_BYTES);
             byte[] transcriptHash = getCurrentPRFHash(handshakeHash);
 
             TlsCrypto crypto = context.getCrypto();
@@ -1825,8 +1841,8 @@ public class TlsUtils
     {
         ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
-        final boolean isTLSv13 = TlsUtils.isTLSv13(negotiatedVersion);
-        final boolean isTLSv12Exactly = !isTLSv13 && TlsUtils.isTLSv12(negotiatedVersion);
+        final boolean isTLSv13 = isTLSv13(negotiatedVersion);
+        final boolean isTLSv12Exactly = !isTLSv13 && isTLSv12(negotiatedVersion);
         final boolean isSSL = negotiatedVersion.isSSL();
 
         switch (cipherSuite)
@@ -4516,7 +4532,7 @@ public class TlsUtils
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
+        boolean isTLSv13 = isTLSv13(securityParameters.getNegotiatedVersion());
         if (isTLSv13)
         {
             // 'keyExchange' not used
@@ -4553,7 +4569,7 @@ public class TlsUtils
         Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
-        boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
+        boolean isTLSv13 = isTLSv13(securityParameters.getNegotiatedVersion());
 
         if (null == clientAuthentication)
         {
@@ -4639,7 +4655,7 @@ public class TlsUtils
         throws IOException
     {
         short[] validClientCertificateTypes = keyExchange.getClientCertificateTypes();
-        if (validClientCertificateTypes == null || validClientCertificateTypes.length < 1)
+        if (isNullOrEmpty(validClientCertificateTypes))
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
@@ -4943,7 +4959,7 @@ public class TlsUtils
     private static void collectKeyShares(TlsCrypto crypto, int[] supportedGroups, Vector keyShareGroups,
         Hashtable clientAgreements, Vector clientShares) throws IOException
     {
-        if (null == supportedGroups || supportedGroups.length < 1)
+        if (isNullOrEmpty(supportedGroups))
         {
             return;
         }

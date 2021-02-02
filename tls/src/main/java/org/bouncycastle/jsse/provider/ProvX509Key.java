@@ -6,6 +6,7 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.X509KeyManager;
 
 import org.bouncycastle.jsse.BCX509Key;
+import org.bouncycastle.tls.TlsUtils;
 
 class ProvX509Key
     implements BCX509Key
@@ -31,7 +32,7 @@ class ProvX509Key
         }
 
         X509Certificate[] certificateChain = x509KeyManager.getCertificateChain(alias);
-        if (null == certificateChain || certificateChain.length < 1)
+        if (TlsUtils.isNullOrEmpty(certificateChain))
         {
             return null;
         }

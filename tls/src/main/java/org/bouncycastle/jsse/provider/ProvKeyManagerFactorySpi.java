@@ -20,6 +20,7 @@ import javax.net.ssl.ManagerFactoryParameters;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
+import org.bouncycastle.tls.TlsUtils;
 
 class ProvKeyManagerFactorySpi
     extends KeyManagerFactorySpi
@@ -130,7 +131,7 @@ class ProvKeyManagerFactorySpi
     {
         String ksType = getKeyStoreType(defaultType);
         String ksProv = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreProvider");
-        return (null == ksProv || ksProv.length() < 1)
+        return TlsUtils.isNullOrEmpty(ksProv)
             ?   KeyStore.getInstance(ksType)
             :   KeyStore.getInstance(ksType, ksProv);
     }

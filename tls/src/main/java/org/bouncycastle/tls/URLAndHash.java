@@ -16,7 +16,7 @@ public class URLAndHash
 
     public URLAndHash(String url, byte[] sha1Hash)
     {
-        if (url == null || url.length() < 1 || url.length() >= (1 << 16))
+        if (TlsUtils.isNullOrEmpty(url) || url.length() >= (1 << 16))
         {
             throw new IllegalArgumentException("'url' must have length from 1 to (2^16 - 1)");
         }
