@@ -14,11 +14,9 @@ public class UseSRTPData
      */
     public UseSRTPData(int[] protectionProfiles, byte[] mki)
     {
-        if (protectionProfiles == null || protectionProfiles.length < 1
-            || protectionProfiles.length >= (1 << 15))
+        if (TlsUtils.isNullOrEmpty(protectionProfiles) || protectionProfiles.length >= (1 << 15))
         {
-            throw new IllegalArgumentException(
-                "'protectionProfiles' must have length from 1 to (2^15 - 1)");
+            throw new IllegalArgumentException("'protectionProfiles' must have length from 1 to (2^15 - 1)");
         }
 
         if (mki == null)

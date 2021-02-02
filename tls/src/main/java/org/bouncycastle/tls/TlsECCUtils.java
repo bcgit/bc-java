@@ -3,7 +3,6 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Hashtable;
 
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
@@ -50,7 +49,7 @@ public class TlsECCUtils
 
     public static void checkPointEncoding(int namedGroup, byte[] encoding) throws IOException
     {
-        if (encoding == null || encoding.length < 1)
+        if (TlsUtils.isNullOrEmpty(encoding))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

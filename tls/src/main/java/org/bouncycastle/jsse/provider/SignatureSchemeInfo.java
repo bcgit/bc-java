@@ -191,7 +191,7 @@ class SignatureSchemeInfo
     {
         if (null == infos)
         {
-            return new String[0];
+            return TlsUtils.EMPTY_STRINGS;
         }
 
         ArrayList<String> result = new ArrayList<String>();
@@ -200,14 +200,14 @@ class SignatureSchemeInfo
             // TODO The two kinds of PSS signature scheme can give duplicates here
             result.add(info.getJcaSignatureAlgorithm());
         }
-        return result.toArray(new String[0]);
+        return result.toArray(TlsUtils.EMPTY_STRINGS);
     }
 
     static String[] getJcaSignatureAlgorithmsBC(Collection<SignatureSchemeInfo> infos)
     {
         if (null == infos)
         {
-            return new String[0];
+            return TlsUtils.EMPTY_STRINGS;
         }
 
         ArrayList<String> result = new ArrayList<String>();
@@ -215,7 +215,7 @@ class SignatureSchemeInfo
         {
             result.add(info.getJcaSignatureAlgorithmBC());
         }
-        return result.toArray(new String[0]);
+        return result.toArray(TlsUtils.EMPTY_STRINGS);
     }
 
     static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(int signatureScheme)

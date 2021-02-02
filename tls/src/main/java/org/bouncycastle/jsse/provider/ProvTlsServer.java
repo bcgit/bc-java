@@ -501,7 +501,7 @@ class ProvTlsServer
         {
             this.sslSession = null;
 
-            if (sessionID == null || sessionID.length < 1)
+            if (TlsUtils.isNullOrEmpty(sessionID))
             {
                 LOG.fine("Server did not specify a session ID");
             }
