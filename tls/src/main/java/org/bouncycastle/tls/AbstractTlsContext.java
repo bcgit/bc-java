@@ -25,7 +25,8 @@ abstract class AbstractTlsContext
         byte[] additionalSeedMaterial = new byte[16];
         Pack.longToBigEndian(nextCounterValue(), additionalSeedMaterial, 0);
         Pack.longToBigEndian(Times.nanoTime(), additionalSeedMaterial, 8);
-        additionalSeedMaterial[0] = (byte)connectionEnd;
+        additionalSeedMaterial[0] &= 0x7F;
+        additionalSeedMaterial[0] |= (byte)(connectionEnd << 7);
 
         return crypto.createNonceGenerator(additionalSeedMaterial);
     }
