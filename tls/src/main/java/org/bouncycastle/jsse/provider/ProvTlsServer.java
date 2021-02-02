@@ -53,9 +53,8 @@ class ProvTlsServer
     // TODO[jsse] Integrate this into NamedGroupInfo
     private static final int provEphemeralDHKeySize = PropertyUtils.getIntegerSystemProperty("jdk.tls.ephemeralDHKeySize", 2048, 1024, 8192);
 
-    // TODO[resumption] Enable by default in due course
     private static final boolean provServerEnableSessionResumption = PropertyUtils
-        .getBooleanSystemProperty("org.bouncycastle.jsse.server.enableSessionResumption", false);
+        .getBooleanSystemProperty("org.bouncycastle.jsse.server.enableSessionResumption", true);
 
     // TODO[jsse] Support status_request and status_request_v2 extensions
 //    private static final boolean provServerEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
