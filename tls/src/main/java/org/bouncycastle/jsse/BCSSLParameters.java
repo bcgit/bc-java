@@ -8,17 +8,13 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+import org.bouncycastle.tls.TlsUtils;
 
 /**
  * A BCJSSE-specific interface providing access to extended SSL parameters in earlier JDKs.
  */
 public final class BCSSLParameters
 {
-    private static String[] clone(String[] a)
-    {
-        return a == null ? null : (String[])a.clone();
-    }
-
     private static <T> List<T> copyList(Collection<T> list)
     {
         if (list == null)
@@ -32,7 +28,7 @@ public final class BCSSLParameters
         return Collections.unmodifiableList(new ArrayList<T>(list));
     }
 
-    private String[] applicationProtocols = new String[0];
+    private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
     private String[] cipherSuites;
     private String[] protocols;
     private boolean wantClientAuth;
@@ -60,7 +56,7 @@ public final class BCSSLParameters
 
     public String[] getApplicationProtocols()
     {
-        return applicationProtocols.clone();
+        return TlsUtils.clone(applicationProtocols);
     }
 
     public void setApplicationProtocols(String[] applicationProtocols)
@@ -70,10 +66,10 @@ public final class BCSSLParameters
             throw new NullPointerException("'applicationProtocols' cannot be null");
         }
 
-        String[] check = applicationProtocols.clone();
+        String[] check = TlsUtils.clone(applicationProtocols);
         for (String entry : check)
         {
-            if (null == entry || entry.length() < 1)
+            if (TlsUtils.isNullOrEmpty(entry))
             {
                 throw new IllegalArgumentException("'applicationProtocols' entries cannot be null or empty strings");
             }
@@ -84,22 +80,22 @@ public final class BCSSLParameters
 
     public String[] getCipherSuites()
     {
-        return clone(cipherSuites);
+        return TlsUtils.clone(cipherSuites);
     }
 
     public void setCipherSuites(String[] cipherSuites)
     {
-        this.cipherSuites = clone(cipherSuites);
+        this.cipherSuites = TlsUtils.clone(cipherSuites);
     }
 
     public String[] getProtocols()
     {
-        return clone(protocols);
+        return TlsUtils.clone(protocols);
     }
 
     public void setProtocols(String[] protocols)
     {
-        this.protocols = clone(protocols);
+        this.protocols = TlsUtils.clone(protocols);
     }
 
     public boolean getWantClientAuth()

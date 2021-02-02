@@ -601,7 +601,7 @@ class ProvSSLContextSpi
         ArrayList<String> result = new ArrayList<String>(cipherSuites.length);
         for (String cipherSuite : cipherSuites)
         {
-            if (null == cipherSuite || cipherSuite.length() < 1)
+            if (TlsUtils.isNullOrEmpty(cipherSuite))
             {
                 throw new IllegalArgumentException("'cipherSuites' cannot contain null or empty string elements");
             }

@@ -41,6 +41,7 @@ import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.TlsUtils;
 
 class ProvX509TrustManager
     extends BCX509ExtendedTrustManager
@@ -253,11 +254,11 @@ class ProvX509TrustManager
     private void checkTrusted(X509Certificate[] chain, String authType, TransportData transportData,
         boolean checkServerTrusted) throws CertificateException
     {
-        if (null == chain || chain.length < 1)
+        if (TlsUtils.isNullOrEmpty(chain))
         {
             throw new IllegalArgumentException("'chain' must be a chain of at least one certificate");
         }
-        if (null == authType || authType.length() < 1)
+        if (TlsUtils.isNullOrEmpty(authType))
         {
             throw new IllegalArgumentException("'authType' must be a non-null, non-empty string");
         }
@@ -339,8 +340,8 @@ class ProvX509TrustManager
         {
             BCSSLParameters parameters = transportData.getParameters();
 
-            String endpointIDAlg = parameters.getEndpointIdentificationAlgorithm();
-            if (null != endpointIDAlg && endpointIDAlg.length() > 0)
+            String endpointIDAlgorithm = parameters.getEndpointIdentificationAlgorithm();
+            if (JsseUtils.isNameSpecified(endpointIDAlgorithm))
             {
                 BCExtendedSSLSession handshakeSession = transportData.getHandshakeSession();
                 if (null == handshakeSession)
@@ -348,7 +349,7 @@ class ProvX509TrustManager
                     throw new CertificateException("No handshake session");
                 }
 
-                checkEndpointID(trustedChain[0], endpointIDAlg, checkServerTrusted, handshakeSession);
+                checkEndpointID(trustedChain[0], endpointIDAlgorithm, checkServerTrusted, handshakeSession);
             }
         }
     }

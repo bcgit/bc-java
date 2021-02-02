@@ -26,6 +26,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactorySpi;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.tls.TlsUtils;
 
 class ProvTrustManagerFactorySpi
     extends TrustManagerFactorySpi
@@ -222,7 +223,7 @@ class ProvTrustManagerFactorySpi
     {
         String tsType = getTrustStoreType(defaultType);
         String tsProv = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreProvider");
-        return (null == tsProv || tsProv.length() < 1)
+        return TlsUtils.isNullOrEmpty(tsProv)
             ?   KeyStore.getInstance(tsType)
             :   KeyStore.getInstance(tsType, tsProv);
     }

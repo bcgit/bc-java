@@ -63,12 +63,12 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedDecrypto
 
 abstract class JsseUtils
 {
-    private static final boolean provRequireCloseNotify =
-        PropertyUtils.getBooleanSystemProperty("com.sun.net.ssl.requireCloseNotify", true);
     private static final boolean provTlsAllowLegacyMasterSecret =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyMasterSecret", true);
     private static final boolean provTlsAllowLegacyResumption =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
+    private static final boolean provTlsRequireCloseNotify =
+        PropertyUtils.getBooleanSystemProperty("com.sun.net.ssl.requireCloseNotify", true);
     private static final boolean provTlsUseExtendedMasterSecret =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.useExtendedMasterSecret", true);
 
@@ -79,7 +79,7 @@ abstract class JsseUtils
     static final Set<BCCryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES_BC =
         Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.SIGNATURE));
 
-    protected static X509Certificate[] EMPTY_CHAIN = new X509Certificate[0];
+    static X509Certificate[] EMPTY_X509CERTIFICATES = new X509Certificate[0];
 
     static class BCUnknownServerName extends BCSNIServerName
     {
@@ -314,7 +314,7 @@ abstract class JsseUtils
 
     static Certificate getCertificateMessage(JcaTlsCrypto crypto, X509Certificate[] chain)
     {
-        if (chain == null || chain.length < 1)
+        if (TlsUtils.isNullOrEmpty(chain))
         {
             throw new IllegalArgumentException();
         }
@@ -330,7 +330,7 @@ abstract class JsseUtils
     static Certificate getCertificateMessage13(JcaTlsCrypto crypto, X509Certificate[] chain,
         byte[] certificateRequestContext)
     {
-        if (chain == null || chain.length < 1)
+        if (TlsUtils.isNullOrEmpty(chain))
         {
             throw new IllegalArgumentException();
         }
@@ -415,7 +415,7 @@ abstract class JsseUtils
 
     static Vector<ProtocolName> getProtocolNames(String[] applicationProtocols)
     {
-        if (null == applicationProtocols || applicationProtocols.length < 1)
+        if (TlsUtils.isNullOrEmpty(applicationProtocols))
         {
             return null;
         }
@@ -511,7 +511,7 @@ abstract class JsseUtils
     {
         if (certificateMessage == null || certificateMessage.isEmpty())
         {
-            return EMPTY_CHAIN;
+            return EMPTY_X509CERTIFICATES;
         }
 
         try
@@ -815,7 +815,7 @@ abstract class JsseUtils
 
     static boolean requireCloseNotify()
     {
-        return provRequireCloseNotify;
+        return provTlsRequireCloseNotify;
     }
 
     static String stripDoubleQuotes(String s)

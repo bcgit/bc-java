@@ -441,7 +441,7 @@ class NamedGroupInfo
 
     private static List<NamedGroupInfo> getNamedGroupInfos(Map<Integer, NamedGroupInfo> namedGroupInfos, int[] namedGroups)
     {
-        if (null == namedGroups || namedGroups.length < 1)
+        if (TlsUtils.isNullOrEmpty(namedGroups))
         {
             return Collections.emptyList();
         }

@@ -36,6 +36,7 @@ import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.TlsUtils;
 
 class ProvX509KeyManagerSimple
     extends BCX509ExtendedKeyManager
@@ -170,7 +171,7 @@ class ProvX509KeyManagerSimple
                 }
 
                 X509Certificate[] certificateChain = JsseUtils.getX509CertificateChain(ks.getCertificateChain(alias));
-                if (certificateChain == null || certificateChain.length < 1)
+                if (TlsUtils.isNullOrEmpty(certificateChain))
                 {
                     continue;
                 }
@@ -429,7 +430,7 @@ class ProvX509KeyManagerSimple
     private boolean isSuitableChain(X509Certificate[] chain, List<String> keyTypes, Set<Principal> uniqueIssuers,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer)
     {
-        if (null == chain || chain.length < 1
+        if (TlsUtils.isNullOrEmpty(chain)
             || !isSuitableChainForIssuers(chain, uniqueIssuers)
             || !isSuitableEECert(chain[0], keyTypes, algorithmConstraints, forServer))
         {

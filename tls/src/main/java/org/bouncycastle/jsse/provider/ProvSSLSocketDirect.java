@@ -541,7 +541,7 @@ class ProvSSLSocketDirect
 
     synchronized void notifyConnected()
     {
-        if (null != peerHost && peerHost.length() > 0)
+        if (JsseUtils.isNameSpecified(peerHost))
         {
             this.peerHostSNI = peerHost;
             return;

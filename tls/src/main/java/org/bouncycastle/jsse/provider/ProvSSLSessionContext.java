@@ -17,6 +17,7 @@ import javax.net.ssl.SSLSessionContext;
 
 import org.bouncycastle.tls.SessionID;
 import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class ProvSSLSessionContext
@@ -308,7 +309,7 @@ class ProvSSLSessionContext
 
     private static SessionID makeSessionID(byte[] sessionID)
     {
-        return (sessionID == null || sessionID.length < 1) ? null : new SessionID(sessionID);
+        return TlsUtils.isNullOrEmpty(sessionID) ? null : new SessionID(sessionID);
     }
 
     private static <K, V> void mapAdd(Map<K, V> map, K key, V value)
