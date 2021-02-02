@@ -129,7 +129,8 @@ class ProvX509TrustManager
         }
         else
         {
-            this.pkixParametersTemplate = new PKIXBuilderParameters(baseParameters.getTrustAnchors(), null);
+            this.pkixParametersTemplate = new PKIXBuilderParameters(baseParameters.getTrustAnchors(),
+                baseParameters.getTargetCertConstraints());
             this.pkixParametersTemplate.setAnyPolicyInhibited(baseParameters.isAnyPolicyInhibited());
             this.pkixParametersTemplate.setCertPathCheckers(baseParameters.getCertPathCheckers());
             this.pkixParametersTemplate.setCertStores(baseParameters.getCertStores());
