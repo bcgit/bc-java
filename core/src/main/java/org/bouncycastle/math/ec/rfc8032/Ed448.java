@@ -177,6 +177,13 @@ public abstract class Ed448
         return !Nat.gte(SCALAR_INTS, n, L);
     }
 
+    private static byte[] copy(byte[] buf, int off, int len)
+    {
+        byte[] result = new byte[len];
+        System.arraycopy(buf, off, result, 0, len);
+        return result;
+    }
+
     public static Xof createPrehash()
     {
         return createXof();
@@ -221,7 +228,7 @@ public abstract class Ed448
 
     private static boolean decodePointVar(byte[] p, int pOff, boolean negate, PointExt r)
     {
-        byte[] py = Arrays.copyOfRange(p, pOff, pOff + POINT_BYTES);
+        byte[] py = copy(p, pOff, POINT_BYTES);
         if (!checkPointVar(py))
         {
             return false;
@@ -474,8 +481,8 @@ public abstract class Ed448
             throw new IllegalArgumentException("ctx");
         }
 
-        byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
-        byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
+        byte[] R = copy(sig, sigOff, POINT_BYTES);
+        byte[] S = copy(sig, sigOff + POINT_BYTES, SCALAR_BYTES);
 
         if (!checkPointVar(R))
         {
@@ -514,6 +521,11 @@ public abstract class Ed448
 
         byte[] check = new byte[POINT_BYTES];
         return 0 != encodePoint(pR, check, 0) && Arrays.areEqual(check, R);
+    }
+
+    private static boolean isNeutralElementVar(int[] x, int[] y, int[] z)
+    {
+        return F.isZeroVar(x) && F.areEqualVar(y, z);
     }
 
     private static void pointAdd(PointExt p, PointExt r)
@@ -1294,6 +1306,28 @@ public abstract class Ed448
         F.copy(p.y, 0, y, 0);
     }
 
+    private static void scalarMultOrder(PointExt p, PointExt r)
+    {
+        int[] n = new int[SCALAR_INTS];
+        Nat.shiftDownBit(SCALAR_INTS, L, 1, n);
+
+        int[] table = pointPrecompute(p, 8);
+        PointExt q = new PointExt();
+
+        pointLookup(n, 111, table, r);
+
+        for (int w = 110; w >= 0; --w)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                pointDouble(r);
+            }
+
+            pointLookup(n, w, table, q);
+            pointAdd(q, r);
+        }
+    }
+
     private static void scalarMultStrausVar(int[] nb, int[] np, PointExt p, PointExt r)
     {
         precompute();
@@ -1388,6 +1422,39 @@ public abstract class Ed448
         byte phflag = 0x01;
 
         implSign(sk, skOff, pk, pkOff, ctx, phflag, m, 0, m.length, sig, sigOff);
+    }
+
+    public static boolean validatePublicKeyFull(byte[] pk, int pkOff)
+    {
+        PointExt p = new PointExt();
+        if (!decodePointVar(pk, pkOff, false, p))
+        {
+            return false;
+        }
+
+        F.normalize(p.x);
+        F.normalize(p.y);
+        F.normalize(p.z);
+
+        if (isNeutralElementVar(p.x, p.y, p.z))
+        {
+            return false;
+        }
+
+        PointExt r = new PointExt();
+        scalarMultOrder(p, r);
+
+        F.normalize(r.x);
+        F.normalize(r.y);
+        F.normalize(r.z);
+
+        return isNeutralElementVar(r.x, r.y, r.z);
+    }
+
+    public static boolean validatePublicKeyPartial(byte[] pk, int pkOff)
+    {
+        PointExt p = new PointExt();
+        return decodePointVar(pk, pkOff, false, p);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen)
