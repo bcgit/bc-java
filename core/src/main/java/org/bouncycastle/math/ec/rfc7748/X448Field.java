@@ -42,6 +42,22 @@ public abstract class X448Field
 //        }
 //    }
 
+    public static int areEqual(int[] x, int[] y)
+    {
+        int d = 0;
+        for (int i = 0; i < SIZE; ++i)
+        {
+            d |= x[i] ^ y[i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
+    public static boolean areEqualVar(int[] x, int[] y)
+    {
+        return 0 != areEqual(x, y);
+    }
+
     public static void carry(int[] z)
     {
         int z0 = z[0], z1 = z[1], z2 = z[2], z3 = z[3], z4 = z[4], z5 = z[5], z6 = z[6], z7 = z[7];
@@ -277,6 +293,22 @@ public abstract class X448Field
         Mod.modOddInverseVar(P32, u, u);
 
         decode(u, 0, z);
+    }
+
+    public static int isOne(int[] x)
+    {
+        int d = x[0] ^ 1;
+        for (int i = 1; i < SIZE; ++i)
+        {
+            d |= x[i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
+    public static boolean isOneVar(int[] x)
+    {
+        return 0 != isOne(x);
     }
 
     public static int isZero(int[] x)

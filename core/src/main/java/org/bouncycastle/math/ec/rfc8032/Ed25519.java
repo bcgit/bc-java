@@ -184,6 +184,13 @@ public abstract class Ed25519
         return !Nat256.gte(n, L);
     }
 
+    private static byte[] copy(byte[] buf, int off, int len)
+    {
+        byte[] result = new byte[len];
+        System.arraycopy(buf, off, result, 0, len);
+        return result;
+    }
+
     private static Digest createDigest()
     {
         return new SHA512Digest();
@@ -221,7 +228,7 @@ public abstract class Ed25519
 
     private static boolean decodePointVar(byte[] p, int pOff, boolean negate, PointAffine r)
     {
-        byte[] py = Arrays.copyOfRange(p, pOff, pOff + POINT_BYTES);
+        byte[] py = copy(p, pOff, POINT_BYTES);
         if (!checkPointVar(py))
         {
             return false;
@@ -473,8 +480,8 @@ public abstract class Ed25519
             throw new IllegalArgumentException("ctx");
         }
 
-        byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
-        byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
+        byte[] R = copy(sig, sigOff, POINT_BYTES);
+        byte[] S = copy(sig, sigOff + POINT_BYTES, SCALAR_BYTES);
 
         if (!checkPointVar(R))
         {
@@ -513,6 +520,16 @@ public abstract class Ed25519
 
         byte[] check = new byte[POINT_BYTES];
         return 0 != encodePoint(pR, check, 0) && Arrays.areEqual(check, R);
+    }
+
+    private static boolean isNeutralElementVar(int[] x, int[] y)
+    {
+        return F.isZeroVar(x) && F.isOneVar(y);
+    }
+
+    private static boolean isNeutralElementVar(int[] x, int[] y, int[] z)
+    {
+        return F.isZeroVar(x) && F.areEqualVar(y, z);
     }
 
     private static void pointAdd(PointExt p, PointAccum r)
@@ -1273,6 +1290,38 @@ public abstract class Ed25519
         F.copy(p.z, 0, z, 0);
     }
 
+    private static void scalarMultOrder(PointAffine p, PointAccum r)
+    {
+        int[] n = new int[SCALAR_INTS];
+        Nat.shiftDownBit(SCALAR_INTS, L, 0, n);
+        n[SCALAR_INTS - 1] |= 1 << 28;
+
+        int[] table = pointPrecompute(p, 8);
+        PointExt q = new PointExt();
+
+        // Replace first 4 doublings (2^4 * P) with 1 addition (P + 15 * P)
+        pointCopy(p, r);
+        pointLookup(table, 7, q);
+        pointAdd(q, r);
+
+        int w = 62;
+        for (;;)
+        {
+            pointLookup(n, w, table, q);
+            pointAdd(q, r);
+
+            if (--w < 0)
+            {
+                break;
+            }
+
+            for (int i = 0; i < 4; ++i)
+            {
+                pointDouble(r);
+            }
+        }
+    }
+
     private static void scalarMultStrausVar(int[] nb, int[] np, PointAffine p, PointAccum r)
     {
         precompute();
@@ -1383,6 +1432,38 @@ public abstract class Ed25519
         byte phflag = 0x01;
 
         implSign(sk, skOff, pk, pkOff, ctx, phflag, m, 0, m.length, sig, sigOff);
+    }
+
+    public static boolean validatePublicKeyFull(byte[] pk, int pkOff)
+    {
+        PointAffine p = new PointAffine();
+        if (!decodePointVar(pk, pkOff, false, p))
+        {
+            return false;
+        }
+
+        F.normalize(p.x);
+        F.normalize(p.y);
+
+        if (isNeutralElementVar(p.x, p.y))
+        {
+            return false;
+        }
+
+        PointAccum r = new PointAccum();
+        scalarMultOrder(p, r);
+
+        F.normalize(r.x);
+        F.normalize(r.y);
+        F.normalize(r.z);
+
+        return isNeutralElementVar(r.x, r.y, r.z);
+    }
+
+    public static boolean validatePublicKeyPartial(byte[] pk, int pkOff)
+    {
+        PointAffine p = new PointAffine();
+        return decodePointVar(pk, pkOff, false, p);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen)
