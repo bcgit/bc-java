@@ -263,6 +263,21 @@ public abstract class JceKeyAgreeRecipient
 
                     return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
                 }
+                // one last try - people do actually do this it turns out
+                if (userKeyingMaterial != null)
+                {
+                    try
+                    {
+                        SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
+                            senderPublicKey, userKeyingMaterial, recipientKey, simple_ecc_cmsGenerator);
+
+                        return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
+                    }
+                    catch (InvalidKeyException ex)
+                    {
+                        throw e; // we'll throw the original exception
+                    }
+                }
                 throw e;
             }
         }
@@ -318,5 +333,13 @@ public abstract class JceKeyAgreeRecipient
         }
     };
 
+    private static KeyMaterialGenerator simple_ecc_cmsGenerator = new KeyMaterialGenerator()
+    {
+        public byte[] generateKDFMaterial(AlgorithmIdentifier keyAlgorithm, int keySize, byte[] userKeyMaterialParameters)
+        {
+            return userKeyMaterialParameters;
+        }
+    };
+    
     private static KeyMaterialGenerator ecc_cms_Generator = new RFC5753KeyMaterialGenerator();
 }
