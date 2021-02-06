@@ -77,7 +77,17 @@ public class JceOpenSSLPKCS8EncryptorBuilder
         return this;
     }
 
+    /**
+     * @deprecated Incorrectly spelt. Use setPassword.
+     */
     public JceOpenSSLPKCS8EncryptorBuilder setPasssword(char[] password)
+    {
+        this.password = password;
+
+        return this;
+    }
+
+    public JceOpenSSLPKCS8EncryptorBuilder setPassword(char[] password)
     {
         this.password = password;
 
