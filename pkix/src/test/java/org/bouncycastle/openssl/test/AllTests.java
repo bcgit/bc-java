@@ -108,7 +108,7 @@ public class
         JceOpenSSLPKCS8EncryptorBuilder encryptorBuilder = new JceOpenSSLPKCS8EncryptorBuilder(algorithm);
 
         encryptorBuilder.setProvider("BC");
-        encryptorBuilder.setPasssword("hello".toCharArray());
+        encryptorBuilder.setPassword("hello".toCharArray());
 
         PKCS8Generator pkcs8 = new JcaPKCS8Generator(key, encryptorBuilder.build());
 
@@ -135,7 +135,7 @@ public class
         JceOpenSSLPKCS8EncryptorBuilder encryptorBuilder = new JceOpenSSLPKCS8EncryptorBuilder(algorithm);
 
         encryptorBuilder.setProvider("BC");
-        encryptorBuilder.setPasssword("hello".toCharArray());
+        encryptorBuilder.setPassword("hello".toCharArray());
         encryptorBuilder.setPRF(prf);
 
         PKCS8Generator pkcs8 = new JcaPKCS8Generator(key, encryptorBuilder.build());
