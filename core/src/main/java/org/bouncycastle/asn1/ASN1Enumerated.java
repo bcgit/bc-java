@@ -127,6 +127,12 @@ public class ASN1Enumerated
         return new BigInteger(bytes);
     }
 
+    public boolean hasValue(int x)
+    {
+        return (bytes.length - start) <= 4
+            && ASN1Integer.intValue(bytes, start, ASN1Integer.SIGN_EXT_SIGNED) == x;
+    }
+
     public boolean hasValue(BigInteger x)
     {
         return null != x
