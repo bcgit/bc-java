@@ -139,7 +139,7 @@ public class EvidenceRecord
         }
 
         final ASN1Integer versionNumber = ASN1Integer.getInstance(sequence.getObjectAt(0));
-        if (versionNumber.intValueExact() != 1)
+        if (!versionNumber.hasValue(1))
         {
             throw new IllegalArgumentException("incompatible version");
         }
