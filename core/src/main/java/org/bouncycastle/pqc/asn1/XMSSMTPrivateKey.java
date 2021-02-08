@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * XMMSMTPrivateKey
@@ -70,7 +69,7 @@ public class XMSSMTPrivateKey
     private XMSSMTPrivateKey(ASN1Sequence seq)
     {
         ASN1Integer v = ASN1Integer.getInstance(seq.getObjectAt(0));
-        if (!(v.hasValue(BigIntegers.ZERO) || v.hasValue(BigIntegers.ONE)))
+        if (!(v.hasValue(0) || v.hasValue(1)))
         {
             throw new IllegalArgumentException("unknown version of sequence");
         }

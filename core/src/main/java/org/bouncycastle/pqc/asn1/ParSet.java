@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.asn1;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -24,8 +22,6 @@ import org.bouncycastle.util.Arrays;
 public class ParSet
     extends ASN1Object
 {
-    private static final BigInteger ZERO = BigInteger.valueOf(0);
-
     private int   t;
     private int[] h;
     private int[] w;

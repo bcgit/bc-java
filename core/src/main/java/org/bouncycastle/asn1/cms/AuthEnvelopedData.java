@@ -94,7 +94,7 @@ public class AuthEnvelopedData
         // "It MUST be set to 0."
         ASN1Primitive tmp = seq.getObjectAt(index++).toASN1Primitive();
         version = ASN1Integer.getInstance(tmp);
-        if (version.intValueExact() != 0)
+        if (!version.hasValue(0))
         {
             throw new IllegalArgumentException("AuthEnvelopedData version number must be 0");
         }
