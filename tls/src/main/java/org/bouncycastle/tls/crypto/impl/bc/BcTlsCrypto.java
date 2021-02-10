@@ -221,13 +221,13 @@ public class BcTlsCrypto
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
     {
-        final DigestRandomGenerator nonceGen = new DigestRandomGenerator(createDigest(HashAlgorithm.sha256));
+        Digest digest = createDigest(HashAlgorithm.sha256);
 
-        nonceGen.addSeedMaterial(additionalSeedMaterial);
-
-        byte[] seed = new byte[createDigest(HashAlgorithm.sha256).getDigestSize()];
+        byte[] seed = new byte[digest.getDigestSize()];
         getSecureRandom().nextBytes(seed);
 
+        final DigestRandomGenerator nonceGen = new DigestRandomGenerator(digest);
+        nonceGen.addSeedMaterial(additionalSeedMaterial);
         nonceGen.addSeedMaterial(seed);
 
         return new TlsNonceGenerator()
