@@ -154,7 +154,7 @@ public class AttributeCertificateInfo
     {
         ASN1EncodableVector v = new ASN1EncodableVector(9);
 
-        if (version.intValueExact() != 0)
+        if (!version.hasValue(0))
         {
             v.add(version);
         }
