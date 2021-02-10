@@ -1566,6 +1566,12 @@ public class NewSignedDataTest
         rsaDigestTest("SHA384withRSA");
     }
 
+    public void testSHA512WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA512withRSA");
+    }
+
     public void testSHA3_224WithRSADigest()
         throws Exception
     {
@@ -1582,6 +1588,12 @@ public class NewSignedDataTest
         throws Exception
     {
         rsaDigestTest("SHA3-384withRSA");
+    }
+
+    public void testSHA3_512WithRSADigest()
+        throws Exception
+    {
+        rsaDigestTest("SHA3-512withRSA");
     }
 
     public void testSHA512_224ithRSADigest()
