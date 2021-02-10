@@ -965,7 +965,7 @@ public class BcCertTest
         {
             ASN1Enumerated reasonCode = ASN1Enumerated.getInstance(ext.getParsedValue());
 
-            if (reasonCode.intValueExact() != CRLReason.privilegeWithdrawn)
+            if (!reasonCode.hasValue(CRLReason.privilegeWithdrawn))
             {
                 fail("CRL entry reasonCode wrong");
             }
@@ -1046,7 +1046,7 @@ public class BcCertTest
         {
             ASN1Enumerated   reasonCode = ASN1Enumerated.getInstance(ext.getParsedValue());
 
-            if (reasonCode.intValueExact() != CRLReason.privilegeWithdrawn)
+            if (!reasonCode.hasValue(CRLReason.privilegeWithdrawn))
             {
                 fail("CRL entry reasonCode wrong");
             }
@@ -1128,7 +1128,7 @@ public class BcCertTest
         {
             ASN1Enumerated   reasonCode = ASN1Enumerated.getInstance(ext.getParsedValue());
 
-            if (reasonCode.intValueExact() != CRLReason.privilegeWithdrawn)
+            if (!reasonCode.hasValue(CRLReason.privilegeWithdrawn))
             {
                 fail("CRL entry reasonCode wrong");
             }
@@ -1172,7 +1172,7 @@ public class BcCertTest
                 {
                     ASN1Enumerated reasonCode = ASN1Enumerated.getInstance(extn.getParsedValue());
 
-                    if (reasonCode.intValueExact() != CRLReason.privilegeWithdrawn)
+                    if (!reasonCode.hasValue(CRLReason.privilegeWithdrawn))
                     {
                         fail("CRL entry reasonCode wrong on recheck");
                     }

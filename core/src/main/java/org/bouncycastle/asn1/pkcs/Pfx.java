@@ -21,7 +21,7 @@ public class Pfx
         ASN1Sequence   seq)
     {
         ASN1Integer version = ASN1Integer.getInstance(seq.getObjectAt(0));
-        if (version.intValueExact() != 3)
+        if (!version.hasValue(3))
         {
             throw new IllegalArgumentException("wrong version for PFX PDU");
         }

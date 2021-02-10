@@ -206,7 +206,7 @@ public class SignedData
         {
             SignerInfo s = SignerInfo.getInstance(e.nextElement());
 
-            if (s.getVersion().intValueExact() == 3)
+            if (s.getVersion().hasValue(3))
             {
                 return true;
             }
