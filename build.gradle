@@ -39,6 +39,7 @@ task printProperties {
 }
 
 subprojects {
+  apply plugin: 'eclipse'
 
   JavaVersion current = JavaVersion.current();
   if (current.compareTo(JavaVersion.VERSION_1_8) <= 0)

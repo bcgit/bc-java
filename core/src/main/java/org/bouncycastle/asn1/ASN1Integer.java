@@ -150,6 +150,18 @@ public class ASN1Integer
         return new BigInteger(bytes);
     }
 
+    public boolean hasValue(int x)
+    {
+        return (bytes.length - start) <= 4
+            && intValue(bytes, start, SIGN_EXT_SIGNED) == x;
+    }
+
+    public boolean hasValue(long x)
+    {
+        return (bytes.length - start) <= 8
+            && longValue(bytes, start, SIGN_EXT_SIGNED) == x;
+    }
+
     public boolean hasValue(BigInteger x)
     {
         return null != x
