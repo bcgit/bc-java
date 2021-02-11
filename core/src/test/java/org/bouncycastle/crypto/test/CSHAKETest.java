@@ -170,20 +170,21 @@ public class CSHAKETest
             data[i] = (byte)i;
         }
 
+        byte[] hex0123 = Hex.decodeStrict("00010203");
         for (int i = 10000; i != data.length; i++)
         {
             CSHAKEDigest cshake = new CSHAKEDigest(128, new byte[0], Arrays.copyOfRange(data, 0, i));
 
-            cshake.update(Hex.decode("00010203"), 0, 4);
+            cshake.update(hex0123, 0, 4);
 
-            cshake.doFinal(res, 0);
+            cshake.doFinal(res, 0, 16);
         }
 
         CSHAKEDigest cshake = new CSHAKEDigest(256, new byte[0], new byte[200]);
 
-        cshake.update(Arrays.copyOfRange(data, 0, 200), 0, 200);
+        cshake.update(data, 0, 200);
 
-        cshake.doFinal(res, 0);
+        cshake.doFinal(res, 0, 32);
 
         isTrue(Arrays.areEqual(Hex.decode("4a899b5be460d85a9789215bc17f88b8f8ac049bd3b519f561e7b5d3870dafa3"), res));
     }
