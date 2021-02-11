@@ -1,10 +1,7 @@
 package org.bouncycastle.jcajce.provider.digest;
 
-import java.security.DigestException;
-
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.macs.HMac;
@@ -44,28 +41,7 @@ public class SHA3
     {
         public DigestSHAKE(int type, int size)
         {
-            super(new SHAKEDigest(type), size);
-        }
-
-        public byte[] engineDigest()
-        {
-            byte[]  digestBytes = new byte[digestSize];
-
-            ((Xof)digest).doFinal(digestBytes, 0, digestSize);
-    
-            return digestBytes;
-        }
-
-        public int engineDigest(byte[] buf, int off, int len) throws DigestException
-        {
-            if (len < digestSize)
-                throw new DigestException("partial digests not returned");
-            if (buf.length - off < digestSize)
-                throw new DigestException("insufficient space in the output buffer to store the digest");
-
-            ((Xof)digest).doFinal(buf, off, digestSize);
-
-            return digestSize;
+            super(new SHAKEDigest(type));
         }
 
         public Object clone()

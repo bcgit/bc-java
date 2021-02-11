@@ -43,6 +43,11 @@ public class SHAKEDigest
         return "SHAKE" + fixedOutputLength;
     }
 
+    public int getDigestSize()
+    {
+        return fixedOutputLength / 4;
+    }
+
     public int doFinal(byte[] out, int outOff)
     {
         return doFinal(out, outOff, getDigestSize());
