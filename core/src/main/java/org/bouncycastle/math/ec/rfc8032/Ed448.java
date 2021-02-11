@@ -25,7 +25,8 @@ public abstract class Ed448
     private static final long M28L = 0x0FFFFFFFL;
     private static final long M32L = 0xFFFFFFFFL;
 
-    private static final int POINT_BYTES = 57;
+    private static final int COORD_INTS = 14;
+    private static final int POINT_BYTES = COORD_INTS * 4 + 1;
     private static final int SCALAR_INTS = 14;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4 + 1;
 
@@ -98,7 +99,7 @@ public abstract class Ed448
         int[] u = new int[SCALAR_INTS];         decodeScalar(k, 0, u);
         int[] v = new int[SCALAR_INTS];         decodeScalar(s, 0, v);
 
-        Nat.mulAddTo(14, u, v, t);
+        Nat.mulAddTo(SCALAR_INTS, u, v, t);
 
         byte[] result = new byte[SCALAR_BYTES * 2];
         for (int i = 0; i < t.length; ++i)
@@ -160,19 +161,18 @@ public abstract class Ed448
             return false;
         }
 
-        int[] t = new int[14];
-        decode32(p, 0, t, 0, 14);
-        return !Nat.gte(14, t, P);
+        int[] t = new int[COORD_INTS];
+        decode32(p, 0, t, 0, COORD_INTS);
+        return !Nat.gte(COORD_INTS, t, P);
     }
 
-    private static boolean checkScalarVar(byte[] s)
+    private static boolean checkScalarVar(byte[] s, int[] n)
     {
         if (s[SCALAR_BYTES - 1] != 0x00)
         {
             return false;
         }
 
-        int[] n = new int[SCALAR_INTS];
         decodeScalar(s, 0, n);
         return !Nat.gte(SCALAR_INTS, n, L);
     }
@@ -354,7 +354,8 @@ public abstract class Ed448
 
     private static byte[] getWnafVar(int[] n, int width)
     {
-//        assert n[SCALAR_INTS - 1] >>> 30 == 0;
+//        assert n[SCALAR_INTS - 1] <= L[SCALAR_INTS - 1];
+//        assert 2 <= width && width <= 8;
 
         int[] t = new int[SCALAR_INTS * 2];
         {
@@ -370,9 +371,7 @@ public abstract class Ed448
 
         byte[] ws = new byte[447];
 
-        final int pow2 = 1 << width;
-        final int mask = pow2 - 1;
-        final int sign = pow2 >>> 1;
+        final int lead = 32 - width;
 
         int j = 0, carry = 0;
         for (int i = 0; i < t.length; ++i, j -= 16)
@@ -389,12 +388,10 @@ public abstract class Ed448
                     continue;
                 }
 
-                int digit = (word16 & mask) + carry;
-                carry = digit & sign;
-                digit -= (carry << 1);
-                carry >>>= (width - 1);
+                int digit = (word16 | 1) << lead;
+                carry = digit >>> 31;
 
-                ws[(i << 4) + j] = (byte)digit;
+                ws[(i << 4) + j] = (byte)(digit >> lead);
 
                 j += width;
             }
@@ -488,7 +485,9 @@ public abstract class Ed448
         {
             return false;
         }
-        if (!checkScalarVar(S))
+
+        int[] nS = new int[SCALAR_INTS];
+        if (!checkScalarVar(S, nS))
         {
             return false;
         }
@@ -509,9 +508,6 @@ public abstract class Ed448
         d.doFinal(h, 0, h.length);
 
         byte[] k = reduceScalar(h);
-
-        int[] nS = new int[SCALAR_INTS];
-        decodeScalar(S, 0, nS);
 
         int[] nA = new int[SCALAR_INTS];
         decodeScalar(k, 0, nA);
@@ -1306,25 +1302,33 @@ public abstract class Ed448
         F.copy(p.y, 0, y, 0);
     }
 
-    private static void scalarMultOrder(PointExt p, PointExt r)
+    private static void scalarMultOrderVar(PointExt p, PointExt r)
     {
-        int[] n = new int[SCALAR_INTS];
-        Nat.shiftDownBit(SCALAR_INTS, L, 1, n);
+        final int width = 5;
 
-        int[] table = pointPrecompute(p, 8);
-        PointExt q = new PointExt();
+        byte[] ws_p = getWnafVar(L, width);
 
-        pointLookup(n, 111, table, r);
+        PointExt[] tp = pointPrecomputeVar(p, 1 << (width - 2));
 
-        for (int w = 110; w >= 0; --w)
+        pointSetNeutral(r);
+
+        for (int bit = 446;;)
         {
-            for (int i = 0; i < 4; ++i)
+            int wp = ws_p[bit];
+            if (wp != 0)
             {
-                pointDouble(r);
+                int sign = wp >> 31;
+                int index = (wp ^ sign) >>> 1;
+
+                pointAddVar((sign != 0), tp[index], r);
             }
 
-            pointLookup(n, w, table, q);
-            pointAdd(q, r);
+            if (--bit < 0)
+            {
+                break;
+            }
+
+            pointDouble(r);
         }
     }
 
@@ -1442,7 +1446,7 @@ public abstract class Ed448
         }
 
         PointExt r = new PointExt();
-        scalarMultOrder(p, r);
+        scalarMultOrderVar(p, r);
 
         F.normalize(r.x);
         F.normalize(r.y);
