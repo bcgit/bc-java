@@ -47,8 +47,7 @@ public class XMSSPrivateKeyTest
 
     private byte[] generateRoot(Digest digest)
     {
-        int digestSize = (digest instanceof Xof) ? digest.getDigestSize() * 2 : digest.getDigestSize();
-        byte[] rv = new byte[digestSize];
+        byte[] rv = new byte[digest.getDigestSize()];
 
         for (int i = 0; i != rv.length; i++)
         {
