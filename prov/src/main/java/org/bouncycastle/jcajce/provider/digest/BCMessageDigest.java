@@ -4,7 +4,6 @@ import java.security.DigestException;
 import java.security.MessageDigest;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Xof;
 
 public class BCMessageDigest
     extends MessageDigest
@@ -19,15 +18,6 @@ public class BCMessageDigest
 
         this.digest = digest;
         this.digestSize = digest.getDigestSize();
-    }
-
-    protected BCMessageDigest(
-        Xof digest, int outputSize)
-    {
-        super(digest.getAlgorithmName());
-
-        this.digest = digest;
-        this.digestSize = outputSize / 8;
     }
 
     public void engineReset() 
