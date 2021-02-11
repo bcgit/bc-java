@@ -353,7 +353,7 @@ public abstract class Ed25519
 
     private static byte[] getWnafVar(int[] n, int width)
     {
-//        assert n[SCALAR_INTS - 1] <= L[SCALAR_INTS - 1];
+//        assert 0 <= n[SCALAR_INTS - 1] && n[SCALAR_INTS - 1] <= L[SCALAR_INTS - 1];
 //        assert 2 <= width && width <= 8;
 
         int[] t = new int[SCALAR_INTS * 2];
