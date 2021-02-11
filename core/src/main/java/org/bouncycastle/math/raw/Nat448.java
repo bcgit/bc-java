@@ -96,6 +96,44 @@ public abstract class Nat448
         return true;
     }
 
+    public static void mul(int[] x, int[] y, int[] zz)
+    {
+        Nat224.mul(x, y, zz);
+        Nat224.mul(x, 7, y, 7, zz, 14);
+
+        int c21 = Nat224.addToEachOther(zz, 7, zz, 14);
+        int c14 = c21 + Nat224.addTo(zz, 0, zz, 7, 0);
+        c21 += Nat224.addTo(zz, 21, zz, 14, c14);
+
+        int[] dx = Nat224.create(), dy = Nat224.create();
+        boolean neg = Nat224.diff(x, 7, x, 0, dx, 0) != Nat224.diff(y, 7, y, 0, dy, 0);
+
+        int[] tt = Nat224.createExt();
+        Nat224.mul(dx, dy, tt);
+
+        c21 += neg ? Nat.addTo(14, tt, 0, zz, 7) : Nat.subFrom(14, tt, 0, zz, 7);
+        Nat.addWordAt(28, c21, zz, 21); 
+    }
+
+    public static void square(int[] x, int[] zz)
+    {
+        Nat224.square(x, zz);
+        Nat224.square(x, 7, zz, 14);
+
+        int c21 = Nat224.addToEachOther(zz, 7, zz, 14);
+        int c14 = c21 + Nat224.addTo(zz, 0, zz, 7, 0);
+        c21 += Nat224.addTo(zz, 21, zz, 14, c14);
+
+        int[] dx = Nat224.create();
+        Nat224.diff(x, 7, x, 0, dx, 0);
+
+        int[] tt = Nat224.createExt();
+        Nat224.square(dx, tt);
+
+        c21 += Nat.subFrom(14, tt, 0, zz, 7);
+        Nat.addWordAt(28, c21, zz, 21); 
+    }
+
     public static BigInteger toBigInteger64(long[] x)
     {
         byte[] bs = new byte[56];
