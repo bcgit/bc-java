@@ -13,6 +13,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Base64;
 
+import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import junit.framework.TestCase;
@@ -133,10 +134,14 @@ public class EdDSA15Test
             KeyPair kpBC = kpGenBC.generateKeyPair();
             KeyPair kpSunEC = kpGenSunEC.generateKeyPair();
 
+            implTestInteropCase(kpBC, sigBC, sigBC);
             implTestInteropCase(kpBC, sigBC, sigSunEC);
             implTestInteropCase(kpBC, sigSunEC, sigBC);
+            implTestInteropCase(kpBC, sigSunEC, sigSunEC);
+            implTestInteropCase(kpSunEC, sigBC, sigBC);
             implTestInteropCase(kpSunEC, sigBC, sigSunEC);
             implTestInteropCase(kpSunEC, sigSunEC, sigBC);
+//            implTestInteropCase(kpSunEC, sigSunEC, sigSunEC);
         }
     }
 
@@ -152,6 +157,14 @@ public class EdDSA15Test
         verifier.update(new byte[32]);
 
         assertTrue(verifier.verify(sig));
+
+        if (kp.getPrivate() instanceof EdDSAPrivateKey)
+        {
+            verifier.initVerify(((EdDSAPrivateKey)kp.getPrivate()).getPublicKey());
+            verifier.update(new byte[32]);
+
+            assertTrue(verifier.verify(sig));
+        }
     }
 
     private void checkNamedParamSpecEdECKey(Key key, String name)
