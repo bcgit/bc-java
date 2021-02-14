@@ -45,7 +45,6 @@ public class BcPGPDataEncryptorBuilder
      * @param withIntegrityPacket true if an integrity packet is to be included, false otherwise.
      * @return the current builder.
      */
-    @Override
     public BcPGPDataEncryptorBuilder setWithIntegrityPacket(boolean withIntegrityPacket)
     {
         this.withIntegrityPacket = withIntegrityPacket;

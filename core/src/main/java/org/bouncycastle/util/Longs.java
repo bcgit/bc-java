@@ -2,6 +2,9 @@ package org.bouncycastle.util;
 
 public class Longs
 {
+    public static final int BYTES = Long.BYTES;
+    public static final int SIZE = Long.SIZE;
+
     public static long reverse(long i)
     {
         return Long.reverse(i);

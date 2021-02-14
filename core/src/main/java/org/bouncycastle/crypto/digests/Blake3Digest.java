@@ -1,12 +1,14 @@
 package org.bouncycastle.crypto.digests;
 
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Deque;
+import java.util.Iterator;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.params.Blake3Parameters;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -34,7 +36,7 @@ public class Blake3Digest
     /**
      * Buffer length.
      */
-    private static final int BLOCKLEN = NUMWORDS * Integer.BYTES * 2;
+    private static final int BLOCKLEN = NUMWORDS * Integers.BYTES * 2;
 
     /**
      * Chunk length.
@@ -521,9 +523,9 @@ public class Blake3Digest
 
         /* Copy stack */
         theStack.clear();
-        for (int[] myEntry : mySource.theStack)
+        for (Iterator it = mySource.theStack.iterator(); it.hasNext();)
         {
-            theStack.push(myEntry.clone());
+            theStack.push(Arrays.clone((int[])it.next()));
         }
 
         /* Copy buffer */
@@ -531,7 +533,7 @@ public class Blake3Digest
         thePos = mySource.thePos;
     }
 
-    public Blake3Digest copy()
+    public Memoable copy()
     {
         return new Blake3Digest(this);
     }
@@ -675,7 +677,7 @@ public class Blake3Digest
         /* Copy message bytes into word array */
         for (int i = 0; i < NUMWORDS << 1; i++)
         {
-            theM[i] = Pack.littleEndianToInt(pMessage, pMsgPos + i * Integer.BYTES);
+            theM[i] = Pack.littleEndianToInt(pMessage, pMsgPos + i * Integers.BYTES);
         }
     }
 
@@ -697,7 +699,7 @@ public class Blake3Digest
             /* Output state to buffer */
             for (int i = 0; i < NUMWORDS << 1; i++)
             {
-                Pack.intToLittleEndian(theV[i], theBuffer, i * Integer.BYTES);
+                Pack.intToLittleEndian(theV[i], theBuffer, i * Integers.BYTES);
             }
             thePos = 0;
 
@@ -733,13 +735,13 @@ public class Blake3Digest
 
         /* Perform the Round */
         theV[posA] += theV[posB] + theM[theIndices[msg++]];
-        theV[posD] = rotr32(theV[posD] ^ theV[posA], ROTATE[rot++]);
+        theV[posD] = Integers.rotateRight(theV[posD] ^ theV[posA], ROTATE[rot++]);
         theV[posC] += theV[posD];
-        theV[posB] = rotr32(theV[posB] ^ theV[posC], ROTATE[rot++]);
+        theV[posB] = Integers.rotateRight(theV[posB] ^ theV[posC], ROTATE[rot++]);
         theV[posA] += theV[posB] + theM[theIndices[msg]];
-        theV[posD] = rotr32(theV[posD] ^ theV[posA], ROTATE[rot++]);
+        theV[posD] = Integers.rotateRight(theV[posD] ^ theV[posA], ROTATE[rot++]);
         theV[posC] += theV[posD];
-        theV[posB] = rotr32(theV[posB] ^ theV[posC], ROTATE[rot]);
+        theV[posB] = Integers.rotateRight(theV[posB] ^ theV[posC], ROTATE[rot]);
     }
 
     /**
@@ -765,18 +767,6 @@ public class Blake3Digest
     }
 
     /**
-     * Rotate an int right.
-     * @param x the value to rotate
-     * @param rot the number of bits to rotate
-     * @return the result
-     */
-    private static int rotr32(final int x,
-                              final int rot)
-    {
-        return x >>> rot | (x << (Integer.SIZE - rot));
-    }
-
-    /**
      * Initialise null key.
      */
     private void initNullKey()
@@ -793,7 +783,7 @@ public class Blake3Digest
         /* Copy message bytes into word array */
         for (int i = 0; i < NUMWORDS; i++)
         {
-            theK[i] = Pack.littleEndianToInt(pKey, i * Integer.BYTES);
+            theK[i] = Pack.littleEndianToInt(pKey, i * Integers.BYTES);
         }
         theMode = KEYEDHASH;
     }
@@ -819,7 +809,7 @@ public class Blake3Digest
         System.arraycopy(theCurrBytes == 0 ? theK : theChaining, 0, theV, 0, NUMWORDS);
         System.arraycopy(IV, 0, theV, NUMWORDS, NUMWORDS >> 1);
         theV[COUNT0] = (int) theCounter;
-        theV[COUNT1] = (int) (theCounter >> Integer.SIZE);
+        theV[COUNT1] = (int) (theCounter >> Integers.SIZE);
         theV[DATALEN] = pDataLen;
         theV[FLAGS] = theMode
                     + (theCurrBytes == 0 ? CHUNKSTART : 0)
@@ -866,7 +856,7 @@ public class Blake3Digest
         System.arraycopy(theChaining, 0, theV, 0, NUMWORDS);
         System.arraycopy(IV, 0, theV, NUMWORDS, NUMWORDS >> 1);
         theV[COUNT0] = (int) theCounter;
-        theV[COUNT1] = (int) (theCounter >> Integer.SIZE);
+        theV[COUNT1] = (int) (theCounter >> Integers.SIZE);
         theV[DATALEN] = theOutputDataLen;
         theV[FLAGS] = theOutputMode;
 

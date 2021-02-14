@@ -4,6 +4,9 @@ import org.bouncycastle.math.raw.Bits;
 
 public class Longs
 {
+    public static final int BYTES = 8;
+    public static final int SIZE = 64;
+
     public static long reverse(long i)
     {
         i = Bits.bitPermuteStepSimple(i, 0x5555555555555555L, 1);
