@@ -1,8 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Iterator;
+import java.util.Stack;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Xof;
@@ -208,7 +207,7 @@ public class Blake3Digest
     /**
      * The chainingStack.
      */
-    private final Deque<int[]> theStack = new ArrayDeque();
+    private final Stack theStack = new Stack();
 
     /**
      * The default digestLength.
@@ -574,7 +573,7 @@ public class Blake3Digest
             }
 
             /* Build the message to be hashed */
-            final int[] myLeft = theStack.pop();
+            final int[] myLeft = (int[])theStack.pop();
             System.arraycopy(myLeft, 0, theM, 0, NUMWORDS);
             System.arraycopy(theChaining, 0, theM, NUMWORDS, NUMWORDS);
 
@@ -614,7 +613,7 @@ public class Blake3Digest
         while (!theStack.isEmpty())
         {
             /* Build the message to be hashed */
-            final int[] myLeft = theStack.pop();
+            final int[] myLeft = (int[])theStack.pop();
             System.arraycopy(myLeft, 0, theM, 0, NUMWORDS);
             System.arraycopy(theChaining, 0, theM, NUMWORDS, NUMWORDS);
 
