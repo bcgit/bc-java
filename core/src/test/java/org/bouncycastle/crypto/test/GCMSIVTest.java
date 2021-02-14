@@ -73,9 +73,9 @@ public class GCMSIVTest
             isTrue("Encryption mismatch", Arrays.areEqual(myExpected, myOutput));
 
             /* Repeat processing byte at a time */
-            for (byte b : myData)
+            for (int i = 0; i != myData.length; i++)
             {
-                pCipher.processByte(b, null, 0);
+                pCipher.processByte(myData[i], null, 0);
             }
             pCipher.doFinal(myOutput, 0);
             isTrue("Encryption mismatch", Arrays.areEqual(myExpected, myOutput));
