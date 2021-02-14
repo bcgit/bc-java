@@ -786,6 +786,7 @@ public class PBETest
         String provider = "BC";
         SecretKeyFactory skf =
             SecretKeyFactory.getInstance("PBKDF2WITHHMACSHA1", provider);
+        // note: the salt would be regarded as too short and the iteration count too small!
         PBEKeySpec pbeks = new PBEKeySpec("password".toCharArray(), Strings.toByteArray("salt"), 100, 128);
         SecretKey secretKey = skf.generateSecret(pbeks);
         PBEParameterSpec paramSpec = new PBEParameterSpec(pbeks.getSalt(), pbeks.getIterationCount());
