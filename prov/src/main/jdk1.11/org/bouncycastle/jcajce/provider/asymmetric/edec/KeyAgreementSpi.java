@@ -223,17 +223,17 @@ public class KeyAgreementSpi
 
             String algorithm = jcePriv.getAlgorithm();
 
-            if ("X25519".equals(algorithm))
+            if ("X25519".equalsIgnoreCase(algorithm))
             {
                 return getX25519PrivateKey(scalar.get());
             }
 
-            if ("X448".equals(algorithm))
+            if ("X448".equalsIgnoreCase(algorithm))
             {
                 return getX448PrivateKey(scalar.get());
             }
 
-            if ("XDH".equals(algorithm))
+            if ("XDH".equalsIgnoreCase(algorithm))
             {
                 AlgorithmParameterSpec params = jcePriv.getParams();
                 if (params instanceof NamedParameterSpec)
@@ -242,12 +242,12 @@ public class KeyAgreementSpi
 
                     String name = namedParams.getName();
 
-                    if ("X25519".equals(name))
+                    if ("X25519".equalsIgnoreCase(name))
                     {
                         return getX25519PrivateKey(scalar.get());
                     }
 
-                    if ("X448".equals(name))
+                    if ("X448".equalsIgnoreCase(name))
                     {
                         return getX448PrivateKey(scalar.get());
                     }
@@ -280,17 +280,17 @@ public class KeyAgreementSpi
 
             String algorithm = jcePub.getAlgorithm();
 
-            if ("X25519".equals(algorithm))
+            if ("X25519".equalsIgnoreCase(algorithm))
             {
                 return getX25519PublicKey(u);
             }
 
-            if ("X448".equals(algorithm))
+            if ("X448".equalsIgnoreCase(algorithm))
             {
                 return getX448PublicKey(u);
             }
 
-            if ("XDH".equals(algorithm))
+            if ("XDH".equalsIgnoreCase(algorithm))
             {
                 AlgorithmParameterSpec params = jcePub.getParams();
                 if (params instanceof NamedParameterSpec)
@@ -299,12 +299,12 @@ public class KeyAgreementSpi
 
                     String name = namedParams.getName();
 
-                    if ("X25519".equals(name))
+                    if ("X25519".equalsIgnoreCase(name))
                     {
                         return getX25519PublicKey(u);
                     }
 
-                    if ("X448".equals(name))
+                    if ("X448".equalsIgnoreCase(name))
                     {
                         return getX448PublicKey(u);
                     }
