@@ -1,7 +1,7 @@
 package org.bouncycastle.util;
 
 /**
- * Utility methods for ints.
+ * Utility methods and constants for ints.
  */
 public class Integers
 {
