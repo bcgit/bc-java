@@ -15,13 +15,12 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import junit.framework.TestCase;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.TestRandomData;
-import org.junit.Assert;
 
 /**
  * basic test class for the AES cipher vectors from FIPS-197
@@ -344,20 +343,20 @@ public class AESTest
 
         byte[] enc = in.doFinal(P);
 
-        Assert.assertArrayEquals(Hex.decode("d0effdb2ec15369ff27a02bf"), in.getIV());
+        isTrue(Arrays.areEqual(Hex.decode("d0effdb2ec15369ff27a02bf"), in.getIV()));
 
-        Assert.assertEquals(12, in.getIV().length);
+        isEquals(12, in.getIV().length);
 
         out.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(in.getIV()));
 
         byte[] dec = out.doFinal(enc);
-        Assert.assertArrayEquals("plaintext doesn't match in GCM", P, dec);
+        isTrue("plaintext doesn't match in GCM", Arrays.areEqual(P, dec));
 
         try
         {
             in = Cipher.getInstance("AES/GCM/PKCS5Padding", "BC");
 
-            TestCase.fail("bad padding missed in GCM");
+            fail("bad padding missed in GCM");
         }
         catch (NoSuchPaddingException e)
         {
