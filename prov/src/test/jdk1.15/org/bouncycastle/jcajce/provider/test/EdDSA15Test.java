@@ -2,11 +2,15 @@ package org.bouncycastle.jcajce.provider.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.interfaces.EdECKey;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.util.Base64;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -54,6 +58,39 @@ public class EdDSA15Test
         throws Exception
     {
         implTestInterop("Ed448");
+    }
+
+    public void testShouldReturnNamedParamSpec()
+        throws Exception
+    {
+        BouncyCastleProvider BC = new BouncyCastleProvider();
+
+        {
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed25519", BC);
+            KeyPair kp = kpGen.generateKeyPair();
+            checkNamedParamSpecEdECKey(kp.getPrivate(), "Ed25519");
+            checkNamedParamSpecEdECKey(kp.getPublic(), "Ed25519");
+        }
+        {
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed448", BC);
+            KeyPair kp = kpGen.generateKeyPair();
+            checkNamedParamSpecEdECKey(kp.getPrivate(), "Ed448");
+            checkNamedParamSpecEdECKey(kp.getPublic(), "Ed448");
+        }
+        {
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EdDSA", BC);
+            kpGen.initialize(255);
+            KeyPair kp = kpGen.generateKeyPair();
+            checkNamedParamSpecEdECKey(kp.getPrivate(), "Ed25519");
+            checkNamedParamSpecEdECKey(kp.getPublic(), "Ed25519");
+        }
+        {
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EdDSA", BC);
+            kpGen.initialize(448);
+            KeyPair kp = kpGen.generateKeyPair();
+            checkNamedParamSpecEdECKey(kp.getPrivate(), "Ed448");
+            checkNamedParamSpecEdECKey(kp.getPublic(), "Ed448");
+        }
     }
 
     private void implTestBCSig(String algorithm)
@@ -115,5 +152,14 @@ public class EdDSA15Test
         verifier.update(new byte[32]);
 
         assertTrue(verifier.verify(sig));
+    }
+
+    private void checkNamedParamSpecEdECKey(Key key, String name)
+    {
+        assertTrue(key instanceof EdECKey);
+        AlgorithmParameterSpec params = ((EdECKey)key).getParams();
+        assertTrue(params instanceof NamedParameterSpec);
+        NamedParameterSpec spec = (NamedParameterSpec)params;
+        assertEquals(name, spec.getName());
     }
 }
