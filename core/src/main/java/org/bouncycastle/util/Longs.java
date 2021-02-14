@@ -1,5 +1,8 @@
 package org.bouncycastle.util;
 
+/**
+ * Utility methods and constants for longs.
+ */
 public class Longs
 {
     public static final int BYTES = Long.BYTES;
