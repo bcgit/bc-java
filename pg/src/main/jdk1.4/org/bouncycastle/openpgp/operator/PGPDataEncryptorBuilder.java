@@ -34,12 +34,4 @@ public interface PGPDataEncryptorBuilder
      * constructed and retained by the this builder.</p>
      */
     SecureRandom getSecureRandom();
-
-    /**
-     * Sets whether or not the resulting encrypted data will be protected using an integrity packet.
-     *
-     * @param withIntegrityPacket true if an integrity packet is to be included, false otherwise.
-     * @return the current builder.
-     */
-    PGPDataEncryptorBuilder setWithIntegrityPacket(boolean withIntegrityPacket);
 }

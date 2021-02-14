@@ -8,13 +8,15 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.Tables4kGCMMultiplier;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
+import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -636,8 +638,8 @@ import org.bouncycastle.util.Pack;
      {
          /* Create reversed bigEndian buffer to keep it simple */
          final byte[] myIn = new byte[BUFLEN];
-         Pack.longToBigEndian(Byte.SIZE * theDataHasher.getBytesProcessed(), myIn, 0);
-         Pack.longToBigEndian(Byte.SIZE * theAEADHasher.getBytesProcessed(), myIn, Long.BYTES);
+         Pack.longToBigEndian(Bytes.SIZE * theDataHasher.getBytesProcessed(), myIn, 0);
+         Pack.longToBigEndian(Bytes.SIZE * theAEADHasher.getBytesProcessed(), myIn, Longs.BYTES);
 
          /* hash value */
          gHASH(myIn);
@@ -714,7 +716,7 @@ import org.bouncycastle.util.Pack;
      private static void incrementCounter(final byte[] pCounter)
      {
          /* Loop through the bytes incrementing counter */
-         for (int i = 0; i < Integer.BYTES; i++)
+         for (int i = 0; i < Integers.BYTES; i++)
          {
              if (++pCounter[i] != 0)
              {

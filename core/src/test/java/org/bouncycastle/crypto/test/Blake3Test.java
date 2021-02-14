@@ -285,7 +285,7 @@ public class Blake3Test
 
         /* Save just before final and reset */
         myDigest.update(pTest.theData, 0, pTest.theLength);
-        final Blake3Digest mySave = myDigest.copy();
+        final Blake3Digest mySave = (Blake3Digest)myDigest.copy();
         myDigest.reset();
 
         /* restore save and perform a standard hash */
@@ -319,7 +319,7 @@ public class Blake3Test
 
         /* Save just before final and reset */
         myDigest.update(pTest.theData, 0, pTest.theLength);
-        final Blake3Digest mySave = myDigest.copy();
+        final Blake3Digest mySave = (Blake3Digest)myDigest.copy();
         myDigest.reset();
 
         /* restore save and perform a standard hash */
@@ -353,7 +353,7 @@ public class Blake3Test
 
         /* Save just before final and reset */
         myDigest.update(pTest.theData, 0, pTest.theLength);
-        final Blake3Digest mySave = myDigest.copy();
+        final Blake3Digest mySave = (Blake3Digest)myDigest.copy();
         myDigest.reset();
 
         /* restore save and perform a standard hash */
@@ -379,7 +379,7 @@ public class Blake3Test
                                   final byte[] pBuffer)
     {
         /* Take a copy of the state */
-        final Blake3Digest mySave = pDigest.copy();
+        final Blake3Digest mySave = (Blake3Digest)pDigest.copy();
 
         /* Crate alternative buffer */
         final int myLen = pBuffer.length;
@@ -400,7 +400,7 @@ public class Blake3Test
             if (i == PARTBREAK)
             {
                 /* Check save and reset in the middle of output */
-                final Blake3Digest myTemp  = pDigest.copy();
+                final Blake3Digest myTemp  = (Blake3Digest)pDigest.copy();
                 pDigest.reset();
                 pDigest.reset(myTemp);
             }
