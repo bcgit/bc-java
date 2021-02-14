@@ -141,17 +141,17 @@ public class SignatureSpi
 
             String algorithm = jcaPriv.getAlgorithm();
 
-            if ("Ed25519".equals(algorithm))
+            if ("Ed25519".equalsIgnoreCase(algorithm))
             {
                 return getEd25519PrivateKey(bytes.get());
             }
 
-            if ("Ed448".equals(algorithm))
+            if ("Ed448".equalsIgnoreCase(algorithm))
             {
                 return getEd448PrivateKey(bytes.get());
             }
 
-            if ("EdDSA".equals(algorithm))
+            if ("EdDSA".equalsIgnoreCase(algorithm))
             {
                 AlgorithmParameterSpec params = jcaPriv.getParams();
                 if (params instanceof NamedParameterSpec)
@@ -160,12 +160,12 @@ public class SignatureSpi
 
                     String name = namedParams.getName();
 
-                    if ("Ed25519".equals(name))
+                    if ("Ed25519".equalsIgnoreCase(name))
                     {
                         return getEd25519PrivateKey(bytes.get());
                     }
 
-                    if ("Ed448".equals(name))
+                    if ("Ed448".equalsIgnoreCase(name))
                     {
                         return getEd448PrivateKey(bytes.get());
                     }
@@ -194,17 +194,17 @@ public class SignatureSpi
 
             String algorithm = jcaPub.getAlgorithm();
 
-            if ("Ed25519".equals(algorithm))
+            if ("Ed25519".equalsIgnoreCase(algorithm))
             {
                 return getEd25519PublicKey(point);
             }
 
-            if ("Ed448".equals(algorithm))
+            if ("Ed448".equalsIgnoreCase(algorithm))
             {
                 return getEd448PublicKey(point);
             }
 
-            if ("EdDSA".equals(algorithm))
+            if ("EdDSA".equalsIgnoreCase(algorithm))
             {
                 AlgorithmParameterSpec params = jcaPub.getParams();
                 if (params instanceof NamedParameterSpec)
@@ -213,12 +213,12 @@ public class SignatureSpi
 
                     String name = namedParams.getName();
 
-                    if ("Ed25519".equals(name))
+                    if ("Ed25519".equalsIgnoreCase(name))
                     {
                         return getEd25519PublicKey(point);
                     }
 
-                    if ("Ed448".equals(name))
+                    if ("Ed448".equalsIgnoreCase(name))
                     {
                         return getEd448PublicKey(point);
                     }
