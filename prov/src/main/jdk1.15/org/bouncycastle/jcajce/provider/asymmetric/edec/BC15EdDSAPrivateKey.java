@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
+import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 
 class BC15EdDSAPrivateKey
     extends BCEdDSAPrivateKey
@@ -48,6 +49,19 @@ class BC15EdDSAPrivateKey
         else
         {
             return NamedParameterSpec.ED25519;
+        }
+    }
+
+    @Override
+    public EdDSAPublicKey getPublicKey()
+    {
+        if (eddsaPrivateKey instanceof Ed448PrivateKeyParameters)
+        {
+            return new BC15EdDSAPublicKey(((Ed448PrivateKeyParameters)eddsaPrivateKey).generatePublicKey());
+        }
+        else
+        {
+            return new BC15EdDSAPublicKey(((Ed25519PrivateKeyParameters)eddsaPrivateKey).generatePublicKey());
         }
     }
 }
