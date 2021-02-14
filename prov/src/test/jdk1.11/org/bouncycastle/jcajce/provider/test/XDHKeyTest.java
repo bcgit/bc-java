@@ -21,6 +21,7 @@ import org.bouncycastle.jcajce.interfaces.XDHPrivateKey;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.junit.Assert;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -177,44 +178,61 @@ public class XDHKeyTest
             privateKey instanceof XECPrivateKey);
     }
 
-    public void testBCAgreementX25519()
+    public void testInteropX25519()
         throws Exception
     {
-        implTestBCAgreement("X25519");
+        implTestInterop("X25519");
     }
 
-    public void testBCAgreementX448()
+    public void testInteropX448()
         throws Exception
     {
-        implTestBCAgreement("X448");
+        implTestInterop("X448");
     }
 
-    private void implTestBCAgreement(String algorithm)
+    private void implTestInterop(String algorithm)
         throws Exception
     {
-        KeyPairGenerator kpGen1 = KeyPairGenerator.getInstance(algorithm, "SunEC");
-        KeyPairGenerator kpGen2 = KeyPairGenerator.getInstance(algorithm, "BC");
+        KeyPairGenerator kpgSunEC = KeyPairGenerator.getInstance(algorithm, "SunEC");
+        KeyPairGenerator kpgBC = KeyPairGenerator.getInstance(algorithm, "BC");
 
-        KeyAgreement keyAgreement = KeyAgreement.getInstance("XDH", "BC");
+        KeyAgreement keyAgreementSunEC = KeyAgreement.getInstance(algorithm, "SunEC");
+        KeyAgreement keyAgreementBC = KeyAgreement.getInstance(algorithm, "BC");
 
         for (int i = 0; i < 10; ++i)
         {
-            KeyPair kp1 = kpGen1.generateKeyPair();
-            KeyPair kp2 = kpGen2.generateKeyPair();
+            implTestInteropCase(kpgBC, kpgBC, keyAgreementBC);
+            implTestInteropCase(kpgBC, kpgSunEC, keyAgreementBC);
+            implTestInteropCase(kpgSunEC, kpgSunEC, keyAgreementBC);
+            implTestInteropCase(kpgBC, kpgBC, keyAgreementSunEC);
+            implTestInteropCase(kpgBC, kpgSunEC, keyAgreementSunEC);
+//            implTestInteropCase(kpgSunEC, kpgSunEC, keyAgreementSunEC);
+        }
+    }
 
-            keyAgreement.init(kp1.getPrivate());
+    private void implTestInteropCase(KeyPairGenerator kpg1, KeyPairGenerator kpg2, KeyAgreement keyAgreement)
+        throws Exception
+    {
+        KeyPair kp1 = kpg1.generateKeyPair();
+        KeyPair kp2 = kpg2.generateKeyPair();
 
-            keyAgreement.doPhase(kp2.getPublic(), true);
+        keyAgreement.init(kp1.getPrivate());
+        keyAgreement.doPhase(kp2.getPublic(), true);
+        byte[] sec1 = keyAgreement.generateSecret();
 
-            byte[] sec1 = keyAgreement.generateSecret();
+        keyAgreement.init(kp2.getPrivate());
+        keyAgreement.doPhase(kp1.getPublic(), true);
+        byte[] sec2 = keyAgreement.generateSecret();
 
+        Assert.assertTrue(Arrays.areEqual(sec1, sec2));
+
+        if (kp1.getPrivate() instanceof XDHPrivateKey)
+        {
             keyAgreement.init(kp2.getPrivate());
+            keyAgreement.doPhase(((XDHPrivateKey)kp1.getPrivate()).getPublicKey(), true);
+            byte[] sec3 = keyAgreement.generateSecret();
 
-            keyAgreement.doPhase(kp1.getPublic(), true);
-
-            byte[] sec2 = keyAgreement.generateSecret();
-
-            assertTrue(Arrays.areEqual(sec1, sec2));
+            Assert.assertTrue(Arrays.areEqual(sec1, sec3));
         }
     }
 
