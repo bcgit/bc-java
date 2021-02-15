@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Random;
 
 import junit.framework.TestCase;
-
 import org.bouncycastle.util.encoders.Encoder;
 
 public abstract class AbstractCoderTest extends TestCase
@@ -81,7 +80,14 @@ public abstract class AbstractCoderTest extends TestCase
             if (c == paddingChar())
             {
                 // should only be padding at end of string
-                assertTrue(i > encString.length() - 3);
+                if (this instanceof Base64Test)
+                {
+                    assertTrue(i > encString.length() - 3);
+                }
+                else
+                {
+                    assertTrue(i > encString.length() - 7);
+                }
                 continue;
             }
             else if (isEncodedChar(c))
