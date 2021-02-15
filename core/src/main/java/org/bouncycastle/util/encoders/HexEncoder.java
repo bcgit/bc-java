@@ -62,6 +62,16 @@ public class HexEncoder
         return outPos - outOff;
     }
 
+    public int getEncodedLength(int inputLength)
+    {
+        return inputLength * 2;
+    }
+
+    public int getMaxDecodedLength(int inputLength)
+    {
+        return inputLength / 2;
+    }
+
     /**
      * encode the input data producing a Hex output stream.
      *

@@ -8,6 +8,8 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base32;
 import org.bouncycastle.util.encoders.Base32Encoder;
 import org.bouncycastle.util.encoders.DecoderException;
+import org.bouncycastle.util.encoders.Encoder;
+import org.bouncycastle.util.encoders.Hex;
 
 public class Base32Test
     extends AbstractCoderTest
@@ -34,20 +36,29 @@ public class Base32Test
     String v7 = "foobar";
     String r7 = "MZXW6YTBOI======";
 
-    private static final String invalid1 = "%O4TYLWG7VjFWdKT8IJcVbZ/jwc=";
-    private static final String invalid2 = "F%I4p8Vf/mS+Kxvri3FPoMcqmJ1f";
-    private static final String invalid3 = "UJ%EdJYodqHJmd7Rtv6/OP29/jUEFw==";
-    private static final String invalid4 = "MO4%yLWG7vjFWdKT8IJcVbZ/jwc=";
-    private static final String invalid5 = "UJMEdJYODPHJMd7Rtv6/OP29/jUEF%==";
-    private static final String invalid6 = "mO4TyLWG7vjFWdKT8IJcVbZ/jw%=";
-    private static final String invalid7 = "F4I4p8Vf/mS+Kxvri3FPoMcqmJ1%";
-    private static final String invalid8 = "UJmEdJYodqHJmd7Rtv6/OP29/jUE%c==";
-    private static final String invalid9 = "mO4TyLWG7vjFWdKT8IJcVbZ/j%c=";
-    private static final String invalida = "F4I4p8Vf/mS+Kxvri3FPoMcqmJ%1";
-    private static final String invalidb = "UJmEdJYodqHJmd7Rtv6/OP29/jU%Fc==";
-    private static final String invalidc = "mO4TyLWG7vjFWdKT8IJcVbZ/%wc=";
-    private static final String invalidd = "F4I4P8VfXMSZKXVRI3FPOMCQM%2C";
-    private static final String invalide = "UJmEdJYodqHJmd7Rtv6/OP29/jUEFw=1";
+    String v8 = "The quick brown fox jumped over the lazy dog.";
+    String r8 = "KRUGKIDROVUWG2ZAMJZG653OEBTG66BANJ2W24DFMQQG65TFOIQHI2DFEBWGC6TZEBSG6ZZO";
+
+    String v9 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    String r9 = "MFRGGZDFMZTWQ2LKNNWG23TPOBYXE43UOV3HO6DZPJAUEQ2EIVDEOSCJJJFUYTKOJ5IFCUSTKRKVMV2YLFNA====";
+
+    byte[] v10 = Hex.decode("FF 62 63 FF 65 66 67 68 69 6a 6b 6c 6d 6e 6f 70 71 72 73 74 75 76 77 FA 79 7a 41 FF 43 44 45 46 47 48 49 4a FF 4c 4d 4e 4f 50 51 52 53 54 55 56 57 58 59 5a");
+    String r10 = "75RGH73FMZTWQ2LKNNWG23TPOBYXE43UOV3HP6TZPJA76Q2EIVDEOSCJJL7UYTKOJ5IFCUSTKRKVMV2YLFNA====";
+
+    private static final String invalid1 = "%ZXXOIDJOMQHI2DFEB2GS3LFEBTG64RAMFWGY===";
+    private static final String invalid2 = "J%XXOIDJOMQHI2DFEB2GS3LFEBTG64RAMFWGY===";
+    private static final String invalid3 = "JZ%XOIDJOMQHI2DFEB2GS3LFEBTG64RAMFWGY====";
+    private static final String invalid4 = "JZX%OIDJOMQHI2DFEB2GS3LFEBTG64RAMFWGY===";
+    private static final String invalid5 = "JZXX%IDJOMQHI2DFEB2GS3LFEBTG64RAMFWGY===";
+    private static final String invalid6 = "JZXXO%DJOMQHI2DFEB2GS3LFEBTG64RAMFWGY===";
+    private static final String invalid7 = "JZXXOIDJOMQHI2DFEB2GS3LFEBTG64RAMFWGY==";
+    private static final String invalid8 = "JZXXOIDJOMQHI2DFEB2GS3LFEBTG64RAMFWGY==%";
+    private static final String invalid9 = "JZXXOIDJOMQHI2DFEB2GS3LFEBTG64RAMFWGY%==";
+    private static final String invalida = "JZXXOIDJO=======";
+    private static final String invalidb = "JZXXOIDJO======";
+    private static final String invalidc = "JZXXOIDJO====";
+    private static final String invalidd = "JZXXOIDJO=====";
+    private static final String invalide = "JZXXOIDJO===";
     private static final String invalidf = "DAXFSKJDQSBTYW";
     private static final String invalidg = "M";
 
@@ -73,6 +84,9 @@ public class Base32Test
         assertTrue(Arrays.areEqual(Strings.toByteArray(r5), Base32.encode(Strings.toByteArray(v5))));
         assertTrue(Arrays.areEqual(Strings.toByteArray(r6), Base32.encode(Strings.toByteArray(v6))));
         assertTrue(Arrays.areEqual(Strings.toByteArray(r7), Base32.encode(Strings.toByteArray(v7))));
+        assertTrue(Arrays.areEqual(Strings.toByteArray(r8), Base32.encode(Strings.toByteArray(v8))));
+        assertTrue(Arrays.areEqual(Strings.toByteArray(r9), Base32.encode(Strings.toByteArray(v9))));
+        assertTrue(Arrays.areEqual(Strings.toByteArray(r10), Base32.encode(v10)));
 
         assertTrue(Arrays.areEqual(Strings.toByteArray(v1), Base32.decode(r1)));
         assertTrue(Arrays.areEqual(Strings.toByteArray(v2), Base32.decode(r2)));
@@ -81,6 +95,27 @@ public class Base32Test
         assertTrue(Arrays.areEqual(Strings.toByteArray(v5), Base32.decode(r5)));
         assertTrue(Arrays.areEqual(Strings.toByteArray(v6), Base32.decode(r6)));
         assertTrue(Arrays.areEqual(Strings.toByteArray(v7), Base32.decode(r7)));
+        assertTrue(Arrays.areEqual(Strings.toByteArray(v8), Base32.decode(r8)));
+        assertTrue(Arrays.areEqual(Strings.toByteArray(v9), Base32.decode(r9)));
+        assertTrue(Arrays.areEqual(v10, Base32.decode(r10)));
+
+        Base32Encoder b32Encoder = new Base32Encoder();
+
+        lengthCheck(b32Encoder, r1, v1);
+        lengthCheck(b32Encoder, r2, v2);
+        lengthCheck(b32Encoder, r3, v3);
+        lengthCheck(b32Encoder, r4, v4);
+        lengthCheck(b32Encoder, r5, v5);
+        lengthCheck(b32Encoder, r6, v6);
+        lengthCheck(b32Encoder, r7, v7);
+        lengthCheck(b32Encoder, r8, v8);
+        lengthCheck(b32Encoder, r9, v9);
+    }
+
+    private void lengthCheck(Encoder encoder, String r, String v)
+    {
+        assertEquals(r.length(), encoder.getEncodedLength(v.length()));
+        assertEquals(((v.length() + 4) / 5) * 5, encoder.getMaxDecodedLength(r.length()));
     }
 
     public void testInvalidInput()
@@ -112,6 +147,31 @@ public class Base32Test
         Base32.decode(Arrays.concatenate(new byte[4], bData), 4, bData.length, bOut);
 
         assertTrue(Arrays.areEqual(Strings.toByteArray("teststring"), bOut.toByteArray()));
+    }
+
+    public void testWithSpecificAlphabet()
+        throws Exception
+    {
+        // try base 32 hex
+        Base32Encoder b32Encoder = new Base32Encoder(
+            Strings.toByteArray("0123456789ABCDEFGHIJKLMNOPQRSTUV"), (byte)'=');
+
+        byte[] v1 = Strings.toByteArray("Now is the time for all");
+        byte[] r1 = Strings.toByteArray("9PNNE839ECG78Q3541Q6IRB541J6USH0C5M6O===");
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream(b32Encoder.getEncodedLength(v1.length));
+
+        b32Encoder.encode(v1, 0, v1.length, bOut);
+
+        assertEquals(((v1.length + 4) / 5) * 5, b32Encoder.getMaxDecodedLength(r1.length));
+        assertEquals(bOut.toByteArray().length, b32Encoder.getEncodedLength(v1.length));
+        assertTrue(Arrays.areEqual(bOut.toByteArray(), r1));
+
+        bOut = new ByteArrayOutputStream(b32Encoder.getMaxDecodedLength(r1.length));
+
+        b32Encoder.decode(r1, 0, r1.length, bOut);
+
+        assertTrue(Arrays.areEqual(bOut.toByteArray(), v1));
     }
 
     private void invalidTest(String data)

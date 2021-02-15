@@ -8,6 +8,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Base64Encoder;
 import org.bouncycastle.util.encoders.DecoderException;
+import org.bouncycastle.util.encoders.Encoder;
 import org.bouncycastle.util.encoders.Hex;
 
 public class Base64Test extends AbstractCoderTest
@@ -60,6 +61,18 @@ public class Base64Test extends AbstractCoderTest
         assertTrue(Arrays.areEqual(sample2Bytes, Base64.decode(Strings.toByteArray(sample2))));
         assertTrue(Arrays.areEqual(sample3Bytes, Base64.decode(sample3)));
         assertTrue(Arrays.areEqual(sample3Bytes, Base64.decode(Strings.toByteArray(sample3))));
+
+        Base64Encoder base64Encoder = new Base64Encoder();
+
+        lengthCheck(base64Encoder, sample1, sample1Bytes);
+        lengthCheck(base64Encoder, sample2, sample2Bytes);
+        lengthCheck(base64Encoder, sample3, sample3Bytes);
+    }
+
+    private void lengthCheck(Encoder encoder, String r, byte[] v)
+    {
+        assertEquals(r.length(), encoder.getEncodedLength(v.length));
+        assertEquals(((v.length + 2) / 3) * 3, encoder.getMaxDecodedLength(r.length()));
     }
 
     public void testInvalidInput()
