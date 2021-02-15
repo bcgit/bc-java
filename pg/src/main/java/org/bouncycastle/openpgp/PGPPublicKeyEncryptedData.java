@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp;
 
+import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.InputStream;
 
@@ -99,7 +100,9 @@ public class PGPPublicKeyEncryptedData
 
                 PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionData[0] & 0xff, sessionKey);
 
-                encStream = new BCPGInputStream(dataDecryptor.getInputStream(encData.getInputStream()));
+                BufferedInputStream bufferIn = encData.getInputStream();
+                bufferIn.mark(dataDecryptor.getBlockSize() + 2); // iv + 2 octets checksum
+                encStream = new BCPGInputStream(dataDecryptor.getInputStream(bufferIn));
 
                 if (withIntegrityPacket)
                 {
@@ -118,6 +121,7 @@ public class PGPPublicKeyEncryptedData
 
                     if (ch < 0)
                     {
+                        bufferIn.reset();
                         throw new EOFException("unexpected end of stream.");
                     }
 
@@ -129,6 +133,7 @@ public class PGPPublicKeyEncryptedData
 
                 if (v1 < 0 || v2 < 0)
                 {
+                    bufferIn.reset();
                     throw new EOFException("unexpected end of stream.");
                 }
 
