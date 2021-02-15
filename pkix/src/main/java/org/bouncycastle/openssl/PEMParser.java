@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -117,7 +117,7 @@ public class PEMParser
             Object pemObjectParser = parsers.get(type);
             if (pemObjectParser != null)
             {
-                return ((PemObjectParser) pemObjectParser).parseObject(obj);
+                return ((PemObjectParser)pemObjectParser).parseObject(obj);
             }
             else
             {
