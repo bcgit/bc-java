@@ -80,13 +80,13 @@ public abstract class AbstractCoderTest extends TestCase
             if (c == paddingChar())
             {
                 // should only be padding at end of string
-                if (this instanceof Base64Test)
+                if (this instanceof Base32Test)
                 {
-                    assertTrue(i > encString.length() - 3);
+                    assertTrue(i > encString.length() - 7);
                 }
                 else
                 {
-                    assertTrue(i > encString.length() - 7);
+                    assertTrue(i > encString.length() - 3);
                 }
                 continue;
             }
