@@ -130,7 +130,9 @@ public abstract class AbstractCoderTest extends TestCase
         enc.encode(offsetOriginal, off, length, bOut);
         
         byte[] encoded = bOut.toByteArray();
-        
+
+        assertEquals(enc.getEncodedLength(length), encoded.length);
+
         bOut.reset();
         
         enc.decode(encoded, 0, encoded.length, bOut);
