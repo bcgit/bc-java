@@ -135,7 +135,7 @@ public class BcPGPKeyConverter
 
                 return implGetPrivateKeyPKCS8(new PrivateKeyInfo(
                     new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519),
-                    new DEROctetString(BigIntegers.asUnsignedByteArray(eddsaK.getX()))));
+                    new DEROctetString(BigIntegers.asUnsignedByteArray(32, eddsaK.getX()))));
             }
 
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
