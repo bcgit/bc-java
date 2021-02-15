@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
+import java.io.IOException;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateExpiredException;
@@ -159,6 +160,12 @@ class X509CertificateObject
         }
     }
 
+    public byte[] getEncoded()
+        throws CertificateEncodingException
+    {
+        return getInternalCertificate().getEncoded();
+    }
+
     public boolean equals(Object other)
     {
         if (other == this)
@@ -252,9 +259,9 @@ class X509CertificateObject
         byte[] encoding;
         try
         {
-            encoding = getEncoded();
+            encoding = c.getEncoded(ASN1Encoding.DER);;
         }
-        catch (CertificateEncodingException e)
+        catch (IOException e)
         {
             encoding = null;
         }
