@@ -49,7 +49,7 @@ public class Base32
         int off,
         int length)
     {
-        int len = (length + 2) / 3 * 4;
+        int len = encoder.getEncodedLength(length);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream(len);
 
         try
@@ -100,7 +100,7 @@ public class Base32
     public static byte[] decode(
         byte[] data)
     {
-        int len = data.length / 4 * 3;
+        int len = data.length / 8 * 5;
         ByteArrayOutputStream bOut = new ByteArrayOutputStream(len);
 
         try

@@ -96,6 +96,16 @@ public class Base64Encoder
         return outPos - outOff;
     }
 
+    public int getEncodedLength(int inputLength)
+    {
+        return (inputLength + 2) / 3 * 4;
+    }
+
+    public int getMaxDecodedLength(int inputLength)
+    {
+        return inputLength / 4 * 3;
+    }
+
     /**
      * encode the input data producing a base 64 output stream.
      *

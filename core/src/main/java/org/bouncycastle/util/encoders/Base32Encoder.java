@@ -3,6 +3,7 @@ package org.bouncycastle.util.encoders;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -11,7 +12,7 @@ import org.bouncycastle.util.Strings;
 public class Base32Encoder
     implements Encoder
 {
-    protected final byte[] encodingTable =
+    private static final byte[] DEAULT_ENCODING_TABLE =
     {
         (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', (byte)'G',
         (byte)'H', (byte)'I', (byte)'J', (byte)'K', (byte)'L', (byte)'M', (byte)'N',
@@ -20,12 +21,14 @@ public class Base32Encoder
         (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7'
     };
 
-    protected byte    padding = (byte)'=';
+    private static final byte DEFAULT_PADDING = (byte)'=';
 
     /*
      * set up the decoding table.
      */
-    protected final byte[] decodingTable = new byte[128];
+    private final byte[] encodingTable;
+    private final byte   padding;
+    private final byte[] decodingTable = new byte[128];
 
     protected void initialiseDecodingTable()
     {
@@ -40,8 +43,33 @@ public class Base32Encoder
         }
     }
 
+    /**
+     * Base constructor for RFC 4648, Section 6.
+     */
     public Base32Encoder()
     {
+        this.encodingTable = DEAULT_ENCODING_TABLE;
+        this.padding = DEFAULT_PADDING;
+
+        initialiseDecodingTable();
+    }
+
+    /**
+     * Constructor allowing the setting of an alternative alphabet.
+     *
+     * @param encodingTable a 32 entry encoding table to do the mapping.
+     * @param padding the padding value to use.
+     */
+    public Base32Encoder(byte[] encodingTable, byte padding)
+    {
+        if (encodingTable.length != 32)
+        {
+            throw new IllegalArgumentException("encoding table needs to be length 32");
+        }
+
+        this.encodingTable = Arrays.clone(encodingTable);
+        this.padding = padding;
+        
         initialiseDecodingTable();
     }
 
@@ -112,6 +140,16 @@ public class Base32Encoder
         outBuf[outPos++] = encodingTable[(a4 >>> 2) & 0x1F];
         outBuf[outPos++] = encodingTable[((a4 << 3) | (a5 >>> 5)) & 0x1F];
         outBuf[outPos] = encodingTable[a5 & 0x1F];
+    }
+
+    public int getEncodedLength(int inputLength)
+    {
+        return (inputLength + 4) / 5 * 8;
+    }
+
+    public int getMaxDecodedLength(int inputLength)
+    {
+        return inputLength / 8 * 5;
     }
 
     /**

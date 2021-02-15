@@ -28,6 +28,15 @@ public class HexTest extends AbstractCoderTest
         enc = new HexEncoder();
     }
 
+    public void testLength()
+    {
+        String r = "616263";
+        String v = "abc";
+
+        assertEquals(r.length(), enc.getEncodedLength(v.length()));
+        assertEquals(v.length(), enc.getMaxDecodedLength(r.length()));
+    }
+
     protected char paddingChar()
     {
         return 0;
