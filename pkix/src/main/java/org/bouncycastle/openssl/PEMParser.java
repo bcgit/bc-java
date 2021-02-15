@@ -2,9 +2,11 @@ package org.bouncycastle.openssl;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -48,7 +50,25 @@ import org.bouncycastle.util.io.pem.PemReader;
 public class PEMParser
     extends PemReader
 {
-    private final Map parsers = new HashMap();
+    public static final String TYPE_CERTIFICATE_REQUEST = "CERTIFICATE REQUEST";
+    public static final String TYPE_NEW_CERTIFICATE_REQUEST = "NEW CERTIFICATE REQUEST";
+    public static final String TYPE_CERTIFICATE = "CERTIFICATE";
+    public static final String TYPE_TRUSTED_CERTIFICATE = "TRUSTED CERTIFICATE";
+    public static final String TYPE_X509_CERTIFICATE = "X509 CERTIFICATE";
+    public static final String TYPE_X509_CRL = "X509 CRL";
+    public static final String TYPE_PKCS7 = "PKCS7";
+    public static final String TYPE_CMS = "CMS";
+    public static final String TYPE_ATTRIBUTE_CERTIFICATE = "ATTRIBUTE CERTIFICATE";
+    public static final String TYPE_EC_PARAMETERS = "EC PARAMETERS";
+    public static final String TYPE_PUBLIC_KEY = "PUBLIC KEY";
+    public static final String TYPE_RSA_PUBLIC_KEY = "RSA PUBLIC KEY";
+    public static final String TYPE_RSA_PRIVATE_KEY = "RSA PRIVATE KEY";
+    public static final String TYPE_DSA_PRIVATE_KEY = "DSA PRIVATE KEY";
+    public static final String TYPE_EC_PRIVATE_KEY = "EC PRIVATE KEY";
+    public static final String TYPE_ENCRYPTED_PRIVATE_KEY = "ENCRYPTED PRIVATE KEY";
+    public static final String TYPE_PRIVATE_KEY = "PRIVATE KEY";
+
+    protected final Map parsers = new HashMap();
 
     /**
      * Create a new PEMReader
@@ -60,23 +80,23 @@ public class PEMParser
     {
         super(reader);
 
-        parsers.put("CERTIFICATE REQUEST", new PKCS10CertificationRequestParser());
-        parsers.put("NEW CERTIFICATE REQUEST", new PKCS10CertificationRequestParser());
-        parsers.put("CERTIFICATE", new X509CertificateParser());
-        parsers.put("TRUSTED CERTIFICATE", new X509TrustedCertificateParser());
-        parsers.put("X509 CERTIFICATE", new X509CertificateParser());
-        parsers.put("X509 CRL", new X509CRLParser());
-        parsers.put("PKCS7", new PKCS7Parser());
-        parsers.put("CMS", new PKCS7Parser());
-        parsers.put("ATTRIBUTE CERTIFICATE", new X509AttributeCertificateParser());
-        parsers.put("EC PARAMETERS", new ECCurveParamsParser());
-        parsers.put("PUBLIC KEY", new PublicKeyParser());
-        parsers.put("RSA PUBLIC KEY", new RSAPublicKeyParser());
-        parsers.put("RSA PRIVATE KEY", new KeyPairParser(new RSAKeyPairParser()));
-        parsers.put("DSA PRIVATE KEY", new KeyPairParser(new DSAKeyPairParser()));
-        parsers.put("EC PRIVATE KEY", new KeyPairParser(new ECDSAKeyPairParser()));
-        parsers.put("ENCRYPTED PRIVATE KEY", new EncryptedPrivateKeyParser());
-        parsers.put("PRIVATE KEY", new PrivateKeyParser());
+        parsers.put(TYPE_CERTIFICATE_REQUEST, new PKCS10CertificationRequestParser());
+        parsers.put(TYPE_NEW_CERTIFICATE_REQUEST, new PKCS10CertificationRequestParser());
+        parsers.put(TYPE_CERTIFICATE, new X509CertificateParser());
+        parsers.put(TYPE_TRUSTED_CERTIFICATE, new X509TrustedCertificateParser());
+        parsers.put(TYPE_X509_CERTIFICATE, new X509CertificateParser());
+        parsers.put(TYPE_X509_CRL, new X509CRLParser());
+        parsers.put(TYPE_PKCS7, new PKCS7Parser());
+        parsers.put(TYPE_CMS, new PKCS7Parser());
+        parsers.put(TYPE_ATTRIBUTE_CERTIFICATE, new X509AttributeCertificateParser());
+        parsers.put(TYPE_EC_PARAMETERS, new ECCurveParamsParser());
+        parsers.put(TYPE_PUBLIC_KEY, new PublicKeyParser());
+        parsers.put(TYPE_RSA_PUBLIC_KEY, new RSAPublicKeyParser());
+        parsers.put(TYPE_RSA_PRIVATE_KEY, new KeyPairParser(new RSAKeyPairParser()));
+        parsers.put(TYPE_DSA_PRIVATE_KEY, new KeyPairParser(new DSAKeyPairParser()));
+        parsers.put(TYPE_EC_PRIVATE_KEY, new KeyPairParser(new ECDSAKeyPairParser()));
+        parsers.put(TYPE_ENCRYPTED_PRIVATE_KEY, new EncryptedPrivateKeyParser());
+        parsers.put(TYPE_PRIVATE_KEY, new PrivateKeyParser());
     }
 
     /**
@@ -94,9 +114,10 @@ public class PEMParser
         if (obj != null)
         {
             String type = obj.getType();
-            if (parsers.containsKey(type))
+            Object pemObjectParser = parsers.get(type);
+            if (pemObjectParser != null)
             {
-                return ((PemObjectParser)parsers.get(type)).parseObject(obj);
+                return ((PemObjectParser) pemObjectParser).parseObject(obj);
             }
             else
             {
@@ -105,6 +126,14 @@ public class PEMParser
         }
 
         return null;
+    }
+
+    /**
+     * @return set of pem object types that can be parsed
+     * @see PemObject#getType()
+     */
+    public Set<String> getSupportedTypes() {
+        return Collections.unmodifiableSet(parsers.keySet());
     }
 
     private class KeyPairParser
