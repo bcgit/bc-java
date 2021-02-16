@@ -158,19 +158,6 @@ abstract class X509CRLImpl
         return null;
     }
 
-    public byte[] getEncoded()
-        throws CRLException
-    {
-        try
-        {
-            return c.getEncoded(ASN1Encoding.DER);
-        }
-        catch (IOException e)
-        {
-            throw new CRLException(e.toString());
-        }
-    }
-
     public void verify(PublicKey key)
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException, SignatureException
