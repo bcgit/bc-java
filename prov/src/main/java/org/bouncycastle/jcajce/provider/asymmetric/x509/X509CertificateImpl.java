@@ -464,19 +464,6 @@ abstract class X509CertificateImpl
         }
     }
 
-    public byte[] getEncoded()
-        throws CertificateEncodingException
-    {
-        try
-        {
-            return c.getEncoded(ASN1Encoding.DER);
-        }
-        catch (IOException e)
-        {
-            throw new CertificateEncodingException(e.toString());
-        }
-    }
-
     public String toString()
     {
         StringBuffer    buf = new StringBuffer();
