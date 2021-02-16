@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
+import java.io.IOException;
 import java.security.cert.CRLException;
 
 import org.bouncycastle.asn1.ASN1BitString;
@@ -9,6 +10,7 @@ import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Arrays;
 
 class X509CRLObject
     extends X509CRLImpl
@@ -22,6 +24,11 @@ class X509CRLObject
     X509CRLObject(JcaJceHelper bcHelper, CertificateList c) throws CRLException
     {
         super(bcHelper, c, createSigAlgName(c), createSigAlgParams(c), isIndirectCRL(c));
+    }
+
+    public byte[] getEncoded() throws CRLException
+    {
+        return Arrays.clone(getInternalCRL().getEncoded());
     }
 
     public boolean equals(Object other)
@@ -50,6 +57,8 @@ class X509CRLObject
                     return false;
                 }
             }
+
+            return getInternalCRL().equals(otherBC.getInternalCRL());
         }
 
         return getInternalCRL().equals(other);
@@ -76,17 +85,19 @@ class X509CRLObject
             }
         }
 
-        byte[] encoding;
+        byte[] encoding = null;
+        CRLException exception = null;
         try
         {
-            encoding = getEncoded();
+            encoding = c.getEncoded(ASN1Encoding.DER);
         }
-        catch (CRLException e)
+        catch (IOException e)
         {
-            encoding = null;
+            exception = new CRLException(e);
         }
 
-        X509CRLInternal temp = new X509CRLInternal(bcHelper, c, sigAlgName,sigAlgParams, isIndirect, encoding);
+        X509CRLInternal temp = new X509CRLInternal(bcHelper, c, sigAlgName,sigAlgParams, isIndirect, encoding,
+            exception);
 
         synchronized (cacheLock)
         {
