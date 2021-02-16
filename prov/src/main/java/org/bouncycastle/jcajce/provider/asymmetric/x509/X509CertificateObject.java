@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.Arrays;
 
 class X509CertificateObject
     extends X509CertificateImpl
@@ -163,7 +164,7 @@ class X509CertificateObject
     public byte[] getEncoded()
         throws CertificateEncodingException
     {
-        return getInternalCertificate().getEncoded();
+        return Arrays.clone(getInternalCertificate().getEncoded());
     }
 
     public boolean equals(Object other)
@@ -192,6 +193,8 @@ class X509CertificateObject
                     return false;
                 }
             }
+
+            return getInternalCertificate().equals(otherBC.getInternalCertificate());
         }
 
         return getInternalCertificate().equals(other);
@@ -256,18 +259,19 @@ class X509CertificateObject
             }
         }
 
-        byte[] encoding;
+        byte[] encoding = null;
+        CertificateEncodingException exception = null;
         try
         {
-            encoding = c.getEncoded(ASN1Encoding.DER);;
+            encoding = c.getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {
-            encoding = null;
+            exception = new CertificateEncodingException(e);
         }
 
         X509CertificateInternal temp = new X509CertificateInternal(bcHelper, c, basicConstraints, keyUsage, sigAlgName,
-            sigAlgParams, encoding);
+            sigAlgParams, encoding, exception);
 
         synchronized (cacheLock)
         {
