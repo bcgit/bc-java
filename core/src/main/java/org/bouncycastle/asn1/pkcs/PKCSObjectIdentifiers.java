@@ -127,6 +127,10 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier    id_hmacWithSHA384      = digestAlgorithm.branch("10").intern();
     /**  1.2.840.113549.2.11 */
     ASN1ObjectIdentifier    id_hmacWithSHA512      = digestAlgorithm.branch("11").intern();
+    /**  1.2.840.113549.2.12 */
+    ASN1ObjectIdentifier    id_hmacWithSHA512_224  = digestAlgorithm.branch("12").intern();
+    /**  1.2.840.113549.2.13 */
+    ASN1ObjectIdentifier    id_hmacWithSHA512_256  = digestAlgorithm.branch("13").intern();
 
     //
     // pkcs-7 OBJECT IDENTIFIER ::= {
