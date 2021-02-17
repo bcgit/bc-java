@@ -32,7 +32,8 @@ public class RegressionTest
         new PGPEdDSATest(),
         new SExprTest(),
         new ArmoredInputStreamTest(),
-        new PGPUtilTest()
+        new PGPUtilTest(),
+        new BcPGPEd25519JcaKeyPairConversionTest()
     };
 
     public static void main(String[] args)
