@@ -49,6 +49,7 @@ import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.rfc8032.Ed25519;
 import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKdfParameters;
@@ -135,7 +136,7 @@ public class BcPGPKeyConverter
 
                 return implGetPrivateKeyPKCS8(new PrivateKeyInfo(
                     new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519),
-                    new DEROctetString(BigIntegers.asUnsignedByteArray(32, eddsaK.getX()))));
+                    new DEROctetString(BigIntegers.asUnsignedByteArray(Ed25519.PUBLIC_KEY_SIZE, eddsaK.getX()))));
             }
 
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
