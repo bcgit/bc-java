@@ -1,16 +1,16 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Pack;
 
 /**
  * Kangaroo.
  */
-public abstract class Kangaroo
-        implements Digest
+public final class Kangaroo
 {
     /**
      * Default digest length.
@@ -42,7 +42,7 @@ public abstract class Kangaroo
 
         public String getAlgorithmName()
         {
-            return getClass().getSimpleName();
+            return "KangarooTwelve";
         }
     }
 
@@ -71,7 +71,7 @@ public abstract class Kangaroo
 
         public String getAlgorithmName()
         {
-            return getClass().getSimpleName();
+            return "MarsupilamiFourteen";
         }
     }
 
@@ -171,8 +171,8 @@ public abstract class Kangaroo
     /**
      * The Kangaroo Base.
      */
-    public abstract static class KangarooBase
-            implements Digest, Xof
+    abstract static class KangarooBase
+            implements ExtendedDigest, Xof
     {
         /**
          * Block Size.
@@ -561,7 +561,7 @@ public abstract class Kangaroo
             if (v != 0)
             {
                 n = 1;
-                while ((v >>= Byte.SIZE) != 0)
+                while ((v >>= Bytes.SIZE) != 0)
                 {
                     n++;
                 }
@@ -574,7 +574,7 @@ public abstract class Kangaroo
             /* Encode the length */
             for (int i = 0; i < n; i++)
             {
-                b[i] = (byte) (strLen >> (Byte.SIZE * (n - i - 1)));
+                b[i] = (byte) (strLen >> (Bytes.SIZE * (n - i - 1)));
             }
 
             /* Return the encoded length */
