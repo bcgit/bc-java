@@ -177,7 +177,8 @@ public class RegressionTest
             new KMACTest(),
             new SipHash128Test(),
             new GCMSIVTest(),
-            new Blake3Test()
+            new Blake3Test(),
+            new KangarooTest()
         };
 
     public static void main(String[] args)
