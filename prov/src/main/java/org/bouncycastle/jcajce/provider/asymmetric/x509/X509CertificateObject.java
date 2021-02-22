@@ -267,7 +267,7 @@ class X509CertificateObject
         }
         catch (IOException e)
         {
-            exception = new CertificateEncodingException(e);
+            exception = new X509CertificateEncodingException(e);
         }
 
         X509CertificateInternal temp = new X509CertificateInternal(bcHelper, c, basicConstraints, keyUsage, sigAlgName,
@@ -360,6 +360,22 @@ class X509CertificateObject
         catch (Exception e)
         {
             throw new CertificateParsingException("cannot construct SigAlgParams: " + e);
+        }
+    }
+
+    private static class X509CertificateEncodingException
+        extends CertificateEncodingException
+    {
+        private final Throwable cause;
+
+        X509CertificateEncodingException(Throwable cause)
+        {
+            this.cause = cause;
+        }
+
+        public Throwable getCause()
+        {
+            return cause;
         }
     }
 }
