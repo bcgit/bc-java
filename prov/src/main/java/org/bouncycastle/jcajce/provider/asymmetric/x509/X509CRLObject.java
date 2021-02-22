@@ -93,7 +93,7 @@ class X509CRLObject
         }
         catch (IOException e)
         {
-            exception = new CRLException(e);
+            exception = new X509CRLException(e);
         }
 
         X509CRLInternal temp = new X509CRLInternal(bcHelper, c, sigAlgName,sigAlgParams, isIndirect, encoding,
@@ -118,7 +118,7 @@ class X509CRLObject
         }
         catch (Exception e)
         {
-            throw new CRLException("CRL contents invalid: " + e);
+            throw new X509CRLException("CRL contents invalid: " + e.getMessage(), e);
         }
     }
 
@@ -155,6 +155,28 @@ class X509CRLObject
         catch (Exception e)
         {
             throw new ExtCRLException("Exception reading IssuingDistributionPoint", e);
+        }
+    }
+
+    private static class X509CRLException
+        extends CRLException
+    {
+        private final Throwable cause;
+
+        X509CRLException(String msg, Throwable cause)
+        {
+            super(msg);
+            this.cause = cause;
+        }
+
+        X509CRLException(Throwable cause)
+        {
+            this.cause = cause;
+        }
+
+        public Throwable getCause()
+        {
+            return cause;
         }
     }
 }

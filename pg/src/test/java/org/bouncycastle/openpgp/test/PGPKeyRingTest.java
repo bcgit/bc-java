@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
@@ -58,6 +57,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPPrivateKey;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
@@ -2204,7 +2204,7 @@ public class PGPKeyRingTest
         throws Exception
     {
         PGPPublicKeyRing publicKeys = new PGPPublicKeyRing(
-                        PGPUtil.getDecoderStream(new ByteArrayInputStream(certificateWithMarker.getBytes(StandardCharsets.UTF_8))),
+                        PGPUtil.getDecoderStream(new ByteArrayInputStream(Strings.toByteArray(certificateWithMarker))),
                         new BcKeyFingerprintCalculator());
     }
 
