@@ -184,10 +184,10 @@ public class ArmoredOutputStream
     /**
      * Remove all headers.
      */
-    public void noHeaders() {
+    public void clearHeaders()
+    {
         headers.clear();
     }
-
 
     /**
      * Set an additional header entry. The current value(s) will continue to exist together
