@@ -28,6 +28,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <h3>2.2.2 Defects Fixed</h3>
 <ul>
 <li>Lightweight conversion of Ed25519 keys in the PGP API could drop the leading byte as it was zero. This has been fixed.</li>
+<li>Marker packets appearing at the start of PGP public key rings could cause parsing failure. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -35,6 +36,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Blake3 has been added to the lightweight API.</li>
 <li>The OpenSSL PEMParser can now be extended to add specialised parsers.</li>
 <li>Base32 encoding has now been added, the default alphabet is from RFC 4648.</li>
+<li>The KangarooTwelve message digest has ben added to the lightweight API.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
