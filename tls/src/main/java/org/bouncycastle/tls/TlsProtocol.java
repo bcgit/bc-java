@@ -387,10 +387,14 @@ public abstract class TlsProtocol
 
     protected void cleanupHandshake()
     {
-        SecurityParameters securityParameters = getContext().getSecurityParameters();
-        if (null != securityParameters)
+        TlsContext context = getContext();
+        if (null != context)
         {
-            securityParameters.clear();
+            SecurityParameters securityParameters = context.getSecurityParameters();
+            if (null != securityParameters)
+            {
+                securityParameters.clear();
+            }
         }
 
         this.tlsSession = null;
@@ -1664,7 +1668,14 @@ public abstract class TlsProtocol
 
     public boolean isHandshaking()
     {
-        return !isClosed() && null != getContext().getSecurityParametersHandshake();
+        if (closed)
+        {
+            return false;
+        }
+
+        TlsContext context = getContext();
+
+        return null != context && null != context.getSecurityParametersHandshake();
     }
 
     protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
