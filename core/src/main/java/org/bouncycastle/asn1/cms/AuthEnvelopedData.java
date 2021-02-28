@@ -184,17 +184,17 @@ public class AuthEnvelopedData
     public static AuthEnvelopedData getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof AuthEnvelopedData)
+        if (obj instanceof AuthEnvelopedData)
         {
             return (AuthEnvelopedData)obj;
         }
 
-        if (obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new AuthEnvelopedData((ASN1Sequence)obj);
+            return new AuthEnvelopedData(ASN1Sequence.getInstance(obj));
         }
 
-        throw new IllegalArgumentException("Invalid AuthEnvelopedData: " + obj.getClass().getName());
+        return null;
     }
 
     public ASN1Integer getVersion()

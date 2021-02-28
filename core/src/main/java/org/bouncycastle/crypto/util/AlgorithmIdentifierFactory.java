@@ -1,8 +1,11 @@
 package org.bouncycastle.crypto.util;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.CAST5CBCParameters;
@@ -12,8 +15,6 @@ import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-
-import java.security.SecureRandom;
 
 /**
  * Factory methods for common AlgorithmIdentifiers.
@@ -73,14 +74,25 @@ public class AlgorithmIdentifierFactory
 
             return new AlgorithmIdentifier(encryptionOID, new DEROctetString(iv));
         }
-        else if(encryptionOID.equals(NISTObjectIdentifiers.id_aes128_GCM)
+        else if (encryptionOID.equals(NISTObjectIdentifiers.id_aes128_GCM)
                 || encryptionOID.equals(NISTObjectIdentifiers.id_aes192_GCM)
-                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_GCM)){
-            byte[] iv =new byte[16];
+                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_GCM))
+        {
+            byte[] iv = new byte[12];
 
             random.nextBytes(iv);
 
-            return new AlgorithmIdentifier(encryptionOID, new GCMParameters(iv, 12));
+            return new AlgorithmIdentifier(encryptionOID, new GCMParameters(iv, 16));
+        }
+        else if (encryptionOID.equals(NISTObjectIdentifiers.id_aes128_CCM)
+                || encryptionOID.equals(NISTObjectIdentifiers.id_aes192_CCM)
+                || encryptionOID.equals(NISTObjectIdentifiers.id_aes256_CCM))
+        {
+            byte[] iv = new byte[8];
+
+            random.nextBytes(iv);
+
+            return new AlgorithmIdentifier(encryptionOID, new CCMParameters(iv, 16));
         }
         else if (encryptionOID.equals(PKCSObjectIdentifiers.des_EDE3_CBC)
                 || encryptionOID.equals(IDEA_CBC)

@@ -1,9 +1,12 @@
 package org.bouncycastle.crypto.util;
 
+import java.io.OutputStream;
+
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.CAST5CBCParameters;
@@ -27,6 +30,7 @@ import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.io.CipherOutputStream;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.paddings.PKCS7Padding;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
@@ -34,8 +38,6 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.RC2Parameters;
-
-import java.io.OutputStream;
 
 /**
  * Factory methods for creating Cipher objects and CipherOutputStreams.
@@ -94,6 +96,19 @@ public class CipherFactory
                 throw new IllegalArgumentException("key data must be accessible for GCM operation") ;
             }
             AEADParameters aeadParameters = new AEADParameters((KeyParameter) encKey, gcmParameters.getIcvLen() * 8, gcmParameters.getNonce());
+            cipher.init(forEncryption, aeadParameters);
+            return cipher;
+        }
+        else if(encAlg.equals(NISTObjectIdentifiers.id_aes128_CCM)
+            || encAlg.equals(NISTObjectIdentifiers.id_aes192_CCM)
+            || encAlg.equals(NISTObjectIdentifiers.id_aes256_CCM))
+        {
+            AEADBlockCipher cipher = createAEADCipher(encryptionAlgID.getAlgorithm());
+            CCMParameters ccmParameters = CCMParameters.getInstance(encryptionAlgID.getParameters());
+            if(!(encKey instanceof KeyParameter)){
+                throw new IllegalArgumentException("key data must be accessible for GCM operation") ;
+            }
+            AEADParameters aeadParameters = new AEADParameters((KeyParameter) encKey, ccmParameters.getIcvLen() * 8, ccmParameters.getNonce());
             cipher.init(forEncryption, aeadParameters);
             return cipher;
         }
@@ -159,6 +174,12 @@ public class CipherFactory
                 || NISTObjectIdentifiers.id_aes256_GCM.equals(algorithm))
         {
             return new GCMBlockCipher(new AESEngine());
+        }
+        if (NISTObjectIdentifiers.id_aes128_CCM.equals(algorithm)
+                || NISTObjectIdentifiers.id_aes192_CCM.equals(algorithm)
+                || NISTObjectIdentifiers.id_aes256_CCM.equals(algorithm))
+        {
+            return new CCMBlockCipher(new AESEngine());
         }
         else
         {
