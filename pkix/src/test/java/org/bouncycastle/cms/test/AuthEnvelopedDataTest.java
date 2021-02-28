@@ -29,6 +29,7 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.bc.BcCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransAuthEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
@@ -64,10 +65,13 @@ public class AuthEnvelopedDataTest
 
     public boolean DEBUG = true;
 
-    private static final byte[] Sample1 = Base64.decode("MIAGCyqGSIb3DQEJEAEXoIAwgAIBADGBmzCBmAIBAoABATANBgkqhkiG9w0BAQEFAASBgG9yJPC3zFmIbPTtSrrTD+71lluua3F1" +
-        "/V/XzzDOczjdymy4tI4sle5HSxJN8yrw+m2JdWKb4s/u4frvmNqE6fcqfFtLpLEMXJneoEWWXZFKbndoqQNRMgfKGCncpeWhktRc" +
-        "SRtbEEk/H4hWggJGmVClS7f/nmCDjwyANBnI3shYMIAGCSqGSIb3DQEHATAfBglghkgBZQMEAQYwEgQQLO0PwnuhYXRk8pLLhgik" +
-        "0aCABB8KvxIkbmBKT73Oz4xtf0DNNGmdn+tzPcOldJUQWCEnAAAAAAQMn+tzPcOldJUQWCEnAAAAAAAA");
+    private static final byte[] Sample1 = Base64.decode(
+        "MIAGCyqGSIb3DQEJEAEXoIAwgAIBADGBmzCBmAIBAoABATANBgkqhkiG9w0BAQEF" +
+            "AASBgG9yJPC3zFmIbPTtSrrTD+71lluua3F1/V/XzzDOczjdymy4tI4sle5HSxJ" +
+            "N8yrw+m2JdWKb4s/u4frvmNqE6fcqfFtLpLEMXJneoEWWXZFKbndoqQNRMgfKGC" +
+            "ncpeWhktRcSRtbEEk/H4hWggJGmVClS7f/nmCDjwyANBnI3shYMIAGCSqGSIb3D" +
+            "QEHATAfBglghkgBZQMEAQYwEgQQLO0PwnuhYXRk8pLLhgik0aCABBMKvxIkbmBK" +
+            "T73Oz4xtf0DNNGmdAAAAAAQMn+tzPcOldJUQWCEnAAAAAAAA");
 
     private static final byte[] Sample1Key = Base64.decode("MIICdAIBADANBgkqhkiG9w0BAQEFAASCAl4wggJaAgEAAoGBAMtFuFyzl4jgeuPL\n" +
         "uGp8Niqf11QGWVDTpZvE7VabLoPanzuVgjTYC8oJOq4PvVYW5V56KeGzXhsnhsDt\n" +
@@ -154,7 +158,144 @@ public class AuthEnvelopedDataTest
         assertTrue(Arrays.areEqual(Sample1, authEnv.getEncoded()));
     }
 
-    public void testAttributes()
+    public void testGCM()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+        byte[] message = Strings.toByteArray("Hello, world!");
+        OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM).setProvider(BC).build();
+
+        assertEquals(NISTObjectIdentifiers.id_aes128_GCM, candidate.getAlgorithmIdentifier().getAlgorithm());
+        assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
+
+        assertTrue(candidate instanceof OutputAEADEncryptor);
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)candidate;
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+
+        authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+                 Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                     new DERSet(new Time(new Date())));
+                 attrs.put(testAttr.getAttrType(), testAttr);
+                 return new AttributeTable(attrs);
+            }
+        });
+
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(authData.getEncoded());
+
+        RecipientInformationStore recipients = encAuthData.getRecipientInfos();
+
+        RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
+    public void testCCM()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+        byte[] message = Strings.toByteArray("Hello, world!");
+        OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CCM).setProvider(BC).build();
+
+        assertEquals(NISTObjectIdentifiers.id_aes128_CCM, candidate.getAlgorithmIdentifier().getAlgorithm());
+        assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
+
+        assertTrue(candidate instanceof OutputAEADEncryptor);
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)candidate;
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+
+        authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+                 Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                     new DERSet(new Time(new Date())));
+                 attrs.put(testAttr.getAttrType(), testAttr);
+                 return new AttributeTable(attrs);
+            }
+        });
+
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(authData.getEncoded());
+
+        RecipientInformationStore recipients = encAuthData.getRecipientInfos();
+
+        RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
+    public void testBcCCM()
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("Hello, world!");
+        OutputEncryptor candidate = new BcCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CCM).build();
+
+        assertEquals(NISTObjectIdentifiers.id_aes128_CCM, candidate.getAlgorithmIdentifier().getAlgorithm());
+        assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
+
+        assertTrue(candidate instanceof OutputAEADEncryptor);
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)candidate;
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+
+        authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+                 Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                     new DERSet(new Time(new Date())));
+                 attrs.put(testAttr.getAttrType(), testAttr);
+                 return new AttributeTable(attrs);
+            }
+        });
+
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(authData.getEncoded());
+
+        RecipientInformationStore recipients = encAuthData.getRecipientInfos();
+
+        RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
+    public void testBcAttributes()
         throws Exception
     {
         byte[] message = Strings.toByteArray("Hello, world!");

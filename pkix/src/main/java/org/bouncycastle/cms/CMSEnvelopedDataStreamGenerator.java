@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 
 /**
@@ -151,9 +152,7 @@ public class CMSEnvelopedDataStreamGenerator
         OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
             eiGen.getRawOutputStream(), 0, false, _bufferSize);
 
-        OutputStream cOut = encryptor.getOutputStream(octetStream);
-
-        return new CmsEnvelopedDataOutputStream(cOut, cGen, envGen, eiGen);
+        return new CmsEnvelopedDataOutputStream(encryptor, octetStream, cGen, envGen, eiGen);
     }
 
     protected OutputStream open(
@@ -206,7 +205,7 @@ public class CMSEnvelopedDataStreamGenerator
             OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
                 eiGen.getRawOutputStream(), 0, false, _bufferSize);
 
-            return new CmsEnvelopedDataOutputStream(encryptor.getOutputStream(octetStream), cGen, envGen, eiGen);
+            return new CmsEnvelopedDataOutputStream(encryptor, octetStream, cGen, envGen, eiGen);
         }
         catch (IOException e)
         {
@@ -243,18 +242,23 @@ public class CMSEnvelopedDataStreamGenerator
     private class CmsEnvelopedDataOutputStream
         extends OutputStream
     {
-        private OutputStream   _out;
+        private final OutputEncryptor _encryptor;
+        private final OutputStream _cOut;
+        private OutputStream _octetStream;
         private BERSequenceGenerator _cGen;
         private BERSequenceGenerator _envGen;
         private BERSequenceGenerator _eiGen;
     
         public CmsEnvelopedDataOutputStream(
-            OutputStream   out,
+            OutputEncryptor encryptor,
+            OutputStream   octetStream,
             BERSequenceGenerator cGen,
             BERSequenceGenerator envGen,
             BERSequenceGenerator eiGen)
         {
-            _out = out;
+            _encryptor = encryptor;
+            _octetStream = octetStream;
+            _cOut = encryptor.getOutputStream(octetStream);
             _cGen = cGen;
             _envGen = envGen;
             _eiGen = eiGen;
@@ -264,7 +268,7 @@ public class CMSEnvelopedDataStreamGenerator
             int b)
             throws IOException
         {
-            _out.write(b);
+            _cOut.write(b);
         }
         
         public void write(
@@ -273,20 +277,26 @@ public class CMSEnvelopedDataStreamGenerator
             int    len)
             throws IOException
         {
-            _out.write(bytes, off, len);
+            _cOut.write(bytes, off, len);
         }
         
         public void write(
             byte[] bytes)
             throws IOException
         {
-            _out.write(bytes);
+            _cOut.write(bytes);
         }
         
         public void close()
             throws IOException
         {
-            _out.close();
+            _cOut.close();
+            if (_encryptor instanceof OutputAEADEncryptor)
+            {
+                // enveloped data so MAC appended to cipher text.
+                _octetStream.write(((OutputAEADEncryptor)_encryptor).getMAC());
+                _octetStream.close();
+            }
             _eiGen.close();
 
             if (unprotectedAttributeGenerator != null)

@@ -15,7 +15,9 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -36,6 +38,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
@@ -54,6 +57,7 @@ import org.bouncycastle.operator.jcajce.JceKTSKeyUnwrapper;
 public class EnvelopedDataHelper
 {
     protected static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
+    private static final Set authEnvelopedAlgorithms = new HashSet();
 
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
     protected static final Map CIPHER_ALG_NAMES = new HashMap();
@@ -102,6 +106,13 @@ public class EnvelopedDataHelper
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA256.getAlgorithmID(), "PBKDF2WITHHMACSHA256");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA384.getAlgorithmID(), "PBKDF2WITHHMACSHA384");
         PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA512.getAlgorithmID(), "PBKDF2WITHHMACSHA512");
+
+        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes128_GCM);
+        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes192_GCM);
+        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes256_GCM);
+        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes128_CCM);
+        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes192_CCM);
+        authEnvelopedAlgorithms.add(NISTObjectIdentifiers.id_aes256_CCM);
     }
 
     private static final short[] rc2Table = {
@@ -713,6 +724,11 @@ public class EnvelopedDataHelper
         {
              throw new CMSException("Unable to calculate derived key from password: " + e.getMessage(), e);
         }
+    }
+
+    boolean isAuthEnveloped(ASN1ObjectIdentifier algorithm)
+    {
+        return authEnvelopedAlgorithms.contains(algorithm);
     }
 
     static interface JCECallback

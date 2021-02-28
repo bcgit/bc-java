@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.CipherFactory;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.MacCaptureStream;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
@@ -127,6 +128,7 @@ public class BcCMSContentEncryptorBuilder
         implements OutputAEADEncryptor
     {
         private AEADBlockCipher aeadCipher;
+        private MacCaptureStream macOut;
 
         CMSAuthOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, SecureRandom random)
             throws CMSException
@@ -145,6 +147,12 @@ public class BcCMSContentEncryptorBuilder
             return (AEADBlockCipher)cipher;
         }
 
+        public OutputStream getOutputStream(OutputStream dOut)
+        {
+            macOut = new MacCaptureStream(dOut, aeadCipher.getMac().length);
+            return CipherFactory.createOutputStream(macOut, cipher);
+        }
+
         public OutputStream getAADStream()
         {
             return new AADStream(aeadCipher);
@@ -152,7 +160,7 @@ public class BcCMSContentEncryptorBuilder
 
         public byte[] getMAC()
         {
-            return aeadCipher.getMac();
+            return macOut.getMac();
         }
     }
 

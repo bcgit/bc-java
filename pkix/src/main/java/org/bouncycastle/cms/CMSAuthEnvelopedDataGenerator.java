@@ -67,6 +67,7 @@ public class CMSAuthEnvelopedDataGenerator
         }
 
         byte[] encryptedContent = bOut.toByteArray();
+        byte[] mac = contentEncryptor.getMAC();
 
         encAlgId = contentEncryptor.getAlgorithmIdentifier();
 
@@ -96,7 +97,7 @@ public class CMSAuthEnvelopedDataGenerator
 
         ContentInfo contentInfo = new ContentInfo(
                 CMSObjectIdentifiers.authEnvelopedData,
-                new AuthEnvelopedData(originatorInfo, new DERSet(recipientInfos), eci, authenticatedAttrSet, new DEROctetString(contentEncryptor.getMAC()), unprotectedAttrSet));
+                new AuthEnvelopedData(originatorInfo, new DERSet(recipientInfos), eci, authenticatedAttrSet, new DEROctetString(mac), unprotectedAttrSet));
 
         return new CMSAuthEnvelopedData(contentInfo);
     }
