@@ -1,11 +1,8 @@
 package org.bouncycastle.cms;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.OriginatorInfo;
 
 /**
@@ -14,18 +11,6 @@ import org.bouncycastle.asn1.cms.OriginatorInfo;
 public class CMSAuthEnvelopedGenerator
     extends CMSEnvelopedGenerator
 {
-    static Set<ASN1ObjectIdentifier> cipherNeedsMacAppended = new HashSet<ASN1ObjectIdentifier>();
-
-    static
-    {
-        cipherNeedsMacAppended.add(CMSAlgorithm.AES128_GCM);
-        cipherNeedsMacAppended.add(CMSAlgorithm.AES192_GCM);
-        cipherNeedsMacAppended.add(CMSAlgorithm.AES256_GCM);
-        cipherNeedsMacAppended.add(CMSAlgorithm.AES128_CCM);
-        cipherNeedsMacAppended.add(CMSAlgorithm.AES192_CCM);
-        cipherNeedsMacAppended.add(CMSAlgorithm.AES256_CCM);
-    }
-
     final List recipientInfoGenerators = new ArrayList();
 
     protected CMSAttributeTableGenerator authAttrsGenerator = null;
