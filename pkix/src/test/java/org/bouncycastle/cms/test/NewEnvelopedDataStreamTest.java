@@ -17,6 +17,9 @@ import java.util.Iterator;
 
 import javax.crypto.SecretKey;
 
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERSet;
@@ -49,10 +52,6 @@ import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 public class NewEnvelopedDataStreamTest
     extends TestCase
@@ -249,7 +248,64 @@ public class NewEnvelopedDataStreamTest
 
         assertEquals(new DERUTF8String("Hint"), attrTable.get(PKCSObjectIdentifiers.id_aa_contentHint).getAttrValues().getObjectAt(0));
         assertEquals(new DERUTF8String("Request"), attrTable.get(PKCSObjectIdentifiers.id_aa_receiptRequest).getAttrValues().getObjectAt(0));
+    }
 
+    public void testKeyTransAES128GCM()
+        throws Exception
+    {
+        byte[] data = new byte[2000];
+
+        for (int i = 0; i != 2000; i++)
+        {
+            data[i] = (byte)(i & 0xff);
+        }
+
+        //
+        // unbuffered
+        //
+        CMSEnvelopedDataStreamGenerator edGen = new CMSEnvelopedDataStreamGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        OutputStream out = edGen.open(
+            bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(BC).build());
+
+        for (int i = 0; i != 2000; i++)
+        {
+            out.write(data[i]);
+        }
+
+        out.close();
+
+        verifyData(bOut, CMSAlgorithm.AES128_GCM.getId(), data);
+
+        int unbufferedLength = bOut.toByteArray().length;
+
+        //
+        // Using buffered output - should be == to unbuffered
+        //
+        edGen = new CMSEnvelopedDataStreamGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        bOut = new ByteArrayOutputStream();
+
+        out = edGen.open(bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(BC).build());
+
+        BufferedOutputStream bfOut = new BufferedOutputStream(out, 300);
+
+        for (int i = 0; i != 2000; i++)
+        {
+            bfOut.write(data[i]);
+        }
+
+        bfOut.close();
+
+        verifyData(bOut, CMSAlgorithm.AES128_GCM.getId(), data);
+
+        assertTrue(bOut.toByteArray().length == unbufferedLength);
     }
 
     public void testKeyTransAES128BufferedStream()
