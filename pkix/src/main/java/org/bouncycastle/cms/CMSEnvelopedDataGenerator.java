@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 
 /**
@@ -68,6 +69,13 @@ public class CMSEnvelopedDataGenerator
             content.write(cOut);
 
             cOut.close();
+
+            if (contentEncryptor instanceof OutputAEADEncryptor)
+            {
+                byte[] mac = ((OutputAEADEncryptor)contentEncryptor).getMAC();
+
+                bOut.write(mac, 0, mac.length);
+            }
         }
         catch (IOException e)
         {

@@ -1,8 +1,10 @@
 package org.bouncycastle.cms.jcajce;
 
 import java.io.OutputStream;
+import java.security.AccessController;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.SecureRandom;
 
@@ -13,6 +15,7 @@ import javax.crypto.SecretKey;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -21,6 +24,8 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.MacCaptureStream;
+import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.jcajce.JceGenericKey;
@@ -145,6 +150,10 @@ public class JceCMSContentEncryptorBuilder
     {
         if (algorithmParameters != null)
         {
+            if (helper.isAuthEnveloped(encryptionOID))
+            {
+                return new CMSAuthOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
+            }
             return new CMSOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
         }
         if (algorithmIdentifier != null)
@@ -165,6 +174,10 @@ public class JceCMSContentEncryptorBuilder
             }
         }
 
+        if (helper.isAuthEnveloped(encryptionOID))
+        {
+            return new CMSAuthOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
+        }
         return new CMSOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
     }
 
@@ -234,5 +247,112 @@ public class JceCMSContentEncryptorBuilder
         {
             return new JceGenericKey(algorithmIdentifier, encKey);
         }
+    }
+
+    private class CMSAuthOutputEncryptor
+        implements OutputAEADEncryptor
+    {
+        private SecretKey encKey;
+        private AlgorithmIdentifier algorithmIdentifier;
+        private Cipher              cipher;
+        private MacCaptureStream    macOut;
+
+        CMSAuthOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
+            throws CMSException
+        {
+            KeyGenerator keyGen = helper.createKeyGenerator(encryptionOID);
+
+            random = CryptoServicesRegistrar.getSecureRandom(random);
+
+            if (keySize < 0)
+            {
+                keyGen.init(random);
+            }
+            else
+            {
+                keyGen.init(keySize, random);
+            }
+
+            cipher = helper.createCipher(encryptionOID);
+            encKey = keyGen.generateKey();
+
+            if (params == null)
+            {
+                params = helper.generateParameters(encryptionOID, encKey, random);
+            }
+
+            try
+            {
+                cipher.init(Cipher.ENCRYPT_MODE, encKey, params, random);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new CMSException("unable to initialize cipher: " + e.getMessage(), e);
+            }
+
+            //
+            // If params are null we try and second guess on them as some providers don't provide
+            // algorithm parameter generation explicitly but instead generate them under the hood.
+            //
+            if (params == null)
+            {
+                params = cipher.getParameters();
+            }
+
+            algorithmIdentifier = helper.getAlgorithmIdentifier(encryptionOID, params);
+        }
+
+        public AlgorithmIdentifier getAlgorithmIdentifier()
+        {
+            return algorithmIdentifier;
+        }
+
+        public OutputStream getOutputStream(OutputStream dOut)
+        {
+            // TODO: works for CCM too, but others will follow.
+            GCMParameters p = GCMParameters.getInstance(algorithmIdentifier.getParameters());
+
+            macOut = new MacCaptureStream(dOut, p.getIcvLen());
+            return new CipherOutputStream(macOut, cipher);
+        }
+
+        public GenericKey getKey()
+        {
+            return new JceGenericKey(algorithmIdentifier, encKey);
+        }
+
+        public OutputStream getAADStream()
+        {
+            if (checkForAEAD())
+            {
+                return new JceAADStream(cipher);
+            }
+
+            return null; // TODO: okay this is awful, we could use AEADParameterSpec for earlier JDKs.
+        }
+
+        public byte[] getMAC()
+        {
+            return macOut.getMac();
+        }
+    }
+
+    private static boolean checkForAEAD()
+    {
+        return (Boolean)AccessController.doPrivileged(new PrivilegedAction()
+        {
+            public Object run()
+            {
+                try
+                {
+                    return Cipher.class.getMethod("updateAAD", byte[].class) != null;
+                }
+                catch (Exception ignore)
+                {
+                    // TODO[logging] Log the fact that we are falling back to BC-specific class
+                    return Boolean.FALSE;
+                }
+            }
+        });
     }
 }

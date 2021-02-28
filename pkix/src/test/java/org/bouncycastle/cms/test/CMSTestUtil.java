@@ -70,7 +70,9 @@ public class CMSTestUtil
     public static KeyGenerator     seedKg;
     public static KeyGenerator     camelliaKg;
     public static BigInteger       serialNumber;
-    
+
+    private static boolean aeadAvailable = false;
+
     public static final boolean DEBUG = true;
 
     private static byte[]  attrCert = Base64.decode(
@@ -119,6 +121,15 @@ public class CMSTestUtil
         try
         {
             java.security.Security.addProvider(new BouncyCastleProvider());
+
+            try
+            {
+                CMSTestUtil.class.getClassLoader().loadClass("javax.crypto.spec.GCMParameterSpec");
+                aeadAvailable = true;
+            }
+            catch (ClassNotFoundException e)
+            {
+            }
 
             rand = new SecureRandom();
 
@@ -184,7 +195,12 @@ public class CMSTestUtil
             throw new RuntimeException(ex.toString());
         }
     }
-    
+
+    public static boolean isAeadAvailable()
+    {
+        return aeadAvailable;
+    }
+
     public static String dumpBase64(
         byte[]  data)
     {
