@@ -44,6 +44,11 @@ public class KeyAgreeRecipientId
         this(new X509CertificateHolderSelector(issuer, serialNumber, subjectKeyId));
     }
 
+    public X500Name getIssuer()
+    {
+        return baseSelector.getIssuer();
+    }
+
     public BigInteger getSerialNumber()
     {
         return baseSelector.getSerialNumber();
