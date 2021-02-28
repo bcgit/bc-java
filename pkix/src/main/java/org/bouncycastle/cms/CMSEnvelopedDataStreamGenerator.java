@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.EnvelopedData;
@@ -43,7 +44,6 @@ import org.bouncycastle.operator.OutputEncryptor;
 public class CMSEnvelopedDataStreamGenerator
     extends CMSEnvelopedGenerator
 {
-    private ASN1Set              _unprotectedAttributes = null;
     private int                 _bufferSize;
     private boolean             _berEncodeRecipientSet;
 
@@ -74,16 +74,14 @@ public class CMSEnvelopedDataStreamGenerator
         _berEncodeRecipientSet = berEncodeRecipientSet;
     }
 
-    private ASN1Integer getVersion()
+    private ASN1Integer getVersion(ASN1EncodableVector recipientInfos)
     {
-        if (originatorInfo != null || _unprotectedAttributes != null)
+        if (unprotectedAttributeGenerator != null)
         {
-            return new ASN1Integer(2);
+            // mark unprotected attributes as non-null.
+            return new ASN1Integer(EnvelopedData.calculateVersion(originatorInfo, new DLSet(recipientInfos), new DLSet()));
         }
-        else
-        {
-            return new ASN1Integer(0);
-        }
+        return new ASN1Integer(EnvelopedData.calculateVersion(originatorInfo, new DLSet(recipientInfos), null));
     }
 
     private OutputStream doOpen(
@@ -125,7 +123,7 @@ public class CMSEnvelopedDataStreamGenerator
         //
         BERSequenceGenerator envGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
 
-        envGen.addObject(getVersion());
+        envGen.addObject(getVersion(recipientInfos));
 
         if (originatorInfo != null)
         {
@@ -185,7 +183,7 @@ public class CMSEnvelopedDataStreamGenerator
                 recipients = new DERSet(recipientInfos);
             }
 
-            envGen.addObject(new ASN1Integer(EnvelopedData.calculateVersion(originatorInfo, recipients, _unprotectedAttributes)));
+            envGen.addObject(getVersion(recipientInfos));
 
             if (originatorInfo != null)
             {
