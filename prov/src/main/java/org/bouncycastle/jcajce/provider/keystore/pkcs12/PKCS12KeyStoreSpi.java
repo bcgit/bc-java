@@ -836,7 +836,7 @@ public class PKCS12KeyStoreSpi
                 throw new IOException("error constructing MAC: " + e.toString());
             }
         }
-        else if (password != null)
+        else if (password != null && password.length != 0)
         {
             if (!Properties.isOverrideSet("org.bouncycastle.pkcs12.ignore_useless_passwd"))
             {
