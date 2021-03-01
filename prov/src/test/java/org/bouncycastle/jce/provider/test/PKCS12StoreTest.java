@@ -624,6 +624,10 @@ public class PKCS12StoreTest
 
         isTrue(pkcs12.containsAlias("alias"));
 
+        pkcs12.load(new ByteArrayInputStream(certsOnly), new char[] {});
+
+        isTrue(pkcs12.containsAlias("alias"));
+
         try
         {
             pkcs12.load(new ByteArrayInputStream(certsOnly), "1".toCharArray());
