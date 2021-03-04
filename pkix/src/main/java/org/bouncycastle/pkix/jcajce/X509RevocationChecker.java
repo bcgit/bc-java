@@ -461,7 +461,7 @@ public class X509RevocationChecker
             }
             catch(AnnotatedException e1)
             {
-                throw new CertPathValidatorException(e.getMessage(), e.getCause());
+                throw new CertPathValidatorException(e1.getMessage(), e1.getCause());
             }
 
             if (crl != null)
@@ -479,7 +479,7 @@ public class X509RevocationChecker
                 }
                 catch(AnnotatedException e1)
                 {
-                    throw new CertPathValidatorException(e.getMessage(), e.getCause());
+                    throw new CertPathValidatorException(e1.getMessage(), e1.getCause());
                 }
             }
             else
