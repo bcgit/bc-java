@@ -14,6 +14,9 @@ public final class ProtocolVersion
     public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF, "DTLS 1.0");
     public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD, "DTLS 1.2");
 
+    public static final ProtocolVersion GMSSLv11 = new ProtocolVersion(0x0101, "GMSSL 1.1");
+
+
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_DTLS = DTLSv10;
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_TLS = SSLv3;
     static final ProtocolVersion CLIENT_LATEST_SUPPORTED_DTLS = DTLSv12;
@@ -347,6 +350,15 @@ public final class ProtocolVersion
     {
         switch (major)
         {
+        case 0x01:
+        {
+            switch (minor)
+            {
+            case 0x01:
+                return GMSSLv11;
+            }
+            return getUnknownVersion(major, minor, "GMSSL");
+        }
         case 0x03:
         {
             switch (minor)

@@ -2882,6 +2882,9 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
             return EncryptionAlgorithm.SEED_CBC;
 
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return EncryptionAlgorithm.SM4_CBC;
+
         default:
             return -1;
         }
@@ -3259,6 +3262,9 @@ public class TlsUtils
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
             return KeyExchangeAlgorithm.SRP_RSA;
 
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return KeyExchangeAlgorithm.SM2;
+
         default:
             return -1;
         }
@@ -3579,6 +3585,9 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_ARIA_256_CBC_SHA384:
             return MACAlgorithm.hmac_sha384;
 
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return MACAlgorithm.hmac_sm3;
+
         default:
             return -1;
         }
@@ -3774,6 +3783,9 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
             return ProtocolVersion.TLSv12;
+
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return ProtocolVersion.GMSSLv11;
 
         default:
             return ProtocolVersion.SSLv3;
@@ -4193,7 +4205,8 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_RSA:
             return crypto.hasSRPAuthentication()
                 && hasAnyRSASigAlgs(crypto);
-
+        case KeyExchangeAlgorithm.SM2:
+            return true;
         default:
             return false;
         }
