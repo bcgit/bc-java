@@ -16,7 +16,7 @@ class CipherSuiteInfo
 {
     static CipherSuiteInfo forCipherSuite(int cipherSuite, String name)
     {
-        if (!name.startsWith("TLS_") || !name.startsWith("GMSSL_"))
+        if (!name.startsWith("TLS_") && !name.startsWith("GMSSL_"))
         {
             throw new IllegalArgumentException();
         }
@@ -407,6 +407,8 @@ class CipherSuiteInfo
             return "ChaCha20-Poly1305";
         case EncryptionAlgorithm.NULL:
             return "NULL";
+        case EncryptionAlgorithm.SM4_CBC:
+            return "SM4/CBC/NoPadding";
         default:
             throw new IllegalArgumentException();
         }

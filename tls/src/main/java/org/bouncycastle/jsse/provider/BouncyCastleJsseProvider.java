@@ -209,6 +209,14 @@ public class BouncyCastleJsseProvider
                         new String[]{ "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" });
                 }
             });
+        addAlgorithmImplementation("SSLContext.GMSSLv1.1", "org.bouncycastle.jsse.provider.SSLContext.GMSSLv1_1",
+                new EngineCreator()
+                {
+                    public Object createInstance(Object constructorParameter)
+                    {
+                        return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "GMSSLv1.1" });
+                    }
+                });
         addAlgorithmImplementation("SSLContext.DEFAULT", "org.bouncycastle.jsse.provider.SSLContext.Default",
             new EngineCreator()
             {
@@ -219,6 +227,7 @@ public class BouncyCastleJsseProvider
             });
         addAlias("Alg.Alias.SSLContext.SSL", "TLS");
         addAlias("Alg.Alias.SSLContext.SSLV3", "TLSV1");
+        addAlias("Alg.Alias.SSLContext.GMSSL", "GMSSLv1.1");
 
         return fipsMode;
     }

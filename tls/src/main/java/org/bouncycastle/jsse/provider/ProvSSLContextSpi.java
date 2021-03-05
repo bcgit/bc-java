@@ -66,7 +66,7 @@ class ProvSSLContextSpi
     private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS = createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST);
 
     // TODO[tls13] Enable TLSv1.3 by default in due course
-    private static final String[] DEFAULT_ENABLED_PROTOCOLS = new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" };
+    private static final String[] DEFAULT_ENABLED_PROTOCOLS = new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" ,"GMSSLv1.1"};
 
     private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
     {
@@ -239,6 +239,7 @@ class ProvSSLContextSpi
         addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA", CipherSuite.TLS_RSA_WITH_NULL_SHA);
         addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA256", CipherSuite.TLS_RSA_WITH_NULL_SHA256);
 
+        // GMSSL 1.1
         addCipherSuite(cs, "GMSSL_ECC_SM4_SM3", CipherSuite.GMSSL_ECC_SM4_SM3);
 
         return Collections.unmodifiableMap(cs);
