@@ -1793,6 +1793,8 @@ public class TlsUtils
             return HashAlgorithm.sha384;
         case MACAlgorithm.hmac_sha512:
             return HashAlgorithm.sha512;
+        case MACAlgorithm.hmac_sm3:
+            return HashAlgorithm.sm3;
         default:
             throw new IllegalArgumentException("specified MACAlgorithm not an HMAC: " + MACAlgorithm.getText(macAlgorithm));
         }

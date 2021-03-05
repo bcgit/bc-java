@@ -22,6 +22,7 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.macs.HMac;
@@ -157,7 +158,8 @@ public class BcTlsCrypto
             // NOTE: Ignores macAlgorithm
             return createChaCha20Poly1305(cryptoParams);
         case EncryptionAlgorithm.SM4_CBC:
-            return createSm4(cryptoParams, macAlgorithm);
+            // Chinese GMSSL SM4 mode
+            return createSM4Cipher(cryptoParams, macAlgorithm);
         case EncryptionAlgorithm.NULL:
             return createNullCipher(cryptoParams, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
@@ -369,6 +371,8 @@ public class BcTlsCrypto
             return new SHA384Digest();
         case HashAlgorithm.sha512:
             return new SHA512Digest();
+        case HashAlgorithm.sm3:
+            return new SM3Digest();
         default:
             throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
@@ -435,9 +439,10 @@ public class BcTlsCrypto
         }
     }
 
-    protected TlsCipher createSm4(TlsCryptoParameters cryptoParams, int macAlgorithm)
+    protected TlsCipher createSM4Cipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
             throws IOException
     {
+        // SM4 Block size 128bit => 16 byte
         return new TlsBlockCipher(this, cryptoParams,
                 new BlockOperator(createSM4BlockCipher(), true),
                 new BlockOperator(createSM4BlockCipher(), false),
