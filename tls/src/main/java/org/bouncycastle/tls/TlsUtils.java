@@ -2919,6 +2919,7 @@ public class TlsUtils
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
         case EncryptionAlgorithm.SEED_CBC:
+        case EncryptionAlgorithm.SM4_CBC:
             return CipherType.block;
 
         case EncryptionAlgorithm.NULL:

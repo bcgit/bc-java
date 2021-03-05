@@ -239,6 +239,8 @@ class ProvSSLContextSpi
         addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA", CipherSuite.TLS_RSA_WITH_NULL_SHA);
         addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA256", CipherSuite.TLS_RSA_WITH_NULL_SHA256);
 
+        addCipherSuite(cs, "GMSSL_ECC_SM4_SM3", CipherSuite.GMSSL_ECC_SM4_SM3);
+
         return Collections.unmodifiableMap(cs);
     }
 
@@ -258,6 +260,7 @@ class ProvSSLContextSpi
         ps.put("TLSv1.1", ProtocolVersion.TLSv11);
         ps.put("TLSv1", ProtocolVersion.TLSv10);
         ps.put("SSLv3", ProtocolVersion.SSLv3);
+        ps.put("GMSSLv1.1", ProtocolVersion.GMSSLv11);
         return Collections.unmodifiableMap(ps);
     }
 
