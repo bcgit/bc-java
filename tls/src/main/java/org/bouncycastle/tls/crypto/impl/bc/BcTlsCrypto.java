@@ -23,13 +23,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.ARIAEngine;
-import org.bouncycastle.crypto.engines.CamelliaEngine;
-import org.bouncycastle.crypto.engines.DESedeEngine;
-import org.bouncycastle.crypto.engines.RC4Engine;
-import org.bouncycastle.crypto.engines.RSABlindedEngine;
-import org.bouncycastle.crypto.engines.SEEDEngine;
+import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -162,6 +156,8 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.CHACHA20_POLY1305:
             // NOTE: Ignores macAlgorithm
             return createChaCha20Poly1305(cryptoParams);
+        case EncryptionAlgorithm.SM4_CBC:
+            return createSm4(cryptoParams, macAlgorithm);
         case EncryptionAlgorithm.NULL:
             return createNullCipher(cryptoParams, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
@@ -439,6 +435,16 @@ public class BcTlsCrypto
         }
     }
 
+    protected TlsCipher createSm4(TlsCryptoParameters cryptoParams, int macAlgorithm)
+            throws IOException
+    {
+        return new TlsBlockCipher(this, cryptoParams,
+                new BlockOperator(createSM4BlockCipher(), true),
+                new BlockOperator(createSM4BlockCipher(), false),
+                createMAC(cryptoParams, macAlgorithm),
+                createMAC(cryptoParams, macAlgorithm), 16);
+    }
+
     protected TlsCipher createAESCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
@@ -521,6 +527,11 @@ public class BcTlsCrypto
             createMAC(cryptoParams, macAlgorithm), 16);
     }
 
+    protected BlockCipher createSM4Engine()
+    {
+        return new SM4Engine();
+    }
+
     protected BlockCipher createAESEngine()
     {
         return new AESEngine();
@@ -539,6 +550,11 @@ public class BcTlsCrypto
     protected BlockCipher createAESBlockCipher()
     {
         return new CBCBlockCipher(createAESEngine());
+    }
+
+    protected BlockCipher createSM4BlockCipher()
+    {
+        return new CBCBlockCipher(createSM4Engine());
     }
 
     protected BlockCipher createARIABlockCipher()
