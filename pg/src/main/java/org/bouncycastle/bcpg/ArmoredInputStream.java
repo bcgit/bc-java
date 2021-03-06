@@ -240,6 +240,10 @@ public class ArmoredInputStream
                     {
                         break;
                     }
+                    if (headerList.size() != 0 && line.indexOf(':') < 0)
+                    {
+                        throw new IOException("invalid armor header");
+                    }
                     headerList.add(line);
                     buf.setLength(0);
                 }
