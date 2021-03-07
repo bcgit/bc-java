@@ -57,6 +57,7 @@ import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLSocket;
 
@@ -226,9 +227,15 @@ class TestUtils
     public static KeyPair generateECKeyPair()
         throws Exception
     {
+        return generateECKeyPair("secp256r1");
+    }
+
+    public static KeyPair generateECKeyPair(String curveName)
+        throws Exception
+    {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", ProviderUtils.PROVIDER_NAME_BC);
 
-        kpGen.initialize(256, RANDOM);
+        kpGen.initialize(new ECNamedCurveGenParameterSpec(curveName), RANDOM);
 
         return kpGen.generateKeyPair();
     }
