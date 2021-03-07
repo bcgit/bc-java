@@ -219,6 +219,9 @@ abstract class JsseUtils
         case SignatureAlgorithm.dsa:
             return "DSA";
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return "EC";
         case SignatureAlgorithm.ed25519:
             return "Ed25519";
@@ -651,6 +654,9 @@ abstract class JsseUtils
             return privateKey instanceof DSAPrivateKey || "DSA".equalsIgnoreCase(algorithm);
 
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return privateKey instanceof ECPrivateKey || "EC".equalsIgnoreCase(algorithm);
 
         case SignatureAlgorithm.ed25519:

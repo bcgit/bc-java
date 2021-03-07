@@ -54,7 +54,7 @@ public class JcaTlsRSAPSSSigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        short hash = SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm);
+        short hash = SignatureAlgorithm.getIntrinsicHashAlgorithm(signatureAlgorithm);
         String digestName = crypto.getDigestName(hash);
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
