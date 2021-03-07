@@ -825,8 +825,6 @@ class ProvTlsServer
     protected TlsCredentials selectServerCredentials12(Principal[] issuers, int keyExchangeAlgorithm) throws IOException
     {
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
-        boolean post13Active = TlsUtils.isTLSv13(context);
-        boolean pre13Active = !post13Active;
 
         final short legacySignatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
 
@@ -849,9 +847,8 @@ class ProvTlsServer
                 continue;
             }
 
-            // TODO[tls13] Somewhat redundant if we get all active signature schemes later (for CertificateRequest)
-            if (!signatureSchemeInfo.isActive(algorithmConstraints, pre13Active, post13Active,
-                jsseSecurityParameters.namedGroups))
+            // TODO[jsse] Somewhat redundant if we get all active signature schemes later (for CertificateRequest)
+            if (!signatureSchemeInfo.isActive(algorithmConstraints, false, true, jsseSecurityParameters.namedGroups))
             {
                 continue;
             }
@@ -899,8 +896,8 @@ class ProvTlsServer
                 continue;
             }
 
-            // TODO[tls13] Somewhat redundant if we get all active signature schemes later (for CertificateRequest)
-            if (!signatureSchemeInfo.isActive(algorithmConstraints, false, true, jsseSecurityParameters.namedGroups))
+            // TODO[jsse] Somewhat redundant if we get all active signature schemes later (for CertificateRequest)
+            if (!signatureSchemeInfo.isActive(algorithmConstraints, true, false, jsseSecurityParameters.namedGroups))
             {
                 continue;
             }

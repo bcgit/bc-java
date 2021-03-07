@@ -4,7 +4,6 @@ import java.security.AlgorithmParameters;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,8 +12,6 @@ import java.util.TreeMap;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.NamedGroup;
@@ -66,6 +63,10 @@ class NamedGroupInfo
         x25519(NamedGroup.x25519, "XDH"),
         x448(NamedGroup.x448, "XDH"),
 
+        brainpoolP256r1tls13(NamedGroup.brainpoolP256r1tls13, "EC"),
+        brainpoolP384r1tls13(NamedGroup.brainpoolP384r1tls13, "EC"),
+        brainpoolP512r1tls13(NamedGroup.brainpoolP512r1tls13, "EC"),
+
         ffdhe2048(NamedGroup.ffdhe2048, "DiffieHellman"),
         ffdhe3072(NamedGroup.ffdhe3072, "DiffieHellman"),
         ffdhe4096(NamedGroup.ffdhe4096, "DiffieHellman"),
@@ -76,18 +77,22 @@ class NamedGroupInfo
         private final String name;
         private final String text;
         private final String jcaAlgorithm;
+        private final String jcaGroup;
         private final boolean char2;
-        private final boolean supported13;
-        private final int bitsECDH; 
-        private final int bitsFFDHE; 
+        private final boolean supportedPost13;
+        private final boolean supportedPre13;
+        private final int bitsECDH;
+        private final int bitsFFDHE;
 
         private All(int namedGroup, String jcaAlgorithm)
         {
             this.namedGroup = namedGroup;
             this.name = NamedGroup.getName(namedGroup);
-            this.text = name + "(" + namedGroup + ")";
+            this.text = NamedGroup.getText(namedGroup);
             this.jcaAlgorithm = jcaAlgorithm;
-            this.supported13 = NamedGroup.canBeNegotiated(namedGroup, ProtocolVersion.TLSv13);
+            this.jcaGroup = NamedGroup.getStandardName(namedGroup);
+            this.supportedPost13 = NamedGroup.canBeNegotiated(namedGroup, ProtocolVersion.TLSv13);
+            this.supportedPre13 = NamedGroup.canBeNegotiated(namedGroup, ProtocolVersion.TLSv12);
             this.char2 = NamedGroup.isChar2Curve(namedGroup);
             this.bitsECDH = NamedGroup.getCurveBits(namedGroup);
             this.bitsFFDHE = NamedGroup.getFiniteFieldBits(namedGroup);
@@ -144,20 +149,6 @@ class NamedGroupInfo
         }
     }
 
-    private static final Map<ASN1ObjectIdentifier, All> CURVES_BY_OID = createCurvesByOid();
-
-    private static Map<ASN1ObjectIdentifier, All> createCurvesByOid()
-    {
-        Map<ASN1ObjectIdentifier, All> m = new HashMap<ASN1ObjectIdentifier, All>();
-
-        // TODO[jsse] This is currently only used to find FIPS curves, but we will eventually want OIDs for all curves
-        m.put(SECObjectIdentifiers.secp256r1, All.secp256r1);
-        m.put(SECObjectIdentifiers.secp384r1, All.secp384r1);
-        m.put(SECObjectIdentifiers.secp521r1, All.secp521r1);
-
-        return Collections.unmodifiableMap(m);
-    }
-
     static PerConnection createPerConnection(PerContext perContext, ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
     {
         Map<Integer, NamedGroupInfo> local = createLocal(perContext, sslParameters, activeProtocolVersions);
@@ -192,19 +183,6 @@ class NamedGroupInfo
             maxBits = Math.max(maxBits, namedGroupInfo.getBitsFFDHE());
         }
         return maxBits;
-    }
-
-    static int getCurve(ASN1ObjectIdentifier oid)
-    {
-        if (null != oid)
-        {
-            All all = CURVES_BY_OID.get(oid);
-            if (null != all)
-            {
-                return all.namedGroup;
-            }
-        }
-        return -1;
     }
 
     static NamedGroupInfo getNamedGroup(PerContext perContext, int namedGroup)
@@ -283,7 +261,7 @@ class NamedGroupInfo
 
         boolean disable = (disableChar2 && all.char2) || (disableFFDHE && all.bitsFFDHE > 0);
 
-        boolean enabled = !disable && crypto.hasNamedGroup(namedGroup);
+        boolean enabled = !disable && (null != all.jcaGroup) && crypto.hasNamedGroup(namedGroup);
 
         AlgorithmParameters algorithmParameters = null;
         if (enabled)
@@ -387,7 +365,7 @@ class NamedGroupInfo
             NamedGroupInfo namedGroupInfo = perContext.index.get(candidate);
 
             if (null != namedGroupInfo
-                && namedGroupInfo.isActive(algorithmConstraints, pre13Active, post13Active))
+                && namedGroupInfo.isActive(algorithmConstraints, post13Active, pre13Active))
             {
                 // NOTE: Re-insertion doesn't affect iteration order for insertion-order LinkedHashMap
                 result.put(candidate, namedGroupInfo);
@@ -487,9 +465,14 @@ class NamedGroupInfo
         return all.bitsFFDHE;
     }
 
-    String getName()
+    String getJcaAlgorithm()
     {
-        return all.name;
+        return all.jcaAlgorithm;
+    }
+
+    String getJcaGroup()
+    {
+        return all.jcaGroup;
     }
 
     int getNamedGroup()
@@ -497,10 +480,10 @@ class NamedGroupInfo
         return all.namedGroup;
     }
 
-    boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean pre13Active, boolean post13Active)
+    boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean post13Active, boolean pre13Active)
     {
         return enabled
-            && (pre13Active || (post13Active && isSupported13()))
+            && ((post13Active && isSupportedPost13()) || (pre13Active && isSupportedPre13()))
             && isPermittedBy(algorithmConstraints);
     }
 
@@ -509,9 +492,14 @@ class NamedGroupInfo
         return enabled;
     }
 
-    boolean isSupported13()
+    boolean isSupportedPost13()
     {
-        return all.supported13;
+        return all.supportedPost13;
+    }
+
+    boolean isSupportedPre13()
+    {
+        return all.supportedPre13;
     }
 
     @Override
@@ -524,7 +512,7 @@ class NamedGroupInfo
     {
         Set<BCCryptoPrimitive> primitives = JsseUtils.KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC;
 
-        return algorithmConstraints.permits(primitives, all.name, null)
-            && algorithmConstraints.permits(primitives, all.jcaAlgorithm, algorithmParameters);
+        return algorithmConstraints.permits(primitives, getJcaGroup(), null)
+            && algorithmConstraints.permits(primitives, getJcaAlgorithm(), algorithmParameters);
     }
 }

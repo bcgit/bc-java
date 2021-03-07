@@ -121,6 +121,9 @@ public class JcaTlsCertificate
             return new JcaTlsDSAVerifier(crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return new JcaTlsECDSAVerifier(crypto, getPubKeyEC());
 
         case SignatureAlgorithm.ed25519:
@@ -356,6 +359,9 @@ public class JcaTlsCertificate
             return publicKey instanceof DSAPublicKey;
 
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return publicKey instanceof ECPublicKey;
 
         case SignatureAlgorithm.ed25519:
