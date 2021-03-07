@@ -54,6 +54,13 @@ public class NamedGroup
     public static final int x448 = 30;
 
     /*
+     * RFC 8734
+     */
+    public static final int brainpoolP256r1tls13 = 31;
+    public static final int brainpoolP384r1tls13 = 32;
+    public static final int brainpoolP512r1tls13 = 33;
+
+    /*
      * RFC 7919 2. Codepoints in the "Supported Groups Registry" with a high byte of 0x01 (that is,
      * between 256 and 511, inclusive) are set aside for FFDHE groups, though only a small number of
      * them are initially defined and we do not expect many other FFDHE groups to be added to this
@@ -79,13 +86,15 @@ public class NamedGroup
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
 
+    /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
     private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
         "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
-        "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1",
-        "brainpoolp256r1", "brainpoolp384r1", "brainpoolp512r1", "x25519", "x448" };
+        "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1", "brainpoolP256r1", "brainpoolP384r1",
+        "brainpoolP512r1", "X25519", "X448", "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1" };
 
-    private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096", "ffdhe6144", "ffdhe8192" };
+    private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096",
+        "ffdhe6144", "ffdhe8192" };
 
     public static boolean canBeNegotiated(int namedGroup, ProtocolVersion version)
     {
@@ -98,30 +107,15 @@ public class NamedGroup
                 return false;
             }
         }
-
-        return isValid(namedGroup);
-    }
-
-    public static int getByName(String name)
-    {
-        if (name != null)
+        else
         {
-            for (int i = 0; i < CURVE_NAMES.length; ++i)
+            if (namedGroup >= brainpoolP256r1tls13 && namedGroup <= brainpoolP512r1tls13)
             {
-                if (name.equals(CURVE_NAMES[i]))
-                {
-                    return sect163k1 + i;
-                }
-            }
-            for (int i = 0; i < FINITE_FIELD_NAMES.length; ++i)
-            {
-                if (name.equals(FINITE_FIELD_NAMES[i]))
-                {
-                    return ffdhe2048 + i;
-                }
+                return false;
             }
         }
-        return -1;
+
+        return isValid(namedGroup);
     }
 
     public static int getCurveBits(int namedGroup)
@@ -161,6 +155,7 @@ public class NamedGroup
             return 252;
 
         case brainpoolP256r1:
+        case brainpoolP256r1tls13:
         case secp256k1:
         case secp256r1:
             return 256;
@@ -170,6 +165,7 @@ public class NamedGroup
             return 283;
 
         case brainpoolP384r1:
+        case brainpoolP384r1tls13:
         case secp384r1:
             return 384;
 
@@ -181,6 +177,7 @@ public class NamedGroup
             return 446;
 
         case brainpoolP512r1:
+        case brainpoolP512r1tls13:
             return 512;
 
         case secp521r1:
@@ -193,6 +190,16 @@ public class NamedGroup
         default:
             return 0;
         }
+    }
+
+    public static String getCurveName(int namedGroup)
+    {
+        if (refersToASpecificCurve(namedGroup))
+        {
+            return CURVE_NAMES[namedGroup - sect163k1];
+        }
+
+        return null;
     }
 
     public static int getFiniteFieldBits(int namedGroup)
@@ -212,6 +219,16 @@ public class NamedGroup
         default:
             return 0;
         }
+    }
+
+    public static String getFiniteFieldName(int namedGroup)
+    {
+        if (refersToASpecificFiniteField(namedGroup))
+        {
+            return FINITE_FIELD_NAMES[namedGroup - ffdhe2048];
+        }
+
+        return null;
     }
 
     public static int getMaximumChar2CurveBits()
@@ -241,25 +258,48 @@ public class NamedGroup
             return "PRIVATE";
         }
 
-        if (namedGroup >= sect163k1 && namedGroup <= x448)
-        {
-            return CURVE_NAMES[namedGroup - sect163k1];
-        }
-
-        if (namedGroup >= ffdhe2048 && namedGroup <= ffdhe8192)
-        {
-            return FINITE_FIELD_NAMES[namedGroup - ffdhe2048];
-        }
-
         switch (namedGroup)
         {
+        case x25519:
+            return "x25519";
+        case x448:
+            return "x448";
+        case brainpoolP256r1tls13:
+            return "brainpoolP256r1tls13";
+        case brainpoolP384r1tls13:
+            return "brainpoolP384r1tls13";
+        case brainpoolP512r1tls13:
+            return "brainpoolP512r1tls13";
         case arbitrary_explicit_prime_curves:
             return "arbitrary_explicit_prime_curves";
         case arbitrary_explicit_char2_curves:
             return "arbitrary_explicit_char2_curves";
-        default:
-            return "UNKNOWN";
         }
+
+        String standardName = getStandardName(namedGroup);
+        if (null != standardName)
+        {
+            return standardName;
+        }
+
+        return "UNKNOWN";
+    }
+
+    public static String getStandardName(int namedGroup)
+    {
+        String curveName = getCurveName(namedGroup);
+        if (null != curveName)
+        {
+            return curveName;
+        }
+
+        String finiteFieldName = getFiniteFieldName(namedGroup);
+        if (null != finiteFieldName)
+        {
+            return finiteFieldName;
+        }
+
+        return null;
     }
 
     public static String getText(int namedGroup)
@@ -275,7 +315,7 @@ public class NamedGroup
 
     public static boolean isPrimeCurve(int namedGroup)
     {
-        return (namedGroup >= secp160k1 && namedGroup <= x448)
+        return (namedGroup >= secp160k1 && namedGroup <= brainpoolP512r1tls13)
             || (namedGroup == arbitrary_explicit_prime_curves);
     }
 
@@ -293,12 +333,13 @@ public class NamedGroup
 
     public static boolean refersToAnECDHCurve(int namedGroup)
     {
-        return namedGroup >= sect163k1 && namedGroup <= x448;
+        return refersToASpecificCurve(namedGroup);
     }
 
     public static boolean refersToAnECDSACurve(int namedGroup)
     {
-        return namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1;
+        return refersToASpecificCurve(namedGroup)
+            && !refersToAnXDHCurve(namedGroup);
     }
 
     public static boolean refersToAnXDHCurve(int namedGroup)
@@ -308,7 +349,7 @@ public class NamedGroup
 
     public static boolean refersToASpecificCurve(int namedGroup)
     {
-        return namedGroup >= sect163k1 && namedGroup <= x448;
+        return namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1tls13;
     }
 
     public static boolean refersToASpecificFiniteField(int namedGroup)

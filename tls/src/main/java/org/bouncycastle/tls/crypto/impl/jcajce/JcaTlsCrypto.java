@@ -382,7 +382,7 @@ public class JcaTlsCrypto
         }
         else if (NamedGroup.refersToAnECDSACurve(namedGroup))
         {
-            return ECUtil.getAlgorithmParameters(this, NamedGroup.getName(namedGroup));
+            return ECUtil.getAlgorithmParameters(this, NamedGroup.getCurveName(namedGroup));
         }
         else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
         {
@@ -404,7 +404,7 @@ public class JcaTlsCrypto
         case SignatureScheme.rsa_pss_pss_sha512:
         case SignatureScheme.rsa_pss_rsae_sha512:
         {
-            short hash = SignatureScheme.getRSAPSSHashAlgorithm(signatureScheme);
+            short hash = SignatureScheme.getIntrinsicHashAlgorithm(signatureScheme);
             String digestName = getDigestName(hash);
             String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
@@ -572,6 +572,9 @@ public class JcaTlsCrypto
         case SignatureAlgorithm.rsa_pss_pss_sha256:
         case SignatureAlgorithm.rsa_pss_pss_sha384:
         case SignatureAlgorithm.rsa_pss_pss_sha512:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return true;
         default:
             return false;
@@ -1019,7 +1022,7 @@ public class JcaTlsCrypto
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))
             {
-                return Boolean.valueOf(ECUtil.isCurveSupported(this, NamedGroup.getName(namedGroup)));
+                return Boolean.valueOf(ECUtil.isCurveSupported(this, NamedGroup.getCurveName(namedGroup)));
             }
             else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
             {

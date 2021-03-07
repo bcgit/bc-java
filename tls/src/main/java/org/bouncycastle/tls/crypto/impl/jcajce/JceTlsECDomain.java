@@ -38,7 +38,7 @@ public class JceTlsECDomain
         int namedGroup = ecConfig.getNamedGroup();
         if (NamedGroup.refersToAnECDSACurve(namedGroup))
         {
-            ECParameterSpec spec = ECUtil.getECParameterSpec(crypto, NamedGroup.getName(namedGroup));
+            ECParameterSpec spec = ECUtil.getECParameterSpec(crypto, NamedGroup.getCurveName(namedGroup));
             if (null != spec)
             {
                 this.crypto = crypto;

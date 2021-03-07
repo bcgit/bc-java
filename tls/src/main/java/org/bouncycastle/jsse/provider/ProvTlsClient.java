@@ -680,7 +680,7 @@ class ProvTlsClient
 
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
-            if (!signatureSchemeInfo.isSupported13() ||
+            if (!signatureSchemeInfo.isSupportedPost13() ||
                 !jsseSecurityParameters.localSigSchemes.contains(signatureSchemeInfo))
             {
                 continue;

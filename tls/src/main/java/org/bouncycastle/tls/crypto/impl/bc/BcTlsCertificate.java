@@ -95,6 +95,9 @@ public class BcTlsCertificate
             return new BcTlsDSAVerifier(crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return new BcTlsECDSAVerifier(crypto, getPubKeyEC());
 
         case SignatureAlgorithm.ed25519:
@@ -392,6 +395,9 @@ public class BcTlsCertificate
             return publicKey instanceof DSAPublicKeyParameters;
 
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return publicKey instanceof ECPublicKeyParameters;
 
         case SignatureAlgorithm.ed25519:

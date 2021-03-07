@@ -47,7 +47,7 @@ public class BcTlsRSAPSSVerifier
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        short hash = SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm);
+        short hash = SignatureAlgorithm.getIntrinsicHashAlgorithm(signatureAlgorithm);
         Digest digest = crypto.createDigest(hash);
 
         PSSSigner verifier = new PSSSigner(new RSAEngine(), digest, digest.getDigestSize());
