@@ -309,26 +309,24 @@ public class ECUtil
     public static ASN1ObjectIdentifier getNamedCurveOid(
         String curveName)
     {
-        String name = curveName;
+        if (null == curveName || curveName.length() < 1)
+        {
+            return null;
+        }
 
-        int spacePos = name.indexOf(' ');
+        int spacePos = curveName.indexOf(' ');
         if (spacePos > 0)
         {
-            name = name.substring(spacePos + 1);
+            curveName = curveName.substring(spacePos + 1);
         }
 
-        try
+        ASN1ObjectIdentifier oid = getOID(curveName);
+        if (null != oid)
         {
-            if (name.charAt(0) >= '0' && name.charAt(0) <= '2')
-            {
-                return new ASN1ObjectIdentifier(name);
-            }
-        }
-        catch (IllegalArgumentException ex)
-        {
+            return oid;
         }
 
-        return ECNamedCurveTable.getOID(name);
+        return ECNamedCurveTable.getOID(curveName);
     }
 
     public static ASN1ObjectIdentifier getNamedCurveOid(
@@ -445,5 +443,21 @@ public class ECUtil
                 return null;
             }
         });
+    }
+
+    private static ASN1ObjectIdentifier getOID(String curveName)
+    {
+        char firstChar = curveName.charAt(0);
+        if (firstChar >= '0' && firstChar <= '2')
+        {
+            try
+            {
+                return new ASN1ObjectIdentifier(curveName);
+            }
+            catch (Exception e)
+            {
+            }
+        }
+        return null;
     }
 }
