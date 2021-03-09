@@ -67,6 +67,8 @@ abstract class JsseUtils
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyMasterSecret", true);
     private static final boolean provTlsAllowLegacyResumption =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
+    private static final int provTlsMaxCertificateChainLength =
+        PropertyUtils.getIntegerSystemProperty("jdk.tls.maxCertificateChainLength", 10, 1, Integer.MAX_VALUE);
     private static final boolean provTlsRequireCloseNotify =
         PropertyUtils.getBooleanSystemProperty("com.sun.net.ssl.requireCloseNotify", true);
     private static final boolean provTlsUseExtendedMasterSecret =
@@ -177,6 +179,11 @@ abstract class JsseUtils
     static boolean equals(Object a, Object b)
     {
         return a == b || (null != a && null != b && a.equals(b));
+    }
+
+    static int getMaxCertificateChainLength()
+    {
+        return provTlsMaxCertificateChainLength;
     }
 
     static String[] resize(String[] data, int count)

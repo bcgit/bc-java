@@ -350,6 +350,12 @@ class ProvTlsClient
     }
 
     @Override
+    public int getMaxCertificateChainLength()
+    {
+        return JsseUtils.getMaxCertificateChainLength();
+    }
+
+    @Override
     public TlsSession getSessionToResume()
     {
         if (provClientEnableSessionResumption)

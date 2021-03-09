@@ -68,6 +68,11 @@ public abstract class AbstractTlsPeer
         return false;
     }
 
+    public int getMaxCertificateChainLength()
+    {
+        return 10;
+    }
+
     public boolean requiresCloseNotify()
     {
         return true;
