@@ -226,6 +226,12 @@ class ProvTlsServer
         return JsseUtils.allowLegacyResumption();
     }
 
+    @Override
+    public int getMaxCertificateChainLength()
+    {
+        return JsseUtils.getMaxCertificateChainLength();
+    }
+
     public synchronized boolean isHandshakeComplete()
     {
         return handshakeComplete;
