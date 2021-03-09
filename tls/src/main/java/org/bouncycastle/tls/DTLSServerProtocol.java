@@ -606,7 +606,10 @@ public class DTLSServerProtocol
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        Certificate clientCertificate = Certificate.parse(state.serverContext, buf, null);
+        Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setMaxChainLength(state.server.getMaxCertificateChainLength());
+
+        Certificate clientCertificate = Certificate.parse(options, state.serverContext, buf, null);
 
         TlsProtocol.assertEmpty(buf);
 

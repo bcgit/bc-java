@@ -1255,7 +1255,10 @@ public class TlsServerProtocol
     {
         // TODO[tls13] This currently just duplicates 'receiveCertificateMessage'
 
-        Certificate clientCertificate = Certificate.parse(tlsServerContext, buf, null);
+        Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setMaxChainLength(tlsServer.getMaxCertificateChainLength());
+
+        Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);
 
         assertEmpty(buf);
 
@@ -1288,7 +1291,10 @@ public class TlsServerProtocol
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        Certificate clientCertificate = Certificate.parse(tlsServerContext, buf, null);
+        Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setMaxChainLength(tlsServer.getMaxCertificateChainLength());
+
+        Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);
 
         assertEmpty(buf);
 

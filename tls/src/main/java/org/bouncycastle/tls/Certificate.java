@@ -8,6 +8,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 
 /**
  * Parsing and encoding of a <i>Certificate</i> struct from RFC 4346.
@@ -28,6 +29,22 @@ public class Certificate
 
     public static final Certificate EMPTY_CHAIN = new Certificate(EMPTY_CERTS);
     public static final Certificate EMPTY_CHAIN_TLS13 = new Certificate(TlsUtils.EMPTY_BYTES, EMPTY_CERT_ENTRIES);
+
+    public static class ParseOptions
+    {
+        private int maxChainLength = Integer.MAX_VALUE;
+
+        public int getMaxChainLength()
+        {
+            return maxChainLength;
+        }
+
+        public ParseOptions setMaxChainLength(int maxChainLength)
+        {
+            this.maxChainLength = maxChainLength;
+            return this;
+        }
+    }
 
     private static CertificateEntry[] convert(TlsCertificate[] certificateList)
     {
@@ -199,11 +216,32 @@ public class Certificate
      * @param endPointHashOutput the {@link OutputStream} to write the "end point hash" (or null).
      * @return a {@link Certificate} object.
      * @throws IOException
+     * @deprecated Use version taking a {@link ParseOptions} argument instead. 
      */
     public static Certificate parse(TlsContext context, InputStream messageInput, OutputStream endPointHashOutput)
         throws IOException
     {
-        final boolean isTLSv13 = TlsUtils.isTLSv13(context);
+        return parse(new ParseOptions(), context, messageInput, endPointHashOutput);
+    }
+
+    /**
+     * Parse a {@link Certificate} from an {@link InputStream}.
+     *
+     * @param options
+     *            the {@link ParseOptions} to apply during parsing.  
+     * @param context
+     *            the {@link TlsContext} of the current connection.
+     * @param messageInput
+     *            the {@link InputStream} to parse from.
+     * @param endPointHashOutput the {@link OutputStream} to write the "end point hash" (or null).
+     * @return a {@link Certificate} object.
+     * @throws IOException
+     */
+    public static Certificate parse(ParseOptions options, TlsContext context, InputStream messageInput,
+        OutputStream endPointHashOutput) throws IOException
+    {
+        final SecurityParameters securityParameters = context.getSecurityParameters();
+        final boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
 
         byte[] certificateRequestContext = null;
         if (isTLSv13)
@@ -220,14 +258,22 @@ public class Certificate
         }
 
         byte[] certListData = TlsUtils.readFully(totalLength, messageInput);
-
         ByteArrayInputStream buf = new ByteArrayInputStream(certListData);
+
+        TlsCrypto crypto = context.getCrypto();
+        int maxChainLength = Math.max(1, options.getMaxChainLength());
 
         Vector certificate_list = new Vector();
         while (buf.available() > 0)
         {
+            if (certificate_list.size() >= maxChainLength)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error,
+                    "Certificate chain longer than maximum (" + maxChainLength + ")");
+            }
+
             byte[] derEncoding = TlsUtils.readOpaque24(buf, 1);
-            TlsCertificate cert = context.getCrypto().createCertificate(derEncoding);
+            TlsCertificate cert = crypto.createCertificate(derEncoding);
 
             if (certificate_list.isEmpty() && endPointHashOutput != null)
             {
