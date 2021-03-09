@@ -73,6 +73,11 @@ public abstract class AbstractTlsPeer
         return 10;
     }
 
+    public int getMaxHandshakeMessageSize()
+    {
+        return 32768;
+    }
+
     public boolean requiresCloseNotify()
     {
         return true;

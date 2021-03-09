@@ -69,6 +69,8 @@ abstract class JsseUtils
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
     private static final int provTlsMaxCertificateChainLength =
         PropertyUtils.getIntegerSystemProperty("jdk.tls.maxCertificateChainLength", 10, 1, Integer.MAX_VALUE);
+    private static final int provTlsMaxHandshakeMessageSize =
+        PropertyUtils.getIntegerSystemProperty("jdk.tls.maxHandshakeMessageSize", 32768, 1024, Integer.MAX_VALUE);
     private static final boolean provTlsRequireCloseNotify =
         PropertyUtils.getBooleanSystemProperty("com.sun.net.ssl.requireCloseNotify", true);
     private static final boolean provTlsUseExtendedMasterSecret =
@@ -184,6 +186,11 @@ abstract class JsseUtils
     static int getMaxCertificateChainLength()
     {
         return provTlsMaxCertificateChainLength;
+    }
+
+    static int getMaxHandshakeMessageSize()
+    {
+        return provTlsMaxHandshakeMessageSize;
     }
 
     static String[] resize(String[] data, int count)
