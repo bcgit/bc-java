@@ -16,7 +16,7 @@ public final class ProtocolVersion
 
     public static final ProtocolVersion GMSSLv11 = new ProtocolVersion(0x0101, "GMSSL 1.1");
 
-
+    static final ProtocolVersion CLIENT_GM_SUPPORTED_TLS = GMSSLv11;
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_DTLS = DTLSv10;
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_TLS = SSLv3;
     static final ProtocolVersion CLIENT_LATEST_SUPPORTED_DTLS = DTLSv12;
@@ -145,6 +145,9 @@ public final class ProtocolVersion
 
         int fullVersion = version.getFullVersion();
 
+        if(fullVersion == CLIENT_GM_SUPPORTED_TLS.getFullVersion()){
+            return  true;
+        }
         return fullVersion >= CLIENT_EARLIEST_SUPPORTED_TLS.getFullVersion()
             && fullVersion <= CLIENT_LATEST_SUPPORTED_TLS.getFullVersion();
     }
@@ -228,7 +231,8 @@ public final class ProtocolVersion
 
     public boolean isTLS()
     {
-        return getMajorVersion() == 0x03;
+        final int majorVersion = getMajorVersion();
+        return majorVersion == 0x03 || majorVersion == 0x01;
     }
 
     public ProtocolVersion getEquivalentTLSVersion()
@@ -243,6 +247,7 @@ public final class ProtocolVersion
             case 0xFD:  return TLSv12;
             default:    return null;
             }
+        case 0x01: return  GMSSLv11;
         default:    return null;
         }
     }

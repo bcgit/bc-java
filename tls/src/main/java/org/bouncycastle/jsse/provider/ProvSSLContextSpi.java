@@ -109,6 +109,9 @@ class ProvSSLContextSpi
         cs.add("TLS_RSA_WITH_AES_256_CBC_SHA");
         cs.add("TLS_RSA_WITH_AES_128_CBC_SHA");
 
+        // GMSSL 1.1
+        cs.add("GMSSL_ECC_SM4_SM3");
+
         cs.retainAll(supportedCipherSuiteSet);
         cs.trimToSize();
         return Collections.unmodifiableList(cs);
@@ -480,6 +483,8 @@ class ProvSSLContextSpi
         boolean post13Active = TlsUtils.isTLSv13(latest);
         boolean pre13Active = !TlsUtils.isTLSv13(earliest);
 
+        boolean isGMSSLActive = TlsUtils.isGMSSLv11(latest);
+
         int[] candidates = new int[enabledCipherSuites.length];
 
         int count = 0;
@@ -488,6 +493,12 @@ class ProvSSLContextSpi
             CipherSuiteInfo candidate = supportedCipherSuites.get(enabledCipherSuite);
             if (null == candidate)
             {
+                continue;
+            }
+            if (isGMSSLActive && !candidate.isGMSSLv11())
+            {
+                // GMSSL specific suite different with TLS
+                // if found GMSSL active just keep gm related suites
                 continue;
             }
             if (candidate.isTLSv13())

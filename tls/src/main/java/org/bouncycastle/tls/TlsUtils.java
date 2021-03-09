@@ -316,6 +316,10 @@ public class TlsUtils
         return ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
     }
 
+    public static boolean isGMSSLv11(ProtocolVersion version) {
+        return ProtocolVersion.GMSSLv11.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
+    }
+
     public static boolean isTLSv13(TlsContext context)
     {
         return isTLSv13(context.getServerVersion());

@@ -1612,10 +1612,10 @@ public class TlsClientProtocol
                 // TODO[tls13] Prevent offering SSLv3 AND TLSv13?
                 recordStream.setWriteVersion(ProtocolVersion.SSLv3);
             }
-//            else if (ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), ProtocolVersion.GMSSLv11))
-//            {
-//                recordStream.setWriteVersion(ProtocolVersion.GMSSLv11);
-//            }
+            else if (ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), ProtocolVersion.GMSSLv11))
+            {
+                recordStream.setWriteVersion(ProtocolVersion.GMSSLv11);
+            }
             else
             {
                 recordStream.setWriteVersion(ProtocolVersion.TLSv10);

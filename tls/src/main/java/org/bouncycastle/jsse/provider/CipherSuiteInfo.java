@@ -81,6 +81,14 @@ class CipherSuiteInfo
         return isTLSv13;
     }
 
+    /**
+     * GMSSL 1.1 crypto suites Start with 0xe0
+     * @return true - GMSSL suite; false - not
+     */
+    boolean isGMSSLv11(){
+        return ((cipherSuite >> 8) & 0xFF) == 0xe0;
+    }
+
     private static void addAll(Set<String> decomposition, String... entries)
     {
         for (String entry : entries)
