@@ -356,6 +356,12 @@ class ProvTlsClient
     }
 
     @Override
+    public int getMaxHandshakeMessageSize()
+    {
+        return JsseUtils.getMaxHandshakeMessageSize();
+    }
+
+    @Override
     public TlsSession getSessionToResume()
     {
         if (provClientEnableSessionResumption)
