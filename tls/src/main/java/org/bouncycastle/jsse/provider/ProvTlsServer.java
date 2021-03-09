@@ -232,6 +232,12 @@ class ProvTlsServer
         return JsseUtils.getMaxCertificateChainLength();
     }
 
+    @Override
+    public int getMaxHandshakeMessageSize()
+    {
+        return JsseUtils.getMaxHandshakeMessageSize();
+    }
+
     public synchronized boolean isHandshakeComplete()
     {
         return handshakeComplete;
