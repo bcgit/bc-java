@@ -99,6 +99,26 @@ public class TlsDHUtils
         return -1;
     }
 
+    public static DHGroup getStandardGroupForDHParameters(BigInteger p, BigInteger g)
+    {
+        DHGroup[] standardGroups = new DHGroup[] { DHStandardGroups.rfc7919_ffdhe2048,
+            DHStandardGroups.rfc7919_ffdhe3072, DHStandardGroups.rfc7919_ffdhe4096, DHStandardGroups.rfc7919_ffdhe6144,
+            DHStandardGroups.rfc7919_ffdhe8192, DHStandardGroups.rfc3526_1536, DHStandardGroups.rfc3526_2048,
+            DHStandardGroups.rfc3526_3072, DHStandardGroups.rfc3526_4096, DHStandardGroups.rfc3526_6144,
+            DHStandardGroups.rfc3526_8192, DHStandardGroups.rfc5996_768, DHStandardGroups.rfc5996_1024 };
+
+        for (int i = 0; i < standardGroups.length; ++i)
+        {
+            DHGroup dhGroup = standardGroups[i];
+            if (dhGroup != null && dhGroup.getP().equals(p) && dhGroup.getG().equals(g))
+            {
+                return dhGroup;
+            }
+        }
+
+        return null;
+    }
+
     public static TlsDHConfig receiveDHConfig(TlsContext context, TlsDHGroupVerifier dhGroupVerifier,
         InputStream input) throws IOException
     {
@@ -108,7 +128,12 @@ public class TlsDHUtils
         int namedGroup = getNamedGroupForDHParameters(p, g);
         if (namedGroup < 0)
         {
-            DHGroup dhGroup = new DHGroup(p, null, g, 0);
+            DHGroup dhGroup = getStandardGroupForDHParameters(p, g);
+            if (null == dhGroup)
+            {
+                dhGroup = new DHGroup(p, null, g, 0);
+            }
+
             if (!dhGroupVerifier.accept(dhGroup))
             {
                 throw new TlsFatalAlert(AlertDescription.insufficient_security);
