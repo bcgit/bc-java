@@ -1817,6 +1817,8 @@ public class TlsUtils
         case PRFAlgorithm.tls_prf_sha384:
         case PRFAlgorithm.tls13_hkdf_sha384:
             return HashAlgorithm.sha384;
+        case PRFAlgorithm.gmssl11_prf_sm3:
+            return HashAlgorithm.sm3;
         default:
             throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
         }
@@ -1847,6 +1849,7 @@ public class TlsUtils
     {
         ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
+        final boolean isGMSSLv11 = isGMSSLv11(negotiatedVersion);
         final boolean isTLSv13 = isTLSv13(negotiatedVersion);
         final boolean isTLSv12Exactly = !isTLSv13 && isTLSv12(negotiatedVersion);
         final boolean isSSL = negotiatedVersion.isSSL();
@@ -2094,6 +2097,15 @@ public class TlsUtils
                 return PRFAlgorithm.ssl_prf_legacy;
             }
             return PRFAlgorithm.tls_prf_legacy;
+        }
+
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+        {
+            if (isGMSSLv11)
+            {
+                return PRFAlgorithm.gmssl11_prf_sm3;
+            }
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         default:
@@ -4288,6 +4300,9 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_RSA:
             return factory.createSRPKeyExchangeClient(keyExchange, client.getSRPIdentity(),
                 client.getSRPConfigVerifier());
+
+        case KeyExchangeAlgorithm.SM2:
+            return factory.createSM2KeyExchange(keyExchange);
 
         default:
             /*

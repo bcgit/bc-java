@@ -37,7 +37,7 @@ public class GMSSLClientTest
     private static void bc(InetAddress HOST, int port) throws IOException
     {
         final MockGMSSLClient client = new MockGMSSLClient();
-        Socket s = new Socket("localhost", port,null, 2222);
+        Socket s = new Socket("localhost", port,null, 2333);
         TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(client);
 

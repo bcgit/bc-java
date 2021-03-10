@@ -17,6 +17,7 @@ public class SignatureAndHashAlgorithm
     public static final SignatureAndHashAlgorithm rsa_pss_pss_sha256 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha256);
     public static final SignatureAndHashAlgorithm rsa_pss_pss_sha384 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha384);
     public static final SignatureAndHashAlgorithm rsa_pss_pss_sha512 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha512);
+    public static final SignatureAndHashAlgorithm sm2 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.sm2);
 
     public static SignatureAndHashAlgorithm getInstance(short hashAlgorithm, short signatureAlgorithm)
     {
@@ -41,6 +42,7 @@ public class SignatureAndHashAlgorithm
         case SignatureAlgorithm.rsa_pss_pss_sha256:     return rsa_pss_pss_sha256;
         case SignatureAlgorithm.rsa_pss_pss_sha384:     return rsa_pss_pss_sha384;
         case SignatureAlgorithm.rsa_pss_pss_sha512:     return rsa_pss_pss_sha512;
+        case SignatureAlgorithm.sm2:
         default:
             return new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, signatureAlgorithm);
         }

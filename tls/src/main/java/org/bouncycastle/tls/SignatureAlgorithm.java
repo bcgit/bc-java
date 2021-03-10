@@ -9,6 +9,7 @@ public class SignatureAlgorithm
     public static final short rsa = 1;
     public static final short dsa = 2;
     public static final short ecdsa = 3;
+    public static final short sm2 = 23;
 
     /*
      * RFC 8422
@@ -25,6 +26,7 @@ public class SignatureAlgorithm
     public static final short rsa_pss_pss_sha256 = 9;
     public static final short rsa_pss_pss_sha384 = 10;
     public static final short rsa_pss_pss_sha512 = 11;
+
 
     public static short getClientCertificateType(short signatureAlgorithm)
     {
@@ -45,6 +47,7 @@ public class SignatureAlgorithm
         case SignatureAlgorithm.ecdsa:
         case SignatureAlgorithm.ed25519:
         case SignatureAlgorithm.ed448:
+        case SignatureAlgorithm.sm2:
             return ClientCertificateType.ecdsa_sign;
 
         default:
@@ -80,6 +83,8 @@ public class SignatureAlgorithm
             return "rsa_pss_pss_sha384";
         case rsa_pss_pss_sha512:
             return "rsa_pss_pss_sha512";
+        case sm2:
+            return "sm2";
         default:
             return "UNKNOWN";
         }
