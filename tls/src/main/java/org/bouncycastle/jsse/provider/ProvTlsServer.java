@@ -53,6 +53,9 @@ class ProvTlsServer
     // TODO[jsse] Integrate this into NamedGroupInfo
     private static final int provEphemeralDHKeySize = PropertyUtils.getIntegerSystemProperty("jdk.tls.ephemeralDHKeySize", 2048, 1024, 8192);
 
+    private static final boolean provServerEnableCA = PropertyUtils
+        .getBooleanSystemProperty("jdk.tls.server.enableCAExtension", true);
+
     private static final boolean provServerEnableSessionResumption = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.server.enableSessionResumption", true);
 
@@ -272,12 +275,11 @@ class ProvTlsServer
         Vector<SignatureAndHashAlgorithm> serverSigAlgs = SignatureSchemeInfo
             .getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemes);
 
-        /*
-         * TODO[tls13] It appears SunJSSE will add a system property for this (default enabled?),
-         * perhaps "jdk.tls[.client/server].enableCAExtension" or similar.
-         */
-        Vector<X500Name> certificateAuthorities = JsseUtils
-            .getCertificateAuthorities(contextData.getX509TrustManager());
+        Vector<X500Name> certificateAuthorities = null;
+        if (provServerEnableCA)
+        {
+            certificateAuthorities = JsseUtils.getCertificateAuthorities(contextData.getX509TrustManager());
+        }
 
         if (TlsUtils.isTLSv13(negotiatedVersion))
         {
@@ -707,12 +709,23 @@ class ProvTlsServer
             }
         }
 
-        if (provServerEnableTrustedCAKeys)
+        if (TlsUtils.isTLSv13(context))
         {
             @SuppressWarnings("unchecked")
-            Vector<TrustedAuthority> trustedCAKeys = this.trustedCAKeys;
+            Vector<X500Name> certificateAuthorities = TlsExtensionsUtils
+                .getCertificateAuthoritiesExtension(clientExtensions);
 
-            jsseSecurityParameters.trustedIssuers = JsseUtils.getTrustedIssuers(trustedCAKeys);
+            jsseSecurityParameters.trustedIssuers = JsseUtils.toX500Principals(certificateAuthorities);
+        }
+        else
+        {
+            if (provServerEnableTrustedCAKeys)
+            {
+                @SuppressWarnings("unchecked")
+                Vector<TrustedAuthority> trustedCAKeys = this.trustedCAKeys;
+
+                jsseSecurityParameters.trustedIssuers = JsseUtils.getTrustedIssuers(trustedCAKeys);
+            }
         }
     }
 
