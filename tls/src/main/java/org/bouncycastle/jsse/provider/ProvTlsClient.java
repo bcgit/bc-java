@@ -52,15 +52,20 @@ class ProvTlsClient
 {
     private static final Logger LOG = Logger.getLogger(ProvTlsClient.class.getName());
 
-    private static final boolean provEnableSNIExtension = PropertyUtils.getBooleanSystemProperty("jsse.enableSNIExtension", true);
-    private static final boolean provClientEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
-        "jdk.tls.client.enableStatusRequestExtension", true);
+    private static final boolean provClientEnableCA = PropertyUtils
+        .getBooleanSystemProperty("jdk.tls.client.enableCAExtension", false);
 
     private static final boolean provClientEnableSessionResumption = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableSessionResumption", true);
 
+    private static final boolean provClientEnableStatusRequest = PropertyUtils
+        .getBooleanSystemProperty("jdk.tls.client.enableStatusRequestExtension", true);
+
     private static final boolean provClientEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableTrustedCAKeysExtension", false);
+
+    private static final boolean provEnableSNIExtension = PropertyUtils
+        .getBooleanSystemProperty("jsse.enableSNIExtension", true);
 
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
@@ -80,13 +85,15 @@ class ProvTlsClient
     @Override
     protected Vector<X500Name> getCertificateAuthorities()
     {
-        /*
-         * TODO[tls13] It appears SunJSSE will add a system property for this (default disabled?),
-         * perhaps "jdk.tls[.client/server].enableCAExtension" or similar.
-         * 
-         * TODO[tls13] Avoid duplication b/w this method and getTrustedCAIndication.
-         */
-//        return JsseUtils.getCertificateAuthorities(manager.getContextData().getX509TrustManager());
+        if (provClientEnableCA)
+        {
+            /*
+             * TODO[tls13] Avoid fetching the CAs more than once if this method and
+             * getTrustedCAIndication are both called.
+             */
+            return JsseUtils.getCertificateAuthorities(manager.getContextData().getX509TrustManager());
+        }
+
         return null;
     }
 
