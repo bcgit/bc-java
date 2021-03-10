@@ -140,7 +140,7 @@ public class ESTService
 
             if (resp.getStatusCode() == 200)
             {
-                if (!"application/pkcs7-mime".equals(resp.getHeaders().getFirstValue("Content-Type")))
+                if (!resp.getHeaders().getFirstValue("Content-Type").contains("application/pkcs7-mime"))
                 {
                     String j = resp.getHeaders().getFirstValue("Content-Type") != null ? " got " + resp.getHeaders().getFirstValue("Content-Type") : " but was not present.";
                     throw new ESTException(("Response : " + url.toString() + "Expecting application/pkcs7-mime ") + j, null, resp.getStatusCode(), resp.getInputStream());
