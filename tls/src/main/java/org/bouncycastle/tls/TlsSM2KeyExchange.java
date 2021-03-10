@@ -127,11 +127,28 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
         TlsUtils.requireSignerCredentials(clientCredentials);
     }
 
+    /**
+     * generate preMasterSecret then use enc certificate public key
+     * enc preMasterSecret
+     * @param output
+     * @throws IOException
+     */
     public void generateClientKeyExchange(OutputStream output) throws IOException
     {
-        throw new TlsFatalAlert(AlertDescription.internal_error);
-//        // TODO: SM2加密工具
-//        this.preMasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, serverCertificate, output);
+        /*
+         * GMSSL PreMasterSecret struct same with rsaPreMasterSecret
+         *
+         * struct
+         * {
+         *     ProtocolVersion client_version;
+         *     opaque random[46];
+         * } PreMasterSecret
+         */
+        this.preMasterSecret = context.getCrypto()
+                .generateRSAPreMasterSecret(context.getClientVersion());
+        // add  BcGmsslEncryptor to support encrypt preMasterSecret
+        byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(serverEncCertificate);
+        TlsUtils.writeEncryptedPMS(context, encryptedPreMasterSecret, output);
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException

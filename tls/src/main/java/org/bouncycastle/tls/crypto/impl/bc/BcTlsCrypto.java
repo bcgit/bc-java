@@ -23,19 +23,13 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SM3Digest;
-import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.params.SRP6GroupParameters;
+import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.EncryptionAlgorithm;
@@ -62,14 +56,7 @@ import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
-import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
-import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
-import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
-import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
-import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
-import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
-import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
+import org.bouncycastle.tls.crypto.impl.*;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -193,28 +180,25 @@ public class BcTlsCrypto
         BcTlsCertificate bcCert = BcTlsCertificate.convert(this, certificate);
         bcCert.validateKeyUsage(KeyUsage.keyEncipherment);
 
-        final RSAKeyParameters pubKeyRSA = bcCert.getPubKeyRSA();
 
-        return new TlsEncryptor()
+        final AsymmetricKeyParameter publicKey = bcCert.getPublicKey();
+
+        if(publicKey instanceof RSAKeyParameters)
         {
-            public byte[] encrypt(byte[] input, int inOff, int length)
-                throws IOException
-            {
-                try
-                {
-                    PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
-                    encoding.init(true, new ParametersWithRandom(pubKeyRSA, getSecureRandom()));
-                    return encoding.processBlock(input, inOff, length);
-                }
-                catch (InvalidCipherTextException e)
-                {
-                    /*
-                     * This should never happen, only during decryption.
-                     */
-                    throw new TlsFatalAlert(AlertDescription.internal_error, e);
-                }
-            }
-        };
+            final RSAKeyParameters pubKeyRSA = (RSAKeyParameters) publicKey;
+            return new BcTlsRSAEncryptor(pubKeyRSA, getSecureRandom());
+        }
+        else if(publicKey instanceof ECPublicKeyParameters)
+        {
+            final ECPublicKeyParameters pubKeySM2 = (ECPublicKeyParameters) publicKey;
+            return new BcGmsslEncryptor(pubKeySM2, getSecureRandom());
+        }
+        else
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+
     }
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
@@ -434,6 +418,8 @@ public class BcTlsCrypto
             return new SHA384Digest((SHA384Digest)hash);
         case HashAlgorithm.sha512:
             return new SHA512Digest((SHA512Digest)hash);
+        case HashAlgorithm.sm3:
+            return new SM3Digest((SM3Digest)hash);
         default:
             throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
