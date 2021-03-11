@@ -9,8 +9,6 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -63,13 +61,7 @@ public class BcGmsslEncryptor implements TlsEncryptor
             sm2Cipher.setyCoordinate(new ASN1Integer(new BigInteger(1, y)));
             sm2Cipher.setHash(new DEROctetString(hash));
             sm2Cipher.setCipherText(new DEROctetString(cipherText));
-            final byte[] encoded = sm2Cipher.getEncoded();
-            System.out.printf(">> PreMasterSecret Key: %s\n", Hex.toHexString(input).toUpperCase());
-            System.out.printf(">> CipherTtext: %s\n", Hex.toHexString(encoded).toUpperCase());
-            System.out.printf(">> C1C3C2: %s\n", Hex.toHexString(c1c3c2).toUpperCase());
-            System.out.printf(">> X: %s\n", Hex.toHexString(x).toUpperCase());
-            System.out.printf(">> Y: %s\n", Hex.toHexString(y).toUpperCase());
-            return encoded;
+            return sm2Cipher.getEncoded();
         } catch (InvalidCipherTextException e)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);

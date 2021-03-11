@@ -429,10 +429,8 @@ public class BcTlsCrypto
             throws IOException
     {
         // SM4 Block size 128bit => 16 byte
-        return new TlsBlockCipher(this, cryptoParams,
-                new BlockOperator(createSM4BlockCipher(), true),
-                new BlockOperator(createSM4BlockCipher(), false),
-                createMAC(cryptoParams, macAlgorithm),
+        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createSM4BlockCipher(), true),
+                new BlockOperator(createSM4BlockCipher(), false), createMAC(cryptoParams, macAlgorithm),
                 createMAC(cryptoParams, macAlgorithm), 16);
     }
 

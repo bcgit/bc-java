@@ -28,6 +28,7 @@ public class TlsBlockCipher
     protected final boolean useExplicitIV;
     protected final boolean acceptExtraPadding;
     protected final boolean useExtraPadding;
+    protected final boolean useGMSSL;
 
     protected final TlsBlockCipherImpl decryptCipher, encryptCipher;
     protected final TlsSuiteMac readMac, writeMac;
@@ -49,6 +50,7 @@ public class TlsBlockCipher
 
         this.encryptThenMAC = securityParameters.isEncryptThenMAC();
         this.useExplicitIV = TlsImplUtils.isTLSv11(negotiatedVersion);
+        this.useGMSSL = TlsUtils.isGMSSLv11(negotiatedVersion);
 
         this.acceptExtraPadding = !negotiatedVersion.isSSL();
 
@@ -205,7 +207,7 @@ public class TlsBlockCipher
         }
 
         int totalSize = len + macSize + padding_length;
-        if (useExplicitIV)
+        if (useExplicitIV || useGMSSL)
         {
             totalSize += blockSize;
         }
@@ -218,6 +220,29 @@ public class TlsBlockCipher
             // Technically the explicit IV will be the encryption of this nonce
             byte[] explicitIV = cryptoParams.getNonceGenerator().generateNonce(blockSize);
             System.arraycopy(explicitIV, 0, outBuf, outOff, blockSize);
+            outOff += blockSize;
+        }
+
+        if (useGMSSL)
+        {
+            /*
+             * GMSSL GenericBlockCipher struct same as RFC5246 TLS 1.2
+             * struct {
+             *     opaque IV[SecurityParameters.record_iv_length];
+             *     block-ciphered struct {
+             *         opaque content[TLSCompressed.length];
+             *         opaque MAC[SecurityParameters.mac_length];
+             *         uint8 padding[GenericBlockCipher.padding_length];
+             *         uint8 padding_length;
+             *     };
+             * } GenericBlockCipher;
+             */
+            byte[] explicitIV = cryptoParams.getNonceGenerator().generateNonce(blockSize);
+            System.arraycopy(explicitIV, 0, outBuf, outOff, blockSize);
+            // set cipher with new iv.
+            encryptCipher.init(explicitIV, 0, blockSize);
+            // GMSSL use explicit IV put after header, this part not be encrypted.
+            headerAllocation += blockSize;
             outOff += blockSize;
         }
 
@@ -309,6 +334,18 @@ public class TlsBlockCipher
                  */
                 throw new TlsFatalAlert(AlertDescription.bad_record_mac);
             }
+        }
+
+        if(useGMSSL)
+        {
+            // Get explicit IV from begin of message
+            byte[] explicitIV = new byte[blockSize];
+            System.arraycopy(ciphertext, offset, explicitIV, 0, blockSize);
+            // set explicit IV to decrypt cipher
+            decryptCipher.init(explicitIV, 0, blockSize);
+            // encrypted part does not include iv
+            offset += blockSize;
+            blocks_length -= blockSize;
         }
 
         decryptCipher.doFinal(ciphertext, offset, blocks_length, ciphertext, offset);
