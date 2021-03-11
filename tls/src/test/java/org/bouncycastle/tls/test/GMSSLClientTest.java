@@ -28,23 +28,23 @@ public class GMSSLClientTest
         Security.addProvider(provider);
         Security.addProvider(new BouncyCastleJsseProvider());
 
-        InetAddress host = InetAddress.getByName("localhost");
+        String host = "sm2test.ovssl.cn";
         int port = 443;
 //        jsse(host, port);
         bc(host, port);
     }
 
-    private static void bc(InetAddress HOST, int port) throws IOException
+    private static void bc(String host, int port) throws IOException
     {
         final MockGMSSLClient client = new MockGMSSLClient();
-        Socket s = new Socket(HOST, port);
+        Socket s = new Socket(host, port);
         TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(client);
 
 
         OutputStream out = protocol.getOutputStream();
         String req = "GET / HTTP/1.1\r\n" +
-                "Host: localhost\r\n" +
+                "Host: "+ host + "\r\n" +
                 "Connection: close\r\n\r\n";
 
         out.write(req.getBytes("UTF-8"));
