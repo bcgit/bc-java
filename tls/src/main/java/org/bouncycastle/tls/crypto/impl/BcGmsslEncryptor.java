@@ -49,22 +49,28 @@ public class BcGmsslEncryptor implements TlsEncryptor
             ByteArrayInputStream stream = new ByteArrayInputStream(c1c3c2);
             // read 1 byte for uncompressed point prefix 0x04
             stream.read();
-            byte[] x = TlsUtils.readFully(32, stream);
-            byte[] y = TlsUtils.readFully(32, stream);
-            byte[] hash = TlsUtils.readFully(32, stream);
-            final byte[] cipherText = TlsUtils.readFully(length, stream);
+            final byte[] x = new byte[32];
+            final byte[] y = new byte[32];
+            final byte[] hash = new byte[32];
+            final byte[] cipherText = new byte[length];
+            stream.read(x);
+            stream.read(y);
+            stream.read(hash);
+            stream.read(cipherText);
 
             final SM2Cipher sm2Cipher = new SM2Cipher();
-            sm2Cipher.setxCoordinate(new ASN1Integer(new BigInteger(x)));
-            sm2Cipher.setyCoordinate(new ASN1Integer(new BigInteger(y)));
+            sm2Cipher.setxCoordinate(new ASN1Integer(new BigInteger(1, x)));
+            sm2Cipher.setyCoordinate(new ASN1Integer(new BigInteger(1, y)));
             sm2Cipher.setHash(new DEROctetString(hash));
             sm2Cipher.setCipherText(new DEROctetString(cipherText));
             final byte[] encoded = sm2Cipher.getEncoded();
             System.out.printf(">> PreMasterSecret Key: %s\n", Hex.toHexString(input).toUpperCase());
             System.out.printf(">> CipherTtext: %s\n", Hex.toHexString(encoded).toUpperCase());
+            System.out.printf(">> C1C3C2: %s\n", Hex.toHexString(c1c3c2).toUpperCase());
+            System.out.printf(">> X: %s\n", Hex.toHexString(x).toUpperCase());
+            System.out.printf(">> Y: %s\n", Hex.toHexString(y).toUpperCase());
             return encoded;
-        }
-        catch (InvalidCipherTextException e)
+        } catch (InvalidCipherTextException e)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
