@@ -766,8 +766,10 @@ class ProvSSLContextSpi
         this.contextData = null;
 
         JcaTlsCrypto crypto = cryptoProvider.create(sr);
-        BCX509ExtendedKeyManager x509KeyManager = selectX509KeyManager(crypto.getHelper(), kms);
-        BCX509ExtendedTrustManager x509TrustManager = selectX509TrustManager(crypto.getHelper(), tms);
+        JcaJceHelper helper = crypto.getHelper();
+
+        BCX509ExtendedKeyManager x509KeyManager = selectX509KeyManager(helper, kms);
+        BCX509ExtendedTrustManager x509TrustManager = selectX509TrustManager(helper, tms);
 
         // Trigger (possibly expensive) RNG initialization here to avoid timeout in an actual handshake
         crypto.getSecureRandom().nextInt();

@@ -8,6 +8,8 @@ import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -36,6 +38,24 @@ public class ArmoredInputStreamTest
             "b5f289a884ce649b5b00b46ad33ee43b0db8c0202cf1fdde4c3b61d5fec99e3024016ccdb0ff2d321f08781d08e4312de38245eb" +
             "bc2af032d2a59e36be6467bc23456b4ac178d36cf9f45df5e833a1981ed1a1032679ea0a");
 
+    private static final String badHeaderData1 =
+          "-----BEGIN PGP MESSAGE-----\n"
+        + "Version: BCPG v1.32\n"
+        + "Comment: A dummy message\n"
+        + "Comment actually not really as there is no colon"
+        + " \t \t\n"
+        + "SGVsbG8gV29ybGQh\n"
+        + "=d9Xi\n"
+        + "-----END PGP MESSAGE-----\n";
+
+    private static final String badHeaderData2 =
+          "-----BEGIN PGP MESSAGE-----\n"
+        + "Comment actually not really as there is no colon"
+        + " \t \t\n"
+        + "SGVsbG8gV29ybGQh\n"
+        + "=d9Xi\n"
+        + "-----END PGP MESSAGE-----\n";
+
     public String getName()
     {
         return "ArmoredInputStream";
@@ -47,13 +67,36 @@ public class ArmoredInputStreamTest
         try
         {
             PGPObjectFactory pgpObjectFactoryOfTestFile = new PGPObjectFactory(
-                new ArmoredInputStream(new ByteArrayInputStream(bogusData)), new JcaKeyFingerprintCalculator());
+                new ArmoredInputStream(new ByteArrayInputStream(Arrays.concatenate(Strings.toByteArray("-----BEGIN PGP MESSAGE-----\n"
+                        + "Version: BCPG v1.32\n\n"), bogusData))), new JcaKeyFingerprintCalculator());
             pgpObjectFactoryOfTestFile.nextObject(); // <-- EXCEPTION HERE
             fail("no exception");
         }
         catch (IOException e)
         {
             isTrue("invalid armor".equals(e.getMessage()));
+        }
+
+        try
+        {
+            PGPObjectFactory pgpObjectFactoryOfTestFile = new PGPObjectFactory(
+                new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(badHeaderData1))), new JcaKeyFingerprintCalculator());
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isTrue("invalid armor header".equals(e.getMessage()));
+        }
+
+        try
+        {
+            PGPObjectFactory pgpObjectFactoryOfTestFile = new PGPObjectFactory(
+                new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(badHeaderData2))), new JcaKeyFingerprintCalculator());
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isTrue("invalid armor header".equals(e.getMessage()));
         }
     }
 
