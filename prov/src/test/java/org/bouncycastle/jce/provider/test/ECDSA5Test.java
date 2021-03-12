@@ -1258,13 +1258,13 @@ public class ECDSA5Test
         testECDSA239bitBinary();
         testGeneration();
         testKeyPairGenerationWithOIDs();
-       // testNamedCurveParameterPreservation();
-       // testNamedCurveSigning();
-//        testBSI();
-//        testMQVwithHMACOnePass();
+        testNamedCurveParameterPreservation();
+        testNamedCurveSigning();
+        testBSI();
+        testMQVwithHMACOnePass();
         testAlgorithmParameters();
         testModified();
-//        testSM2();
+        testSM2();
         testNonsense();
         testNamedCurveInKeyFactory();
         testKeyFactory();
