@@ -12,7 +12,6 @@ import java.util.List;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
@@ -282,7 +281,7 @@ public class PGPSecretKey
         sGen.setHashedSubpackets(hashedPcks);
         sGen.setUnhashedSubpackets(unhashedPcks);
 
-        List subSigs = new ArrayList();
+        List<PGPSignature> subSigs = new ArrayList<>();
 
         subSigs.add(sGen.generateCertification(masterKeyPair.getPublicKey(), keyPair.getPublicKey()));
 
@@ -725,7 +724,7 @@ public class PGPSecretKey
         {
             for (int i = 0; i != pub.keySigs.size(); i++)
             {
-                ((PGPSignature)pub.keySigs.get(i)).encode(out);
+                pub.keySigs.get(i).encode(out);
             }
 
             for (int i = 0; i != pub.ids.size(); i++)
@@ -745,14 +744,14 @@ public class PGPSecretKey
 
                 if (pub.idTrusts.get(i) != null)
                 {
-                    out.writePacket((ContainedPacket)pub.idTrusts.get(i));
+                    out.writePacket(pub.idTrusts.get(i));
                 }
 
-                List sigs = (ArrayList)pub.idSigs.get(i);
+                List<PGPSignature> sigs = pub.idSigs.get(i);
 
                 for (int j = 0; j != sigs.size(); j++)
                 {
-                    ((PGPSignature)sigs.get(j)).encode(out);
+                    sigs.get(j).encode(out);
                 }
             }
         }
@@ -760,7 +759,7 @@ public class PGPSecretKey
         {
             for (int j = 0; j != pub.subSigs.size(); j++)
             {
-                ((PGPSignature)pub.subSigs.get(j)).encode(out);
+                pub.subSigs.get(j).encode(out);
             }
         }
     }

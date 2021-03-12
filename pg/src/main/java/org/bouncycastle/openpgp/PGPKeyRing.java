@@ -43,13 +43,13 @@ public abstract class PGPKeyRing
             :   null;
     }
 
-    static List readSignaturesAndTrust(
+    static List<PGPSignature> readSignaturesAndTrust(
         BCPGInputStream pIn)
         throws IOException
     {
         try
         {
-            List sigList = new ArrayList();
+            List<PGPSignature> sigList = new ArrayList<>();
 
             while (pIn.nextPacketTag() == PacketTags.SIGNATURE)
             {
@@ -71,8 +71,8 @@ public abstract class PGPKeyRing
     static void readUserIDs(
         BCPGInputStream pIn,
         List ids,
-        List idTrusts,
-        List idSigs)
+        List<TrustPacket> idTrusts,
+        List<List<PGPSignature>> idSigs)
         throws IOException
     {
         while (pIn.nextPacketTag() == PacketTags.USER_ID

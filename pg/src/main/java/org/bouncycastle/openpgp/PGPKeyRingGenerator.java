@@ -18,10 +18,10 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
  */
 public class PGPKeyRingGenerator
 {    
-    List                                keys = new ArrayList();
+    List<PGPSecretKey>                  keys = new ArrayList<>();
 
     private PBESecretKeyEncryptor       keyEncryptor;
-    private PGPDigestCalculator checksumCalculator;
+    private PGPDigestCalculator         checksumCalculator;
     private PGPKeyPair                  masterKey;
     private PGPSignatureSubpacketVector hashedPcks;
     private PGPSignatureSubpacketVector unhashedPcks;
@@ -87,8 +87,8 @@ public class PGPKeyRingGenerator
         this.checksumCalculator = checksumCalculator;
         this.keySignerBuilder = keySignerBuilder;
 
-        PGPSignature certSig = (PGPSignature)originalSecretRing.getPublicKey().getSignatures().next();
-        List hashedVec = new ArrayList();
+        PGPSignature certSig = originalSecretRing.getPublicKey().getSignatures().next();
+        List<SignatureSubpacket> hashedVec = new ArrayList<>();
         PGPSignatureSubpacketVector existing = certSig.getHashedSubPackets();
         for (int i = 0; i != existing.size(); i++)
         {
@@ -99,7 +99,7 @@ public class PGPKeyRingGenerator
             hashedVec.add(existing.packets[i]);
         }
         this.hashedPcks = new PGPSignatureSubpacketVector(
-            (SignatureSubpacket[])hashedVec.toArray(new SignatureSubpacket[hashedVec.size()]));
+                hashedVec.toArray(new SignatureSubpacket[0]));
         this.unhashedPcks = certSig.getUnhashedSubPackets();
 
         keys.addAll(originalSecretRing.keys);
@@ -146,7 +146,7 @@ public class PGPKeyRingGenerator
             sGen.setHashedSubpackets(hashedPcks);
             sGen.setUnhashedSubpackets(unhashedPcks);
 
-            List                 subSigs = new ArrayList();
+            List<PGPSignature> subSigs = new ArrayList<>();
             
             subSigs.add(sGen.generateCertification(masterKey.getPublicKey(), keyPair.getPublicKey()));
 
@@ -184,14 +184,14 @@ public class PGPKeyRingGenerator
      */
     public PGPPublicKeyRing generatePublicKeyRing()
     {
-        Iterator it = keys.iterator();
-        List     pubKeys = new ArrayList();
+        Iterator<PGPSecretKey> it = keys.iterator();
+        List<PGPPublicKey>     pubKeys = new ArrayList<>();
         
-        pubKeys.add(((PGPSecretKey)it.next()).getPublicKey());
+        pubKeys.add(it.next().getPublicKey());
         
         while (it.hasNext())
         {
-            pubKeys.add(((PGPSecretKey)it.next()).getPublicKey());
+            pubKeys.add(it.next().getPublicKey());
         }
         
         return new PGPPublicKeyRing(pubKeys);
