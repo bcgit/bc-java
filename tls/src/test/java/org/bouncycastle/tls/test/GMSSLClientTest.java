@@ -3,6 +3,7 @@ package org.bouncycastle.tls.test;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.util.io.Streams;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -28,8 +29,10 @@ public class GMSSLClientTest
         Security.addProvider(provider);
         Security.addProvider(new BouncyCastleJsseProvider());
 
-        String host = "sm2test.ovssl.cn";
-        int port = 443;
+        String host = "localhost";
+        int port = 5557;
+//        String host = "sm2test.ovssl.cn";
+//        int port = 443;
 //        jsse(host, port);
         bc(host, port);
     }
@@ -49,26 +52,22 @@ public class GMSSLClientTest
 
         out.write(req.getBytes("UTF-8"));
         out.flush();
-        InputStream in = protocol.getInputStream();
-        byte[] buffer = new byte[2048];
-        in.read(buffer);
-        System.out.println(new String(buffer));
-
+        Streams.pipeAll(protocol.getInputStream(), System.out);
         out.close();
-        in.close();
+
 
     }
 
-    private static void jsse(InetAddress HOST, int port) throws IOException, NoSuchProviderException, NoSuchAlgorithmException, KeyManagementException
+    private static void jsse(String host, int port) throws IOException, NoSuchProviderException, NoSuchAlgorithmException, KeyManagementException
     {
         SSLContext clientContext = SSLContext.getInstance("GMSSL", BouncyCastleJsseProvider.PROVIDER_NAME);
         clientContext.init(new KeyManager[]{}, new TrustManager[]{}, new SecureRandom());
         SSLSocketFactory fact = clientContext.getSocketFactory();
-        SSLSocket cSock = (SSLSocket) fact.createSocket(HOST, port);
+        SSLSocket cSock = (SSLSocket) fact.createSocket(host, port);
 
         OutputStream out = cSock.getOutputStream();
         String req = "GET / HTTP/1.1\r\n" +
-                "Host: localhost\r\n" +
+                "Host: "+host+"\r\n" +
                 "Connection: close\r\n\r\n";
 
         out.write(req.getBytes("UTF-8"));

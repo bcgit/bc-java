@@ -9,7 +9,9 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 
 /**
- * @author 权观宇
+ * Mock GMSSL client
+ *
+ * @author Cliven
  * @since 2021-03-09 14:01:50
  */
 public class MockGMSSLClient extends AbstractTlsClient

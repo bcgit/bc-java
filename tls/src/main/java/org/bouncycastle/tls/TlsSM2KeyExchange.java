@@ -1,9 +1,11 @@
 package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,7 +30,8 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
         }
     }
 
-    protected TlsCredentialedDecryptor serverCredentials = null;
+    protected TlsCredentialedDecryptor serverDecryptor = null;
+    protected TlsCredentialedSigner serverSigner = null;
     /**
      * first cert of certificate list
      * use to sign server side key exchange message
@@ -47,6 +50,7 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
      * use to encrypt client generate preMasterSecret.
      */
     protected TlsCertificate serverEncCertificate;
+
     protected TlsSecret preMasterSecret;
 
     public TlsSM2KeyExchange(int keyExchange)
@@ -61,7 +65,34 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
     {
-        this.serverCredentials = TlsUtils.requireDecryptorCredentials(serverCredentials);
+        if(serverCredentials instanceof TlsCredentialedDecryptor && serverCredentials instanceof TlsCredentialedSigner)
+        {
+            serverSigner = (TlsCredentialedSigner) serverCredentials;
+            serverDecryptor = (TlsCredentialedDecryptor) serverCredentials;
+            final TlsCertificate[] certificateList = serverCredentials.getCertificate().getCertificateList();
+            if(certificateList == null || certificateList.length < 2)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+            // get certificate
+            serverSigCertificate = certificateList[0];
+            serverEncCertificate = certificateList[1];
+        }
+        else
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    @Override
+    public byte[] generateServerKeyExchange() throws IOException
+    {
+        // build key exchange message plaintext, struct see #buildServerKeyExchangeParams method.
+        final byte[] plaintext = buildServerKeyExchangeParams();
+        final byte[] signature = serverSigner.generateRawSignature(plaintext);
+        ByteArrayOutputStream bout = new ByteArrayOutputStream(signature.length+2);
+        TlsUtils.writeOpaque16(signature,bout);
+        return bout.toByteArray();
     }
 
     @Override
@@ -70,28 +101,8 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
 
         final int n = TlsUtils.readUint16(input);
         final byte[] signature = TlsUtils.readFully(n, input);
-        /*
-         * digitally-signed struct
-         * {
-         *     opaque client_random[32];
-         *     opaque server_random[32];
-         *     opaque ASN.1Cert<1..2^24-1>
-         * } signed params
-         *
-         * the ASN.1Cert field is encrypt certificate
-         */
-        final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        final byte[] clientRandom = securityParameters.getClientRandom();
-        final byte[] serverRandom = securityParameters.getServerRandom();
-        final byte[] encCert = serverEncCertificate.getEncoded();
-        int totalSize = clientRandom.length + serverRandom.length + 3 + encCert.length;
-        byte[] plaintext = new byte[totalSize];
-        System.arraycopy(clientRandom, 0, plaintext, 0, 32);
-        System.arraycopy(serverRandom, 0, plaintext, 32, 32);
-        plaintext[64] = (byte) (0xff & (encCert.length >> 16));
-        plaintext[65] = (byte) (0xff & (encCert.length >> 8));
-        plaintext[66] = (byte) (0xff & (encCert.length));
-        System.arraycopy(encCert, 0, plaintext, 67, encCert.length);
+        // build KeyExchangeParams plaintext.
+        byte[] plaintext = buildServerKeyExchangeParams();
         final TlsVerifier verifier = serverSigCertificate.createVerifier(SignatureAlgorithm.sm2);
 
         DigitallySigned digitallySigned = new DigitallySigned(SignatureAndHashAlgorithm.sm2, signature);
@@ -124,12 +135,13 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
-        TlsUtils.requireSignerCredentials(clientCredentials);
+
     }
 
     /**
      * generate preMasterSecret then use enc certificate public key
      * enc preMasterSecret
+     *
      * @param output
      * @throws IOException
      */
@@ -144,8 +156,7 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
          *     opaque random[46];
          * } PreMasterSecret
          */
-        this.preMasterSecret = context.getCrypto()
-                .generateRSAPreMasterSecret(context.getClientVersion());
+        this.preMasterSecret = context.getCrypto().generateRSAPreMasterSecret(context.getClientVersion());
         // add  BcGmsslEncryptor to support encrypt preMasterSecret
         byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(serverEncCertificate);
         TlsUtils.writeEncryptedPMS(context, encryptedPreMasterSecret, output);
@@ -153,10 +164,8 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        throw new TlsFatalAlert(AlertDescription.internal_error);
-//        byte[] encryptedPreMasterSecret = TlsUtils.readEncryptedPMS(context, input);
-//        // TODO: 解密工具
-//        this.preMasterSecret = serverCredentials.decrypt(new TlsCryptoParameters(context), encryptedPreMasterSecret);
+        byte[] encryptedPreMasterSecret = TlsUtils.readEncryptedPMS(context, input);
+        this.preMasterSecret = serverDecryptor.decrypt(new TlsCryptoParameters(context), encryptedPreMasterSecret);
     }
 
     public TlsSecret generatePreMasterSecret() throws IOException
@@ -164,5 +173,48 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
         TlsSecret tmp = this.preMasterSecret;
         this.preMasterSecret = null;
         return tmp;
+    }
+
+    /**
+     * build Server side Key Exchange Params plaintext.
+     * @return params plaintext
+     * @throws IOException
+     */
+    private byte[] buildServerKeyExchangeParams() throws IOException
+    {
+        /*
+         * SM2_SM4_SM3 suite ServerKeyExchange message struct
+         *
+         * GM0009-2012: SM2 is called ECC,
+         *
+         * enum {ECDHE,ECC,IBSDH,IBC,RSA} KeyExchangeAlgorithm;
+         * struct
+         * {
+         *      select(KeyExchangeAlgorithm) {
+         *          case ECC:
+         *              digitally-signed struct
+         *              {
+         *                   opaque client_random[32];
+         *                   opaque server_random[32];
+         *                   opaque ASN.1Cert<1..2^24-1>
+         *              } signed_params
+         *      }
+         *  } ServerKeyExchange;
+         *
+         * the ASN.1Cert field is encrypt certificate
+         */
+        final SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        final byte[] clientRandom = securityParameters.getClientRandom();
+        final byte[] serverRandom = securityParameters.getServerRandom();
+        final byte[] encCert = serverEncCertificate.getEncoded();
+        int totalSize = clientRandom.length + serverRandom.length + 3 + encCert.length;
+        byte[] plaintext = new byte[totalSize];
+        System.arraycopy(clientRandom, 0, plaintext, 0, 32);
+        System.arraycopy(serverRandom, 0, plaintext, 32, 32);
+        plaintext[64] = (byte) (0xff & (encCert.length >> 16));
+        plaintext[65] = (byte) (0xff & (encCert.length >> 8));
+        plaintext[66] = (byte) (0xff & (encCert.length));
+        System.arraycopy(encCert, 0, plaintext, 67, encCert.length);
+        return plaintext;
     }
 }

@@ -399,12 +399,20 @@ public class TlsServerProtocol
         ProtocolVersion clientVersion = clientLegacyVersion;
         if (null == tlsServerContext.getClientSupportedVersions())
         {
-            if (clientVersion.isLaterVersionOf(ProtocolVersion.TLSv12))
+            if(clientVersion.getEquivalentTLSVersion() == ProtocolVersion.GMSSLv11)
             {
-                clientVersion = ProtocolVersion.TLSv12;
+                tlsServerContext.setClientSupportedVersions(new ProtocolVersion[]{clientVersion});
+            }
+            else
+            {
+                if (clientVersion.isLaterVersionOf(ProtocolVersion.TLSv12))
+                {
+                    clientVersion = ProtocolVersion.TLSv12;
+                }
+
+                tlsServerContext.setClientSupportedVersions(clientVersion.downTo(ProtocolVersion.SSLv3));
             }
 
-            tlsServerContext.setClientSupportedVersions(clientVersion.downTo(ProtocolVersion.SSLv3));
         }
         else
         {
@@ -414,7 +422,8 @@ public class TlsServerProtocol
         // Set the legacy_record_version to use for early alerts 
         recordStream.setWriteVersion(clientVersion);
 
-        if (!ProtocolVersion.SERVER_EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(clientVersion))
+        if (!ProtocolVersion.SERVER_EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(clientVersion)
+                && !ProtocolVersion.CLIENT_GM_SUPPORTED_TLS.isEqualOrEarlierVersionOf(clientVersion))
         {
             throw new TlsFatalAlert(AlertDescription.protocol_version);
         }

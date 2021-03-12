@@ -161,6 +161,9 @@ public final class ProtocolVersion
 
         int fullVersion = version.getFullVersion();
 
+        if(fullVersion == CLIENT_GM_SUPPORTED_TLS.getFullVersion()){
+            return  true;
+        }
         return fullVersion >= SERVER_EARLIEST_SUPPORTED_TLS.getFullVersion()
             && fullVersion <= SERVER_LATEST_SUPPORTED_TLS.getFullVersion();
     }
@@ -232,6 +235,7 @@ public final class ProtocolVersion
     public boolean isTLS()
     {
         final int majorVersion = getMajorVersion();
+        // GMSSL is also a variants TLS
         return majorVersion == 0x03 || majorVersion == 0x01;
     }
 

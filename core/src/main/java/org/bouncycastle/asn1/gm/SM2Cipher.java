@@ -1,12 +1,17 @@
 package org.bouncycastle.asn1.gm;
 
 import org.bouncycastle.asn1.*;
+import org.bouncycastle.util.BigIntegers;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Enumeration;
 
 /**
  * GMT 0009-2012
- *
+ * <p>
  * sm2 encrypted data specific struct
  *
  * @author Cliven
@@ -103,5 +108,73 @@ public class SM2Cipher extends ASN1Object
         v.add(hash);
         v.add(cipherText);
         return new DERSequence(v);
+    }
+
+    /**
+     * Convert ASN.1 Struct to C1C3C2 format
+     *
+     * @return C1C3C2
+     * @throws IOException
+     */
+    public byte[] convertC1C3C2() throws IOException
+    {
+        /*
+         * construct GMT0009-2012 encrypted data struct
+         */
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+
+        final byte[] x = new byte[32];
+        final byte[] y = new byte[32];
+
+        byte[] tmp = BigIntegers.asUnsignedByteArray(getxCoordinate().getValue());
+        System.arraycopy(tmp, 0, x, 32 - tmp.length, tmp.length);
+        tmp = BigIntegers.asUnsignedByteArray(getyCoordinate().getValue());
+        System.arraycopy(tmp, 0, y, 32 - tmp.length, tmp.length);
+
+        // C1
+        // read 1 byte for uncompressed point prefix 0x04
+        stream.write(0x04);
+        stream.write(x);
+        stream.write(y);
+        // C3
+        stream.write(getHash().getOctets());
+        // C2
+        stream.write(getCipherText().getOctets());
+        stream.flush();
+        return stream.toByteArray();
+    }
+
+    /**
+     * Convert SM2 encrypted result format of c1c3c2 to ASN.1 SM2Cipher
+     *
+     * @param c1c3c2 encrypted result
+     * @return SM2Cipher
+     * @throws IOException
+     */
+    static public SM2Cipher fromC1C3C2(byte[] c1c3c2) throws IOException
+    {
+        /*
+         * construct GMT0009-2012 encrypted data struct
+         */
+        ByteArrayInputStream stream = new ByteArrayInputStream(c1c3c2);
+        // read 1 byte for uncompressed point prefix 0x04
+        stream.read();
+        final byte[] x = new byte[32];
+        final byte[] y = new byte[32];
+        final byte[] hash = new byte[32];
+        int length = c1c3c2.length - 1 - 32 - 32 - 32;
+        final byte[] cipherText = new byte[length];
+        stream.read(x);
+        stream.read(y);
+        stream.read(hash);
+        stream.read(cipherText);
+
+        final SM2Cipher sm2Cipher = new SM2Cipher();
+        sm2Cipher.setxCoordinate(new ASN1Integer(new BigInteger(1, x)));
+        sm2Cipher.setyCoordinate(new ASN1Integer(new BigInteger(1, y)));
+        sm2Cipher.setHash(new DEROctetString(hash));
+        sm2Cipher.setCipherText(new DEROctetString(cipherText));
+        return sm2Cipher;
     }
 }

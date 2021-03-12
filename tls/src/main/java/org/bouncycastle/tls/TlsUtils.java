@@ -4361,6 +4361,9 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_RSA:
             return factory.createSRPKeyExchangeServer(keyExchange, server.getSRPLoginParameters());
 
+        case KeyExchangeAlgorithm.SM2:
+            return factory.createSM2KeyExchange(keyExchange);
+
         default:
             /*
              * Note: internal error here; the TlsProtocol implementation verifies that the
@@ -5234,7 +5237,7 @@ public class TlsUtils
             count += (credentials instanceof TlsCredentialedAgreement) ? 1 : 0;
             count += (credentials instanceof TlsCredentialedDecryptor) ? 1 : 0;
             count += (credentials instanceof TlsCredentialedSigner) ? 1 : 0;
-            if (count != 1)
+            if (count < 1)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
