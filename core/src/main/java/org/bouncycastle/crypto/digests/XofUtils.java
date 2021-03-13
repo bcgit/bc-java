@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.util.Arrays;
+
 public class XofUtils
 {
     public static byte[] leftEncode(long strLen)
@@ -44,5 +46,19 @@ public class XofUtils
         }
 
         return b;
+    }
+
+    static byte[] encode(byte X)
+    {
+        return Arrays.concatenate(XofUtils.leftEncode(8), new byte[] { X });
+    }
+
+    static byte[] encode(byte[] in, int inOff, int len)
+    {
+        if (in.length == len)
+        {
+            return Arrays.concatenate(XofUtils.leftEncode(len * 8), in);
+        }
+        return Arrays.concatenate(XofUtils.leftEncode(len * 8), Arrays.copyOfRange(in, inOff, inOff + len));
     }
 }
