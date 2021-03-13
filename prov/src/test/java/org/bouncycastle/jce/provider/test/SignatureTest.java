@@ -88,6 +88,9 @@ public class SignatureTest
         checkSig(kp, "SHA384withRSAandMGF1");
         checkSig(kp, "SHA512withRSAandMGF1");
 
+        checkSig(kp, "SHAKE128withRSAPSS");
+        checkSig(kp, "SHAKE256withRSAPSS");
+
         checkSig(kp, "SHA1withRSA/ISO9796-2");
         checkSig(kp, "MD5withRSA/ISO9796-2");
         checkSig(kp, "RIPEMD160withRSA/ISO9796-2");
@@ -130,6 +133,8 @@ public class SignatureTest
         checkSig(kp, "SHA384withECDSA");
         checkSig(kp, "SHA512withECDSA");
         checkSig(kp, "RIPEMD160withECDSA");
+        checkSig(kp, "SHAKE128withECDSA");
+        checkSig(kp, "SHAKE256withECDSA");
 
         kpGen = KeyPairGenerator.getInstance("EC", "BC");
 

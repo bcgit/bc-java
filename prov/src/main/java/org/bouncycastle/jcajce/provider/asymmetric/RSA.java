@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -180,6 +181,9 @@ public class RSA
             addX931Signature(provider, "SHA512(224)", PREFIX + "X931SignatureSpi$SHA512_224WithRSAEncryption");
             addX931Signature(provider, "SHA512(256)", PREFIX + "X931SignatureSpi$SHA512_256WithRSAEncryption");
 
+            addSHAKEPSSSignature(provider, "SHAKE128", PREFIX + "SHAKEPSSSignatureSpi$SHAKE128WithRSAPSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128);
+            addSHAKEPSSSignature(provider, "SHAKE256", PREFIX + "SHAKEPSSSignatureSpi$SHAKE256WithRSAPSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256);
+
             if (provider.hasAlgorithm("MessageDigest", "RIPEMD128"))
             {
                 addDigestSignature(provider, "RIPEMD128", PREFIX + "DigestSignatureSpi$RIPEMD128", TeleTrusTObjectIdentifiers.rsaSignatureWithripemd128);
@@ -213,6 +217,7 @@ public class RSA
                 addX931Signature(provider, "Whirlpool", PREFIX + "X931SignatureSpi$WhirlpoolWithRSAEncryption");
                 addX931Signature(provider, "WHIRLPOOL", PREFIX + "X931SignatureSpi$WhirlpoolWithRSAEncryption");
             }
+
         }
 
         private void addDigestSignature(
@@ -267,6 +272,35 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSASSA-PSS", digest + "WITHRSAANDMGF1");
             provider.addAlgorithm("Alg.Alias.Signature." + digest + "WITHRSASSA-PSS", digest + "WITHRSAANDMGF1");
             provider.addAlgorithm("Signature." + digest + "WITHRSAANDMGF1", className);
+        }
+
+        private void addSHAKEPSSSignature(
+            ConfigurableProvider provider,
+            String digest,
+            String className,
+            ASN1ObjectIdentifier oid)
+        {
+            String mainName = digest + "WITHRSAPSS";
+            String jdk11Variation1 = digest + "withRSAPSS";
+            String jdk11Variation2 = digest + "WithRSAPSS";
+            String alias = digest + "/" + "RSAPSS";
+            String longName = digest + "WITHRSASSA-PSS";
+            String longJdk11Variation1 = digest + "withRSASSA-PSS";
+            String longJdk11Variation2 = digest + "WithRSASSA-PSS";
+
+            provider.addAlgorithm("Signature." + mainName, className);
+            provider.addAlgorithm("Alg.Alias.Signature." + jdk11Variation1, mainName);
+            provider.addAlgorithm("Alg.Alias.Signature." + jdk11Variation2, mainName);
+            provider.addAlgorithm("Alg.Alias.Signature." + longName, mainName);
+            provider.addAlgorithm("Alg.Alias.Signature." + longJdk11Variation1, mainName);
+            provider.addAlgorithm("Alg.Alias.Signature." + longJdk11Variation2, mainName);
+            provider.addAlgorithm("Alg.Alias.Signature." + alias, mainName);
+
+            if (oid != null)
+            {
+                provider.addAlgorithm("Alg.Alias.Signature." + oid, mainName);
+                provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, mainName);
+            }
         }
 
         private void addX931Signature(
