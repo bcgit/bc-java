@@ -3,7 +3,6 @@ package org.bouncycastle.operator;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
@@ -26,6 +25,7 @@ public class DefaultDigestAlgorithmIdentifierFinder
 {
     private static Map digestOids = new HashMap();
     private static Map digestNameToOids = new HashMap();
+    private static Map digestOidToAlgIds = new HashMap();
 
     static
     {
@@ -127,6 +127,8 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestNameToOids.put("SHA3-384", NISTObjectIdentifiers.id_sha3_384);
         digestNameToOids.put("SHA3-512", NISTObjectIdentifiers.id_sha3_512);
 
+        digestNameToOids.put("SHAKE128", NISTObjectIdentifiers.id_shake128);
+        digestNameToOids.put("SHAKE256", NISTObjectIdentifiers.id_shake256);
         digestNameToOids.put("SHAKE-128", NISTObjectIdentifiers.id_shake128);
         digestNameToOids.put("SHAKE-256", NISTObjectIdentifiers.id_shake256);
 
@@ -143,34 +145,97 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestNameToOids.put("RIPEMD256", TeleTrusTObjectIdentifiers.ripemd256);
 
         digestNameToOids.put("SM3", GMObjectIdentifiers.sm3);
+
+        // IETF RFC 3370
+        addDigestAlgId(OIWObjectIdentifiers.idSHA1, true);
+        // IETF RFC 5874
+        addDigestAlgId(NISTObjectIdentifiers.id_sha224, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_sha256, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_sha384, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_sha512, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_sha512_224, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_sha512_256, false);
+
+        // NIST CSOR
+        addDigestAlgId(NISTObjectIdentifiers.id_sha3_224, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_sha3_256, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_sha3_384, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_sha3_512, false);
+
+        // RFC 8072
+        addDigestAlgId(NISTObjectIdentifiers.id_shake128, false);
+        addDigestAlgId(NISTObjectIdentifiers.id_shake256, false);
+
+        // RFC 4357
+        addDigestAlgId(CryptoProObjectIdentifiers.gostR3411, true);
+
+        // draft-deremin-rfc4491
+        addDigestAlgId(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256, false);
+        addDigestAlgId(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512, false);
+
+        // IETF RFC 1319
+        addDigestAlgId(PKCSObjectIdentifiers.md2, true);
+        // IETF RFC 1320
+        addDigestAlgId(PKCSObjectIdentifiers.md4, true);
+        // IETF RFC 1321
+        addDigestAlgId(PKCSObjectIdentifiers.md5, true);
+
+        // found no standard which specified the handle of AlgorithmIdentifier.parameters,
+        // so let it as before.
+        addDigestAlgId(TeleTrusTObjectIdentifiers.ripemd128, true);
+        addDigestAlgId(TeleTrusTObjectIdentifiers.ripemd160, true);
+        addDigestAlgId(TeleTrusTObjectIdentifiers.ripemd256, true);
+    }
+
+    private static void addDigestAlgId(ASN1ObjectIdentifier oid, boolean withNullParams) {
+        AlgorithmIdentifier algId;
+        if (withNullParams) {
+            algId = new AlgorithmIdentifier(oid, DERNull.INSTANCE);
+        } else {
+            algId = new AlgorithmIdentifier(oid);
+        }
+        digestOidToAlgIds.put(oid, algId);
     }
 
     public AlgorithmIdentifier find(AlgorithmIdentifier sigAlgId)
     {
-        AlgorithmIdentifier digAlgId;
+        ASN1ObjectIdentifier digAlgOid;
 
         if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
         {
-            digAlgId = RSASSAPSSparams.getInstance(sigAlgId.getParameters()).getHashAlgorithm();
+            digAlgOid = RSASSAPSSparams.getInstance(sigAlgId.getParameters()).getHashAlgorithm().getAlgorithm();
         }
         else if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed25519))
         {
-            digAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+            digAlgOid = NISTObjectIdentifiers.id_sha512;
         }
         else if (sigAlgId.getAlgorithm().equals(EdECObjectIdentifiers.id_Ed448))
         {
-            digAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512));
+            digAlgOid = NISTObjectIdentifiers.id_shake256;
         }
         else
         {
-            digAlgId = new AlgorithmIdentifier((ASN1ObjectIdentifier)digestOids.get(sigAlgId.getAlgorithm()), DERNull.INSTANCE);
+            digAlgOid = (ASN1ObjectIdentifier)digestOids.get(sigAlgId.getAlgorithm());
         }
 
-        return digAlgId;
+        return find(digAlgOid);
     }
 
     public AlgorithmIdentifier find(String digAlgName)
     {
-        return new AlgorithmIdentifier((ASN1ObjectIdentifier)digestNameToOids.get(digAlgName), DERNull.INSTANCE);
+        return find((ASN1ObjectIdentifier)digestNameToOids.get(digAlgName));
+    }
+
+    public static AlgorithmIdentifier find(ASN1ObjectIdentifier digAlgOid)
+    {
+        AlgorithmIdentifier digAlgId = (AlgorithmIdentifier) digestOidToAlgIds.get(digAlgOid);
+        if (digAlgId == null)
+        {
+            return new AlgorithmIdentifier(digAlgOid);
+        }
+        else
+        {
+            return digAlgId;
+        }
     }
 }

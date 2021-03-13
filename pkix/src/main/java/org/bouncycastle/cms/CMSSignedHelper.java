@@ -30,12 +30,16 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 
 class CMSSignedHelper
 {
+
     static final CMSSignedHelper INSTANCE = new CMSSignedHelper();
+
+    private static final DefaultDigestAlgorithmIdentifierFinder dgstAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
 
     private static final Map     encryptionAlgs = new HashMap();
 
@@ -135,6 +139,19 @@ class CMSSignedHelper
         }
 
         return algId;
+    }
+
+    AlgorithmIdentifier fixDigestAlgID(AlgorithmIdentifier algId)
+    {
+        ASN1Encodable params = algId.getParameters();
+        if (params == null || DERNull.INSTANCE.equals(params))
+        {
+            return dgstAlgFinder.find(algId.getAlgorithm());
+        }
+        else
+        {
+            return algId;
+        }
     }
 
     void setSigningEncryptionAlgorithmMapping(ASN1ObjectIdentifier oid, String algorithmName)
