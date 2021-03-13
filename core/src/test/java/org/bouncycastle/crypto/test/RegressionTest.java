@@ -178,7 +178,10 @@ public class RegressionTest
             new SipHash128Test(),
             new GCMSIVTest(),
             new Blake3Test(),
-            new KangarooTest()
+            new KangarooTest(),
+            new SP80038GTest(),
+            new TupleHashTest(),
+            new ParallelHashTest()
         };
 
     public static void main(String[] args)
