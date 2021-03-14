@@ -43,6 +43,7 @@ import org.bouncycastle.crypto.modes.CTSBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.modes.GCFBBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.modes.GCMSIVBlockCipher;
 import org.bouncycastle.crypto.modes.GOFBBlockCipher;
 import org.bouncycastle.crypto.modes.KCCMBlockCipher;
 import org.bouncycastle.crypto.modes.KCTRBlockCipher;
@@ -469,6 +470,11 @@ public class BaseBlockCipher
         {
             ivLength = baseEngine.getBlockSize();
             cipher = new AEADGenericBlockCipher(new EAXBlockCipher(baseEngine));
+        }
+        else if (modeName.equals("GCM-SIV"))
+        {
+            ivLength = 12;
+            cipher = new AEADGenericBlockCipher(new GCMSIVBlockCipher(baseEngine));
         }
         else if (modeName.equals("GCM"))
         {
@@ -1201,7 +1207,7 @@ public class BaseBlockCipher
     private boolean isAEADModeName(
         String modeName)
     {
-        return "CCM".equals(modeName) || "EAX".equals(modeName) || "GCM".equals(modeName) || "OCB".equals(modeName);
+        return "CCM".equals(modeName) || "EAX".equals(modeName) || "GCM".equals(modeName) || "GCM-SIV".equals(modeName) || "OCB".equals(modeName);
     }
 
     /*
