@@ -133,6 +133,9 @@ import org.bouncycastle.util.Pack;
       */
      private int theFlags;
 
+     // defined fixed
+     private byte[]      macBlock = new byte[16];
+
      /**
       * Constructor.
       */
@@ -202,7 +205,7 @@ import org.bouncycastle.util.Pack;
          }
          else
          {
-             throw new IllegalArgumentException("invalid parameters passed to GCM_SIV");
+             throw new IllegalArgumentException("invalid parameters passed to GCM-SIV");
          }
 
          /* Check nonceSize */
@@ -387,6 +390,8 @@ import org.bouncycastle.util.Pack;
              /* Add the tag to the output */
              System.arraycopy(myTag, 0, pOutput, pOffset + thePlain.size(), BUFLEN);
 
+             System.arraycopy(myTag, 0, macBlock, 0, macBlock.length);
+
              /* Reset the streams */
              resetStreams();
              return myDataLen;
@@ -411,7 +416,7 @@ import org.bouncycastle.util.Pack;
 
      public byte[] getMac()
      {
-         throw new UnsupportedOperationException();
+         return Arrays.clone(macBlock);
      }
 
      public int getUpdateOutputSize(final int pLen)
@@ -589,6 +594,8 @@ import org.bouncycastle.util.Pack;
              reset();
              throw new InvalidCipherTextException("mac check failed");
          }
+
+         System.arraycopy(myTag, 0, macBlock, 0, macBlock.length);
      }
 
      /**
