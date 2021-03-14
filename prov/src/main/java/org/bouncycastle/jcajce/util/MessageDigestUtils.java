@@ -41,6 +41,8 @@ public class MessageDigestUtils
         digestOidMap.put(NISTObjectIdentifiers.id_sha3_256, "SHA3-256");
         digestOidMap.put(NISTObjectIdentifiers.id_sha3_384, "SHA3-384");
         digestOidMap.put(NISTObjectIdentifiers.id_sha3_512, "SHA3-512");
+        digestOidMap.put(NISTObjectIdentifiers.id_shake128, "SHAKE128");
+        digestOidMap.put(NISTObjectIdentifiers.id_shake256, "SHAKE256");
         digestOidMap.put(GMObjectIdentifiers.sm3, "SM3");
     }
 

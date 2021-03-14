@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 /**
  * Basic factory class for message digests.
@@ -73,5 +74,15 @@ public final class DigestFactory
     public static Digest createSHA3_512()
     {
         return new SHA3Digest(512);
+    }
+
+    public static Digest createSHAKE128()
+    {
+        return new SHAKEDigest(128);
+    }
+
+    public static Digest createSHAKE256()
+    {
+        return new SHAKEDigest(256);
     }
 }
