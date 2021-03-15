@@ -30,7 +30,7 @@ public class GMSSLClientTest
         Security.addProvider(new BouncyCastleJsseProvider());
 
         String host = "localhost";
-        int port = 5557;
+        int port = 446;
 //        String host = "sm2test.ovssl.cn";
 //        int port = 443;
 //        jsse(host, port);

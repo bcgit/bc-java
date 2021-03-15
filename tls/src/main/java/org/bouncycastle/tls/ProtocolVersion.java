@@ -227,6 +227,10 @@ public final class ProtocolVersion
         return getMajorVersion() == 0xFE;
     }
 
+    public boolean isGMSSL(){
+        return getMajorVersion() == 0x01;
+    }
+
     public boolean isSSL()
     {
         return this == SSLv3;

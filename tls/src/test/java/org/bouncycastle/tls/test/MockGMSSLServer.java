@@ -44,13 +44,17 @@ class MockGMSSLServer
             + ", " + AlertDescription.getText(alertDescription));
     }
 
+    @Override
+    public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException
+    {
+
+    }
+
     public ProtocolVersion getServerVersion() throws IOException
     {
-        ProtocolVersion serverVersion = super.getServerVersion();
-
-        System.out.println("GMSSL server negotiated " + serverVersion);
-
-        return serverVersion;
+//        ProtocolVersion serverVersion = super.getServerVersion();
+//        System.out.println("GMSSL server negotiated " + serverVersion);
+        return ProtocolVersion.GMSSLv11;
     }
 
     public CertificateRequest getCertificateRequest() throws IOException
