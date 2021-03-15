@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSABlindingParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -245,7 +246,7 @@ public class PSSSigner
         block[block.length - sLen - 1 - hLen - 1] = 0x01;
         System.arraycopy(salt, 0, block, block.length - sLen - hLen - 1, sLen);
 
-        byte[] dbMask = maskGeneratorFunction1(h, 0, h.length, block.length - hLen - 1);
+        byte[] dbMask = maskGenerator(h, 0, h.length, block.length - hLen - 1);
         for (int i = 0; i != dbMask.length; i++)
         {
             block[i] ^= dbMask[i];
@@ -294,7 +295,7 @@ public class PSSSigner
             return false;
         }
 
-        byte[] dbMask = maskGeneratorFunction1(block, block.length - hLen - 1, hLen, block.length - hLen - 1);
+        byte[] dbMask = maskGenerator(block, block.length - hLen - 1, hLen, block.length - hLen - 1);
 
         for (int i = 0; i != dbMask.length; i++)
         {
@@ -358,6 +359,26 @@ public class PSSSigner
         sp[1] = (byte)(i >>> 16);
         sp[2] = (byte)(i >>> 8);
         sp[3] = (byte)(i >>> 0);
+    }
+
+    private byte[] maskGenerator(
+        byte[]  Z,
+        int     zOff,
+        int     zLen,
+        int     length)
+    {
+        if (mgfDigest instanceof Xof)
+        {
+            byte[] mask = new byte[length];
+            mgfDigest.update(Z, zOff, zLen);
+            ((Xof)mgfDigest).doFinal(mask, 0, mask.length);
+
+            return mask;
+        }
+        else
+        {
+            return maskGeneratorFunction1(Z, zOff, zLen, length);
+        }
     }
 
     /**
