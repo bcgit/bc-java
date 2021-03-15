@@ -108,6 +108,11 @@ public class DefaultDigestAlgorithmIdentifierFinder
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha512, NISTObjectIdentifiers.id_sha512);
         digestOids.put(GMObjectIdentifiers.sm2sign_with_sm3, GMObjectIdentifiers.sm3);
 
+        digestOids.put(CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128, NISTObjectIdentifiers.id_shake128);
+        digestOids.put(CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(CMSObjectIdentifiers.id_ecdsa_with_shake128, NISTObjectIdentifiers.id_shake128);
+        digestOids.put(CMSObjectIdentifiers.id_ecdsa_with_shake256, NISTObjectIdentifiers.id_shake256);
+
         digestNameToOids.put("SHA-1", OIWObjectIdentifiers.idSHA1);
         digestNameToOids.put("SHA-224", NISTObjectIdentifiers.id_sha224);
         digestNameToOids.put("SHA-256", NISTObjectIdentifiers.id_sha256);
@@ -129,6 +134,8 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestNameToOids.put("SHA3-384", NISTObjectIdentifiers.id_sha3_384);
         digestNameToOids.put("SHA3-512", NISTObjectIdentifiers.id_sha3_512);
 
+        digestNameToOids.put("SHAKE128", NISTObjectIdentifiers.id_shake128);
+        digestNameToOids.put("SHAKE256", NISTObjectIdentifiers.id_shake256);
         digestNameToOids.put("SHAKE-128", NISTObjectIdentifiers.id_shake128);
         digestNameToOids.put("SHAKE-256", NISTObjectIdentifiers.id_shake256);
 
