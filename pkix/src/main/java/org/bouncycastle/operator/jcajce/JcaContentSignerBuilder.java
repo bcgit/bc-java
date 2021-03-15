@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -234,8 +235,14 @@ public class JcaContentSignerBuilder
     private static RSASSAPSSparams createPSSParams(PSSParameterSpec pssSpec)
     {
         DigestAlgorithmIdentifierFinder digFinder = new DefaultDigestAlgorithmIdentifierFinder();
-           AlgorithmIdentifier digId = digFinder.find(pssSpec.getDigestAlgorithm());
-           AlgorithmIdentifier mgfDig = digFinder.find(((MGF1ParameterSpec)pssSpec.getMGFParameters()).getDigestAlgorithm());
+        AlgorithmIdentifier digId = digFinder.find(pssSpec.getDigestAlgorithm());
+        if (digId.getParameters() == null) {
+            digId = new AlgorithmIdentifier(digId.getAlgorithm(), DERNull.INSTANCE);
+        }
+        AlgorithmIdentifier mgfDig = digFinder.find(((MGF1ParameterSpec)pssSpec.getMGFParameters()).getDigestAlgorithm());
+        if (mgfDig.getParameters() == null) {
+            mgfDig = new AlgorithmIdentifier(mgfDig.getAlgorithm(), DERNull.INSTANCE);
+        }
 
         return new RSASSAPSSparams(
             digId,

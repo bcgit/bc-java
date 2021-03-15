@@ -441,7 +441,7 @@ public class CMSSignedDataParser
         for (Iterator it = signerInformationStore.getSigners().iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixAlgID(signer.getDigestAlgorithmID()));
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID()));
         }
 
         sigGen.getRawOutputStream().write(new DERSet(digestAlgs).getEncoded());
