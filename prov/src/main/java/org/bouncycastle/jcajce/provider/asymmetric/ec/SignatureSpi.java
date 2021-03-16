@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSAEncoding;
 import org.bouncycastle.crypto.signers.ECDSASigner;
@@ -238,6 +239,26 @@ public class SignatureSpi
         public ecDSARipeMD160()
         {
             super(new RIPEMD160Digest(), new ECDSASigner(), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDSAShake128
+         extends SignatureSpi
+    {
+        public ecDSAShake128()
+        {
+            // RFC 8702 specifies deterministic DSA
+            super(new SHAKEDigest(128), new ECDSASigner(new HMacDSAKCalculator(new SHAKEDigest(128))), StandardDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecDSAShake256
+        extends SignatureSpi
+    {
+        public ecDSAShake256()
+        {
+            // RFC 8702 specifies deterministic DSA
+            super(new SHAKEDigest(256), new ECDSASigner(new HMacDSAKCalculator(new SHAKEDigest(256))), StandardDSAEncoding.INSTANCE);
         }
     }
 

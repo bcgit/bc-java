@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
@@ -40,6 +41,10 @@ class SignatureSchemeInfo
     {
         ed25519(SignatureScheme.ed25519, "Ed25519", "Ed25519"),
         ed448(SignatureScheme.ed448, "Ed448", "Ed448"),
+
+        ecdsa_brainpoolP256r1tls13_sha256(SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256, "SHA256withECDSA", "EC"),
+        ecdsa_brainpoolP384r1tls13_sha384(SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384, "SHA384withECDSA", "EC"),
+        ecdsa_brainpoolP512r1tls13_sha512(SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512, "SHA512withECDSA", "EC"),
 
         ecdsa_secp256r1_sha256(SignatureScheme.ecdsa_secp256r1_sha256, "SHA256withECDSA", "EC"),
         ecdsa_secp384r1_sha384(SignatureScheme.ecdsa_secp384r1_sha384, "SHA384withECDSA", "EC"),
@@ -79,7 +84,8 @@ class SignatureSchemeInfo
         private final String jcaSignatureAlgorithm;
         private final String jcaSignatureAlgorithmBC;
         private final String keyAlgorithm;
-        private final boolean supported13;
+        private final boolean supportedPost13;
+        private final boolean supportedPre13;
         private final boolean supportedCerts13;
         private final int namedGroup13;
 
@@ -95,11 +101,11 @@ class SignatureSchemeInfo
             this(signatureScheme, jcaSignatureAlgorithm, keyAlgorithm, false, supportedCerts13, -1);
         }
 
-        private All(int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm, boolean supported13,
+        private All(int signatureScheme, String jcaSignatureAlgorithm, String keyAlgorithm, boolean supportedPost13,
             boolean supportedCerts13, int namedGroup13)
         {
             this(signatureScheme, SignatureScheme.getName(signatureScheme), jcaSignatureAlgorithm, keyAlgorithm,
-                supported13, supportedCerts13, namedGroup13);
+                supportedPost13, supportedCerts13, namedGroup13);
         }
 
         // Historical
@@ -109,7 +115,7 @@ class SignatureSchemeInfo
         }
 
         private All(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm,
-            boolean supported13, boolean supportedCerts13, int namedGroup13)
+            boolean supportedPost13, boolean supportedCerts13, int namedGroup13)
         {
             this.signatureScheme = signatureScheme;
             this.name = name;
@@ -117,7 +123,8 @@ class SignatureSchemeInfo
             this.jcaSignatureAlgorithm = jcaSignatureAlgorithm;
             this.jcaSignatureAlgorithmBC = JsseUtils.getJcaSignatureAlgorithmBC(jcaSignatureAlgorithm, keyAlgorithm);
             this.keyAlgorithm = keyAlgorithm;
-            this.supported13 = supported13;
+            this.supportedPost13 = supportedPost13;
+            this.supportedPre13 = (namedGroup13 < 0) || NamedGroup.canBeNegotiated(namedGroup13, ProtocolVersion.TLSv12);
             this.supportedCerts13 = supportedCerts13;
             this.namedGroup13 = namedGroup13;
         }
@@ -174,7 +181,7 @@ class SignatureSchemeInfo
             SignatureSchemeInfo signatureSchemeInfo = perContext.index.get(candidate);
 
             if (null != signatureSchemeInfo
-                && signatureSchemeInfo.isActiveCerts(algorithmConstraints, pre13Active, post13Active, namedGroups))
+                && signatureSchemeInfo.isActiveCerts(algorithmConstraints, post13Active, pre13Active, namedGroups))
             {
                 result.add(signatureSchemeInfo);
             }
@@ -321,7 +328,7 @@ class SignatureSchemeInfo
         if (namedGroup13 >= 0)
         {
             namedGroupInfo = NamedGroupInfo.getNamedGroup(ng, namedGroup13);
-            if (null == namedGroupInfo || !namedGroupInfo.isEnabled())
+            if (null == namedGroupInfo || !namedGroupInfo.isEnabled() || !namedGroupInfo.isSupportedPost13())
             {
                 disabled13 = true;
             }
@@ -436,11 +443,14 @@ class SignatureSchemeInfo
     {
         switch (signatureScheme)
         {
-        case SignatureScheme.ecdsa_sha1:
-        case historical_ecdsa_sha224:
+        case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512:
         case SignatureScheme.ecdsa_secp256r1_sha256:
         case SignatureScheme.ecdsa_secp384r1_sha384:
         case SignatureScheme.ecdsa_secp521r1_sha512:
+        case SignatureScheme.ecdsa_sha1:
+        case historical_ecdsa_sha224:
             return true;
 
         default:
@@ -509,19 +519,19 @@ class SignatureSchemeInfo
         return all.signatureScheme;
     }
 
-    boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean pre13Active, boolean post13Active,
+    boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean post13Active, boolean pre13Active,
         NamedGroupInfo.PerConnection namedGroupInfos)
     {
         return enabled
-            && isNamedGroupOK(pre13Active, post13Active && isSupported13(), namedGroupInfos)
+            && isNamedGroupOK(post13Active && isSupportedPost13(), pre13Active && isSupportedPre13(), namedGroupInfos)
             && isPermittedBy(algorithmConstraints);
     }
 
-    boolean isActiveCerts(BCAlgorithmConstraints algorithmConstraints, boolean pre13Active, boolean post13Active,
+    boolean isActiveCerts(BCAlgorithmConstraints algorithmConstraints, boolean post13Active, boolean pre13Active,
         NamedGroupInfo.PerConnection namedGroupInfos)
     {
         return enabled
-            && isNamedGroupOK(pre13Active, post13Active && isSupportedCerts13(), namedGroupInfos)
+            && isNamedGroupOK(post13Active && isSupportedCerts13(), pre13Active && isSupportedPre13(), namedGroupInfos)
             && isPermittedBy(algorithmConstraints);
     }
 
@@ -530,9 +540,14 @@ class SignatureSchemeInfo
         return enabled;
     }
 
-    boolean isSupported13()
+    boolean isSupportedPost13()
     {
-        return !disabled13 && all.supported13;
+        return !disabled13 && all.supportedPost13;
+    }
+
+    boolean isSupportedPre13()
+    {
+        return all.supportedPre13;
     }
 
     boolean isSupportedCerts13()
@@ -546,7 +561,7 @@ class SignatureSchemeInfo
         return all.text;
     }
 
-    private boolean isNamedGroupOK(boolean pre13Allowed, boolean post13Allowed, NamedGroupInfo.PerConnection namedGroupInfos)
+    private boolean isNamedGroupOK(boolean post13Allowed, boolean pre13Allowed, NamedGroupInfo.PerConnection namedGroupInfos)
     {
         if (null != namedGroupInfo)
         {

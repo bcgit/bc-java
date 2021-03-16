@@ -339,14 +339,18 @@ public abstract class AbstractTlsServer
                 }
             }
 
-            this.encryptThenMACOffered = TlsExtensionsUtils.hasEncryptThenMACExtension(clientExtensions);
-            this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
-            this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
-            this.statusRequestV2 = TlsExtensionsUtils.getStatusRequestV2Extension(clientExtensions);
-            this.trustedCAKeys = TlsExtensionsUtils.getTrustedCAKeysExtensionClient(clientExtensions);
+            // TODO[tls13] Don't need these if we have negotiated (D)TLS 1.3+
+            {
+                this.encryptThenMACOffered = TlsExtensionsUtils.hasEncryptThenMACExtension(clientExtensions);
+                this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
+                this.statusRequestV2 = TlsExtensionsUtils.getStatusRequestV2Extension(clientExtensions);
+                this.trustedCAKeys = TlsExtensionsUtils.getTrustedCAKeysExtensionClient(clientExtensions);
 
-            // We only support uncompressed format, this is just to validate the extension, and note its presence.
-            this.clientSentECPointFormats = (null != TlsExtensionsUtils.getSupportedPointFormatsExtension(clientExtensions));
+                // We only support uncompressed format, this is just to validate the extension, and note its presence.
+                this.clientSentECPointFormats = (null != TlsExtensionsUtils.getSupportedPointFormatsExtension(clientExtensions));
+            }
+
+            this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
 
             this.maxFragmentLengthOffered = TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions);
             if (maxFragmentLengthOffered >= 0 && !MaxFragmentLength.isValid(maxFragmentLengthOffered))

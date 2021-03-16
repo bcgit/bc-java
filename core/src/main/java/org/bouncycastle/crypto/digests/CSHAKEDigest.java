@@ -33,6 +33,13 @@ public class CSHAKEDigest
         }
     }
 
+    CSHAKEDigest(CSHAKEDigest source)
+    {
+        super(source);
+
+        this.diff = Arrays.clone(source.diff);
+    }
+
     // bytepad in SP 800-185
     private void diffPadAndAbsorb()
     {

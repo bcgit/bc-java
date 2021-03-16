@@ -68,6 +68,16 @@ public abstract class AbstractTlsPeer
         return false;
     }
 
+    public int getMaxCertificateChainLength()
+    {
+        return 10;
+    }
+
+    public int getMaxHandshakeMessageSize()
+    {
+        return 32768;
+    }
+
     public boolean requiresCloseNotify()
     {
         return true;

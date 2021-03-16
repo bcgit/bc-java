@@ -317,6 +317,48 @@ public class AESTest
         {
             isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for GCM encryption"));
         }
+
+        //
+        // GCM-SIV
+        //
+        key = new SecretKeySpec(Hex.decode("01000000000000000000000000000000"), "AES");
+        N = Hex.decode("030000000000000000000000");
+        P = Hex.decode("01000000000000000000000000000000" + "02000000000000000000000000000000"
+                        + "03000000000000000000000000000000" + "04000000000000000000000000000000");
+        C  = Hex.decode("2433668f1058190f6d43e360f4f35cd8" + "e475127cfca7028ea8ab5c20f7ab2af0"
+                + "2516a2bdcbc08d521be37ff28c152bba" + "36697f25b4cd169c6590d1dd39566d3f"
+                + "8a263dd317aa88d56bdf3936dba75bb8");
+
+        in = Cipher.getInstance("AES/GCM-SIV/NoPadding", "BC");
+        out = Cipher.getInstance("AES/GCM-SIV/NoPadding", "BC");
+
+        in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
+
+        enc = in.doFinal(P);
+        if (!areEqual(enc, C))
+        {
+            fail("ciphertext doesn't match in GCM-SIV");
+        }
+
+        out.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(N));
+
+        dec = out.doFinal(C);
+        if (!areEqual(dec, P))
+        {
+            fail("plaintext doesn't match in GCM-SIV");
+        }
+
+        try
+        {
+            in = Cipher.getInstance("AES/GCM-SIV/PKCS5Padding", "BC");
+
+            fail("bad padding missed in GCM");
+        }
+        catch (NoSuchPaddingException e)
+        {
+            // expected
+        }
+
     }
 
     private void gcmTestWithRandom()

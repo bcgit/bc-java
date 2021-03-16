@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -111,17 +112,43 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.Signature.NONEWITHRSAANDMGF1", "RAWRSASSA-PSS");
             provider.addAlgorithm("Alg.Alias.Signature.RSAPSS", "RSASSA-PSS");
 
-            addPSSSignature(provider, "SHA224", PREFIX + "PSSSignatureSpi$SHA224withRSA");
-            addPSSSignature(provider, "SHA256", PREFIX + "PSSSignatureSpi$SHA256withRSA");
-            addPSSSignature(provider, "SHA384", PREFIX + "PSSSignatureSpi$SHA384withRSA");
-            addPSSSignature(provider, "SHA512", PREFIX + "PSSSignatureSpi$SHA512withRSA");
-            addPSSSignature(provider, "SHA512(224)", PREFIX + "PSSSignatureSpi$SHA512_224withRSA");
-            addPSSSignature(provider, "SHA512(256)", PREFIX + "PSSSignatureSpi$SHA512_256withRSA");
+            addPSSSignature(provider, "SHA224", "MGF1", PREFIX + "PSSSignatureSpi$SHA224withRSA");
+            addPSSSignature(provider, "SHA256", "MGF1", PREFIX + "PSSSignatureSpi$SHA256withRSA");
+            addPSSSignature(provider, "SHA384", "MGF1", PREFIX + "PSSSignatureSpi$SHA384withRSA");
+            addPSSSignature(provider, "SHA512", "MGF1", PREFIX + "PSSSignatureSpi$SHA512withRSA");
+            addPSSSignature(provider, "SHA512(224)", "MGF1", PREFIX + "PSSSignatureSpi$SHA512_224withRSA");
+            addPSSSignature(provider, "SHA512(256)", "MGF1", PREFIX + "PSSSignatureSpi$SHA512_256withRSA");
 
-            addPSSSignature(provider, "SHA3-224", PREFIX + "PSSSignatureSpi$SHA3_224withRSA");
-            addPSSSignature(provider, "SHA3-256", PREFIX + "PSSSignatureSpi$SHA3_256withRSA");
-            addPSSSignature(provider, "SHA3-384", PREFIX + "PSSSignatureSpi$SHA3_384withRSA");
-            addPSSSignature(provider, "SHA3-512", PREFIX + "PSSSignatureSpi$SHA3_512withRSA");
+            addPSSSignature(provider, "SHA3-224", "MGF1", PREFIX + "PSSSignatureSpi$SHA3_224withRSA");
+            addPSSSignature(provider, "SHA3-256", "MGF1", PREFIX + "PSSSignatureSpi$SHA3_256withRSA");
+            addPSSSignature(provider, "SHA3-384", "MGF1", PREFIX + "PSSSignatureSpi$SHA3_384withRSA");
+            addPSSSignature(provider, "SHA3-512", "MGF1", PREFIX + "PSSSignatureSpi$SHA3_512withRSA");
+            addPSSSignature(provider, "SHAKE128", PREFIX + "PSSSignatureSpi$SHAKE128WithRSAPSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128);
+            addPSSSignature(provider, "SHAKE256", PREFIX + "PSSSignatureSpi$SHAKE256WithRSAPSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256);
+
+            addPSSSignature(provider, "SHA224", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA224withRSAandSHAKE128");
+            addPSSSignature(provider, "SHA256", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA256withRSAandSHAKE128");
+            addPSSSignature(provider, "SHA384", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA384withRSAandSHAKE128");
+            addPSSSignature(provider, "SHA512", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA512withRSAandSHAKE128");
+            addPSSSignature(provider, "SHA512(224)", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA512_224withRSAandSHAKE128");
+            addPSSSignature(provider, "SHA512(256)", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA512_256withRSAandSHAKE128");
+
+            addPSSSignature(provider, "SHA224", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA224withRSAandSHAKE256");
+            addPSSSignature(provider, "SHA256", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA256withRSAandSHAKE256");
+            addPSSSignature(provider, "SHA384", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA384withRSAandSHAKE256");
+            addPSSSignature(provider, "SHA512", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA512withRSAandSHAKE256");
+            addPSSSignature(provider, "SHA512(224)", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA512_224withRSAandSHAKE256");
+            addPSSSignature(provider, "SHA512(256)", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA512_256withRSAandSHAKE256");
+
+            addPSSSignature(provider, "SHA3-224", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA3_224withRSAandSHAKE128");
+            addPSSSignature(provider, "SHA3-256", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA3_256withRSAandSHAKE128");
+            addPSSSignature(provider, "SHA3-384", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA3_384withRSAandSHAKE128");
+            addPSSSignature(provider, "SHA3-512", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA3_512withRSAandSHAKE128");
+
+            addPSSSignature(provider, "SHA3-224", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA3_224withRSAandSHAKE256");
+            addPSSSignature(provider, "SHA3-256", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA3_256withRSAandSHAKE256");
+            addPSSSignature(provider, "SHA3-384", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA3_384withRSAandSHAKE256");
+            addPSSSignature(provider, "SHA3-512", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA3_512withRSAandSHAKE256");
 
             if (provider.hasAlgorithm("MessageDigest", "MD2"))
             {
@@ -144,7 +171,9 @@ public class RSA
                 provider.addAlgorithm("Alg.Alias.AlgorithmParameters.SHA1withRSA/PSS", "PSS");
                 provider.addAlgorithm("Alg.Alias.AlgorithmParameters.SHA1WITHRSAANDMGF1", "PSS");
 
-                addPSSSignature(provider, "SHA1", PREFIX + "PSSSignatureSpi$SHA1withRSA");
+                addPSSSignature(provider, "SHA1", "MGF1", PREFIX + "PSSSignatureSpi$SHA1withRSA");
+                addPSSSignature(provider, "SHA1", "SHAKE128", PREFIX + "PSSSignatureSpi$SHA1withRSAandSHAKE128");
+                addPSSSignature(provider, "SHA1", "SHAKE256", PREFIX + "PSSSignatureSpi$SHA1withRSAandSHAKE256");
                 addDigestSignature(provider, "SHA1", PREFIX + "DigestSignatureSpi$SHA1", PKCSObjectIdentifiers.sha1WithRSAEncryption);
                 addISO9796Signature(provider, "SHA1", PREFIX + "ISOSignatureSpi$SHA1WithRSAEncryption");
 
@@ -256,17 +285,39 @@ public class RSA
 
         private void addPSSSignature(
             ConfigurableProvider provider,
-            String digest,
+            String digest, String mgf,
             String className)
         {
-            provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSA/PSS", digest + "WITHRSAANDMGF1");
-            provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSA/PSS", digest + "WITHRSAANDMGF1");
-            provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSAandMGF1", digest + "WITHRSAANDMGF1");
-            provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSAAndMGF1", digest + "WITHRSAANDMGF1");
-            provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSASSA-PSS", digest + "WITHRSAANDMGF1");
-            provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSASSA-PSS", digest + "WITHRSAANDMGF1");
-            provider.addAlgorithm("Alg.Alias.Signature." + digest + "WITHRSASSA-PSS", digest + "WITHRSAANDMGF1");
-            provider.addAlgorithm("Signature." + digest + "WITHRSAANDMGF1", className);
+            String stem = "WITHRSAAND" + mgf;
+            if (mgf.equals("MGF1"))
+            {
+                provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSA/PSS", digest + stem);
+                provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSA/PSS", digest + stem);
+                provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSASSA-PSS", digest + stem);
+                provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSASSA-PSS", digest + stem);
+                provider.addAlgorithm("Alg.Alias.Signature." + digest + "WITHRSASSA-PSS", digest + stem);
+            }
+
+            provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSAand" + mgf, digest + stem);
+            provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSAAnd" + mgf, digest + stem);
+
+            provider.addAlgorithm("Signature." + digest + "WITHRSAAND" + mgf, className);
+        }
+
+        private void addPSSSignature(
+            ConfigurableProvider provider,
+            String digest,
+            String className,
+            ASN1ObjectIdentifier sigOid)
+        {
+            provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSA/PSS", digest + "WITHRSAPSS");
+            provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSA/PSS", digest + "WITHRSAPSS");
+            provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSASSA-PSS", digest + "WITHRSAPSS");
+            provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSASSA-PSS", digest + "WITHRSAPSS");
+            provider.addAlgorithm("Alg.Alias.Signature." + digest + "WITHRSASSA-PSS", digest + "WITHRSAPSS");
+
+            provider.addAlgorithm("Signature", sigOid, className);
+            provider.addAlgorithm("Signature." + digest + "WITHRSAPSS", className);
         }
 
         private void addX931Signature(
