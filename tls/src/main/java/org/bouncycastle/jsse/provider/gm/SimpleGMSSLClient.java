@@ -1,4 +1,4 @@
-package org.bouncycastle.tls.test;
+package org.bouncycastle.jsse.provider.gm;
 
 import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -9,12 +9,15 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 
 /**
- * Mock GMSSL client
+ * Simple GMSSL client
+ *
+ * - make handshake connection
+ * - no authentication
  *
  * @author Cliven
  * @since 2021-03-09 14:01:50
  */
-public class MockGMSSLClient extends AbstractTlsClient
+public class SimpleGMSSLClient extends AbstractTlsClient
 {
     private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
@@ -24,12 +27,12 @@ public class MockGMSSLClient extends AbstractTlsClient
         CipherSuite.GMSSL_ECC_SM4_SM3,
     };
 
-    public MockGMSSLClient()
+    public SimpleGMSSLClient()
     {
         this(new BcTlsCrypto(new SecureRandom()));
     }
 
-    public MockGMSSLClient(TlsCrypto crypto)
+    public SimpleGMSSLClient(TlsCrypto crypto)
     {
         super(crypto);
     }
@@ -52,12 +55,12 @@ public class MockGMSSLClient extends AbstractTlsClient
 
             public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
             {
-                System.out.println(">> TlsAuthentication on notifyServerCertificate");
+//                System.out.println(">> TlsAuthentication on notifyServerCertificate");
             }
 
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
             {
-                System.out.println(">> TlsAuthentication on getClientCredentials");
+//                System.out.println(">> TlsAuthentication on getClientCredentials");
                 return null;
             }
         };

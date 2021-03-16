@@ -2,6 +2,7 @@ package org.bouncycastle.tls.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.bouncycastle.jsse.provider.gm.SimpleGMSSLClient;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.util.io.Streams;
 
@@ -30,16 +31,15 @@ public class GMSSLClientTest
         Security.addProvider(new BouncyCastleJsseProvider());
 
         String host = "localhost";
-        int port = 446;
+        int port = 5557;
 //        String host = "sm2test.ovssl.cn";
 //        int port = 443;
-//        jsse(host, port);
         bc(host, port);
     }
 
     private static void bc(String host, int port) throws IOException
     {
-        final MockGMSSLClient client = new MockGMSSLClient();
+        final SimpleGMSSLClient client = new SimpleGMSSLClient();
         Socket s = new Socket(host, port);
         TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(client);
