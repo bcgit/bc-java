@@ -17,7 +17,7 @@ import java.security.SecureRandom;
  * @author Cliven
  * @since 2021-03-16 09:31:14
  */
-public class SimpleGMSSLServer
+public class GMSimpleSSLServer
     extends DefaultTlsServer
 {
     /*
@@ -35,7 +35,7 @@ public class SimpleGMSSLServer
      * @param signKey sign private key
      * @param encKey encrypt private key
      */
-    public SimpleGMSSLServer(TlsCrypto crypto, Certificate certList, AsymmetricKeyParameter signKey, AsymmetricKeyParameter encKey)
+    public GMSimpleSSLServer(TlsCrypto crypto, Certificate certList, AsymmetricKeyParameter signKey, AsymmetricKeyParameter encKey)
     {
         super(crypto);
         this.certList = certList;

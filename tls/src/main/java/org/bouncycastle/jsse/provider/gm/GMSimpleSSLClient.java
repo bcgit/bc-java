@@ -17,7 +17,7 @@ import java.util.Hashtable;
  * @author Cliven
  * @since 2021-03-09 14:01:50
  */
-public class SimpleGMSSLClient extends AbstractTlsClient
+public class GMSimpleSSLClient extends AbstractTlsClient
 {
     private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
@@ -27,12 +27,12 @@ public class SimpleGMSSLClient extends AbstractTlsClient
         CipherSuite.GMSSL_ECC_SM4_SM3,
     };
 
-    public SimpleGMSSLClient()
+    public GMSimpleSSLClient()
     {
         this(new BcTlsCrypto(new SecureRandom()));
     }
 
-    public SimpleGMSSLClient(TlsCrypto crypto)
+    public GMSimpleSSLClient(TlsCrypto crypto)
     {
         super(crypto);
     }

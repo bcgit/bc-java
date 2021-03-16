@@ -1,12 +1,10 @@
 package org.bouncycastle.tls.test;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.jsse.provider.gm.SimpleGMSSLServer;
+import org.bouncycastle.jsse.provider.gm.GMSimpleSSLServer;
 import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
-import org.bouncycastle.util.io.Streams;
-import org.bouncycastle.util.io.TeeOutputStream;
 
 import java.io.*;
 import java.net.*;
@@ -28,7 +26,7 @@ public class GMSSLServerTest
     public static void main(String[] args) throws Exception
     {
 
-        int port = 5557;
+        int port = 5559;
         ServerSocket ss = new ServerSocket(port, 16);
 
         crypto = new BcTlsCrypto(new SecureRandom());
@@ -70,7 +68,7 @@ public class GMSSLServerTest
         {
             try
             {
-                SimpleGMSSLServer server = new SimpleGMSSLServer(crypto, certList, signKey, encKey);
+                GMSimpleSSLServer server = new GMSimpleSSLServer(crypto, certList, signKey, encKey);
                 TlsServerProtocol serverProtocol = new TlsServerProtocol(s.getInputStream(), s.getOutputStream());
                 serverProtocol.accept(server);
 
@@ -97,6 +95,10 @@ public class GMSSLServerTest
                 System.out.println(">> Responded");
             } catch (Exception e)
             {
+                if(e instanceof EOFException)
+                {
+                    return;
+                }
                 throw new RuntimeException(e);
             } finally
             {

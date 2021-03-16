@@ -2,17 +2,16 @@ package org.bouncycastle.tls.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.bouncycastle.jsse.provider.gm.SimpleGMSSLClient;
+import org.bouncycastle.jsse.provider.gm.GMSimpleSSLClient;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.util.io.Streams;
 
 import javax.net.ssl.*;
 import java.io.IOException;
+
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.security.*;
 
 /**
@@ -30,16 +29,17 @@ public class GMSSLClientTest
         Security.addProvider(provider);
         Security.addProvider(new BouncyCastleJsseProvider());
 
-        String host = "localhost";
-        int port = 5557;
-//        String host = "sm2test.ovssl.cn";
-//        int port = 443;
-        bc(host, port);
+//        String host = "localhost";
+//        int port = 5557;
+        String host = "sm2test.ovssl.cn";
+        int port = 443;
+//        bc(host, port);
+        jsse(host, port);
     }
 
     private static void bc(String host, int port) throws IOException
     {
-        final SimpleGMSSLClient client = new SimpleGMSSLClient();
+        final GMSimpleSSLClient client = new GMSimpleSSLClient();
         Socket s = new Socket(host, port);
         TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(client);
@@ -54,13 +54,11 @@ public class GMSSLClientTest
         out.flush();
         Streams.pipeAll(protocol.getInputStream(), System.out);
         out.close();
-
-
     }
 
     private static void jsse(String host, int port) throws IOException, NoSuchProviderException, NoSuchAlgorithmException, KeyManagementException
     {
-        SSLContext clientContext = SSLContext.getInstance("GMSSL", BouncyCastleJsseProvider.PROVIDER_NAME);
+        SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
         clientContext.init(new KeyManager[]{}, new TrustManager[]{}, new SecureRandom());
         SSLSocketFactory fact = clientContext.getSocketFactory();
         SSLSocket cSock = (SSLSocket) fact.createSocket(host, port);

@@ -66,7 +66,7 @@ class ProvSSLContextSpi
     private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS = createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST);
 
     // TODO[tls13] Enable TLSv1.3 by default in due course
-    private static final String[] DEFAULT_ENABLED_PROTOCOLS = new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" ,"GMSSLv1.1"};
+    private static final String[] DEFAULT_ENABLED_PROTOCOLS = new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" };
 
     private static void addCipherSuite(Map<String, CipherSuiteInfo> cs, String name, int cipherSuite)
     {
@@ -108,9 +108,6 @@ class ProvSSLContextSpi
         cs.add("TLS_RSA_WITH_AES_128_CBC_SHA256");
         cs.add("TLS_RSA_WITH_AES_256_CBC_SHA");
         cs.add("TLS_RSA_WITH_AES_128_CBC_SHA");
-
-        // GMSSL 1.1
-        cs.add("GMSSL_ECC_SM4_SM3");
 
         cs.retainAll(supportedCipherSuiteSet);
         cs.trimToSize();
@@ -242,9 +239,6 @@ class ProvSSLContextSpi
         addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA", CipherSuite.TLS_RSA_WITH_NULL_SHA);
         addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA256", CipherSuite.TLS_RSA_WITH_NULL_SHA256);
 
-        // GMSSL 1.1
-        addCipherSuite(cs, "GMSSL_ECC_SM4_SM3", CipherSuite.GMSSL_ECC_SM4_SM3);
-
         return Collections.unmodifiableMap(cs);
     }
 
@@ -264,7 +258,6 @@ class ProvSSLContextSpi
         ps.put("TLSv1.1", ProtocolVersion.TLSv11);
         ps.put("TLSv1", ProtocolVersion.TLSv10);
         ps.put("SSLv3", ProtocolVersion.SSLv3);
-        ps.put("GMSSLv1.1", ProtocolVersion.GMSSLv11);
         return Collections.unmodifiableMap(ps);
     }
 
@@ -483,8 +476,6 @@ class ProvSSLContextSpi
         boolean post13Active = TlsUtils.isTLSv13(latest);
         boolean pre13Active = !TlsUtils.isTLSv13(earliest);
 
-        boolean isGMSSLActive = TlsUtils.isGMSSLv11(latest);
-
         int[] candidates = new int[enabledCipherSuites.length];
 
         int count = 0;
@@ -493,12 +484,6 @@ class ProvSSLContextSpi
             CipherSuiteInfo candidate = supportedCipherSuites.get(enabledCipherSuite);
             if (null == candidate)
             {
-                continue;
-            }
-            if (isGMSSLActive && !candidate.isGMSSLv11())
-            {
-                // GMSSL specific suite different with TLS
-                // if found GMSSL active just keep gm related suites
                 continue;
             }
             if (candidate.isTLSv13())
