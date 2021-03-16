@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
@@ -241,7 +242,8 @@ public class EC
             addSignatureAlgorithm(provider, "SHA3-256", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_256", NISTObjectIdentifiers.id_ecdsa_with_sha3_256);
             addSignatureAlgorithm(provider, "SHA3-384", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_384", NISTObjectIdentifiers.id_ecdsa_with_sha3_384);
             addSignatureAlgorithm(provider, "SHA3-512", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_512", NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
-
+            addSignatureAlgorithm(provider, "SHAKE128", "ECDSA", PREFIX + "SignatureSpi$ecDSAShake128", CMSObjectIdentifiers.id_ecdsa_with_shake128);
+            addSignatureAlgorithm(provider, "SHAKE256", "ECDSA", PREFIX + "SignatureSpi$ecDSAShake256", CMSObjectIdentifiers.id_ecdsa_with_shake256);
             addSignatureAlgorithm(provider, "RIPEMD160", "ECDSA", PREFIX + "SignatureSpi$ecDSARipeMD160",TeleTrusTObjectIdentifiers.ecSignWithRipemd160);
 
             provider.addAlgorithm("Signature.SHA1WITHECNR", PREFIX + "SignatureSpi$ecNR");

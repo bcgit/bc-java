@@ -66,7 +66,7 @@ public class PSSSignatureSpi
         }
         else
         {
-            this.contentDigest = mgfDigest;
+            this.contentDigest = DigestFactory.getDigest(paramSpec.getDigestAlgorithm());
         }
     }
 
@@ -96,7 +96,14 @@ public class PSSSignatureSpi
             this.paramSpec = baseParamSpec;
         }
 
-        this.mgfDigest = DigestFactory.getDigest(paramSpec.getDigestAlgorithm());
+        if ("MGF1".equals(paramSpec.getMGFAlgorithm()))
+        {
+            this.mgfDigest = DigestFactory.getDigest(paramSpec.getDigestAlgorithm());
+        }
+        else // an XOF
+        {
+            this.mgfDigest = DigestFactory.getDigest(paramSpec.getMGFAlgorithm());
+        }
         this.saltLength = paramSpec.getSaltLength();
         this.trailer = getTrailer(paramSpec.getTrailerField());
         this.isRaw = isRaw;
@@ -224,33 +231,43 @@ public class PSSSignatureSpi
                     throw new InvalidAlgorithmParameterException("parameter must be using " + originalSpec.getDigestAlgorithm());
                 }
             }
-            if (!newParamSpec.getMGFAlgorithm().equalsIgnoreCase("MGF1") && !newParamSpec.getMGFAlgorithm().equals(PKCSObjectIdentifiers.id_mgf1.getId()))
+
+            Digest mgfDigest;
+            if (newParamSpec.getMGFAlgorithm().equalsIgnoreCase("MGF1")
+                || newParamSpec.getMGFAlgorithm().equals(PKCSObjectIdentifiers.id_mgf1.getId()))
+            {
+                if (!(newParamSpec.getMGFParameters() instanceof MGF1ParameterSpec))
+                {
+                    throw new InvalidAlgorithmParameterException("unknown MGF parameters");
+                }
+
+                MGF1ParameterSpec mgfParams = (MGF1ParameterSpec)newParamSpec.getMGFParameters();
+
+                if (!DigestFactory.isSameDigest(mgfParams.getDigestAlgorithm(), newParamSpec.getDigestAlgorithm()))
+                {
+                    throw new InvalidAlgorithmParameterException("digest algorithm for MGF should be the same as for PSS parameters.");
+                }
+
+                mgfDigest = DigestFactory.getDigest(mgfParams.getDigestAlgorithm());
+            }
+            else if (newParamSpec.getMGFAlgorithm().equals("SHAKE128")
+                    || newParamSpec.getMGFAlgorithm().equals("SHAKE256"))
+            {
+                mgfDigest = DigestFactory.getDigest(newParamSpec.getMGFAlgorithm());
+            }
+            else
             {
                 throw new InvalidAlgorithmParameterException("unknown mask generation function specified");
             }
-            
-            if (!(newParamSpec.getMGFParameters() instanceof MGF1ParameterSpec))
+
+            if (mgfDigest == null)
             {
-                throw new InvalidAlgorithmParameterException("unknown MGF parameters");
-            }
-            
-            MGF1ParameterSpec mgfParams = (MGF1ParameterSpec)newParamSpec.getMGFParameters();
-            
-            if (!DigestFactory.isSameDigest(mgfParams.getDigestAlgorithm(), newParamSpec.getDigestAlgorithm()))
-            {
-                throw new InvalidAlgorithmParameterException("digest algorithm for MGF should be the same as for PSS parameters.");
-            }
-            
-            Digest newDigest = DigestFactory.getDigest(mgfParams.getDigestAlgorithm());
-            
-            if (newDigest == null)
-            {
-                throw new InvalidAlgorithmParameterException("no match on MGF digest algorithm: "+ mgfParams.getDigestAlgorithm());
+                throw new InvalidAlgorithmParameterException("no match on MGF algorithm: "+ newParamSpec.getMGFAlgorithm());
             }
 
             this.engineParams = null;
             this.paramSpec = newParamSpec;
-            this.mgfDigest = newDigest;
+            this.mgfDigest = mgfDigest;
             this.saltLength = paramSpec.getSaltLength();
             this.trailer = getTrailer(paramSpec.getTrailerField());
 
@@ -281,6 +298,11 @@ public class PSSSignatureSpi
         {
             if (paramSpec != null)
             {
+                if (paramSpec.getDigestAlgorithm().equals(paramSpec.getMGFAlgorithm())
+                    && paramSpec.getMGFParameters() == null)
+                {
+                    return null; // must be RFC 8702 SHAKE128 or SHAKE256
+                }
                 try
                 {
                     engineParams = helper.createAlgorithmParameters("PSS");
@@ -339,6 +361,24 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA1withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA1withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA1", "SHAKE128", null, 20, 1));
+        }
+    }
+
+    static public class SHA1withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA1withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA1", "SHAKE256", null, 20, 1));
+        }
+    }
+
     static public class SHA224withRSA
         extends PSSSignatureSpi
     {
@@ -347,13 +387,49 @@ public class PSSSignatureSpi
             super(new RSABlindedEngine(), new PSSParameterSpec("SHA-224", "MGF1", new MGF1ParameterSpec("SHA-224"), 28, 1));
         }
     }
-    
+
+    static public class SHA224withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA224withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-224", "SHAKE128", null, 28, 1));
+        }
+    }
+
+    static public class SHA224withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA224withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-224", "SHAKE256", null, 28, 1));
+        }
+    }
+
     static public class SHA256withRSA
         extends PSSSignatureSpi
     {
         public SHA256withRSA()
         {
             super(new RSABlindedEngine(), new PSSParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), 32, 1));
+        }
+    }
+
+    static public class SHA256withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA256withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-256", "SHAKE128", null, 32, 1));
+        }
+    }
+
+    static public class SHA256withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA256withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-256", "SHAKE256", null, 32, 1));
         }
     }
 
@@ -366,12 +442,48 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA384withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA384withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-384", "SHAKE128", null, 48, 1));
+        }
+    }
+
+    static public class SHA384withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA384withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-384", "SHAKE256", null, 48, 1));
+        }
+    }
+
     static public class SHA512withRSA
         extends PSSSignatureSpi
     {
         public SHA512withRSA()
         {
             super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512", "MGF1", new MGF1ParameterSpec("SHA-512"), 64, 1));
+        }
+    }
+
+    static public class SHA512withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA512withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512", "SHAKE128", null, 64, 1));
+        }
+    }
+
+    static public class SHA512withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA512withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512", "SHAKE256", null, 64, 1));
         }
     }
 
@@ -384,12 +496,48 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA512_224withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA512_224withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512(224)", "SHAKE128", null, 28, 1));
+        }
+    }
+
+    static public class SHA512_224withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA512_224withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512(224)", "SHAKE256", null, 28, 1));
+        }
+    }
+
     static public class SHA512_256withRSA
         extends PSSSignatureSpi
     {
         public SHA512_256withRSA()
         {
             super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512(256)", "MGF1", new MGF1ParameterSpec("SHA-512(256)"), 32, 1));
+        }
+    }
+
+    static public class SHA512_256withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA512_256withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512(256)", "SHAKE128", null, 32, 1));
+        }
+    }
+
+    static public class SHA512_256withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA512_256withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512(256)", "SHAKE256", null, 32, 1));
         }
     }
 
@@ -402,12 +550,48 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA3_224withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA3_224withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-224", "SHAKE128", null, 28, 1));
+        }
+    }
+
+    static public class SHA3_224withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA3_224withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-224", "SHAKE256", null, 28, 1));
+        }
+    }
+
     static public class SHA3_256withRSA
         extends PSSSignatureSpi
     {
         public SHA3_256withRSA()
         {
             super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-256", "MGF1", new MGF1ParameterSpec("SHA3-256"), 32, 1));
+        }
+    }
+
+    static public class SHA3_256withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA3_256withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-256", "SHAKE128", null, 32, 1));
+        }
+    }
+
+    static public class SHA3_256withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA3_256withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-256", "SHAKE256", null, 32, 1));
         }
     }
 
@@ -420,12 +604,66 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA3_384withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA3_384withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-384", "SHAKE128", null, 48, 1));
+        }
+    }
+
+    static public class SHA3_384withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA3_384withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-384", "SHAKE256", null, 48, 1));
+        }
+    }
+
     static public class SHA3_512withRSA
         extends PSSSignatureSpi
     {
         public SHA3_512withRSA()
         {
             super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-512", "MGF1", new MGF1ParameterSpec("SHA3-512"), 64, 1));
+        }
+    }
+
+    static public class SHA3_512withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA3_512withRSAandSHAKE128()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-512", "SHAKE128", null, 64, 1));
+        }
+    }
+
+    static public class SHA3_512withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA3_512withRSAandSHAKE256()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-512", "SHAKE256", null, 64, 1));
+        }
+    }
+
+    static public class SHAKE128WithRSAPSS
+        extends PSSSignatureSpi
+    {
+        public SHAKE128WithRSAPSS()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHAKE128", "SHAKE128", null, 32, 1));
+        }
+    }
+
+    static public class SHAKE256WithRSAPSS
+        extends PSSSignatureSpi
+    {
+        public SHAKE256WithRSAPSS()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHAKE256", "SHAKE256", null, 64, 1));
         }
     }
 

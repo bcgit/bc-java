@@ -34,7 +34,8 @@ public class SignatureAlgorithm
     public static final short ecdsa_brainpoolP384r1tls13_sha384 = 27;
     public static final short ecdsa_brainpoolP512r1tls13_sha512 = 28;
 
-    /**
+
+    /*
      * GMSSL GMT 0009-2012
      */
     public static final short sm2 = 200;

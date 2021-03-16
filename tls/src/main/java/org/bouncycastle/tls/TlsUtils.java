@@ -4865,7 +4865,10 @@ public class TlsUtils
 
         ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
 
-        Certificate serverCertificate = Certificate.parse(clientContext, buf, endPointHash);
+        Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setMaxChainLength(client.getMaxCertificateChainLength());
+
+        Certificate serverCertificate = Certificate.parse(options, clientContext, buf, endPointHash);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -4895,7 +4898,10 @@ public class TlsUtils
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        Certificate serverCertificate = Certificate.parse(clientContext, buf, null);
+        Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setMaxChainLength(client.getMaxCertificateChainLength());
+
+        Certificate serverCertificate = Certificate.parse(options, clientContext, buf, null);
 
         TlsProtocol.assertEmpty(buf);
 

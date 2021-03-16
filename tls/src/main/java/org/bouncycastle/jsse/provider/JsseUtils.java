@@ -67,6 +67,10 @@ abstract class JsseUtils
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyMasterSecret", true);
     private static final boolean provTlsAllowLegacyResumption =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.allowLegacyResumption", false);
+    private static final int provTlsMaxCertificateChainLength =
+        PropertyUtils.getIntegerSystemProperty("jdk.tls.maxCertificateChainLength", 10, 1, Integer.MAX_VALUE);
+    private static final int provTlsMaxHandshakeMessageSize =
+        PropertyUtils.getIntegerSystemProperty("jdk.tls.maxHandshakeMessageSize", 32768, 1024, Integer.MAX_VALUE);
     private static final boolean provTlsRequireCloseNotify =
         PropertyUtils.getBooleanSystemProperty("com.sun.net.ssl.requireCloseNotify", true);
     private static final boolean provTlsUseExtendedMasterSecret =
@@ -179,6 +183,16 @@ abstract class JsseUtils
         return a == b || (null != a && null != b && a.equals(b));
     }
 
+    static int getMaxCertificateChainLength()
+    {
+        return provTlsMaxCertificateChainLength;
+    }
+
+    static int getMaxHandshakeMessageSize()
+    {
+        return provTlsMaxHandshakeMessageSize;
+    }
+
     static String[] resize(String[] data, int count)
     {
         if (count < data.length)
@@ -219,6 +233,9 @@ abstract class JsseUtils
         case SignatureAlgorithm.dsa:
             return "DSA";
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return "EC";
         case SignatureAlgorithm.ed25519:
             return "Ed25519";
@@ -651,6 +668,9 @@ abstract class JsseUtils
             return privateKey instanceof DSAPrivateKey || "DSA".equalsIgnoreCase(algorithm);
 
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return privateKey instanceof ECPrivateKey || "EC".equalsIgnoreCase(algorithm);
 
         case SignatureAlgorithm.ed25519:

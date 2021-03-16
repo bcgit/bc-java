@@ -134,6 +134,8 @@ public abstract class TlsProtocol
     final RecordStream recordStream;
     final Object recordWriteLock = new Object();
 
+    private int maxHandshakeMessageSize = -1;
+
     TlsHandshakeHash handshakeHash;
 
     private TlsInputStream tlsInputStream = null;
@@ -375,6 +377,8 @@ public abstract class TlsProtocol
         AbstractTlsContext context = getContextAdmin(); 
         TlsPeer peer = getPeer();
 
+        this.maxHandshakeMessageSize = Math.max(1024, peer.getMaxHandshakeMessageSize());
+
         this.handshakeHash = new DeferredHash(context);
         this.connection_state = CS_START;
 
@@ -548,14 +552,24 @@ public abstract class TlsProtocol
             int header = queue.readInt32();
 
             short type = (short)(header >>> 24);
-            int length = header & 0x00FFFFFF;
-            int totalLength = 4 + length;
+            if (!HandshakeType.isRecognized(type))
+            {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                    "Handshake message of unrecognized type: " + type);
+            }
 
-            /*
-             * Check if we have enough bytes in the buffer to read the full message.
-             */
+            int length = header & 0x00FFFFFF;
+            if (length > maxHandshakeMessageSize)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error,
+                    "Handshake message length exceeds the maximum: " + HandshakeType.getText(type) + ", " + length
+                        + " > " + maxHandshakeMessageSize);
+            }
+
+            int totalLength = 4 + length;
             if (queue.available() < totalLength)
             {
+                // Not enough bytes in the buffer to read the full message.
                 break;
             }
 

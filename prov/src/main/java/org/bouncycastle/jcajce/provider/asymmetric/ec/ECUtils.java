@@ -5,6 +5,7 @@ import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
@@ -14,6 +15,7 @@ import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
 
@@ -26,39 +28,42 @@ class ECUtils
         return (key instanceof BCECPublicKey) ? ((BCECPublicKey)key).engineGetKeyParameters() : ECUtil.generatePublicKeyParameter(key);
     }
 
-    static X9ECParameters getDomainParametersFromGenSpec(ECGenParameterSpec genSpec)
+    static X9ECParameters getDomainParametersFromGenSpec(ECGenParameterSpec genSpec, ProviderConfiguration configuration)
     {
-        return getDomainParametersFromName(genSpec.getName());
+        return getDomainParametersFromName(genSpec.getName(), configuration);
     }
 
-    static X9ECParameters getDomainParametersFromName(String curveName)
+    static X9ECParameters getDomainParametersFromName(String curveName, ProviderConfiguration configuration)
     {
-        X9ECParameters domainParameters;
-        try
+        if (null == curveName || curveName.length() < 1)
         {
-            if (curveName.charAt(0) >= '0' && curveName.charAt(0) <= '2')
+            return null;
+        }
+
+        int spacePos = curveName.indexOf(' ');
+        if (spacePos > 0)
+        {
+            curveName = curveName.substring(spacePos + 1);
+        }
+
+        ASN1ObjectIdentifier oid = getOID(curveName);
+        if (null == oid)
+        {
+            return ECUtil.getNamedCurveByName(curveName);
+        }
+
+        X9ECParameters x9 = ECUtil.getNamedCurveByOid(oid);
+        if (null == x9)
+        {
+            if (null != configuration)
             {
-                ASN1ObjectIdentifier oidID = new ASN1ObjectIdentifier(curveName);
-                domainParameters = ECUtil.getNamedCurveByOid(oidID);
-            }
-            else
-            {
-                if (curveName.indexOf(' ') > 0)
-                {
-                    curveName = curveName.substring(curveName.indexOf(' ') + 1);
-                    domainParameters = ECUtil.getNamedCurveByName(curveName);
-                }
-                else
-                {
-                    domainParameters = ECUtil.getNamedCurveByName(curveName);
-                }
+                Map extraCurves = configuration.getAdditionalECParameters();
+
+                x9 = (X9ECParameters)extraCurves.get(oid);
             }
         }
-        catch (IllegalArgumentException ex)
-        {
-            domainParameters = ECUtil.getNamedCurveByName(curveName);
-        }
-        return domainParameters;
+
+        return x9;
     }
 
     static X962Parameters getDomainParametersFromName(ECParameterSpec ecSpec, boolean withCompression)
@@ -93,5 +98,21 @@ class ECUtils
         }
 
         return params;
+    }
+
+    private static ASN1ObjectIdentifier getOID(String curveName)
+    {
+        char firstChar = curveName.charAt(0);
+        if (firstChar >= '0' && firstChar <= '2')
+        {
+            try
+            {
+                return new ASN1ObjectIdentifier(curveName);
+            }
+            catch (Exception e)
+            {
+            }
+        }
+        return null;
     }
 }
