@@ -146,7 +146,8 @@ public class GMSimpleSSLSocket extends SSLSocket
     @Override
     public SSLSession getSession()
     {
-        return null;
+        // prevent apache HttpClient get session null throw error
+        return new GMEmptySession();
     }
 
     @Override

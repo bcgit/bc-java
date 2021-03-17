@@ -30,10 +30,40 @@ public class GMSimpleSSLSocketFactoryTest
 
 
         bootServer(port, certList, signKey, encKey);
-
-//        bootClient("localhost", port);
+//        bootClient("sm2test.ovssl.cn", 443);
 
     }
+
+    /*
+    // GMSSL HttpClient Example
+    import org.apache.http.HttpResponse;
+    import org.apache.http.client.HttpClient;
+    import org.apache.http.client.methods.HttpGet;
+    import org.apache.http.conn.ssl.NoopHostnameVerifier;
+    import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+    import org.apache.http.impl.client.HttpClientBuilder;
+    import org.bouncycastle.jce.provider.BouncyCastleProvider;
+    import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+    import org.bouncycastle.jsse.provider.gm.GMSimpleSSLSocketFactory;
+
+    import java.security.Security;
+    public class GMHttpClient {
+        public static void main(String[] args) throws Exception {
+            Security.addProvider(new BouncyCastleProvider());
+            Security.addProvider(new BouncyCastleJsseProvider());
+
+            GMSimpleSSLSocketFactory factory = new GMSimpleSSLSocketFactory();
+
+            SSLConnectionSocketFactory sf = new SSLConnectionSocketFactory(factory,  new NoopHostnameVerifier());
+            HttpClient client = HttpClientBuilder.create()
+                    .setSSLSocketFactory(sf)
+                    .build();
+
+            final HttpResponse response = client.execute(new HttpGet("https://127.0.0.1:5558"));
+            response.getEntity().writeTo(System.out);
+        }
+    }
+     */
 
     private static void bootServer(int port, Certificate certList, AsymmetricKeyParameter signKey, AsymmetricKeyParameter encKey)
     {
