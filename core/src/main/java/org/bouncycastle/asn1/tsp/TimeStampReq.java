@@ -62,27 +62,43 @@ public class TimeStampReq
             // tsaPolicy
             if (seq.getObjectAt(opt) instanceof ASN1ObjectIdentifier)
             {
+                checkOption(tsaPolicy, opt, 2);
                 tsaPolicy = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(opt));
             }
             // nonce
             else if (seq.getObjectAt(opt) instanceof ASN1Integer)
             {
+                checkOption(nonce, opt, 3);
                 nonce = ASN1Integer.getInstance(seq.getObjectAt(opt));
             }
             // certReq
             else if (seq.getObjectAt(opt) instanceof ASN1Boolean)
             {
+                checkOption(certReq, opt, 4);
                 certReq = ASN1Boolean.getInstance(seq.getObjectAt(opt));
             }
             // extensions
             else if (seq.getObjectAt(opt) instanceof ASN1TaggedObject)
             {
+                checkOption(extensions, opt, 5);
                 ASN1TaggedObject    tagged = (ASN1TaggedObject)seq.getObjectAt(opt);
                 if (tagged.getTagNo() == 0)
                 {
                     extensions = Extensions.getInstance(tagged, false);
                 }
             }
+            else
+            {
+                throw new IllegalArgumentException("unidentified structure in sequence");
+            }
+        }
+    }
+
+    private void checkOption(Object o, int index, int maxOption)
+    {
+        if (o != null || index > maxOption)
+        {
+            throw new IllegalArgumentException("badly placed optional in sequence");
         }
     }
 
@@ -125,6 +141,10 @@ public class TimeStampReq
 
     public ASN1Boolean getCertReq()
     {
+        if (certReq == null)
+        {
+            return ASN1Boolean.FALSE;
+        }
         return certReq;
     }
 
