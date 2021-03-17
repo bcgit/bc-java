@@ -73,6 +73,7 @@ import org.bouncycastle.tsp.TimeStampTokenGenerator;
 import org.bouncycastle.tsp.TimeStampTokenInfo;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.encoders.Base64;
 
 public class NewTSPTest
     extends TestCase
@@ -105,6 +106,11 @@ public class NewTSPTest
         Store certs = new JcaCertStore(certList);
 
         basicTest(origKP.getPrivate(), origCert, certs);
+
+        TimeStampRequest tReq = new TimeStampRequest(Base64.decode("MDcCAQEwLzALBglghkgBZQMEAgEEIJg0h23PsFyxZ6XCSVPrpYxKyJsa31fyjy+dCa8QfujwAQH/"));
+        
+        assertTrue(tReq.getCertReq());
+
         resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_SECONDS, "19700101000009Z");
         resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_TENTHS_OF_SECONDS, "19700101000009.9Z");
         resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_HUNDREDTHS_OF_SECONDS, "19700101000009.99Z");
