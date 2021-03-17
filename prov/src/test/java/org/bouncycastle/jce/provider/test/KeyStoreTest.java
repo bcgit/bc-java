@@ -403,7 +403,9 @@ public class KeyStoreTest
     {
         keyStoreTest("BKS");
         keyStoreTest("UBER");
+
         keyStoreTest("BKS-V1");
+
         ecStoreTest("BKS");
         oldStoreTest();
         checkException();
@@ -412,6 +414,8 @@ public class KeyStoreTest
     public static void main(
         String[]    args)
     {
+        System.setProperty("org.bouncycastle.bks.enable_v1", "true");
+
         Security.addProvider(new BouncyCastleProvider());
 
         runTest(new KeyStoreTest());
