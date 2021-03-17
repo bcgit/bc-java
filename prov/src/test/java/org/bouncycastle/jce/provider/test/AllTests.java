@@ -35,6 +35,8 @@ public class AllTests
 
         protected void setUp()
         {
+            System.setProperty("org.bouncycastle.bks.enable_v1", "true");
+
             Security.addProvider(new BouncyCastleProvider());
         }
 
