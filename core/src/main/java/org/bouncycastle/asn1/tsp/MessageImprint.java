@@ -17,7 +17,9 @@ public class MessageImprint
     byte[]              hashedMessage;
     
     /**
-     * @param o
+     * Return an instance of MessageImprint, or null, based on o.
+     * 
+     * @param o the object to be converted.
      * @return a MessageImprint object.
      */
     public static MessageImprint getInstance(Object o)
@@ -38,8 +40,15 @@ public class MessageImprint
     private MessageImprint(
         ASN1Sequence seq)
     {
-        this.hashAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
-        this.hashedMessage = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
+        if (seq.size() == 2)
+        {
+            this.hashAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
+            this.hashedMessage = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
+        }
+        else
+        {
+            throw new IllegalArgumentException("sequence has wrong number of elements");
+        }
     }
     
     public MessageImprint(
