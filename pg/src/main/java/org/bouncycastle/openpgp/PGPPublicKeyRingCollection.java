@@ -466,27 +466,6 @@ public class PGPPublicKeyRingCollection
      */
     public Iterator<PGPPublicKeyRing> iterator()
     {
-        return new KeyRingIterator(order);
-    }
-
-    private class KeyRingIterator
-        implements Iterator
-    {
-        private final Iterator<Long> iterator;
-
-        KeyRingIterator(List<Long> ids)
-        {
-            this.iterator = ids.iterator();
-        }
-
-        public boolean hasNext()
-        {
-            return iterator.hasNext();
-        }
-
-        public Object next()
-        {
-            return pubRings.get(iterator.next());
-        }
+        return new KeyRingIterator(order, pubRings);
     }
 }
