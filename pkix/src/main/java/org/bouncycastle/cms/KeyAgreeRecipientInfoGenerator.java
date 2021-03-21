@@ -68,7 +68,7 @@ public abstract class KeyAgreeRecipientInfoGenerator
     protected OriginatorPublicKey createOriginatorPublicKey(SubjectPublicKeyInfo originatorKeyInfo)
     {
         return new OriginatorPublicKey(
-            new AlgorithmIdentifier(originatorKeyInfo.getAlgorithm().getAlgorithm(), DERNull.INSTANCE),
+            originatorKeyInfo.getAlgorithm(),
             originatorKeyInfo.getPublicKeyData().getBytes());
     }
 
