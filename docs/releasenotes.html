@@ -29,6 +29,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <ul>
 <li>Lightweight conversion of Ed25519 keys in the PGP API could drop the leading byte as it was zero. This has been fixed.</li>
 <li>Marker packets appearing at the start of PGP public key rings could cause parsing failure. This has been fixed.</li>
+<li>ESTService could fail for some valid Content-Type headers. This has been fixed.</li>
+<li>Originator key algorithm parameters were being passed as NULL in key agreement recipients. The parameters now reflect the value of the parameters in the key's SubjectPublicKeyInfo.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -42,6 +44,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>An implementation of TupleHash has been added to the lightweight API.</li>
 <li>RSA-PSS now supports the use of SHAKE128 and SHAKE256 as the mask generation function and digest.</li>
 <li>ECDSA now supports the use of SHAKE128 and SHAKE256.</li>
+<li>PGPPBEEncryptedData will now reset the stream if the initial checksum fails so another password can be tried.</li>
+<li>Iterators on public and secret key ring collections in PGP now reflect the original order of the public/secret key rings they contain.</li>
+<li>KeyAgreeRecipientInformation now has a getOriginator() method for retrieving the underlying orginator information.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>

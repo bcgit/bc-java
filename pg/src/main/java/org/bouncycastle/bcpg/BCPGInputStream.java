@@ -1,5 +1,6 @@
 package org.bouncycastle.bcpg;
 
+import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +17,9 @@ public class BCPGInputStream
     boolean        next = false;
     int            nextB;
 
+    boolean        mNext = false;
+    int            mNextB;
+
     public BCPGInputStream(
         InputStream    in)
     {
@@ -26,6 +30,26 @@ public class BCPGInputStream
         throws IOException
     {
         return in.available();
+    }
+
+    public boolean markSupported()
+    {
+        return in.markSupported();
+    }
+
+    public synchronized void mark(int readLimit)
+    {
+        mNext = next;
+        mNextB = nextB;
+        in.mark(readLimit);
+    }
+
+    public synchronized void reset()
+        throws IOException
+    {
+        next = mNext;
+        nextB = mNextB;
+        in.reset();
     }
 
     public int read()
@@ -217,7 +241,8 @@ public class BCPGInputStream
         }
         else
         {
-            objStream = new BCPGInputStream(new PartialInputStream(this, partial, bodyLen));
+            objStream = new BCPGInputStream(
+                new BufferedInputStream(new PartialInputStream(this, partial, bodyLen)));
         }
 
         switch (tag)
