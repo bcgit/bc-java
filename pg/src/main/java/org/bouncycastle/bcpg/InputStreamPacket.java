@@ -1,19 +1,17 @@
 package org.bouncycastle.bcpg;
 
-import java.io.BufferedInputStream;
-
 /**
  * A block of data associated with other packets in a PGP object stream.
  */
 public class InputStreamPacket
     extends Packet
 {
-    private BufferedInputStream        in;
+    private BCPGInputStream        in;
 
     public InputStreamPacket(
         BCPGInputStream  in)
     {
-        this.in = new BufferedInputStream(in);
+        this.in = in;
     }
 
     /**
@@ -21,7 +19,7 @@ public class InputStreamPacket
      *
      * @return the data in this packet.
      */
-    public BufferedInputStream getInputStream()
+    public BCPGInputStream getInputStream()
     {
         return in;
     }
