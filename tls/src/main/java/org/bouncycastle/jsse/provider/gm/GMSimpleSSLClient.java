@@ -14,7 +14,7 @@ import java.util.Hashtable;
  * - make handshake connection
  * - no authentication
  *
- * @author Cliven
+ *
  * @since 2021-03-09 14:01:50
  */
 public class GMSimpleSSLClient extends AbstractTlsClient

@@ -19,7 +19,7 @@ import java.net.SocketAddress;
 /**
  * GMSSL Socket simple implement.
  *
- * @author Cliven
+ *
  * @since 2021-03-16 13:18:06
  */
 public class GMSimpleSSLSocket extends SSLSocket

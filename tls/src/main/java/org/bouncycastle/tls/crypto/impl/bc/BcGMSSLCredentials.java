@@ -19,7 +19,7 @@ import java.security.Signature;
  * one for sign, one for encrypt
  * so we need provider Signer and Decryptor both
  *
- * @author Cliven
+ *
  * @since 2021-03-12 12:10:31
  */
 public class BcGMSSLCredentials implements TlsCredentialedSigner, TlsCredentialedDecryptor

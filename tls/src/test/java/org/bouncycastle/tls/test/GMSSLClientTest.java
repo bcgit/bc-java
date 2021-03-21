@@ -17,7 +17,7 @@ import java.security.*;
 /**
  * Test GMSSL's client connection status
  *
- * @author cliven
+ *
  * @since 2021-03-05 11:31:29
  */
 public class GMSSLClientTest

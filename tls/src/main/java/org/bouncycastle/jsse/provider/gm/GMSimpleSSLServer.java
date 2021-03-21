@@ -14,7 +14,7 @@ import java.security.SecureRandom;
 /**
  * Simple GMSSL Server
  *
- * @author Cliven
+ *
  * @since 2021-03-16 09:31:14
  */
 public class GMSimpleSSLServer

@@ -13,7 +13,7 @@ import java.security.SecureRandom;
 /**
  * A simple test designed to conduct a GMSSL handshake with an external GMSSL client.
  *
- * @author Cliven
+ *
  * @since 2021-03-16 09:57:58
  */
 public class GMSSLServerTest

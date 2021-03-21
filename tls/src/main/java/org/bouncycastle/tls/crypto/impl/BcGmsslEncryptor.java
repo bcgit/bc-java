@@ -16,7 +16,7 @@ import java.security.SecureRandom;
 /**
  * GMSSL basic chinese GMT 0009-2012
  *
- * @author Cliven
+ *
  * @since 2021-03-10 13:56:20
  */
 public class BcGmsslEncryptor implements TlsEncryptor

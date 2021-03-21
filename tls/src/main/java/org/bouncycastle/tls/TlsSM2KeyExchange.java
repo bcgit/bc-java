@@ -13,7 +13,7 @@ import java.io.OutputStream;
 /**
  * GMSSL SM2 exchange.
  *
- * @author Cliven
+ *
  */
 public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
 {

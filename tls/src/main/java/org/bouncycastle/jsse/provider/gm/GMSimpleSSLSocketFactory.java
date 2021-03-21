@@ -16,7 +16,7 @@ import java.security.SecureRandom;
 /**
  * Simple GMSSL Socket Factory
  *
- * @author Cliven
+ *
  * @since 2021-03-16 13:15:00
  */
 public class GMSimpleSSLSocketFactory extends SSLSocketFactory

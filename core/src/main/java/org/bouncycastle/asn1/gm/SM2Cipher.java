@@ -14,7 +14,7 @@ import java.util.Enumeration;
  * <p>
  * sm2 encrypted data specific struct
  *
- * @author Cliven
+ *
  * @since 2021-03-10 13:28:12
  */
 public class SM2Cipher extends ASN1Object

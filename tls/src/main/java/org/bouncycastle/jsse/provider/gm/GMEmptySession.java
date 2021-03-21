@@ -10,7 +10,7 @@ import java.security.cert.Certificate;
 /**
  * Empty session to prevent errors
  *
- * @author Cliven
+ *
  * @since 2021-03-17 16:35:18
  */
 public class GMEmptySession implements SSLSession

@@ -10,7 +10,7 @@ import org.bouncycastle.tls.DigitallySigned;
  *
  * force use SM2WithSM3 signature verify data.
  *
- * @author Cliven
+ *
  */
 public class BcTlsSM2Verifier extends BcTlsVerifier
 {
