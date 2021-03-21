@@ -74,6 +74,16 @@ public class KeyAgreeRecipientInformation
         this.encryptedKey = encryptedKey;
     }
 
+    /**
+     * Return the originator details for this recipient.
+     *
+     * @return the originator details.
+     */
+    public OriginatorIdentifierOrKey getOriginator()
+    {
+        return this.info.getOriginator();
+    }
+
     private SubjectPublicKeyInfo getSenderPublicKeyInfo(AlgorithmIdentifier recKeyAlgId,
         OriginatorIdentifierOrKey originator)
         throws CMSException, IOException
