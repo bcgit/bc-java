@@ -33,7 +33,8 @@ public class RegressionTest
         new SExprTest(),
         new ArmoredInputStreamTest(),
         new PGPUtilTest(),
-        new BcPGPEd25519JcaKeyPairConversionTest()
+        new BcPGPEd25519JcaKeyPairConversionTest(),
+        new RewindStreamWhenDecryptingMultiSKESKMessageTest()
     };
 
     public static void main(String[] args)
