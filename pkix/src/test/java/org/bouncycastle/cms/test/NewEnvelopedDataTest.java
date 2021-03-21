@@ -60,6 +60,7 @@ import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
@@ -1718,6 +1719,12 @@ public class NewEnvelopedDataTest
 
         confirmDataReceived(recipients, data, _reciEcCert, _reciEcKP.getPrivate(), BC);
         confirmNumberRecipients(recipients, 1);
+
+        KeyAgreeRecipientInformation recInfo = (KeyAgreeRecipientInformation)recipients.getRecipients().iterator().next();
+
+        assertTrue(recInfo.getOriginator().getOriginatorKey() != null);
+
+        assertEquals(X9ObjectIdentifiers.prime239v1, recInfo.getOriginator().getOriginatorKey().getAlgorithm().getParameters());
     }
 
     public void testFaultyAgreementRecipient()
