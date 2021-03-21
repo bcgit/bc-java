@@ -29,6 +29,7 @@ public class SignatureAndHashAlgorithm
         SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384);
     public static final SignatureAndHashAlgorithm ecdsa_brainpoolP512r1tls13_sha512 = createInstanceIntrinsic(
         SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512);
+    public static final SignatureAndHashAlgorithm sm2 = createInstanceIntrinsic(SignatureAlgorithm.sm2);
 
     public static SignatureAndHashAlgorithm getInstance(short hashAlgorithm, short signatureAlgorithm)
     {
@@ -67,6 +68,8 @@ public class SignatureAndHashAlgorithm
             return ecdsa_brainpoolP384r1tls13_sha384;
         case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return ecdsa_brainpoolP512r1tls13_sha512;
+        case SignatureAlgorithm.sm2:
+            return sm2;
         default:
             return new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, signatureAlgorithm);
         }

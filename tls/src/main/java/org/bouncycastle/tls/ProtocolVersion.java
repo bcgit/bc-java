@@ -14,6 +14,9 @@ public final class ProtocolVersion
     public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF, "DTLS 1.0");
     public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD, "DTLS 1.2");
 
+    public static final ProtocolVersion GMSSLv11 = new ProtocolVersion(0x0101, "GMSSL 1.1");
+
+    static final ProtocolVersion CLIENT_GM_SUPPORTED_TLS = GMSSLv11;
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_DTLS = DTLSv10;
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_TLS = SSLv3;
     static final ProtocolVersion CLIENT_LATEST_SUPPORTED_DTLS = DTLSv12;
@@ -142,6 +145,9 @@ public final class ProtocolVersion
 
         int fullVersion = version.getFullVersion();
 
+        if(fullVersion == CLIENT_GM_SUPPORTED_TLS.getFullVersion()){
+            return  true;
+        }
         return fullVersion >= CLIENT_EARLIEST_SUPPORTED_TLS.getFullVersion()
             && fullVersion <= CLIENT_LATEST_SUPPORTED_TLS.getFullVersion();
     }
@@ -155,6 +161,9 @@ public final class ProtocolVersion
 
         int fullVersion = version.getFullVersion();
 
+        if(fullVersion == CLIENT_GM_SUPPORTED_TLS.getFullVersion()){
+            return  true;
+        }
         return fullVersion >= SERVER_EARLIEST_SUPPORTED_TLS.getFullVersion()
             && fullVersion <= SERVER_LATEST_SUPPORTED_TLS.getFullVersion();
     }
@@ -218,6 +227,10 @@ public final class ProtocolVersion
         return getMajorVersion() == 0xFE;
     }
 
+    public boolean isGMSSL(){
+        return getMajorVersion() == 0x01;
+    }
+
     public boolean isSSL()
     {
         return this == SSLv3;
@@ -225,7 +238,9 @@ public final class ProtocolVersion
 
     public boolean isTLS()
     {
-        return getMajorVersion() == 0x03;
+        final int majorVersion = getMajorVersion();
+        // GMSSL is also a variants TLS
+        return majorVersion == 0x03 || majorVersion == 0x01;
     }
 
     public ProtocolVersion getEquivalentTLSVersion()
@@ -240,6 +255,7 @@ public final class ProtocolVersion
             case 0xFD:  return TLSv12;
             default:    return null;
             }
+        case 0x01: return  GMSSLv11;
         default:    return null;
         }
     }
@@ -347,6 +363,15 @@ public final class ProtocolVersion
     {
         switch (major)
         {
+        case 0x01:
+        {
+            switch (minor)
+            {
+            case 0x01:
+                return GMSSLv11;
+            }
+            return getUnknownVersion(major, minor, "GMSSL");
+        }
         case 0x03:
         {
             switch (minor)

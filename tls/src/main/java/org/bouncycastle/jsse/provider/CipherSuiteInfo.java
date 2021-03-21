@@ -16,7 +16,7 @@ class CipherSuiteInfo
 {
     static CipherSuiteInfo forCipherSuite(int cipherSuite, String name)
     {
-        if (!name.startsWith("TLS_"))
+        if (!name.startsWith("TLS_") && !name.startsWith("GMSSL_"))
         {
             throw new IllegalArgumentException();
         }
@@ -79,6 +79,14 @@ class CipherSuiteInfo
     boolean isTLSv13()
     {
         return isTLSv13;
+    }
+
+    /**
+     * GMSSL 1.1 crypto suites Start with 0xe0
+     * @return true - GMSSL suite; false - not
+     */
+    boolean isGMSSLv11(){
+        return ((cipherSuite >> 8) & 0xFF) == 0xe0;
     }
 
     private static void addAll(Set<String> decomposition, String... entries)
@@ -150,6 +158,9 @@ class CipherSuiteInfo
         case EncryptionAlgorithm.CHACHA20_POLY1305:
             // NOTE: Following SunJSSE, nothing beyond the transformation added above (i.e "ChaCha20-Poly1305")
             break;
+        case EncryptionAlgorithm.SM4_CBC:
+            decomposition.add("SM4_CBC");
+            break;
         case EncryptionAlgorithm.NULL:
             decomposition.add("C_NULL");
             break;
@@ -169,6 +180,9 @@ class CipherSuiteInfo
             break;
         case HashAlgorithm.sha384:
             addAll(decomposition, "SHA384", "SHA-384", "HmacSHA384");
+            break;
+        case HashAlgorithm.sm3:
+            addAll(decomposition, "SM3");
             break;
 //        case HashAlgorithm.sha512:
 //            addAll(decomposition, "SHA512", "SHA-512", "HmacSHA512");
@@ -200,6 +214,9 @@ class CipherSuiteInfo
         case KeyExchangeAlgorithm.RSA:
             addAll(decomposition, "RSA");
             break;
+        case KeyExchangeAlgorithm.SM2:
+            addAll(decomposition, "SM2");
+            break;
         default:
             throw new IllegalArgumentException();
         }
@@ -226,6 +243,9 @@ class CipherSuiteInfo
             break;
         case MACAlgorithm.hmac_sha384:
             addAll(decomposition, "SHA384", "SHA-384", "HmacSHA384");
+            break;
+        case MACAlgorithm.hmac_sm3:
+            addAll(decomposition, "SM3", "HmacSM3");
             break;
 //        case MACAlgorithm.hmac_sha512:
 //            addAll(decomposition, "SHA512", "SHA-512", "HmacSHA512");
@@ -354,6 +374,9 @@ class CipherSuiteInfo
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
             return HashAlgorithm.sha384;
 
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return HashAlgorithm.sm3;
+
         default:
             throw new IllegalArgumentException();
         }
@@ -392,6 +415,8 @@ class CipherSuiteInfo
             return "ChaCha20-Poly1305";
         case EncryptionAlgorithm.NULL:
             return "NULL";
+        case EncryptionAlgorithm.SM4_CBC:
+            return "SM4/CBC/NoPadding";
         default:
             throw new IllegalArgumentException();
         }

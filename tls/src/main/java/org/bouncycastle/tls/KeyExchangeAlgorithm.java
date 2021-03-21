@@ -53,4 +53,9 @@ public class KeyExchangeAlgorithm
      * RFC 5489
      */
     public static final int ECDHE_PSK = 24;
+
+    /*
+     * GMT 0024-2014
+     */
+    public static final int SM2 = 50;
 }

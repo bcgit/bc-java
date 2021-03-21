@@ -89,4 +89,17 @@ public class DefaultTlsKeyExchangeFactory
     {
         return new TlsSRPKeyExchange(keyExchange, loginParameters);
     }
+
+    /**
+     * GMSSL ECC_SM4_SM3 suite key exchange
+     *
+     * @param keyExchange enum type
+     * @return SM2 key exchange object
+     * @throws IOException err
+     */
+    @Override
+    public TlsKeyExchange createSM2KeyExchange(int keyExchange) throws IOException
+    {
+        return new TlsSM2KeyExchange(keyExchange);
+    }
 }

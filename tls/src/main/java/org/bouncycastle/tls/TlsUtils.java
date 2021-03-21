@@ -316,6 +316,10 @@ public class TlsUtils
         return ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
     }
 
+    public static boolean isGMSSLv11(ProtocolVersion version) {
+        return ProtocolVersion.GMSSLv11.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
+    }
+
     public static boolean isTLSv13(TlsContext context)
     {
         return isTLSv13(context.getServerVersion());
@@ -1793,6 +1797,8 @@ public class TlsUtils
             return HashAlgorithm.sha384;
         case MACAlgorithm.hmac_sha512:
             return HashAlgorithm.sha512;
+        case MACAlgorithm.hmac_sm3:
+            return HashAlgorithm.sm3;
         default:
             throw new IllegalArgumentException("specified MACAlgorithm not an HMAC: " + MACAlgorithm.getText(macAlgorithm));
         }
@@ -1811,6 +1817,8 @@ public class TlsUtils
         case PRFAlgorithm.tls_prf_sha384:
         case PRFAlgorithm.tls13_hkdf_sha384:
             return HashAlgorithm.sha384;
+        case PRFAlgorithm.gmssl11_prf_sm3:
+            return HashAlgorithm.sm3;
         default:
             throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
         }
@@ -1841,6 +1849,7 @@ public class TlsUtils
     {
         ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
+        final boolean isGMSSLv11 = isGMSSLv11(negotiatedVersion);
         final boolean isTLSv13 = isTLSv13(negotiatedVersion);
         final boolean isTLSv12Exactly = !isTLSv13 && isTLSv12(negotiatedVersion);
         final boolean isSSL = negotiatedVersion.isSSL();
@@ -2088,6 +2097,15 @@ public class TlsUtils
                 return PRFAlgorithm.ssl_prf_legacy;
             }
             return PRFAlgorithm.tls_prf_legacy;
+        }
+
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+        {
+            if (isGMSSLv11)
+            {
+                return PRFAlgorithm.gmssl11_prf_sm3;
+            }
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         default:
@@ -2880,6 +2898,9 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
             return EncryptionAlgorithm.SEED_CBC;
 
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return EncryptionAlgorithm.SM4_CBC;
+
         default:
             return -1;
         }
@@ -2914,6 +2935,7 @@ public class TlsUtils
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
         case EncryptionAlgorithm.SEED_CBC:
+        case EncryptionAlgorithm.SM4_CBC:
             return CipherType.block;
 
         case EncryptionAlgorithm.NULL:
@@ -3257,6 +3279,9 @@ public class TlsUtils
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
             return KeyExchangeAlgorithm.SRP_RSA;
 
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return KeyExchangeAlgorithm.SM2;
+
         default:
             return -1;
         }
@@ -3577,6 +3602,9 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_ARIA_256_CBC_SHA384:
             return MACAlgorithm.hmac_sha384;
 
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return MACAlgorithm.hmac_sm3;
+
         default:
             return -1;
         }
@@ -3772,6 +3800,9 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
             return ProtocolVersion.TLSv12;
+
+        case CipherSuite.GMSSL_ECC_SM4_SM3:
+            return ProtocolVersion.GMSSLv11;
 
         default:
             return ProtocolVersion.SSLv3;
@@ -4191,7 +4222,8 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_RSA:
             return crypto.hasSRPAuthentication()
                 && hasAnyRSASigAlgs(crypto);
-
+        case KeyExchangeAlgorithm.SM2:
+            return true;
         default:
             return false;
         }
@@ -4269,6 +4301,9 @@ public class TlsUtils
             return factory.createSRPKeyExchangeClient(keyExchange, client.getSRPIdentity(),
                 client.getSRPConfigVerifier());
 
+        case KeyExchangeAlgorithm.SM2:
+            return factory.createSM2KeyExchange(keyExchange);
+
         default:
             /*
              * Note: internal error here; the TlsProtocol implementation verifies that the
@@ -4325,6 +4360,9 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_DSS:
         case KeyExchangeAlgorithm.SRP_RSA:
             return factory.createSRPKeyExchangeServer(keyExchange, server.getSRPLoginParameters());
+
+        case KeyExchangeAlgorithm.SM2:
+            return factory.createSM2KeyExchange(keyExchange);
 
         default:
             /*
@@ -5205,7 +5243,7 @@ public class TlsUtils
             count += (credentials instanceof TlsCredentialedAgreement) ? 1 : 0;
             count += (credentials instanceof TlsCredentialedDecryptor) ? 1 : 0;
             count += (credentials instanceof TlsCredentialedSigner) ? 1 : 0;
-            if (count != 1)
+            if (count < 1)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }

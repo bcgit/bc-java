@@ -10,6 +10,7 @@ public class SignatureAlgorithm
     public static final short dsa = 2;
     public static final short ecdsa = 3;
 
+
     /*
      * RFC 8422
      */
@@ -33,6 +34,13 @@ public class SignatureAlgorithm
     public static final short ecdsa_brainpoolP384r1tls13_sha384 = 27;
     public static final short ecdsa_brainpoolP512r1tls13_sha512 = 28;
 
+
+    /*
+     * GMSSL GMT 0009-2012
+     */
+    public static final short sm2 = 200;
+
+
     public static short getClientCertificateType(short signatureAlgorithm)
     {
         switch (signatureAlgorithm)
@@ -52,6 +60,7 @@ public class SignatureAlgorithm
         case SignatureAlgorithm.ecdsa:
         case SignatureAlgorithm.ed25519:
         case SignatureAlgorithm.ed448:
+        case SignatureAlgorithm.sm2:
             return ClientCertificateType.ecdsa_sign;
 
         // NOTE: Only valid from TLS 1.3, where ClientCertificateType is not used
@@ -97,6 +106,8 @@ public class SignatureAlgorithm
             return "ecdsa_brainpoolP384r1tls13_sha384";
         case ecdsa_brainpoolP512r1tls13_sha512:
             return "ecdsa_brainpoolP512r1tls13_sha512";
+        case sm2:
+            return "sm2";
         default:
             return "UNKNOWN";
         }
