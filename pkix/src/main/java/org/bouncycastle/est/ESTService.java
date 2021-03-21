@@ -137,12 +137,12 @@ public class ESTService
             Store<X509CertificateHolder> caCerts = null;
             Store<X509CRLHolder> crlHolderStore = null;
 
-
             if (resp.getStatusCode() == 200)
             {
-                if (!"application/pkcs7-mime".equals(resp.getHeaders().getFirstValue("Content-Type")))
+                String contentType = resp.getHeaders().getFirstValue("Content-Type");
+                if (contentType == null || !contentType.startsWith("application/pkcs7-mime"))
                 {
-                    String j = resp.getHeaders().getFirstValue("Content-Type") != null ? " got " + resp.getHeaders().getFirstValue("Content-Type") : " but was not present.";
+                    String j = contentType != null ? " got " + contentType : " but was not present.";
                     throw new ESTException(("Response : " + url.toString() + "Expecting application/pkcs7-mime ") + j, null, resp.getStatusCode(), resp.getInputStream());
                 }
 
