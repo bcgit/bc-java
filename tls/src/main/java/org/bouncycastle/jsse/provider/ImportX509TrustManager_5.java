@@ -89,7 +89,7 @@ class ImportX509TrustManager_5
     {
         checkAlgorithmConstraints(chain, authType, transportData, checkServerTrusted);
 
-        ProvX509TrustManager.checkExtendedTrust(chain, authType, transportData, checkServerTrusted);
+        ProvX509TrustManager.checkExtendedTrust(chain, transportData, checkServerTrusted);
     }
 
     private void checkAlgorithmConstraints(X509Certificate[] chain, String authType, TransportData transportData,

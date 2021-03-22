@@ -271,7 +271,7 @@ class ProvX509TrustManager
 
         X509Certificate[] trustedChain = validateChain(chain, authType, transportData, checkServerTrusted);
 
-        checkExtendedTrust(trustedChain, authType, transportData, checkServerTrusted);
+        checkExtendedTrust(trustedChain, transportData, checkServerTrusted);
     }
 
     // NOTE: We avoid re-reading eeCert from chain[0]
@@ -334,7 +334,7 @@ class ProvX509TrustManager
         }
     }
 
-    static void checkExtendedTrust(X509Certificate[] trustedChain, String authType, TransportData transportData,
+    static void checkExtendedTrust(X509Certificate[] trustedChain, TransportData transportData,
         boolean checkServerTrusted) throws CertificateException
     {
         if (null != transportData)
