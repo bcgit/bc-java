@@ -67,7 +67,7 @@ public class SM2Cipher
         return null;
     }
 
-    public ASN1Integer getxCoordinate()
+    public ASN1Integer getXCoordinate()
     {
         return xCoordinate;
     }
@@ -77,7 +77,7 @@ public class SM2Cipher
         this.xCoordinate = xCoordinate;
     }
 
-    public ASN1Integer getyCoordinate()
+    public ASN1Integer getYCoordinate()
     {
         return yCoordinate;
     }
@@ -134,9 +134,9 @@ public class SM2Cipher
         final byte[] x = new byte[32];
         final byte[] y = new byte[32];
 
-        byte[] tmp = BigIntegers.asUnsignedByteArray(getxCoordinate().getValue());
+        byte[] tmp = BigIntegers.asUnsignedByteArray(getXCoordinate().getValue());
         System.arraycopy(tmp, 0, x, 32 - tmp.length, tmp.length);
-        tmp = BigIntegers.asUnsignedByteArray(getyCoordinate().getValue());
+        tmp = BigIntegers.asUnsignedByteArray(getYCoordinate().getValue());
         System.arraycopy(tmp, 0, y, 32 - tmp.length, tmp.length);
 
         // C1
