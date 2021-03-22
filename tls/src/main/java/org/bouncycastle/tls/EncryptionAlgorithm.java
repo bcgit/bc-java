@@ -66,4 +66,9 @@ public class EncryptionAlgorithm
      * RFC 7905
      */
     public static final int CHACHA20_POLY1305 = 21;
+
+    /*
+     * GMT 0024-2014
+     */
+    public static final int SM4_CBC = 31;
 }

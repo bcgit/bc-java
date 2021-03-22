@@ -19,4 +19,13 @@ public class ClientCertificateType
     public static final short ecdsa_sign = 64;
     public static final short rsa_fixed_ecdh = 65;
     public static final short ecdsa_fixed_ecdh = 66;
+
+    /*
+     * GMT0024 has not mentioned
+     *
+     * Just specify a number here
+     */
+    public static final short sm2_encrypt = 128;
+
+
 }

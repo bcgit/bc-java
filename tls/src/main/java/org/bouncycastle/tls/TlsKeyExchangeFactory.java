@@ -44,4 +44,14 @@ public interface TlsKeyExchangeFactory
 
     TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, TlsSRPLoginParameters loginParameters)
         throws IOException;
+
+    /**
+     * GMSSL ECC_SM4_SM3 suite key exchange
+     *
+     * @param keyExchange enum type
+     * @return SM2 key exchange object
+     * @throws IOException err
+     */
+    TlsKeyExchange createSM2KeyExchange(int keyExchange)
+            throws IOException;
 }

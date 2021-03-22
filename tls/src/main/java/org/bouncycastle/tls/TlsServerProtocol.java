@@ -174,7 +174,7 @@ public class TlsServerProtocol
 
             /*
              * TODO[tls13] Confirm fields in the ClientHello haven't changed
-             * 
+             *
              * RFC 8446 4.1.2 [..] when the server has responded to its ClientHello with a
              * HelloRetryRequest [..] the client MUST send the same ClientHello without
              * modification, except as follows: [key_share, early_data, cookie, pre_shared_key,
@@ -223,7 +223,7 @@ public class TlsServerProtocol
 
             /*
              * NOTE: Currently no server support for session resumption
-             * 
+             *
              * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
              * ONLY when extended_master_secret has been negotiated (otherwise NULL).
              */
@@ -334,7 +334,7 @@ public class TlsServerProtocol
 
         /*
          * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
-         * 
+         *
          * OCSP information is carried in an extension for a CertificateEntry.
          */
         securityParameters.statusRequestVersion = clientHelloExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
@@ -344,7 +344,7 @@ public class TlsServerProtocol
 
         {
             int namedGroup = clientShare.getNamedGroup();
-    
+
             TlsAgreement agreement;
             if (NamedGroup.refersToASpecificCurve(namedGroup))
             {
@@ -390,7 +390,6 @@ public class TlsServerProtocol
         this.offeredCipherSuites = clientHello.getCipherSuites();
 
 
- 
         SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
 
         tlsServerContext.setClientSupportedVersions(
@@ -399,22 +398,37 @@ public class TlsServerProtocol
         ProtocolVersion clientVersion = clientLegacyVersion;
         if (null == tlsServerContext.getClientSupportedVersions())
         {
-            if (clientVersion.isLaterVersionOf(ProtocolVersion.TLSv12))
+            if(clientVersion.getEquivalentTLSVersion() == ProtocolVersion.GMSSLv11)
             {
-                clientVersion = ProtocolVersion.TLSv12;
+                tlsServerContext.setClientSupportedVersions(new ProtocolVersion[]{clientVersion});
+            }
+            else
+            {
+                if (clientVersion.isLaterVersionOf(ProtocolVersion.TLSv12))
+                {
+                    clientVersion = ProtocolVersion.TLSv12;
+                }
+
+                tlsServerContext.setClientSupportedVersions(clientVersion.downTo(ProtocolVersion.SSLv3));
             }
 
-            tlsServerContext.setClientSupportedVersions(clientVersion.downTo(ProtocolVersion.SSLv3));
         }
         else
         {
             clientVersion = ProtocolVersion.getLatestTLS(tlsServerContext.getClientSupportedVersions());
         }
 
+        // check server client is support client versions
+        if(!ProtocolVersion.contains(tlsServer.getProtocolVersions(), clientVersion))
+        {
+            throw new TlsFatalAlert(AlertDescription.protocol_version);
+        }
+
         // Set the legacy_record_version to use for early alerts 
         recordStream.setWriteVersion(clientVersion);
 
-        if (!ProtocolVersion.SERVER_EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(clientVersion))
+        if (!ProtocolVersion.SERVER_EARLIEST_SUPPORTED_TLS.isEqualOrEarlierVersionOf(clientVersion)
+                && !ProtocolVersion.CLIENT_GM_SUPPORTED_TLS.isEqualOrEarlierVersionOf(clientVersion))
         {
             throw new TlsFatalAlert(AlertDescription.protocol_version);
         }
@@ -721,7 +735,7 @@ public class TlsServerProtocol
         {
             /*
              * TODO[tls13] Abbreviated handshakes (PSK resumption)
-             * 
+             *
              * NOTE: No CertificateRequest, Certificate, CertificateVerify messages, but client
              * might now send EndOfEarlyData after receiving server Finished message.
              */
@@ -1099,7 +1113,7 @@ public class TlsServerProtocol
                     /*
                      * RFC 5246 If no suitable certificate is available, the client MUST send a
                      * certificate message containing no certificates.
-                     * 
+                     *
                      * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                      */
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);

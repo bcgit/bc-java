@@ -118,6 +118,9 @@ public class BcTlsCertificate
             validateRSA_PSS_PSS(signatureAlgorithm);
             return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
 
+        case SignatureAlgorithm.sm2:
+            return new BcTlsSM2Verifier(crypto, getPubKeyEC());
+
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
@@ -279,6 +282,24 @@ public class BcTlsCertificate
         }
     }
 
+    /**
+     * Get public key from sm2 certificate
+     * @return sm2 public key
+     * @throws IOException err
+     */
+    public ECPublicKeyParameters getPubKeySM2() throws IOException
+    {
+        try
+        {
+            return (ECPublicKeyParameters)getPublicKey();
+        }
+        catch (ClassCastException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+        }
+    }
+
+
     public boolean supportsSignatureAlgorithm(short signatureAlgorithm) throws IOException
     {
         return supportsSignatureAlgorithm(signatureAlgorithm, KeyUsage.digitalSignature);
@@ -319,6 +340,12 @@ public class BcTlsCertificate
             {
                 validateKeyUsage(KeyUsage.keyEncipherment);
                 this.pubKeyRSA = getPubKeyRSA();
+                return this;
+            }
+            case KeyExchangeAlgorithm.SM2:
+            {
+                // validateKeyUsage(KeyUsage.keyEncipherment);
+                pubKeyEC = getPubKeySM2();
                 return this;
             }
             }
