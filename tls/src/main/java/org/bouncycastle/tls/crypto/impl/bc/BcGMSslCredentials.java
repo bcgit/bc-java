@@ -1,18 +1,23 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
+import java.io.IOException;
+import java.security.Signature;
+
 import org.bouncycastle.asn1.gm.SM2Cipher;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.engines.SM2Engine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
-import org.bouncycastle.tls.*;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsCredentialedDecryptor;
+import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsFatalAlertReceived;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
-
-import java.io.IOException;
-import java.security.Signature;
 
 /**
  * GMSSL need two certificate
@@ -22,7 +27,8 @@ import java.security.Signature;
  *
  * @since 2021-03-12 12:10:31
  */
-public class BcGMSSLCredentials implements TlsCredentialedSigner, TlsCredentialedDecryptor
+public class BcGMSslCredentials
+    implements TlsCredentialedSigner, TlsCredentialedDecryptor
 {
     private BcTlsCrypto crypto;
     /*
@@ -34,7 +40,7 @@ public class BcGMSSLCredentials implements TlsCredentialedSigner, TlsCredentiale
     private AsymmetricKeyParameter encKey;
     private Signature rawSigner;
 
-    public BcGMSSLCredentials(BcTlsCrypto crypto, Certificate certList, AsymmetricKeyParameter signKey, AsymmetricKeyParameter encKey)
+    public BcGMSslCredentials(BcTlsCrypto crypto, Certificate certList, AsymmetricKeyParameter signKey, AsymmetricKeyParameter encKey)
     {
         if(certList.getLength() < 2)
         {

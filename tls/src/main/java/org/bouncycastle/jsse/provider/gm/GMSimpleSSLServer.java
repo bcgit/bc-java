@@ -1,15 +1,18 @@
 package org.bouncycastle.jsse.provider.gm;
 
+import java.io.IOException;
+
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.tls.*;
+import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.DefaultTlsServer;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.impl.bc.BcGMSSLCredentials;
+import org.bouncycastle.tls.crypto.impl.bc.BcGMSslCredentials;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.io.PrintStream;
-import java.security.SecureRandom;
 
 /**
  * Simple GMSSL Server
@@ -94,7 +97,7 @@ public class GMSimpleSSLServer
     @Override
     public TlsCredentials getCredentials() throws IOException
     {
-        return new BcGMSSLCredentials((BcTlsCrypto) getCrypto(), certList, signKey, encKey);
+        return new BcGMSslCredentials((BcTlsCrypto) getCrypto(), certList, signKey, encKey);
     }
 
     @Override

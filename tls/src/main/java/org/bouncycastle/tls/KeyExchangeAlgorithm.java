@@ -57,5 +57,5 @@ public class KeyExchangeAlgorithm
     /*
      * GMT 0024-2014
      */
-    public static final int SM2 = 50;
+    public static final int GM_SM2 = 50;
 }

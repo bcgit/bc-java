@@ -3280,7 +3280,7 @@ public class TlsUtils
             return KeyExchangeAlgorithm.SRP_RSA;
 
         case CipherSuite.GMSSL_ECC_SM4_SM3:
-            return KeyExchangeAlgorithm.SM2;
+            return KeyExchangeAlgorithm.GM_SM2;
 
         default:
             return -1;

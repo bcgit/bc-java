@@ -214,7 +214,7 @@ class CipherSuiteInfo
         case KeyExchangeAlgorithm.RSA:
             addAll(decomposition, "RSA");
             break;
-        case KeyExchangeAlgorithm.SM2:
+        case KeyExchangeAlgorithm.GM_SM2:
             addAll(decomposition, "SM2");
             break;
         default:

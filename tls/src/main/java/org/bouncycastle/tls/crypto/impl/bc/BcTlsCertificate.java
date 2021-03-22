@@ -342,7 +342,7 @@ public class BcTlsCertificate
                 this.pubKeyRSA = getPubKeyRSA();
                 return this;
             }
-            case KeyExchangeAlgorithm.SM2:
+            case KeyExchangeAlgorithm.GM_SM2:
             {
                 // validateKeyUsage(KeyUsage.keyEncipherment);
                 pubKeyEC = getPubKeySM2();

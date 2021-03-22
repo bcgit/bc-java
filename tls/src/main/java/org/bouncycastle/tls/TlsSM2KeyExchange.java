@@ -1,14 +1,14 @@
 package org.bouncycastle.tls;
 
-import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCryptoParameters;
-import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.TlsVerifier;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.TlsVerifier;
 
 /**
  * GMSSL SM2 exchange.
@@ -23,7 +23,7 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
     {
         switch (keyExchange)
         {
-        case KeyExchangeAlgorithm.SM2:
+        case KeyExchangeAlgorithm.GM_SM2:
             return keyExchange;
         default:
             throw new IllegalArgumentException("unsupported key exchange algorithm");
@@ -123,9 +123,9 @@ public class TlsSM2KeyExchange extends AbstractTlsKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         // sign cert
-        this.serverSigCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.SM2);
+        this.serverSigCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.GM_SM2);
         // encrypt cert
-        this.serverEncCertificate = serverCertificate.getCertificateAt(1).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.SM2);
+        this.serverEncCertificate = serverCertificate.getCertificateAt(1).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.GM_SM2);
     }
 
     public short[] getClientCertificateTypes()
