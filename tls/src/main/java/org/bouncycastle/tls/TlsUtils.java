@@ -3610,7 +3610,7 @@ public class TlsUtils
         }
     }
 
-    public static ProtocolVersion getMinimumVersion(int cipherSuite)
+    public static ProtocolVersion getMinimumTLSVersion(int cipherSuite)
     {
         switch (cipherSuite)
         {
@@ -3800,10 +3800,6 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
             return ProtocolVersion.TLSv12;
-
-        case CipherSuite.GMSSL_ECC_SM4_SM3:
-            return ProtocolVersion.GMSSLv11;
-
         default:
             return ProtocolVersion.SSLv3;
         }
@@ -4005,9 +4001,14 @@ public class TlsUtils
 
     public static boolean isValidVersionForCipherSuite(int cipherSuite, ProtocolVersion version)
     {
+        if (isGMSSLv11(version))
+        {
+            return CipherSuite.GMSSL_ECC_SM4_SM3 == cipherSuite;
+        }
+
         version = version.getEquivalentTLSVersion();
 
-        ProtocolVersion minimumVersion = getMinimumVersion(cipherSuite);
+        ProtocolVersion minimumVersion = getMinimumTLSVersion(cipherSuite);
         if (minimumVersion == version)
         {
             return true;
@@ -4222,7 +4223,8 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_RSA:
             return crypto.hasSRPAuthentication()
                 && hasAnyRSASigAlgs(crypto);
-        case KeyExchangeAlgorithm.SM2:
+        case KeyExchangeAlgorithm.GM_SM2:
+            // TODO: add check for crypto capability
             return true;
         default:
             return false;
@@ -4301,7 +4303,7 @@ public class TlsUtils
             return factory.createSRPKeyExchangeClient(keyExchange, client.getSRPIdentity(),
                 client.getSRPConfigVerifier());
 
-        case KeyExchangeAlgorithm.SM2:
+        case KeyExchangeAlgorithm.GM_SM2:
             return factory.createSM2KeyExchange(keyExchange);
 
         default:
@@ -4361,7 +4363,7 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_RSA:
             return factory.createSRPKeyExchangeServer(keyExchange, server.getSRPLoginParameters());
 
-        case KeyExchangeAlgorithm.SM2:
+        case KeyExchangeAlgorithm.GM_SM2:
             return factory.createSM2KeyExchange(keyExchange);
 
         default:
@@ -5243,7 +5245,7 @@ public class TlsUtils
             count += (credentials instanceof TlsCredentialedAgreement) ? 1 : 0;
             count += (credentials instanceof TlsCredentialedDecryptor) ? 1 : 0;
             count += (credentials instanceof TlsCredentialedSigner) ? 1 : 0;
-            if (count < 1)
+            if (count != 1)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
