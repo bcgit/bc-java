@@ -18,6 +18,12 @@ public class HashAlgorithm
      */
     public static final short Intrinsic = 8;
 
+    /*
+     * GMT 0024-2014 No value is specified,
+     * so a value is randomly specified here to avoid conflicts
+     */
+    public static final short sm3 = 20;
+
     public static String getName(short hashAlgorithm)
     {
         switch (hashAlgorithm)
@@ -38,6 +44,8 @@ public class HashAlgorithm
             return "sha512";
         case Intrinsic:
             return "Intrinsic";
+        case sm3:
+            return "sm3";
         default:
             return "UNKNOWN";
         }
@@ -54,6 +62,7 @@ public class HashAlgorithm
         case sha224:
             return 28;
         case sha256:
+        case sm3:
             return 32;
         case sha384:
             return 48;
@@ -79,6 +88,7 @@ public class HashAlgorithm
         switch (hashAlgorithm)
         {
         case md5:
+        case sm3:
         case sha1:
         case sha224:
         case sha256:

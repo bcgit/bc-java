@@ -91,4 +91,9 @@ public class AbstractTlsKeyExchangeFactory
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
+
+    public TlsKeyExchange createSM2KeyExchange(int keyExchange) throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
 }
