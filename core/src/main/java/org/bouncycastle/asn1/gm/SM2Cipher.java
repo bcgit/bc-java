@@ -1,13 +1,20 @@
 package org.bouncycastle.asn1.gm;
 
-import org.bouncycastle.asn1.*;
-import org.bouncycastle.util.BigIntegers;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Enumeration;
+
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * GMT 0009-2012
@@ -17,7 +24,8 @@ import java.util.Enumeration;
  *
  * @since 2021-03-10 13:28:12
  */
-public class SM2Cipher extends ASN1Object
+public class SM2Cipher
+    extends ASN1Object
 {
     /*
      * SM2Cipher ::== SEQUENCE{
@@ -33,12 +41,11 @@ public class SM2Cipher extends ASN1Object
     private ASN1OctetString hash;
     private ASN1OctetString cipherText;
 
-    public SM2Cipher()
+    private SM2Cipher()
     {
-        super();
     }
 
-    public SM2Cipher(ASN1Sequence seq)
+    private SM2Cipher(ASN1Sequence seq)
     {
         Enumeration<?> e = seq.getObjects();
         xCoordinate = ASN1Integer.getInstance(e.nextElement());
@@ -65,7 +72,7 @@ public class SM2Cipher extends ASN1Object
         return xCoordinate;
     }
 
-    public void setxCoordinate(ASN1Integer xCoordinate)
+    private void setxCoordinate(ASN1Integer xCoordinate)
     {
         this.xCoordinate = xCoordinate;
     }
@@ -75,7 +82,7 @@ public class SM2Cipher extends ASN1Object
         return yCoordinate;
     }
 
-    public void setyCoordinate(ASN1Integer yCoordinate)
+    private void setyCoordinate(ASN1Integer yCoordinate)
     {
         this.yCoordinate = yCoordinate;
     }
@@ -85,7 +92,7 @@ public class SM2Cipher extends ASN1Object
         return hash;
     }
 
-    public void setHash(ASN1OctetString hash)
+    private void setHash(ASN1OctetString hash)
     {
         this.hash = hash;
     }
@@ -95,7 +102,7 @@ public class SM2Cipher extends ASN1Object
         return cipherText;
     }
 
-    public void setCipherText(ASN1OctetString cipherText)
+    private void setCipherText(ASN1OctetString cipherText)
     {
         this.cipherText = cipherText;
     }
