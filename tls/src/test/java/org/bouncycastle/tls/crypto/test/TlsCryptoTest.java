@@ -326,7 +326,7 @@ public abstract class TlsCryptoTest
 
         for (int i = 0; i < hashes.length; ++i)
         {
-            short hash = HashAlgorithm.sha256;
+            short hash = hashes[i];
             int hashLen = HashAlgorithm.getOutputSize(hash);
             byte[] zeroes = new byte[hashLen];
 
