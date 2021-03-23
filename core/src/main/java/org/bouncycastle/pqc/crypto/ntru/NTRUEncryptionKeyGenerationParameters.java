@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.util.DigestFactory;
 
 /**
  * A set of parameters for NtruEncrypt. Several predefined parameter sets are available and new ones can be created as well.
@@ -273,11 +274,11 @@ public class NTRUEncryptionKeyGenerationParameters
     {
         if (polyType == NTRUParameters.TERNARY_POLYNOMIAL_TYPE_SIMPLE)
         {
-            return new NTRUEncryptionParameters(N, q, df, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, hashAlg);
+            return new NTRUEncryptionParameters(N, q, df, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp,  DigestFactory.cloneDigest(hashAlg));
         }
         else
         {
-            return new NTRUEncryptionParameters(N, q, df1, df2, df3, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, hashAlg);
+            return new NTRUEncryptionParameters(N, q, df1, df2, df3, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp,  DigestFactory.cloneDigest(hashAlg));
         }
     }
 
@@ -285,11 +286,11 @@ public class NTRUEncryptionKeyGenerationParameters
     {
         if (polyType == NTRUParameters.TERNARY_POLYNOMIAL_TYPE_SIMPLE)
         {
-            return new NTRUEncryptionKeyGenerationParameters(N, q, df, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, hashAlg);
+            return new NTRUEncryptionKeyGenerationParameters(N, q, df, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, DigestFactory.cloneDigest(hashAlg));
         }
         else
         {
-            return new NTRUEncryptionKeyGenerationParameters(N, q, df1, df2, df3, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp, hashAlg);
+            return new NTRUEncryptionKeyGenerationParameters(N, q, df1, df2, df3, dm0, db, c, minCallsR, minCallsMask, hashSeed, oid, sparse, fastFp,  DigestFactory.cloneDigest(hashAlg));
         }
     }
 
