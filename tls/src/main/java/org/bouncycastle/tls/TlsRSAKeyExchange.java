@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -49,8 +50,8 @@ public class TlsRSAKeyExchange
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
-        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server,
-            KeyExchangeAlgorithm.RSA);
+        this.serverCertificate = serverCertificate.getCertificateAt(0).checkUsageInRole(ConnectionEnd.server,
+            TlsCertificateRole.RSA_ENCRYPTION);
     }
 
     public short[] getClientCertificateTypes()
