@@ -228,6 +228,27 @@ public final class Strings
     }
 
     /**
+     * Constant time string comparison.
+     *
+     * @param a a string.
+     * @param b another string to compare to a.
+     *
+     * @return true if a and b represent the same string, false otherwise.
+     */
+    public static boolean constantTimeAreEqual(String a, String b)
+    {
+        boolean isEqual = a.length() == b.length();
+        int     len = a.length();
+
+        for (int i = 0; i != len; i++)
+        {
+            isEqual &= (a.charAt(i) == b.charAt(i));
+        }
+
+        return isEqual;
+    }
+
+    /**
      * Convert an array of 8 bit characters into a string.
      *
      * @param bytes 8 bit characters.
