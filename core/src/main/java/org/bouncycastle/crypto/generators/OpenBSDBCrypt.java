@@ -334,12 +334,7 @@ public class OpenBSDBCrypt
 
         String newBcryptString = doGenerate(version, password, salt, cost);
 
-        boolean isEqual = sLength == newBcryptString.length();
-        for (int i = 0; i != sLength; i++)
-        {
-            isEqual &= (bcryptString.charAt(i) == newBcryptString.charAt(i));
-        }
-        return isEqual;
+        return Strings.constantTimeAreEqual(bcryptString, newBcryptString);
     }
 
     /**
