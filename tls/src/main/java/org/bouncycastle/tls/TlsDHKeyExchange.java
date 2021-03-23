@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -45,7 +46,8 @@ public class TlsDHKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        this.dhPeerCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
+        this.dhPeerCertificate = serverCertificate.getCertificateAt(0).checkUsageInRole(ConnectionEnd.server,
+            TlsCertificateRole.DH);
     }
 
     public short[] getClientCertificateTypes()
@@ -74,8 +76,8 @@ public class TlsDHKeyExchange
 
     public void processClientCertificate(Certificate clientCertificate) throws IOException
     {
-        this.dhPeerCertificate = clientCertificate.getCertificateAt(0)
-            .useInRole(ConnectionEnd.client, keyExchange);
+        this.dhPeerCertificate = clientCertificate.getCertificateAt(0).checkUsageInRole(ConnectionEnd.client,
+            TlsCertificateRole.DH);
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException

@@ -6,7 +6,6 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.tls.ConnectionEnd;
-import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 
 /**
@@ -49,9 +48,8 @@ public interface TlsCertificate
     /**
      * @param connectionEnd
      *            {@link ConnectionEnd}
-     * @param keyExchangeAlgorithm
-     *            {@link KeyExchangeAlgorithm}
+     * @param tlsCertificateRole
+     *            {@link TlsCertificateRole}
      */
-    // TODO[tls-ops] This is expected to be only transitional and eventually redundant
-    TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException;
+    TlsCertificate checkUsageInRole(int connectionEnd, int tlsCertificateRole) throws IOException;
 }
