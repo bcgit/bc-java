@@ -118,6 +118,10 @@ public class BcTlsCertificate
             validateRSA_PSS_PSS(signatureAlgorithm);
             return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
 
+        // TODO[RFC 8998]
+//        case SignatureAlgorithm.sm2:
+//            return new BcTlsSM2Verifier(crypto, getPubKeyEC(), Strings.toByteArray("TLSv1.3+GM+Cipher+Suite"));
+
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }

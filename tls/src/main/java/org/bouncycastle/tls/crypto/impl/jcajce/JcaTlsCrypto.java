@@ -208,6 +208,10 @@ public class JcaTlsCrypto
                 return createNullCipher(cryptoParams, macAlgorithm);
             case EncryptionAlgorithm.SEED_CBC:
                 return createSEEDCipher(cryptoParams, macAlgorithm);
+            case EncryptionAlgorithm.SM4_CCM:
+                return createCipher_SM4_CCM(cryptoParams);
+            case EncryptionAlgorithm.SM4_GCM:
+                return createCipher_SM4_GCM(cryptoParams);
 
             case EncryptionAlgorithm.DES40_CBC:
             case EncryptionAlgorithm.DES_CBC:
@@ -358,6 +362,9 @@ public class JcaTlsCrypto
             return "HmacSHA384";
         case HashAlgorithm.sha512:
             return "HmacSHA512";
+        // TODO[RFC 8998]
+//        case HashAlgorithm.sm3:
+//            return "HmacSM3";
         default:
             throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
@@ -596,15 +603,23 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureScheme(int signatureScheme)
     {
-        /*
-         * This is somewhat overkill, but much simpler for now. It's also consistent with SunJSSE behaviour.
-         */
-        if ((signatureScheme >>> 8) == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
+        switch (signatureScheme)
         {
+        case SignatureScheme.sm2sig_sm3:
             return false;
-        }
+        default:
+        {
+            /*
+             * This is somewhat overkill, but much simpler for now. It's also consistent with SunJSSE behaviour.
+             */
+            if ((signatureScheme >>> 8) == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
+            {
+                return false;
+            }
 
-        return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+            return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+        }
+        }
     }
 
     public boolean hasSRPAuthentication()
@@ -976,6 +991,8 @@ public class JcaTlsCrypto
             case EncryptionAlgorithm.RC2_CBC_40:
             case EncryptionAlgorithm.RC4_128:
             case EncryptionAlgorithm.RC4_40:
+            case EncryptionAlgorithm.SM4_CCM:
+            case EncryptionAlgorithm.SM4_GCM:
             {
                 return Boolean.FALSE;
             }
@@ -1140,6 +1157,24 @@ public class JcaTlsCrypto
             TlsAEADCipher.AEAD_GCM);
     }
 
+    private TlsAEADCipher createCipher_SM4_CCM(TlsCryptoParameters cryptoParams)
+        throws IOException, GeneralSecurityException
+    {
+        int cipherKeySize = 16, macSize = 16;
+        return new TlsAEADCipher(cryptoParams, createAEADCipher("SM4/CCM/NoPadding", "SM4", cipherKeySize, true),
+            createAEADCipher("SM4/CCM/NoPadding", "SM4", cipherKeySize, false), cipherKeySize, macSize,
+            TlsAEADCipher.AEAD_CCM);
+    }
+
+    private TlsAEADCipher createCipher_SM4_GCM(TlsCryptoParameters cryptoParams)
+        throws IOException, GeneralSecurityException
+    {
+        int cipherKeySize = 16, macSize = 16;
+        return new TlsAEADCipher(cryptoParams, createAEADCipher("SM4/GCM/NoPadding", "SM4", cipherKeySize, true),
+            createAEADCipher("SM4/GCM/NoPadding", "SM4", cipherKeySize, false), cipherKeySize, macSize,
+            TlsAEADCipher.AEAD_GCM);
+    }
+
     String getDigestName(short hashAlgorithm)
     {
         String digestName;
@@ -1163,6 +1198,10 @@ public class JcaTlsCrypto
         case HashAlgorithm.sha512:
             digestName = "SHA-512";
             break;
+        // TODO[RFC 8998]
+//        case HashAlgorithm.sm3:
+//            digestName = "SM3";
+//            break;
         default:
             throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }

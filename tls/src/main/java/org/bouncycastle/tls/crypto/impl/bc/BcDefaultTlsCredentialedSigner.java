@@ -72,7 +72,20 @@ public class BcDefaultTlsCredentialedSigner
         }
         else if (privateKey instanceof ECPrivateKeyParameters)
         {
-            signer = new BcTlsECDSASigner(crypto, (ECPrivateKeyParameters)privateKey);
+            ECPrivateKeyParameters privKeyEC = (ECPrivateKeyParameters)privateKey;
+
+            // TODO[RFC 8998]
+//            if (signatureAndHashAlgorithm != null)
+//            {
+//                short signatureAlgorithm = signatureAndHashAlgorithm.getSignature();
+//                switch (signatureAlgorithm)
+//                {
+//                case SignatureAlgorithm.sm2:
+//                    return new BcTlsSM2Signer(crypto, privKeyEC, Strings.toByteArray("TLSv1.3+GM+Cipher+Suite"));
+//                }
+//            }
+
+            signer = new BcTlsECDSASigner(crypto, privKeyEC);
         }
         else if (privateKey instanceof Ed25519PrivateKeyParameters)
         {

@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
+import org.bouncycastle.crypto.engines.SM4Engine;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -50,6 +51,7 @@ import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -166,6 +168,10 @@ public class BcTlsCrypto
             return createNullCipher(cryptoParams, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
             return createSEEDCipher(cryptoParams, macAlgorithm);
+        case EncryptionAlgorithm.SM4_CCM:
+            return createCipher_SM4_CCM(cryptoParams);
+        case EncryptionAlgorithm.SM4_GCM:
+            return createCipher_SM4_GCM(cryptoParams);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -268,6 +274,8 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.RC2_CBC_40:
         case EncryptionAlgorithm.RC4_128:
         case EncryptionAlgorithm.RC4_40:
+        case EncryptionAlgorithm.SM4_CCM:
+        case EncryptionAlgorithm.SM4_GCM:
             return false;
 
         default:
@@ -313,6 +321,8 @@ public class BcTlsCrypto
         case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
         case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
         case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
+        // TODO[RFC 8998]
+//        case SignatureAlgorithm.sm2:
             return true;
         default:
             return false;
@@ -326,7 +336,13 @@ public class BcTlsCrypto
 
     public boolean hasSignatureScheme(int signatureScheme)
     {
-        return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+        switch (signatureScheme)
+        {
+        case SignatureScheme.sm2sig_sm3:
+            return false;
+        default:
+            return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+        }
     }
 
     public boolean hasSRPAuthentication()
@@ -376,6 +392,9 @@ public class BcTlsCrypto
             return new SHA384Digest();
         case HashAlgorithm.sha512:
             return new SHA512Digest();
+        // TODO[RFC 8998]
+//        case HashAlgorithm.sm3:
+//            return new SM3Digest();
         default:
             throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
@@ -437,6 +456,9 @@ public class BcTlsCrypto
             return new SHA384Digest((SHA384Digest)hash);
         case HashAlgorithm.sha512:
             return new SHA512Digest((SHA512Digest)hash);
+        // TODO[RFC 8998]
+//        case HashAlgorithm.sm3:
+//            return new SM3Digest((SM3Digest)hash);
         default:
             throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
@@ -501,6 +523,22 @@ public class BcTlsCrypto
             TlsAEADCipher.AEAD_GCM);
     }
 
+    protected TlsAEADCipher createCipher_SM4_CCM(TlsCryptoParameters cryptoParams)
+        throws IOException
+    {
+        int cipherKeySize = 16, macSize = 16;
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_SM4_CCM(), true),
+            new AeadOperator(createAEADBlockCipher_SM4_CCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_CCM);
+    }
+
+    protected TlsAEADCipher createCipher_SM4_GCM(TlsCryptoParameters cryptoParams)
+        throws IOException
+    {
+        int cipherKeySize = 16, macSize = 16;
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_SM4_GCM(), true),
+            new AeadOperator(createAEADBlockCipher_SM4_GCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
+    }
+
     protected TlsBlockCipher createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
@@ -539,6 +577,11 @@ public class BcTlsCrypto
         return new CamelliaEngine();
     }
 
+    protected BlockCipher createSM4Engine()
+    {
+        return new SM4Engine();
+    }
+
     protected BlockCipher createAESBlockCipher()
     {
         return new CBCBlockCipher(createAESEngine());
@@ -570,6 +613,17 @@ public class BcTlsCrypto
     {
         // TODO Consider allowing custom configuration of multiplier
         return new GCMBlockCipher(createCamelliaEngine());
+    }
+
+    protected AEADBlockCipher createAEADBlockCipher_SM4_CCM()
+    {
+        return new CCMBlockCipher(createSM4Engine());
+    }
+
+    protected AEADBlockCipher createAEADBlockCipher_SM4_GCM()
+    {
+        // TODO Consider allowing custom configuration of multiplier
+        return new GCMBlockCipher(createSM4Engine());
     }
 
     protected BlockCipher createCamelliaBlockCipher()

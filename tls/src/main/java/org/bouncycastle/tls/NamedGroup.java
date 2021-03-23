@@ -61,6 +61,11 @@ public class NamedGroup
     public static final int brainpoolP512r1tls13 = 33;
 
     /*
+     * RFC 8998
+     */
+    public static final int curveSM2 = 41;
+
+    /*
      * RFC 7919 2. Codepoints in the "Supported Groups Registry" with a high byte of 0x01 (that is,
      * between 256 and 511, inclusive) are set aside for FFDHE groups, though only a small number of
      * them are initially defined and we do not expect many other FFDHE groups to be added to this
@@ -91,7 +96,8 @@ public class NamedGroup
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
         "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
         "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1", "brainpoolP256r1", "brainpoolP384r1",
-        "brainpoolP512r1", "X25519", "X448", "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1" };
+        "brainpoolP512r1", "X25519", "X448", "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1", null, null, null,
+        null, null, null, null, "sm2p256v1" };
 
     private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096",
         "ffdhe6144", "ffdhe8192" };
@@ -109,7 +115,8 @@ public class NamedGroup
         }
         else
         {
-            if (namedGroup >= brainpoolP256r1tls13 && namedGroup <= brainpoolP512r1tls13)
+            if ((namedGroup >= brainpoolP256r1tls13 && namedGroup <= brainpoolP512r1tls13)
+                || (namedGroup == curveSM2))
             {
                 return false;
             }
@@ -156,6 +163,7 @@ public class NamedGroup
 
         case brainpoolP256r1:
         case brainpoolP256r1tls13:
+        case curveSM2:
         case secp256k1:
         case secp256r1:
             return 256;
@@ -270,6 +278,8 @@ public class NamedGroup
             return "brainpoolP384r1tls13";
         case brainpoolP512r1tls13:
             return "brainpoolP512r1tls13";
+        case curveSM2:
+            return "curveSM2";
         case arbitrary_explicit_prime_curves:
             return "arbitrary_explicit_prime_curves";
         case arbitrary_explicit_char2_curves:
@@ -316,6 +326,7 @@ public class NamedGroup
     public static boolean isPrimeCurve(int namedGroup)
     {
         return (namedGroup >= secp160k1 && namedGroup <= brainpoolP512r1tls13)
+            || (namedGroup == curveSM2)
             || (namedGroup == arbitrary_explicit_prime_curves);
     }
 
@@ -338,6 +349,11 @@ public class NamedGroup
 
     public static boolean refersToAnECDSACurve(int namedGroup)
     {
+        /*
+         * TODO[RFC 8998] Double-check whether this method is only being used to mean
+         * "signature-capable" or specifically ECDSA, and consider curveSM2 behaviour
+         * accordingly.
+         */
         return refersToASpecificCurve(namedGroup)
             && !refersToAnXDHCurve(namedGroup);
     }
@@ -349,7 +365,8 @@ public class NamedGroup
 
     public static boolean refersToASpecificCurve(int namedGroup)
     {
-        return namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1tls13;
+        return (namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1tls13)
+            || (namedGroup == curveSM2);
     }
 
     public static boolean refersToASpecificFiniteField(int namedGroup)

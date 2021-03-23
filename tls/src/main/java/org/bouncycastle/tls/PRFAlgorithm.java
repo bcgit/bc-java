@@ -14,6 +14,8 @@ public class PRFAlgorithm
     public static final int tls_prf_sha384 = 3;
     public static final int tls13_hkdf_sha256 = 4;
     public static final int tls13_hkdf_sha384 = 5;
+//    public static final int tls13_hkdf_sha512 = 6;
+    public static final int tls13_hkdf_sm3 = 7;
 
     public static String getName(int prfAlgorithm)
     {
@@ -31,6 +33,8 @@ public class PRFAlgorithm
             return "tls13_hkdf_sha256";
         case tls13_hkdf_sha384:
             return "tls13_hkdf_sha384";
+        case tls13_hkdf_sm3:
+            return "tls13_hkdf_sm3";
         default:
             return "UNKNOWN";
         }

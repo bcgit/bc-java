@@ -139,8 +139,7 @@ public abstract class TlsCryptoTest
         }
     }
 
-    public void testHKDF()
-        throws IOException
+    public void testHKDF() throws IOException
     {
         /*
          * Test vectors drawn from the server-side calculations of example handshake trace in RFC 8448, section 3.
@@ -322,7 +321,10 @@ public abstract class TlsCryptoTest
     public void testHKDFExpandLimit()
     {
         short[] hashes = new short[]{ HashAlgorithm.md5, HashAlgorithm.sha1, HashAlgorithm.sha224,
-            HashAlgorithm.sha256, HashAlgorithm.sha384, HashAlgorithm.sha512 };
+            HashAlgorithm.sha256, HashAlgorithm.sha384, HashAlgorithm.sha512,
+            // TODO[RFC 8998]
+//            HashAlgorithm.sm3
+        };
 
         for (int i = 0; i < hashes.length; ++i)
         {
