@@ -5,6 +5,8 @@ import java.util.Arrays;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.cms.CMSCompressedData;
 import org.bouncycastle.cms.CMSCompressedDataGenerator;
 import org.bouncycastle.cms.CMSException;
@@ -106,6 +108,18 @@ public class NewCompressedDataTest
     {
         CMSCompressedData cd = getStdData();
 
+        assertEquals(PKCSObjectIdentifiers.data, cd.getCompressedContentType());
+        assertEquals(PKCSObjectIdentifiers.data, cd.getContentStream(new ZlibExpanderProvider()).getContentType());
+        assertEquals(true, Arrays.equals(TEST_DATA, cd.getContent(new ZlibExpanderProvider())));
+    }
+
+    public void testContentType()
+        throws Exception
+    {
+        CMSCompressedData cd = getStdData(PKCSObjectIdentifiers.safeContentsBag);
+
+        assertEquals(PKCSObjectIdentifiers.safeContentsBag, cd.getCompressedContentType());
+        assertEquals(PKCSObjectIdentifiers.safeContentsBag, cd.getContentStream(new ZlibExpanderProvider()).getContentType());
         assertEquals(true, Arrays.equals(TEST_DATA, cd.getContent(new ZlibExpanderProvider())));
     }
 
@@ -140,12 +154,18 @@ public class NewCompressedDataTest
         assertEquals(true, Arrays.equals(TEST_DATA, cd.getContent(new ZlibExpanderProvider(TEST_DATA.length))));
     }
 
-    private CMSCompressedData getStdData()
+    private CMSCompressedData getStdData(ASN1ObjectIdentifier contentType)
         throws CMSException
     {
-        CMSProcessableByteArray testData = new CMSProcessableByteArray(TEST_DATA);
+        CMSProcessableByteArray testData = new CMSProcessableByteArray(contentType, TEST_DATA);
         CMSCompressedDataGenerator gen = new CMSCompressedDataGenerator();
 
         return gen.generate(testData, new ZlibCompressor());
+    }
+
+    private CMSCompressedData getStdData()
+        throws CMSException
+    {
+        return getStdData(PKCSObjectIdentifiers.data);
     }
 }

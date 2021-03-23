@@ -62,7 +62,7 @@ public class CMSCompressedDataParser
 
             ASN1OctetStringParser bytes = (ASN1OctetStringParser)content.getContent(BERTags.OCTET_STRING);
 
-            return new CMSTypedStream(content.getContentType().getId(), expander.getInputStream(bytes.getOctetStream()));
+            return new CMSTypedStream(content.getContentType(), expander.getInputStream(bytes.getOctetStream()));
         }
         catch (IOException e)
         {

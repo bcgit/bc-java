@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.AuthEnvelopedData;
@@ -64,6 +65,11 @@ public class CMSAuthEnvelopedData
 
         CMSSecureReadable secureReadable = new CMSSecureReadable()
         {
+            public ASN1ObjectIdentifier getContentType()
+            {
+                return authEncInfo.getContentType();
+            }
+
             public InputStream getInputStream()
                 throws IOException, CMSException
             {
