@@ -46,6 +46,7 @@ import org.bouncycastle.cms.jcajce.JceKEKRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceKeyAgreeAuthenticatedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceKeyTransAuthenticatedRecipient;
+import org.bouncycastle.cms.jcajce.JceKeyTransRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JcePasswordAuthenticatedRecipient;
 import org.bouncycastle.cms.jcajce.JcePasswordRecipientInfoGenerator;
@@ -330,9 +331,61 @@ public class NewAuthenticatedDataTest
 
             byte[] recData = recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
+            assertEquals(PKCSObjectIdentifiers.data, recipient.getContentType());
             assertTrue(Arrays.equals(data, recData));
             assertEquals(16, ad.getMac().length);
             assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
+        }
+    }
+
+    public void testAES256CCMContentType()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+        ASN1ObjectIdentifier macAlg = CMSAlgorithm.AES256_CCM;
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance("CCM", BC);
+
+        algParams.init(new CCMParameters(Hex.decode("000102030405060708090a0b"), 16).getEncoded());
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+
+        X509CertificateHolder origCert = new X509CertificateHolder(_origCert.getEncoded());
+
+        adGen.setOriginatorInfo(new OriginatorInfoGenerator(origCert).generate());
+
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(PKCSObjectIdentifiers.safeContentsBag, data),
+            new JceCMSMacCalculatorBuilder(macAlg).setAlgorithmParameters(algParams).setProvider(BC).build());
+
+        assertTrue(ad.getOriginatorInfo().getCertificates().getMatches(null).contains(origCert));
+
+        RecipientInformationStore recipients = ad.getRecipientInfos();
+
+        assertEquals(ad.getMacAlgOID(), macAlg.getId());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
+
+            JceKeyTransRecipient rec = new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC);
+            byte[] recData = recipient.getContent(rec);
+
+            assertEquals(PKCSObjectIdentifiers.safeContentsBag, recipient.getContentType());
+            assertEquals(16, ad.getMac().length);
+            assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
+            assertTrue(Arrays.equals(data, recData));
+
+            assertEquals(PKCSObjectIdentifiers.safeContentsBag, recipient.getContentStream(rec).getContentType());
         }
     }
 

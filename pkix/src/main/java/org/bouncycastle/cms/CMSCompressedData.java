@@ -64,6 +64,22 @@ public class CMSCompressedData
         return contentInfo.getContentType();
     }
 
+    public ASN1ObjectIdentifier getCompressedContentType()
+    {
+        return comData.getEncapContentInfo().getContentType();
+    }
+
+    public CMSTypedStream getContentStream(InputExpanderProvider expanderProvider)
+    {
+        ContentInfo     content = comData.getEncapContentInfo();
+
+        ASN1OctetString bytes = (ASN1OctetString)content.getContent();
+        InputExpander   expander = expanderProvider.get(comData.getCompressionAlgorithmIdentifier());
+        InputStream     zIn = expander.getInputStream(bytes.getOctetStream());
+
+        return new CMSTypedStream(content.getContentType(), zIn);
+    }
+
     /**
      * Return the uncompressed content.
      *

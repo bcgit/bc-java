@@ -70,6 +70,7 @@ import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSTypedData;
+import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.cms.KeyAgreeRecipientInformation;
 import org.bouncycastle.cms.KeyTransRecipientInformation;
 import org.bouncycastle.cms.OriginatorInfoGenerator;
@@ -104,6 +105,7 @@ import org.bouncycastle.operator.jcajce.JcaAlgorithmParametersConverter;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.io.Streams;
 
 public class NewEnvelopedDataTest
     extends TestCase
@@ -658,6 +660,42 @@ public class NewEnvelopedDataTest
             byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
             assertEquals(true, Arrays.equals(data, recData));
+        }
+    }
+
+    public void testContentType()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(PKCSObjectIdentifiers.safeContentsBag, data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
+
+            CMSTypedStream contentStream = recipient.getContentStream(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            assertEquals(PKCSObjectIdentifiers.safeContentsBag, contentStream.getContentType());
+            assertEquals(true, Arrays.equals(data, Streams.readAll(contentStream.getContentStream())));
         }
     }
 

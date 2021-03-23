@@ -101,6 +101,7 @@ public class CMSAuthenticatedData
         //
         ContentInfo encInfo = authData.getEncapsulatedContentInfo();
         CMSReadable readable = new CMSProcessableByteArray(
+            encInfo.getContentType(),
             ASN1OctetString.getInstance(encInfo.getContent()).getOctets());
 
         //
@@ -143,7 +144,7 @@ public class CMSAuthenticatedData
             }
             try
             {
-                CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(authData.getDigestAlgorithm()), readable);
+                CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(authData.getDigestAlgorithm()), encInfo.getContentType(), readable);
 
                 this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable, new AuthAttributesProvider()
                 {
@@ -165,7 +166,7 @@ public class CMSAuthenticatedData
         }
         else
         {
-            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthenticatedSecureReadable(this.macAlg, readable);
+            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthenticatedSecureReadable(this.macAlg, encInfo.getContentType(), readable);
 
             this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
         }
