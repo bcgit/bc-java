@@ -7,6 +7,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -96,7 +97,8 @@ public class TlsPSKKeyExchange
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
+        this.serverCertificate = serverCertificate.getCertificateAt(0).checkUsageInRole(ConnectionEnd.server,
+            TlsCertificateRole.RSA_ENCRYPTION);
     }
 
     public byte[] generateServerKeyExchange() throws IOException

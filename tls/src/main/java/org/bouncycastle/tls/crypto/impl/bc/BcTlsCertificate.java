@@ -22,10 +22,10 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
-import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 import org.bouncycastle.util.Arrays;
@@ -289,20 +289,18 @@ public class BcTlsCertificate
         return supportsSignatureAlgorithm(signatureAlgorithm, KeyUsage.keyCertSign);
     }
 
-    public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
+    public TlsCertificate checkUsageInRole(int connectionEnd, int tlsCertificateRole) throws IOException
     {
-        switch (keyExchangeAlgorithm)
+        switch (tlsCertificateRole)
         {
-        case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_RSA:
+        case TlsCertificateRole.DH:
         {
             validateKeyUsage(KeyUsage.keyAgreement);
             this.pubKeyDH = getPubKeyDH();
             return this;
         }
 
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-        case KeyExchangeAlgorithm.ECDH_RSA:
+        case TlsCertificateRole.ECDH:
         {
             validateKeyUsage(KeyUsage.keyAgreement);
             this.pubKeyEC = getPubKeyEC();
@@ -312,10 +310,9 @@ public class BcTlsCertificate
 
         if (connectionEnd == ConnectionEnd.server)
         {
-            switch (keyExchangeAlgorithm)
+            switch (tlsCertificateRole)
             {
-            case KeyExchangeAlgorithm.RSA:
-            case KeyExchangeAlgorithm.RSA_PSK:
+            case TlsCertificateRole.RSA_ENCRYPTION:
             {
                 validateKeyUsage(KeyUsage.keyEncipherment);
                 this.pubKeyRSA = getPubKeyRSA();

@@ -24,11 +24,11 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
-import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
@@ -307,20 +307,18 @@ public class JcaTlsCertificate
         return implSupportsSignatureAlgorithm(signatureAlgorithm);
     }
 
-    public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
+    public TlsCertificate checkUsageInRole(int connectionEnd, int tlsCertificateRole) throws IOException
     {
-        switch (keyExchangeAlgorithm)
+        switch (tlsCertificateRole)
         {
-        case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_RSA:
+        case TlsCertificateRole.DH:
         {
             validateKeyUsageBit(KU_KEY_AGREEMENT);
             this.pubKeyDH = getPubKeyDH();
             return this;
         }
 
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-        case KeyExchangeAlgorithm.ECDH_RSA:
+        case TlsCertificateRole.ECDH:
         {
             validateKeyUsageBit(KU_KEY_AGREEMENT);
             this.pubKeyEC = getPubKeyEC();
@@ -330,10 +328,9 @@ public class JcaTlsCertificate
 
         if (connectionEnd == ConnectionEnd.server)
         {
-            switch (keyExchangeAlgorithm)
+            switch (tlsCertificateRole)
             {
-            case KeyExchangeAlgorithm.RSA:
-            case KeyExchangeAlgorithm.RSA_PSK:
+            case TlsCertificateRole.RSA_ENCRYPTION:
             {
                 validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
                 this.pubKeyRSA = getPubKeyRSA();
