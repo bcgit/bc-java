@@ -100,7 +100,7 @@ public class CMSEnvelopedDataParser
         CMSReadable readable = new CMSProcessableInputStream(
             ((ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING)).getOctetStream());
         CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSEnvelopedSecureReadable(
-            this.encAlg, readable);
+            this.encAlg, encInfo.getContentType(), readable);
 
         //
         // build the RecipientInformationStore

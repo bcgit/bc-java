@@ -132,7 +132,7 @@ public class CMSAuthenticatedDataGenerator
             ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(Collections.unmodifiableMap(parameters)).toASN1EncodableVector()) : null;
 
             ContentInfo  eci = new ContentInfo(
-                            CMSObjectIdentifiers.data,
+                            typedData.getContentType(),
                             encContent);
 
             authData = new AuthenticatedData(originatorInfo, new DERSet(recipientInfos), macCalculator.getAlgorithmIdentifier(), digestCalculator.getAlgorithmIdentifier(), eci, authed, macResult, unauthed);
@@ -160,7 +160,7 @@ public class CMSAuthenticatedDataGenerator
             ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(new HashMap()).toASN1EncodableVector()) : null;
 
             ContentInfo  eci = new ContentInfo(
-                            CMSObjectIdentifiers.data,
+                            typedData.getContentType(),
                             encContent);
 
             authData = new AuthenticatedData(originatorInfo, new DERSet(recipientInfos), macCalculator.getAlgorithmIdentifier(), null, eci, null, macResult, unauthed);

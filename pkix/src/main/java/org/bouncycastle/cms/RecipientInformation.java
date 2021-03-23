@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.util.io.Streams;
 
@@ -156,6 +157,16 @@ public abstract class RecipientInformation
     }
 
     /**
+     * Return the content type of the encapsulated data accessed by this recipient.
+     *
+     * @return the content type OID.
+     */
+    public ASN1ObjectIdentifier getContentType()
+    {
+        return secureReadable.getContentType();
+    }
+
+    /**
      * Return a CMSTypedStream representing the content in the EnvelopedData after recovering the content
      * encryption/MAC key using the passed in Recipient.
      *
@@ -175,15 +186,15 @@ public abstract class RecipientInformation
                 // TODO: this needs to be done after reading the encrypted data
                 operator.getAADStream().write(additionalData.getAuthAttributes().getEncoded(ASN1Encoding.DER));
 
-                return new CMSTypedStream(operator.getInputStream(secureReadable.getInputStream()));
+                return new CMSTypedStream(secureReadable.getContentType(), operator.getInputStream(secureReadable.getInputStream()));
             }
             else
             {
-                return new CMSTypedStream(secureReadable.getInputStream());
+                return new CMSTypedStream(secureReadable.getContentType(), secureReadable.getInputStream());
             }
         }
 
-        return new CMSTypedStream(operator.getInputStream(secureReadable.getInputStream()));
+        return new CMSTypedStream(secureReadable.getContentType(), operator.getInputStream(secureReadable.getInputStream()));
     }
 
     protected abstract RecipientOperator getRecipientOperator(Recipient recipient)

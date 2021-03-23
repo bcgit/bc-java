@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.KEKRecipientInfo;
 import org.bouncycastle.asn1.cms.KeyAgreeRecipientInfo;
@@ -67,12 +68,19 @@ class CMSEnvelopedHelper
         implements CMSSecureReadable
     {
         private DigestCalculator digestCalculator;
+        private final ASN1ObjectIdentifier contentType;
         private CMSReadable readable;
 
-        public CMSDigestAuthenticatedSecureReadable(DigestCalculator digestCalculator, CMSReadable readable)
+        public CMSDigestAuthenticatedSecureReadable(DigestCalculator digestCalculator, ASN1ObjectIdentifier contentType, CMSReadable readable)
         {
             this.digestCalculator = digestCalculator;
+            this.contentType = contentType;
             this.readable = readable;
+        }
+
+        public ASN1ObjectIdentifier getContentType()
+        {
+            return contentType;
         }
 
         public InputStream getInputStream()
@@ -117,12 +125,19 @@ class CMSEnvelopedHelper
     static class CMSAuthenticatedSecureReadable implements CMSSecureReadable
     {
         private AlgorithmIdentifier algorithm;
+        private final ASN1ObjectIdentifier contentType;
         private CMSReadable readable;
 
-        CMSAuthenticatedSecureReadable(AlgorithmIdentifier algorithm, CMSReadable readable)
+        CMSAuthenticatedSecureReadable(AlgorithmIdentifier algorithm, ASN1ObjectIdentifier contentType, CMSReadable readable)
         {
             this.algorithm = algorithm;
+            this.contentType = contentType;
             this.readable = readable;
+        }
+
+        public ASN1ObjectIdentifier getContentType()
+        {
+            return contentType;
         }
 
         public InputStream getInputStream()
@@ -136,12 +151,19 @@ class CMSEnvelopedHelper
     static class CMSEnvelopedSecureReadable implements CMSSecureReadable
     {
         private AlgorithmIdentifier algorithm;
+        private final ASN1ObjectIdentifier contentType;
         private CMSReadable readable;
 
-        CMSEnvelopedSecureReadable(AlgorithmIdentifier algorithm, CMSReadable readable)
+        CMSEnvelopedSecureReadable(AlgorithmIdentifier algorithm, ASN1ObjectIdentifier contentType, CMSReadable readable)
         {
             this.algorithm = algorithm;
+            this.contentType = contentType;
             this.readable = readable;
+        }
+
+        public ASN1ObjectIdentifier getContentType()
+        {
+            return contentType;
         }
 
         public InputStream getInputStream()

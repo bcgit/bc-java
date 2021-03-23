@@ -145,7 +145,7 @@ public class CMSAuthenticatedDataParser
 
             try
             {
-                CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(digestAlgorithm), readable);
+                CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(digestAlgorithm), data.getContentType(), readable);
 
                 this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable, new AuthAttributesProvider()
                 {
@@ -181,7 +181,7 @@ public class CMSAuthenticatedDataParser
             CMSReadable readable = new CMSProcessableInputStream(
                 ((ASN1OctetStringParser)data.getContent(BERTags.OCTET_STRING)).getOctetStream());
 
-            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthenticatedSecureReadable(this.macAlg, readable);
+            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthenticatedSecureReadable(this.macAlg, data.getContentType(), readable);
 
             this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
         }
