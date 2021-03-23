@@ -37,6 +37,12 @@ public class SignatureScheme
     public static final int ecdsa_brainpoolP512r1tls13_sha512 = 0x081C;
 
     /*
+     * RFC 8998
+     */
+
+    public static final int sm2sig_sm3 = 0x0708;
+
+    /*
      * RFC 8446 reserved for private use (0xFE00..0xFFFF)
      */
 
@@ -82,6 +88,8 @@ public class SignatureScheme
             return "ecdsa_brainpoolP384r1tls13_sha384";
         case ecdsa_brainpoolP512r1tls13_sha512:
             return "ecdsa_brainpoolP512r1tls13_sha512";
+        case sm2sig_sm3:
+            return "sm2sig_sm3";
         default:
             return "UNKNOWN";
         }
@@ -107,6 +115,8 @@ public class SignatureScheme
             return NamedGroup.secp384r1;
         case ecdsa_secp521r1_sha512:
             return NamedGroup.secp521r1;
+        case sm2sig_sm3:
+            return NamedGroup.curveSM2;
         default:
             return -1;
         }
@@ -114,6 +124,7 @@ public class SignatureScheme
 
     public static short getIntrinsicHashAlgorithm(int signatureScheme)
     {
+        // TODO[RFC 8998] sm2sig_sm3
         switch (signatureScheme)
         {
         case ecdsa_brainpoolP256r1tls13_sha256:
@@ -143,11 +154,13 @@ public class SignatureScheme
 
     public static short getHashAlgorithm(int signatureScheme)
     {
+        // TODO[RFC 8998] sm2sig_sm3
         return (short)((signatureScheme >>> 8) & 0xFF);
     }
 
     public static short getSignatureAlgorithm(int signatureScheme)
     {
+        // TODO[RFC 8998] sm2sig_sm3
         return (short)(signatureScheme & 0xFF);
     }
 

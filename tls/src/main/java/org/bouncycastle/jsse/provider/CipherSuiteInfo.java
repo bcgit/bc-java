@@ -153,6 +153,12 @@ class CipherSuiteInfo
         case EncryptionAlgorithm.NULL:
             decomposition.add("C_NULL");
             break;
+        case EncryptionAlgorithm.SM4_CCM:
+            decomposition.add("SM4_CCM");
+            break;
+        case EncryptionAlgorithm.SM4_GCM:
+            decomposition.add("SM4_GCM");
+            break;
         default:
             throw new IllegalArgumentException();
         }
@@ -172,6 +178,10 @@ class CipherSuiteInfo
             break;
 //        case HashAlgorithm.sha512:
 //            addAll(decomposition, "SHA512", "SHA-512", "HmacSHA512");
+//            break;
+        // TODO[RFC 8998]
+//        case HashAlgorithm.sm3:
+//            addAll(decomposition, "SM3", "HmacSM3");
 //            break;
         default:
             throw new IllegalArgumentException();
@@ -354,6 +364,11 @@ class CipherSuiteInfo
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
             return HashAlgorithm.sha384;
 
+        // TODO[RFC 8998]
+//        case CipherSuite.TLS_SM4_CCM_SM3:
+//        case CipherSuite.TLS_SM4_GCM_SM3:
+//            return HashAlgorithm.sm3;
+
         default:
             throw new IllegalArgumentException();
         }
@@ -392,6 +407,10 @@ class CipherSuiteInfo
             return "ChaCha20-Poly1305";
         case EncryptionAlgorithm.NULL:
             return "NULL";
+        case EncryptionAlgorithm.SM4_CCM:
+            return "SM4/CCM/NoPadding";
+        case EncryptionAlgorithm.SM4_GCM:
+            return "SM4/GCM/NoPadding";
         default:
             throw new IllegalArgumentException();
         }

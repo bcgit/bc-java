@@ -65,6 +65,8 @@ class SignatureSchemeInfo
         rsa_pkcs1_sha384(SignatureScheme.rsa_pkcs1_sha384, "SHA384withRSA", "RSA", true),
         rsa_pkcs1_sha512(SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA", "RSA", true),
 
+        sm2sig_sm3(SignatureScheme.sm2sig_sm3, "SM3withSM2", "EC"),
+
         /*
          * Legacy/Historical: mostly not supported in 1.3, except ecdsa_sha1 and rsa_pkcs1_sha1 are
          * still permitted as a last resort for certs.
