@@ -176,6 +176,6 @@ public final class DigestFactory
 
     public static Digest cloneDigest(Digest hashAlg)
     {
-        return ((Cloner)cloneMap.get(hashAlg)).createClone(hashAlg);
+        return ((Cloner)cloneMap.get(hashAlg.getAlgorithmName())).createClone(hashAlg);
     }
 }
