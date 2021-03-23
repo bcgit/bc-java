@@ -112,7 +112,8 @@ class PEMUtil
     }
 
     ASN1Sequence readPEMObject(
-        InputStream in)
+        InputStream in,
+        boolean     isFirst)
         throws IOException
     {
         String line;
@@ -131,6 +132,11 @@ class PEMUtil
 
         if (header == null)
         {
+            if (!isFirst)
+            {
+                // just ignore the data
+                return null;
+            }
             throw new IOException("malformed PEM data: no header found");
         }
 

@@ -1399,10 +1399,20 @@ public class CertTest
         {
             fail("PEM cert collection not right");
         }
+        col = cf.generateCertificates(new ByteArrayInputStream((PEMData.CERTIFICATE_2 + "z\n").getBytes("US-ASCII")));
+        if (col.size() != 1 || !col.contains(cert))
+        {
+            fail("PEM cert collection with extra not right");
+        }
         col = cf.generateCRLs(new ByteArrayInputStream(PEMData.CRL_2.getBytes("US-ASCII")));
         if (col.size() != 1 || !col.contains(crl))
         {
             fail("PEM crl collection not right");
+        }
+        col = cf.generateCRLs(new ByteArrayInputStream((PEMData.CRL_2 + "z\n").getBytes("US-ASCII")));
+        if (col.size() != 1 || !col.contains(crl))
+        {
+            fail("PEM crl collection with extra not right");
         }
 
         cert = readPEMCert(cf, ecPemCert);
