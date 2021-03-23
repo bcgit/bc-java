@@ -59,6 +59,9 @@ public class BcTlsSecret
                 return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sha256, label, seed, length);
             case PRFAlgorithm.tls13_hkdf_sha384:
                 return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sha384, label, seed, length);
+            // TODO[RFC 8998]
+//            case PRFAlgorithm.tls13_hkdf_sm3:
+//                return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sm3, label, seed, length);
             default:
                 return crypto.adoptLocalSecret(prf(prfAlgorithm, label, seed, length));
             }

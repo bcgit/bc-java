@@ -67,6 +67,8 @@ class NamedGroupInfo
         brainpoolP384r1tls13(NamedGroup.brainpoolP384r1tls13, "EC"),
         brainpoolP512r1tls13(NamedGroup.brainpoolP512r1tls13, "EC"),
 
+        curveSM2(NamedGroup.curveSM2, "EC"),
+
         ffdhe2048(NamedGroup.ffdhe2048, "DiffieHellman"),
         ffdhe3072(NamedGroup.ffdhe3072, "DiffieHellman"),
         ffdhe4096(NamedGroup.ffdhe4096, "DiffieHellman"),

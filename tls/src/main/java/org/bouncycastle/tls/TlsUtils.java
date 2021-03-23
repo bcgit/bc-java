@@ -105,6 +105,9 @@ public class TlsUtils
         addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed25519, HashAlgorithm.Intrinsic, SignatureAlgorithm.ed25519);
         addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed448, HashAlgorithm.Intrinsic, SignatureAlgorithm.ed448);
 
+        // TODO[RFC 8998]
+//        addCertSigAlgOID(h, GMObjectIdentifiers.sm2sign_with_sm3, HashAlgorithm.sm3, SignatureAlgorithm.sm2);
+
         return h;
     }
 
@@ -1811,6 +1814,9 @@ public class TlsUtils
         case PRFAlgorithm.tls_prf_sha384:
         case PRFAlgorithm.tls13_hkdf_sha384:
             return HashAlgorithm.sha384;
+        // TODO[RFC 8998]
+//        case PRFAlgorithm.tls13_hkdf_sm3:
+//            return HashAlgorithm.sm3;
         default:
             throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
         }
@@ -1832,6 +1838,9 @@ public class TlsUtils
             return NISTObjectIdentifiers.id_sha384;
         case HashAlgorithm.sha512:
             return NISTObjectIdentifiers.id_sha512;
+        // TODO[RFC 8998]
+//        case HashAlgorithm.sm3:
+//            return GMObjectIdentifiers.sm3;
         default:
             throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
@@ -1864,6 +1873,16 @@ public class TlsUtils
             if (isTLSv13)
             {
                 return PRFAlgorithm.tls13_hkdf_sha384;
+            }
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        case CipherSuite.TLS_SM4_CCM_SM3:
+        case CipherSuite.TLS_SM4_GCM_SM3:
+        {
+            if (isTLSv13)
+            {
+                return PRFAlgorithm.tls13_hkdf_sm3;
             }
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -2880,6 +2899,12 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
             return EncryptionAlgorithm.SEED_CBC;
 
+        case CipherSuite.TLS_SM4_CCM_SM3:
+            return EncryptionAlgorithm.SM4_CCM;
+
+        case CipherSuite.TLS_SM4_GCM_SM3:
+            return EncryptionAlgorithm.SM4_GCM;
+
         default:
             return -1;
         }
@@ -3168,6 +3193,8 @@ public class TlsUtils
         case CipherSuite.TLS_AES_128_GCM_SHA256:
         case CipherSuite.TLS_AES_256_GCM_SHA384:
         case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_SM4_CCM_SM3:
+        case CipherSuite.TLS_SM4_GCM_SM3:
             return KeyExchangeAlgorithm.NULL;
 
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
@@ -3394,6 +3421,8 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_ARIA_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_SM4_CCM_SM3:
+        case CipherSuite.TLS_SM4_GCM_SM3:
             return MACAlgorithm._null;
 
         case CipherSuite.TLS_DH_anon_WITH_3DES_EDE_CBC_SHA:
@@ -3591,6 +3620,8 @@ public class TlsUtils
         case CipherSuite.TLS_AES_128_GCM_SHA256:
         case CipherSuite.TLS_AES_256_GCM_SHA384:
         case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_SM4_CCM_SM3:
+        case CipherSuite.TLS_SM4_GCM_SM3:
             return ProtocolVersion.TLSv13;
 
         case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256:
