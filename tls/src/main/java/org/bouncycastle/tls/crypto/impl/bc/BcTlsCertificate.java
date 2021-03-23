@@ -318,6 +318,12 @@ public class BcTlsCertificate
                 this.pubKeyRSA = getPubKeyRSA();
                 return this;
             }
+            case TlsCertificateRole.SM2_ENCRYPTION:
+            {
+                validateKeyUsage(KeyUsage.keyEncipherment);
+                this.pubKeyEC = getPubKeyEC();
+                return this;
+            }
             }
         }
 

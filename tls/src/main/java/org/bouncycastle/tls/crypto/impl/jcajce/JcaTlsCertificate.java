@@ -336,6 +336,12 @@ public class JcaTlsCertificate
                 this.pubKeyRSA = getPubKeyRSA();
                 return this;
             }
+            case TlsCertificateRole.SM2_ENCRYPTION:
+            {
+                validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
+                this.pubKeyEC = getPubKeyEC();
+                return this;
+            }
             }
         }
 
