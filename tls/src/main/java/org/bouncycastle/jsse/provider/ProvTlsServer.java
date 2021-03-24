@@ -1,8 +1,10 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,11 +36,13 @@ import org.bouncycastle.tls.SessionParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.TrustedAuthority;
+import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
@@ -50,8 +54,17 @@ class ProvTlsServer
 {
     private static final Logger LOG = Logger.getLogger(ProvTlsServer.class.getName());
 
+    private static final String PROPERTY_DEFAULT_DHE_PARAMETERS = "jdk.tls.server.defaultDHEParameters";
+
     // TODO[jsse] Integrate this into NamedGroupInfo
     private static final int provEphemeralDHKeySize = PropertyUtils.getIntegerSystemProperty("jdk.tls.ephemeralDHKeySize", 2048, 1024, 8192);
+
+    /*
+     * TODO[jsse] Does this selection override the restriction from 'jdk.tls.ephemeralDHKeySize'?
+     * TODO[fips] Probably should be ignored in fips mode?
+     */
+    @SuppressWarnings("unused")
+    private static final DHGroup[] provServerDefaultDHEParameters = getDefaultDHEParameters();
 
     private static final boolean provServerEnableCA = PropertyUtils
         .getBooleanSystemProperty("jdk.tls.server.enableCAExtension", true);
@@ -66,6 +79,90 @@ class ProvTlsServer
 
     private static final boolean provServerEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.server.enableTrustedCAKeysExtension", false);
+
+    private static DHGroup[] getDefaultDHEParameters()
+    {
+        String propertyValue = PropertyUtils.getStringSecurityProperty(PROPERTY_DEFAULT_DHE_PARAMETERS);
+        if (null == propertyValue)
+        {
+            return null;
+        }
+
+        String input = JsseUtils.stripDoubleQuotes(JsseUtils.removeAllWhitespace(propertyValue));
+        int limit = input.length();
+        if (limit < 1)
+        {
+            return null;
+        }
+
+        ArrayList<DHGroup> result = new ArrayList<DHGroup>();
+        int outerComma = -1;
+        do
+        {
+            int openBrace = outerComma + 1;
+            if (openBrace >= limit || '{' != input.charAt(openBrace))
+            {
+                break;
+            }
+
+            int modulus = openBrace + 1;
+
+            int innerComma = input.indexOf(',', modulus);
+            if (innerComma <= modulus)
+            {
+                break;
+            }
+
+            int generator = innerComma + 1;
+
+            int closeBrace = input.indexOf('}', generator);
+            if (closeBrace <= generator)
+            {
+                break;
+            }
+
+            try
+            {
+                BigInteger p = parseDHParameter(input, modulus, innerComma);
+                BigInteger g = parseDHParameter(input, generator, closeBrace);
+
+                DHGroup dhGroup = TlsDHUtils.getStandardGroupForDHParameters(p, g);
+                if (null != dhGroup)
+                {
+                    result.add(dhGroup);
+                }
+                else if (!p.isProbablePrime(120))
+                {
+                    LOG.log(Level.WARNING, "Non-prime modulus ignored in security property ["
+                        + PROPERTY_DEFAULT_DHE_PARAMETERS + "]: " + p.toString(16));
+                }
+                else
+                {
+                    result.add(new DHGroup(p, null, g, 0));
+                }
+            }
+            catch (Exception e)
+            {
+                break;
+            }
+
+            outerComma = closeBrace + 1;
+            if (outerComma >= limit)
+            {
+                return result.toArray(new DHGroup[result.size()]);
+            }
+        }
+        while (',' == input.charAt(outerComma));
+
+        LOG.log(Level.WARNING, "Invalid syntax for security property [" + PROPERTY_DEFAULT_DHE_PARAMETERS + "]");
+
+        return null;
+    }
+
+    private static BigInteger parseDHParameter(String s, int beginIndex, int endIndex)
+    {
+        return new BigInteger(s.substring(beginIndex, endIndex), 16);
+    }
 
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
