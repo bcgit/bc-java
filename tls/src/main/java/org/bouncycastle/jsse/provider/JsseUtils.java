@@ -83,6 +83,7 @@ abstract class JsseUtils
     static final Set<BCCryptoPrimitive> SIGNATURE_CRYPTO_PRIMITIVES_BC =
         Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.SIGNATURE));
 
+    static String EMPTY_STRING = "";
     static X509Certificate[] EMPTY_X509CERTIFICATES = new X509Certificate[0];
 
     static class BCUnknownServerName extends BCSNIServerName
@@ -648,7 +649,12 @@ abstract class JsseUtils
 
     static boolean isNameSpecified(String name)
     {
-        return null != name && name.length() > 0;
+        return !isNullOrEmpty(name);
+    }
+
+    static boolean isNullOrEmpty(String s)
+    {
+        return null == s || s.length() < 1;
     }
 
     static boolean isTLSv12(String protocol)
@@ -831,6 +837,37 @@ abstract class JsseUtils
             }
         }
         return null;
+    }
+
+    static String removeAllWhitespace(String s)
+    {
+        if (isNullOrEmpty(s))
+        {
+            return s;
+        }
+
+        int originalLength = s.length();
+        char[] buf = new char[originalLength];
+        int bufPos = 0;
+
+        for (int i = 0; i < originalLength; ++i)
+        {
+            char c = s.charAt(i);
+            if (!Character.isWhitespace(c))
+            {
+                buf[bufPos++] = c;
+            }
+        }
+
+        if (bufPos == 0)
+        {
+            return EMPTY_STRING;
+        }
+        if (bufPos == originalLength)
+        {
+            return s;
+        }
+        return new String(buf, 0, bufPos);
     }
 
     static boolean requireCloseNotify()

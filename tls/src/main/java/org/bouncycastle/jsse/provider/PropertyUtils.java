@@ -114,6 +114,17 @@ class PropertyUtils
         return defaultValue;
     }
 
+    static String getStringSecurityProperty(String propertyName)
+    {
+        String propertyValue = getSecurityProperty(propertyName);
+        if (null != propertyValue)
+        {
+            LOG.log(Level.INFO, "Found string security property [" + propertyName + "]: " + propertyValue);
+            return propertyValue;
+        }
+        return null;
+    }
+
     static String getStringSecurityProperty(String propertyName, String defaultValue)
     {
         String propertyValue = getSecurityProperty(propertyName);
