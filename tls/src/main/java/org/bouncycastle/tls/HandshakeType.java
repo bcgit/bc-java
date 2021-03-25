@@ -42,9 +42,9 @@ public class HandshakeType
     public static final short key_update = 24;
     public static final short message_hash = 254;
 
-    public static String getName(short hashAlgorithm)
+    public static String getName(short handshakeType)
     {
-        switch (hashAlgorithm)
+        switch (handshakeType)
         {
         case hello_request:
             return "hello_request";
