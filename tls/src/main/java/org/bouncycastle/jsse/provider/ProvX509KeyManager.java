@@ -309,6 +309,7 @@ class ProvX509KeyManager
             }
             catch (Exception e)
             {
+                LOG.log(Level.FINER, "Failed to load private key", e);
             }
         }
 
@@ -316,23 +317,17 @@ class ProvX509KeyManager
         return null;
     }
 
-    private BCX509Key createKeyBC(int builderIndex, String alias, KeyStore keyStore, X509Certificate[] certificateChain)
+    private BCX509Key createKeyBC(int builderIndex, String localAlias, KeyStore keyStore,
+        X509Certificate[] certificateChain)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
         KeyStore.Builder builder = builders.get(builderIndex);
-        ProtectionParameter protectionParameter = builder.getProtectionParameter(alias);
+        ProtectionParameter protectionParameter = builder.getProtectionParameter(localAlias);
 
-        if (protectionParameter instanceof KeyStore.PasswordProtection)
+        Key key = KeyStoreUtil.getKey(keyStore, localAlias, protectionParameter);
+        if (key instanceof PrivateKey)
         {
-            KeyStore.PasswordProtection passwordProtection = (KeyStore.PasswordProtection)protectionParameter;
-            if (null == passwordProtection.getProtectionAlgorithm())
-            {
-                Key key = keyStore.getKey(alias, passwordProtection.getPassword());
-                if (key instanceof PrivateKey)
-                {
-                    return new ProvX509Key((PrivateKey) key, certificateChain);
-                }
-            }
+            return new ProvX509Key((PrivateKey)key, certificateChain);
         }
 
         return null;
@@ -378,7 +373,7 @@ class ProvX509KeyManager
 
     private List<Match> getAliasesFromBuilder(int builderIndex, List<String> keyTypes, Set<Principal> uniqueIssuers,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws Exception
+        throws KeyStoreException
     {
         KeyStore.Builder builder = builders.get(builderIndex);
         KeyStore keyStore = builder.getKeyStore();
@@ -441,7 +436,7 @@ class ProvX509KeyManager
 
     private Match getBestMatchFromBuilder(int builderIndex, List<String> keyTypes, Set<Principal> uniqueIssuers,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws Exception
+        throws KeyStoreException
     {
         KeyStore.Builder builder = builders.get(builderIndex);
         KeyStore keyStore = builder.getKeyStore();
@@ -477,7 +472,7 @@ class ProvX509KeyManager
     private Match getPotentialMatch(int builderIndex, KeyStore.Builder builder, KeyStore keyStore, String localAlias,
         Match.Quality qualityLimit, List<String> keyTypes, Set<Principal> uniqueIssuers,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws Exception
+        throws KeyStoreException
     {
         if (keyStore.isKeyEntry(localAlias))
         {
