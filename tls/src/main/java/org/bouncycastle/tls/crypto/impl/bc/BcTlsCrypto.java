@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.ARIAEngine;
@@ -390,9 +391,8 @@ public class BcTlsCrypto
             return new SHA384Digest();
         case CryptoHashAlgorithm.sha512:
             return new SHA512Digest();
-        // TODO[RFC 8998]
-//        case HashAlgorithm.sm3:
-//            return new SM3Digest();
+        case CryptoHashAlgorithm.sm3:
+            return new SM3Digest();
         default:
             throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
@@ -454,9 +454,8 @@ public class BcTlsCrypto
             return new SHA384Digest((SHA384Digest)hash);
         case CryptoHashAlgorithm.sha512:
             return new SHA512Digest((SHA512Digest)hash);
-        // TODO[RFC 8998]
-//        case HashAlgorithm.sm3:
-//            return new SM3Digest((SM3Digest)hash);
+        case CryptoHashAlgorithm.sm3:
+            return new SM3Digest((SM3Digest)hash);
         default:
             throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }

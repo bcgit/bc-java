@@ -364,9 +364,8 @@ public class JcaTlsCrypto
             return "HmacSHA384";
         case CryptoHashAlgorithm.sha512:
             return "HmacSHA512";
-        // TODO[RFC 8998]
-//        case HashAlgorithm.sm3:
-//            return "HmacSM3";
+        case CryptoHashAlgorithm.sm3:
+            return "HmacSM3";
         default:
             throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
@@ -1193,9 +1192,8 @@ public class JcaTlsCrypto
             return "SHA-384";
         case CryptoHashAlgorithm.sha512:
             return "SHA-512";
-        // TODO[RFC 8998]
-//        case HashAlgorithm.sm3:
-//            return "SM3";
+        case CryptoHashAlgorithm.sm3:
+            return "SM3";
         default:
             throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }

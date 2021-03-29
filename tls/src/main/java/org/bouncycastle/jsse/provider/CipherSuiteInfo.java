@@ -7,10 +7,10 @@ import java.util.Set;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.CipherType;
 import org.bouncycastle.tls.EncryptionAlgorithm;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 
 class CipherSuiteInfo
 {
@@ -23,7 +23,7 @@ class CipherSuiteInfo
 
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(cipherSuite);
         int encryptionAlgorithmType = TlsUtils.getEncryptionAlgorithmType(encryptionAlgorithm);
-        short hashAlgorithm = getHashAlgorithm(cipherSuite);
+        int cryptoHashAlgorithm = getCryptoHashAlgorithm(cipherSuite);
         int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(cipherSuite);
         int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
 
@@ -32,7 +32,7 @@ class CipherSuiteInfo
 
         Set<String> decompositionTLS = new HashSet<String>(decompositionX509);
         decomposeEncryptionAlgorithm(decompositionTLS, encryptionAlgorithm);
-        decomposeHashAlgorithm(decompositionTLS, hashAlgorithm);
+        decomposeHashAlgorithm(decompositionTLS, cryptoHashAlgorithm);
         decomposeMACAlgorithm(decompositionTLS, encryptionAlgorithmType, macAlgorithm);
 
         boolean isTLSv13 = (KeyExchangeAlgorithm.NULL == keyExchangeAlgorithm);
@@ -164,25 +164,22 @@ class CipherSuiteInfo
         }
     }
 
-    private static void decomposeHashAlgorithm(Set<String> decomposition, short hashAlgorithm)
+    private static void decomposeHashAlgorithm(Set<String> decomposition, int cryptoHashAlgorithm)
     {
-        switch (hashAlgorithm)
+        switch (cryptoHashAlgorithm)
         {
-        case HashAlgorithm.none:
-            break;
-        case HashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha256:
             addAll(decomposition, "SHA256", "SHA-256", "HmacSHA256");
             break;
-        case HashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha384:
             addAll(decomposition, "SHA384", "SHA-384", "HmacSHA384");
             break;
-//        case HashAlgorithm.sha512:
+//        case CryptoHashAlgorithm.sha512:
 //            addAll(decomposition, "SHA512", "SHA-512", "HmacSHA512");
 //            break;
-        // TODO[RFC 8998]
-//        case HashAlgorithm.sm3:
-//            addAll(decomposition, "SM3", "HmacSM3");
-//            break;
+        case CryptoHashAlgorithm.sm3:
+            addAll(decomposition, "SM3", "HmacSM3");
+            break;
         default:
             throw new IllegalArgumentException();
         }
@@ -245,7 +242,7 @@ class CipherSuiteInfo
         }
     }
 
-    private static short getHashAlgorithm(int cipherSuite)
+    private static int getCryptoHashAlgorithm(int cipherSuite)
     {
         switch (cipherSuite)
         {
@@ -277,7 +274,7 @@ class CipherSuiteInfo
              * TODO[jsse] We follow SunJSSE behaviour here, but it's not quite right; these cipher
              * suites will actually use the legacy PRF based on MD5/SHA1 for TLS 1.1 or earlier.
              */
-            return HashAlgorithm.sha256;
+            return CryptoHashAlgorithm.sha256;
 
         case CipherSuite.TLS_AES_128_CCM_SHA256:
         case CipherSuite.TLS_AES_128_CCM_8_SHA256:
@@ -335,7 +332,7 @@ class CipherSuiteInfo
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
-            return HashAlgorithm.sha256;
+            return CryptoHashAlgorithm.sha256;
 
         case CipherSuite.TLS_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
@@ -362,12 +359,11 @@ class CipherSuiteInfo
         case CipherSuite.TLS_RSA_WITH_ARIA_256_CBC_SHA384:
         case CipherSuite.TLS_RSA_WITH_ARIA_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
-            return HashAlgorithm.sha384;
+            return CryptoHashAlgorithm.sha384;
 
-        // TODO[RFC 8998]
-//        case CipherSuite.TLS_SM4_CCM_SM3:
-//        case CipherSuite.TLS_SM4_GCM_SM3:
-//            return HashAlgorithm.sm3;
+        case CipherSuite.TLS_SM4_CCM_SM3:
+        case CipherSuite.TLS_SM4_GCM_SM3:
+            return CryptoHashAlgorithm.sm3;
 
         default:
             throw new IllegalArgumentException();
