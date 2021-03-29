@@ -85,7 +85,6 @@ class ProvAlgorithmChecker
         return Collections.unmodifiableSet(noParams);
     }
 
-    @SuppressWarnings("unused")
     private final boolean isInFipsMode;
     private final JcaJceHelper helper;
     private final BCAlgorithmConstraints algorithmConstraints;
