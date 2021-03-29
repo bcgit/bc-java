@@ -3,9 +3,9 @@ package org.bouncycastle.tls.crypto.impl.bc;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
@@ -56,12 +56,11 @@ public class BcTlsSecret
             switch (prfAlgorithm)
             {
             case PRFAlgorithm.tls13_hkdf_sha256:
-                return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sha256, label, seed, length);
+                return TlsCryptoUtils.hkdfExpandLabel(this, CryptoHashAlgorithm.sha256, label, seed, length);
             case PRFAlgorithm.tls13_hkdf_sha384:
-                return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sha384, label, seed, length);
-            // TODO[RFC 8998]
-//            case PRFAlgorithm.tls13_hkdf_sm3:
-//                return TlsCryptoUtils.hkdfExpandLabel(this, HashAlgorithm.sm3, label, seed, length);
+                return TlsCryptoUtils.hkdfExpandLabel(this, CryptoHashAlgorithm.sha384, label, seed, length);
+            case PRFAlgorithm.tls13_hkdf_sm3:
+                return TlsCryptoUtils.hkdfExpandLabel(this, CryptoHashAlgorithm.sm3, label, seed, length);
             default:
                 return crypto.adoptLocalSecret(prf(prfAlgorithm, label, seed, length));
             }
@@ -187,8 +186,8 @@ public class BcTlsSecret
 
     protected byte[] prf_SSL(byte[] seed, int length)
     {
-        Digest md5 = crypto.createDigest(HashAlgorithm.md5);
-        Digest sha1 = crypto.createDigest(HashAlgorithm.sha1);
+        Digest md5 = crypto.createDigest(CryptoHashAlgorithm.md5);
+        Digest sha1 = crypto.createDigest(CryptoHashAlgorithm.sha1);
 
         int md5Size = md5.getDigestSize();
         int sha1Size = sha1.getDigestSize();
@@ -231,10 +230,10 @@ public class BcTlsSecret
         int s_half = (data.length + 1) / 2;
 
         byte[] b1 = new byte[length];
-        hmacHash(crypto.createDigest(HashAlgorithm.md5), data, 0, s_half, labelSeed, b1);
+        hmacHash(crypto.createDigest(CryptoHashAlgorithm.md5), data, 0, s_half, labelSeed, b1);
 
         byte[] b2 = new byte[length];
-        hmacHash(crypto.createDigest(HashAlgorithm.sha1), data, data.length - s_half, s_half, labelSeed, b2);
+        hmacHash(crypto.createDigest(CryptoHashAlgorithm.sha1), data, data.length - s_half, s_half, labelSeed, b2);
 
         for (int i = 0; i < length; i++)
         {

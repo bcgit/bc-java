@@ -8,4 +8,5 @@ public abstract class CryptoHashAlgorithm
     public static final int sha256 = 4;
     public static final int sha384 = 5;
     public static final int sha512 = 6;
+    public static final int sm3 = 7;
 }
