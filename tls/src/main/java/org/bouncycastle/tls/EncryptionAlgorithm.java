@@ -41,14 +41,6 @@ public class EncryptionAlgorithm
     public static final int SEED_CBC = 14;
 
     /*
-     * RFC 6209
-     */
-    public static final int ARIA_128_CBC = 22;
-    public static final int ARIA_256_CBC = 23;
-    public static final int ARIA_128_GCM = 24;
-    public static final int ARIA_256_GCM = 25;
-
-    /*
      * RFC 6655
      */
     public static final int AES_128_CCM = 15;
@@ -68,8 +60,21 @@ public class EncryptionAlgorithm
     public static final int CHACHA20_POLY1305 = 21;
 
     /*
+     * RFC 6209
+     */
+    public static final int ARIA_128_CBC = 22;
+    public static final int ARIA_256_CBC = 23;
+    public static final int ARIA_128_GCM = 24;
+    public static final int ARIA_256_GCM = 25;
+
+    /*
      * RFC 8998
      */
     public static final int SM4_CCM = 26;
     public static final int SM4_GCM = 27;
+
+    /*
+     * GMT 0024-2014
+     */
+    public static final int SM4_CBC = 28;
 }
