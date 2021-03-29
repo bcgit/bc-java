@@ -347,14 +347,14 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        setup13Cipher(cipher, nonce, secret, securityParameters.getPRFHashAlgorithm());
+        setup13Cipher(cipher, nonce, secret, TlsCryptoUtils.getHash(securityParameters.getPRFHashAlgorithm()));
     }
 
-    protected void setup13Cipher(TlsAEADCipherImpl cipher, byte[] nonce, TlsSecret secret, short hash)
+    protected void setup13Cipher(TlsAEADCipherImpl cipher, byte[] nonce, TlsSecret secret, int cryptoHashAlgorithm)
         throws IOException
     {
-        byte[] key = TlsCryptoUtils.hkdfExpandLabel(secret, hash, "key", TlsUtils.EMPTY_BYTES, keySize).extract();
-        byte[] iv = TlsCryptoUtils.hkdfExpandLabel(secret, hash, "iv", TlsUtils.EMPTY_BYTES, fixed_iv_length).extract();
+        byte[] key = TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, "key", TlsUtils.EMPTY_BYTES, keySize).extract();
+        byte[] iv = TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, "iv", TlsUtils.EMPTY_BYTES, fixed_iv_length).extract();
 
         cipher.setKey(key, 0, keySize);
         System.arraycopy(iv, 0, nonce, 0, fixed_iv_length);

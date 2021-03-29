@@ -2,11 +2,13 @@ package org.bouncycastle.tls.crypto.impl.bc;
 
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.tls.DigitallySigned;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 
 /**
  * BC light-weight base class for the verifiers supporting the two DSA style algorithms from FIPS PUB 186-4: DSA and ECDSA.
@@ -19,7 +21,7 @@ public abstract class BcTlsDSSVerifier
         super(crypto, publicKey);
     }
 
-    protected abstract DSA createDSAImpl(short hashAlgorithm);
+    protected abstract DSA createDSAImpl(int cryptoHashAlgorithm);
 
     protected abstract short getSignatureAlgorithm();
 
@@ -31,9 +33,11 @@ public abstract class BcTlsDSSVerifier
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        short hashAlgorithm = algorithm == null ? HashAlgorithm.sha1 : algorithm.getHash();
+        int cryptoHashAlgorithm = (null == algorithm)
+            ? CryptoHashAlgorithm.sha1
+            : TlsCryptoUtils.getHash(algorithm.getHash());
 
-        Signer signer = new DSADigestSigner(createDSAImpl(hashAlgorithm), crypto.createDigest(HashAlgorithm.none));
+        Signer signer = new DSADigestSigner(createDSAImpl(cryptoHashAlgorithm), new NullDigest());
         signer.init(false, publicKey);
         if (algorithm == null)
         {

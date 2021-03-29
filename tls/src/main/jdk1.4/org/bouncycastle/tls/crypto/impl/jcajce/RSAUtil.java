@@ -2,12 +2,8 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.security.AlgorithmParameters;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.security.GeneralSecurityException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
-//import java.security.spec.MGF1ParameterSpec;
-//import java.security.spec.PSSParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERNull;
@@ -16,7 +12,8 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 
 class RSAUtil
 {
@@ -32,17 +29,18 @@ class RSAUtil
         return name;
     }
 
-    static AlgorithmParameterSpec getPSSParameterSpec(short hash, String digestName, JcaJceHelper helper)
+    static AlgorithmParameterSpec getPSSParameterSpec(int cryptoHashAlgorithm, String digestName, JcaJceHelper helper)
     {
-// Used where providers can't handle PSSParameterSpec properly.
-        AlgorithmIdentifier hashAlg = getHashAlgorithmID(hash);
+        int saltLength = TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm);
+
+        // Used where providers can't handle PSSParameterSpec properly.
+        AlgorithmIdentifier hashAlg = getHashAlgorithmID(cryptoHashAlgorithm);
 
         RSASSAPSSparams pssParams = new RSASSAPSSparams(
             hashAlg,
             new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlg),
-            new ASN1Integer(HashAlgorithm.getOutputSize(hash)),
+            new ASN1Integer(saltLength),
             RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
-
 
         try
         {
@@ -56,32 +54,24 @@ class RSAUtil
         {   // this should never happen!
             throw new IllegalStateException("cannot encode RSASSAPSSparams: " + e.getMessage());
         }
-        catch (InvalidParameterSpecException e)
-        {
-            throw new IllegalStateException("cannot recover PSS paramSpec: " + e.getMessage());
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new IllegalStateException("cannot recover PSS paramSpec: " + e.getMessage());
-        }
-        catch (NoSuchProviderException e)
+        catch (GeneralSecurityException e)
         {
             throw new IllegalStateException("cannot recover PSS paramSpec: " + e.getMessage());
         }
 
 //        MGF1ParameterSpec mgf1Spec = new MGF1ParameterSpec(digestName);
-//        return new PSSParameterSpec(digestName, "MGF1", mgf1Spec, HashAlgorithm.getOutputSize(hash), 1);
+//        return new PSSParameterSpec(digestName, "MGF1", mgf1Spec, saltLength, 1);
     }
 
-    private static AlgorithmIdentifier getHashAlgorithmID(short hashAlgorithm)
+    private static AlgorithmIdentifier getHashAlgorithmID(int cryptoHashAlgorithm)
     {
-        switch (hashAlgorithm)
+        switch (cryptoHashAlgorithm)
         {
-        case HashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha256:
             return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
-        case HashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha384:
             return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
-        case HashAlgorithm.sha512:
+        case CryptoHashAlgorithm.sha512:
             return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
         default:
             return null;

@@ -1552,7 +1552,7 @@ public class TlsUtils
 
         if (HashAlgorithm.none != hashAlgorithm)
         {
-            TlsHash hash = context.getCrypto().createHash(hashAlgorithm);
+            TlsHash hash = createHash(context.getCrypto(), hashAlgorithm);
             if (hash != null)
             {                
                 hash.update(enc, encOff, encLen);
@@ -1619,7 +1619,7 @@ public class TlsUtils
 
             TlsCrypto crypto = context.getCrypto();
             byte[] hmacKey = crypto.adoptSecret(finishedKey).extract();
-            TlsHMAC hmac = crypto.createHMAC(securityParameters.getPRFHashAlgorithm());
+            TlsHMAC hmac = crypto.createHMACForHash(TlsCryptoUtils.getHash(securityParameters.getPRFHashAlgorithm()));
             hmac.setKey(hmacKey, 0, hmacKey.length);
             hmac.update(transcriptHash, 0, transcriptHash.length);
             return hmac.calculateMAC();
@@ -1642,7 +1642,7 @@ public class TlsUtils
     static void establish13PhaseSecrets(TlsContext context) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        short hash = securityParameters.getPRFHashAlgorithm();
+        int cryptoHashAlgorithm = TlsCryptoUtils.getHash(securityParameters.getPRFHashAlgorithm());
         int hashLen = securityParameters.getPRFHashLength();
         byte[] zeroes = new byte[hashLen];
 
@@ -1666,14 +1666,14 @@ public class TlsUtils
 
         TlsCrypto crypto = context.getCrypto();
 
-        byte[] emptyTranscriptHash = crypto.createHash(hash).calculateHash();
+        byte[] emptyTranscriptHash = crypto.createHash(cryptoHashAlgorithm).calculateHash();
 
-        TlsSecret earlySecret = crypto.hkdfInit(hash)
-            .hkdfExtract(hash, psk);
+        TlsSecret earlySecret = crypto.hkdfInit(cryptoHashAlgorithm)
+            .hkdfExtract(cryptoHashAlgorithm, psk);
         TlsSecret handshakeSecret = deriveSecret(securityParameters, earlySecret, "derived", emptyTranscriptHash)
-            .hkdfExtract(hash, ecdhe);
+            .hkdfExtract(cryptoHashAlgorithm, ecdhe);
         TlsSecret masterSecret = deriveSecret(securityParameters, handshakeSecret, "derived", emptyTranscriptHash)
-            .hkdfExtract(hash, zeroes);
+            .hkdfExtract(cryptoHashAlgorithm, zeroes);
 
         securityParameters.earlySecret = earlySecret;
         securityParameters.handshakeSecret = handshakeSecret;
@@ -1780,25 +1780,6 @@ public class TlsUtils
     {
         return TlsCryptoUtils.hkdfExpandLabel(secret, securityParameters.getPRFHashAlgorithm(), "traffic upd",
             EMPTY_BYTES, securityParameters.getPRFHashLength());
-    }
-
-    public static short getHashAlgorithmForHMACAlgorithm(int macAlgorithm)
-    {
-        switch (macAlgorithm)
-        {
-        case MACAlgorithm.hmac_md5:
-            return HashAlgorithm.md5;
-        case MACAlgorithm.hmac_sha1:
-            return HashAlgorithm.sha1;
-        case MACAlgorithm.hmac_sha256:
-            return HashAlgorithm.sha256;
-        case MACAlgorithm.hmac_sha384:
-            return HashAlgorithm.sha384;
-        case MACAlgorithm.hmac_sha512:
-            return HashAlgorithm.sha512;
-        default:
-            throw new IllegalArgumentException("specified MACAlgorithm not an HMAC: " + MACAlgorithm.getText(macAlgorithm));
-        }
     }
 
     public static short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm)
@@ -2134,7 +2115,7 @@ public class TlsUtils
 
         TlsHash h = algorithm == null
             ? new CombinedHash(crypto)
-            : crypto.createHash(algorithm.getHash());
+            : createHash(crypto, algorithm.getHash());
 
         SecurityParameters sp = context.getSecurityParametersHandshake();
         byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();
@@ -2233,7 +2214,7 @@ public class TlsUtils
             return streamSigner.getSignature();
         }
 
-        TlsHash tlsHash = crypto.createHash(hashAlgorithm);
+        TlsHash tlsHash = createHash(crypto, hashAlgorithm);
         tlsHash.update(header, 0, header.length);
         tlsHash.update(prfHash, 0, prfHash.length);
         byte[] hash = tlsHash.calculateHash();
@@ -2410,7 +2391,7 @@ public class TlsUtils
             return streamVerifier.isVerified();
         }
 
-        TlsHash tlsHash = crypto.createHash(certificateVerify.getAlgorithm().getHash());
+        TlsHash tlsHash = createHash(crypto, certificateVerify.getAlgorithm().getHash());
         tlsHash.update(header, 0, header.length);
         tlsHash.update(prfHash, 0, prfHash.length);
         byte[] hash = tlsHash.calculateHash();
@@ -4252,6 +4233,13 @@ public class TlsUtils
         }
 
         handshakeHash.sealHashAlgorithms();
+    }
+
+    private static TlsHash createHash(TlsCrypto crypto, short hashAlgorithm)
+    {
+        int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
+
+        return crypto.createHash(cryptoHashAlgorithm);
     }
 
     private static TlsKeyExchange createKeyExchangeClient(TlsClient client, int keyExchange) throws IOException

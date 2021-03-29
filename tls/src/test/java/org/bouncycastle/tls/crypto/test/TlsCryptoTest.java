@@ -3,10 +3,10 @@ package org.bouncycastle.tls.crypto.test;
 import java.io.IOException;
 
 import org.bouncycastle.tls.DefaultTlsDHGroupVerifier;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -145,8 +145,8 @@ public abstract class TlsCryptoTest
          * Test vectors drawn from the server-side calculations of example handshake trace in RFC 8448, section 3.
          */
 
-        short hash = HashAlgorithm.sha256;
-        int hashLen = HashAlgorithm.getOutputSize(hash);
+        int hash = CryptoHashAlgorithm.sha256;
+        int hashLen = TlsCryptoUtils.getHashOutputSize(hash);
 
         TlsSecret init = crypto.hkdfInit(hash), early, handshake, master, c_hs_t, s_hs_t, c_ap_t, s_ap_t, exp_master, res_master;
 
@@ -320,16 +320,16 @@ public abstract class TlsCryptoTest
 
     public void testHKDFExpandLimit()
     {
-        short[] hashes = new short[]{ HashAlgorithm.md5, HashAlgorithm.sha1, HashAlgorithm.sha224,
-            HashAlgorithm.sha256, HashAlgorithm.sha384, HashAlgorithm.sha512,
+        int[] hashes = new int[] { CryptoHashAlgorithm.md5, CryptoHashAlgorithm.sha1, CryptoHashAlgorithm.sha224,
+            CryptoHashAlgorithm.sha256, CryptoHashAlgorithm.sha384, CryptoHashAlgorithm.sha512,
             // TODO[RFC 8998]
 //            HashAlgorithm.sm3
         };
 
         for (int i = 0; i < hashes.length; ++i)
         {
-            short hash = hashes[i];
-            int hashLen = HashAlgorithm.getOutputSize(hash);
+            int hash = hashes[i];
+            int hashLen = TlsCryptoUtils.getHashOutputSize(hash);
             byte[] zeroes = new byte[hashLen];
 
             int limit = 255 * hashLen;
@@ -361,11 +361,11 @@ public abstract class TlsCryptoTest
         }
     }
 
-    private byte[] calculateHMAC(short hash, TlsSecret hmacKey, byte[] hmacInput)
+    private byte[] calculateHMAC(int cryptoHashAlgorithm, TlsSecret hmacKey, byte[] hmacInput)
     {
         byte[] keyBytes = extract(hmacKey);
 
-        TlsHMAC hmac = crypto.createHMAC(hash);
+        TlsHMAC hmac = crypto.createHMACForHash(cryptoHashAlgorithm);
         hmac.setKey(keyBytes, 0, keyBytes.length);
         hmac.update(hmacInput, 0, hmacInput.length);
         return hmac.calculateMAC();

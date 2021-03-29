@@ -75,14 +75,14 @@ public class JceTlsSecret
         }
     }
 
-    public synchronized TlsSecret hkdfExpand(short hashAlgorithm, byte[] info, int length)
+    public synchronized TlsSecret hkdfExpand(int cryptoHashAlgorithm, byte[] info, int length)
     {
         if (length < 1)
         {
             return crypto.adoptLocalSecret(TlsUtils.EMPTY_BYTES);
         }
 
-        int hashLen = HashAlgorithm.getOutputSize(hashAlgorithm);
+        int hashLen = TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm);
         if (length > (255 * hashLen))
         {
             throw new IllegalArgumentException("'length' must be <= 255 * (output size of 'hashAlgorithm')");
@@ -94,7 +94,7 @@ public class JceTlsSecret
 
         try
         {
-            String algorithm = crypto.getHMACAlgorithmName(hashAlgorithm);
+            String algorithm = crypto.getHMACAlgorithmName(cryptoHashAlgorithm);
             Mac hmac = crypto.getHelper().createMac(algorithm);
             hmac.init(new SecretKeySpec(prk, 0, prk.length, algorithm));
 
@@ -130,7 +130,7 @@ public class JceTlsSecret
         }
     }
 
-    public synchronized TlsSecret hkdfExtract(short hashAlgorithm, byte[] ikm)
+    public synchronized TlsSecret hkdfExtract(int cryptoHashAlgorithm, byte[] ikm)
     {
         checkAlive();
 
@@ -139,7 +139,7 @@ public class JceTlsSecret
 
         try
         {
-            String algorithm = crypto.getHMACAlgorithmName(hashAlgorithm);
+            String algorithm = crypto.getHMACAlgorithmName(cryptoHashAlgorithm);
             Mac hmac = crypto.getHelper().createMac(algorithm);
             hmac.init(new SecretKeySpec(salt, 0, salt.length, algorithm));
 
@@ -269,7 +269,7 @@ public class JceTlsSecret
     protected byte[] prf_1_2(int prfAlgorithm, byte[] labelSeed, int length)
         throws GeneralSecurityException
     {
-        String digestName = crypto.getDigestName(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)).replaceAll("-", "");
+        String digestName = crypto.getDigestName(TlsCryptoUtils.getHashForPRF(prfAlgorithm)).replaceAll("-", "");
         byte[] result = new byte[length];
         hmacHash(digestName, data, 0, data.length, labelSeed, result);
         return result;

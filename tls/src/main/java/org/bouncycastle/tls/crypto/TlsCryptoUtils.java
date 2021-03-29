@@ -3,6 +3,9 @@ package org.bouncycastle.tls.crypto;
 import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.MACAlgorithm;
+import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 
@@ -11,8 +14,98 @@ public abstract class TlsCryptoUtils
     // "tls13 "
     private static final byte[] TLS13_PREFIX = new byte[]{ 0x74, 0x6c, 0x73, 0x31, 0x33, 0x20 };
 
-    public static TlsSecret hkdfExpandLabel(TlsSecret secret, short hashAlgorithm, String label, byte[] context, int length)
-        throws IOException
+    public static int getHash(short hashAlgorithm)
+    {
+        switch (hashAlgorithm)
+        {
+        case HashAlgorithm.md5:
+            return CryptoHashAlgorithm.md5;
+        case HashAlgorithm.sha1:
+            return CryptoHashAlgorithm.sha1;
+        case HashAlgorithm.sha224:
+            return CryptoHashAlgorithm.sha224;
+        case HashAlgorithm.sha256:
+            return CryptoHashAlgorithm.sha256;
+        case HashAlgorithm.sha384:
+            return CryptoHashAlgorithm.sha384;
+        case HashAlgorithm.sha512:
+            return CryptoHashAlgorithm.sha512;
+        default:
+            throw new IllegalArgumentException("specified HashAlgorithm invalid: " + HashAlgorithm.getText(hashAlgorithm));
+        }
+    }
+
+    public static int getHashForHMAC(int macAlgorithm)
+    {
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm.hmac_md5:
+            return CryptoHashAlgorithm.md5;
+        case MACAlgorithm.hmac_sha1:
+            return CryptoHashAlgorithm.sha1;
+        case MACAlgorithm.hmac_sha256:
+            return CryptoHashAlgorithm.sha256;
+        case MACAlgorithm.hmac_sha384:
+            return CryptoHashAlgorithm.sha384;
+        case MACAlgorithm.hmac_sha512:
+            return CryptoHashAlgorithm.sha512;
+        default:
+            throw new IllegalArgumentException("specified MACAlgorithm not an HMAC: " + MACAlgorithm.getText(macAlgorithm));
+        }
+    }
+
+    public static int getHashForPRF(int prfAlgorithm)
+    {
+        switch (prfAlgorithm)
+        {
+        case PRFAlgorithm.ssl_prf_legacy:
+        case PRFAlgorithm.tls_prf_legacy:
+            throw new IllegalArgumentException("legacy PRF not a valid algorithm");
+        case PRFAlgorithm.tls_prf_sha256:
+        case PRFAlgorithm.tls13_hkdf_sha256:
+            return CryptoHashAlgorithm.sha256;
+        case PRFAlgorithm.tls_prf_sha384:
+        case PRFAlgorithm.tls13_hkdf_sha384:
+            return CryptoHashAlgorithm.sha384;
+        // TODO[RFC 8998]
+//        case PRFAlgorithm.tls13_hkdf_sm3:
+//            return HashAlgorithm.sm3;
+        default:
+            throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
+        }
+    }
+
+    public static int getHashOutputSize(int cryptoHashAlgorithm)
+    {
+        switch (cryptoHashAlgorithm)
+        {
+        case CryptoHashAlgorithm.md5:
+            return 16;
+        case CryptoHashAlgorithm.sha1:
+            return 20;
+        case CryptoHashAlgorithm.sha224:
+            return 28;
+        case CryptoHashAlgorithm.sha256:
+            return 32;
+        case CryptoHashAlgorithm.sha384:
+            return 48;
+        case CryptoHashAlgorithm.sha512:
+            return 64;
+        default:
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public static TlsSecret hkdfExpandLabel(TlsSecret secret, short hashAlgorithm, String label, byte[] context,
+        int length) throws IOException
+    {
+        int cryptoHashAlgorithm = getHash(hashAlgorithm);
+
+        return hkdfExpandLabel(secret, cryptoHashAlgorithm, label, context, length);
+    }
+
+    public static TlsSecret hkdfExpandLabel(TlsSecret secret, int cryptoHashAlgorithm, String label, byte[] context,
+        int length) throws IOException
     {
         int labelLength = label.length();
         if (labelLength < 1)
@@ -51,6 +144,6 @@ public abstract class TlsCryptoUtils
             TlsUtils.writeOpaque8(context, hkdfLabel, 2 + (1 + expandedLabelLength));
         }
 
-        return secret.hkdfExpand(hashAlgorithm, hkdfLabel, length);
+        return secret.hkdfExpand(cryptoHashAlgorithm, hkdfLabel, length);
     }
 }

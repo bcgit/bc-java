@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.EncryptionAlgorithm;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -49,10 +48,10 @@ public interface TlsCrypto
     /**
      * Return true if this TlsCrypto can support the passed in hash algorithm.
      *
-     * @param hashAlgorithm the algorithm of interest.
-     * @return true if hashAlgorithm is supported, false otherwise.
+     * @param cryptoHashAlgorithm the algorithm of interest.
+     * @return true if cryptoHashAlgorithm is supported, false otherwise.
      */
-    boolean hasHashAlgorithm(short hashAlgorithm);
+    boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm);
 
     /**
      * Return true if this TlsCrypto can support the passed in MAC algorithm.
@@ -182,23 +181,13 @@ public interface TlsCrypto
     /**
      * Create a suitable hash for the hash algorithm identifier passed in.
      * <p>
-     * See enumeration class {@link HashAlgorithm} for appropriate argument values.
+     * See enumeration class {@link CryptoHashAlgorithm} for appropriate argument values.
      * </p>
      *
-     * @param hashAlgorithm the hash algorithm the hash needs to implement.
+     * @param cryptoHashAlgorithm the hash algorithm the hash needs to implement.
      * @return a {@link TlsHash}.
      */
-    TlsHash createHash(short hashAlgorithm);
-
-    /**
-     * Create a suitable HMAC using the hash algorithm identifier passed in.
-     * <p>
-     * See enumeration class {@link HashAlgorithm} for appropriate argument values.
-     * </p>
-     * @param hashAlgorithm the hash algorithm the HMAC should use.
-     * @return a {@link TlsHMAC}.
-     */
-    TlsHMAC createHMAC(short hashAlgorithm);
+    TlsHash createHash(int cryptoHashAlgorithm);
 
     /**
      * Create a suitable HMAC for the MAC algorithm identifier passed in.
@@ -209,6 +198,16 @@ public interface TlsCrypto
      * @return a {@link TlsHMAC}.
      */
     TlsHMAC createHMAC(int macAlgorithm);
+
+    /**
+     * Create a suitable HMAC using the hash algorithm identifier passed in.
+     * <p>
+     * See enumeration class {@link CryptoHashAlgorithm} for appropriate argument values.
+     * </p>
+     * @param cryptoHashAlgorithm the hash algorithm the HMAC should use.
+     * @return a {@link TlsHMAC}.
+     */
+    TlsHMAC createHMACForHash(int cryptoHashAlgorithm);
 
     /**
      * Create a nonce generator. Each call should construct a new generator, and the generator
@@ -249,7 +248,7 @@ public interface TlsCrypto
     /**
      * Setup an initial "secret" for a chain of HKDF calls (RFC 5869), containing a string of HashLen zeroes.
      * 
-     * @param hashAlgorithm the hash algorithm to instantiate HMAC with. See {@link HashAlgorithm} for values.
+     * @param cryptoHashAlgorithm the hash algorithm to instantiate HMAC with. See {@link CryptoHashAlgorithm} for values.
      */
-    TlsSecret hkdfInit(short hashAlgorithm);
+    TlsSecret hkdfInit(int cryptoHashAlgorithm);
 }
