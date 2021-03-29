@@ -16,7 +16,6 @@ import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -45,7 +44,6 @@ import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.EncryptionAlgorithm;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -54,9 +52,11 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -227,7 +227,7 @@ public class BcTlsCrypto
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
     {
-        Digest digest = createDigest(HashAlgorithm.sha256);
+        Digest digest = createDigest(CryptoHashAlgorithm.sha256);
 
         byte[] seed = new byte[digest.getDigestSize()];
         getSecureRandom().nextBytes(seed);
@@ -283,7 +283,7 @@ public class BcTlsCrypto
         }
     }
 
-    public boolean hasHashAlgorithm(short hashAlgorithm)
+    public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
     {
         return true;
     }
@@ -374,46 +374,44 @@ public class BcTlsCrypto
         return adoptLocalSecret(data);
     }
 
-    public Digest createDigest(short hashAlgorithm)
+    public Digest createDigest(int cryptoHashAlgorithm)
     {
-        switch (hashAlgorithm)
+        switch (cryptoHashAlgorithm)
         {
-        case HashAlgorithm.none:
-            return new NullDigest();
-        case HashAlgorithm.md5:
+        case CryptoHashAlgorithm.md5:
             return new MD5Digest();
-        case HashAlgorithm.sha1:
+        case CryptoHashAlgorithm.sha1:
             return new SHA1Digest();
-        case HashAlgorithm.sha224:
+        case CryptoHashAlgorithm.sha224:
             return new SHA224Digest();
-        case HashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha256:
             return new SHA256Digest();
-        case HashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha384:
             return new SHA384Digest();
-        case HashAlgorithm.sha512:
+        case CryptoHashAlgorithm.sha512:
             return new SHA512Digest();
         // TODO[RFC 8998]
 //        case HashAlgorithm.sm3:
 //            return new SM3Digest();
         default:
-            throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
+            throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
     }
 
-    public TlsHash createHash(short algorithm)
+    public TlsHash createHash(int cryptoHashAlgorithm)
     {
-        return new BcTlsHash(algorithm, createDigest(algorithm));
+        return new BcTlsHash(cryptoHashAlgorithm, createDigest(cryptoHashAlgorithm));
     }
 
     private static class BcTlsHash
         implements TlsHash
     {
-        private final short hashAlgorithm;
+        private final int cryptoHashAlgorithm;
         private final Digest digest;
 
-        BcTlsHash(short hashAlgorithm, Digest digest)
+        BcTlsHash(int cryptoHashAlgorithm, Digest digest)
         {
-            this.hashAlgorithm = hashAlgorithm;
+            this.cryptoHashAlgorithm = cryptoHashAlgorithm;
             this.digest = digest;
         }
 
@@ -431,7 +429,7 @@ public class BcTlsCrypto
 
         public Object clone()
         {
-            return new BcTlsHash(hashAlgorithm, cloneDigest(hashAlgorithm, digest));
+            return new BcTlsHash(cryptoHashAlgorithm, cloneDigest(cryptoHashAlgorithm, digest));
         }
 
         public void reset()
@@ -440,27 +438,27 @@ public class BcTlsCrypto
         }
     }
 
-    public static Digest cloneDigest(short hashAlgorithm, Digest hash)
+    public static Digest cloneDigest(int cryptoHashAlgorithm, Digest hash)
     {
-        switch (hashAlgorithm)
+        switch (cryptoHashAlgorithm)
         {
-        case HashAlgorithm.md5:
+        case CryptoHashAlgorithm.md5:
             return new MD5Digest((MD5Digest)hash);
-        case HashAlgorithm.sha1:
+        case CryptoHashAlgorithm.sha1:
             return new SHA1Digest((SHA1Digest)hash);
-        case HashAlgorithm.sha224:
+        case CryptoHashAlgorithm.sha224:
             return new SHA224Digest((SHA224Digest)hash);
-        case HashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha256:
             return new SHA256Digest((SHA256Digest)hash);
-        case HashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha384:
             return new SHA384Digest((SHA384Digest)hash);
-        case HashAlgorithm.sha512:
+        case CryptoHashAlgorithm.sha512:
             return new SHA512Digest((SHA512Digest)hash);
         // TODO[RFC 8998]
 //        case HashAlgorithm.sm3:
 //            return new SM3Digest((SM3Digest)hash);
         default:
-            throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
+            throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
     }
 
@@ -646,14 +644,14 @@ public class BcTlsCrypto
         return new CBCBlockCipher(new SEEDEngine());
     }
 
-    public TlsHMAC createHMAC(short hashAlgorithm)
-    {
-        return new HMacOperator(createDigest(hashAlgorithm));
-    }
-
     public TlsHMAC createHMAC(int macAlgorithm)
     {
-        return createHMAC(TlsUtils.getHashAlgorithmForHMACAlgorithm(macAlgorithm));
+        return createHMACForHash(TlsCryptoUtils.getHashForHMAC(macAlgorithm));
+    }
+
+    public TlsHMAC createHMACForHash(int cryptoHashAlgorithm)
+    {
+        return new HMacOperator(createDigest(cryptoHashAlgorithm));
     }
 
     protected TlsHMAC createHMAC_SSL(int macAlgorithm)
@@ -662,15 +660,15 @@ public class BcTlsCrypto
         switch (macAlgorithm)
         {
         case MACAlgorithm.hmac_md5:
-            return new BcSSL3HMAC(createDigest(HashAlgorithm.md5));
+            return new BcSSL3HMAC(createDigest(CryptoHashAlgorithm.md5));
         case MACAlgorithm.hmac_sha1:
-            return new BcSSL3HMAC(createDigest(HashAlgorithm.sha1));
+            return new BcSSL3HMAC(createDigest(CryptoHashAlgorithm.sha1));
         case MACAlgorithm.hmac_sha256:
-            return new BcSSL3HMAC(createDigest(HashAlgorithm.sha256));
+            return new BcSSL3HMAC(createDigest(CryptoHashAlgorithm.sha256));
         case MACAlgorithm.hmac_sha384:
-            return new BcSSL3HMAC(createDigest(HashAlgorithm.sha384));
+            return new BcSSL3HMAC(createDigest(CryptoHashAlgorithm.sha384));
         case MACAlgorithm.hmac_sha512:
-            return new BcSSL3HMAC(createDigest(HashAlgorithm.sha512));
+            return new BcSSL3HMAC(createDigest(CryptoHashAlgorithm.sha512));
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -763,9 +761,9 @@ public class BcTlsCrypto
         };
     }
 
-    public TlsSecret hkdfInit(short hashAlgorithm)
+    public TlsSecret hkdfInit(int cryptoHashAlgorithm)
     {
-        return adoptLocalSecret(new byte[HashAlgorithm.getOutputSize(hashAlgorithm)]);
+        return adoptLocalSecret(new byte[TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm)]);
     }
 
     private class BlockOperator

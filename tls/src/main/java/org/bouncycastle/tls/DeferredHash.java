@@ -5,8 +5,10 @@ import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsHash;
-import org.bouncycastle.util.Shorts;
+import org.bouncycastle.util.Integers;
 
 /**
  * Buffers input until the hash algorithm is determined.
@@ -72,13 +74,13 @@ class DeferredHash
         case PRFAlgorithm.ssl_prf_legacy:
         case PRFAlgorithm.tls_prf_legacy:
         {
-            checkTrackingHash(Shorts.valueOf(HashAlgorithm.md5));
-            checkTrackingHash(Shorts.valueOf(HashAlgorithm.sha1));
+            checkTrackingHash(CryptoHashAlgorithm.md5);
+            checkTrackingHash(CryptoHashAlgorithm.sha1);
             break;
         }
         default:
         {
-            checkTrackingHash(Shorts.valueOf(securityParameters.getPRFHashAlgorithm()));
+            checkTrackingHash(securityParameters.getPRFHashAlgorithm());
             if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
             {
                 sealHashAlgorithms();
@@ -95,7 +97,9 @@ class DeferredHash
             throw new IllegalStateException("Too late to track more hash algorithms");
         }
 
-        checkTrackingHash(Shorts.valueOf(hashAlgorithm));
+        int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
+
+        checkTrackingHash(cryptoHashAlgorithm);
     }
 
     public void sealHashAlgorithms()
@@ -164,7 +168,9 @@ class DeferredHash
 
     public byte[] getFinalHash(short hashAlgorithm)
     {
-        TlsHash d = (TlsHash)hashes.get(Shorts.valueOf(hashAlgorithm));
+        int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
+
+        TlsHash d = (TlsHash)hashes.get(box(cryptoHashAlgorithm));
         if (d == null)
         {
             throw new IllegalStateException("HashAlgorithm." + HashAlgorithm.getText(hashAlgorithm) + " is not being tracked");
@@ -223,6 +229,11 @@ class DeferredHash
         }
     }
 
+    protected Integer box(int cryptoHashAlgorithm)
+    {
+        return Integers.valueOf(cryptoHashAlgorithm);
+    }
+
     protected void checkStopBuffering()
     {
         if (!forceBuffering && sealed && buf != null && hashes.size() <= BUFFERING_HASH_LIMIT)
@@ -238,31 +249,36 @@ class DeferredHash
         }
     }
 
-    protected void checkTrackingHash(Short hashAlgorithm)
+    protected void checkTrackingHash(int cryptoHashAlgorithm)
     {
-        if (!hashes.containsKey(hashAlgorithm))
+        checkTrackingHash(box(cryptoHashAlgorithm));
+    }
+
+    protected void checkTrackingHash(Integer cryptoHashAlgorithm)
+    {
+        if (!hashes.containsKey(cryptoHashAlgorithm))
         {
-            TlsHash hash = context.getCrypto().createHash(hashAlgorithm.shortValue());
-            hashes.put(hashAlgorithm, hash);
+            TlsHash hash = context.getCrypto().createHash(cryptoHashAlgorithm.intValue());
+            hashes.put(cryptoHashAlgorithm, hash);
         }
     }
 
-    protected TlsHash cloneHash(short hashAlgorithm)
+    protected TlsHash cloneHash(int cryptoHashAlgorithm)
     {
-        return cloneHash(Shorts.valueOf(hashAlgorithm));
+        return cloneHash(box(cryptoHashAlgorithm));
     }
 
-    protected TlsHash cloneHash(Short hashAlgorithm)
+    protected TlsHash cloneHash(Integer cryptoHashAlgorithm)
     {
-        return (TlsHash)(((TlsHash)hashes.get(hashAlgorithm)).clone());
+        return (TlsHash)(((TlsHash)hashes.get(cryptoHashAlgorithm)).clone());
     }
 
-    protected void cloneHash(Hashtable newHashes, short hashAlgorithm)
+    protected void cloneHash(Hashtable newHashes, int cryptoHashAlgorithm)
     {
-        cloneHash(newHashes, Shorts.valueOf(hashAlgorithm));
+        cloneHash(newHashes, box(cryptoHashAlgorithm));
     }
 
-    protected void cloneHash(Hashtable newHashes, Short hashAlgorithm)
+    protected void cloneHash(Hashtable newHashes, Integer hashAlgorithm)
     {
         TlsHash hash = cloneHash(hashAlgorithm);
         if (buf != null)

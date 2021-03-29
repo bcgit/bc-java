@@ -17,9 +17,9 @@ public class BcTlsECDSASigner
         super(crypto, privateKey);
     }
 
-    protected DSA createDSAImpl(short hashAlgorithm)
+    protected DSA createDSAImpl(int cryptoHashAlgorithm)
     {
-        return new ECDSASigner(new HMacDSAKCalculator(crypto.createDigest(hashAlgorithm)));
+        return new ECDSASigner(new HMacDSAKCalculator(crypto.createDigest(cryptoHashAlgorithm)));
     }
 
     protected short getSignatureAlgorithm()
