@@ -322,9 +322,7 @@ public abstract class TlsCryptoTest
     {
         int[] hashes = new int[] { CryptoHashAlgorithm.md5, CryptoHashAlgorithm.sha1, CryptoHashAlgorithm.sha224,
             CryptoHashAlgorithm.sha256, CryptoHashAlgorithm.sha384, CryptoHashAlgorithm.sha512,
-            // TODO[RFC 8998]
-//            HashAlgorithm.sm3
-        };
+            CryptoHashAlgorithm.sm3 };
 
         for (int i = 0; i < hashes.length; ++i)
         {

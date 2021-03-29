@@ -67,9 +67,8 @@ public abstract class TlsCryptoUtils
         case PRFAlgorithm.tls_prf_sha384:
         case PRFAlgorithm.tls13_hkdf_sha384:
             return CryptoHashAlgorithm.sha384;
-        // TODO[RFC 8998]
-//        case PRFAlgorithm.tls13_hkdf_sm3:
-//            return HashAlgorithm.sm3;
+        case PRFAlgorithm.tls13_hkdf_sm3:
+            return CryptoHashAlgorithm.sm3;
         default:
             throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
         }
@@ -86,6 +85,7 @@ public abstract class TlsCryptoUtils
         case CryptoHashAlgorithm.sha224:
             return 28;
         case CryptoHashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sm3:
             return 32;
         case CryptoHashAlgorithm.sha384:
             return 48;
