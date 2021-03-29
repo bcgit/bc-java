@@ -153,6 +153,9 @@ class CipherSuiteInfo
         case EncryptionAlgorithm.NULL:
             decomposition.add("C_NULL");
             break;
+        case EncryptionAlgorithm.SM4_CBC:
+            decomposition.add("SM4_CBC");
+            break;
         case EncryptionAlgorithm.SM4_CCM:
             decomposition.add("SM4_CCM");
             break;
@@ -403,6 +406,8 @@ class CipherSuiteInfo
             return "ChaCha20-Poly1305";
         case EncryptionAlgorithm.NULL:
             return "NULL";
+        case EncryptionAlgorithm.SM4_CBC:
+            return "SM4/CBC/NoPadding";
         case EncryptionAlgorithm.SM4_CCM:
             return "SM4/CCM/NoPadding";
         case EncryptionAlgorithm.SM4_GCM:

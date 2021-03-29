@@ -118,10 +118,21 @@ public class BcTlsCrypto
     {
         switch (encryptionAlgorithm)
         {
-        case EncryptionAlgorithm._3DES_EDE_CBC:
-            return createDESedeCipher(cryptoParams, macAlgorithm);
         case EncryptionAlgorithm.AES_128_CBC:
-            return createAESCipher(cryptoParams, 16, macAlgorithm);
+        case EncryptionAlgorithm.ARIA_128_CBC:
+        case EncryptionAlgorithm.CAMELLIA_128_CBC:
+        case EncryptionAlgorithm.SEED_CBC:
+        case EncryptionAlgorithm.SM4_CBC:
+            return createCipher_CBC(cryptoParams, encryptionAlgorithm, 16, macAlgorithm);
+
+        case EncryptionAlgorithm._3DES_EDE_CBC:
+            return createCipher_CBC(cryptoParams, encryptionAlgorithm, 24, macAlgorithm);
+
+        case EncryptionAlgorithm.AES_256_CBC:
+        case EncryptionAlgorithm.ARIA_256_CBC:
+        case EncryptionAlgorithm.CAMELLIA_256_CBC:
+            return createCipher_CBC(cryptoParams, encryptionAlgorithm, 32, macAlgorithm);
+
         case EncryptionAlgorithm.AES_128_CCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_CCM(cryptoParams, 16, 16);
@@ -131,8 +142,6 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.AES_128_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(cryptoParams, 16, 16);
-        case EncryptionAlgorithm.AES_256_CBC:
-            return createAESCipher(cryptoParams, 32, macAlgorithm);
         case EncryptionAlgorithm.AES_256_CCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_CCM(cryptoParams, 32, 16);
@@ -142,23 +151,15 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.AES_256_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(cryptoParams, 32, 16);
-        case EncryptionAlgorithm.ARIA_128_CBC:
-            return createARIACipher(cryptoParams, 16, macAlgorithm);
         case EncryptionAlgorithm.ARIA_128_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_ARIA_GCM(cryptoParams, 16, 16);
-        case EncryptionAlgorithm.ARIA_256_CBC:
-            return createARIACipher(cryptoParams, 32, macAlgorithm);
         case EncryptionAlgorithm.ARIA_256_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_ARIA_GCM(cryptoParams, 32, 16);
-        case EncryptionAlgorithm.CAMELLIA_128_CBC:
-            return createCamelliaCipher(cryptoParams, 16, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_Camellia_GCM(cryptoParams, 16, 16);
-        case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            return createCamelliaCipher(cryptoParams, 32, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_Camellia_GCM(cryptoParams, 32, 16);
@@ -167,12 +168,19 @@ public class BcTlsCrypto
             return createChaCha20Poly1305(cryptoParams);
         case EncryptionAlgorithm.NULL:
             return createNullCipher(cryptoParams, macAlgorithm);
-        case EncryptionAlgorithm.SEED_CBC:
-            return createSEEDCipher(cryptoParams, macAlgorithm);
         case EncryptionAlgorithm.SM4_CCM:
+            // NOTE: Ignores macAlgorithm
             return createCipher_SM4_CCM(cryptoParams);
         case EncryptionAlgorithm.SM4_GCM:
+            // NOTE: Ignores macAlgorithm
             return createCipher_SM4_GCM(cryptoParams);
+
+        case EncryptionAlgorithm.DES40_CBC:
+        case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.RC2_CBC_40:
+        case EncryptionAlgorithm.RC4_128:
+        case EncryptionAlgorithm.RC4_40:
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -275,8 +283,6 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.RC2_CBC_40:
         case EncryptionAlgorithm.RC4_128:
         case EncryptionAlgorithm.RC4_40:
-        case EncryptionAlgorithm.SM4_CCM:
-        case EncryptionAlgorithm.SM4_GCM:
             return false;
 
         default:
@@ -461,28 +467,40 @@ public class BcTlsCrypto
         }
     }
 
-    protected TlsCipher createAESCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
+    protected BlockCipher createBlockCipher(int encryptionAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createAESBlockCipher(), true),
-            new BlockOperator(createAESBlockCipher(), false), createMAC(cryptoParams, macAlgorithm),
-            createMAC(cryptoParams, macAlgorithm), cipherKeySize);
+        switch (encryptionAlgorithm)
+        {
+        case EncryptionAlgorithm._3DES_EDE_CBC:
+            return createDESedeEngine();
+        case EncryptionAlgorithm.AES_128_CBC:
+        case EncryptionAlgorithm.AES_256_CBC:
+            return createAESEngine();
+        case EncryptionAlgorithm.ARIA_128_CBC:
+        case EncryptionAlgorithm.ARIA_256_CBC:
+            return createARIAEngine();
+        case EncryptionAlgorithm.CAMELLIA_128_CBC:
+        case EncryptionAlgorithm.CAMELLIA_256_CBC:
+            return createCamelliaEngine();
+        case EncryptionAlgorithm.SEED_CBC:
+            return createSEEDEngine();
+        case EncryptionAlgorithm.SM4_CBC:
+            return createSM4Engine();
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
-    protected TlsCipher createARIACipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
-        throws IOException
+    protected BlockCipher createCBCBlockCipher(BlockCipher blockCipher)
     {
-        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createARIABlockCipher(), true),
-            new BlockOperator(createARIABlockCipher(), false), createMAC(cryptoParams, macAlgorithm),
-            createMAC(cryptoParams, macAlgorithm), cipherKeySize);
+        return new CBCBlockCipher(blockCipher);
     }
 
-    protected TlsCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
+    protected BlockCipher createCBCBlockCipher(int encryptionAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createCamelliaBlockCipher(), true),
-            new BlockOperator(createCamelliaBlockCipher(), false), createMAC(cryptoParams, macAlgorithm),
-            createMAC(cryptoParams, macAlgorithm), cipherKeySize);
+        return createCBCBlockCipher(createBlockCipher(encryptionAlgorithm));
     }
 
     protected TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams) throws IOException
@@ -520,6 +538,18 @@ public class BcTlsCrypto
             TlsAEADCipher.AEAD_GCM);
     }
 
+    protected TlsCipher createCipher_CBC(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int cipherKeySize,
+        int macAlgorithm) throws IOException
+    {
+        BlockOperator encrypt = new BlockOperator(createCBCBlockCipher(encryptionAlgorithm), true);
+        BlockOperator decrypt = new BlockOperator(createCBCBlockCipher(encryptionAlgorithm), false);
+
+        TlsHMAC clientMAC = createMAC(cryptoParams, macAlgorithm);
+        TlsHMAC serverMAC = createMAC(cryptoParams, macAlgorithm);
+
+        return new TlsBlockCipher(this, cryptoParams, encrypt, decrypt, clientMAC, serverMAC, cipherKeySize);
+    }
+
     protected TlsAEADCipher createCipher_SM4_CCM(TlsCryptoParameters cryptoParams)
         throws IOException
     {
@@ -536,27 +566,11 @@ public class BcTlsCrypto
             new AeadOperator(createAEADBlockCipher_SM4_GCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
     }
 
-    protected TlsBlockCipher createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
-        throws IOException
-    {
-        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createDESedeBlockCipher(), true),
-            new BlockOperator(createDESedeBlockCipher(), false), createMAC(cryptoParams, macAlgorithm),
-            createMAC(cryptoParams, macAlgorithm), 24);
-    }
-
     protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
         return new TlsNullCipher(cryptoParams, createMAC(cryptoParams, macAlgorithm),
             createMAC(cryptoParams, macAlgorithm));
-    }
-
-    protected TlsBlockCipher createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
-        throws IOException
-    {
-        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createSEEDBlockCipher(), true),
-            new BlockOperator(createSEEDBlockCipher(), false), createMAC(cryptoParams, macAlgorithm),
-            createMAC(cryptoParams, macAlgorithm), 16);
     }
 
     protected BlockCipher createAESEngine()
@@ -574,19 +588,19 @@ public class BcTlsCrypto
         return new CamelliaEngine();
     }
 
+    protected BlockCipher createDESedeEngine()
+    {
+        return new DESedeEngine();
+    }
+
+    protected BlockCipher createSEEDEngine()
+    {
+        return new SEEDEngine();
+    }
+
     protected BlockCipher createSM4Engine()
     {
         return new SM4Engine();
-    }
-
-    protected BlockCipher createAESBlockCipher()
-    {
-        return new CBCBlockCipher(createAESEngine());
-    }
-
-    protected BlockCipher createARIABlockCipher()
-    {
-        return new CBCBlockCipher(createARIAEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_CCM()
@@ -623,24 +637,9 @@ public class BcTlsCrypto
         return new GCMBlockCipher(createSM4Engine());
     }
 
-    protected BlockCipher createCamelliaBlockCipher()
-    {
-        return new CBCBlockCipher(createCamelliaEngine());
-    }
-
-    protected BlockCipher createDESedeBlockCipher()
-    {
-        return new CBCBlockCipher(new DESedeEngine());
-    }
-
     protected StreamCipher createRC4StreamCipher()
     {
         return new RC4Engine();
-    }
-
-    protected BlockCipher createSEEDBlockCipher()
-    {
-        return new CBCBlockCipher(new SEEDEngine());
     }
 
     public TlsHMAC createHMAC(int macAlgorithm)

@@ -2906,6 +2906,8 @@ public class TlsUtils
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
         case EncryptionAlgorithm.CHACHA20_POLY1305:
+        case EncryptionAlgorithm.SM4_CCM:
+        case EncryptionAlgorithm.SM4_GCM:
             return CipherType.aead;
 
         case EncryptionAlgorithm.RC2_CBC_40:
@@ -2920,6 +2922,7 @@ public class TlsUtils
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
         case EncryptionAlgorithm.SEED_CBC:
+        case EncryptionAlgorithm.SM4_CBC:
             return CipherType.block;
 
         case EncryptionAlgorithm.NULL:
