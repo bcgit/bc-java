@@ -13,8 +13,9 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.util.Arrays;
 
 public class RSAUtil
@@ -42,9 +43,9 @@ public class RSAUtil
         AlgorithmIdentifier mgf1SHA384Identifier_B = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha384Identifier_B);
         AlgorithmIdentifier mgf1SHA512Identifier_B = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha512Identifier_B);
 
-        ASN1Integer sha256Size = new ASN1Integer(HashAlgorithm.getOutputSize(HashAlgorithm.sha256));
-        ASN1Integer sha384Size = new ASN1Integer(HashAlgorithm.getOutputSize(HashAlgorithm.sha384));
-        ASN1Integer sha512Size = new ASN1Integer(HashAlgorithm.getOutputSize(HashAlgorithm.sha512));
+        ASN1Integer sha256Size = new ASN1Integer(TlsCryptoUtils.getHashOutputSize(CryptoHashAlgorithm.sha256));
+        ASN1Integer sha384Size = new ASN1Integer(TlsCryptoUtils.getHashOutputSize(CryptoHashAlgorithm.sha384));
+        ASN1Integer sha512Size = new ASN1Integer(TlsCryptoUtils.getHashOutputSize(CryptoHashAlgorithm.sha512));
 
         ASN1Integer trailerField = new ASN1Integer(1);
 

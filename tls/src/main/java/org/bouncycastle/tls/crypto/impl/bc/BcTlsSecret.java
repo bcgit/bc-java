@@ -72,14 +72,14 @@ public class BcTlsSecret
         }
     }
 
-    public synchronized TlsSecret hkdfExpand(short hashAlgorithm, byte[] info, int length)
+    public synchronized TlsSecret hkdfExpand(int cryptoHashAlgorithm, byte[] info, int length)
     {
         if (length < 1)
         {
             return crypto.adoptLocalSecret(TlsUtils.EMPTY_BYTES);
         }
 
-        int hashLen = HashAlgorithm.getOutputSize(hashAlgorithm);
+        int hashLen = TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm);
         if (length > (255 * hashLen))
         {
             throw new IllegalArgumentException("'length' must be <= 255 * (output size of 'hashAlgorithm')");
@@ -89,7 +89,7 @@ public class BcTlsSecret
 
         byte[] prk = data;
 
-        HMac hmac = new HMac(crypto.createDigest(hashAlgorithm));
+        HMac hmac = new HMac(crypto.createDigest(cryptoHashAlgorithm));
         hmac.init(new KeyParameter(prk));
 
         byte[] okm = new byte[length];
@@ -119,14 +119,14 @@ public class BcTlsSecret
         return crypto.adoptLocalSecret(okm);
     }
 
-    public synchronized TlsSecret hkdfExtract(short hashAlgorithm, byte[] ikm)
+    public synchronized TlsSecret hkdfExtract(int cryptoHashAlgorithm, byte[] ikm)
     {
         checkAlive();
 
         byte[] salt = data;
         this.data = null;
 
-        HMac hmac = new HMac(crypto.createDigest(hashAlgorithm));
+        HMac hmac = new HMac(crypto.createDigest(cryptoHashAlgorithm));
         hmac.init(new KeyParameter(salt));
 
         hmac.update(ikm, 0, ikm.length);
@@ -245,7 +245,7 @@ public class BcTlsSecret
 
     protected byte[] prf_1_2(int prfAlgorithm, byte[] labelSeed, int length)
     {
-        Digest digest = crypto.createDigest(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+        Digest digest = crypto.createDigest(TlsCryptoUtils.getHashForPRF(prfAlgorithm));
         byte[] result = new byte[length];
         hmacHash(digest, data, 0, data.length, labelSeed, result);
         return result;

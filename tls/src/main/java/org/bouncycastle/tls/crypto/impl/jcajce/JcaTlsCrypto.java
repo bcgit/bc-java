@@ -30,11 +30,13 @@ import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -229,14 +231,14 @@ public class JcaTlsCrypto
         }
     }
 
-    public TlsHMAC createHMAC(short hashAlgorithm)
-    {
-        return createHMAC(getHMACAlgorithmName(hashAlgorithm));
-    }
-
     public TlsHMAC createHMAC(int macAlgorithm)
     {
-        return createHMAC(TlsUtils.getHashAlgorithmForHMACAlgorithm(macAlgorithm));
+        return createHMACForHash(TlsCryptoUtils.getHashForHMAC(macAlgorithm));
+    }
+
+    public TlsHMAC createHMACForHash(int cryptoHashAlgorithm)
+    {
+        return createHMAC(getHMACAlgorithmName(cryptoHashAlgorithm));
     }
 
     protected TlsHMAC createHMAC_SSL(int macAlgorithm)
@@ -245,15 +247,15 @@ public class JcaTlsCrypto
         switch (macAlgorithm)
         {
         case MACAlgorithm.hmac_md5:
-            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.md5)), 16, 64);
+            return new JcaSSL3HMAC(createHash(getDigestName(CryptoHashAlgorithm.md5)), 16, 64);
         case MACAlgorithm.hmac_sha1:
-            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.sha1)), 20, 64);
+            return new JcaSSL3HMAC(createHash(getDigestName(CryptoHashAlgorithm.sha1)), 20, 64);
         case MACAlgorithm.hmac_sha256:
-            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.sha256)), 32, 64);
+            return new JcaSSL3HMAC(createHash(getDigestName(CryptoHashAlgorithm.sha256)), 32, 64);
         case MACAlgorithm.hmac_sha384:
-            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.sha384)), 48, 128);
+            return new JcaSSL3HMAC(createHash(getDigestName(CryptoHashAlgorithm.sha384)), 48, 128);
         case MACAlgorithm.hmac_sha512:
-            return new JcaSSL3HMAC(createHash(getDigestName(HashAlgorithm.sha512)), 64, 128);
+            return new JcaSSL3HMAC(createHash(getDigestName(CryptoHashAlgorithm.sha512)), 64, 128);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -278,7 +280,7 @@ public class JcaTlsCrypto
 
         BigInteger[] ng = srpConfig.getExplicitNG();
         SRP6Group srpGroup= new SRP6Group(ng[0], ng[1]);
-        srpClient.init(srpGroup, createHash(HashAlgorithm.sha1), this.getSecureRandom());
+        srpClient.init(srpGroup, createHash(CryptoHashAlgorithm.sha1), this.getSecureRandom());
 
         return new TlsSRP6Client()
         {
@@ -307,7 +309,7 @@ public class JcaTlsCrypto
         final SRP6Server srpServer = new SRP6Server();
         BigInteger[] ng = srpConfig.getExplicitNG();
         SRP6Group srpGroup= new SRP6Group(ng[0], ng[1]);
-        srpServer.init(srpGroup, srpVerifier, createHash(HashAlgorithm.sha1), this.getSecureRandom());
+        srpServer.init(srpGroup, srpVerifier, createHash(CryptoHashAlgorithm.sha1), this.getSecureRandom());
         return new TlsSRP6Server()
         {
             public BigInteger generateServerCredentials()
@@ -335,7 +337,7 @@ public class JcaTlsCrypto
         BigInteger[] ng = srpConfig.getExplicitNG();
         final SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
 
-        verifierGenerator.init(ng[0], ng[1], createHash(HashAlgorithm.sha1));
+        verifierGenerator.init(ng[0], ng[1], createHash(CryptoHashAlgorithm.sha1));
 
         return new TlsSRP6VerifierGenerator()
         {
@@ -346,27 +348,27 @@ public class JcaTlsCrypto
         };
     }
 
-    public String getHMACAlgorithmName(short hashAlgorithm)
+    String getHMACAlgorithmName(int cryptoHashAlgorithm)
     {
-        switch (hashAlgorithm)
+        switch (cryptoHashAlgorithm)
         {
-        case HashAlgorithm.md5:
+        case CryptoHashAlgorithm.md5:
             return "HmacMD5";
-        case HashAlgorithm.sha1:
+        case CryptoHashAlgorithm.sha1:
             return "HmacSHA1";
-        case HashAlgorithm.sha224:
+        case CryptoHashAlgorithm.sha224:
             return "HmacSHA224";
-        case HashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha256:
             return "HmacSHA256";
-        case HashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha384:
             return "HmacSHA384";
-        case HashAlgorithm.sha512:
+        case CryptoHashAlgorithm.sha512:
             return "HmacSHA512";
         // TODO[RFC 8998]
 //        case HashAlgorithm.sm3:
 //            return "HmacSM3";
         default:
-            throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
+            throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
     }
 
@@ -411,11 +413,11 @@ public class JcaTlsCrypto
         case SignatureScheme.rsa_pss_pss_sha512:
         case SignatureScheme.rsa_pss_rsae_sha512:
         {
-            short hash = SignatureScheme.getIntrinsicHashAlgorithm(signatureScheme);
-            String digestName = getDigestName(hash);
+            int cryptoHashAlgorithm = TlsCryptoUtils.getHash(SignatureScheme.getIntrinsicHashAlgorithm(signatureScheme));
+            String digestName = getDigestName(cryptoHashAlgorithm);
             String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
-            AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, getHelper());
+            AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName, getHelper());
 
             Signature signer = getHelper().createSignature(sigName);
 
@@ -481,7 +483,7 @@ public class JcaTlsCrypto
         return supported.booleanValue();
     }
 
-    public boolean hasHashAlgorithm(short hashAlgorithm)
+    public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
     {
         // TODO: expand
         return true;
@@ -651,11 +653,11 @@ public class JcaTlsCrypto
         return adoptLocalSecret(data);
     }
 
-    public TlsHash createHash(short algorithm)
+    public TlsHash createHash(int cryptoHashAlgorithm)
     {
         try
         {
-            return createHash(getDigestName(algorithm));
+            return createHash(getDigestName(cryptoHashAlgorithm));
         }
         catch (GeneralSecurityException e)
         {
@@ -729,9 +731,9 @@ public class JcaTlsCrypto
         };
     }
 
-    public TlsSecret hkdfInit(short hashAlgorithm)
+    public TlsSecret hkdfInit(int cryptoHashAlgorithm)
     {
-        return adoptLocalSecret(new byte[HashAlgorithm.getOutputSize(hashAlgorithm)]);
+        return adoptLocalSecret(new byte[TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm)]);
     }
 
     /**
@@ -1175,36 +1177,27 @@ public class JcaTlsCrypto
             TlsAEADCipher.AEAD_GCM);
     }
 
-    String getDigestName(short hashAlgorithm)
+    String getDigestName(int cryptoHashAlgorithm)
     {
-        String digestName;
-        switch (hashAlgorithm)
+        switch (cryptoHashAlgorithm)
         {
-        case HashAlgorithm.md5:
-            digestName = "MD5";
-            break;
-        case HashAlgorithm.sha1:
-            digestName = "SHA-1";
-            break;
-        case HashAlgorithm.sha224:
-            digestName = "SHA-224";
-            break;
-        case HashAlgorithm.sha256:
-            digestName = "SHA-256";
-            break;
-        case HashAlgorithm.sha384:
-            digestName = "SHA-384";
-            break;
-        case HashAlgorithm.sha512:
-            digestName = "SHA-512";
-            break;
+        case CryptoHashAlgorithm.md5:
+            return "MD5";
+        case CryptoHashAlgorithm.sha1:
+            return "SHA-1";
+        case CryptoHashAlgorithm.sha224:
+            return "SHA-224";
+        case CryptoHashAlgorithm.sha256:
+            return "SHA-256";
+        case CryptoHashAlgorithm.sha384:
+            return "SHA-384";
+        case CryptoHashAlgorithm.sha512:
+            return "SHA-512";
         // TODO[RFC 8998]
 //        case HashAlgorithm.sm3:
-//            digestName = "SM3";
-//            break;
+//            return "SM3";
         default:
-            throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
+            throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
-        return digestName;
     }
 }

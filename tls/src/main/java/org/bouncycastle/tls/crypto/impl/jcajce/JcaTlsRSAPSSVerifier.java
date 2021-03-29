@@ -8,6 +8,7 @@ import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
@@ -56,12 +57,14 @@ public class JcaTlsRSAPSSVerifier
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        short hash = SignatureAlgorithm.getIntrinsicHashAlgorithm(signatureAlgorithm);
-        String digestName = crypto.getDigestName(hash);
+        int cryptoHashAlgorithm = TlsCryptoUtils
+            .getHash(SignatureAlgorithm.getIntrinsicHashAlgorithm(signatureAlgorithm));
+        String digestName = crypto.getDigestName(cryptoHashAlgorithm);
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
         // NOTE: We explicitly set them even though they should be the defaults, because providers vary
-        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(hash, digestName, crypto.getHelper());
+        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName,
+            crypto.getHelper());
 
         return crypto.createStreamVerifier(sigName, pssSpec, signature.getSignature(), publicKey);
     }
