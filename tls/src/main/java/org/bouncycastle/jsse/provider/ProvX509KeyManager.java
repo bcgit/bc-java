@@ -551,7 +551,7 @@ class ProvX509KeyManager
             if (builderIndexEnd > builderIndexStart)
             {
                 int localAliasStart = builderIndexEnd + 1;
-                int localAliasEnd = alias.indexOf('.', localAliasStart);
+                int localAliasEnd = alias.lastIndexOf('.');
                 if (localAliasEnd > localAliasStart)
                 {
                     int builderIndex = Integer.parseInt(alias.substring(builderIndexStart, builderIndexEnd));
