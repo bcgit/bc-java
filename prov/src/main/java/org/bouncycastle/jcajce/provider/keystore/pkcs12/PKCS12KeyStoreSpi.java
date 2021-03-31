@@ -89,8 +89,11 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.jcajce.BCLoadStoreParameter;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
+import org.bouncycastle.jcajce.provider.keystore.util.AdaptingKeyStoreSpi;
+import org.bouncycastle.jcajce.provider.keystore.util.ParameterUtil;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
@@ -240,6 +243,12 @@ public class PKCS12KeyStoreSpi
         SecureRandom rand)
     {
         this.random = rand;
+    }
+
+    public boolean engineProbe(InputStream stream)
+        throws IOException
+    {
+        return false;
     }
 
     public Enumeration engineAliases()
@@ -746,6 +755,26 @@ public class PKCS12KeyStoreSpi
             cipher.init(mode, key, new GOST28147ParameterSpec(gParams.getEncryptionParamSet(), gParams.getIV()));
         }
         return cipher;
+    }
+
+    public void engineLoad(KeyStore.LoadStoreParameter loadStoreParameter)
+        throws IOException, NoSuchAlgorithmException, CertificateException
+    {
+        if (loadStoreParameter == null)
+        {
+            engineLoad(null, null);
+        }
+        else if (loadStoreParameter instanceof BCLoadStoreParameter)
+        {
+            BCLoadStoreParameter bcParam = (BCLoadStoreParameter)loadStoreParameter;
+
+            engineLoad(bcParam.getInputStream(), ParameterUtil.extractPassword(loadStoreParameter));
+        }
+        else
+        {
+            throw new IllegalArgumentException(
+                "no support for 'param' of type " + loadStoreParameter.getClass().getName());
+        }
     }
 
     public void engineLoad(
@@ -1762,38 +1791,38 @@ public class PKCS12KeyStoreSpi
     }
 
     public static class BCPKCS12KeyStore
-        extends PKCS12KeyStoreSpi
+        extends AdaptingKeyStoreSpi
     {
         public BCPKCS12KeyStore()
         {
-            super(new BCJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
+            super(new BCJcaJceHelper(), new PKCS12KeyStoreSpi(new BCJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC));
         }
     }
 
     public static class BCPKCS12KeyStore3DES
-        extends PKCS12KeyStoreSpi
+        extends AdaptingKeyStoreSpi
     {
         public BCPKCS12KeyStore3DES()
         {
-            super(new BCJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
+            super(new BCJcaJceHelper(), new PKCS12KeyStoreSpi(new BCJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC));
         }
     }
 
     public static class DefPKCS12KeyStore
-        extends PKCS12KeyStoreSpi
+        extends AdaptingKeyStoreSpi
     {
         public DefPKCS12KeyStore()
         {
-            super(new DefaultJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
+            super(new DefaultJcaJceHelper(), new PKCS12KeyStoreSpi(new DefaultJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC));
         }
     }
 
     public static class DefPKCS12KeyStore3DES
-        extends PKCS12KeyStoreSpi
+        extends AdaptingKeyStoreSpi
     {
         public DefPKCS12KeyStore3DES()
         {
-            super(new DefaultJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
+            super(new DefaultJcaJceHelper(), new PKCS12KeyStoreSpi(new DefaultJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC));
         }
     }
 
