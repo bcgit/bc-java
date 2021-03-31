@@ -44,10 +44,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -96,6 +92,8 @@ import org.bouncycastle.crypto.util.ScryptConfig;
 import org.bouncycastle.jcajce.BCFKSLoadStoreParameter;
 import org.bouncycastle.jcajce.BCFKSStoreParameter;
 import org.bouncycastle.jcajce.BCLoadStoreParameter;
+import org.bouncycastle.jcajce.provider.keystore.util.AdaptingKeyStoreSpi;
+import org.bouncycastle.jcajce.provider.keystore.util.ParameterUtil;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -830,43 +828,6 @@ class BcFKSKeyStoreSpi
         return mac.doFinal(content);
     }
 
-    private char[] extractPassword(KeyStore.LoadStoreParameter bcParam)
-        throws IOException
-    {
-        KeyStore.ProtectionParameter protParam = bcParam.getProtectionParameter();
-
-        if (protParam == null)
-        {
-            return null;
-        }
-        else if (protParam instanceof KeyStore.PasswordProtection)
-        {
-            return ((KeyStore.PasswordProtection)protParam).getPassword();
-        }
-        else if (protParam instanceof KeyStore.CallbackHandlerProtection)
-        {
-            CallbackHandler handler = ((KeyStore.CallbackHandlerProtection)protParam).getCallbackHandler();
-
-            PasswordCallback passwordCallback = new PasswordCallback("password: ", false);
-
-            try
-            {
-                handler.handle(new Callback[]{passwordCallback});
-
-                return passwordCallback.getPassword();
-            }
-            catch (UnsupportedCallbackException e)
-            {
-                throw new IllegalArgumentException("PasswordCallback not recognised: " + e.getMessage(), e);
-            }
-        }
-        else
-        {
-            throw new IllegalArgumentException(
-                "no support for protection parameter of type " + protParam.getClass().getName());
-        }
-    }
-
     public void engineStore(KeyStore.LoadStoreParameter parameter)
         throws CertificateException, NoSuchAlgorithmException, IOException
     {
@@ -879,7 +840,7 @@ class BcFKSKeyStoreSpi
         {
             BCFKSStoreParameter bcParam = (BCFKSStoreParameter)parameter;
 
-            char[] password = extractPassword(parameter);
+            char[] password = ParameterUtil.extractPassword(parameter);
 
             hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(bcParam.getStorePBKDFConfig(), 512 / 8);
 
@@ -913,7 +874,7 @@ class BcFKSKeyStoreSpi
                     hmacAlgorithm = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_512, DERNull.INSTANCE);
                 }
 
-                char[] password = extractPassword(bcParam);
+                char[] password = ParameterUtil.extractPassword(bcParam);
                 
                 EncryptedObjectStoreData encStoreData = getEncryptedObjectStoreData(signatureAlgorithm, password);
                 
@@ -954,7 +915,7 @@ class BcFKSKeyStoreSpi
             }
             else
             {
-                char[] password = extractPassword(bcParam);
+                char[] password = ParameterUtil.extractPassword(bcParam);
 
                 hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(bcParam.getStorePBKDFConfig(), 512 / 8);
 
@@ -983,7 +944,7 @@ class BcFKSKeyStoreSpi
         {
             BCLoadStoreParameter bcParam = (BCLoadStoreParameter)parameter;
 
-            engineStore(bcParam.getOutputStream(), extractPassword(parameter));
+            engineStore(bcParam.getOutputStream(), ParameterUtil.extractPassword(parameter));
         }
         else
         {
@@ -1096,14 +1057,13 @@ class BcFKSKeyStoreSpi
     {
         if (parameter == null)
         {
-            throw new IllegalArgumentException("'parameter' arg cannot be null");
+            engineLoad(null, null);
         }
-
-        if (parameter instanceof BCFKSLoadStoreParameter)
+        else if (parameter instanceof BCFKSLoadStoreParameter)
         {
             BCFKSLoadStoreParameter bcParam = (BCFKSLoadStoreParameter)parameter;
 
-            char[] password = extractPassword(bcParam);
+            char[] password = ParameterUtil.extractPassword(bcParam);
 
             hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(bcParam.getStorePBKDFConfig(), 512 / 8);
 
@@ -1150,7 +1110,7 @@ class BcFKSKeyStoreSpi
         {
             BCLoadStoreParameter bcParam = (BCLoadStoreParameter)parameter;
 
-            engineLoad(bcParam.getInputStream(), extractPassword(parameter));
+            engineLoad(bcParam.getInputStream(), ParameterUtil.extractPassword(parameter));
         }
         else
         {
@@ -1530,6 +1490,24 @@ class BcFKSKeyStoreSpi
         }
     }
 
+    public static class StdCompat
+        extends AdaptingKeyStoreSpi
+    {
+        public StdCompat()
+        {
+            super(new DefaultJcaJceHelper(), new BcFKSKeyStoreSpi(new BCJcaJceHelper()));
+        }
+    }
+
+    public static class DefCompat
+        extends AdaptingKeyStoreSpi
+    {
+        public DefCompat()
+        {
+            super(new DefaultJcaJceHelper(), new BcFKSKeyStoreSpi(new DefaultJcaJceHelper()));
+        }
+    }
+
     private static class SharedKeyStoreSpi
         extends BcFKSKeyStoreSpi
         implements PKCSObjectIdentifiers, X509ObjectIdentifiers
@@ -1647,6 +1625,24 @@ class BcFKSKeyStoreSpi
         public DefShared()
         {
             super(new DefaultJcaJceHelper());
+        }
+    }
+
+    public static class StdSharedCompat
+        extends AdaptingKeyStoreSpi
+    {
+        public StdSharedCompat()
+        {
+            super(new BCJcaJceHelper(), new BcFKSKeyStoreSpi(new BCJcaJceHelper()));
+        }
+    }
+
+    public static class DefSharedCompat
+        extends AdaptingKeyStoreSpi
+    {
+        public DefSharedCompat()
+        {
+            super(new DefaultJcaJceHelper(), new BcFKSKeyStoreSpi(new DefaultJcaJceHelper()));
         }
     }
 
