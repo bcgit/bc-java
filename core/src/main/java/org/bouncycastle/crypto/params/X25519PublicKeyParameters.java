@@ -19,7 +19,7 @@ public final class X25519PublicKeyParameters
     {
         super(false);
 
-        System.arraycopy(buf, off, data, 0, KEY_SIZE);
+        System.arraycopy(buf, off, data, 0, buf.length);
     }
 
     public X25519PublicKeyParameters(InputStream input) throws IOException
