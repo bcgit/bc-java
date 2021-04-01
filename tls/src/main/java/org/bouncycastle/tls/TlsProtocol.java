@@ -1098,6 +1098,10 @@ public abstract class TlsProtocol
 
     public RecordPreview previewOutputRecord(int applicationDataSize) throws IOException
     {
+        if (!appDataReady)
+        {
+            throw new IllegalStateException("Cannot use previewOutputRecord() until initial handshake completed.");
+        }
         if (blocking)
         {
             throw new IllegalStateException("Cannot use previewOutputRecord() in blocking mode!");
