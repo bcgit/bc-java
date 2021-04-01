@@ -145,6 +145,7 @@ public abstract class TlsProtocol
     private volatile boolean failedWithError = false;
     private volatile boolean appDataReady = false;
     private volatile boolean appDataSplitEnabled = true;
+    private volatile boolean keyUpdateEnabled = false;
 //    private volatile boolean keyUpdatePendingReceive = false;
     private volatile boolean keyUpdatePendingSend = false;
     private volatile boolean resumableHandshake = false;
@@ -439,8 +440,12 @@ public abstract class TlsProtocol
             this.alertQueue.shrink();
             this.handshakeQueue.shrink();
 
-            this.appDataSplitEnabled = !TlsUtils.isTLSv11(context);
+            ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+
+            this.appDataSplitEnabled = !TlsUtils.isTLSv11(negotiatedVersion);
             this.appDataReady = true;
+
+            this.keyUpdateEnabled = TlsUtils.isTLSv13(negotiatedVersion);
 
             if (blocking)
             {
@@ -941,13 +946,16 @@ public abstract class TlsProtocol
                     }
                     }
                 }
-                else if (keyUpdatePendingSend)
+                else if (keyUpdateEnabled)
                 {
-                    send13KeyUpdate(false);
-                }
-                else if (recordStream.needsKeyUpdate())
-                {
-                    send13KeyUpdate(true);
+                    if (keyUpdatePendingSend)
+                    {
+                        send13KeyUpdate(false);
+                    }
+                    else if (recordStream.needsKeyUpdate())
+                    {
+                        send13KeyUpdate(true);
+                    }
                 }
 
                 // Fragment data according to the current fragment limit.
@@ -1148,7 +1156,7 @@ public abstract class TlsProtocol
         else
         {
             RecordPreview a = recordStream.previewOutputRecord(applicationDataSize);
-            if (keyUpdatePendingSend || recordStream.needsKeyUpdate())
+            if (keyUpdateEnabled && (keyUpdatePendingSend || recordStream.needsKeyUpdate()))
             {
                 int keyUpdateLength = HandshakeMessageOutput.getLength(1);
                 int recordSize = recordStream.previewOutputRecordSize(keyUpdateLength);
@@ -1495,7 +1503,7 @@ public abstract class TlsProtocol
     {
         // TODO[tls13] This is interesting enough to notify the TlsPeer for possible logging/vetting
 
-        if (!appDataReady)
+        if (!(appDataReady && keyUpdateEnabled))
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
@@ -1632,7 +1640,7 @@ public abstract class TlsProtocol
     {
         // TODO[tls13] This is interesting enough to notify the TlsPeer for possible logging/vetting
 
-        if (!appDataReady)
+        if (!(appDataReady && keyUpdateEnabled))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
