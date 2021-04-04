@@ -117,6 +117,15 @@ public class PGPSignature
     }
 
     /**
+     * Return the digest prefix of the signature.
+     * @return digest prefix
+     */
+    public byte[] getDigestPrefix()
+    {
+        return sigPck.getFingerPrint();
+    }
+
+    /**
      * Return true if this signature represents a certification.
      *
      * @return true if this signature represents a certification, false otherwise.
