@@ -40,8 +40,9 @@ abstract class PKIXCRLUtil
         for (Iterator it = initialSet.iterator(); it.hasNext();)
         {
             X509CRL crl = (X509CRL)it.next();
-
-            if (crl.getNextUpdate().after(validityDate))
+            
+            Date nextUpdate = crl.getNextUpdate();
+            if (nextUpdate == null || nextUpdate.after(validityDate))
             {
                 X509Certificate cert = crlselect.getCertificateChecking();
 
