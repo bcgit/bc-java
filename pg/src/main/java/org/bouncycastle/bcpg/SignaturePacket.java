@@ -288,6 +288,17 @@ public class SignaturePacket
     {
         return keyID;
     }
+
+    /**
+     * Return the signatures fingerprint.
+     * @return fingerprint (digest prefix) of the signature
+     */
+    public byte[] getFingerPrint()
+    {
+        byte[] fp = new byte[fingerPrint.length];
+        System.arraycopy(fingerPrint, 0, fp, 0, fingerPrint.length);
+        return fp;
+    }
     
     /**
      * return the signature trailer that must be included with the data
