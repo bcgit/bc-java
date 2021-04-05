@@ -1,6 +1,12 @@
 package org.bouncycastle.asn1.util.test;
 
 import org.bouncycastle.asn1.cmc.test.*;
+import org.bouncycastle.asn1.cmp.test.*;
+import org.bouncycastle.asn1.cms.test.*;
+import org.bouncycastle.asn1.crmf.test.*;
+import org.bouncycastle.asn1.esf.test.*;
+import org.bouncycastle.asn1.ess.test.*;
+import org.bouncycastle.asn1.icao.test.*;
 import org.bouncycastle.asn1.isismtt.test.AdditionalInformationSyntaxUnitTest;
 import org.bouncycastle.asn1.isismtt.test.AdmissionSyntaxUnitTest;
 import org.bouncycastle.asn1.isismtt.test.AdmissionsUnitTest;
@@ -53,6 +59,23 @@ public class RegressionTest
         new TaggedCertificationRequestTest(),
         new TaggedContentInfoTest(),
         new TaggedRequestTest(),
+        new CertifiedKeyPairTest(),
+        new PKIFailureInfoTest(),
+        new PollReqContentTest(),
+        new AttributeTableUnitTest(),
+        new CMSTest(),
+        new DhSigStaticTest(),
+        new PKIPublicationInfoTest(),
+        new CommitmentTypeIndicationUnitTest(),
+        new CommitmentTypeQualifierUnitTest(),
+        new SignerLocationUnitTest(),
+        new ContentHintsUnitTest(),
+        new ESSCertIDv2UnitTest(),
+        new OtherCertIDUnitTest(),
+        new OtherSigningCertificateUnitTest(),
+        new CscaMasterListTest(),
+        new DataGroupHashUnitTest(),
+        new LDSSecurityObjectUnitTest(),
         new AdditionalInformationSyntaxUnitTest(),
         new AdmissionsUnitTest(),
         new AdmissionSyntaxUnitTest(),
