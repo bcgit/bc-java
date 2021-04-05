@@ -6,7 +6,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.isismtt.x509.ProcurationSyntax;
-import org.bouncycastle.asn1.test.ASN1UnitTest;
+import org.bouncycastle.asn1.util.test.ASN1UnitTest;
 import org.bouncycastle.asn1.x500.DirectoryString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
