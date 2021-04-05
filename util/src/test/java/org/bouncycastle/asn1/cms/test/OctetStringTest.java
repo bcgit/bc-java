@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.test;
+package org.bouncycastle.asn1.cms.test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;

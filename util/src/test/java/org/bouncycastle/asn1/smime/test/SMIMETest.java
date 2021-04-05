@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.test;
+package org.bouncycastle.asn1.smime.test;
 
 import java.io.ByteArrayInputStream;
 
