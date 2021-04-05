@@ -4,7 +4,8 @@ module org.bouncycastle.tls
     
     requires java.logging;
     requires org.bouncycastle.provider;
-    
+    requires org.bouncycastle.util;
+
     exports org.bouncycastle.jsse;
     exports org.bouncycastle.tls;
     exports org.bouncycastle.jsse.provider;
