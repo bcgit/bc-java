@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ess.OtherCertID;
-import org.bouncycastle.asn1.test.ASN1UnitTest;
+import org.bouncycastle.asn1.util.test.ASN1UnitTest;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
