@@ -34,10 +34,6 @@ import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
 import org.bouncycastle.asn1.cryptopro.GOST3410ParamSetParameters;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 
-import org.bouncycastle.asn1.icao.CscaMasterList;
-import org.bouncycastle.asn1.icao.DataGroupHash;
-import org.bouncycastle.asn1.icao.LDSSecurityObject;
-import org.bouncycastle.asn1.icao.LDSVersionInfo;
 import org.bouncycastle.asn1.misc.CAST5CBCParameters;
 import org.bouncycastle.asn1.misc.IDEACBCPar;
 import org.bouncycastle.asn1.mozilla.PublicKeyAndChallenge;
@@ -365,10 +361,6 @@ public class GetInstanceTest
         v.add(BigInteger.valueOf(2));
         NoticeReference noticeReference = new NoticeReference("BC", v);
 
-        CscaMasterList.getInstance(null);
-        DataGroupHash.getInstance(null);
-        LDSSecurityObject.getInstance(null);
-        LDSVersionInfo.getInstance(null);
         CAST5CBCParameters.getInstance(null);
         IDEACBCPar.getInstance(null);
         PublicKeyAndChallenge.getInstance(null);
