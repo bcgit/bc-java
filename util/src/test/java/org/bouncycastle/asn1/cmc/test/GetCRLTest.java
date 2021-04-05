@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cmc.GetCRL;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -30,7 +31,6 @@ public class GetCRLTest
     public void performTest()
         throws Exception
     {
-
         {
             X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
             builder.addRDN(BCStyle.C, "AU");
@@ -64,7 +64,8 @@ public class GetCRLTest
 
             try
             {
-                GetCRL.getInstance(new DERSequence(new ASN1Encodable[5]));
+                GetCRL.getInstance(new DERSequence(new ASN1Encodable[]
+                    { new ASN1Integer(1), new ASN1Integer(2), new ASN1Integer(3), new ASN1Integer(4), new ASN1Integer(5)}));
                 fail("Must not accept sequence larger than 5");
             }
             catch (Throwable t)
