@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.test;
+package org.bouncycastle.asn1.icao.test;
 
 import java.io.IOException;
 import java.util.Random;
