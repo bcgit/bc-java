@@ -5,6 +5,8 @@ sh add_module.sh prov
 
 sh add_module.sh prov-ext
 
+sh add_module.sh util
+
 sh add_module.sh tls
 
 sh add_module.sh pkix
