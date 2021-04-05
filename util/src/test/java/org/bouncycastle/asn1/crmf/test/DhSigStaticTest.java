@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.test;
+package org.bouncycastle.asn1.crmf.test;
 
 
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.test;
+package org.bouncycastle.asn1.isismtt.test;
 
 import java.io.IOException;
 
@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.isismtt.x509.Admissions;
 import org.bouncycastle.asn1.isismtt.x509.NamingAuthority;
 import org.bouncycastle.asn1.isismtt.x509.ProfessionInfo;
+import org.bouncycastle.asn1.test.ASN1UnitTest;
 import org.bouncycastle.asn1.x500.DirectoryString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;

@@ -1,8 +1,9 @@
-package org.bouncycastle.asn1.test;
+package org.bouncycastle.asn1.ess.test;
 
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.test.ASN1UnitTest;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 public class ESSCertIDv2UnitTest
