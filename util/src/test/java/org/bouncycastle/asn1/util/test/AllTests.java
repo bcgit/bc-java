@@ -5,7 +5,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import org.bouncycastle.asn1.misc.test.GetInstanceTest;
+import org.bouncycastle.asn1.cms.test.*;
+import org.bouncycastle.asn1.misc.test.*;
 import org.bouncycastle.util.test.SimpleTestResult;
 
 public class AllTests
@@ -36,6 +37,8 @@ public class AllTests
         TestSuite suite = new TestSuite("ASN.1 Tests");
         
         suite.addTestSuite(AllTests.class);
+        suite.addTestSuite(OctetStringTest.class);
+        suite.addTestSuite(ParseTest.class);
         suite.addTestSuite(GetInstanceTest.class);
         
         return new BCTestSetup(suite);
