@@ -6,7 +6,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.isismtt.ocsp.CertHash;
-import org.bouncycastle.asn1.test.ASN1UnitTest;
+import org.bouncycastle.asn1.util.test.ASN1UnitTest;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 public class CertHashUnitTest

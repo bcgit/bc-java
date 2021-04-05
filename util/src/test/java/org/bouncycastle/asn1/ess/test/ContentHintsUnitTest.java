@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.ess.ContentHints;
-import org.bouncycastle.asn1.test.ASN1UnitTest;
+import org.bouncycastle.asn1.util.test.ASN1UnitTest;
 
 public class ContentHintsUnitTest
     extends ASN1UnitTest

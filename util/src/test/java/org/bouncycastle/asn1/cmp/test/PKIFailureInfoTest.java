@@ -6,7 +6,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
-import org.bouncycastle.asn1.test.BitStringConstantTester;
+import org.bouncycastle.asn1.util.test.BitStringConstantTester;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 

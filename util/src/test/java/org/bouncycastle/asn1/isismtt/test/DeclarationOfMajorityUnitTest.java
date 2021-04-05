@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.isismtt.x509.DeclarationOfMajority;
-import org.bouncycastle.asn1.test.ASN1UnitTest;
+import org.bouncycastle.asn1.util.test.ASN1UnitTest;
 
 public class DeclarationOfMajorityUnitTest
     extends ASN1UnitTest
