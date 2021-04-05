@@ -123,7 +123,7 @@ public class PKCS12KeyStoreSpi
     private static final DefaultSecretKeyProvider keySizeProvider = new DefaultSecretKeyProvider();
 
     private IgnoresCaseHashtable keys = new IgnoresCaseHashtable();
-    private Hashtable localIds = new Hashtable();
+    private IgnoresCaseHashtable localIds = new IgnoresCaseHashtable();
     private IgnoresCaseHashtable certs = new IgnoresCaseHashtable();
     private Hashtable chainCerts = new Hashtable();
     private Hashtable keyCerts = new Hashtable();
@@ -874,7 +874,7 @@ public class PKCS12KeyStoreSpi
         }
 
         keys = new IgnoresCaseHashtable();
-        localIds = new Hashtable();
+        localIds = new IgnoresCaseHashtable();
 
         if (info.getContentType().equals(data))
         {
