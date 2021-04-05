@@ -34,6 +34,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>ContentType on encapsulated data was not been passed through correctly for authenticated and enveloped data. This has been fixed.</li>
 <li>NTRUEncryptionParameters and NTRUEncryptionKeyGenerationParameters were not correctly cloning the contained message digest. This has been fixed.</li>
 <li>CertificateFactory.generateCertificates()/generateCRLs() would throw an exception if extra data was found at the end of a PEM file even if valid objects had been found. Extra data is now ignored providing at least one object found.</li>
+<li>Internal class PKIXCRLUtil could throw a NullPointerException for CRLs with an absent nextUpdate field. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -50,6 +51,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>PGPPBEEncryptedData will now reset the stream if the initial checksum fails so another password can be tried.</li>
 <li>Iterators on public and secret key ring collections in PGP now reflect the original order of the public/secret key rings they contain.</li>
 <li>KeyAgreeRecipientInformation now has a getOriginator() method for retrieving the underlying orginator information.</li>
+<li>PGPSignature now has a getDigestPrefix() method for people wanting exposure to the signature finger print details.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
