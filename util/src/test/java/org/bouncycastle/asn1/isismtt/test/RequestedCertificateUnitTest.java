@@ -1,9 +1,10 @@
-package org.bouncycastle.asn1.test;
+package org.bouncycastle.asn1.isismtt.test;
 
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.isismtt.ocsp.RequestedCertificate;
+import org.bouncycastle.asn1.test.ASN1UnitTest;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.util.encoders.Base64;
 

@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.test;
+package org.bouncycastle.asn1.misc.test;
 
 import java.lang.reflect.Method;
 import java.math.BigInteger;
