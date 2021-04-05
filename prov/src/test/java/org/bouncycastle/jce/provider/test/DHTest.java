@@ -39,7 +39,7 @@ import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;

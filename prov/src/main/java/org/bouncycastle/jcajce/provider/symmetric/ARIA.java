@@ -9,8 +9,8 @@ import java.security.spec.InvalidParameterSpecException;
 
 import javax.crypto.spec.IvParameterSpec;
 
-import org.bouncycastle.asn1.cms.CCMParameters;
-import org.bouncycastle.asn1.cms.GCMParameters;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
+import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;

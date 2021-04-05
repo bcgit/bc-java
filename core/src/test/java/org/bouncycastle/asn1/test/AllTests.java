@@ -36,8 +36,6 @@ public class AllTests
         suite.addTestSuite(AllTests.class);
         suite.addTestSuite(GetInstanceTest.class);
         suite.addTestSuite(ASN1SequenceParserTest.class);
-        suite.addTestSuite(OctetStringTest.class);
-        suite.addTestSuite(ParseTest.class);
         
         return new BCTestSetup(suite);
     }
