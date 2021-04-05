@@ -56,6 +56,12 @@
             <fileset dir="pg/src/test/java" includes="**/*.java" />
             <fileset dir="pg/src/test/resources" includes="**/*.*" />
 
+            <fileset dir="util/src/main/java" includes="**/*.java" />
+            <fileset dir="util/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="util/src/main/java" includes="**/*.properties" />
+            <fileset dir="util/src/test/java" includes="**/*.java" />
+            <fileset dir="util/src/test/resources" includes="**/*.*" />
+
             <fileset dir="mail/src/main/java" includes="**/*.java" />
             <fileset dir="mail/src/main/javadoc" includes="**/*.html" />
             <fileset dir="mail/src/main/resources" includes="**/*.properties" />
@@ -94,6 +100,7 @@
     </target>
     
     <target name="build" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-util" />
         <ant antfile="ant/bc+-build.xml" dir="." target="build-tls" />
         <ant antfile="ant/bc+-build.xml" dir="." />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />

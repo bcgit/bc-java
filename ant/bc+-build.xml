@@ -49,6 +49,12 @@
     <property name="tls.target.docs.dir" value="${tls.target.dir}/javadoc" />
     <property name="tls.target.src.zip" value="${tls.target.dir}/src.zip" />
 
+    <property name="util.target" value="bcutil-${target.name}" />
+    <property name="util.target.dir" value="${artifacts.dir}/${util.target}" />
+    <property name="util.target.src.dir" value="${util.target.dir}/src" />
+    <property name="util.target.docs.dir" value="${util.target.dir}/javadoc" />
+    <property name="util.target.src.zip" value="${util.target.dir}/src.zip" />
+
     <property name="lcrypto.target" value="lcrypto-${target.name}" />
     <property name="lcrypto.target.dir" value="${artifacts.dir}/${lcrypto.target}" />
     <property name="lcrypto.target.src.dir" value="${lcrypto.target.dir}/src" />
@@ -275,6 +281,7 @@
                  <include name="org/bouncycastle/crypto/**/*.java" />
                  <include name="org/bouncycastle/util/**/*.java" />
                  <include name="org/bouncycastle/asn1/**/*.java" />
+                 <include name="org/bouncycastle/internal/**/*.java" />
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
@@ -318,11 +325,27 @@
                  <exclude name="org/bouncycastle/**/AllTests.java" />
                  <exclude name="org/bouncycastle/**/test/**" />
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
+                 <exclude name="org/bouncycastle/asn1/*/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="**/*.crl" />
                  <exclude name="org/bouncycastle/util/utiltest/**" />
+                 <exclude name="org/bouncycastle/asn1/bsi/**" />
+                 <exclude name="org/bouncycastle/asn1/cmc/**" />
+                 <exclude name="org/bouncycastle/asn1/cmp/**" />
+                 <exclude name="org/bouncycastle/asn1/cms/**" />
+                 <exclude name="org/bouncycastle/asn1/crmf/**" />
+                 <exclude name="org/bouncycastle/asn1/dvcs/**" />
+                 <exclude name="org/bouncycastle/asn1/eac/**" />
+                 <exclude name="org/bouncycastle/asn1/esf/**" />
+                 <exclude name="org/bouncycastle/asn1/ess/**" />
+                 <exclude name="org/bouncycastle/asn1/est/**" />
+                 <exclude name="org/bouncycastle/asn1/icao/**" />
+                 <exclude name="org/bouncycastle/asn1/isismtt/**" />
+                 <exclude name="org/bouncycastle/asn1/its/**" />
+                 <exclude name="org/bouncycastle/asn1/smime/**" />
+                 <exclude name="org/bouncycastle/asn1/tsp/**" />
                  <exclude name="org/bouncycastle/bcpg/**" />
                  <exclude name="org/bouncycastle/cert/**" />
                  <exclude name="org/bouncycastle/cms/**" />
@@ -621,6 +644,63 @@
 
     </target>
 
+    <!--
+          Utility Classes
+    -->
+    <target name="build-util" depends="initMacros">
+        <mkdir dir="${util.target.dir}" />
+
+        <copyStandardFiles toDir="${util.target.dir}" />
+
+        <copy todir="${util.target.src.dir}">
+             <fileset dir="${src.dir}">
+                 <exclude name="**/*Test.java" />
+                 <exclude name="**/*Tests.java" />
+                 <exclude name="**/test/*.java" />
+                 <include name="org/bouncycastle/asn1/bsi/**" />
+                 <include name="org/bouncycastle/asn1/cmc/**" />
+                 <include name="org/bouncycastle/asn1/cmp/**" />
+                 <include name="org/bouncycastle/asn1/cms/**" />
+                 <include name="org/bouncycastle/asn1/crmf/**" />
+                 <include name="org/bouncycastle/asn1/dvcs/**" />
+                 <include name="org/bouncycastle/asn1/eac/**" />
+                 <include name="org/bouncycastle/asn1/esf/**" />
+                 <include name="org/bouncycastle/asn1/ess/**" />
+                 <include name="org/bouncycastle/asn1/est/**" />
+                 <include name="org/bouncycastle/asn1/icao/**" />
+                 <include name="org/bouncycastle/asn1/isismtt/**" />
+                 <include name="org/bouncycastle/asn1/its/**" />
+                 <include name="org/bouncycastle/asn1/smime/**" />
+                 <include name="org/bouncycastle/asn1/tsp/**" />
+             </fileset>
+        </copy>
+
+        <compile target="${util.target}">
+            <jarFileSet>
+                <exclude name="**/test/*.class" />
+                <include name="**/*.class"/>
+                <include name="**/*.properties"/>
+            </jarFileSet>
+            <manifestElements>
+                <attribute name="Manifest-Version" value="1.0" />
+                <attribute name="Extension-Name" value="org.bouncycastle.bcutil" />
+                <attribute name="Specification-Vendor" value="BouncyCastle.org" />
+                <attribute name="Specification-Version" value="1.1" />
+                <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
+                <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
+                <attribute name="Implementation-Version" value="${release.version}.0" />
+                <attribute name="Application-Name" value="Bouncy Castle Utility APIs" />
+                <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.util" />
+            </manifestElements>
+        </compile>
+
+    </target>
+
     <target name="build-pkix" depends="initMacros">
         <mkdir dir="${pkix.target.dir}" />
 
@@ -871,7 +951,7 @@
                  <include name="org/bouncycastle/ocsp/**/test/*.java" />
                  <include name="org/bouncycastle/crypto/**/test/*.java" />
                  <include name="org/bouncycastle/crypto/**/test/cavp/*.java" />
-                 <include name="org/bouncycastle/asn1/**/test/*.java" />
+                 <include name="org/bouncycastle/asn1/test/*.java" />
                  <include name="org/bouncycastle/crypto/**/*.html" />
                  <include name="org/bouncycastle/math/**/*.html" />
                  <include name="org/bouncycastle/asn1/**/*.html" />
