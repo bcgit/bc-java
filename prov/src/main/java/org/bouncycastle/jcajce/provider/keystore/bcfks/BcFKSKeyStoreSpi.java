@@ -61,7 +61,7 @@ import org.bouncycastle.asn1.bc.ObjectStoreIntegrityCheck;
 import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.bc.SecretKeyData;
 import org.bouncycastle.asn1.bc.SignatureCheck;
-import org.bouncycastle.asn1.cms.CCMParameters;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.misc.ScryptParams;

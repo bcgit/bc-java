@@ -12,8 +12,8 @@ import java.util.Map;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.cms.CCMParameters;
-import org.bouncycastle.asn1.cms.GCMParameters;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
+import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
