@@ -197,7 +197,7 @@ public class CMSSignedDataStreamGenerator
         for (Iterator it = _signers.iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            AlgorithmIdentifier digAlg = CMSSignedHelper.INSTANCE.fixAlgID(signer.getDigestAlgorithmID());
+            AlgorithmIdentifier digAlg = CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID());
 
             digestAlgs.add(digAlg);
         }
@@ -247,7 +247,7 @@ public class CMSSignedDataStreamGenerator
         for (Iterator it = _signers.iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            AlgorithmIdentifier digAlg = CMSSignedHelper.INSTANCE.fixAlgID(signer.getDigestAlgorithmID());
+            AlgorithmIdentifier digAlg = CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID());
 
             digestAlorithms.add(digAlg);
         }
