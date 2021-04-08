@@ -13,6 +13,7 @@ import javax.crypto.spec.PSource;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
@@ -61,7 +62,13 @@ public class JcaAlgorithmParametersConverter
                 }
 
                 AlgorithmIdentifier hashAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find(oaepSpec.getDigestAlgorithm());
+                if (hashAlgorithm.getParameters() == null) {
+                    hashAlgorithm = new AlgorithmIdentifier(hashAlgorithm.getAlgorithm(), DERNull.INSTANCE);
+                }
                 AlgorithmIdentifier mgf1HashAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find((((MGF1ParameterSpec)oaepSpec.getMGFParameters()).getDigestAlgorithm()));
+                if (mgf1HashAlgorithm.getParameters() == null) {
+                    mgf1HashAlgorithm = new AlgorithmIdentifier(mgf1HashAlgorithm.getAlgorithm(), DERNull.INSTANCE);
+                }
                 return new AlgorithmIdentifier(algorithm,
                                     new RSAESOAEPparams(hashAlgorithm, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, mgf1HashAlgorithm),
                                                         new AlgorithmIdentifier(PKCSObjectIdentifiers.id_pSpecified, new DEROctetString(((PSource.PSpecified)pSource).getValue()))));
