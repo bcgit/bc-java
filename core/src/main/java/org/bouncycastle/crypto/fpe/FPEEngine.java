@@ -106,6 +106,13 @@ public abstract class FPEEngine
      */
     public abstract void init(boolean forEncryption, CipherParameters parameters);
 
+    /**
+     * Return the name of the algorithm the cipher implements.
+     *
+     * @return the name of the algorithm the cipher implements.
+     */
+    public abstract String getAlgorithmName();
+
     protected abstract int encryptBlock(byte[] inBuf, int inOff, int length, byte[] outBuf, int outOff);
 
     protected abstract int decryptBlock(byte[] inBuf, int inOff, int length, byte[] outBuf, int outOff);
