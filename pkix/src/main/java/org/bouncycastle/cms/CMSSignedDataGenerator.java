@@ -127,7 +127,7 @@ public class CMSSignedDataGenerator
         for (Iterator it = _signers.iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID()));
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID(), digestAlgIdFinder));
 
             // TODO Verify the content type and calculated digest match the precalculated SignerInfo
             signerInfos.add(signer.toASN1Structure());

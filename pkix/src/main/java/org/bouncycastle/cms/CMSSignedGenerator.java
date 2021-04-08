@@ -24,6 +24,8 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 
@@ -85,6 +87,8 @@ public class CMSSignedGenerator
     protected List _signers = new ArrayList();
     protected List signerGens = new ArrayList();
     protected Map digests = new HashMap();
+
+    protected DigestAlgorithmIdentifierFinder digestAlgIdFinder = new DefaultDigestAlgorithmIdentifierFinder();
 
     /**
      * base constructor

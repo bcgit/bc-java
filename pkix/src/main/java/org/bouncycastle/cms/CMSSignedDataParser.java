@@ -33,6 +33,7 @@ import org.bouncycastle.asn1.cms.ContentInfoParser;
 import org.bouncycastle.asn1.cms.SignedDataParser;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -87,6 +88,7 @@ public class CMSSignedDataParser
     extends CMSContentInfoParser
 {
     private static final CMSSignedHelper HELPER = CMSSignedHelper.INSTANCE;
+    private static final DefaultDigestAlgorithmIdentifierFinder dgstAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
 
     private SignedDataParser        _signedData;
     private ASN1ObjectIdentifier    _signedContentType;
@@ -441,7 +443,7 @@ public class CMSSignedDataParser
         for (Iterator it = signerInformationStore.getSigners().iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID()));
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID(), dgstAlgFinder));
         }
 
         sigGen.getRawOutputStream().write(new DERSet(digestAlgs).getEncoded());

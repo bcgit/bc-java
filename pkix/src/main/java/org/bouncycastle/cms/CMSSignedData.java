@@ -30,6 +30,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Store;
@@ -66,7 +67,8 @@ public class CMSSignedData
     implements Encodable
 {
     private static final CMSSignedHelper HELPER = CMSSignedHelper.INSTANCE;
-    
+    private static final DefaultDigestAlgorithmIdentifierFinder dgstAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
+
     SignedData              signedData;
     ContentInfo             contentInfo;
     CMSTypedData            signedContent;
@@ -514,7 +516,7 @@ public class CMSSignedData
         while (it.hasNext())
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID()));
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID(), dgstAlgFinder));
             vec.add(signer.toASN1Structure());
         }
 
