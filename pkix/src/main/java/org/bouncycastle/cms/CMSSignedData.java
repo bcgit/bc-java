@@ -514,7 +514,7 @@ public class CMSSignedData
         while (it.hasNext())
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixAlgID(signer.getDigestAlgorithmID()));
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID()));
             vec.add(signer.toASN1Structure());
         }
 
