@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
@@ -24,6 +25,10 @@ import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.RC5ParameterSpec;
 
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.crypto.fpe.FPEEngine;
+import org.bouncycastle.crypto.fpe.FPEFF1Engine;
+import org.bouncycastle.crypto.fpe.FPEFF3_1Engine;
+import org.bouncycastle.crypto.params.FPEParameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
@@ -72,6 +77,7 @@ import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
+import org.bouncycastle.jcajce.spec.FPEParameterSpec;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.util.Arrays;
@@ -395,6 +401,18 @@ public class BaseBlockCipher
             ivLength = 0;
             cipher = new BufferedGenericBlockCipher(
                 new OpenPGPCFBBlockCipher(baseEngine));
+        }
+        else if (modeName.equals("FF1"))
+        {
+            ivLength = 0;
+            cipher = new BufferedFPEBlockCipher(
+                new FPEFF1Engine(baseEngine));
+        }
+        else if (modeName.equals("FF3-1"))
+        {
+            ivLength = 0;
+            cipher = new BufferedFPEBlockCipher(
+                new FPEFF3_1Engine(baseEngine));
         }
         else if (modeName.equals("SIC"))
         {
@@ -853,6 +871,12 @@ public class BaseBlockCipher
                 }
                 ivParam = (ParametersWithIV)param;
             }
+        }
+        else if (params instanceof FPEParameterSpec)
+        {
+            FPEParameterSpec spec = (FPEParameterSpec)params;
+
+            param = new FPEParameters((KeyParameter)param, spec.getRadix(), spec.getTweak(), spec.isUsingInverseFunction());
         }
         else if (gcmSpecClass != null && gcmSpecClass.isInstance(params))
         {
@@ -1321,6 +1345,76 @@ public class BaseBlockCipher
             {
                 throw new BadPaddingException(e.getMessage());
             }
+        }
+    }
+
+    private static class BufferedFPEBlockCipher
+        implements GenericBlockCipher
+    {
+        private FPEEngine cipher;
+        private ErasableOutputStream eOut = new ErasableOutputStream();
+
+        BufferedFPEBlockCipher(FPEEngine cipher)
+        {
+            this.cipher = cipher;
+        }
+
+        public void init(boolean forEncryption, CipherParameters params)
+            throws IllegalArgumentException
+        {
+            cipher.init(forEncryption, params);
+        }
+
+        public boolean wrapOnNoPadding()
+        {
+            return false;
+        }
+
+        public String getAlgorithmName()
+        {
+            return cipher.getAlgorithmName();
+        }
+
+        public org.bouncycastle.crypto.BlockCipher getUnderlyingCipher()
+        {
+            throw new IllegalStateException("not applicable for FPE");
+        }
+
+        public int getOutputSize(int len)
+        {
+            return eOut.size() + len;
+        }
+
+        public int getUpdateOutputSize(int len)
+        {
+            return 0;
+        }
+
+        public void updateAAD(byte[] input, int offset, int length)
+        {
+            throw new UnsupportedOperationException("AAD is not supported in the current mode.");
+        }
+
+        public int processByte(byte in, byte[] out, int outOff)
+            throws DataLengthException
+        {
+            eOut.write(in);
+
+            return 0;
+        }
+
+        public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
+            throws DataLengthException
+        {
+            eOut.write(in, inOff, len);
+
+            return 0;
+        }
+
+        public int doFinal(byte[] out, int outOff)
+            throws IllegalStateException, BadPaddingException
+        {
+            return cipher.processBlock(eOut.getBuf(), 0, eOut.size(), out, outOff);
         }
     }
 
