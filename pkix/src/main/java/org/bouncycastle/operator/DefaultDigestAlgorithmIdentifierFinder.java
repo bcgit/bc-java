@@ -194,11 +194,15 @@ public class DefaultDigestAlgorithmIdentifierFinder
         addDigestAlgId(TeleTrusTObjectIdentifiers.ripemd256, true);
     }
 
-    private static void addDigestAlgId(ASN1ObjectIdentifier oid, boolean withNullParams) {
+    private static void addDigestAlgId(ASN1ObjectIdentifier oid, boolean withNullParams)
+    {
         AlgorithmIdentifier algId;
-        if (withNullParams) {
+        if (withNullParams)
+        {
             algId = new AlgorithmIdentifier(oid, DERNull.INSTANCE);
-        } else {
+        }
+        else
+        {
             algId = new AlgorithmIdentifier(oid);
         }
         digestOidToAlgIds.put(oid, algId);
@@ -230,19 +234,14 @@ public class DefaultDigestAlgorithmIdentifierFinder
         return find(digAlgOid);
     }
 
-    public AlgorithmIdentifier find(String digAlgName)
+    public AlgorithmIdentifier find(ASN1ObjectIdentifier digAlgOid)
     {
-        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)digestNameToOids.get(digAlgName);
-        return find(oid);
-    }
-
-    public static AlgorithmIdentifier find(ASN1ObjectIdentifier digAlgOid)
-    {
-        if (digAlgOid == null) {
-            return null;
+        if (digAlgOid == null)
+        {
+            throw new NullPointerException("digest OID is null");
         }
 
-        AlgorithmIdentifier digAlgId = (AlgorithmIdentifier) digestOidToAlgIds.get(digAlgOid);
+        AlgorithmIdentifier digAlgId = (AlgorithmIdentifier)digestOidToAlgIds.get(digAlgOid);
         if (digAlgId == null)
         {
             return new AlgorithmIdentifier(digAlgOid);
@@ -251,5 +250,24 @@ public class DefaultDigestAlgorithmIdentifierFinder
         {
             return digAlgId;
         }
+    }
+
+    public AlgorithmIdentifier find(String digAlgName)
+    {
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)digestNameToOids.get(digAlgName);
+        if (oid != null)
+        {
+            return find(oid);
+        }
+        try
+        {
+            return find(new ASN1ObjectIdentifier(digAlgName));
+        }
+        catch (IllegalArgumentException e)
+        {
+            // ignore - tried it but it didn't work...
+        }
+
+        return null;
     }
 }
