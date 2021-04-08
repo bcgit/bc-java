@@ -53,6 +53,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>KeyAgreeRecipientInformation now has a getOriginator() method for retrieving the underlying orginator information.</li>
 <li>PGPSignature now has a getDigestPrefix() method for people wanting exposure to the signature finger print details.</li>
 </ul>
+<h3>2.1.4 Notes</h3>
+<ul>
+<li>There is a small API change in the PKIX package to the DigestAlgorithmIdentifierFinder interface as a find() method that takes an ASN1ObjectIdentifier has been added to it. For people wishing to extend their own implementations, see DefaultDigestAlgorithmIdentifierFinder for a sample implementation.</li>
+</ul>
 
 <h3>2.2.1 Version</h3>
 Release: 1.68<br/>
