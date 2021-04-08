@@ -56,6 +56,11 @@ public class FPEFF3_1Engine
         }
     }
 
+    public String getAlgorithmName()
+    {
+        return "FF3-1";
+    }
+
     protected int encryptBlock(byte[] inBuf, int inOff, int length, byte[] outBuf, int outOff)
     {
         byte[] enc;

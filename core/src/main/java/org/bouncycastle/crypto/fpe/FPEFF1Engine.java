@@ -50,6 +50,11 @@ public class FPEFF1Engine
         baseCipher.init(!fpeParameters.isUsingInverseFunction(), fpeParameters.getKey());
     }
 
+    public String getAlgorithmName()
+    {
+        return "FF1";
+    }
+
     protected int encryptBlock(byte[] inBuf, int inOff, int length, byte[] outBuf, int outOff)
     {
         byte[] enc;
