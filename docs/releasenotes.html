@@ -52,6 +52,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Iterators on public and secret key ring collections in PGP now reflect the original order of the public/secret key rings they contain.</li>
 <li>KeyAgreeRecipientInformation now has a getOriginator() method for retrieving the underlying orginator information.</li>
 <li>PGPSignature now has a getDigestPrefix() method for people wanting exposure to the signature finger print details.</li>
+<li>The old BKS-V1 format keystore is now disabled by default. If you need to use BKS-V1 for legacy reasons, it can be re-enabled by adding:
+<pre>
+org.bouncycastle.bks.enable_v1=true
+</pre>
+to the java.security file. We would be interested in hearing from anyone that needs to do this.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>
