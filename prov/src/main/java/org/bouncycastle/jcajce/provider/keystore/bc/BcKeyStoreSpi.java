@@ -53,6 +53,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeOutputStream;
 
@@ -97,6 +98,10 @@ public class BcKeyStoreSpi
     public BcKeyStoreSpi(int version)
     {
         this.version = version;
+        if (version == 1 && Properties.isOverrideSet("org.bouncycastle.bks.enable_v1"))
+        {
+             throw new IllegalStateException("BKS-V1 not enabled");
+        }
     }
 
     private class StoreEntry
