@@ -383,9 +383,16 @@ class ProvTlsClient
             if (null != availableSSLSession)
             {
                 TlsSession sessionToResume = availableSSLSession.getTlsSession();
-                if (isResumable(availableSSLSession, sessionToResume))
+                SessionParameters resumableSessionParameters = getResumableSessionParameters(availableSSLSession,
+                    sessionToResume);
+                if (null != resumableSessionParameters)
                 {
                     this.sslSession = availableSSLSession;
+                    if (!manager.getEnableSessionCreation())
+                    {
+                         // If session creation is disabled, only offer the session cipher suite.
+                        this.cipherSuites = new int[]{ resumableSessionParameters.getCipherSuite() };
+                    }
                     return sessionToResume;
                 }
             }
@@ -588,29 +595,29 @@ class ProvTlsClient
         return keyTypes;
     }
 
-    protected boolean isResumable(ProvSSLSession provSSLSession, TlsSession tlsSession)
+    protected SessionParameters getResumableSessionParameters(ProvSSLSession provSSLSession, TlsSession tlsSession)
     {
         if (null == tlsSession || !tlsSession.isResumable())
         {
-            return false;
+            return null;
         }
 
-        {
-            // TODO[resumption] Avoid the copy somehow?
-            SessionParameters sessionParameters = tlsSession.exportSessionParameters();
+        // TODO[resumption] Avoid the copy somehow?
+        SessionParameters sessionParameters = tlsSession.exportSessionParameters();
 
+        {
             // TODO[resumption] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
             if (null == sessionParameters ||
                 !ProtocolVersion.contains(getProtocolVersions(), sessionParameters.getNegotiatedVersion()) ||
                 !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
             {
-                return false;
+                return null;
             }
 
             // TODO[tls13] Resumption/PSK 
             if (TlsUtils.isTLSv13(sessionParameters.getNegotiatedVersion()))
             {
-                return false;
+                return null;
             }
         }
 
@@ -624,12 +631,12 @@ class ProvTlsClient
                 {
                     LOG.finer("Session not resumable - endpoint ID algorithm mismatch; connection: "
                         + connectionEndpointID + ", session: " + sessionEndpointID);
-                    return false;
+                    return null;
                 }
             }
         }
 
-        return true;
+        return sessionParameters;
     }
 
     protected TlsCredentials selectClientCredentials12(Principal[] issuers, short[] certificateTypes)
