@@ -1062,7 +1062,7 @@ public class BcKeyStoreSpi
         public Version1()
         {
             super(1);
-            if (Properties.isOverrideSet("org.bouncycastle.bks.enable_v1"))
+            if (!Properties.isOverrideSet("org.bouncycastle.bks.enable_v1"))
             {
                  throw new IllegalStateException("BKS-V1 not enabled");
             }
