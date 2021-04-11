@@ -155,7 +155,7 @@ public class DefaultDigestAlgorithmIdentifierFinder
 
         // IETF RFC 3370
         addDigestAlgId(OIWObjectIdentifiers.idSHA1, true);
-        // IETF RFC 5874
+        // IETF RFC 5754
         addDigestAlgId(NISTObjectIdentifiers.id_sha224, false);
         addDigestAlgId(NISTObjectIdentifiers.id_sha256, false);
         addDigestAlgId(NISTObjectIdentifiers.id_sha384, false);
@@ -169,7 +169,7 @@ public class DefaultDigestAlgorithmIdentifierFinder
         addDigestAlgId(NISTObjectIdentifiers.id_sha3_384, false);
         addDigestAlgId(NISTObjectIdentifiers.id_sha3_512, false);
 
-        // RFC 8072
+        // RFC 8702
         addDigestAlgId(NISTObjectIdentifiers.id_shake128, false);
         addDigestAlgId(NISTObjectIdentifiers.id_shake256, false);
 
