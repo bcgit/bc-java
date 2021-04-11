@@ -102,6 +102,7 @@ public class TlsClientProtocol
         super.beginHandshake();
 
         establishSession(tlsClient.getSessionToResume());
+        tlsClient.notifySessionToResume(tlsSession);
 
         sendClientHello();
         this.connection_state = CS_CLIENT_HELLO;
