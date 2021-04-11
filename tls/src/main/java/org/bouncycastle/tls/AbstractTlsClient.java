@@ -364,6 +364,10 @@ public abstract class AbstractTlsClient
     {
     }
 
+    public void notifySessionToResume(TlsSession session)
+    {
+    }
+
     public void notifySessionID(byte[] sessionID)
     {
     }
