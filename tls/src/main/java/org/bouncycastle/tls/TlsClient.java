@@ -43,6 +43,19 @@ public interface TlsClient
         throws IOException;
 
     /**
+     * Notifies the client of the session that will be offered in ClientHello for resumption, if any.
+     * This will be either the session returned from {@link #getSessionToResume()} or null if that
+     * session was unusable.
+     * 
+     * NOTE: the actual negotiated session_id is notified by {@link #notifySessionID(byte[])}.
+     *
+     * @param session The {@link TlsSession} representing the resumable session to
+     *                be offered for this connection, or null if there is none.
+     * @see #notifySessionID(byte[])
+     */
+    void notifySessionToResume(TlsSession session);
+
+    /**
      * Notifies the client of the session_id sent in the ServerHello.
      *
      * @param sessionID

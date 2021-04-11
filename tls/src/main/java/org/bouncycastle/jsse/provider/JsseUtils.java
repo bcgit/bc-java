@@ -104,6 +104,14 @@ abstract class JsseUtils
         return provTlsAllowLegacyResumption;
     }
 
+    static void checkSessionCreationEnabled(ProvTlsManager manager)
+    {
+        if (!manager.getEnableSessionCreation())
+        {
+            throw new IllegalStateException("Cannot resume session and session creation is disabled");
+        }
+    }
+
     static <T> T[] clone(T[] ts)
     {
         return null == ts ? null : ts.clone();
