@@ -459,7 +459,7 @@ public class HttpAuth
 
         if (algorithm.equals("SHA-512-256"))
         {
-            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256, DERNull.INSTANCE);
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256);
         }
 
         return digestAlgorithmIdentifierFinder.find(algorithm);

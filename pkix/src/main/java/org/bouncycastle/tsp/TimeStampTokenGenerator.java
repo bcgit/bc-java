@@ -20,7 +20,6 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.ess.ESSCertID;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
@@ -45,6 +44,7 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.SignerInfoGenerator;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
@@ -101,6 +101,8 @@ public class TimeStampTokenGenerator
      * Create time-stamps with a resolution of 1 millisecond.
      */
     public static final int R_MILLISECONDS = 3;
+
+    private static final DefaultDigestAlgorithmIdentifierFinder dgstAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
 
     private int resolution = R_SECONDS;
     private Locale locale = null; // default locale
@@ -362,7 +364,7 @@ public class TimeStampTokenGenerator
     {
         ASN1ObjectIdentifier digestAlgOID = request.getMessageImprintAlgOID();
 
-        AlgorithmIdentifier algID = new AlgorithmIdentifier(digestAlgOID, DERNull.INSTANCE);
+        AlgorithmIdentifier algID = dgstAlgFinder.find(digestAlgOID);
         MessageImprint messageImprint = new MessageImprint(algID, request.getMessageImprintDigest());
 
         Accuracy accuracy = null;
