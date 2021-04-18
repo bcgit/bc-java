@@ -398,11 +398,7 @@ class ProvTlsClient
             }
         }
 
-        if (!manager.getEnableSessionCreation())
-        {
-            throw new IllegalStateException("No resumable sessions and session creation is disabled");
-        }
-
+        JsseUtils.checkSessionCreationEnabled(manager);
         return null;
     }
 
@@ -518,6 +514,17 @@ class ProvTlsClient
     }
 
     @Override
+    public void notifySessionToResume(TlsSession session)
+    {
+        if (null == session)
+        {
+            JsseUtils.checkSessionCreationEnabled(manager);
+        }
+
+        super.notifySessionToResume(session);
+    }
+
+    @Override
     public void notifySessionID(byte[] sessionID)
     {
         final boolean isResumed = !TlsUtils.isNullOrEmpty(sessionID) && null != sslSession
@@ -540,10 +547,7 @@ class ProvTlsClient
                 LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
             }
 
-            if (!manager.getEnableSessionCreation())
-            {
-                throw new IllegalStateException("Server did not resume session and session creation is disabled");
-            }
+            JsseUtils.checkSessionCreationEnabled(manager);
         }
 
         manager.notifyHandshakeSession(manager.getContextData().getClientSessionContext(),
@@ -606,7 +610,6 @@ class ProvTlsClient
         SessionParameters sessionParameters = tlsSession.exportSessionParameters();
 
         {
-            // TODO[resumption] We could check EMS here, although the protocol classes reject non-EMS sessions anyway
             if (null == sessionParameters ||
                 !ProtocolVersion.contains(getProtocolVersions(), sessionParameters.getNegotiatedVersion()) ||
                 !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
