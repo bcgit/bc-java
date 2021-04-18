@@ -52,11 +52,25 @@ public class BasicConstraintsValidation
                     {
                         int plc = pathLengthConstraint.intValue();
 
-                        if (plc < pathLengthRemaining)
+                        if (maxPathLength == null)
+                        {
+                            maxPathLength = pathLengthConstraint;
+                            pathLengthRemaining = plc;
+                            bc = certBC;
+                        }
+                        else if (plc < pathLengthRemaining)
                         {
                             pathLengthRemaining = plc;
                             bc = certBC;
                         }
+                        else
+                        {
+                            pathLengthRemaining--;
+                        }
+                    }
+                    else if (maxPathLength != null)
+                    {
+                        pathLengthRemaining--;
                     }
                 }
             }
