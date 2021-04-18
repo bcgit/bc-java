@@ -2,6 +2,8 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.KeyManagementException;
 import java.security.SecureRandom;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
@@ -10,6 +12,14 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 
 class DefaultSSLContextSpi extends ProvSSLContextSpi
 {
+    private static final Logger LOG = Logger.getLogger(DefaultSSLContextSpi.class.getName());
+
+    private static Exception avoidCapturingException(Exception e)
+    {
+        // NOTE: Avoid capturing arbitrary exception into static field
+        return new KeyManagementException(e.getMessage());
+    }
+
     private static class LazyInstance
     {
         private static final Exception initException;
@@ -28,8 +38,8 @@ class DefaultSSLContextSpi extends ProvSSLContextSpi
                 }
                 catch (Exception e)
                 {
-                    ex = e;
-                    i = null;
+                    LOG.log(Level.WARNING, "Failed to load default SSLContext", e);
+                    ex = avoidCapturingException(e);
                 }
             }
 
@@ -47,17 +57,35 @@ class DefaultSSLContextSpi extends ProvSSLContextSpi
         static
         {
             Exception ex = null;
-            KeyManager[] kms;
-            TrustManager[] tms;
+            KeyManager[] kms = null;
+            TrustManager[] tms = null;
 
             try
             {
-                kms = ProvSSLContextSpi.getDefaultKeyManagers();
                 tms = ProvSSLContextSpi.getDefaultTrustManagers();
             }
             catch (Exception e)
             {
+                LOG.log(Level.WARNING, "Failed to load default trust managers", e);
                 ex = e;
+            }
+
+            if (null == ex)
+            {
+                try
+                {
+                    kms = ProvSSLContextSpi.getDefaultKeyManagers();
+                }
+                catch (Exception e)
+                {
+                    LOG.log(Level.WARNING, "Failed to load default key managers", e);
+                    ex = e;
+                }
+            }
+
+            if (null != ex)
+            {
+                ex = avoidCapturingException(ex);
                 kms = null;
                 tms = null;
             }

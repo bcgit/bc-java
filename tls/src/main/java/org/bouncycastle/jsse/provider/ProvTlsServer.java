@@ -577,11 +577,7 @@ class ProvTlsServer
             }
         }
 
-        if (!manager.getEnableSessionCreation())
-        {
-            throw new IllegalStateException("Cannot resume session and session creation is disabled");
-        }
-
+        JsseUtils.checkSessionCreationEnabled(manager);
         return null;
     }
 
@@ -620,10 +616,7 @@ class ProvTlsServer
                 LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
             }
 
-            if (!manager.getEnableSessionCreation())
-            {
-                throw new IllegalStateException("Cannot resume session and session creation is disabled");
-            }
+            JsseUtils.checkSessionCreationEnabled(manager);
         }
 
         manager.notifyHandshakeSession(manager.getContextData().getServerSessionContext(),

@@ -1348,6 +1348,10 @@ public abstract class TlsProtocol
 
     protected boolean establishSession(TlsSession sessionToResume)
     {
+        this.tlsSession = null;
+        this.sessionParameters = null;
+        this.sessionMasterSecret = null;
+
         if (null == sessionToResume || !sessionToResume.isResumable())
         {
             return false;
