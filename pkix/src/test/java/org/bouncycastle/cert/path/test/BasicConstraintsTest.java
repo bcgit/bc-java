@@ -107,11 +107,8 @@ public class BasicConstraintsTest
         X509CertificateHolder interm2 = new X509CertificateHolder(SECOND_INTERMEDIATE);
         X509CertificateHolder leaf = new X509CertificateHolder(LEAF);
 
-
         CertPath path = new CertPath(new X509CertificateHolder[] {leaf, interm2, interm1, root});
-        for(X509CertificateHolder c : path.getCertificates()) {
-            System.out.println(c.getSubject());
-        }
+
         X509ContentVerifierProviderBuilder verifier = new JcaX509ContentVerifierProviderBuilder();
         CertPathValidation[] validations = new CertPathValidation[] {
                 new ParentCertIssuedValidation(verifier),
