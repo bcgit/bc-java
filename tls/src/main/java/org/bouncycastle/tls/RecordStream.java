@@ -73,7 +73,7 @@ class RecordStream
     {
         if (pendingCipher == null)
         {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.unexpected_message, "No pending cipher");
         }
 
         enablePendingCipherRead(false);
@@ -356,7 +356,8 @@ class RecordStream
     {
         if (1 != len || (byte)ChangeCipherSpec.change_cipher_spec != buf[off])
         {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                "Malformed " + ContentType.getText(ContentType.change_cipher_spec));
         }
     }
 
@@ -382,7 +383,8 @@ class RecordStream
                 }
                 else
                 {
-                    throw new TlsFatalAlert(AlertDescription.unexpected_message, ContentType.getText(recordType));
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                        "Opaque " + ContentType.getText(recordType));
                 }
             }
         }
@@ -394,7 +396,8 @@ class RecordStream
             {
                 if (!handler.isApplicationDataReady())
                 {
-                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                        "Not ready for " + ContentType.getText(ContentType.application_data));
                 }
                 break;
             }
@@ -404,7 +407,8 @@ class RecordStream
     //        case ContentType.heartbeat:
                 break;
             default:
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                    "Unsupported " + ContentType.getText(recordType));
             }
         }
 
@@ -515,7 +519,7 @@ class RecordStream
         {
             if (exhausted)
             {
-                throw new TlsFatalAlert(alertDescription);
+                throw new TlsFatalAlert(alertDescription, "Sequence numbers exhausted");
             }
             long result = value;
             if (++value == 0)
