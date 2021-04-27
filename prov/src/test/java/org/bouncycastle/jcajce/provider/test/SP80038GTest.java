@@ -463,6 +463,45 @@ public class SP80038GTest
         assertEquals(s1, new String(decrypted));
     }
 
+    public void testCipherReuseThroughDoFinal_Encrypt()
+        throws Exception
+    {
+        FPEParameterSpec parameterSpec = new FPEParameterSpec(100, new byte[0]);
+        SecretKey aesKey = new SecretKeySpec(new byte[32], "AES");
+
+        Cipher multipleOperationsCipher = Cipher.getInstance("AES/FF1/NoPadding", "BC");
+        multipleOperationsCipher.init(Cipher.ENCRYPT_MODE, aesKey, parameterSpec);
+
+        Cipher singleOperationCipher = Cipher.getInstance("AES/FF1/NoPadding", "BC");
+        singleOperationCipher.init(Cipher.ENCRYPT_MODE, aesKey, parameterSpec);
+
+        multipleOperationsCipher.doFinal(new byte[] { 84, 13, 92, 49 });
+        byte[] ciphertext1 = multipleOperationsCipher.doFinal(new byte[] { 99, 0, 27, 3 });
+
+        byte[] ciphertext2 = singleOperationCipher.doFinal(new byte[] { 99, 0, 27, 3 });
+
+        assertTrue(Arrays.areEqual(ciphertext1, ciphertext2));
+    }
+
+    public void testCipherReuseThroughDoFinal_Decrypt()
+        throws Exception
+    {
+        FPEParameterSpec parameterSpec = new FPEParameterSpec(100, new byte[0]);
+        SecretKey aesKey = new SecretKeySpec(new byte[32], "AES");
+
+        Cipher multipleOperationsCipher = Cipher.getInstance("AES/FF1/NoPadding", "BC");
+        multipleOperationsCipher.init(Cipher.DECRYPT_MODE, aesKey, parameterSpec);
+
+        Cipher singleOperationCipher = Cipher.getInstance("AES/FF1/NoPadding", "BC");
+        singleOperationCipher.init(Cipher.DECRYPT_MODE, aesKey, parameterSpec);
+
+        multipleOperationsCipher.doFinal(new byte[] { 84, 13, 92, 49 });
+        byte[] ciphertext1 = multipleOperationsCipher.doFinal(new byte[] { 99, 0, 27, 3 });
+
+        byte[] ciphertext2 = singleOperationCipher.doFinal(new byte[] { 99, 0, 27, 3 });
+
+        assertTrue(Arrays.areEqual(ciphertext1, ciphertext2));
+    }
 
     public class FPECharEncryptor
     {
