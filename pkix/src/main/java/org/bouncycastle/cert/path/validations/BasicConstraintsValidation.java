@@ -8,31 +8,38 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.path.CertPathValidation;
 import org.bouncycastle.cert.path.CertPathValidationContext;
 import org.bouncycastle.cert.path.CertPathValidationException;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Memoable;
 
 
-public class BasicConstraintsValidation implements CertPathValidation {
+public class BasicConstraintsValidation
+    implements CertPathValidation
+{
 
     private boolean previousCertWasCA = true;
     private Integer maxPathLength = null;
     private boolean isMandatory = true;
 
-    public BasicConstraintsValidation() {
+    public BasicConstraintsValidation()
+    {
         this(true);
     }
 
-    public BasicConstraintsValidation(boolean isMandatory) {
+    public BasicConstraintsValidation(boolean isMandatory)
+    {
         this.isMandatory = isMandatory;
     }
 
     @Override
     public void validate(CertPathValidationContext context, X509CertificateHolder certificate)
-            throws CertPathValidationException {
+        throws CertPathValidationException
+    {
 
         context.addHandledExtension(Extension.basicConstraints);
 
         // verify that the issuing certificate is in fact a CA
-        if(!previousCertWasCA) {
+        if (!previousCertWasCA)
+        {
             throw new CertPathValidationException("Basic constraints violated: issuer is not a CA");
         }
 
@@ -44,8 +51,10 @@ public class BasicConstraintsValidation implements CertPathValidation {
         // if the certificate is not self-issued (see § 4.2.1.9 and § 6.1.4 (l) of RFC 5280),
         // it "uses up" one path length unit.
         // NOTE: self-issued != self-signed. We only need to compare subject DN and issuer DN here.
-        if(maxPathLength != null && !certificate.getSubject().equals(certificate.getIssuer())) {
-            if(maxPathLength < 0) {
+        if (maxPathLength != null && !certificate.getSubject().equals(certificate.getIssuer()))
+        {
+            if (maxPathLength < 0)
+            {
                 throw new CertPathValidationException("Basic constraints violated: path length exceeded");
             }
             maxPathLength--;
@@ -53,11 +62,13 @@ public class BasicConstraintsValidation implements CertPathValidation {
 
         // § 6.1.4 (m)
         // Update maxPathLength if appropriate
-        if(bc != null) {
+        if (bc != null)
+        {
             BigInteger bigPathLen = bc.getPathLenConstraint();
-            if(bigPathLen != null) {
+            if (bigPathLen != null)
+            {
                 // use intValueExact to prevent issues with weird certificates that include ridiculous path lengths
-                int newPathLength = bigPathLen.intValueExact();
+                int newPathLength = BigIntegers.intValueExact(bigPathLen);
                 maxPathLength = maxPathLength == null ? newPathLength : Math.min(newPathLength, maxPathLength);
             }
         }
@@ -65,7 +76,8 @@ public class BasicConstraintsValidation implements CertPathValidation {
     }
 
     @Override
-    public Memoable copy() {
+    public Memoable copy()
+    {
         BasicConstraintsValidation result = new BasicConstraintsValidation();
         result.isMandatory = this.isMandatory;
         result.previousCertWasCA = this.previousCertWasCA;
@@ -74,8 +86,9 @@ public class BasicConstraintsValidation implements CertPathValidation {
     }
 
     @Override
-    public void reset(Memoable other) {
-        BasicConstraintsValidation otherBCV = (BasicConstraintsValidation) other;
+    public void reset(Memoable other)
+    {
+        BasicConstraintsValidation otherBCV = (BasicConstraintsValidation)other;
         this.isMandatory = otherBCV.isMandatory;
         this.previousCertWasCA = otherBCV.previousCertWasCA;
         this.maxPathLength = otherBCV.maxPathLength;
