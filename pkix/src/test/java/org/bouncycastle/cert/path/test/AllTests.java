@@ -15,7 +15,8 @@ public class AllTests
     public void testSimpleTests()
     {
         org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] {
-            new CertPathTest(), new CertPathValidationTest(), new BasicConstraintsTest() };
+            new CertPathTest(), new CertPathValidationTest(), new BasicConstraintsTest(),
+                new PKITSBasicConstraintsTest() };
 
         for (int i = 0; i != tests.length; i++)
         {
