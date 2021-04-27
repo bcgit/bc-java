@@ -109,6 +109,9 @@ public class CRLReason
     private CRLReason(
         int reason)
     {
+        if (reason < 0) {
+            throw new IllegalArgumentException("Invalid CRL reason : not in (0..MAX)");
+        }
         value = new ASN1Enumerated(reason);
     }
 
