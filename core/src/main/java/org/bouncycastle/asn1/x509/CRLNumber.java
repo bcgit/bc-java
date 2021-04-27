@@ -20,7 +20,8 @@ public class CRLNumber
     public CRLNumber(
         BigInteger number)
     {
-        if (BigInteger.ZERO.compareTo(number) > 0) {
+        if (BigInteger.ZERO.compareTo(number) > 0)
+        {
             throw new IllegalArgumentException("Invalid CRL number : not in (0..MAX)");
         }
         this.number = number;
