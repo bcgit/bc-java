@@ -17,7 +17,6 @@ public class DESUtil
         des.add("DESEDE");
         des.add(OIWObjectIdentifiers.desCBC.getId());
         des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
-        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
         des.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
     }
 

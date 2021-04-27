@@ -56,7 +56,6 @@ class CMSUtils
         des.add("DESEDE");
         des.add(OIWObjectIdentifiers.desCBC.getId());
         des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
-        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
         des.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
 
         mqvAlgs.add(X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme);
