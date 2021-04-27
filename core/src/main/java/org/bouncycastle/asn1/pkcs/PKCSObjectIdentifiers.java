@@ -185,6 +185,8 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier    pkcs_9_at_smimeCapabilities  = pkcs_9.branch("15").intern();
     /** PKCS#9: 1.2.840.113549.1.9.16 */
     ASN1ObjectIdentifier    id_smime                     = pkcs_9.branch("16").intern();
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.46 */
+    ASN1ObjectIdentifier    pkcs_9_at_binarySigningTime  = pkcs_9.branch("16.2.46").intern();
 
     /** PKCS#9: 1.2.840.113549.1.9.20 */
     ASN1ObjectIdentifier    pkcs_9_at_friendlyName  = pkcs_9.branch("20").intern();
