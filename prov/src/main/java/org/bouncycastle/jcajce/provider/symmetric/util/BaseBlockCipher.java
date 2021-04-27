@@ -1414,7 +1414,14 @@ public class BaseBlockCipher
         public int doFinal(byte[] out, int outOff)
             throws IllegalStateException, BadPaddingException
         {
-            return cipher.processBlock(eOut.getBuf(), 0, eOut.size(), out, outOff);
+            try
+            {
+                return cipher.processBlock(eOut.getBuf(), 0, eOut.size(), out, outOff);
+            }
+            finally
+            {
+                eOut.erase();
+            }
         }
     }
 
