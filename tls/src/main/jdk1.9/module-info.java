@@ -10,6 +10,7 @@ module org.bouncycastle.tls
     exports org.bouncycastle.tls;
     exports org.bouncycastle.jsse.provider;
     exports org.bouncycastle.jsse.java.security;
+    exports org.bouncycastle.jsse.util;
     exports org.bouncycastle.tls.crypto;
     exports org.bouncycastle.tls.crypto.impl;
     exports org.bouncycastle.tls.crypto.impl.bc;
