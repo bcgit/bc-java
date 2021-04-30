@@ -81,22 +81,8 @@ public class CipherSuitesEngineTestSuite
         }
         Arrays.sort(cipherSuites);
 
-        /*
-         * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit SSLv3. Perhaps we
-         * could modify that security property when running this test suite.
-         */
-        // NOTE: Avoid defaultSSLContext.getSupportedSSLParameters() for 1.5 compatibility
-        String[] protocols = new String[]{
-            "TLSv1",
-            "TLSv1.1",
-            "TLSv1.2",
-            "TLSv1.3",
-        };
-
-        for (int p = 0; p < protocols.length; ++p)
+        for (String protocol : TestUtils.getTestableProtocols(defaultSSLContext, fips))
         {
-            String protocol = protocols[p];
-
             boolean isTLSv13Protocol = "TLSv1.3".equals(protocol);
             boolean isTLSv12Protocol = "TLSv1.2".equals(protocol);
 

@@ -22,7 +22,7 @@ class ProvAlgorithmConstraints
         "MD2, MD5, SHA1 jdkCA & usage TLSServer, RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, " +
         "include jdk.disabled.namedCurves";
     private static final String DEFAULT_TLS_DISABLED_ALGORITHMS =
-        "SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, " +
+        "SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, " +
         "include jdk.disabled.namedCurves";
 
     private static final DisabledAlgorithmConstraints provTlsDisabledAlgorithms = DisabledAlgorithmConstraints.create(
