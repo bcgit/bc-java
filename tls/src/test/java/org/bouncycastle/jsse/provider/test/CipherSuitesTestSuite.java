@@ -1,13 +1,13 @@
 package org.bouncycastle.jsse.provider.test;
 
-import static org.junit.Assert.fail;
-
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
+
+import org.junit.Assert;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -76,7 +76,7 @@ public class CipherSuitesTestSuite
         {
             if (!filter.isPermitted(cipherSuites[i]))
             {
-                fail("Cipher suite not permitted in supported cipher suites: " + cipherSuites[i]);
+                Assert.fail("Cipher suite not permitted in supported cipher suites: " + cipherSuites[i]);
             }
         }
         Arrays.sort(cipherSuites);
