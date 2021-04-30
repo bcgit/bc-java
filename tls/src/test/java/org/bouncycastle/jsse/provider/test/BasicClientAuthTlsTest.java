@@ -1,7 +1,5 @@
 package org.bouncycastle.jsse.provider.test;
 
-import static org.junit.Assert.assertNotEquals;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -81,7 +79,7 @@ public class BasicClientAuthTlsTest
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
-                assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                Assert.assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
                 assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
                 assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
     
@@ -138,7 +136,7 @@ public class BasicClientAuthTlsTest
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
-                assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                Assert.assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
                 assertNull(session.getLocalPrincipal());
                 assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
 
@@ -223,7 +221,7 @@ public class BasicClientAuthTlsTest
     
                 SSLSession session = sslSock.getSession();
                 assertNotNull(session);
-                assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                Assert.assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
                 assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
 
                 if (needClientAuth)

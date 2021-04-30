@@ -7,10 +7,10 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
+import org.junit.Assert;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
-import static junit.framework.Assert.fail;
 
 public class CipherSuitesEngineTestSuite
     extends TestSuite
@@ -76,7 +76,7 @@ public class CipherSuitesEngineTestSuite
         {
             if (!filter.isPermitted(cipherSuites[i]))
             {
-               fail("Cipher suite not permitted in supported cipher suites: " + cipherSuites[i]);
+               Assert.fail("Cipher suite not permitted in supported cipher suites: " + cipherSuites[i]);
             }
         }
         Arrays.sort(cipherSuites);
