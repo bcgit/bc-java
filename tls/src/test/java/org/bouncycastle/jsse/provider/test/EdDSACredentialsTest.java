@@ -208,7 +208,7 @@ public class EdDSACredentialsTest
          * provider currently does for EdDSA.
          */
 //        KeyStore keyStore = KeyStore.getInstance("JKS");
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
         keyStore.load(null, null);
         return keyStore;
     }
