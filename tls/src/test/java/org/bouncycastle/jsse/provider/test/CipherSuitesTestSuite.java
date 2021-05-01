@@ -1,13 +1,13 @@
 package org.bouncycastle.jsse.provider.test;
 
-import static org.junit.Assert.fail;
-
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
+
+import org.junit.Assert;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -76,27 +76,13 @@ public class CipherSuitesTestSuite
         {
             if (!filter.isPermitted(cipherSuites[i]))
             {
-                fail("Cipher suite not permitted in supported cipher suites: " + cipherSuites[i]);
+                Assert.fail("Cipher suite not permitted in supported cipher suites: " + cipherSuites[i]);
             }
         }
         Arrays.sort(cipherSuites);
 
-        /*
-         * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit SSLv3. Perhaps we
-         * could modify that security property when running this test suite.
-         */
-        // NOTE: Avoid defaultSSLContext.getSupportedSSLParameters() for 1.5 compatibility
-        String[] protocols = new String[]{
-            "TLSv1",
-            "TLSv1.1",
-            "TLSv1.2",
-            "TLSv1.3",
-        };
-
-        for (int p = 0; p < protocols.length; ++p)
+        for (String protocol : TestUtils.getTestableProtocols(defaultSSLContext, fips))
         {
-            String protocol = protocols[p];
-
             boolean isTLSv13Protocol = "TLSv1.3".equals(protocol);
             boolean isTLSv12Protocol = "TLSv1.2".equals(protocol);
 

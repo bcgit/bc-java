@@ -22,13 +22,17 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -59,7 +63,11 @@ import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLEngine;
+import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCSSLSocket;
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 
 /**
  * Test Utils
@@ -104,6 +112,11 @@ class TestUtils
             throw new IllegalArgumentException();
         }
         return algID;
+    }
+
+    public static X509Certificate createExceptionCertificate(boolean exceptionOnEncode)
+    {
+        return new ExceptionCertificate(exceptionOnEncode);
     }
 
     public static X509Certificate createSelfSignedCert(String dn, String sigName, KeyPair keyPair)
@@ -407,9 +420,32 @@ class TestUtils
         return null;
     }
 
-    public static X509Certificate createExceptionCertificate(boolean exceptionOnEncode)
+    public static List<String> getTestableProtocols(SSLContext sslContext, boolean fips)
     {
-        return new ExceptionCertificate(exceptionOnEncode);
+        BCSSLEngine sslEngine = (BCSSLEngine)sslContext.createSSLEngine();
+        BCSSLParameters sslParameters = sslEngine.getParameters();
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+        Set<BCCryptoPrimitive> primitives = Collections.unmodifiableSet(EnumSet.of(BCCryptoPrimitive.KEY_AGREEMENT));
+
+        ArrayList<String> result = new ArrayList<String>();
+        if (!fips)
+        {
+            addTestableProtocols(result, algorithmConstraints, primitives, "SSLv3");
+        }
+        addTestableProtocols(result, algorithmConstraints, primitives, "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3");
+        return result;
+    }
+
+    private static void addTestableProtocols(ArrayList<String> result, BCAlgorithmConstraints algorithmConstraints,
+        Set<BCCryptoPrimitive> primitives, String... protocols)
+    {
+        for (String protocol : protocols)
+        {
+            if (algorithmConstraints.permits(primitives, protocol, null))
+            {
+                result.add(protocol);
+            }
+        }
     }
 
     static KeyManagerFactory getSunX509KeyManagerFactory()
