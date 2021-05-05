@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -180,7 +181,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1" });
+                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, specifyClientProtocols("TLSv1"));
                 }
             });
         addAlgorithmImplementation("SSLContext.TLSV1.1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_1",
@@ -188,7 +189,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, new String[]{ "TLSv1.1", "TLSv1" });
+                    return new ProvSSLContextSpi(fipsMode, cryptoProvider, specifyClientProtocols("TLSv1.1", "TLSv1"));
                 }
             });
         addAlgorithmImplementation("SSLContext.TLSV1.2", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_2",
@@ -197,7 +198,7 @@ public class BouncyCastleJsseProvider
                 public Object createInstance(Object constructorParameter)
                 {
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider,
-                        new String[]{ "TLSv1.2", "TLSv1.1", "TLSv1" });
+                        specifyClientProtocols("TLSv1.2", "TLSv1.1", "TLSv1"));
                 }
             });
         addAlgorithmImplementation("SSLContext.TLSV1.3", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_3",
@@ -206,7 +207,7 @@ public class BouncyCastleJsseProvider
                 public Object createInstance(Object constructorParameter)
                 {
                     return new ProvSSLContextSpi(fipsMode, cryptoProvider,
-                        new String[]{ "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" });
+                        specifyClientProtocols("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1"));
                 }
             });
         addAlgorithmImplementation("SSLContext.DEFAULT", "org.bouncycastle.jsse.provider.SSLContext.Default",
@@ -335,6 +336,11 @@ public class BouncyCastleJsseProvider
         attributeMaps.put(attributeMap, attributeMap);
 
         return attributeMap;
+    }
+
+    private static List<String> specifyClientProtocols(String... protocols)
+    {
+        return Arrays.asList(protocols);
     }
 
     public boolean isFipsMode()
