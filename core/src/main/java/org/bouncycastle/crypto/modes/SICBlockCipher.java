@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -91,9 +92,63 @@ public class SICBlockCipher
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
           throws DataLengthException, IllegalStateException
     {
-        processBytes(in, inOff, blockSize, out, outOff);
+        if (byteCount != 0)
+        {
+            processBytes(in, inOff, blockSize, out, outOff);
+            return blockSize;
+        }
 
+        if (inOff + blockSize > in.length)
+        {
+            throw new DataLengthException("input buffer too small");
+        }
+        if (outOff + blockSize > out.length)
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+
+        cipher.processBlock(counter, 0, counterOut, 0);
+        for (int i = 0; i < blockSize; ++i)
+        {
+            out[outOff + i] = (byte)(in[inOff + i] ^ counterOut[i]);
+        }
+        incrementCounterChecked();
         return blockSize;
+    }
+
+    public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
+        throws DataLengthException
+    {
+        if (inOff + blockSize > in.length)
+        {
+            throw new DataLengthException("input buffer too small");
+        }
+        if (outOff + blockSize > out.length)
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+
+        for (int i = 0; i < len; ++i)
+        {
+            byte next;
+            if (byteCount == 0)
+            {
+                cipher.processBlock(counter, 0, counterOut, 0);
+                next = (byte)(in[inOff + i] ^ counterOut[byteCount++]);
+            }
+            else
+            {
+                next = (byte)(in[inOff + i] ^ counterOut[byteCount++]);
+                if (byteCount == counter.length)
+                {
+                    byteCount = 0;
+                    incrementCounterChecked();
+                }
+            }
+            out[outOff + i] = next;
+        }
+
+        return len;
     }
 
     protected byte calculateByte(byte in)
@@ -112,9 +167,7 @@ public class SICBlockCipher
         {
             byteCount = 0;
 
-            incrementCounterAt(0);
-
-            checkCounter();
+            incrementCounterChecked();
         }
 
         return rv;
@@ -131,6 +184,27 @@ public class SICBlockCipher
                 {
                     throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
                 }
+            }
+        }
+    }
+
+    private void incrementCounterChecked()
+    {
+        int i = counter.length;
+        while (--i >= 0)
+        {
+            if (++counter[i] != 0)
+            {
+                break;
+            }
+        }
+
+        if (i < IV.length)
+        {
+            // if the IV is the same as the blocksize we assume the user knows what they are doing
+            if (IV.length < blockSize)
+            {
+                throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
             }
         }
     }
