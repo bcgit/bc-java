@@ -184,7 +184,7 @@ public class PSSCredentialsTest
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException
     {
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
         keyStore.load(null, null);
         return keyStore;
     }
