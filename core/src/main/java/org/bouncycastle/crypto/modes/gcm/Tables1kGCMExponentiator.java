@@ -2,8 +2,6 @@ package org.bouncycastle.crypto.modes.gcm;
 
 import java.util.Vector;
 
-import org.bouncycastle.util.Arrays;
-
 public class Tables1kGCMExponentiator
     implements GCMExponentiator
 {
@@ -14,7 +12,7 @@ public class Tables1kGCMExponentiator
     public void init(byte[] x)
     {
         long[] y = GCMUtil.asLongs(x);
-        if (lookupPowX2 != null && Arrays.areEqual(y, (long[])lookupPowX2.elementAt(0)))
+        if (lookupPowX2 != null && 0L != GCMUtil.areEqual(y, (long[])lookupPowX2.elementAt(0)))
         {
             return;
         }
@@ -43,17 +41,18 @@ public class Tables1kGCMExponentiator
 
     private void ensureAvailable(int bit)
     {
-        int count = lookupPowX2.size();
-        if (count <= bit)
+        int last = lookupPowX2.size() - 1;
+        if (last < bit)
         {
-            long[] tmp = (long[])lookupPowX2.elementAt(count - 1);
+            long[] prev = (long[])lookupPowX2.elementAt(last);
             do
             {
-                tmp = Arrays.clone(tmp);
-                GCMUtil.square(tmp, tmp);
-                lookupPowX2.addElement(tmp);
+                long[] next = new long[GCMUtil.SIZE_LONGS];
+                GCMUtil.square(prev, next);
+                lookupPowX2.addElement(next);
+                prev = next;
             }
-            while (++count <= bit);
+            while (++last < bit);
         }
     }
 }

@@ -773,6 +773,7 @@ public class TlsServerProtocol
             case CS_SERVER_HELLO_RETRY_REQUEST:
             {
                 ClientHello clientHelloRetry = receiveClientHelloMessage(buf);
+                buf.updateHash(handshakeHash);
                 this.connection_state = CS_CLIENT_HELLO_RETRY;
 
                 ServerHello serverHello = generate13ServerHello(clientHelloRetry, true);
@@ -895,6 +896,7 @@ public class TlsServerProtocol
             case CS_START:
             {
                 ClientHello clientHello = receiveClientHelloMessage(buf);
+                buf.updateHash(handshakeHash);
                 this.connection_state = CS_CLIENT_HELLO;
 
                 ServerHello serverHello = generateServerHello(clientHello);

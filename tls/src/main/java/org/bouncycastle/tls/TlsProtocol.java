@@ -615,6 +615,7 @@ public abstract class TlsProtocol
              * These message types are deferred to the handler to explicitly update the transcript.
              */
             case HandshakeType.certificate_verify:
+            case HandshakeType.client_hello:
             case HandshakeType.finished:
             case HandshakeType.server_hello:
                 break;
