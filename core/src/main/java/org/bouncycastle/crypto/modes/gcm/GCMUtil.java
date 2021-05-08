@@ -6,76 +6,119 @@ import org.bouncycastle.util.Pack;
 
 public abstract class GCMUtil
 {
+    public static final int SIZE_BYTES = 16;
+    public static final int SIZE_INTS = 4;
+    public static final int SIZE_LONGS = 2;
+
     private static final int E1 = 0xe1000000;
     private static final long E1L = (E1 & 0xFFFFFFFFL) << 32;
 
     public static byte[] oneAsBytes()
     {
-        byte[] tmp = new byte[16];
+        byte[] tmp = new byte[SIZE_BYTES];
         tmp[0] = (byte)0x80;
         return tmp;
     }
 
     public static int[] oneAsInts()
     {
-        int[] tmp = new int[4];
+        int[] tmp = new int[SIZE_INTS];
         tmp[0] = 1 << 31;
         return tmp;
     }
 
     public static long[] oneAsLongs()
     {
-        long[] tmp = new long[2];
+        long[] tmp = new long[SIZE_LONGS];
         tmp[0] = 1L << 63;
         return tmp;
     }
 
+    public static byte areEqual(byte[] x, byte[] y)
+    {
+        int d = 0;
+        for (int i = 0; i < SIZE_BYTES; ++i)
+        {
+            d |= x[i] ^ y[i];
+        }
+        d = (d >>> 1) | (d & 1);
+        return (byte)((d - 1) >> 31);
+    }
+
+    public static int areEqual(int[] x, int[] y)
+    {
+        int d = 0;
+        d |= x[0] ^ y[0];
+        d |= x[1] ^ y[1];
+        d |= x[2] ^ y[2];
+        d |= x[3] ^ y[3];
+        d = (d >>> 1) | (d & 1);
+        return (d - 1) >> 31;
+    }
+
+    public static long areEqual(long[] x, long[] y)
+    {
+        long d = 0L;
+        d |= x[0] ^ y[0];
+        d |= x[1] ^ y[1];
+        d = (d >>> 1) | (d & 1L);
+        return (d - 1L) >> 63;
+    }
+
     public static byte[] asBytes(int[] x)
     {
-        byte[] z = new byte[16];
-        Pack.intToBigEndian(x, z, 0);
+        byte[] z = new byte[SIZE_BYTES];
+        Pack.intToBigEndian(x, 0, SIZE_INTS, z, 0);
         return z;
     }
 
     public static void asBytes(int[] x, byte[] z)
     {
-        Pack.intToBigEndian(x, z, 0);
+        Pack.intToBigEndian(x, 0, SIZE_INTS, z, 0);
     }
 
     public static byte[] asBytes(long[] x)
     {
-        byte[] z = new byte[16];
-        Pack.longToBigEndian(x, z, 0);
+        byte[] z = new byte[SIZE_BYTES];
+        Pack.longToBigEndian(x, 0, SIZE_LONGS, z, 0);
         return z;
     }
 
     public static void asBytes(long[] x, byte[] z)
     {
-        Pack.longToBigEndian(x, z, 0);
+        Pack.longToBigEndian(x, 0, SIZE_LONGS, z, 0);
     }
 
     public static int[] asInts(byte[] x)
     {
-        int[] z = new int[4];
-        Pack.bigEndianToInt(x, 0, z);
+        int[] z = new int[SIZE_INTS];
+        Pack.bigEndianToInt(x, 0, z, 0, SIZE_INTS);
         return z;
     }
 
     public static void asInts(byte[] x, int[] z)
     {
-        Pack.bigEndianToInt(x, 0, z);
+        Pack.bigEndianToInt(x, 0, z, 0, SIZE_INTS);
     }
 
     public static long[] asLongs(byte[] x)
     {
-        long[] z = new long[2];
-        Pack.bigEndianToLong(x, 0, z);
+        long[] z = new long[SIZE_LONGS];
+        Pack.bigEndianToLong(x, 0, z, 0, SIZE_LONGS);
         return z;
     }
 
     public static void asLongs(byte[] x, long[] z)
     {
-        Pack.bigEndianToLong(x, 0, z);
+        Pack.bigEndianToLong(x, 0, z, 0, SIZE_LONGS);
+    }
+
+    public static void copy(byte[] x, byte[] z)
+    {
+        for (int i = 0; i < SIZE_BYTES; ++i)
+        {
+            z[i] = x[i];
+        }
     }
 
     public static void copy(int[] x, int[] z)
@@ -114,7 +157,7 @@ public abstract class GCMUtil
         int y0 = y[0], y1 = y[1], y2 = y[2], y3 = y[3];
         int z0 = 0, z1 = 0, z2 = 0, z3 = 0;
 
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < SIZE_INTS; ++i)
         {
             int bits = x[i];
             for (int j = 0; j < 32; ++j)
@@ -299,14 +342,14 @@ public abstract class GCMUtil
 
     public static long[] pAsLongs()
     {
-        long[] tmp = new long[2];
+        long[] tmp = new long[SIZE_LONGS];
         tmp[0] = 1L << 62;
         return tmp;
     }
 
     public static void square(long[] x, long[] z)
     {
-        long[] t  = new long[4];
+        long[] t  = new long[SIZE_LONGS * 2];
         Interleave.expand64To128Rev(x[0], t, 0);
         Interleave.expand64To128Rev(x[1], t, 2);
 
@@ -332,7 +375,7 @@ public abstract class GCMUtil
             x[i] ^= y[i]; ++i;
             x[i] ^= y[i]; ++i;
         }
-        while (i < 16);
+        while (i < SIZE_BYTES);
     }
 
     public static void xor(byte[] x, byte[] y, int yOff)
@@ -345,7 +388,7 @@ public abstract class GCMUtil
             x[i] ^= y[yOff + i]; ++i;
             x[i] ^= y[yOff + i]; ++i;
         }
-        while (i < 16);
+        while (i < SIZE_BYTES);
     }
 
     public static void xor(byte[] x, int xOff, byte[] y, int yOff, byte[] z, int zOff)
@@ -358,7 +401,7 @@ public abstract class GCMUtil
             z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
             z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
         }
-        while (i < 16);
+        while (i < SIZE_BYTES);
     }
 
     public static void xor(byte[] x, byte[] y, int yOff, int yLen)
@@ -387,7 +430,7 @@ public abstract class GCMUtil
             z[i] = (byte)(x[i] ^ y[i]); ++i;
             z[i] = (byte)(x[i] ^ y[i]); ++i;
         }
-        while (i < 16);
+        while (i < SIZE_BYTES);
     }
 
     public static void xor(int[] x, int[] y)
