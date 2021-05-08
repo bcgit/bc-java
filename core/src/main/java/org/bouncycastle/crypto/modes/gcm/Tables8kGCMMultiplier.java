@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.modes.gcm;
 
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 public class Tables8kGCMMultiplier
@@ -15,12 +14,13 @@ public class Tables8kGCMMultiplier
         {
             T = new long[32][16][2];
         }
-        else if (Arrays.areEqual(this.H, H))
+        else if (0 != GCMUtil.areEqual(this.H, H))
         {
             return;
         }
 
-        this.H = Arrays.clone(H);
+        this.H = new byte[GCMUtil.SIZE_BYTES];
+        GCMUtil.copy(H, this.H);
 
         for (int i = 0; i < 32; ++i)
         {
