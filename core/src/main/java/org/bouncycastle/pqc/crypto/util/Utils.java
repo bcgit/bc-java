@@ -4,7 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -19,7 +21,7 @@ import org.bouncycastle.util.Integers;
 
 class Utils
 {
-   static final AlgorithmIdentifier AlgID_qTESLA_p_I = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_p_I);
+    static final AlgorithmIdentifier AlgID_qTESLA_p_I = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_p_I);
     static final AlgorithmIdentifier AlgID_qTESLA_p_III = new AlgorithmIdentifier(PQCObjectIdentifiers.qTESLA_p_III);
 
     static final AlgorithmIdentifier SPHINCS_SHA3_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256);
@@ -134,5 +136,57 @@ class Utils
         }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);
+    }
+
+    public static AlgorithmIdentifier getAlgorithmIdentifier(String digestName)
+    {
+        if (digestName.equals("SHA-1"))
+        {
+            return new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
+        }
+        if (digestName.equals("SHA-224"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224);
+        }
+        if (digestName.equals("SHA-256"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+        }
+        if (digestName.equals("SHA-384"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384);
+        }
+        if (digestName.equals("SHA-512"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+        }
+
+        throw new IllegalArgumentException("unrecognised digest algorithm: " + digestName);
+    }
+
+    public static String getDigestName(ASN1ObjectIdentifier digestOid)
+    {
+        if (digestOid.equals(OIWObjectIdentifiers.idSHA1))
+        {
+            return "SHA-1";
+        }
+        if (digestOid.equals(NISTObjectIdentifiers.id_sha224))
+        {
+            return "SHA-224";
+        }
+        if (digestOid.equals(NISTObjectIdentifiers.id_sha256))
+        {
+            return "SHA-256";
+        }
+        if (digestOid.equals(NISTObjectIdentifiers.id_sha384))
+        {
+            return "SHA-384";
+        }
+        if (digestOid.equals(NISTObjectIdentifiers.id_sha512))
+        {
+            return "SHA-512";
+        }
+
+        throw new IllegalArgumentException("unrecognised digest algorithm: " + digestOid);
     }
 }
