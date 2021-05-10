@@ -35,6 +35,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>NTRUEncryptionParameters and NTRUEncryptionKeyGenerationParameters were not correctly cloning the contained message digest. This has been fixed.</li>
 <li>CertificateFactory.generateCertificates()/generateCRLs() would throw an exception if extra data was found at the end of a PEM file even if valid objects had been found. Extra data is now ignored providing at least one object found.</li>
 <li>Internal class PKIXCRLUtil could throw a NullPointerException for CRLs with an absent nextUpdate field. This has been fixed.</li>
+<li>PGP ArmoredInputStream now fails earlier on malformed headers.</li>
+<li>The McElieceKobaraImaiCipher was randomly throwing "Bad Padding: invalid ciphertext" exception while decrypting due to leading zeroes been missed during processing of the cipher text. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
