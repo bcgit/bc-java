@@ -190,7 +190,7 @@ public class PGPSecretKeyRing
 
         for (int i = 0; i != extraPubKeys.size(); i++)
         {
-            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey    k = (PGPPublicKey)extraPubKeys.get(i);
 
             if (keyID == k.getKeyID())
             {
@@ -218,7 +218,7 @@ public class PGPSecretKeyRing
 
         for (int i = 0; i != extraPubKeys.size(); i++)
         {
-            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey    k = (PGPPublicKey)extraPubKeys.get(i);
 
             if (Arrays.areEqual(fingerprint, k.getFingerprint()))
             {
