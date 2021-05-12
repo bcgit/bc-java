@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.keystore.pkcs12;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -792,7 +793,10 @@ public class PKCS12KeyStoreSpi
         bufIn.mark(10);
 
         int head = bufIn.read();
-
+        if (head < 0)
+        {
+            throw new EOFException("no data in keystore stream");
+        }
         if (head != 0x30)
         {
             throw new IOException("stream does not represent a PKCS12 key store");
