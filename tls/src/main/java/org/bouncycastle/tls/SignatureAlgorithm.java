@@ -1,7 +1,5 @@
 package org.bouncycastle.tls;
 
-import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
-
 /**
  * RFC 5246 7.4.1.4.1 (in RFC 2246, there were no specific values assigned)
  */
@@ -120,66 +118,8 @@ public class SignatureAlgorithm
         }
     }
 
-    public static int getPSSCryptoHashAlgorithm(short signatureAlgorithm)
-    {
-        switch (signatureAlgorithm)
-        {
-        case rsa_pss_pss_sha256:
-        case rsa_pss_rsae_sha256:
-            return CryptoHashAlgorithm.sha256;
-        case rsa_pss_pss_sha384:
-        case rsa_pss_rsae_sha384:
-            return CryptoHashAlgorithm.sha384;
-        case rsa_pss_pss_sha512:
-        case rsa_pss_rsae_sha512:
-            return CryptoHashAlgorithm.sha512;
-        default:
-            return -1;
-        }
-    }
-
     public static String getText(short signatureAlgorithm)
     {
         return getName(signatureAlgorithm) + "(" + signatureAlgorithm + ")";
-    }
-
-    /** deprecated Will be removed. */
-    public static boolean hasIntrinsicHash(short signatureAlgorithm)
-    {
-        switch (signatureAlgorithm)
-        {
-        case ed25519:
-        case ed448:
-        case gostr34102012_256:
-        case gostr34102012_512:
-        case rsa_pss_rsae_sha256:
-        case rsa_pss_rsae_sha384:
-        case rsa_pss_rsae_sha512:
-        case rsa_pss_pss_sha256:
-        case rsa_pss_pss_sha384:
-        case rsa_pss_pss_sha512:
-        case ecdsa_brainpoolP256r1tls13_sha256:
-        case ecdsa_brainpoolP384r1tls13_sha384:
-        case ecdsa_brainpoolP512r1tls13_sha512:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    public static boolean isRSAPSS(short signatureAlgorithm)
-    {
-        switch (signatureAlgorithm)
-        {
-        case rsa_pss_rsae_sha256:
-        case rsa_pss_pss_sha256:
-        case rsa_pss_rsae_sha384:
-        case rsa_pss_pss_sha384:
-        case rsa_pss_rsae_sha512:
-        case rsa_pss_pss_sha512:
-            return true;
-        default:
-            return false;
-        }
     }
 }

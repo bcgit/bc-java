@@ -22,7 +22,9 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
+import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
@@ -109,14 +111,20 @@ public class BcTlsCertificate
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        {
             validateRSA_PSS_RSAE();
-            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
 
         case SignatureAlgorithm.rsa_pss_pss_sha256:
         case SignatureAlgorithm.rsa_pss_pss_sha384:
         case SignatureAlgorithm.rsa_pss_pss_sha512:
+        {
             validateRSA_PSS_PSS(signatureAlgorithm);
-            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
 
         // TODO[RFC 8998]
 //        case SignatureAlgorithm.sm2:

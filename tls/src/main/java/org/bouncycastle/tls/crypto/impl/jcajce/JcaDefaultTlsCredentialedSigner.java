@@ -8,8 +8,8 @@ import java.security.interfaces.RSAPrivateKey;
 
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.DefaultTlsCredentialedSigner;
-import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
@@ -43,16 +43,10 @@ public class JcaDefaultTlsCredentialedSigner
         {
             if (signatureAndHashAlgorithm != null)
             {
-                short signatureAlgorithm = signatureAndHashAlgorithm.getSignature();
-                switch (signatureAlgorithm)
+                int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+                if (SignatureScheme.isRSAPSS(signatureScheme))
                 {
-                case SignatureAlgorithm.rsa_pss_pss_sha256:
-                case SignatureAlgorithm.rsa_pss_pss_sha384:
-                case SignatureAlgorithm.rsa_pss_pss_sha512:
-                case SignatureAlgorithm.rsa_pss_rsae_sha256:
-                case SignatureAlgorithm.rsa_pss_rsae_sha384:
-                case SignatureAlgorithm.rsa_pss_rsae_sha512:
-                    return new JcaTlsRSAPSSSigner(crypto, privateKey, signatureAlgorithm);
+                    return new JcaTlsRSAPSSSigner(crypto, privateKey, signatureScheme);
                 }
             }
 
