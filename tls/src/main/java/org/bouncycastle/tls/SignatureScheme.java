@@ -55,8 +55,11 @@ public class SignatureScheme
             throw new NullPointerException();
         }
 
-        short hashAlgorithm = sigAndHashAlg.getHash(), signatureAlgorithm = sigAndHashAlg.getSignature();
+        return from(sigAndHashAlg.getHash(), sigAndHashAlg.getSignature());
+    }
 
+    public static int from(short hashAlgorithm, short signatureAlgorithm)
+    {
         return ((hashAlgorithm & 0xFF) << 8) | (signatureAlgorithm & 0xFF);
     }
 
@@ -136,7 +139,7 @@ public class SignatureScheme
         }
     }
 
-    public static int getPSSCryptoHashAlgorithm(int signatureScheme)
+    public static int getRSAPSSCryptoHashAlgorithm(int signatureScheme)
     {
         switch (signatureScheme)
         {
@@ -174,5 +177,21 @@ public class SignatureScheme
     public static boolean isPrivate(int signatureScheme)
     {
         return (signatureScheme >>> 9) == 0xFE; 
+    }
+
+    public static boolean isRSAPSS(int signatureScheme)
+    {
+        switch (signatureScheme)
+        {
+        case rsa_pss_rsae_sha256:
+        case rsa_pss_rsae_sha384:
+        case rsa_pss_rsae_sha512:
+        case rsa_pss_pss_sha256:
+        case rsa_pss_pss_sha384:
+        case rsa_pss_pss_sha512:
+            return true;
+        default:
+            return false;
+        }
     }
 }

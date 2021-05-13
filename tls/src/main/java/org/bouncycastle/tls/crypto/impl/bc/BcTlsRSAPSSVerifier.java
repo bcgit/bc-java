@@ -7,9 +7,8 @@ import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.PSSSigner;
 import org.bouncycastle.tls.DigitallySigned;
-import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 
 /**
@@ -18,18 +17,18 @@ import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 public class BcTlsRSAPSSVerifier
     extends BcTlsVerifier
 {
-    private final short signatureAlgorithm;
+    private final int signatureScheme;
 
-    public BcTlsRSAPSSVerifier(BcTlsCrypto crypto, RSAKeyParameters publicKey, short signatureAlgorithm)
+    public BcTlsRSAPSSVerifier(BcTlsCrypto crypto, RSAKeyParameters publicKey, int signatureScheme)
    {
         super(crypto, publicKey);
 
-        if (!SignatureAlgorithm.isRSAPSS(signatureAlgorithm))
+        if (!SignatureScheme.isRSAPSS(signatureScheme))
         {
-            throw new IllegalArgumentException("signatureAlgorithm");
+            throw new IllegalArgumentException("signatureScheme");
         }
 
-        this.signatureAlgorithm = signatureAlgorithm;
+        this.signatureScheme = signatureScheme;
     }
 
     public boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException
@@ -40,14 +39,12 @@ public class BcTlsRSAPSSVerifier
     public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
     {
         SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
-        if (algorithm == null
-            || algorithm.getSignature() != signatureAlgorithm
-            || algorithm.getHash() != HashAlgorithm.Intrinsic)
+        if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        int cryptoHashAlgorithm = SignatureAlgorithm.getPSSCryptoHashAlgorithm(signatureAlgorithm);
+        int cryptoHashAlgorithm = SignatureScheme.getRSAPSSCryptoHashAlgorithm(signatureScheme);
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
         PSSSigner verifier = new PSSSigner(new RSAEngine(), digest, digest.getDigestSize());
