@@ -24,7 +24,9 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
+import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -135,14 +137,20 @@ public class JcaTlsCertificate
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        {
             validateRSA_PSS_RSAE();
-            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
 
         case SignatureAlgorithm.rsa_pss_pss_sha256:
         case SignatureAlgorithm.rsa_pss_pss_sha384:
         case SignatureAlgorithm.rsa_pss_pss_sha512:
+        {
             validateRSA_PSS_PSS(signatureAlgorithm);
-            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
