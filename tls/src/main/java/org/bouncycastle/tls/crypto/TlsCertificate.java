@@ -19,6 +19,12 @@ public interface TlsCertificate
      */
     TlsVerifier createVerifier(short signatureAlgorithm) throws IOException;
 
+    /**
+     * @param signatureScheme
+     *            {@link SignatureScheme}
+     */
+    TlsVerifier createVerifier(int signatureScheme) throws IOException;
+
     byte[] getEncoded() throws IOException;
 
     byte[] getExtension(ASN1ObjectIdentifier extensionOID) throws IOException;
