@@ -20,6 +20,12 @@ public class ClientCertificateType
     public static final short rsa_fixed_ecdh = 65;
     public static final short ecdsa_fixed_ecdh = 66;
 
+    /*
+     * draft-smyshlyaev-tls12-gost-suites-10
+     */
+    public static final short gost_sign256 = 67;
+    public static final short gost_sign512 = 68;
+
     public static String getName(short clientCertificateType)
     {
         switch (clientCertificateType)
@@ -44,6 +50,10 @@ public class ClientCertificateType
             return "rsa_fixed_ecdh";
         case ecdsa_fixed_ecdh:
             return "ecdsa_fixed_ecdh";
+        case gost_sign256:
+            return "gost_sign256";
+        case gost_sign512:
+            return "gost_sign512";
         default:
             return "UNKNOWN";
         }

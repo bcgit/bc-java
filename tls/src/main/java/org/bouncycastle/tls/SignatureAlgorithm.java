@@ -17,6 +17,12 @@ public class SignatureAlgorithm
     public static final short ed448 = 8;
 
     /*
+     * draft-smyshlyaev-tls12-gost-suites-10
+     */
+    public static final short gostr34102012_256 = 64;
+    public static final short gostr34102012_512 = 65;
+
+    /*
      * RFC 8446 (implied from SignatureScheme values)
      */
     public static final short rsa_pss_rsae_sha256 = 4;
@@ -54,6 +60,12 @@ public class SignatureAlgorithm
         case SignatureAlgorithm.ed448:
             return ClientCertificateType.ecdsa_sign;
 
+        case SignatureAlgorithm.gostr34102012_256:
+            return ClientCertificateType.gost_sign256;
+
+        case SignatureAlgorithm.gostr34102012_512:
+            return ClientCertificateType.gost_sign512;
+
         // NOTE: Only valid from TLS 1.3, where ClientCertificateType is not used
         case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
         case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
@@ -79,6 +91,10 @@ public class SignatureAlgorithm
             return "ed25519";
         case ed448:
             return "ed448";
+        case gostr34102012_256:
+            return "gostr34102012_256";
+        case gostr34102012_512:
+            return "gostr34102012_512";
         case rsa_pss_rsae_sha256:
             return "rsa_pss_rsae_sha256";
         case rsa_pss_rsae_sha384:
@@ -132,6 +148,8 @@ public class SignatureAlgorithm
         {
         case ed25519:
         case ed448:
+        case gostr34102012_256:
+        case gostr34102012_512:
         case rsa_pss_rsae_sha256:
         case rsa_pss_rsae_sha384:
         case rsa_pss_rsae_sha512:
