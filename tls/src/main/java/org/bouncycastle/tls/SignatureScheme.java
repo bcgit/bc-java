@@ -122,34 +122,22 @@ public class SignatureScheme
         }
     }
 
-    public static short getIntrinsicHashAlgorithm(int signatureScheme)
+    public static short getRSAPSSHashAlgorithm(int signatureScheme)
     {
-        // TODO[RFC 8998] sm2sig_sm3
         switch (signatureScheme)
         {
-        case ecdsa_brainpoolP256r1tls13_sha256:
         case rsa_pss_pss_sha256:
         case rsa_pss_rsae_sha256:
             return HashAlgorithm.sha256;
-        case ecdsa_brainpoolP384r1tls13_sha384:
         case rsa_pss_pss_sha384:
         case rsa_pss_rsae_sha384:
             return HashAlgorithm.sha384;
-        case ecdsa_brainpoolP512r1tls13_sha512:
         case rsa_pss_pss_sha512:
         case rsa_pss_rsae_sha512:
             return HashAlgorithm.sha512;
-        case ed25519:
-        case ed448:
         default:
             return -1;
         }
-    }
-
-    /** @deprecated Use {@link #getIntrinsicHashAlgorithm(int)} instead. */
-    public static short getRSAPSSHashAlgorithm(int signatureScheme)
-    {
-        return getIntrinsicHashAlgorithm(signatureScheme);
     }
 
     public static short getHashAlgorithm(int signatureScheme)

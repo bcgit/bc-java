@@ -48,7 +48,7 @@ public class BcTlsRSAPSSSigner
         }
 
         int cryptoHashAlgorithm = TlsCryptoUtils
-            .getHash(SignatureAlgorithm.getIntrinsicHashAlgorithm(signatureAlgorithm));
+            .getHash(SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm));
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
         PSSSigner signer = new PSSSigner(new RSABlindedEngine(), digest, digest.getDigestSize());

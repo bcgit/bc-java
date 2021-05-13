@@ -49,7 +49,7 @@ public class BcTlsRSAPSSVerifier
         }
 
         int cryptoHashAlgorithm = TlsCryptoUtils
-            .getHash(SignatureAlgorithm.getIntrinsicHashAlgorithm(signatureAlgorithm));
+            .getHash(SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm));
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
         PSSSigner verifier = new PSSSigner(new RSAEngine(), digest, digest.getDigestSize());

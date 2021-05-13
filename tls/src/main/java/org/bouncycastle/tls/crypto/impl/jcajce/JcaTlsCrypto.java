@@ -416,7 +416,7 @@ public class JcaTlsCrypto
         case SignatureScheme.rsa_pss_pss_sha512:
         case SignatureScheme.rsa_pss_rsae_sha512:
         {
-            int cryptoHashAlgorithm = TlsCryptoUtils.getHash(SignatureScheme.getIntrinsicHashAlgorithm(signatureScheme));
+            int cryptoHashAlgorithm = TlsCryptoUtils.getHash(SignatureScheme.getRSAPSSHashAlgorithm(signatureScheme));
             String digestName = getDigestName(cryptoHashAlgorithm);
             String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
