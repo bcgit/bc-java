@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+
 /**
  * RFC 5246 7.4.1.4.1 (in RFC 2246, there were no specific values assigned)
  */
@@ -118,19 +120,19 @@ public class SignatureAlgorithm
         }
     }
 
-    public static short getRSAPSSHashAlgorithm(short signatureAlgorithm)
+    public static int getPSSCryptoHashAlgorithm(short signatureAlgorithm)
     {
         switch (signatureAlgorithm)
         {
         case rsa_pss_pss_sha256:
         case rsa_pss_rsae_sha256:
-            return HashAlgorithm.sha256;
+            return CryptoHashAlgorithm.sha256;
         case rsa_pss_pss_sha384:
         case rsa_pss_rsae_sha384:
-            return HashAlgorithm.sha384;
+            return CryptoHashAlgorithm.sha384;
         case rsa_pss_pss_sha512:
         case rsa_pss_rsae_sha512:
-            return HashAlgorithm.sha512;
+            return CryptoHashAlgorithm.sha512;
         default:
             return -1;
         }
