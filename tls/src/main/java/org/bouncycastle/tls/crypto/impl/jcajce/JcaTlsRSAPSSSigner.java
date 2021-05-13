@@ -7,7 +7,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsSigner;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 
@@ -55,8 +54,7 @@ public class JcaTlsRSAPSSSigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        int cryptoHashAlgorithm = TlsCryptoUtils
-            .getHash(SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm));
+        int cryptoHashAlgorithm = SignatureAlgorithm.getPSSCryptoHashAlgorithm(signatureAlgorithm);
         String digestName = crypto.getDigestName(cryptoHashAlgorithm);
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 

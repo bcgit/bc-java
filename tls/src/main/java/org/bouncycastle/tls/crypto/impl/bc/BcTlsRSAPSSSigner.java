@@ -10,7 +10,6 @@ import org.bouncycastle.crypto.signers.PSSSigner;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 
 /**
@@ -47,8 +46,7 @@ public class BcTlsRSAPSSSigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        int cryptoHashAlgorithm = TlsCryptoUtils
-            .getHash(SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm));
+        int cryptoHashAlgorithm = SignatureAlgorithm.getPSSCryptoHashAlgorithm(signatureAlgorithm);
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
         PSSSigner signer = new PSSSigner(new RSABlindedEngine(), digest, digest.getDigestSize());

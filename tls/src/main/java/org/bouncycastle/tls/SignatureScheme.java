@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+
 public class SignatureScheme
 {
     /*
@@ -122,19 +124,19 @@ public class SignatureScheme
         }
     }
 
-    public static short getRSAPSSHashAlgorithm(int signatureScheme)
+    public static int getPSSCryptoHashAlgorithm(int signatureScheme)
     {
         switch (signatureScheme)
         {
         case rsa_pss_pss_sha256:
         case rsa_pss_rsae_sha256:
-            return HashAlgorithm.sha256;
+            return CryptoHashAlgorithm.sha256;
         case rsa_pss_pss_sha384:
         case rsa_pss_rsae_sha384:
-            return HashAlgorithm.sha384;
+            return CryptoHashAlgorithm.sha384;
         case rsa_pss_pss_sha512:
         case rsa_pss_rsae_sha512:
-            return HashAlgorithm.sha512;
+            return CryptoHashAlgorithm.sha512;
         default:
             return -1;
         }
