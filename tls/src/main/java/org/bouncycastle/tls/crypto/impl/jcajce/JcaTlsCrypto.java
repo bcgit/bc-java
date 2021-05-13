@@ -407,32 +407,23 @@ public class JcaTlsCrypto
     public AlgorithmParameters getSignatureSchemeAlgorithmParameters(int signatureScheme)
         throws GeneralSecurityException
     {
-        switch (signatureScheme)
+        int cryptoHashAlgorithm = SignatureScheme.getRSAPSSCryptoHashAlgorithm(signatureScheme);
+        if (cryptoHashAlgorithm < 0)
         {
-        case SignatureScheme.rsa_pss_pss_sha256:
-        case SignatureScheme.rsa_pss_rsae_sha256:
-        case SignatureScheme.rsa_pss_pss_sha384:
-        case SignatureScheme.rsa_pss_rsae_sha384:
-        case SignatureScheme.rsa_pss_pss_sha512:
-        case SignatureScheme.rsa_pss_rsae_sha512:
-        {
-            int cryptoHashAlgorithm = TlsCryptoUtils.getHash(SignatureScheme.getRSAPSSHashAlgorithm(signatureScheme));
-            String digestName = getDigestName(cryptoHashAlgorithm);
-            String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
-
-            AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName, getHelper());
-
-            Signature signer = getHelper().createSignature(sigName);
-
-            // NOTE: We explicitly set them even though they should be the defaults, because providers vary
-            signer.setParameter(pssSpec);
-
-            return signer.getParameters();
-        }
-
-        default:
             return null;
         }
+
+        String digestName = getDigestName(cryptoHashAlgorithm);
+        String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
+
+        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName, getHelper());
+
+        Signature signer = getHelper().createSignature(sigName);
+
+        // NOTE: We explicitly set them even though they should be the defaults, because providers vary
+        signer.setParameter(pssSpec);
+
+        return signer.getParameters();
     }
 
     public boolean hasAllRawSignatureAlgorithms()
