@@ -111,6 +111,19 @@ public class JcaTlsCertificate
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
     {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        case SignatureAlgorithm.ed25519:
+        case SignatureAlgorithm.ed448:
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return createVerifier(SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm));
+        }
+
         validateKeyUsageBit(KU_DIGITAL_SIGNATURE);
 
         switch (signatureAlgorithm)
@@ -123,34 +136,62 @@ public class JcaTlsCertificate
             return new JcaTlsDSAVerifier(crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
-        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
-        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
-        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return new JcaTlsECDSAVerifier(crypto, getPubKeyEC());
 
-        case SignatureAlgorithm.ed25519:
+        default:
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
+    public TlsVerifier createVerifier(int signatureScheme) throws IOException
+    {
+        validateKeyUsageBit(KU_DIGITAL_SIGNATURE);
+
+        switch (signatureScheme)
+        {
+        // TODO[RFC 8734] The verifier won't match the signatureAlgorithm for brainpool schemes
+        case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512:
+        case SignatureScheme.ecdsa_secp256r1_sha256:
+        case SignatureScheme.ecdsa_secp384r1_sha384:
+        case SignatureScheme.ecdsa_secp521r1_sha512:
+        case SignatureScheme.ecdsa_sha1:
+            return new JcaTlsECDSAVerifier(crypto, getPubKeyEC());
+
+        case SignatureScheme.ed25519:
             return new JcaTlsEd25519Verifier(crypto, getPubKeyEd25519());
 
-        case SignatureAlgorithm.ed448:
+        case SignatureScheme.ed448:
             return new JcaTlsEd448Verifier(crypto, getPubKeyEd448());
 
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        case SignatureScheme.rsa_pkcs1_sha1:
+        case SignatureScheme.rsa_pkcs1_sha256:
+        case SignatureScheme.rsa_pkcs1_sha384:
+        case SignatureScheme.rsa_pkcs1_sha512:
         {
-            validateRSA_PSS_RSAE();
-            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            validateRSA_PKCS1();
+            return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
+        }
+
+        case SignatureScheme.rsa_pss_pss_sha256:
+        case SignatureScheme.rsa_pss_pss_sha384:
+        case SignatureScheme.rsa_pss_pss_sha512:
+        {
+            validateRSA_PSS_PSS(SignatureScheme.getSignatureAlgorithm(signatureScheme));
             return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
         }
 
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
+        case SignatureScheme.rsa_pss_rsae_sha256:
+        case SignatureScheme.rsa_pss_rsae_sha384:
+        case SignatureScheme.rsa_pss_rsae_sha512:
         {
-            validateRSA_PSS_PSS(signatureAlgorithm);
-            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            validateRSA_PSS_RSAE();
             return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
         }
+
+        // TODO[RFC 8998]
+//        case SignatureScheme.sm2sig_sm3:
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);

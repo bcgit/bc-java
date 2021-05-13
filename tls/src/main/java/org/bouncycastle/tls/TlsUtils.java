@@ -2338,13 +2338,13 @@ public class TlsUtils
         SignatureAndHashAlgorithm sigAndHashAlg = certificateVerify.getAlgorithm();
         verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(), sigAndHashAlg);
 
-        short signatureAlgorithm = sigAndHashAlg.getSignature();
+        int signatureScheme = SignatureScheme.from(sigAndHashAlg);
 
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified;
         try
         {
-            TlsVerifier verifier = verifyingCert.createVerifier(signatureAlgorithm);
+            TlsVerifier verifier = verifyingCert.createVerifier(signatureScheme);
 
             verified = verify13CertificateVerify(serverContext.getCrypto(), certificateVerify, verifier,
                 "TLS 1.3, client CertificateVerify", handshakeHash);
@@ -2374,13 +2374,13 @@ public class TlsUtils
         SignatureAndHashAlgorithm sigAndHashAlg = certificateVerify.getAlgorithm();
         verifySupportedSignatureAlgorithm(securityParameters.getClientSigAlgs(), sigAndHashAlg);
 
-        short signatureAlgorithm = sigAndHashAlg.getSignature();
+        int signatureScheme = SignatureScheme.from(sigAndHashAlg);
 
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified;
         try
         {
-            TlsVerifier verifier = verifyingCert.createVerifier(signatureAlgorithm);
+            TlsVerifier verifier = verifyingCert.createVerifier(signatureScheme);
 
             verified = verify13CertificateVerify(clientContext.getCrypto(), certificateVerify, verifier,
                 "TLS 1.3, server CertificateVerify", handshakeHash);
