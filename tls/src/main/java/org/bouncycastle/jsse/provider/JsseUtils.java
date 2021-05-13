@@ -672,57 +672,22 @@ abstract class JsseUtils
         return null != protocolVersion && TlsUtils.isTLSv12(protocolVersion); 
     }
 
-    static boolean isUsableKeyForServer(short signatureAlgorithm, PrivateKey privateKey)
+    static boolean isUsableKeyForServerLegacy(int keyExchangeAlgorithm, PrivateKey privateKey)
     {
         final String algorithm = getPrivateKeyAlgorithm(privateKey);
 
-        switch (signatureAlgorithm)
-        {
-        case SignatureAlgorithm.dsa:
-            return privateKey instanceof DSAPrivateKey || "DSA".equalsIgnoreCase(algorithm);
-
-        case SignatureAlgorithm.ecdsa:
-        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
-        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
-        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
-            return privateKey instanceof ECPrivateKey || "EC".equalsIgnoreCase(algorithm);
-
-        case SignatureAlgorithm.ed25519:
-            return "Ed25519".equalsIgnoreCase(algorithm);
-
-        case SignatureAlgorithm.ed448:
-            return "Ed448".equalsIgnoreCase(algorithm);
-
-        case SignatureAlgorithm.rsa:
-            return "RSA".equalsIgnoreCase(algorithm);
-
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return "RSA".equalsIgnoreCase(algorithm);
-
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return "RSASSA-PSS".equalsIgnoreCase(algorithm);
-
-        default:
-            return false;
-        }
-    }
-
-    static boolean isUsableKeyForServerLegacy(int keyExchangeAlgorithm, PrivateKey privateKey)
-    {
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-        case KeyExchangeAlgorithm.ECDHE_RSA:
-            return isUsableKeyForServer(TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm), privateKey);
+            return privateKey instanceof DSAPrivateKey || "DSA".equalsIgnoreCase(algorithm);
 
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return privateKey instanceof ECPrivateKey || "EC".equalsIgnoreCase(algorithm);
+
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.RSA:
-            return "RSA".equalsIgnoreCase(getPrivateKeyAlgorithm(privateKey));
+            return "RSA".equalsIgnoreCase(algorithm);
 
         // NOTE: This method should never be called for TLS 1.3 
         case KeyExchangeAlgorithm.NULL:
