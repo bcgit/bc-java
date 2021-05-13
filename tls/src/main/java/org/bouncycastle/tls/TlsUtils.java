@@ -461,12 +461,28 @@ public class TlsUtils
         output.write(buf);
     }
 
+    public static void writeOpaque16(byte[] data, byte[] buf, int off)
+        throws IOException
+    {
+        checkUint16(data.length);
+        writeUint16(data.length, buf, off);
+        System.arraycopy(data, 0, buf, off + 2, data.length);
+    }
+
     public static void writeOpaque24(byte[] buf, OutputStream output)
         throws IOException
     {
         checkUint24(buf.length);
         writeUint24(buf.length, output);
         output.write(buf);
+    }
+
+    public static void writeOpaque24(byte[] data, byte[] buf, int off)
+        throws IOException
+    {
+        checkUint24(data.length);
+        writeUint24(data.length, buf, off);
+        System.arraycopy(data, 0, buf, off + 3, data.length);
     }
 
     public static void writeUint8Array(short[] uints, OutputStream output)
