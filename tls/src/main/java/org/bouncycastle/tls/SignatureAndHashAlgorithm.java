@@ -11,6 +11,10 @@ public class SignatureAndHashAlgorithm
 {
     public static final SignatureAndHashAlgorithm ed25519 = createInstanceIntrinsic(SignatureAlgorithm.ed25519);
     public static final SignatureAndHashAlgorithm ed448 = createInstanceIntrinsic(SignatureAlgorithm.ed448);
+    public static final SignatureAndHashAlgorithm gostr34102012_256 = createInstanceIntrinsic(
+        SignatureAlgorithm.gostr34102012_256);
+    public static final SignatureAndHashAlgorithm gostr34102012_512 = createInstanceIntrinsic(
+        SignatureAlgorithm.gostr34102012_512);
     public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha256 = createInstanceIntrinsic(
         SignatureAlgorithm.rsa_pss_rsae_sha256);
     public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha384 = createInstanceIntrinsic(
@@ -49,6 +53,10 @@ public class SignatureAndHashAlgorithm
             return ed25519;
         case SignatureAlgorithm.ed448:
             return ed448;
+        case SignatureAlgorithm.gostr34102012_256:
+            return gostr34102012_256;
+        case SignatureAlgorithm.gostr34102012_512:
+            return gostr34102012_512;
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
             return rsa_pss_rsae_sha256;
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
