@@ -1,6 +1,9 @@
 package org.bouncycastle.jsse.provider;
 
 import java.security.AlgorithmParameters;
+import java.security.PrivateKey;
+import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.ECPrivateKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -543,6 +546,59 @@ class SignatureSchemeInfo
     boolean isSupportedCerts13()
     {
         return !disabled13 && all.supportedCerts13;
+    }
+
+    boolean isUsableWithPrivateKey(PrivateKey privateKey)
+    {
+        // TODO[jsse] Possibly should have (redundant) protocol version guard here?
+
+        final String algorithm = JsseUtils.getPrivateKeyAlgorithm(privateKey);
+
+        switch (getSignatureScheme())
+        {
+        case historical_dsa_sha1:
+        case historical_dsa_sha224:
+        case historical_dsa_sha256:
+            return privateKey instanceof DSAPrivateKey || "DSA".equalsIgnoreCase(algorithm);
+
+        case SignatureScheme.ecdsa_sha1:
+        case historical_ecdsa_sha224:
+        case SignatureScheme.ecdsa_secp256r1_sha256:
+        case SignatureScheme.ecdsa_secp384r1_sha384:
+        case SignatureScheme.ecdsa_secp521r1_sha512:
+        case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512:
+            return privateKey instanceof ECPrivateKey || "EC".equalsIgnoreCase(algorithm);
+
+        case SignatureScheme.ed25519:
+            return "Ed25519".equalsIgnoreCase(algorithm);
+
+        case SignatureScheme.ed448:
+            return "Ed448".equalsIgnoreCase(algorithm);
+
+        case historical_rsa_md5:
+        case SignatureScheme.rsa_pkcs1_sha1:
+        case historical_rsa_sha224:
+        case SignatureScheme.rsa_pkcs1_sha256:
+        case SignatureScheme.rsa_pkcs1_sha384:
+        case SignatureScheme.rsa_pkcs1_sha512:
+        case SignatureScheme.rsa_pss_rsae_sha256:
+        case SignatureScheme.rsa_pss_rsae_sha384:
+        case SignatureScheme.rsa_pss_rsae_sha512:
+            return "RSA".equalsIgnoreCase(algorithm);
+
+        case SignatureScheme.rsa_pss_pss_sha256:
+        case SignatureScheme.rsa_pss_pss_sha384:
+        case SignatureScheme.rsa_pss_pss_sha512:
+            return "RSASSA-PSS".equalsIgnoreCase(algorithm);
+
+        // TODO[RFC 8998]
+//        case SignatureScheme.sm2sig_sm3:
+
+        default:
+            return false;
+        }
     }
 
     @Override
