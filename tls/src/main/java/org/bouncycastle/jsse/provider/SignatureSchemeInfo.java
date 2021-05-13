@@ -268,18 +268,6 @@ class SignatureSchemeInfo
         return result;
     }
 
-    static int getSignatureScheme(SignatureAndHashAlgorithm sigAndHashAlg)
-    {
-        if (null == sigAndHashAlg)
-        {
-            throw new NullPointerException();
-        }
-
-        short hashAlgorithm = sigAndHashAlg.getHash(), signatureAlgorithm = sigAndHashAlg.getSignature();
-
-        return ((hashAlgorithm & 0xFF) << 8) | (signatureAlgorithm & 0xFF);
-    }
-
     static List<SignatureSchemeInfo> getSignatureSchemes(PerContext perContext,
         Vector<SignatureAndHashAlgorithm> sigAndHashAlgs)
     {
@@ -295,7 +283,7 @@ class SignatureSchemeInfo
             SignatureAndHashAlgorithm sigAndHashAlg = sigAndHashAlgs.elementAt(i);
             if (null != sigAndHashAlg)
             {
-                int signatureScheme = SignatureSchemeInfo.getSignatureScheme(sigAndHashAlg);
+                int signatureScheme = SignatureScheme.from(sigAndHashAlg);
 
                 SignatureSchemeInfo signatureSchemeInfo = perContext.index.get(signatureScheme);
                 if (null != signatureSchemeInfo)

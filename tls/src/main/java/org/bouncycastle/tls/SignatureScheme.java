@@ -48,6 +48,18 @@ public class SignatureScheme
      * RFC 8446 reserved for private use (0xFE00..0xFFFF)
      */
 
+    public static int from(SignatureAndHashAlgorithm sigAndHashAlg)
+    {
+        if (null == sigAndHashAlg)
+        {
+            throw new NullPointerException();
+        }
+
+        short hashAlgorithm = sigAndHashAlg.getHash(), signatureAlgorithm = sigAndHashAlg.getSignature();
+
+        return ((hashAlgorithm & 0xFF) << 8) | (signatureAlgorithm & 0xFF);
+    }
+
     public static String getName(int signatureScheme)
     {
         switch (signatureScheme)
