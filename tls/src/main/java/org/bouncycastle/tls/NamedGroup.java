@@ -61,6 +61,17 @@ public class NamedGroup
     public static final int brainpoolP512r1tls13 = 33;
 
     /*
+     * draft-smyshlyaev-tls12-gost-suites-10
+     */
+    public static final int GC256A = 34;
+    public static final int GC256B = 35;
+    public static final int GC256C = 36;
+    public static final int GC256D = 37;
+    public static final int GC512A = 38;
+    public static final int GC512B = 39;
+    public static final int GC512C = 40;
+
+    /*
      * RFC 8998
      */
     public static final int curveSM2 = 41;
@@ -96,8 +107,10 @@ public class NamedGroup
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
         "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
         "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1", "brainpoolP256r1", "brainpoolP384r1",
-        "brainpoolP512r1", "X25519", "X448", "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1", null, null, null,
-        null, null, null, null, "sm2p256v1" };
+        "brainpoolP512r1", "X25519", "X448", "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1",
+        "Tc26-Gost-3410-12-256-paramSetA", "GostR3410-2001-CryptoPro-A", "GostR3410-2001-CryptoPro-B",
+        "GostR3410-2001-CryptoPro-C", "Tc26-Gost-3410-12-512-paramSetA", "Tc26-Gost-3410-12-512-paramSetB",
+        "Tc26-Gost-3410-12-512-paramSetC", "sm2p256v1" };
 
     private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096",
         "ffdhe6144", "ffdhe8192" };
@@ -108,6 +121,7 @@ public class NamedGroup
         {
             if ((namedGroup >= sect163k1 && namedGroup <= secp256k1)
                 || (namedGroup >= brainpoolP256r1 && namedGroup <= brainpoolP512r1)
+                || (namedGroup >= GC256A && namedGroup <= GC512C)
                 || (namedGroup >= arbitrary_explicit_prime_curves && namedGroup <= arbitrary_explicit_char2_curves))
             {
                 return false;
@@ -164,6 +178,10 @@ public class NamedGroup
         case brainpoolP256r1:
         case brainpoolP256r1tls13:
         case curveSM2:
+        case GC256A:
+        case GC256B:
+        case GC256C:
+        case GC256D:
         case secp256k1:
         case secp256r1:
             return 256;
@@ -186,6 +204,9 @@ public class NamedGroup
 
         case brainpoolP512r1:
         case brainpoolP512r1tls13:
+        case GC512A:
+        case GC512B:
+        case GC512C:
             return 512;
 
         case secp521r1:
@@ -278,6 +299,20 @@ public class NamedGroup
             return "brainpoolP384r1tls13";
         case brainpoolP512r1tls13:
             return "brainpoolP512r1tls13";
+        case GC256A:
+            return "GC256A";
+        case GC256B:
+            return "GC256B";
+        case GC256C:
+            return "GC256C";
+        case GC256D:
+            return "GC256D";
+        case GC512A:
+            return "GC512A";
+        case GC512B:
+            return "GC512B";
+        case GC512C:
+            return "GC512C";
         case curveSM2:
             return "curveSM2";
         case arbitrary_explicit_prime_curves:
@@ -325,8 +360,7 @@ public class NamedGroup
 
     public static boolean isPrimeCurve(int namedGroup)
     {
-        return (namedGroup >= secp160k1 && namedGroup <= brainpoolP512r1tls13)
-            || (namedGroup == curveSM2)
+        return (namedGroup >= secp160k1 && namedGroup <= curveSM2)
             || (namedGroup == arbitrary_explicit_prime_curves);
     }
 
@@ -365,8 +399,7 @@ public class NamedGroup
 
     public static boolean refersToASpecificCurve(int namedGroup)
     {
-        return (namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1tls13)
-            || (namedGroup == curveSM2);
+        return namedGroup >= sect163k1 && namedGroup <= curveSM2;
     }
 
     public static boolean refersToASpecificFiniteField(int namedGroup)
