@@ -19,4 +19,38 @@ public class ClientCertificateType
     public static final short ecdsa_sign = 64;
     public static final short rsa_fixed_ecdh = 65;
     public static final short ecdsa_fixed_ecdh = 66;
+
+    public static String getName(short clientCertificateType)
+    {
+        switch (clientCertificateType)
+        {
+        case rsa_sign:
+            return "rsa_sign";
+        case dss_sign:
+            return "dss_sign";
+        case rsa_fixed_dh:
+            return "rsa_fixed_dh";
+        case dss_fixed_dh:
+            return "dss_fixed_dh";
+        case rsa_ephemeral_dh_RESERVED:
+            return "rsa_ephemeral_dh_RESERVED";
+        case dss_ephemeral_dh_RESERVED:
+            return "dss_ephemeral_dh_RESERVED";
+        case fortezza_dms_RESERVED:
+            return "fortezza_dms_RESERVED";
+        case ecdsa_sign:
+            return "ecdsa_sign";
+        case rsa_fixed_ecdh:
+            return "rsa_fixed_ecdh";
+        case ecdsa_fixed_ecdh:
+            return "ecdsa_fixed_ecdh";
+        default:
+            return "UNKNOWN";
+        }
+    }
+
+    public static String getText(short clientCertificateType)
+    {
+        return getName(clientCertificateType) + "(" + clientCertificateType + ")";
+    }
 }
