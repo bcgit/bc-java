@@ -56,7 +56,7 @@ public class JcaTlsRSAPSSSigner
         }
 
         int cryptoHashAlgorithm = TlsCryptoUtils
-            .getHash(SignatureAlgorithm.getIntrinsicHashAlgorithm(signatureAlgorithm));
+            .getHash(SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm));
         String digestName = crypto.getDigestName(cryptoHashAlgorithm);
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
