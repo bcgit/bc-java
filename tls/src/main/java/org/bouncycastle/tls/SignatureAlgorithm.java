@@ -102,33 +102,22 @@ public class SignatureAlgorithm
         }
     }
 
-    public static short getIntrinsicHashAlgorithm(short signatureAlgorithm)
+    public static short getRSAPSSHashAlgorithm(short signatureAlgorithm)
     {
         switch (signatureAlgorithm)
         {
-        case ecdsa_brainpoolP256r1tls13_sha256:
         case rsa_pss_pss_sha256:
         case rsa_pss_rsae_sha256:
             return HashAlgorithm.sha256;
-        case ecdsa_brainpoolP384r1tls13_sha384:
         case rsa_pss_pss_sha384:
         case rsa_pss_rsae_sha384:
             return HashAlgorithm.sha384;
-        case ecdsa_brainpoolP512r1tls13_sha512:
         case rsa_pss_pss_sha512:
         case rsa_pss_rsae_sha512:
             return HashAlgorithm.sha512;
-        case ed25519:
-        case ed448:
         default:
             return -1;
         }
-    }
-
-    /** @deprecated Use {@link #getIntrinsicHashAlgorithm(int)} instead. */
-    public static short getRSAPSSHashAlgorithm(short signatureAlgorithm)
-    {
-        return getIntrinsicHashAlgorithm(signatureAlgorithm);
     }
 
     public static String getText(short signatureAlgorithm)
