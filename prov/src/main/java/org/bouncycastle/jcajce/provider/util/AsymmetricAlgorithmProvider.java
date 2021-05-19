@@ -21,6 +21,15 @@ public abstract class AsymmetricAlgorithmProvider
         ConfigurableProvider provider,
         String digest,
         String algorithm,
+        String className)
+    {
+        addSignatureAlgorithm(provider, digest, algorithm, className, null);
+    }
+
+    protected void addSignatureAlgorithm(
+        ConfigurableProvider provider,
+        String digest,
+        String algorithm,
         String className,
         ASN1ObjectIdentifier oid)
     {
@@ -33,8 +42,11 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addAlgorithm("Alg.Alias.Signature." + jdk11Variation1, mainName);
         provider.addAlgorithm("Alg.Alias.Signature." + jdk11Variation2, mainName);
         provider.addAlgorithm("Alg.Alias.Signature." + alias, mainName);
-        provider.addAlgorithm("Alg.Alias.Signature." + oid, mainName);
-        provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, mainName);
+        if (oid != null)
+        {
+            provider.addAlgorithm("Alg.Alias.Signature." + oid, mainName);
+            provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, mainName);
+        }
     }
 
     protected void registerOid(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name, AsymmetricKeyInfoConverter keyFactory)

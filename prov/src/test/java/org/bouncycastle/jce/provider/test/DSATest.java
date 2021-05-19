@@ -35,6 +35,9 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.internal.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -48,6 +51,7 @@ import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
+import org.bouncycastle.jcajce.provider.digest.RIPEMD160;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
@@ -375,6 +379,62 @@ public class DSATest
         if (!signer.verifySignature(dummySha1, ASN1Integer.getInstance(derSig.getObjectAt(0)).getValue(), ASN1Integer.getInstance(derSig.getObjectAt(1)).getValue()))
         {
             fail("NONEwithDSA not really NONE!");
+        }
+    }
+
+    private void testRIPEMD160withDSA()
+        throws Exception
+    {
+        byte[] msg = Hex.decode("01020304050607080910111213141516");
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DSA", "BC");
+
+        kpGen.initialize(1024);
+
+        KeyPair          kp = kpGen.generateKeyPair();
+
+        Signature        sig = Signature.getInstance("RIPEMD160withDSA", "BC");
+
+        sig.initSign(kp.getPrivate());
+
+        sig.update(msg);
+
+        byte[] sigBytes = sig.sign();
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg);
+
+        isTrue(sig.verify(sigBytes));
+
+        // reset test
+
+        sig.update(msg);
+
+        if (!sig.verify(sigBytes))
+        {
+            fail("NONEwithDSA failed to reset");
+        }
+
+        // lightweight test
+        RIPEMD160Digest dig = new RIPEMD160Digest();
+        byte[] digest = new byte[dig.getDigestSize()];
+
+        dig.update(msg, 0, msg.length);
+
+        dig.doFinal(digest, 0);
+
+        DSAPublicKey  key = (DSAPublicKey)kp.getPublic();
+        DSAParameters params = new DSAParameters(key.getParams().getP(), key.getParams().getQ(), key.getParams().getG());
+        DSAPublicKeyParameters keyParams = new DSAPublicKeyParameters(key.getY(), params);
+        DSASigner signer = new DSASigner();
+        ASN1Sequence derSig = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(sigBytes));
+
+        signer.init(false, keyParams);
+
+        if (!signer.verifySignature(digest, ASN1Integer.getInstance(derSig.getObjectAt(0)).getValue(), ASN1Integer.getInstance(derSig.getObjectAt(1)).getValue()))
+        {
+            fail("RIPEMD160withDSA not really RIPEMD160!");
         }
     }
 
@@ -1302,6 +1362,7 @@ public class DSATest
     {
         testCompat();
         testNONEwithDSA();
+        testRIPEMD160withDSA();
 
         testDSAsha3(NISTObjectIdentifiers.id_dsa_with_sha3_224, 224, new BigInteger("613202af2a7f77e02b11b5c3a5311cf6b412192bc0032aac3ec127faebfc6bd0", 16));
         testDSAsha3(NISTObjectIdentifiers.id_dsa_with_sha3_256, 256, new BigInteger("2450755c5e15a691b121bc833b97864e34a61ee025ecec89289c949c1858091e", 16));
