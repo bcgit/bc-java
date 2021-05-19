@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSAEncoding;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
@@ -175,6 +176,15 @@ public class DSASigner
         public detDSA()
         {
             super(DigestFactory.createSHA1(), new org.bouncycastle.crypto.signers.DSASigner(new HMacDSAKCalculator(DigestFactory.createSHA1())));
+        }
+    }
+
+    static public class dsaRMD160
+        extends DSASigner
+    {
+        public dsaRMD160()
+        {
+            super(new RIPEMD160Digest(), new org.bouncycastle.crypto.signers.DSASigner());
         }
     }
 
