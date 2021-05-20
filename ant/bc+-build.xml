@@ -31,6 +31,12 @@
     <property name="mail.target.docs.dir" value="${mail.target.dir}/javadoc" />
     <property name="mail.target.src.zip" value="${mail.target.dir}/src.zip" />
 
+    <property name="jmail.target" value="bcjmail-${target.name}" />
+    <property name="jmail.target.dir" value="${artifacts.dir}/${jmail.target}" />
+    <property name="jmail.target.src.dir" value="${jmail.target.dir}/src" />
+    <property name="jmail.target.docs.dir" value="${jmail.target.dir}/javadoc" />
+    <property name="jmail.target.src.zip" value="${jmail.target.dir}/src.zip" />
+
     <property name="pkix.target" value="bcpkix-${target.name}" />
     <property name="pkix.target.dir" value="${artifacts.dir}/${pkix.target}" />
     <property name="pkix.target.src.dir" value="${pkix.target.dir}/src" />
@@ -64,6 +70,8 @@
     <path id="project.classpath">
         <pathelement location="${mail.jar.home}" />
         <pathelement location="${activation.jar.home}" />
+        <pathelement location="${jmail.jar.home}" />
+        <pathelement location="${jactivation.jar.home}" />
         <pathelement location="${junit.jar.home}" />
     </path> 
 
@@ -587,6 +595,69 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.version}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle S/MIME API" />
+                <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.mail" />
+            </manifestElements>
+        </compile>
+
+    </target>
+
+    <target name="build-jmail" depends="initMacros">
+        <mkdir dir="${jmail.target.dir}" />
+
+        <copyStandardFiles toDir="${jmail.target.dir}" />
+
+        <copy todir="${jmail.target.src.dir}">
+             <fileset dir="${basedir}/jmail/src/main/java">
+             </fileset>
+             <fileset dir="${src.dir}">
+                 <include name="**/mailcap"/>
+                 <include name="org/bouncycastle/mail/**/*.java" />
+                 <include name="org/bouncycastle/mail/**/*.properties" />
+                 <exclude name="**/handlers/*.java" />
+                 <exclude name="**/*Test.java" />
+                 <exclude name="**/*Tests.java" />
+                 <exclude name="**/test/*.java" />
+             </fileset>
+        </copy>
+
+        <copy todir="${build.dir}/${jmail.target}/classes">
+             <fileset dir="${src.dir}">
+                 <include name="**/mailcap"/>
+             </fileset>
+        </copy>
+
+        <replaceregexp match="javax.activation." replace="jakarta.activation." flags="g" byline="true">
+            <fileset dir="${jmail.target.src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
+
+        <replaceregexp match="javax.mail." replace="jakarta.mail." flags="g" byline="true">
+            <fileset dir="${jmail.target.src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
+
+        <compile target="${jmail.target}">
+            <jarFileSet>
+                <include name="**/*.class"/>
+                <include name="**/mailcap"/>
+                <include name="**/*.properties"/>
+            </jarFileSet>
+            <manifestElements>
+                <attribute name="Manifest-Version" value="1.0" />
+                <attribute name="Extension-Name" value="org.bouncycastle.bcmail" />
+                <attribute name="Specification-Vendor" value="BouncyCastle.org" />
+                <attribute name="Specification-Version" value="1.1" />
+                <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
+                <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
+                <attribute name="Implementation-Version" value="${release.version}.0" />
+                <attribute name="Application-Name" value="Bouncy Castle Jakarta S/MIME API" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
