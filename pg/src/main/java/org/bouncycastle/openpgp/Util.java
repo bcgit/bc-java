@@ -24,12 +24,18 @@ class Util
         throws IOException
     {
         BCPGInputStream bcIn = new BCPGInputStream(pgIn);
-
-        if (bcIn.nextPacketTag() == tag1 || bcIn.nextPacketTag() == tag2)
+        try
         {
-            return bcIn;
-        }
+            if (bcIn.nextPacketTag() == tag1 || bcIn.nextPacketTag() == tag2)
+            {
+                return bcIn;
+            }
 
-        throw new IOException("unexpected tag " + bcIn.nextPacketTag() + " encountered");
+            throw new IOException("unexpected tag " + bcIn.nextPacketTag() + " encountered");
+        }
+        finally
+        {
+            bcIn.close();
+        }
     }
 }
