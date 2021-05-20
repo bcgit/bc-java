@@ -107,7 +107,16 @@ class ProvTrustManagerFactorySpi
                 tsInput = new BufferedInputStream(new FileInputStream(tsPath));
             }
 
-            ks.load(tsInput, tsPassword);
+            try
+            {
+                ks.load(tsInput, tsPassword);
+            }
+            catch (NullPointerException e)
+            {
+                // work around for NPE in FIPS KeyStore
+                ks = KeyStore.getInstance("BCFKS");
+                ks.load(null, null);
+            }
         }
         finally
         {
