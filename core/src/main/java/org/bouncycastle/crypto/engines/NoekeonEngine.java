@@ -61,12 +61,14 @@ public class NoekeonEngine
                 "invalid parameter passed to Noekeon init - " + params.getClass().getName());
         }
 
-        this._forEncryption = forEncryption;
-        this._initialised = true;
-
         KeyParameter p = (KeyParameter)params;
+        byte[] key = p.getKey();
+        if (key.length != 16)
+        {
+            throw new IllegalArgumentException("Key length not 128 bits.");
+        }
 
-        Pack.bigEndianToInt(p.getKey(), 0, k, 0, 4);
+        Pack.bigEndianToInt(key, 0, k, 0, 4);
 
         if (!forEncryption)
         {
@@ -74,19 +76,23 @@ public class NoekeonEngine
             {
                 int a0 = k[0], a1 = k[1], a2 = k[2], a3 = k[3];
 
-                int t = a0 ^ a2;
-                t ^= Integers.rotateLeft(t, 8) ^ Integers.rotateLeft(t, 24);
-                a1 ^= t;
-                a3 ^= t;
+                int t02 = a0 ^ a2;
+                t02 ^= Integers.rotateLeft(t02, 8) ^ Integers.rotateLeft(t02, 24);
 
-                t = a1 ^ a3;
-                t ^= Integers.rotateLeft(t, 8) ^ Integers.rotateLeft(t, 24);
-                a0 ^= t;
-                a2 ^= t;
+                int t13 = a1 ^ a3;
+                t13 ^= Integers.rotateLeft(t13, 8) ^ Integers.rotateLeft(t13, 24);
+
+                a0 ^= t13;
+                a1 ^= t02;
+                a2 ^= t13;
+                a3 ^= t02;
 
                 k[0] = a0; k[1] = a1; k[2] = a2; k[3] = a3;
             }
         }
+
+        this._forEncryption = forEncryption;
+        this._initialised = true;
     }
 
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
@@ -120,27 +126,28 @@ public class NoekeonEngine
 
         int k0 = k[0], k1 = k[1], k2 = k[2], k3 = k[3];
 
-        int round = 0, t;
+        int round = 0;
         for (;;)
         {
             a0 ^= roundConstants[round] & 0xFF;
 
             // theta(a, k);
             {
-                t = a0 ^ a2;
-                t ^= Integers.rotateLeft(t, 8) ^ Integers.rotateLeft(t, 24);
-                a1 ^= t;
-                a3 ^= t;
+                int t02 = a0 ^ a2;
+                t02 ^= Integers.rotateLeft(t02, 8) ^ Integers.rotateLeft(t02, 24);
 
                 a0 ^= k0;
                 a1 ^= k1;
                 a2 ^= k2;
                 a3 ^= k3;
 
-                t = a1 ^ a3;
-                t ^= Integers.rotateLeft(t, 8) ^ Integers.rotateLeft(t, 24);
-                a0 ^= t;
-                a2 ^= t;
+                int t13 = a1 ^ a3;
+                t13 ^= Integers.rotateLeft(t13, 8) ^ Integers.rotateLeft(t13, 24);
+
+                a0 ^= t13;
+                a1 ^= t02;
+                a2 ^= t13;
+                a3 ^= t02;
             }
 
             if (++round > SIZE)
@@ -157,14 +164,14 @@ public class NoekeonEngine
 
             // gamma(a);
             {
-                a1 ^= ~a3 & ~a2;
-                a0 ^= a2 & a1;
+                int t = a3;
+                a1 ^= a3 | a2;
+                a3 = a0 ^ (a2 & ~a1);
 
-                t = a3; a3 = a0; a0 = t;
-                a2 ^= a0 ^ a1 ^ a3;
+                a2 = t ^ ~a1 ^ a2 ^ a3;
 
-                a1 ^= ~a3 & ~a2;
-                a0 ^= a2 & a1;
+                a1 ^= a3 | a2;
+                a0 = t ^ (a2 & a1);
             }
 
             // pi2(a);
@@ -192,25 +199,26 @@ public class NoekeonEngine
 
         int k0 = k[0], k1 = k[1], k2 = k[2], k3 = k[3];
 
-        int round = SIZE, t;
+        int round = SIZE;
         for (;;)
         {
             // theta(a, k);
             {
-                t = a0 ^ a2;
-                t ^= Integers.rotateLeft(t, 8) ^ Integers.rotateLeft(t, 24);
-                a1 ^= t;
-                a3 ^= t;
+                int t02 = a0 ^ a2;
+                t02 ^= Integers.rotateLeft(t02, 8) ^ Integers.rotateLeft(t02, 24);
 
                 a0 ^= k0;
                 a1 ^= k1;
                 a2 ^= k2;
                 a3 ^= k3;
 
-                t = a1 ^ a3;
-                t ^= Integers.rotateLeft(t, 8) ^ Integers.rotateLeft(t, 24);
-                a0 ^= t;
-                a2 ^= t;
+                int t13 = a1 ^ a3;
+                t13 ^= Integers.rotateLeft(t13, 8) ^ Integers.rotateLeft(t13, 24);
+
+                a0 ^= t13;
+                a1 ^= t02;
+                a2 ^= t13;
+                a3 ^= t02;
             }
 
             a0 ^= roundConstants[round] & 0xFF;
@@ -229,14 +237,14 @@ public class NoekeonEngine
 
             // gamma(a);
             {
-                a1 ^= ~a3 & ~a2;
-                a0 ^= a2 & a1;
+                int t = a3;
+                a1 ^= a3 | a2;
+                a3 = a0 ^ (a2 & ~a1);
 
-                t = a3; a3 = a0; a0 = t;
-                a2 ^= a0 ^ a1 ^ a3;
+                a2 = t ^ ~a1 ^ a2 ^ a3;
 
-                a1 ^= ~a3 & ~a2;
-                a0 ^= a2 & a1;
+                a1 ^= a3 | a2;
+                a0 = t ^ (a2 & a1);
             }
 
             // pi2(a);
