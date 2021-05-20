@@ -109,6 +109,8 @@ public class RegressionTest
             new XSalsa20Test(),
             new ChaChaTest(),
             new ChaCha20Poly1305Test(),
+            new XChaCha20Test(),
+            new XChaCha20Poly1305Test(),
             new CMacTest(),
             new EAXTest(),
             new GCMTest(),

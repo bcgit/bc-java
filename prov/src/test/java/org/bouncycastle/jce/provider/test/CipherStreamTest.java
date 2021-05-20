@@ -74,6 +74,18 @@ public class CipherStreamTest
                                             + "00000000000000000000000000000000");
     private static final byte[] CHA7539OUT = Hex.decode("aef50e541e12a65dc21e90ebb4c03987971c540f78eb536df692ff89fc47561ed17eb23b63eb714c09d0c50af703e01485926c140e994b3edff9df635a91d268");
 
+    private static final byte[] XCHAK = Hex.decode("8000000000000000000000000000000080000000000000000000000000000000");
+    private static final byte[] XCHAIV = Hex.decode("000000000000000000000000000000000000000000000000");
+    private static final byte[] XCHAIN =  Hex.decode(
+                                              "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000");
+    private static final byte[] XCHAOUT = Hex.decode("6d45541f459a2a83ff273e3004084bdd"
+                                                        + "be6c843425cfd2abaf8ea5870f1d9114"
+                                                        + "76dd8b4f5e0735094cb28760e21de461"
+                                                        + "68fa9ac37bb00f327b288cd093cb7a44");
+
     private static final byte[] HCIN = new byte[64];
     private static final byte[] HCIV = new byte[32];
 
@@ -245,7 +257,7 @@ public class CipherStreamTest
         {
             isTrue(Arrays.areEqual(iv, in.getIV()));
             isTrue(Arrays.areEqual(iv, out.getIV()));
-       
+
             AlgorithmParameters algParams = in.getParameters();
 
             isTrue(Arrays.areEqual(iv, ((IvParameterSpec)algParams.getParameterSpec(IvParameterSpec.class)).getIV()));
@@ -253,7 +265,7 @@ public class CipherStreamTest
             algParams = out.getParameters();
             isTrue(Arrays.areEqual(iv, ((IvParameterSpec)algParams.getParameterSpec(IvParameterSpec.class)).getIV()));
         }
-        
+
         byte[] enc = in.doFinal(plainText);
         if (!areEqual(enc, cipherText))
         {
@@ -290,7 +302,7 @@ public class CipherStreamTest
                     (byte)137, (byte)138, (byte)140, (byte)143 };
 
             byte[] keyBytes;
-            if (name.equals("HC256") || name.equals("XSalsa20") || name.equals("ChaCha7539") || name.equals("ChaCha20"))
+            if (name.equals("HC256") || name.equals("XSalsa20") || name.equals("ChaCha7539") || name.equals("ChaCha20") || name.equals("XChaCha20"))
             {
                 keyBytes = key256;
             }
@@ -414,6 +426,9 @@ public class CipherStreamTest
         runTest("ChaCha20");
         testException("ChaCha20");
         testAlgorithm("ChaCha20", CHA7539K, CHA7539IV, CHA7539IN, CHA7539OUT);
+        runTest("XChaCha20");
+        testException("XChaCha20");
+        testAlgorithm("XChaCha20", XCHAK, XCHAIV, XCHAIN, XCHAOUT);
         runTest("HC128");
         testException("HC128");
         testAlgorithm("HC128", HCK128A, HCIV, HCIN, HC128A);

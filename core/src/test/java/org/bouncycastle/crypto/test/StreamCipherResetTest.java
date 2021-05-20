@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.engines.HC256Engine;
 import org.bouncycastle.crypto.engines.ISAACEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.Salsa20Engine;
+import org.bouncycastle.crypto.engines.XChaCha20Engine;
 import org.bouncycastle.crypto.engines.XSalsa20Engine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -42,6 +43,7 @@ public class StreamCipherResetTest
             random(24)));
         testReset(new ChaChaEngine(), new ChaChaEngine(), new ParametersWithIV(new KeyParameter(random(32)), random(8)));
         testReset(new ChaChaEngine(), new ChaChaEngine(), new ParametersWithIV(new KeyParameter(random(16)), random(8)));
+        testReset(new XChaCha20Engine(), new XChaCha20Engine(), new ParametersWithIV(new KeyParameter(random(32)), random(24)));
         testReset(new RC4Engine(), new RC4Engine(), new KeyParameter(random(16)));
         testReset(new ISAACEngine(), new ISAACEngine(), new KeyParameter(random(16)));
         testReset(new HC128Engine(), new HC128Engine(), new ParametersWithIV(new KeyParameter(random(16)), random(16)));

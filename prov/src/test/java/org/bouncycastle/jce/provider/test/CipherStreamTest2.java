@@ -520,6 +520,7 @@ public class CipherStreamTest2
             "XSalsa20",
             "ChaCha",
             "ChaCha7539",
+            "XChaCha20",
             "Grainv1",
             "Grain128",
             "HC128",

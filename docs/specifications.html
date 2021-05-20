@@ -178,6 +178,7 @@ and has the following implemenations.
 <tr><td><b>KCCMBlockCipher</b></td><td>BlockCipher</td><td>DSTU 7624 Packet mode - requires all data up front.</td></tr>
 <tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>ChaCha20Poly1305</b></td><td>AEADCipher</td><td>&nbsp;</td></tr>
+<tr><td><b>XChaCha20Poly1305</b></td><td>AEADCipher</td><td>&nbsp;</td></tr>
 </table>
 </p>
 
@@ -264,6 +265,7 @@ used with the above modes.
 <tr><td><b>HC128Engine</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>HC256Engine</b></td><td>256</td><td>&nbsp;</td></tr>
 <tr><td><b>ChaChaEngine</b></td><td>128/256</td><td>64 bit IV</td></tr>
+<tr><td><b>XChaCha20Engine</b></td><td>256</td><td>192 bit IV</td></tr>
 <tr><td><b>Salsa20Engine</b></td><td>128/256</td><td>64 bit IV</td></tr>
 <tr><td><b>XSalsa20Engine</b></td><td>256</td><td>192 bit IV</td></tr>
 <tr><td><b>ISAACEngine</b></td><td>32 .. 8192</td><td>&nbsp;</td></tr>
@@ -663,8 +665,9 @@ Note: default key sizes are in bold.
 <tr><td>HC128</td><td>(128)</td><td>&nbsp;</td></tr>
 <tr><td>HC256</td><td>(256)</td><td>&nbsp;</td></tr>
 <tr><td>ChaCha</td><td><b>128</b>/256</td><td>64 bit IV</td></tr>
+<tr><td>XChaCha20</td><td>256</td><td>192 bit IV</td></tr>
 <tr><td>Salsa20</td><td><b>128</b>/256</td><td>64 bit IV</td></tr>
-<tr><td>XSalsa20</td><td>256</td><td>182 bit IV</td></tr>
+<tr><td>XSalsa20</td><td>256</td><td>192 bit IV</td></tr>
 <tr><td>VMPC</td><td>128/6144<b>(128)</b></td><td>&nbsp;</td></tr>
 <tr><td>Grainv1</b></td><td>80</td><td>64 bit IV</td></tr>
 <tr><td>Grain128</b></td><td>128</td><td>96 bit IV</td></tr>

@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.engines.XChaCha20Engine;
-import org.bouncycastle.crypto.engines.XSalsa20Engine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
