@@ -16,7 +16,7 @@ import org.bouncycastle.util.Pack;
 public class ChaCha20Poly1305
     implements AEADCipher
 {
-    private static final class State
+    protected static final class State
     {
         static final int UNINITIALIZED  = 0;
         static final int ENC_INIT       = 1;
@@ -41,7 +41,7 @@ public class ChaCha20Poly1305
     private final ChaCha7539Engine chacha20;
     private final Mac poly1305;
 
-    private final byte[] key = new byte[KEY_SIZE];
+    protected final byte[] key = new byte[KEY_SIZE];
     private final byte[] nonce = new byte[NONCE_SIZE];
     private final byte[] buf = new byte[BUF_SIZE + MAC_SIZE];
     private final byte[] mac = new byte[MAC_SIZE];
@@ -50,7 +50,7 @@ public class ChaCha20Poly1305
 
     private long aadCount;
     private long dataCount;
-    private int state = State.UNINITIALIZED;
+    protected int state = State.UNINITIALIZED;
     private int bufPos;
 
     public ChaCha20Poly1305()
