@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -20,6 +19,7 @@ import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -27,7 +27,7 @@ public class RewindStreamWhenDecryptingMultiSKESKMessageTest
     extends SimpleTest
 {
 
-    private static final byte[] message = "Hello World!\n".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] message = Strings.toByteArray("Hello World!\n");
 
     // pgpMessage was symmetrically encrypted using "password1" and "password2".
     // As the "password2" SKESK comes after "password1", but decryption of the
@@ -51,7 +51,7 @@ public class RewindStreamWhenDecryptingMultiSKESKMessageTest
             "=9QAC\n" +
             "-----END PGP MESSAGE-----\n";
 
-        byte[] decrypted = decrypt(pgpMessage.getBytes(StandardCharsets.UTF_8), "password2");
+        byte[] decrypted = decrypt(Strings.toByteArray(pgpMessage), "password2");
         if (!Arrays.equals(message, decrypted))
         {
             throw new Exception("Decryption unsuccessful.");
@@ -70,7 +70,7 @@ public class RewindStreamWhenDecryptingMultiSKESKMessageTest
             Iterator<PGPEncryptedData> iterator = dataList.iterator();
             while (iterator.hasNext())
             {
-                PGPEncryptedData data = iterator.next();
+                PGPEncryptedData data = (PGPEncryptedData)iterator.next();
                 if (data instanceof PGPPBEEncryptedData)
                 {
                     PGPPBEEncryptedData pbeData = (PGPPBEEncryptedData)data;

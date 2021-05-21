@@ -5,13 +5,13 @@ import java.io.OutputStream;
 
 import javax.crypto.Cipher;
 
-public class JceAADStream
+class JceAADStream
     extends OutputStream
 {
      private static final byte[] SINGLE_BYTE = new byte[1];
      private Cipher cipher;
 
-     public JceAADStream(Cipher cipher)
+     JceAADStream(Cipher cipher)
      {
          this.cipher = cipher;
      }

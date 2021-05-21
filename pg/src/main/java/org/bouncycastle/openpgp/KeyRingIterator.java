@@ -25,4 +25,9 @@ class KeyRingIterator
     {
         return rings.get(iterator.next());
     }
+    
+    public void remove()
+    {
+        throw new UnsupportedOperationException("remove not available");
+    }
 }

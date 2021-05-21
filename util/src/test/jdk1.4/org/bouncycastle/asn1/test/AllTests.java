@@ -31,9 +31,9 @@ public class AllTests
     public static Test suite()
     {
         TestSuite suite = new TestSuite("ASN.1 Tests");
-        
-        suite.addTestSuite(AllTests.class);
-        suite.addTestSuite(ASN1SequenceParserTest.class);
+
+        suite.addTestSuite(OctetStringTest.class);
+        suite.addTestSuite(ParseTest.class);
         
         return suite;
     }
