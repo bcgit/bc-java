@@ -45,7 +45,7 @@ class ProvTrustManagerFactorySpi
         String tsPath = null;
         char[] tsPassword = null;
 
-        String tsPathProp = PropertyUtils.getSystemProperty("javax.net.ssl.trustStore");
+        String tsPathProp = PropertyUtils.getStringSystemProperty("javax.net.ssl.trustStore");
         if ("NONE".equals(tsPathProp))
         {
             // Do not try to load any file
@@ -59,7 +59,7 @@ class ProvTrustManagerFactorySpi
         }
         else
         {
-            String javaHome = PropertyUtils.getSystemProperty("java.home");
+            String javaHome = PropertyUtils.getStringSystemProperty("java.home");
             if (null != javaHome)
             {
                 String jsseCacertsPath = javaHome + "/lib/security/jssecacerts".replace("/", File.separator);
@@ -88,7 +88,7 @@ class ProvTrustManagerFactorySpi
 
         KeyStore ks = createTrustStore(defaultType);
 
-        String tsPasswordProp = PropertyUtils.getSystemProperty("javax.net.ssl.trustStorePassword");
+        String tsPasswordProp = PropertyUtils.getStringSystemProperty("javax.net.ssl.trustStorePassword");
         if (null != tsPasswordProp)
         {
             tsPassword = tsPasswordProp.toCharArray();
@@ -231,7 +231,7 @@ class ProvTrustManagerFactorySpi
         throws NoSuchProviderException, KeyStoreException
     {
         String tsType = getTrustStoreType(defaultType);
-        String tsProv = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreProvider");
+        String tsProv = PropertyUtils.getStringSystemProperty("javax.net.ssl.trustStoreProvider");
         return TlsUtils.isNullOrEmpty(tsProv)
             ?   KeyStore.getInstance(tsType)
             :   KeyStore.getInstance(tsType, tsProv);
@@ -267,7 +267,7 @@ class ProvTrustManagerFactorySpi
 
     private static String getTrustStoreType(String defaultType)
     {
-        String tsType = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreType");
+        String tsType = PropertyUtils.getStringSystemProperty("javax.net.ssl.trustStoreType");
         return (null == tsType) ? defaultType : tsType;
     }
 }
