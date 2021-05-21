@@ -958,6 +958,7 @@
                 <fileset dir="${artifacts.jars.dir}">
                     <include name="**/*.jar" />
                     <exclude name="**/bcprov-jdk*.jar" />
+                    <exclude name="**/bcjmail-jdk*.jar" />
                 </fileset>
             </classpath>
             <sysproperty key="bc.test.data.home" value="../../core/src/test/data" />
