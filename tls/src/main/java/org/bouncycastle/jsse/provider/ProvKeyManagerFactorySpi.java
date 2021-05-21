@@ -34,7 +34,7 @@ class ProvKeyManagerFactorySpi
         String ksPath = null;
         char[] ksPassword = null;
 
-        String ksPathProp = PropertyUtils.getSystemProperty("javax.net.ssl.keyStore");
+        String ksPathProp = PropertyUtils.getStringSystemProperty("javax.net.ssl.keyStore");
         if ("NONE".equals(ksPathProp))
         {
             // Do not try to load any file
@@ -49,7 +49,7 @@ class ProvKeyManagerFactorySpi
 
         KeyStore ks = createKeyStore(defaultType);
 
-        String ksPasswordProp = PropertyUtils.getSystemProperty("javax.net.ssl.keyStorePassword");
+        String ksPasswordProp = PropertyUtils.getStringSystemProperty("javax.net.ssl.keyStorePassword");
         if (null != ksPasswordProp)
         {
             ksPassword = ksPasswordProp.toCharArray();
@@ -139,7 +139,7 @@ class ProvKeyManagerFactorySpi
         throws NoSuchProviderException, KeyStoreException
     {
         String ksType = getKeyStoreType(defaultType);
-        String ksProv = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreProvider");
+        String ksProv = PropertyUtils.getStringSystemProperty("javax.net.ssl.keyStoreProvider");
         return TlsUtils.isNullOrEmpty(ksProv)
             ?   KeyStore.getInstance(ksType)
             :   KeyStore.getInstance(ksType, ksProv);
@@ -147,7 +147,7 @@ class ProvKeyManagerFactorySpi
 
     private static String getKeyStoreType(String defaultType)
     {
-        String ksType = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreType");
+        String ksType = PropertyUtils.getStringSystemProperty("javax.net.ssl.keyStoreType");
         return (null == ksType) ? defaultType : ksType;
     }
 }
