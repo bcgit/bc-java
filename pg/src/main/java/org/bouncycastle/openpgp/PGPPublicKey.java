@@ -35,14 +35,14 @@ public class PGPPublicKey
 {
     private static final int[] MASTER_KEY_CERTIFICATION_TYPES = new int[] { PGPSignature.POSITIVE_CERTIFICATION, PGPSignature.CASUAL_CERTIFICATION, PGPSignature.NO_CERTIFICATION, PGPSignature.DEFAULT_CERTIFICATION, PGPSignature.DIRECT_KEY };
     
-    PublicKeyPacket publicPk;
-    TrustPacket     trustPk;
-    List            keySigs = new ArrayList();
-    List            ids = new ArrayList();
-    List            idTrusts = new ArrayList();
-    List            idSigs = new ArrayList();
+    PublicKeyPacket     publicPk;
+    TrustPacket         trustPk;
+    List<PGPSignature>  keySigs = new ArrayList();
+    List                ids = new ArrayList();
+    List<TrustPacket>   idTrusts = new ArrayList();
+    List<List<PGPSignature>>    idSigs = new ArrayList();
     
-    List            subSigs = null;
+    List<PGPSignature>            subSigs = null;
 
     private long    keyID;
     private byte[]  fingerprint;
@@ -549,14 +549,14 @@ public class PGPPublicKey
      * @param userAttributes the vector of user attributes to be matched.
      * @return an iterator of PGPSignature objects.
      */
-    public Iterator getSignaturesForUserAttribute(
+    public Iterator<PGPSignature> getSignaturesForUserAttribute(
         PGPUserAttributeSubpacketVector    userAttributes)
     {
         for (int i = 0; i != ids.size(); i++)
         {
             if (userAttributes.equals(ids.get(i)))
             {
-                return ((ArrayList)idSigs.get(i)).iterator();
+                return ((ArrayList<PGPSignature>)idSigs.get(i)).iterator();
             }
         }
         
@@ -569,11 +569,11 @@ public class PGPPublicKey
      * @param signatureType the type of the signature to be returned.
      * @return an iterator (possibly empty) of signatures of the given type.
      */
-    public Iterator getSignaturesOfType(
+    public Iterator<PGPSignature> getSignaturesOfType(
         int signatureType)
     {
-        List        l = new ArrayList();
-        Iterator    it = this.getSignatures();
+        List<PGPSignature>        l = new ArrayList<PGPSignature>();
+        Iterator<PGPSignature>    it = this.getSignatures();
         
         while (it.hasNext())
         {
@@ -593,7 +593,7 @@ public class PGPPublicKey
      * 
      * @return an iterator (possibly empty) with all signatures/certifications.
      */
-    public Iterator getSignatures()
+    public Iterator<PGPSignature> getSignatures()
     {
         if (subSigs == null)
         {
@@ -619,11 +619,11 @@ public class PGPPublicKey
      *
      * @return an iterator (possibly empty) with all signatures/certifications.
      */
-    public Iterator getKeySignatures()
+    public Iterator<PGPSignature> getKeySignatures()
     {
         if (subSigs == null)
         {
-            List sigs = new ArrayList();
+            List<PGPSignature> sigs = new ArrayList<PGPSignature>();
             sigs.addAll(keySigs);
             
             return sigs.iterator();

@@ -327,7 +327,7 @@ public class SP80038GTest
 
         fpeEngine.init(true, new FPEParameters(new KeyParameter(key), radix, tweak));
 
-        Long valueToEncrypt = 0x31009155FFL;
+        long valueToEncrypt = 0x31009155FFL;
 
         byte[] bytes = Pack.longToBigEndian(valueToEncrypt);
         byte[] enc = new byte[bytes.length];

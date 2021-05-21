@@ -24,11 +24,13 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
-import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
@@ -109,6 +111,19 @@ public class JcaTlsCertificate
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
     {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        case SignatureAlgorithm.ed25519:
+        case SignatureAlgorithm.ed448:
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return createVerifier(SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm));
+        }
+
         validateKeyUsageBit(KU_DIGITAL_SIGNATURE);
 
         switch (signatureAlgorithm)
@@ -123,23 +138,60 @@ public class JcaTlsCertificate
         case SignatureAlgorithm.ecdsa:
             return new JcaTlsECDSAVerifier(crypto, getPubKeyEC());
 
-        case SignatureAlgorithm.ed25519:
+        default:
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
+    public TlsVerifier createVerifier(int signatureScheme) throws IOException
+    {
+        validateKeyUsageBit(KU_DIGITAL_SIGNATURE);
+
+        switch (signatureScheme)
+        {
+        // TODO[RFC 8734] The verifier won't match the signatureAlgorithm for brainpool schemes
+        case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512:
+        case SignatureScheme.ecdsa_secp256r1_sha256:
+        case SignatureScheme.ecdsa_secp384r1_sha384:
+        case SignatureScheme.ecdsa_secp521r1_sha512:
+        case SignatureScheme.ecdsa_sha1:
+            return new JcaTlsECDSAVerifier(crypto, getPubKeyEC());
+
+        case SignatureScheme.ed25519:
             return new JcaTlsEd25519Verifier(crypto, getPubKeyEd25519());
 
-        case SignatureAlgorithm.ed448:
+        case SignatureScheme.ed448:
             return new JcaTlsEd448Verifier(crypto, getPubKeyEd448());
 
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            validateRSA_PSS_RSAE();
-            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
+        case SignatureScheme.rsa_pkcs1_sha1:
+        case SignatureScheme.rsa_pkcs1_sha256:
+        case SignatureScheme.rsa_pkcs1_sha384:
+        case SignatureScheme.rsa_pkcs1_sha512:
+        {
+            validateRSA_PKCS1();
+            return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
+        }
 
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            validateRSA_PSS_PSS(signatureAlgorithm);
-            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
+        case SignatureScheme.rsa_pss_pss_sha256:
+        case SignatureScheme.rsa_pss_pss_sha384:
+        case SignatureScheme.rsa_pss_pss_sha512:
+        {
+            validateRSA_PSS_PSS(SignatureScheme.getSignatureAlgorithm(signatureScheme));
+            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
+
+        case SignatureScheme.rsa_pss_rsae_sha256:
+        case SignatureScheme.rsa_pss_rsae_sha384:
+        case SignatureScheme.rsa_pss_rsae_sha512:
+        {
+            validateRSA_PSS_RSAE();
+            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
+
+        // TODO[RFC 8998]
+//        case SignatureScheme.sm2sig_sm3:
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
@@ -304,20 +356,18 @@ public class JcaTlsCertificate
         return implSupportsSignatureAlgorithm(signatureAlgorithm);
     }
 
-    public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
+    public TlsCertificate checkUsageInRole(int connectionEnd, int tlsCertificateRole) throws IOException
     {
-        switch (keyExchangeAlgorithm)
+        switch (tlsCertificateRole)
         {
-        case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_RSA:
+        case TlsCertificateRole.DH:
         {
             validateKeyUsageBit(KU_KEY_AGREEMENT);
             this.pubKeyDH = getPubKeyDH();
             return this;
         }
 
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-        case KeyExchangeAlgorithm.ECDH_RSA:
+        case TlsCertificateRole.ECDH:
         {
             validateKeyUsageBit(KU_KEY_AGREEMENT);
             this.pubKeyEC = getPubKeyEC();
@@ -327,13 +377,18 @@ public class JcaTlsCertificate
 
         if (connectionEnd == ConnectionEnd.server)
         {
-            switch (keyExchangeAlgorithm)
+            switch (tlsCertificateRole)
             {
-            case KeyExchangeAlgorithm.RSA:
-            case KeyExchangeAlgorithm.RSA_PSK:
+            case TlsCertificateRole.RSA_ENCRYPTION:
             {
                 validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
                 this.pubKeyRSA = getPubKeyRSA();
+                return this;
+            }
+            case TlsCertificateRole.SM2_ENCRYPTION:
+            {
+                validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
+                this.pubKeyEC = getPubKeyEC();
                 return this;
             }
             }
@@ -356,6 +411,9 @@ public class JcaTlsCertificate
             return publicKey instanceof DSAPublicKey;
 
         case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return publicKey instanceof ECPublicKey;
 
         case SignatureAlgorithm.ed25519:
