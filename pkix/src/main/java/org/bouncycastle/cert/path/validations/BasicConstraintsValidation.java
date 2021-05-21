@@ -9,6 +9,7 @@ import org.bouncycastle.cert.path.CertPathValidation;
 import org.bouncycastle.cert.path.CertPathValidationContext;
 import org.bouncycastle.cert.path.CertPathValidationException;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Memoable;
 
 
@@ -30,7 +31,6 @@ public class BasicConstraintsValidation
         this.isMandatory = isMandatory;
     }
 
-    @Override
     public void validate(CertPathValidationContext context, X509CertificateHolder certificate)
         throws CertPathValidationException
     {
@@ -53,11 +53,11 @@ public class BasicConstraintsValidation
         // NOTE: self-issued != self-signed. We only need to compare subject DN and issuer DN here.
         if (maxPathLength != null && !certificate.getSubject().equals(certificate.getIssuer()))
         {
-            if (maxPathLength < 0)
+            if (maxPathLength.intValue() < 0)
             {
                 throw new CertPathValidationException("Basic constraints violated: path length exceeded");
             }
-            maxPathLength--;
+            maxPathLength = Integers.valueOf(maxPathLength.intValue() - 1);
         }
 
         // § 6.1.4 (m)
@@ -69,13 +69,12 @@ public class BasicConstraintsValidation
             {
                 // use intValueExact to prevent issues with weird certificates that include ridiculous path lengths
                 int newPathLength = BigIntegers.intValueExact(bigPathLen);
-                maxPathLength = maxPathLength == null ? newPathLength : Math.min(newPathLength, maxPathLength);
+                maxPathLength = maxPathLength == null ? Integers.valueOf(newPathLength) : Integers.valueOf(Math.min(newPathLength, maxPathLength.intValue()));
             }
         }
 
     }
 
-    @Override
     public Memoable copy()
     {
         BasicConstraintsValidation result = new BasicConstraintsValidation();
@@ -85,7 +84,6 @@ public class BasicConstraintsValidation
         return result;
     }
 
-    @Override
     public void reset(Memoable other)
     {
         BasicConstraintsValidation otherBCV = (BasicConstraintsValidation)other;
