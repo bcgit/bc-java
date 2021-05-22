@@ -33,4 +33,5 @@ public interface BERTags
     public static final int CONSTRUCTED         = 0x20; // decimal 32
     public static final int APPLICATION         = 0x40; // decimal 64
     public static final int TAGGED              = 0x80; // decimal 128
+    public static final int PRIVATE             = 0xC0; // decimal 192
 }
