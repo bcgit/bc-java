@@ -52,7 +52,8 @@ public class RegressionTest
         new LocaleTest(),
         new LinkedCertificateTest(),
         new DLExternalTest(),
-        new KMACParamsTest()
+        new KMACParamsTest(),
+        new DERPrivateTest()
     };
 
     public static void main(String[] args)
