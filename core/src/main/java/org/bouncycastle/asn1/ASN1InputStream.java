@@ -141,7 +141,7 @@ public class ASN1InputStream
 
         DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, limit);
 
-        if ((tag & PRIVATE) != 0)
+        if ((tag & PRIVATE) == PRIVATE)
         {
             return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
         }
