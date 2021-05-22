@@ -141,6 +141,11 @@ public class ASN1InputStream
 
         DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, limit);
 
+        if ((tag & PRIVATE) != 0)
+        {
+            return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
+        }
+
         if ((tag & APPLICATION) != 0)
         {
             return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
@@ -259,6 +264,11 @@ public class ASN1InputStream
             if ((tag & TAGGED) != 0)
             {
                 return new BERTaggedObjectParser(true, tagNo, sp).getLoadedObject();
+            }
+
+            if ((tag & PRIVATE) != 0)
+            {
+                return new BERPrivateParser(tagNo, sp).getLoadedObject();
             }
 
             // TODO There are other tags that may be constructed (e.g. BIT_STRING)
