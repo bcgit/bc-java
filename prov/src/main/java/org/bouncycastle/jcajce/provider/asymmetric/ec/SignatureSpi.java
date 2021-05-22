@@ -360,4 +360,40 @@ public class SignatureSpi
             super(new RIPEMD160Digest(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
         }
     }
+
+    static public class ecCVCDSA3_224
+        extends SignatureSpi
+    {
+        public ecCVCDSA3_224()
+        {
+            super(DigestFactory.createSHA3_224(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecCVCDSA3_256
+        extends SignatureSpi
+    {
+        public ecCVCDSA3_256()
+        {
+            super(DigestFactory.createSHA3_256(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecCVCDSA3_384
+        extends SignatureSpi
+    {
+        public ecCVCDSA3_384()
+        {
+            super(DigestFactory.createSHA3_384(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
+        }
+    }
+
+    static public class ecCVCDSA3_512
+        extends SignatureSpi
+    {
+        public ecCVCDSA3_512()
+        {
+            super(DigestFactory.createSHA3_512(), new ECDSASigner(), PlainDSAEncoding.INSTANCE);
+        }
+    }
 }

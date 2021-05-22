@@ -264,6 +264,10 @@ public class EC
             addSignatureAlgorithm(provider, "SHA384", "PLAIN-ECDSA", PREFIX + "SignatureSpi$ecCVCDSA384", BSIObjectIdentifiers.ecdsa_plain_SHA384);
             addSignatureAlgorithm(provider, "SHA512", "PLAIN-ECDSA", PREFIX + "SignatureSpi$ecCVCDSA512", BSIObjectIdentifiers.ecdsa_plain_SHA512);
             addSignatureAlgorithm(provider, "RIPEMD160", "PLAIN-ECDSA", PREFIX + "SignatureSpi$ecPlainDSARP160", BSIObjectIdentifiers.ecdsa_plain_RIPEMD160);
+            addSignatureAlgorithm(provider, "SHA3-224", "PLAIN-ECDSA", PREFIX + "SignatureSpi$ecCVCDSA3_224", BSIObjectIdentifiers.ecdsa_plain_SHA3_224);
+            addSignatureAlgorithm(provider, "SHA3-256", "PLAIN-ECDSA", PREFIX + "SignatureSpi$ecCVCDSA3_256", BSIObjectIdentifiers.ecdsa_plain_SHA3_256);
+            addSignatureAlgorithm(provider, "SHA3-384", "PLAIN-ECDSA", PREFIX + "SignatureSpi$ecCVCDSA3_384", BSIObjectIdentifiers.ecdsa_plain_SHA3_384);
+            addSignatureAlgorithm(provider, "SHA3-512", "PLAIN-ECDSA", PREFIX + "SignatureSpi$ecCVCDSA3_512", BSIObjectIdentifiers.ecdsa_plain_SHA3_512);
         }
     }
 }
