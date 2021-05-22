@@ -74,7 +74,7 @@ public class PGPPublicKeyRing
      * @param pubKeys the list of keys making up the ring.
      */
     public PGPPublicKeyRing(
-        List pubKeys)
+        List<PGPPublicKey> pubKeys)
     {
         this.keys = checkKeys(pubKeys);
     }
