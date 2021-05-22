@@ -155,6 +155,11 @@ public class ASN1StreamParser
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
             ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit);
 
+            if ((tag & BERTags.PRIVATE) != 0)
+            {
+                return new BERPrivateParser(tagNo, sp);
+            }
+
             if ((tag & BERTags.APPLICATION) != 0)
             {
                 return new BERApplicationSpecificParser(tagNo, sp);
@@ -170,6 +175,11 @@ public class ASN1StreamParser
         else
         {
             DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length, _limit);
+
+            if ((tag & BERTags.PRIVATE) != 0)
+            {
+                return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
+            }
 
             if ((tag & BERTags.APPLICATION) != 0)
             {
