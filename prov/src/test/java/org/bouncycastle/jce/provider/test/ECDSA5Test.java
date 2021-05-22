@@ -386,12 +386,18 @@ public class ECDSA5Test
 
         testBsiAlgorithms(kp, data, cvcAlgs, cvcOids);
 
-        String[] plainAlgs = {"SHA1WITHPLAIN-ECDSA", "SHA224WITHPLAIN-ECDSA",
+        String[] plainAlgs = {
+            "SHA1WITHPLAIN-ECDSA", "SHA224WITHPLAIN-ECDSA",
             "SHA256WITHPLAIN-ECDSA", "SHA384WITHPLAIN-ECDSA",
-            "SHA512WITHPLAIN-ECDSA", "RIPEMD160WITHPLAIN-ECDSA"};
-        String[] plainOids = {BSIObjectIdentifiers.ecdsa_plain_SHA1.getId(), BSIObjectIdentifiers.ecdsa_plain_SHA224.getId(),
+            "SHA512WITHPLAIN-ECDSA", "RIPEMD160WITHPLAIN-ECDSA",
+            "SHA3-224WITHPLAIN-ECDSA", "SHA3-256WITHPLAIN-ECDSA",
+            "SHA3-384WITHPLAIN-ECDSA", "SHA3-512WITHPLAIN-ECDSA"};
+        String[] plainOids = {
+            BSIObjectIdentifiers.ecdsa_plain_SHA1.getId(), BSIObjectIdentifiers.ecdsa_plain_SHA224.getId(),
             BSIObjectIdentifiers.ecdsa_plain_SHA256.getId(), BSIObjectIdentifiers.ecdsa_plain_SHA384.getId(),
-            BSIObjectIdentifiers.ecdsa_plain_SHA512.getId(), BSIObjectIdentifiers.ecdsa_plain_RIPEMD160.getId()};
+            BSIObjectIdentifiers.ecdsa_plain_SHA512.getId(), BSIObjectIdentifiers.ecdsa_plain_RIPEMD160.getId(),
+            BSIObjectIdentifiers.ecdsa_plain_SHA3_224.getId(), BSIObjectIdentifiers.ecdsa_plain_SHA3_256.getId(),
+            BSIObjectIdentifiers.ecdsa_plain_SHA3_384.getId(), BSIObjectIdentifiers.ecdsa_plain_SHA3_512.getId()};
 
         testBsiAlgorithms(kp, data, plainAlgs, plainOids);
 
