@@ -256,6 +256,11 @@ public class ASN1InputStream
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
             ASN1StreamParser sp = new ASN1StreamParser(indIn, limit);
 
+            if ((tag & PRIVATE) == PRIVATE)
+            {
+                return new BERPrivateParser(tagNo, sp).getLoadedObject();
+            }
+
             if ((tag & APPLICATION) != 0)
             {
                 return new BERApplicationSpecificParser(tagNo, sp).getLoadedObject();
@@ -264,11 +269,6 @@ public class ASN1InputStream
             if ((tag & TAGGED) != 0)
             {
                 return new BERTaggedObjectParser(true, tagNo, sp).getLoadedObject();
-            }
-
-            if ((tag & PRIVATE) != 0)
-            {
-                return new BERPrivateParser(tagNo, sp).getLoadedObject();
             }
 
             // TODO There are other tags that may be constructed (e.g. BIT_STRING)
