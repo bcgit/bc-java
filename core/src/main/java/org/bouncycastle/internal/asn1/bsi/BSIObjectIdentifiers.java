@@ -33,6 +33,18 @@ public interface BSIObjectIdentifiers
     /* 0.4.0.127.0.7.1.1.4.1.6 */
     static final ASN1ObjectIdentifier ecdsa_plain_RIPEMD160 = ecdsa_plain_signatures.branch("6");
 
+	/* 0.4.0.127.0.7.1.1.4.1.8 */
+	static final ASN1ObjectIdentifier ecdsa_plain_SHA3_224 = ecdsa_plain_signatures.branch("8");
+
+	/* 0.4.0.127.0.7.1.1.4.1.9 */
+	static final ASN1ObjectIdentifier ecdsa_plain_SHA3_256 = ecdsa_plain_signatures.branch("9");
+
+	/* 0.4.0.127.0.7.1.1.4.1.10 */
+	static final ASN1ObjectIdentifier ecdsa_plain_SHA3_384 = ecdsa_plain_signatures.branch("10");
+
+	/* 0.4.0.127.0.7.1.1.4.1.11 */
+	static final ASN1ObjectIdentifier ecdsa_plain_SHA3_512 = ecdsa_plain_signatures.branch("11");
+
 	/** 0.4.0.127.0.7.1 */
 	static final ASN1ObjectIdentifier algorithm = bsi_de.branch("1");
 
