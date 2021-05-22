@@ -27,10 +27,13 @@
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
             </fileset>
+            <fileset dir="util/src/main/java">
+            </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/**/*.java"/>
             </fileset>
             <fileset dir="pkix/src/main/java">
+                <exclude name="**/JceAADStream.java"/>
                 <exclude name="**/JceKeyTransAuthEnvelopedRecipient.java"/>
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/jcajce/*.java"/>
@@ -42,6 +45,7 @@
                 <exclude name="**/ValidateSignedMail.java"/>
             </fileset>
             <fileset dir="prov/src/main/java">
+		<exclude name="**/ParameterUtil.java"/>
                 <exclude name="**/DSTU4145ParameterSpec.java"/>
                 <exclude name="**/BCLoadStoreParameter.java"/>
                 <exclude name="**/BCFKSLoadStoreParameter.java"/>
@@ -217,6 +221,7 @@
     </target>
 
     <target name="build" depends="init">
+  	<ant antfile="ant/bc+-build.xml" dir="." target="build-util" />
   	<ant antfile="ant/bc+-build.xml" dir="." target="build-tls" />
         <ant antfile="ant/bc+-build.xml" dir="."/>
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw"/>
