@@ -13,4 +13,6 @@ sh add_module.sh pkix
 
 sh add_module.sh mail
 
+sh add_module.sh jmail
+
 sh add_module.sh pg
