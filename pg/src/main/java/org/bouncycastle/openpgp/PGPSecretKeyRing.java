@@ -69,7 +69,7 @@ public class PGPSecretKeyRing
      *
      * @param secKeys the list of keys making up the ring.
      */
-    public PGPSecretKeyRing(List secKeys)
+    public PGPSecretKeyRing(List<PGPSecretKey> secKeys)
     {
         this(checkKeys(secKeys), new ArrayList());
     }
