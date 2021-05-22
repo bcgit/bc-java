@@ -7,7 +7,7 @@ export PATH=$JAVA_HOME/bin:$PATH
 
 if [ $# -ne 1 ]
 then
-   echo "usage: add_module.sh prov|prov-ext|util|tls|pg|pkix|mail"
+   echo "usage: add_module.sh prov|prov-ext|util|tls|pg|pkix|mail|jmail"
    exit 0
 fi 
 
@@ -42,6 +42,10 @@ rm -rf module.tmp
     elif [ $1 = "mail" ]
     then
 	javac  -target 1.9 --module-path ${provJar}:$utilJar:$pkixJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
+    elif [ $1 = "jmail" ]
+    then
+        jmailSrc=`echo build/artifacts/jdk1.5/bcjmail-jdk15on-*/src/`
+	javac  -target 1.9 --module-path ${provJar}:$utilJar:$pkixJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$jmailSrc
     elif [ $1 = "pkix" ]
     then
 	javac  -target 1.9 --module-path ${provJar}:$utilJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
