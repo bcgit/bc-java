@@ -39,6 +39,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRing;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRingCollection;
@@ -3311,8 +3312,10 @@ public class PGPKeyRingTest
         generator = KeyPairGenerator.getInstance("ECDH", BouncyCastleProvider.PROVIDER_NAME);
         generator.initialize(new ECNamedCurveGenParameterSpec("P-256"));
 
-        pair = generator.generateKeyPair();
-        PGPKeyPair pgpSubKey = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDH, pair, new Date());
+        KeyPair encPair = generator.generateKeyPair();
+        PGPKeyPair encSubKey = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDH, encPair, new Date());
+        KeyPair sigPair = generator.generateKeyPair();
+        PGPKeyPair sigSubKey = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDSA, sigPair, new Date());
 
         // Assemble key
 
@@ -3333,7 +3336,12 @@ public class PGPKeyRingTest
 
         subPackets.setKeyFlags(false, KeyFlags.ENCRYPT_STORAGE & KeyFlags.ENCRYPT_COMMS);
 
-        pgpGenerator.addSubKey(pgpSubKey, subPackets.generate(), null);
+        pgpGenerator.addSubKey(encSubKey, subPackets.generate(), null);
+
+        pgpGenerator.addSubKey(sigSubKey, subPackets.generate(), null,
+            new JcaPGPContentSignerBuilder(
+                sigSubKey.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256)
+                    .setProvider("BC"));
 
         // Generate SecretKeyRing
 
@@ -3346,13 +3354,33 @@ public class PGPKeyRingTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream(2048);
         Iterator<PGPPublicKey> iterator = secretKeys.getPublicKeys();
         int count = 0;
+        boolean embeddedFound = false;
         while (iterator.hasNext())
         {
-            bOut.write(((PGPPublicKey)iterator.next()).getEncoded());
+            PGPPublicKey key = iterator.next();
+
+            if (!key.isMasterKey() && !key.isEncryptionKey())
+            {
+                PGPSignature pgpSig = (PGPSignature)key.getSignaturesForKeyID(pgpMasterKey.getKeyID()).next();
+
+                isTrue(pgpSig.hasSubpackets());
+
+                PGPSignatureSubpacketVector subP = pgpSig.getHashedSubPackets();
+                PGPSignature subSig = (PGPSignature)subP.getEmbeddedSignatures().get(0);
+
+                isTrue(subSig.getSignatureType() == PGPSignature.PRIMARYKEY_BINDING);
+
+                subSig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), key);
+
+                isTrue(subSig.verifyCertification(pgpMasterKey.getPublicKey(), key));
+                embeddedFound = true;
+            }
+            bOut.write(key.getEncoded());
             count++;
         }
 
-        isTrue(count == 2);
+        isTrue(count == 3);
+        isTrue(embeddedFound);
 
         checkPublicKeyRing(secretKeys, bOut.toByteArray());
 
@@ -3366,7 +3394,7 @@ public class PGPKeyRingTest
         subPackets.setKeyFlags(false, KeyFlags.ENCRYPT_STORAGE & KeyFlags.ENCRYPT_COMMS);
 
         pair = generator.generateKeyPair();
-        pgpSubKey = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDH, pair, new Date());
+        PGPKeyPair pgpSubKey = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDH, pair, new Date());
 
         pgpGenerator.addSubKey(pgpSubKey, subPackets.generate(), null);
 
@@ -3381,7 +3409,7 @@ public class PGPKeyRingTest
             it.next();
             count++;
         }
-        isTrue(count == 3);
+        isTrue(count == 4);
 
         checkPublicKeyRing(secretKeys, publicKeys.getEncoded());
         // Extract the public keys
