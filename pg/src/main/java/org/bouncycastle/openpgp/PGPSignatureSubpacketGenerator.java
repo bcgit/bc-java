@@ -49,9 +49,12 @@ public class PGPSignatureSubpacketGenerator
      */
     public PGPSignatureSubpacketGenerator(PGPSignatureSubpacketVector sigSubV)
     {
-        for (int i = 0; i != sigSubV.packets.length; i++)
+        if (sigSubV != null)
         {
-            packets.add(sigSubV.packets[i]);
+            for (int i = 0; i != sigSubV.packets.length; i++)
+            {
+                packets.add(sigSubV.packets[i]);
+            }
         }
     }
 
