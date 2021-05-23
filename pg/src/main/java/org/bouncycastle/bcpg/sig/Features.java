@@ -8,7 +8,9 @@ public class Features
 {
 
     /** Identifier for the modification detection feature */
-    public static final byte FEATURE_MODIFICATION_DETECTION = 1;
+    public static final byte FEATURE_MODIFICATION_DETECTION = 0x01;
+    public static final byte FEATURE_AEAD_ENCRYPTED_DATA = 0x02;
+    public static final byte FEATURE_VERSION_5_PUBLIC_KEY = 0x04;
 
     private static final byte[] featureToByteArray(byte feature)
     {
@@ -25,9 +27,14 @@ public class Features
         super(SignatureSubpacketTags.FEATURES, critical, isLongLength, data);
     }
 
-    public Features(boolean critical, byte feature)
+    public Features(boolean critical, byte features)
     {
-        super(SignatureSubpacketTags.FEATURES, critical, false, featureToByteArray(feature));
+        super(SignatureSubpacketTags.FEATURES, critical, false, featureToByteArray(features));
+    }
+
+    public Features(boolean critical, int features)
+    {
+        super(SignatureSubpacketTags.FEATURES, critical, false, featureToByteArray((byte)features));
     }
 
     /**
@@ -43,16 +50,8 @@ public class Features
      */
     public boolean supportsFeature(byte feature)
     {
-        for (int i = 0; i < data.length; i++)
-        {
-            if (data[i] == feature)
-            {
-                return true;
-            }
-        }
-        return false;
+        return (data[0] & feature) != 0;
     }
-
 
     /**
      * Sets support for a particular feature.
@@ -67,24 +66,11 @@ public class Features
         {
             if (support == true)
             {
-                byte[] temp = new byte[data.length + 1];
-                System.arraycopy(data, 0, temp, 0, data.length);
-                temp[data.length] = feature;
-                data = temp;
+                data[0] |= feature;
             }
             else
             {
-                for (int i = 0; i < data.length; i++)
-                {
-                    if (data[i] == feature)
-                    {
-                        byte[] temp = new byte[data.length - 1];
-                        System.arraycopy(data, 0, temp, 0, i);
-                        System.arraycopy(data, i + 1, temp, i, temp.length - i);
-                        data = temp;
-                        break;
-                    }
-                }
+                data[0] &= ~feature;
             }
         }
     }
