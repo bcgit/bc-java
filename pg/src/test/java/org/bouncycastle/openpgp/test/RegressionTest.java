@@ -34,7 +34,8 @@ public class RegressionTest
         new ArmoredInputStreamTest(),
         new PGPUtilTest(),
         new BcPGPEd25519JcaKeyPairConversionTest(),
-        new RewindStreamWhenDecryptingMultiSKESKMessageTest()
+        new RewindStreamWhenDecryptingMultiSKESKMessageTest(),
+        new PGPFeaturesTest()
     };
 
     public static void main(String[] args)
