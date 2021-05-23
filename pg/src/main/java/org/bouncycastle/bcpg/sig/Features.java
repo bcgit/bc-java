@@ -6,10 +6,13 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 public class Features
     extends SignatureSubpacket
 {
-
-    /** Identifier for the modification detection feature */
+    /** Identifier for the Modification Detection (packets 18 and 19) */
     public static final byte FEATURE_MODIFICATION_DETECTION = 0x01;
+    /** Identifier for the AEAD Encrypted Data Packet (packet 20) and version 5
+     Symmetric-Key Encrypted Session Key Packets (packet 3) */
     public static final byte FEATURE_AEAD_ENCRYPTED_DATA = 0x02;
+    /** Identifier for the Version 5 Public-Key Packet format and corresponding new
+       fingerprint format */
     public static final byte FEATURE_VERSION_5_PUBLIC_KEY = 0x04;
 
     private static final byte[] featureToByteArray(byte feature)
@@ -51,27 +54,5 @@ public class Features
     public boolean supportsFeature(byte feature)
     {
         return (data[0] & feature) != 0;
-    }
-
-    /**
-     * Sets support for a particular feature.
-     */
-    private void setSupportsFeature(byte feature, boolean support)
-    {
-        if (feature == 0)
-        {
-            throw new IllegalArgumentException("feature == 0");
-        }
-        if (supportsFeature(feature) != support)
-        {
-            if (support == true)
-            {
-                data[0] |= feature;
-            }
-            else
-            {
-                data[0] &= ~feature;
-            }
-        }
     }
 }
