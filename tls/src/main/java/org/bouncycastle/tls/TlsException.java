@@ -11,6 +11,11 @@ public class TlsException
     // TODO Some day we might be able to just pass this down to IOException (1.6+)
     protected Throwable cause;
 
+    public TlsException(String message)
+    {
+        this(message, null);
+    }
+
     public TlsException(String message, Throwable cause)
     {
         super(message);
