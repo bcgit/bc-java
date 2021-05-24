@@ -10,7 +10,7 @@ public class TlsCryptoException
 {
     public TlsCryptoException(String msg)
     {
-        super(msg, null);
+        super(msg);
     }
 
     public TlsCryptoException(String msg, Throwable cause)
