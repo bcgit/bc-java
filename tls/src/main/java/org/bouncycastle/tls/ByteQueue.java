@@ -147,7 +147,7 @@ public class ByteQueue
      *            How many bytes will be readable.
      * @return A {@link HandshakeMessageInput} over the data.
      */
-    public HandshakeMessageInput readHandshakeMessage(int length)
+    HandshakeMessageInput readHandshakeMessage(int length)
     {
         if (length > available)
         {
