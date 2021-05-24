@@ -12,12 +12,6 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public abstract class AbstractTlsCrypto
     implements TlsCrypto
 {
-    /**
-     * Adopt the passed in secret, creating a new copy of it..
-     *
-     * @param secret the secret to make a copy of.
-     * @return a TlsSecret based the original secret.
-     */
     public TlsSecret adoptSecret(TlsSecret secret)
     {
         // TODO[tls] Need an alternative that doesn't require AbstractTlsSecret (which holds literal data)
@@ -37,6 +31,6 @@ public abstract class AbstractTlsCrypto
      * @param certificate the certificate carrying the public key.
      * @return a TlsEncryptor based on the certificate's public key.
      */
-    protected abstract TlsEncryptor createEncryptor(TlsCertificate certificate)
+    public abstract TlsEncryptor createEncryptor(TlsCertificate certificate)
         throws IOException;
 }

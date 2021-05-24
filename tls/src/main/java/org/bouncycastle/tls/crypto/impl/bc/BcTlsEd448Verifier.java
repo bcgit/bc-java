@@ -5,9 +5,8 @@ import java.io.IOException;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.tls.DigitallySigned;
-import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 
@@ -27,9 +26,7 @@ public class BcTlsEd448Verifier
     public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
     {
         SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
-        if (algorithm == null
-            || algorithm.getSignature() != SignatureAlgorithm.ed448
-            || algorithm.getHash() != HashAlgorithm.Intrinsic)
+        if (algorithm == null || SignatureScheme.from(algorithm) != SignatureScheme.ed448)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }

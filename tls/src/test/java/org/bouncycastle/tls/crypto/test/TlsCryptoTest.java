@@ -106,9 +106,9 @@ public abstract class TlsCryptoTest
         }
 
         new DefaultTlsDHGroupVerifier() {{
-            for (int i = 0; i < DEFAULT_GROUPS.size(); ++i)
+            for (int i = 0; i < groups.size(); ++i)
             {
-                DHGroup dhGroup = (DHGroup)DEFAULT_GROUPS.elementAt(i);
+                DHGroup dhGroup = (DHGroup)groups.elementAt(i);
                 int namedGroup = TlsDHUtils.getNamedGroupForDHParameters(dhGroup.getP(), dhGroup.getG());
                 if (NamedGroup.refersToASpecificFiniteField(namedGroup))
                 {

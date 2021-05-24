@@ -403,7 +403,7 @@ public abstract class AbstractTlsClient
 
             checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
 
-            int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
+            int selectedCipherSuite = securityParameters.getCipherSuite();
 
             if (TlsECCUtils.isECCCipherSuite(selectedCipherSuite))
             {

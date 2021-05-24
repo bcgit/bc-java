@@ -11,12 +11,8 @@ import org.bouncycastle.tls.crypto.TlsSecret;
  */
 public abstract class TlsRSAUtils
 {
-    private TlsRSAUtils()
-    {
-    }
-
-    /*
-     * Generate a pre_master_secret and send it encrypted to the server
+    /**
+     * Generate a pre_master_secret and send it encrypted to the server.
      */
     public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsCertificate certificate,
         OutputStream output) throws IOException

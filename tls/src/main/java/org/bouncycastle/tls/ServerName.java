@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.bouncycastle.util.Strings;
-
 /**
  * RFC 6066 3. Server Name Indication
  *
