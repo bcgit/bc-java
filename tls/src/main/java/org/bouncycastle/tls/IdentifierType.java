@@ -26,4 +26,9 @@ public class IdentifierType
             return "UNKNOWN";
         }
     }
+
+    public static String getText(short identifierType)
+    {
+        return getName(identifierType) + "(" + identifierType + ")";
+    }
 }
