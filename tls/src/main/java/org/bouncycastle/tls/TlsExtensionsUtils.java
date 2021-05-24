@@ -546,11 +546,7 @@ public class TlsExtensionsUtils
             protocolName.encode(buf);
         }
 
-        int length = buf.size() - 2;
-        TlsUtils.checkUint16(length);
-        byte[] extensionData = buf.toByteArray();
-        TlsUtils.writeUint16(length, extensionData, 0);
-        return extensionData;
+        return patchOpaque16(buf);
     }
 
     public static byte[] createALPNExtensionServer(ProtocolName protocolName) throws IOException
@@ -580,11 +576,7 @@ public class TlsExtensionsUtils
             TlsUtils.writeOpaque16(derEncoding, buf);
         }
 
-        int length = buf.size() - 2;
-        TlsUtils.checkUint16(length);
-        byte[] extensionData = buf.toByteArray();
-        TlsUtils.writeUint16(length, extensionData, 0);
-        return extensionData;
+        return patchOpaque16(buf);
     }
 
     public static byte[] createCertificateTypeExtensionClient(short[] certificateTypes) throws IOException
@@ -677,11 +669,7 @@ public class TlsExtensionsUtils
             clientShare.encode(buf);
         }
 
-        int length = buf.size() - 2;
-        TlsUtils.checkUint16(length);
-        byte[] extensionData = buf.toByteArray();
-        TlsUtils.writeUint16(length, extensionData, 0);
-        return extensionData;
+        return patchOpaque16(buf);
     }
 
     public static byte[] createKeyShareHelloRetryRequest(int namedGroup)
@@ -738,11 +726,7 @@ public class TlsExtensionsUtils
             }
         }
 
-        int length = buf.size() - 2;
-        TlsUtils.checkUint16(length);
-        byte[] extensionData = buf.toByteArray();
-        TlsUtils.writeUint16(length, extensionData, 0);
-        return extensionData;
+        return patchOpaque16(buf);
     }
 
     public static byte[] createPaddingExtension(int dataLength)
@@ -867,11 +851,7 @@ public class TlsExtensionsUtils
             entry.encode(buf);
         }
 
-        int length = buf.size() - 2;
-        TlsUtils.checkUint16(length);
-        byte[] extensionData = buf.toByteArray();
-        TlsUtils.writeUint16(length, extensionData, 0);
-        return extensionData;
+        return patchOpaque16(buf);
     }
 
     public static byte[] createSupportedGroupsExtension(Vector namedGroups) throws IOException
@@ -951,11 +931,7 @@ public class TlsExtensionsUtils
             }
         }
 
-        int length = buf.size() - 2;
-        TlsUtils.checkUint16(length);
-        byte[] extensionData = buf.toByteArray();
-        TlsUtils.writeUint16(length, extensionData, 0);
-        return extensionData;
+        return patchOpaque16(buf);
     }
 
     public static byte[] createTrustedCAKeysExtensionServer()
@@ -1475,5 +1451,14 @@ public class TlsExtensionsUtils
     public static boolean readTrustedCAKeysExtensionServer(byte[] extensionData) throws IOException
     {
         return readEmptyExtensionData(extensionData);
+    }
+
+    private static byte[] patchOpaque16(ByteArrayOutputStream buf) throws IOException
+    {
+        int length = buf.size() - 2;
+        TlsUtils.checkUint16(length);
+        byte[] extensionData = buf.toByteArray();
+        TlsUtils.writeUint16(length, extensionData, 0);
+        return extensionData;
     }
 }
