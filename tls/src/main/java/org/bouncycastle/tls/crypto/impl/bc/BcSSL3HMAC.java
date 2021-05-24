@@ -30,8 +30,8 @@ class BcSSL3HMAC
     private byte[] secret;
 
     /**
-     * Base constructor for one of the standard digest algorithms that the byteLength of
-     * the algorithm is know for. Behaviour is undefined for digests other than MD5 or SHA1.
+     * Base constructor for one of the standard digest algorithms for which the byteLength is known. Behaviour is
+     * undefined for digests other than MD5 or SHA1.
      *
      * @param digest the digest.
      */

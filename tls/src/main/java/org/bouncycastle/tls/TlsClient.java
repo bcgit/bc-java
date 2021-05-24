@@ -35,7 +35,6 @@ public interface TlsClient
      * will then add a suitable key_share extension to the ClientHello extensions. 
      * 
      * @return a {@link Vector} of {@link NamedGroup named group} values, possibly empty or null. 
-     * @throws IOException
      */
     Vector getEarlyKeyShareGroups();
 

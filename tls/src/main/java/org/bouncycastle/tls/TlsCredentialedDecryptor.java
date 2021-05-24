@@ -16,7 +16,7 @@ public interface TlsCredentialedDecryptor
      *
      * @param cryptoParams the parameters to use for the decryption.
      * @param ciphertext the cipher text containing the secret.
-     * @return a TlS secret.
+     * @return a TLS secret.
      * @throws IOException on a parsing or decryption error.
      */
     TlsSecret decrypt(TlsCryptoParameters cryptoParams, byte[] ciphertext) throws IOException;

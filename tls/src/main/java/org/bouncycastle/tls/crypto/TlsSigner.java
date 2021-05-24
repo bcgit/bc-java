@@ -10,7 +10,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 public interface TlsSigner
 {
     /**
-     * Generate an encoded signature based on the passed in hash,
+     * Generate an encoded signature based on the passed in hash.
      *
      * @param algorithm the signature algorithm to use.
      * @param hash the hash calculated for the signature.
