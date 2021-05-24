@@ -7,7 +7,7 @@ public class TlsFatalAlertReceived
 
     public TlsFatalAlertReceived(short alertDescription)
     {
-        super(AlertDescription.getText(alertDescription), null);
+        super(AlertDescription.getText(alertDescription));
 
         this.alertDescription = alertDescription;
     }

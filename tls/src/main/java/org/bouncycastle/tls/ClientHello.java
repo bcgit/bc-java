@@ -91,7 +91,6 @@ public class ClientHello
 
         TlsUtils.writeUint8ArrayWithUint8Length(new short[]{ CompressionMethod._null }, output);
 
-        // TODO[tls13] 'pre_shared_key' MUST be the last extension in the ClientHello
         TlsProtocol.writeExtensions(output, extensions);
     }
 

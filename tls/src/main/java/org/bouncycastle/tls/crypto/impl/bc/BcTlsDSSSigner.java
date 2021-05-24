@@ -41,9 +41,8 @@ public abstract class BcTlsDSSSigner
             ? CryptoHashAlgorithm.sha1
             : TlsCryptoUtils.getHash(algorithm.getHash());
 
-        Signer s = new DSADigestSigner(createDSAImpl(cryptoHashAlgorithm), new NullDigest());
-        s.init(true, new ParametersWithRandom(privateKey, crypto.getSecureRandom()));
-        Signer signer = s;
+        Signer signer = new DSADigestSigner(createDSAImpl(cryptoHashAlgorithm), new NullDigest());
+        signer.init(true, new ParametersWithRandom(privateKey, crypto.getSecureRandom()));
         if (algorithm == null)
         {
             // Note: Only use the SHA1 part of the (MD5/SHA1) hash

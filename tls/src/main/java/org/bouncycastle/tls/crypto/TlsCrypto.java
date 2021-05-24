@@ -108,10 +108,10 @@ public interface TlsCrypto
     boolean hasSRPAuthentication();
 
     /**
-     * Create a TlsSecret object based provided data.
+     * Create a TlsSecret object based on provided data.
      *
      * @param data the data to base the TlsSecret on.
-     * @return a TlsSecret based on random data.
+     * @return a TlsSecret based on the provided data.
      */
     TlsSecret createSecret(byte[] data);
 
@@ -131,7 +131,7 @@ public interface TlsCrypto
     SecureRandom getSecureRandom();
 
     /**
-     * Create a TlsCertificate from a ASN.1 binary encoding of an X.509 certificate.
+     * Create a TlsCertificate from an ASN.1 binary encoding of an X.509 certificate.
      *
      * @param encoding DER/BER encoding of the certificate of interest.
      * @return a TlsCertificate.
@@ -148,22 +148,22 @@ public interface TlsCrypto
      * @param cryptoParams context specific parameters.
      * @param encryptionAlgorithm the encryption algorithm to be employed by the cipher.
      * @param macAlgorithm the MAC algorithm to be employed by the cipher.
-     * @return a {@link TlsCipher} implementing the encryption and MAC algorithm.
+     * @return a {@link TlsCipher} implementing the encryption and MAC algorithms.
      * @throws IOException
      */
     TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
         throws IOException;
 
     /**
-     * Create an domain object supporting the domain parameters described in dhConfig.
+     * Create a domain object supporting the domain parameters described in dhConfig.
      *
      * @param dhConfig the config describing the DH parameters to use.
-     * @return a TlsECDomain supporting the parameters in ecConfig.
+     * @return a TlsDHDomain supporting the parameters in dhConfig.
      */
     TlsDHDomain createDHDomain(TlsDHConfig dhConfig);
 
     /**
-     * Create an domain object supporting the domain parameters described in ecConfig.
+     * Create a domain object supporting the domain parameters described in ecConfig.
      *
      * @param ecConfig the config describing the EC parameters to use.
      * @return a TlsECDomain supporting the parameters in ecConfig.
@@ -171,10 +171,10 @@ public interface TlsCrypto
     TlsECDomain createECDomain(TlsECConfig ecConfig);
 
     /**
-     * Adopt the passed in secret, creating a new copy of it..
+     * Adopt the passed in secret, creating a new copy of it.
      *
      * @param secret the secret to make a copy of.
-     * @return a TlsSecret based the original secret.
+     * @return a TlsSecret based on the original secret.
      */
     TlsSecret adoptSecret(TlsSecret secret);
 
@@ -224,7 +224,7 @@ public interface TlsCrypto
      * Create an SRP-6 client.
      *
      * @param srpConfig client config.
-     * @return an initialised SRP6 client object,
+     * @return an initialised SRP6 client object.
      */
     TlsSRP6Client createSRP6Client(TlsSRPConfig srpConfig);
 
@@ -241,7 +241,7 @@ public interface TlsCrypto
      * Create an SRP-6 verifier generator.
      *
      * @param srpConfig generator config.
-     * @return an initialized SRP6 verifier generator,
+     * @return an initialized SRP6 verifier generator.
      */
     TlsSRP6VerifierGenerator createSRP6VerifierGenerator(TlsSRPConfig srpConfig);
 
