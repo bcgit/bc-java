@@ -149,6 +149,8 @@ public class CertificateRequest
     /**
      * Encode this {@link CertificateRequest} to an {@link OutputStream}.
      *
+     * @param context
+     *            the {@link TlsContext} of the current connection.
      * @param output the {@link OutputStream} to encode to.
      * @throws IOException
      */
@@ -162,7 +164,7 @@ public class CertificateRequest
         if (isTLSv13 != (null != certificateRequestContext) ||
             isTLSv13 != (null == certificateTypes) ||
             isTLSv12 != (null != supportedSignatureAlgorithms) ||
-            !isTLSv13 && (null != supportedSignatureAlgorithmsCert))
+            (!isTLSv13 && (null != supportedSignatureAlgorithmsCert)))
         {
             throw new IllegalStateException();
         }
