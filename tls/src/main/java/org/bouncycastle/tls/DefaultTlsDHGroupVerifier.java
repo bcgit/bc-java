@@ -11,7 +11,7 @@ public class DefaultTlsDHGroupVerifier
 {
     public static final int DEFAULT_MINIMUM_PRIME_BITS = 2048;
 
-    protected static final Vector DEFAULT_GROUPS = new Vector();
+    private static final Vector DEFAULT_GROUPS = new Vector();
 
     private static void addDefaultGroup(DHGroup dhGroup)
     {
@@ -66,7 +66,7 @@ public class DefaultTlsDHGroupVerifier
      */
     public DefaultTlsDHGroupVerifier(Vector groups, int minimumPrimeBits)
     {
-        this.groups = groups;
+        this.groups = new Vector(groups);
         this.minimumPrimeBits = minimumPrimeBits;
     }
 
