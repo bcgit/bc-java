@@ -10,7 +10,7 @@ import org.bouncycastle.tls.crypto.TlsSRPConfig;
 public class DefaultTlsSRPConfigVerifier
     implements TlsSRPConfigVerifier
 {
-    protected static final Vector DEFAULT_GROUPS = new Vector();
+    private static final Vector DEFAULT_GROUPS = new Vector();
 
     static
     {
@@ -24,7 +24,7 @@ public class DefaultTlsSRPConfigVerifier
     }
 
     // Vector is (SRP6Group)
-    protected Vector groups;
+    protected final Vector groups;
 
     /**
      * Accept only the group parameters specified in RFC 5054 Appendix A.
@@ -37,11 +37,11 @@ public class DefaultTlsSRPConfigVerifier
     /**
      * Specify a custom set of acceptable group parameters.
      * 
-     * @param groups a {@link Vector} of acceptable {@link SRP6Group}
+     * @param groups a {@link Vector} of acceptable {@link SRP6Group}.
      */
     public DefaultTlsSRPConfigVerifier(Vector groups)
     {
-        this.groups = groups;
+        this.groups = new Vector(groups);
     }
 
     public boolean accept(TlsSRPConfig srpConfig)
@@ -59,7 +59,7 @@ public class DefaultTlsSRPConfigVerifier
     protected boolean areGroupsEqual(TlsSRPConfig a, SRP6Group b)
     {
         BigInteger[] ng = a.getExplicitNG();
-        return (areParametersEqual(ng[0], b.getN()) && areParametersEqual(ng[1], b.getG()));
+        return areParametersEqual(ng[0], b.getN()) && areParametersEqual(ng[1], b.getG());
     }
 
     protected boolean areParametersEqual(BigInteger a, BigInteger b)
