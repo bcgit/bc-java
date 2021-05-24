@@ -10,10 +10,10 @@ import org.bouncycastle.util.Arrays;
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
-class TlsSuiteHMac
+public class TlsSuiteHMac
     implements TlsSuiteMac
 {
-    static int getMacSize(TlsCryptoParameters cryptoParams, TlsMAC mac)
+    protected static int getMacSize(TlsCryptoParameters cryptoParams, TlsMAC mac)
     {
         int macSize = mac.getMacLength();
         if (cryptoParams.getSecurityParametersHandshake().isTruncatedHMac())
@@ -30,7 +30,7 @@ class TlsSuiteHMac
     protected final int macSize;
 
     /**
-     * Generate a new instance of an TlsMac.
+     * Generate a new instance of a TlsMac.
      *
      * @param cryptoParams the TLS client context specific crypto parameters.
      * @param mac  The MAC to use.
@@ -56,23 +56,11 @@ class TlsSuiteHMac
         }
     }
 
-    /**
-     * @return The output length of this MAC.
-     */
     public int getSize()
     {
         return macSize;
     }
 
-    /**
-     * Calculate the MAC for some given data.
-     *
-     * @param type    The message type of the message.
-     * @param msg     A byte-buffer containing the message.
-     * @param msgOff  The number of bytes to skip, before the message starts.
-     * @param msgLen  The length of the message.
-     * @return A new byte-buffer containing the MAC value.
-     */
     public byte[] calculateMac(long seqNo, short type, byte[] msg, int msgOff, int msgLen)
     {
         ProtocolVersion serverVersion = cryptoParams.getServerVersion();
