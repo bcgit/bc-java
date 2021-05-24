@@ -2,6 +2,8 @@ package org.bouncycastle.tls;
 
 /**
  * RFC 4492 5.4. (Errata ID: 2389)
+ * 
+ * @deprecated Will be removed.
  */
 public class ECBasisType
 {
