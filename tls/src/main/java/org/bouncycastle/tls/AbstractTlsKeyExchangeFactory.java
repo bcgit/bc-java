@@ -8,7 +8,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 /**
  * Base class for supporting a TLS key exchange factory implementation.
  */
-public class AbstractTlsKeyExchangeFactory
+public abstract class AbstractTlsKeyExchangeFactory
     implements TlsKeyExchangeFactory
 {
     public TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
