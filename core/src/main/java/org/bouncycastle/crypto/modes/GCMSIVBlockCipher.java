@@ -820,11 +820,6 @@ import org.bouncycastle.util.Pack;
              extends ByteArrayOutputStream
      {
          /**
-          * number of bytes hashed.
-          */
-         private int numHashed;
-
-         /**
           * Constructor.
           */
          GCMSIVCache()
