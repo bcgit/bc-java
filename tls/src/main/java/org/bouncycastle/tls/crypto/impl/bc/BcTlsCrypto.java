@@ -204,7 +204,7 @@ public class BcTlsCrypto
         }
     }
 
-    protected TlsEncryptor createEncryptor(TlsCertificate certificate)
+    public TlsEncryptor createEncryptor(TlsCertificate certificate)
         throws IOException
     {
         BcTlsCertificate bcCert = BcTlsCertificate.convert(this, certificate);
