@@ -116,7 +116,7 @@ abstract class AbstractTlsContext
         return clientSupportedVersions;
     }
 
-    public void setClientSupportedVersions(ProtocolVersion[] clientSupportedVersions)
+    void setClientSupportedVersions(ProtocolVersion[] clientSupportedVersions)
     {
         this.clientSupportedVersions = clientSupportedVersions;
     }
@@ -136,7 +136,7 @@ abstract class AbstractTlsContext
         return rsaPreMasterSecretVersion;
     }
 
-    public void setRSAPreMasterSecretVersion(ProtocolVersion rsaPreMasterSecretVersion)
+    void setRSAPreMasterSecretVersion(ProtocolVersion rsaPreMasterSecretVersion)
     {
         this.rsaPreMasterSecretVersion = rsaPreMasterSecretVersion;
     }

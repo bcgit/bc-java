@@ -993,7 +993,7 @@ public abstract class TlsProtocol
         this.resumableHandshake = resumableHandshake;
     }
 
-    protected void writeHandshakeMessage(byte[] buf, int off, int len) throws IOException
+    void writeHandshakeMessage(byte[] buf, int off, int len) throws IOException
     {
         if (len < 4)
         {
