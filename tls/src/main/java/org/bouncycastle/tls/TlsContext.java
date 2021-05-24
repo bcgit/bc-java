@@ -79,7 +79,7 @@ public interface TlsContext
      *            allows the application using the exporter to mix its own data with the TLS PRF for
      *            the exporter output.
      * @param length
-     *            the number of bytes to generate
+     *            the number of bytes to generate.
      * @return a pseudorandom bit string of 'length' bytes generated from the
      *         (exporter_)master_secret.
      */
@@ -95,7 +95,7 @@ public interface TlsContext
      *            allows the application using the exporter to mix its own data with the TLS PRF for
      *            the exporter output.
      * @param length
-     *            the number of bytes to generate
+     *            the number of bytes to generate.
      * @return a pseudorandom bit string of 'length' bytes generated from the
      *         (exporter_)master_secret.
      */

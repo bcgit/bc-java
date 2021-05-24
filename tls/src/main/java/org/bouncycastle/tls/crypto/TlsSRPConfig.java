@@ -12,7 +12,7 @@ public class TlsSRPConfig
     /**
      * Return the (N, g) values used in SRP-6.
      *
-     * @return (N, g) as a BigInteger array (N=[0], g =[1]).
+     * @return (N, g) as a BigInteger array (N=[0], g=[1]).
      */
     public BigInteger[] getExplicitNG()
     {
@@ -22,7 +22,7 @@ public class TlsSRPConfig
     /**
      * Set the (N, g) values used for SRP-6.
      *
-     * @param explicitNG (N, g) as a BigInteger array (N=[0], g =[1]).
+     * @param explicitNG (N, g) as a BigInteger array (N=[0], g=[1]).
      */
     public void setExplicitNG(BigInteger[] explicitNG)
     {

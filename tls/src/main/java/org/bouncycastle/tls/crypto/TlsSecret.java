@@ -25,10 +25,10 @@ public interface TlsSecret
     void destroy();
 
     /**
-     * Return the an encrypted copy of the data this secret is based on.
+     * Return an encrypted copy of the data this secret is based on.
      *
      * @param certificate the certificate containing the public key to use for protecting the internal data.
-     * @return an encrypted copy of secret's internal data.
+     * @return an encrypted copy of this secret's internal data.
      */
     byte[] encrypt(TlsCertificate certificate) throws IOException;
 

@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.tls.ProtocolVersion;
 
 /**
- * Base interface for a TLS cipher suite.
+ * Base interface for a TLS bulk cipher.
  */
 public interface TlsCipher
 {
@@ -39,14 +39,14 @@ public interface TlsCipher
     int getPlaintextLimit(int ciphertextLimit);
 
     /**
-     * Encrypt and MAC the passed in plain text using the current cipher suite.
+     * Encode the passed in plaintext using the current bulk cipher.
      *
      * @param seqNo sequence number of the message represented by plaintext.
      * @param contentType content type of the message represented by plaintext.
      * @param recordVersion {@link ProtocolVersion} used for the record.
      * @param headerAllocation extra bytes to allocate at start of returned byte array.
-     * @param plaintext array holding input plain text to the cipher.
-     * @param offset offset into input array the plain text starts at.
+     * @param plaintext array holding input plaintext to the cipher.
+     * @param offset offset into input array the plaintext starts at.
      * @param len length of the plaintext in the array.
      * @return A {@link TlsEncodeResult} containing the result of encoding (after 'headerAllocation' unused bytes).
      * @throws IOException
@@ -55,14 +55,14 @@ public interface TlsCipher
         byte[] plaintext, int offset, int len) throws IOException;
 
     /**
-     * Validate and decrypt the passed in cipher text using the current cipher suite.
+     * Decode the passed in ciphertext using the current bulk cipher.
      *
      * @param seqNo sequence number of the message represented by ciphertext.
      * @param recordType content type used in the record for this message.
      * @param recordVersion {@link ProtocolVersion} used for the record.
-     * @param ciphertext  array holding input cipher text to the cipher.
-     * @param offset offset into input array the cipher text starts at.
-     * @param len length of the cipher text in the array.
+     * @param ciphertext  array holding input ciphertext to the cipher.
+     * @param offset offset into input array the ciphertext starts at.
+     * @param len length of the ciphertext in the array.
      * @return A {@link TlsDecodeResult} containing the result of decoding.
      * @throws IOException
      */
