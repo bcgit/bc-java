@@ -54,6 +54,7 @@ import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.CryptoSignatureAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -293,6 +294,35 @@ public class BcTlsCrypto
     public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
     {
         return true;
+    }
+
+    public boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm)
+    {
+        switch (cryptoSignatureAlgorithm)
+        {
+        case CryptoSignatureAlgorithm.rsa:
+        case CryptoSignatureAlgorithm.dsa:
+        case CryptoSignatureAlgorithm.ecdsa:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha512:
+        case CryptoSignatureAlgorithm.ed25519:
+        case CryptoSignatureAlgorithm.ed448:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+            return true;
+
+        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        case CryptoSignatureAlgorithm.gostr34102012_256:
+        case CryptoSignatureAlgorithm.gostr34102012_512:
+
+        // TODO[RFC 8998]
+        case CryptoSignatureAlgorithm.sm2:
+
+        default:
+            return false;
+        }
     }
 
     public boolean hasMacAlgorithm(int macAlgorithm)
