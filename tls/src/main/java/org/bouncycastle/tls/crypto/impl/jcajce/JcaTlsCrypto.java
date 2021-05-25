@@ -638,12 +638,13 @@ public class JcaTlsCrypto
             /*
              * This is somewhat overkill, but much simpler for now. It's also consistent with SunJSSE behaviour.
              */
-            if ((signatureScheme >>> 8) == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
+            short hashAlgorithm = SignatureScheme.getHashAlgorithm(signatureScheme);
+            if (hashAlgorithm == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
             {
                 return false;
             }
 
-            return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+            return hasSignatureAlgorithm(SignatureScheme.getSignatureAlgorithm(signatureScheme));
         }
         }
     }
