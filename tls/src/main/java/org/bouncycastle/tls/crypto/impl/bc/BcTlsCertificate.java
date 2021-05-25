@@ -257,7 +257,7 @@ public class BcTlsCertificate
         return -1;
     }
 
-    protected DHPublicKeyParameters getPubKeyDH() throws IOException
+    public DHPublicKeyParameters getPubKeyDH() throws IOException
     {
         try
         {
@@ -476,7 +476,7 @@ public class BcTlsCertificate
         }
     }
 
-    protected void validateKeyUsage(int keyUsageBits)
+    public void validateKeyUsage(int keyUsageBits)
         throws IOException
     {
         if (!supportsKeyUsage(keyUsageBits))
