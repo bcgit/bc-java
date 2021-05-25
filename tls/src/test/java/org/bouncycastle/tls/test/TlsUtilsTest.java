@@ -6,15 +6,9 @@ import java.util.Vector;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
-import org.bouncycastle.tls.TlsServerContext;
-import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 
 import junit.framework.TestCase;
 
@@ -25,106 +19,17 @@ public class TlsUtilsTest
         throws Exception
     {
         int keyExchangeAlgorithm = KeyExchangeAlgorithm.ECDHE_RSA;
-
-        TlsContext context = new TlsServerContext()
-        {
-            public TlsCrypto getCrypto()
-            {
-                return null;
-            }
-
-            public TlsNonceGenerator getNonceGenerator()
-            {
-                return null;
-            }
-
-            public SecurityParameters getSecurityParameters()
-            {
-                return null;
-            }
-
-            public SecurityParameters getSecurityParametersConnection()
-            {
-                return null;
-            }
-
-            public SecurityParameters getSecurityParametersHandshake()
-            {
-                return null;
-            }
-
-            public boolean isServer()
-            {
-                return false;
-            }
-
-            public ProtocolVersion[] getClientSupportedVersions()
-            {
-                return null;
-            }
-
-            public ProtocolVersion getClientVersion()
-            {
-                return null;
-            }
-
-            public ProtocolVersion getRSAPreMasterSecretVersion()
-            {
-                return null;
-            }
-
-            public ProtocolVersion getServerVersion()
-            {
-                return ProtocolVersion.TLSv12;
-            }
-
-            public TlsSession getResumableSession()
-            {
-                return null;
-            }
-
-            public TlsSession getSession()
-            {
-                return null;
-            }
-
-            public Object getUserObject()
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public void setUserObject(Object userObject)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public byte[] exportChannelBinding(int channelBinding)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public byte[] exportEarlyKeyingMaterial(String asciiLabel, byte[] context_value, int length)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
-            {
-                throw new UnsupportedOperationException();
-            }
-        };
-
         short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
 
         Vector supportedSignatureAlgorithms = getSignatureAlgorithms(false);
-        SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
+        SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(ProtocolVersion.TLSv12,
             supportedSignatureAlgorithms, signatureAlgorithm);
         assertEquals(HashAlgorithm.sha256, sigAlg.getHash());
 
         for (int count = 0; count < 10; ++count)
         {
             supportedSignatureAlgorithms = getSignatureAlgorithms(true);
-            sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context, supportedSignatureAlgorithms,
+            sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(ProtocolVersion.TLSv12, supportedSignatureAlgorithms,
                 signatureAlgorithm);
             assertEquals(HashAlgorithm.sha256, sigAlg.getHash());
         }
@@ -146,18 +51,22 @@ public class TlsUtilsTest
             }
         }
 
-        Random r = new Random();
-        int count = result.size();
-        for (int src = 0; src < count; ++src)
+        if (randomise)
         {
-            int dst = r.nextInt(count);
-            if (src != dst)
+            Random r = new Random();
+            int count = result.size();
+            for (int src = 0; src < count; ++src)
             {
-                Object a = result.elementAt(src), b = result.elementAt(dst);
-                result.setElementAt(a, dst);
-                result.setElementAt(b, src);
+                int dst = r.nextInt(count);
+                if (src != dst)
+                {
+                    Object a = result.elementAt(src), b = result.elementAt(dst);
+                    result.setElementAt(a, dst);
+                    result.setElementAt(b, src);
+                }
             }
         }
+
         return result;
     }
 }
