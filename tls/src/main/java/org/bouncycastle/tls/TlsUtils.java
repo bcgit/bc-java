@@ -4029,10 +4029,16 @@ public class TlsUtils
             || ProtocolVersion.TLSv13.isLaterVersionOf(version);
     }
 
-    public static SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(TlsContext context, Vector sigHashAlgs, short signatureAlgorithm)
-        throws IOException
+    public static SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(TlsContext context, Vector sigHashAlgs,
+        short signatureAlgorithm) throws IOException
     {
-        if (!isTLSv12(context))
+        return chooseSignatureAndHashAlgorithm(context.getServerVersion(), sigHashAlgs, signatureAlgorithm);
+    }
+
+    public static SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(ProtocolVersion negotiatedVersion,
+        Vector sigHashAlgs, short signatureAlgorithm) throws IOException
+    {
+        if (!isTLSv12(negotiatedVersion))
         {
             return null;
         }
