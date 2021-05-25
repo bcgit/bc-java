@@ -37,7 +37,7 @@ public class CertChainUtil
      * we generate the CA's certificate
      */
     public static X509Certificate createMasterCert(
-        String masterDN,
+        String rootDN,
         KeyPair keyPair)
         throws Exception
     {
@@ -45,14 +45,14 @@ public class CertChainUtil
         // create the certificate - version 1
         //
         X509v1CertificateBuilder v1CertBuilder = new JcaX509v1CertificateBuilder(
-            new X500Name(masterDN),
+            new X500Name(rootDN),
             BigInteger.valueOf(serialNumber.getAndIncrement()),
             new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30),
             new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)),
-            new X500Name(masterDN),
+            new X500Name(rootDN),
             keyPair.getPublic());
 
-        X509CertificateHolder cert = v1CertBuilder.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(keyPair.getPrivate()));
+        X509CertificateHolder cert = v1CertBuilder.build(new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(keyPair.getPrivate()));
 
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(cert);
     }
@@ -63,15 +63,15 @@ public class CertChainUtil
     public static X509Certificate createIntermediateCert(
         String interDN,
         PublicKey pubKey,
-        PrivateKey rootPrivKey,
-        X509Certificate rootCert)
+        PrivateKey caPrivKey,
+        X509Certificate caCert)
         throws Exception
     {
         //
         // create the certificate - version 3
         //
         X509v3CertificateBuilder v3CertBuilder = new JcaX509v3CertificateBuilder(
-            JcaX500NameUtil.getIssuer(rootCert),
+            JcaX500NameUtil.getSubject(caCert),
             BigInteger.valueOf(serialNumber.getAndIncrement()),
             new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30),
             new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)),
@@ -92,14 +92,14 @@ public class CertChainUtil
         v3CertBuilder.addExtension(
             Extension.authorityKeyIdentifier,
             false,
-            utils.createAuthorityKeyIdentifier(rootCert));
+            utils.createAuthorityKeyIdentifier(caCert));
 
         v3CertBuilder.addExtension(
             Extension.basicConstraints,
             true,
             new BasicConstraints(0));
 
-        X509CertificateHolder cert = v3CertBuilder.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(rootPrivKey));
+        X509CertificateHolder cert = v3CertBuilder.build(new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(caPrivKey));
 
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(cert);
     }
@@ -116,7 +116,7 @@ public class CertChainUtil
     {
         X509v3CertificateBuilder v3CertBuilder = createBaseEndEntityBuilder(endEntityDN, pubKey, caCert);
 
-        X509CertificateHolder cert = v3CertBuilder.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(caPrivKey));
+        X509CertificateHolder cert = v3CertBuilder.build(new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(caPrivKey));
 
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(cert);
     }
@@ -139,7 +139,7 @@ public class CertChainUtil
             true,
             new ExtendedKeyUsage(keyPurposeId));
 
-        X509CertificateHolder cert = v3CertBuilder.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(caPrivKey));
+        X509CertificateHolder cert = v3CertBuilder.build(new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(caPrivKey));
 
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(cert);
     }
