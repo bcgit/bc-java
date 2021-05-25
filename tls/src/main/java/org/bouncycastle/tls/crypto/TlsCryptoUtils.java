@@ -6,6 +6,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
+import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 
@@ -93,6 +94,42 @@ public abstract class TlsCryptoUtils
             return 64;
         default:
             throw new IllegalArgumentException();
+        }
+    }
+
+    public static int getSignature(short signatureAlgorithm)
+    {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+            return CryptoSignatureAlgorithm.rsa;
+        case SignatureAlgorithm.dsa:
+            return CryptoSignatureAlgorithm.dsa;
+        case SignatureAlgorithm.ecdsa:
+            return CryptoSignatureAlgorithm.ecdsa;
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+            return CryptoSignatureAlgorithm.rsa_pss_rsae_sha256;
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+            return CryptoSignatureAlgorithm.rsa_pss_rsae_sha384;
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return CryptoSignatureAlgorithm.rsa_pss_rsae_sha512;
+        case SignatureAlgorithm.ed25519:
+            return CryptoSignatureAlgorithm.ed25519;
+        case SignatureAlgorithm.ed448:
+            return CryptoSignatureAlgorithm.ed448;
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+            return CryptoSignatureAlgorithm.rsa_pss_pss_sha256;
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+            return CryptoSignatureAlgorithm.rsa_pss_pss_sha384;
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return CryptoSignatureAlgorithm.rsa_pss_pss_sha512;
+        case SignatureAlgorithm.gostr34102012_256:
+            return CryptoSignatureAlgorithm.gostr34102012_256;
+        case SignatureAlgorithm.gostr34102012_512:
+            return CryptoSignatureAlgorithm.gostr34102012_512;
+        default:
+            throw new IllegalArgumentException(
+                "specified SignatureAlgorithm invalid: " + SignatureAlgorithm.getText(signatureAlgorithm));
         }
     }
 
