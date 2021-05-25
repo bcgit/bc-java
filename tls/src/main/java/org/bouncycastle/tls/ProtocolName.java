@@ -12,12 +12,12 @@ import org.bouncycastle.util.Strings;
  */
 public final class ProtocolName
 {
-    public static final ProtocolName asRawBytes(byte[] bytes)
+    public static ProtocolName asRawBytes(byte[] bytes)
     {
         return new ProtocolName(Arrays.clone(bytes));
     }
 
-    public static final ProtocolName asUtf8Encoding(String name)
+    public static ProtocolName asUtf8Encoding(String name)
     {
         return new ProtocolName(Strings.toUTF8ByteArray(name));
     }
