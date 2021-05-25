@@ -27,7 +27,7 @@ public class JcaTlsHash
         return digest.digest();
     }
 
-    public Object clone()
+    public TlsHash cloneHash()
     {
         try
         {

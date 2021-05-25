@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class DigitallySigned
+public final class DigitallySigned
 {
-    protected SignatureAndHashAlgorithm algorithm;
-    protected byte[] signature;
+    private final SignatureAndHashAlgorithm algorithm;
+    private final byte[] signature;
 
     public DigitallySigned(SignatureAndHashAlgorithm algorithm, byte[] signature)
     {

@@ -196,7 +196,7 @@ public class TlsAEADCipher
             outputPos += encryptCipher.doFinal(plaintext, plaintextOffset, plaintextLength, extraInput, output,
                 outputPos);
         }
-        catch (Exception e)
+        catch (RuntimeException e)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
@@ -250,7 +250,7 @@ public class TlsAEADCipher
             outputPos = decryptCipher.doFinal(ciphertext, encryptionOffset, encryptionLength, TlsUtils.EMPTY_BYTES,
                 ciphertext, encryptionOffset);
         }
-        catch (Exception e)
+        catch (RuntimeException e)
         {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac, e);
         }

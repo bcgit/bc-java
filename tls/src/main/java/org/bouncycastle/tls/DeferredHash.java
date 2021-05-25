@@ -178,7 +178,7 @@ class DeferredHash
 
         checkStopBuffering();
 
-        d = (TlsHash)d.clone();
+        d = d.cloneHash();
         if (buf != null)
         {
             buf.updateDigest(d);
@@ -205,10 +205,10 @@ class DeferredHash
 
     public byte[] calculateHash()
     {
-        throw new IllegalStateException("Use fork() to get a definite hash");
+        throw new IllegalStateException("Use 'forkPRFHash' to get a definite hash");
     }
 
-    public Object clone()
+    public TlsHash cloneHash()
     {
         throw new IllegalStateException("attempt to clone a DeferredHash");
     }
@@ -270,7 +270,7 @@ class DeferredHash
 
     protected TlsHash cloneHash(Integer cryptoHashAlgorithm)
     {
-        return (TlsHash)(((TlsHash)hashes.get(cryptoHashAlgorithm)).clone());
+        return ((TlsHash)hashes.get(cryptoHashAlgorithm)).cloneHash();
     }
 
     protected void cloneHash(Hashtable newHashes, int cryptoHashAlgorithm)
@@ -278,13 +278,13 @@ class DeferredHash
         cloneHash(newHashes, box(cryptoHashAlgorithm));
     }
 
-    protected void cloneHash(Hashtable newHashes, Integer hashAlgorithm)
+    protected void cloneHash(Hashtable newHashes, Integer cryptoHashAlgorithm)
     {
-        TlsHash hash = cloneHash(hashAlgorithm);
+        TlsHash hash = cloneHash(cryptoHashAlgorithm);
         if (buf != null)
         {
             buf.updateDigest(hash);
         }
-        newHashes.put(hashAlgorithm, hash);
+        newHashes.put(cryptoHashAlgorithm, hash);
     }
 }

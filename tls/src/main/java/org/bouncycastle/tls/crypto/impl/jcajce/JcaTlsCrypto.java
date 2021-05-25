@@ -31,6 +31,7 @@ import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.CryptoSignatureAlgorithm;
 import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
@@ -483,6 +484,35 @@ public class JcaTlsCrypto
         return true;
     }
 
+    public boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm)
+    {
+        switch (cryptoSignatureAlgorithm)
+        {
+        case CryptoSignatureAlgorithm.rsa:
+        case CryptoSignatureAlgorithm.dsa:
+        case CryptoSignatureAlgorithm.ecdsa:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha512:
+        case CryptoSignatureAlgorithm.ed25519:
+        case CryptoSignatureAlgorithm.ed448:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+            return true;
+
+        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        case CryptoSignatureAlgorithm.gostr34102012_256:
+        case CryptoSignatureAlgorithm.gostr34102012_512:
+
+        // TODO[RFC 8998]
+        case CryptoSignatureAlgorithm.sm2:
+
+        default:
+            return false;
+        }
+    }
+
     public boolean hasMacAlgorithm(int macAlgorithm)
     {
         // TODO: expand
@@ -608,12 +638,13 @@ public class JcaTlsCrypto
             /*
              * This is somewhat overkill, but much simpler for now. It's also consistent with SunJSSE behaviour.
              */
-            if ((signatureScheme >>> 8) == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
+            short hashAlgorithm = SignatureScheme.getHashAlgorithm(signatureScheme);
+            if (hashAlgorithm == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
             {
                 return false;
             }
 
-            return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+            return hasSignatureAlgorithm(SignatureScheme.getSignatureAlgorithm(signatureScheme));
         }
         }
     }
@@ -1134,7 +1165,7 @@ public class JcaTlsCrypto
         TlsHMAC clientMAC = createMAC(cryptoParams, macAlgorithm);
         TlsHMAC serverMAC = createMAC(cryptoParams, macAlgorithm);
 
-        return new TlsBlockCipher(this, cryptoParams, encrypt, decrypt, clientMAC, serverMAC, cipherKeySize);
+        return new TlsBlockCipher(cryptoParams, encrypt, decrypt, clientMAC, serverMAC, cipherKeySize);
     }
 
     private TlsAEADCipher createCipher_SM4_CCM(TlsCryptoParameters cryptoParams)
