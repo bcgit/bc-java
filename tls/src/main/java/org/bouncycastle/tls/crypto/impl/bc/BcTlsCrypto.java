@@ -577,7 +577,7 @@ public class BcTlsCrypto
         TlsHMAC clientMAC = createMAC(cryptoParams, macAlgorithm);
         TlsHMAC serverMAC = createMAC(cryptoParams, macAlgorithm);
 
-        return new TlsBlockCipher(this, cryptoParams, encrypt, decrypt, clientMAC, serverMAC, cipherKeySize);
+        return new TlsBlockCipher(cryptoParams, encrypt, decrypt, clientMAC, serverMAC, cipherKeySize);
     }
 
     protected TlsAEADCipher createCipher_SM4_CCM(TlsCryptoParameters cryptoParams)
