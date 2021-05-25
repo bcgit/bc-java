@@ -530,14 +530,14 @@ public class PGPPublicKey
         return sigs.iterator();
     }
 
-    private Iterator getSignaturesForID(
+    private Iterator<PGPSignature> getSignaturesForID(
         UserIDPacket   id)
     {
         for (int i = 0; i != ids.size(); i++)
         {
             if (id.equals(ids.get(i)))
             {
-                return ((ArrayList)idSigs.get(i)).iterator();
+                return ((List<PGPSignature>)idSigs.get(i)).iterator();
             }
         }
 
