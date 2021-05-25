@@ -1,7 +1,6 @@
 package org.bouncycastle.tls.crypto.impl;
 
 import java.io.IOException;
-import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -9,11 +8,11 @@ import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsEncodeResult;
 import org.bouncycastle.tls.crypto.TlsHMAC;
+import org.bouncycastle.util.Pack;
 
 /**
  * A generic TLS 1.0-1.2 block cipher. This can be used for AES or 3DES for example.
@@ -21,7 +20,6 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 public class TlsBlockCipher
     implements TlsCipher
 {
-    protected final TlsCrypto crypto;
     protected final TlsCryptoParameters cryptoParams;
     protected final byte[] randomData;
     protected final boolean encryptThenMAC;
@@ -32,7 +30,7 @@ public class TlsBlockCipher
     protected final TlsBlockCipherImpl decryptCipher, encryptCipher;
     protected final TlsSuiteMac readMac, writeMac;
 
-    public TlsBlockCipher(TlsCrypto crypto, TlsCryptoParameters cryptoParams, TlsBlockCipherImpl encryptCipher,
+    public TlsBlockCipher(TlsCryptoParameters cryptoParams, TlsBlockCipherImpl encryptCipher,
         TlsBlockCipherImpl decryptCipher, TlsHMAC clientMac, TlsHMAC serverMac, int cipherKeySize) throws IOException
     {
         SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
@@ -44,7 +42,6 @@ public class TlsBlockCipher
         }
 
         this.cryptoParams = cryptoParams;
-        this.crypto = crypto;
         this.randomData = cryptoParams.getNonceGenerator().generateNonce(256);
 
         this.encryptThenMAC = securityParameters.isEncryptThenMAC();
@@ -200,7 +197,7 @@ public class TlsBlockCipher
         {
             // Add a random number of extra blocks worth of padding
             int maxExtraPadBlocks = (256 - padding_length) / blockSize;
-            int actualExtraPadBlocks = chooseExtraPadBlocks(crypto.getSecureRandom(), maxExtraPadBlocks);
+            int actualExtraPadBlocks = chooseExtraPadBlocks(maxExtraPadBlocks);
             padding_length += actualExtraPadBlocks * blockSize;
         }
 
@@ -405,11 +402,10 @@ public class TlsBlockCipher
         return totalPad;
     }
 
-    protected int chooseExtraPadBlocks(SecureRandom r, int max)
+    protected int chooseExtraPadBlocks(int max)
     {
-        // return r.nextInt(max + 1);
-
-        int x = r.nextInt();
+        byte[] random = cryptoParams.getNonceGenerator().generateNonce(4);
+        int x = Pack.littleEndianToInt(random, 0);
         int n = lowestBitSet(x);
         return Math.min(n, max);
     }
