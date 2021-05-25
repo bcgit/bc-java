@@ -6,12 +6,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.ExtendedDigest;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.RuntimeCryptoException;
-import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
@@ -22,13 +17,10 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SM3Digest;
-import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.ARIAEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
-import org.bouncycastle.crypto.engines.RC4Engine;
-import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.engines.SM4Engine;
 import org.bouncycastle.crypto.macs.HMac;
@@ -36,10 +28,6 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
@@ -54,6 +42,7 @@ import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.CryptoSignatureAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -72,9 +61,7 @@ import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
-import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
-import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
@@ -210,28 +197,9 @@ public class BcTlsCrypto
         BcTlsCertificate bcCert = BcTlsCertificate.convert(this, certificate);
         bcCert.validateKeyUsage(KeyUsage.keyEncipherment);
 
-        final RSAKeyParameters pubKeyRSA = bcCert.getPubKeyRSA();
+        RSAKeyParameters pubKeyRSA = bcCert.getPubKeyRSA();
 
-        return new TlsEncryptor()
-        {
-            public byte[] encrypt(byte[] input, int inOff, int length)
-                throws IOException
-            {
-                try
-                {
-                    PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
-                    encoding.init(true, new ParametersWithRandom(pubKeyRSA, getSecureRandom()));
-                    return encoding.processBlock(input, inOff, length);
-                }
-                catch (InvalidCipherTextException e)
-                {
-                    /*
-                     * This should never happen, only during decryption.
-                     */
-                    throw new TlsFatalAlert(AlertDescription.internal_error, e);
-                }
-            }
-        };
+        return new BcTlsRSAEncryptor(this, pubKeyRSA);
     }
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
@@ -241,19 +209,11 @@ public class BcTlsCrypto
         byte[] seed = new byte[digest.getDigestSize()];
         getSecureRandom().nextBytes(seed);
 
-        final DigestRandomGenerator nonceGen = new DigestRandomGenerator(digest);
+        DigestRandomGenerator nonceGen = new DigestRandomGenerator(digest);
         nonceGen.addSeedMaterial(additionalSeedMaterial);
         nonceGen.addSeedMaterial(seed);
 
-        return new TlsNonceGenerator()
-        {
-            public byte[] generateNonce(int size)
-            {
-                byte[] nonce = new byte[size];
-                nonceGen.nextBytes(nonce);
-                return nonce;
-            }
-        };
+        return new BcTlsNonceGenerator(nonceGen);
     }
 
     public boolean hasAllRawSignatureAlgorithms()
@@ -293,6 +253,35 @@ public class BcTlsCrypto
     public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
     {
         return true;
+    }
+
+    public boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm)
+    {
+        switch (cryptoSignatureAlgorithm)
+        {
+        case CryptoSignatureAlgorithm.rsa:
+        case CryptoSignatureAlgorithm.dsa:
+        case CryptoSignatureAlgorithm.ecdsa:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha512:
+        case CryptoSignatureAlgorithm.ed25519:
+        case CryptoSignatureAlgorithm.ed448:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+            return true;
+
+        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        case CryptoSignatureAlgorithm.gostr34102012_256:
+        case CryptoSignatureAlgorithm.gostr34102012_512:
+
+        // TODO[RFC 8998]
+        case CryptoSignatureAlgorithm.sm2:
+
+        default:
+            return false;
+        }
     }
 
     public boolean hasMacAlgorithm(int macAlgorithm)
@@ -348,7 +337,7 @@ public class BcTlsCrypto
         case SignatureScheme.sm2sig_sm3:
             return false;
         default:
-            return hasSignatureAlgorithm((short)(signatureScheme & 0xFF));
+            return hasSignatureAlgorithm(SignatureScheme.getSignatureAlgorithm(signatureScheme));
         }
     }
 
@@ -381,6 +370,29 @@ public class BcTlsCrypto
         return adoptLocalSecret(data);
     }
 
+    public Digest cloneDigest(int cryptoHashAlgorithm, Digest digest)
+    {
+        switch (cryptoHashAlgorithm)
+        {
+        case CryptoHashAlgorithm.md5:
+            return new MD5Digest((MD5Digest)digest);
+        case CryptoHashAlgorithm.sha1:
+            return new SHA1Digest((SHA1Digest)digest);
+        case CryptoHashAlgorithm.sha224:
+            return new SHA224Digest((SHA224Digest)digest);
+        case CryptoHashAlgorithm.sha256:
+            return new SHA256Digest((SHA256Digest)digest);
+        case CryptoHashAlgorithm.sha384:
+            return new SHA384Digest((SHA384Digest)digest);
+        case CryptoHashAlgorithm.sha512:
+            return new SHA512Digest((SHA512Digest)digest);
+        case CryptoHashAlgorithm.sm3:
+            return new SM3Digest((SM3Digest)digest);
+        default:
+            throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
+        }
+    }
+
     public Digest createDigest(int cryptoHashAlgorithm)
     {
         switch (cryptoHashAlgorithm)
@@ -406,65 +418,7 @@ public class BcTlsCrypto
 
     public TlsHash createHash(int cryptoHashAlgorithm)
     {
-        return new BcTlsHash(cryptoHashAlgorithm, createDigest(cryptoHashAlgorithm));
-    }
-
-    private static class BcTlsHash
-        implements TlsHash
-    {
-        private final int cryptoHashAlgorithm;
-        private final Digest digest;
-
-        BcTlsHash(int cryptoHashAlgorithm, Digest digest)
-        {
-            this.cryptoHashAlgorithm = cryptoHashAlgorithm;
-            this.digest = digest;
-        }
-
-        public void update(byte[] data, int offSet, int length)
-        {
-            digest.update(data, offSet, length);
-        }
-
-        public byte[] calculateHash()
-        {
-            byte[] rv = new byte[digest.getDigestSize()];
-            digest.doFinal(rv, 0);
-            return rv;
-        }
-
-        public Object clone()
-        {
-            return new BcTlsHash(cryptoHashAlgorithm, cloneDigest(cryptoHashAlgorithm, digest));
-        }
-
-        public void reset()
-        {
-            digest.reset();
-        }
-    }
-
-    public static Digest cloneDigest(int cryptoHashAlgorithm, Digest hash)
-    {
-        switch (cryptoHashAlgorithm)
-        {
-        case CryptoHashAlgorithm.md5:
-            return new MD5Digest((MD5Digest)hash);
-        case CryptoHashAlgorithm.sha1:
-            return new SHA1Digest((SHA1Digest)hash);
-        case CryptoHashAlgorithm.sha224:
-            return new SHA224Digest((SHA224Digest)hash);
-        case CryptoHashAlgorithm.sha256:
-            return new SHA256Digest((SHA256Digest)hash);
-        case CryptoHashAlgorithm.sha384:
-            return new SHA384Digest((SHA384Digest)hash);
-        case CryptoHashAlgorithm.sha512:
-            return new SHA512Digest((SHA512Digest)hash);
-        case CryptoHashAlgorithm.sm3:
-            return new SM3Digest((SM3Digest)hash);
-        default:
-            throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
-        }
+        return new BcTlsHash(this, cryptoHashAlgorithm);
     }
 
     protected BlockCipher createBlockCipher(int encryptionAlgorithm)
@@ -512,58 +466,67 @@ public class BcTlsCrypto
     protected TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_CCM(), true),
-            new AeadOperator(createAEADBlockCipher_AES_CCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_CCM);
+        BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_CCM(), true);
+        BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_CCM(), false);
+
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_CCM);
     }
 
     protected TlsAEADCipher createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_GCM(), true),
-            new AeadOperator(createAEADBlockCipher_AES_GCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
+        BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_GCM(), true);
+        BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_GCM(), false);
+
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
     }
 
     protected TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_ARIA_GCM(), true),
-            new AeadOperator(createAEADBlockCipher_ARIA_GCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
+        BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_ARIA_GCM(), true);
+        BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_ARIA_GCM(), false);
+
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
     }
 
     protected TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_Camellia_GCM(), true),
-            new AeadOperator(createAEADBlockCipher_Camellia_GCM(), false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM);
+        BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_Camellia_GCM(), true);
+        BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_Camellia_GCM(), false);
+
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
     }
 
     protected TlsCipher createCipher_CBC(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int cipherKeySize,
         int macAlgorithm) throws IOException
     {
-        BlockOperator encrypt = new BlockOperator(createCBCBlockCipher(encryptionAlgorithm), true);
-        BlockOperator decrypt = new BlockOperator(createCBCBlockCipher(encryptionAlgorithm), false);
+        BcTlsBlockCipherImpl encrypt = new BcTlsBlockCipherImpl(createCBCBlockCipher(encryptionAlgorithm), true);
+        BcTlsBlockCipherImpl decrypt = new BcTlsBlockCipherImpl(createCBCBlockCipher(encryptionAlgorithm), false);
 
         TlsHMAC clientMAC = createMAC(cryptoParams, macAlgorithm);
         TlsHMAC serverMAC = createMAC(cryptoParams, macAlgorithm);
 
-        return new TlsBlockCipher(this, cryptoParams, encrypt, decrypt, clientMAC, serverMAC, cipherKeySize);
+        return new TlsBlockCipher(cryptoParams, encrypt, decrypt, clientMAC, serverMAC, cipherKeySize);
     }
 
     protected TlsAEADCipher createCipher_SM4_CCM(TlsCryptoParameters cryptoParams)
         throws IOException
     {
-        int cipherKeySize = 16, macSize = 16;
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_SM4_CCM(), true),
-            new AeadOperator(createAEADBlockCipher_SM4_CCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_CCM);
+        BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_SM4_CCM(), true);
+        BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_SM4_CCM(), false);
+
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, 16, 16, TlsAEADCipher.AEAD_CCM);
     }
 
     protected TlsAEADCipher createCipher_SM4_GCM(TlsCryptoParameters cryptoParams)
         throws IOException
     {
-        int cipherKeySize = 16, macSize = 16;
-        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_SM4_GCM(), true),
-            new AeadOperator(createAEADBlockCipher_SM4_GCM(), false), cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM);
+        BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_SM4_GCM(), true);
+        BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_SM4_GCM(), false);
+
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, 16, 16, TlsAEADCipher.AEAD_GCM);
     }
 
     protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
@@ -603,43 +566,45 @@ public class BcTlsCrypto
         return new SM4Engine();
     }
 
+    protected AEADBlockCipher createCCMMode(BlockCipher engine)
+    {
+        return new CCMBlockCipher(engine);
+    }
+
+    protected AEADBlockCipher createGCMMode(BlockCipher engine)
+    {
+        // TODO Consider allowing custom configuration of multiplier
+        return new GCMBlockCipher(engine);
+    }
+
     protected AEADBlockCipher createAEADBlockCipher_AES_CCM()
     {
-        return new CCMBlockCipher(createAESEngine());
+        return createCCMMode(createAESEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_GCM()
     {
-        // TODO Consider allowing custom configuration of multiplier
-        return new GCMBlockCipher(createAESEngine());
+        return createGCMMode(createAESEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_ARIA_GCM()
     {
-        // TODO Consider allowing custom configuration of multiplier
-        return new GCMBlockCipher(createARIAEngine());
+        return createGCMMode(createARIAEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_Camellia_GCM()
     {
-        // TODO Consider allowing custom configuration of multiplier
-        return new GCMBlockCipher(createCamelliaEngine());
+        return createGCMMode(createCamelliaEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_SM4_CCM()
     {
-        return new CCMBlockCipher(createSM4Engine());
+        return createCCMMode(createSM4Engine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_SM4_GCM()
     {
-        // TODO Consider allowing custom configuration of multiplier
-        return new GCMBlockCipher(createSM4Engine());
-    }
-
-    protected StreamCipher createRC4StreamCipher()
-    {
-        return new RC4Engine();
+        return createGCMMode(createSM4Engine());
     }
 
     public TlsHMAC createHMAC(int macAlgorithm)
@@ -649,7 +614,7 @@ public class BcTlsCrypto
 
     public TlsHMAC createHMACForHash(int cryptoHashAlgorithm)
     {
-        return new HMacOperator(createDigest(cryptoHashAlgorithm));
+        return new BcTlsHMAC(new HMac(createDigest(cryptoHashAlgorithm)));
     }
 
     protected TlsHMAC createHMAC_SSL(int macAlgorithm)
@@ -687,230 +652,38 @@ public class BcTlsCrypto
 
     public TlsSRP6Client createSRP6Client(TlsSRPConfig srpConfig)
     {
-        final SRP6Client srpClient = new SRP6Client();
-
         BigInteger[] ng = srpConfig.getExplicitNG();
-        SRP6GroupParameters srpGroup= new SRP6GroupParameters(ng[0], ng[1]);
-        srpClient.init(srpGroup, new SHA1Digest(), this.getSecureRandom());
+        SRP6GroupParameters srpGroup = new SRP6GroupParameters(ng[0], ng[1]);
 
-        return new TlsSRP6Client()
-        {
-            public BigInteger calculateSecret(BigInteger serverB)
-                throws TlsFatalAlert
-            {
-                try
-                {
-                    return srpClient.calculateSecret(serverB);
-                }
-                catch (CryptoException e)
-                {
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
-                }
-            }
+        SRP6Client srp6Client = new SRP6Client();
+        srp6Client.init(srpGroup, createDigest(CryptoHashAlgorithm.sha1), getSecureRandom());
 
-            public BigInteger generateClientCredentials(byte[] srpSalt, byte[] identity, byte[] password)
-            {
-                return srpClient.generateClientCredentials(srpSalt, identity, password);
-            }
-        };
+        return new BcTlsSRP6Client(srp6Client);
     }
 
     public TlsSRP6Server createSRP6Server(TlsSRPConfig srpConfig, BigInteger srpVerifier)
     {
-        final SRP6Server srpServer = new SRP6Server();
         BigInteger[] ng = srpConfig.getExplicitNG();
-        SRP6GroupParameters srpGroup= new SRP6GroupParameters(ng[0], ng[1]);
-        srpServer.init(srpGroup, srpVerifier, new SHA1Digest(), this.getSecureRandom());
-        return new TlsSRP6Server()
-        {
-            public BigInteger generateServerCredentials()
-            {
-                return srpServer.generateServerCredentials();
-            }
+        SRP6GroupParameters srpGroup = new SRP6GroupParameters(ng[0], ng[1]);
 
-            public BigInteger calculateSecret(BigInteger clientA)
-                throws IOException
-            {
-                try
-                {
-                    return srpServer.calculateSecret(clientA);
-                }
-                catch (CryptoException e)
-                {
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
-                }
-            }
-        };
+        SRP6Server srp6Server = new SRP6Server();
+        srp6Server.init(srpGroup, srpVerifier, createDigest(CryptoHashAlgorithm.sha1), getSecureRandom());
+
+        return new BcTlsSRP6Server(srp6Server);
     }
 
     public TlsSRP6VerifierGenerator createSRP6VerifierGenerator(TlsSRPConfig srpConfig)
     {
         BigInteger[] ng = srpConfig.getExplicitNG();
-        final SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
 
-        verifierGenerator.init(ng[0], ng[1], new SHA1Digest());
+        SRP6VerifierGenerator srp6VerifierGenerator = new SRP6VerifierGenerator();
+        srp6VerifierGenerator.init(ng[0], ng[1], createDigest(CryptoHashAlgorithm.sha1));
 
-        return new TlsSRP6VerifierGenerator()
-        {
-            public BigInteger generateVerifier(byte[] salt, byte[] identity, byte[] password)
-            {
-                return verifierGenerator.generateVerifier(salt, identity, password);
-            }
-        };
+        return new BcTlsSRP6VerifierGenerator(srp6VerifierGenerator);
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
     {
         return adoptLocalSecret(new byte[TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm)]);
-    }
-
-    private class BlockOperator
-        implements TlsBlockCipherImpl
-    {
-        private final boolean isEncrypting;
-        private final BlockCipher cipher;
-
-        private KeyParameter key;
-
-        BlockOperator(BlockCipher cipher, boolean isEncrypting)
-        {
-            this.cipher = cipher;
-            this.isEncrypting = isEncrypting;
-        }
-
-        public void setKey(byte[] key, int keyOff, int keyLen)
-        {
-            this.key = new KeyParameter(key, keyOff, keyLen);
-        }
-
-        public void init(byte[] iv, int ivOff, int ivLen)
-        {
-            cipher.init(isEncrypting, new ParametersWithIV(key, iv, ivOff, ivLen));
-        }
-
-        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
-        {
-            int blockSize = cipher.getBlockSize();
-
-            for (int i = 0; i < inputLength; i += blockSize)
-            {
-                cipher.processBlock(input, inputOffset + i, output, outputOffset + i);
-            }
-
-            return inputLength;
-        }
-
-        public int getBlockSize()
-        {
-            return cipher.getBlockSize();
-        }
-    }
-
-    public class AeadOperator
-        implements TlsAEADCipherImpl
-    {
-        private final boolean isEncrypting;
-        private final AEADBlockCipher cipher;
-
-        private KeyParameter key;
-
-        public AeadOperator(AEADBlockCipher cipher, boolean isEncrypting)
-        {
-            this.cipher = cipher;
-            this.isEncrypting = isEncrypting;
-        }
-
-        public void setKey(byte[] key, int keyOff, int keyLen)
-        {
-            this.key = new KeyParameter(key, keyOff, keyLen);
-        }
-
-        public void init(byte[] nonce, int macSize, byte[] additionalData)
-        {
-            cipher.init(isEncrypting, new AEADParameters(key, macSize * 8, nonce, additionalData));
-        }
-
-        public int getOutputSize(int inputLength)
-        {
-            return cipher.getOutputSize(inputLength);
-        }
-
-        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] extraInput, byte[] output, int outputOffset)
-            throws IOException
-        {
-            int len = cipher.processBytes(input, inputOffset, inputLength, output, outputOffset);
-
-            int extraInputLength = extraInput.length;
-            if (extraInputLength > 0)
-            {
-                if (!isEncrypting)
-                {
-                    throw new TlsFatalAlert(AlertDescription.internal_error);
-                }
-
-                len += cipher.processBytes(extraInput, 0, extraInputLength, output, outputOffset + len);
-            }
-
-            try
-            {
-                len += cipher.doFinal(output, outputOffset + len);
-            }
-            catch (InvalidCipherTextException e)
-            {
-                // TODO:
-                throw new RuntimeCryptoException(e.toString());
-            }
-
-            return len;
-        }
-    }
-
-    private class HMacOperator implements TlsHMAC
-    {
-        private final HMac hmac;
-
-        HMacOperator(Digest digest)
-        {
-            this.hmac = new HMac(digest);
-        }
-
-        public void setKey(byte[] key, int keyOff, int keyLen)
-        {
-            hmac.init(new KeyParameter(key, keyOff, keyLen));
-        }
-
-        public void update(byte[] input, int inOff, int length)
-        {
-            hmac.update(input, inOff, length);
-        }
-
-        public byte[] calculateMAC()
-        {
-            byte[] rv = new byte[hmac.getMacSize()];
-
-            hmac.doFinal(rv, 0);
-
-            return rv;
-        }
-
-        public void calculateMAC(byte[] output, int outOff)
-        {
-            hmac.doFinal(output, outOff);
-        }
-
-        public int getInternalBlockSize()
-        {
-            return ((ExtendedDigest)hmac.getUnderlyingDigest()).getByteLength();
-        }
-
-        public int getMacLength()
-        {
-            return hmac.getMacSize();
-        }
-
-        public void reset()
-        {
-            hmac.reset();
-        }
     }
 }

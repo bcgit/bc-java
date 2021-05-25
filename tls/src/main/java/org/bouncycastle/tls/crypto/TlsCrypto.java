@@ -54,6 +54,15 @@ public interface TlsCrypto
     boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm);
 
     /**
+     * Return true if this TlsCrypto can support the passed in signature algorithm
+     * (not necessarily in combination with EVERY hash algorithm).
+     *
+     * @param cryptoSignatureAlgorithm the algorithm of interest.
+     * @return true if cryptoSignatureAlgorithm is supported, false otherwise.
+     */
+    boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm);
+
+    /**
      * Return true if this TlsCrypto can support the passed in MAC algorithm.
      *
      * @param macAlgorithm the algorithm of interest.

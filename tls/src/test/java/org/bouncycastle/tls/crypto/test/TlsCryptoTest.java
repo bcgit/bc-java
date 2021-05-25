@@ -391,7 +391,7 @@ public abstract class TlsCryptoTest
 
     private byte[] getCurrentHash(TlsHash hash)
     {
-        return ((TlsHash)hash.clone()).calculateHash();
+        return hash.cloneHash().calculateHash();
     }
 
     private static void assertArrayEquals(byte[] a, byte[] b)

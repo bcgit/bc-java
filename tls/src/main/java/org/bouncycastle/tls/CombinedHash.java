@@ -35,8 +35,8 @@ public class CombinedHash
     {
         this.context = t.context;
         this.crypto = t.crypto;
-        this.md5 = (TlsHash)t.md5.clone();
-        this.sha1 = (TlsHash)t.sha1.clone();
+        this.md5 = t.md5.cloneHash();
+        this.sha1 = t.sha1.cloneHash();
     }
 
     public void update(byte[] input, int inOff, int len)
@@ -55,7 +55,7 @@ public class CombinedHash
         return Arrays.concatenate(md5.calculateHash(), sha1.calculateHash());
     }
 
-    public Object clone()
+    public TlsHash cloneHash()
     {
         return new CombinedHash(this);
     }
