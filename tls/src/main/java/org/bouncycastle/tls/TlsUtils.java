@@ -59,14 +59,14 @@ public class TlsUtils
     private static final Hashtable CERT_SIG_ALG_OIDS = createCertSigAlgOIDs();
     private static final Vector DEFAULT_SUPPORTED_SIG_ALGS = createDefaultSupportedSigAlgs();
 
-    private static void addCertSigAlgOID(Hashtable h, ASN1ObjectIdentifier oid, short signatureAlgorithm)
+    private static void addCertSigAlgOID(Hashtable h, ASN1ObjectIdentifier oid, SignatureAndHashAlgorithm sigAndHash)
     {
-        h.put(oid.getId(), SignatureAndHashAlgorithm.getInstanceIntrinsic(signatureAlgorithm));
+        h.put(oid.getId(), sigAndHash);
     }
 
     private static void addCertSigAlgOID(Hashtable h, ASN1ObjectIdentifier oid, short hashAlgorithm, short signatureAlgorithm)
     {
-        h.put(oid.getId(), SignatureAndHashAlgorithm.getInstance(hashAlgorithm, signatureAlgorithm));
+        addCertSigAlgOID(h, oid, SignatureAndHashAlgorithm.getInstance(hashAlgorithm, signatureAlgorithm));
     }
 
     private static Hashtable createCertSigAlgOIDs()
@@ -108,11 +108,13 @@ public class TlsUtils
         addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA384, HashAlgorithm.sha384, SignatureAlgorithm.ecdsa);
         addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA512, HashAlgorithm.sha512, SignatureAlgorithm.ecdsa);
 
-        addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed25519, SignatureAlgorithm.ed25519);
-        addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed448, SignatureAlgorithm.ed448);
+        addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed25519, SignatureAndHashAlgorithm.ed25519);
+        addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed448, SignatureAndHashAlgorithm.ed448);
 
-        addCertSigAlgOID(h, RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256, SignatureAlgorithm.gostr34102012_256);
-        addCertSigAlgOID(h, RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512, SignatureAlgorithm.gostr34102012_512);
+        addCertSigAlgOID(h, RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256,
+            SignatureAndHashAlgorithm.gostr34102012_256);
+        addCertSigAlgOID(h, RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512,
+            SignatureAndHashAlgorithm.gostr34102012_512);
 
         // TODO[RFC 8998]
 //        addCertSigAlgOID(h, GMObjectIdentifiers.sm2sign_with_sm3, HashAlgorithm.sm3, SignatureAlgorithm.sm2);
@@ -155,8 +157,8 @@ public class TlsUtils
     public static final long[] EMPTY_LONGS = new long[0];
     public static final String[] EMPTY_STRINGS = new String[0];
 
-    protected static short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
-    protected static short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
+    static final short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
+    static final short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
 
     public static void checkUint8(short i) throws IOException
     {
@@ -1448,7 +1450,7 @@ public class TlsUtils
         for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
         {
             SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
-            if (entry.getHash() == signatureAlgorithm.getHash() && entry.getSignature() == signatureAlgorithm.getSignature())
+            if (entry.equals(signatureAlgorithm))
             {
                 return true;
             }
@@ -3961,7 +3963,7 @@ public class TlsUtils
 
     static boolean isValidSignatureAlgorithmForServerKeyExchange(short signatureAlgorithm, int keyExchangeAlgorithm)
     {
-        // TODO [tls13]
+        // TODO[tls13]
 
         switch (keyExchangeAlgorithm)
         {
