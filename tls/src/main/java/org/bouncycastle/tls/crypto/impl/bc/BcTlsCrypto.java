@@ -433,7 +433,7 @@ public class BcTlsCrypto
             return rv;
         }
 
-        public Object clone()
+        public TlsHash cloneHash()
         {
             return new BcTlsHash(cryptoHashAlgorithm, cloneDigest(cryptoHashAlgorithm, digest));
         }
