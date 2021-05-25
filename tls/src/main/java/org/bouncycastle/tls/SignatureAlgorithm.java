@@ -17,13 +17,8 @@ public class SignatureAlgorithm
     public static final short ed448 = 8;
 
     /*
-     * draft-smyshlyaev-tls12-gost-suites-10
-     */
-    public static final short gostr34102012_256 = 64;
-    public static final short gostr34102012_512 = 65;
-
-    /*
      * RFC 8446 (implied from SignatureScheme values)
+     * RFC 8447 reserved these values without allocating the implied names
      */
     public static final short rsa_pss_rsae_sha256 = 4;
     public static final short rsa_pss_rsae_sha384 = 5;
@@ -38,6 +33,12 @@ public class SignatureAlgorithm
     public static final short ecdsa_brainpoolP256r1tls13_sha256 = 26;
     public static final short ecdsa_brainpoolP384r1tls13_sha384 = 27;
     public static final short ecdsa_brainpoolP512r1tls13_sha512 = 28;
+
+    /*
+     * draft-smyshlyaev-tls12-gost-suites-10
+     */
+    public static final short gostr34102012_256 = 64;
+    public static final short gostr34102012_512 = 65;
 
     public static short getClientCertificateType(short signatureAlgorithm)
     {
@@ -66,10 +67,6 @@ public class SignatureAlgorithm
         case SignatureAlgorithm.gostr34102012_512:
             return ClientCertificateType.gost_sign512;
 
-        // NOTE: Only valid from TLS 1.3, where ClientCertificateType is not used
-        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
-        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
-        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
         default:
             return -1;
         }
