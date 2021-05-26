@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Implementation of PartialHashtree, as defined in RFC 4998.
@@ -25,7 +24,7 @@ public class PartialHashtree
     /**
      * Hash values that constitute the hash tree, as ASN.1 Octet Strings.
      */
-    private ASN1Sequence values;
+    private final ASN1Sequence values;
 
     /**
      * Return a PartialHashtree from the given object.
