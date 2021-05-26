@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1.tsp;
 
+import java.util.Enumeration;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -8,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Implementation of PartialHashtree, as defined in RFC 4998.
@@ -75,6 +78,11 @@ public class PartialHashtree
         this.values = new DERSequence(v);
     }
 
+    public int getValueCount()
+    {
+        return values.size();
+    }
+
     public byte[][] getValues()
     {
         byte[][] rv = new byte[values.size()][];
@@ -85,6 +93,23 @@ public class PartialHashtree
         }
 
         return rv;
+    }
+
+    public boolean containsHash(byte[] hash)
+    {
+        Enumeration hashes = values.getObjects();
+
+        while (hashes.hasMoreElements())
+        {
+            byte[] currentHash = ASN1OctetString.getInstance(hashes.nextElement()).getOctets();
+
+            if (Arrays.constantTimeAreEqual(hash, currentHash))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public ASN1Primitive toASN1Primitive()
