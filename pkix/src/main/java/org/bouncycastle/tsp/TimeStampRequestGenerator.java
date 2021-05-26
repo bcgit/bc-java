@@ -153,11 +153,49 @@ public class TimeStampRequestGenerator
 
     public TimeStampRequest generate(ASN1ObjectIdentifier digestAlgorithm, byte[] digest)
     {
-        return generate(digestAlgorithm.getId(), digest);
+        return generate(new AlgorithmIdentifier(digestAlgorithm, DERNull.INSTANCE), digest);
     }
 
     public TimeStampRequest generate(ASN1ObjectIdentifier digestAlgorithm, byte[] digest, BigInteger nonce)
     {
-        return generate(digestAlgorithm.getId(), digest, nonce);
+        return generate(new AlgorithmIdentifier(digestAlgorithm, DERNull.INSTANCE), digest, nonce);
+    }
+
+    public TimeStampRequest generate(
+        AlgorithmIdentifier     digestAlgorithmID,
+        byte[]                  digest)
+    {
+        return generate(digestAlgorithmID, digest, null);
+    }
+
+    public TimeStampRequest generate(
+        AlgorithmIdentifier     digestAlgorithmID,
+        byte[]                  digest,
+        BigInteger              nonce)
+    {
+        if (digestAlgorithmID == null)
+        {
+            throw new IllegalArgumentException("digest algorithm not specified");
+        }
+
+        MessageImprint messageImprint = new MessageImprint(digestAlgorithmID, digest);
+
+        Extensions  ext = null;
+
+        if (!extGenerator.isEmpty())
+        {
+            ext = extGenerator.generate();
+        }
+
+        if (nonce != null)
+        {
+            return new TimeStampRequest(new TimeStampReq(messageImprint,
+                    reqPolicy, new ASN1Integer(nonce), certReq, ext));
+        }
+        else
+        {
+            return new TimeStampRequest(new TimeStampReq(messageImprint,
+                    reqPolicy, null, certReq, ext));
+        }
     }
 }

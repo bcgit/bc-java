@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.tsp.TimeStampReq;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 
@@ -84,6 +85,11 @@ public class TimeStampRequest
     public ASN1ObjectIdentifier getMessageImprintAlgOID()
     {
         return req.getMessageImprint().getHashAlgorithm().getAlgorithm();
+    }
+
+    public AlgorithmIdentifier getMessageImprintAlgID()
+    {
+        return req.getMessageImprint().getHashAlgorithm();
     }
 
     public byte[] getMessageImprintDigest()
