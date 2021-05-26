@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -117,6 +118,25 @@ public class EvidenceRecord
         this.cryptoInfos = evidenceRecord.cryptoInfos;
         this.encryptionInfo = evidenceRecord.encryptionInfo;
         this.archiveTimeStampSequence = replacementSequence;
+    }
+
+    /**
+     * Build a basic evidence record from an initial
+     * ArchiveTimeStamp.
+     * 
+     * @param cryptoInfos
+     * @param encryptionInfo
+     * @param archiveTimeStamp
+     */
+    public EvidenceRecord(
+        CryptoInfos cryptoInfos,
+        EncryptionInfo encryptionInfo,
+        ArchiveTimeStamp archiveTimeStamp)
+    {
+        this.digestAlgorithms = new DERSequence(archiveTimeStamp.getDigestAlgorithmIdentifier());
+        this.cryptoInfos = cryptoInfos;
+        this.encryptionInfo = encryptionInfo;
+        this.archiveTimeStampSequence = new ArchiveTimeStampSequence(new ArchiveTimeStampChain(archiveTimeStamp));
     }
 
     public EvidenceRecord(
@@ -232,11 +252,11 @@ public class EvidenceRecord
 
         if (null != cryptoInfos)
         {
-            vector.add(cryptoInfos);
+            vector.add(new DERTaggedObject(false, 0, cryptoInfos));
         }
         if (null != encryptionInfo)
         {
-            vector.add(encryptionInfo);
+            vector.add(new DERTaggedObject(false, 1, encryptionInfo));
         }
 
         vector.add(archiveTimeStampSequence);
