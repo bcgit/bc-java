@@ -20,6 +20,7 @@ import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.tsp.TSPAlgorithms;
@@ -83,7 +84,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("1c077180345165b3b593e0b1ee9d040fb8aa8f0e923fe126ed0e2867aebe466e"),
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
                                             tspReq.getMessageImprintDigest()));
 
 
@@ -242,7 +243,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("1c077180345165b3b593e0b1ee9d040fb8aa8f0e923fe126ed0e2867aebe466e"),
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
                                             tspReq.getMessageImprintDigest()));
 
 
@@ -339,7 +340,55 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("8a51451b8ee6f2911c87e11e9d45348f7b5a7ea2b2b2985605f4cefdf6874c18"),
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
             tspReq.getMessageImprintDigest()));
+    }
+
+    public void testSort()
+        throws Exception
+    {
+        ERSDataGroup h3Docs = new ERSDataGroup(
+            new ERSByteData(H1_DATA),
+            new ERSByteData(H2_DATA)
+        );
+
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+
+        trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
+
+        h3Docs = new ERSDataGroup(
+            new ERSByteData(H2_DATA),
+            new ERSByteData(H1_DATA)
+        );
+
+        trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
+
+        h3Docs = new ERSDataGroup(
+            new ERSByteData(H1_DATA),
+            new ERSByteData(H2_DATA),
+            new ERSByteData(H3A_DATA),
+            new ERSByteData(H3B_DATA),
+            new ERSByteData(H3C_DATA),
+            new ERSByteData(H4_DATA)
+        );
+        trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
+        trySort(h3Docs, NISTObjectIdentifiers.id_sha224, digestCalculatorProvider);
+        trySort(h3Docs, NISTObjectIdentifiers.id_sha384, digestCalculatorProvider);
+    }
+
+    private void trySort(ERSDataGroup h3Docs, ASN1ObjectIdentifier sha, DigestCalculatorProvider digestCalculatorProvider)
+        throws OperatorCreationException
+    {
+        List<byte[]> hashes = h3Docs.getHashes(digestCalculatorProvider.get(
+                                    new AlgorithmIdentifier(sha)));
+        for (int i = 0; i != hashes.size() - 1; i++)
+        {
+              assertTrue(compare((byte[])hashes.get(i), (byte[])hashes.get(i + 1)) < 0);
+        }
+    }
+
+    private int compare(byte[] a, byte[] b)
+    {
+        return new BigInteger(1, a).compareTo(new BigInteger(1, b));
     }
 }
