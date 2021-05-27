@@ -1,16 +1,13 @@
 package org.bouncycastle.tsp.ers;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Date;
 
 import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
 import org.bouncycastle.asn1.tsp.PartialHashtree;
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.selector.X509CertificateHolderSelector;
 import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
@@ -122,7 +119,7 @@ public class ERSArchiveTimeStamp
             final Collection<X509CertificateHolder> certs = certificateStore.getMatches(timeStampToken.getSID());
             if (!certs.isEmpty())
             {
-                return certs.iterator().next();
+                return (X509CertificateHolder)certs.iterator().next();
             }
         }
 
@@ -188,47 +185,31 @@ public class ERSArchiveTimeStamp
         }
     }
 
-    protected Date getGenTime()
-        throws IOException, TSPException
-    {
-        final TimeStampToken timeStampToken = new TimeStampToken(archiveTimeStamp.getTimeStamp());
-        return getGenTime(timeStampToken);
-    }
-
-    private Date getGenTime(final TimeStampToken timeStampToken)
+    /**
+     * Return the generation time of the time-stamp associated with
+     * this archive time stamp.
+     *
+     * @return the time the associated time-stamp was created.
+     */
+    public Date getGenTime()
     {
         return timeStampToken.getTimeStampInfo().getGenTime();
     }
 
-    protected Date getExpiryDate()
-        throws ERSException
+    /**
+     * Return the not-after date for the time-stamp's signing certificate
+     * if it is present.
+     *
+     * @return the issuing TSP server not-after date, or null if not present.
+     */
+    public Date getExpiryTime()
     {
-        return getExpiryDate(timeStampToken);
-    }
-
-    private Date getExpiryDate(final TimeStampToken timeStampToken)
-        throws ERSException
-    {
-        return getSignerCertificateHolder(timeStampToken).getNotAfter();
-    }
-
-    protected X509CertificateHolder getSignerCertificateHolder(final TimeStampToken token)
-        throws ArchiveTimeStampValidationException
-    {
-        BigInteger serialNumber = token.getSID().getSerialNumber();
-        X500Name issuer = token.getSID().getIssuer();
-
-        @SuppressWarnings("unchecked")
-        Collection<X509CertificateHolder> matches = token.getCertificates()
-            .getMatches(new X509CertificateHolderSelector(issuer, serialNumber));
-        if (matches != null && !matches.isEmpty())
+        X509CertificateHolder crtHolder = getSigningCertificate();
+        if (crtHolder != null)
         {
-            return matches.iterator().next();
+            return crtHolder.getNotAfter();
         }
-        else
-        {
-            throw new ArchiveTimeStampValidationException("no signing certificate found");
-        }
+        return null;
     }
 
     public ArchiveTimeStamp toASN1Structure()

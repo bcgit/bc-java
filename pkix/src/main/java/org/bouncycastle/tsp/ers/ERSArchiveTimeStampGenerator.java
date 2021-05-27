@@ -108,7 +108,7 @@ public class ERSArchiveTimeStampGenerator
         // replace groups
         for (int i = 0; i != hashes.size(); i++)
         {
-            byte[] hash = hashes.get(i);
+            byte[] hash = (byte[])hashes.get(i);
             ERSDataGroup found = null;
 
             for (Iterator it = dataGroupSet.iterator(); it.hasNext();)
@@ -119,7 +119,7 @@ public class ERSArchiveTimeStampGenerator
                 if (Arrays.areEqual(dHash, hash))
                 {
                     List<byte[]> dHashes = data.getHashes(digCalc);
-                    trees[i] = new PartialHashtree(dHashes.toArray(new byte[dHashes.size()][]));
+                    trees[i] = new PartialHashtree((byte[][])dHashes.toArray(new byte[dHashes.size()][]));
                     found = data;
                     break;
                 }

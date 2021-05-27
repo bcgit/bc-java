@@ -29,7 +29,7 @@ class ERSUtil
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to calculate hash: " + e.getMessage(), e);
+            throw ExpUtil.createIllegalState("unable to calculate hash: " + e.getMessage(), e);
         }
     }
 
@@ -70,7 +70,7 @@ class ERSUtil
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to calculate hash: " + e.getMessage(), e);
+            throw ExpUtil.createIllegalState("unable to calculate hash: " + e.getMessage(), e);
         }
     }
 
@@ -90,7 +90,7 @@ class ERSUtil
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to calculate hash: " + e.getMessage(), e);
+            throw ExpUtil.createIllegalState("unable to calculate hash: " + e.getMessage(), e);
         }
     }
 
@@ -101,7 +101,7 @@ class ERSUtil
             OutputStream mdOut = digCalc.getOutputStream();
             while (dataGroup.hasNext())
             {
-                mdOut.write(dataGroup.next());
+                mdOut.write((byte[])dataGroup.next());
             }
 
             mdOut.close();
@@ -110,7 +110,7 @@ class ERSUtil
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to calculate hash: " + e.getMessage(), e);
+            throw ExpUtil.createIllegalState("unable to calculate hash: " + e.getMessage(), e);
         }
     }
 
@@ -136,7 +136,7 @@ class ERSUtil
         {
             for (int i = 0; i < hashes.size() - 2; i += 2)
             {
-                newHashes.add(calculateBranchHash(digCalc, hashes.get(i), hashes.get(i + 1)));
+                newHashes.add(calculateBranchHash(digCalc, (byte[])hashes.get(i), (byte[])hashes.get(i + 1)));
             }
 
             if (nodes.length % 2 == 1)
@@ -149,7 +149,7 @@ class ERSUtil
         }
         while (hashes.size() > 1);
 
-        return hashes.get(0);
+        return (byte[])hashes.get(0);
     }
 
     static byte[] computeNodeHash(DigestCalculator digCalc, PartialHashtree node)
@@ -182,7 +182,7 @@ class ERSUtil
 
         for (int i = 0; i != dataObjects.size(); i++)
         {
-            add(hashes, dataObjects.get(i).getHash(digCalc));
+            add(hashes, ((ERSData)dataObjects.get(i)).getHash(digCalc));
         }
 
         return hashes;
