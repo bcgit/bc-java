@@ -3357,7 +3357,7 @@ public class PGPKeyRingTest
         boolean embeddedFound = false;
         while (iterator.hasNext())
         {
-            PGPPublicKey key = iterator.next();
+            PGPPublicKey key = (PGPPublicKey)iterator.next();
 
             if (!key.isMasterKey() && !key.isEncryptionKey())
             {

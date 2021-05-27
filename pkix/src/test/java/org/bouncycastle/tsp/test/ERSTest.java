@@ -65,9 +65,9 @@ public class ERSTest
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
         ERSDataGroup h3Docs = new ERSDataGroup(
-                                new ERSByteData(H3A_DATA),
-                                new ERSByteData(H3B_DATA),
-                                new ERSByteData(H3C_DATA));
+            new ERSData[] { new ERSByteData(H3A_DATA),
+                            new ERSByteData(H3B_DATA),
+                            new ERSByteData(H3C_DATA) });
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
         DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
@@ -135,7 +135,7 @@ public class ERSTest
         List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator);
         for (int i = 0; i != h3Hashes.size(); i++)
         {
-            ats.validatePresent(h3Hashes.get(i), new Date());
+            ats.validatePresent((byte[])h3Hashes.get(i), new Date());
         }
 
         X509CertificateHolder tspCert = ats.getSigningCertificate();
@@ -149,9 +149,9 @@ public class ERSTest
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
         ERSDataGroup h3Docs = new ERSDataGroup(
-                                new ERSByteData(H3A_DATA),
-                                new ERSByteData(H3B_DATA),
-                                new ERSByteData(H3C_DATA));
+            new ERSData[] { new ERSByteData(H3A_DATA),
+                            new ERSByteData(H3B_DATA),
+                            new ERSByteData(H3C_DATA) });
 
         DigestCalculator digestCalculator = new JcaDigestCalculatorProviderBuilder().build().get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
         List<byte[]> hashes = h3Docs.getHashes(
@@ -224,9 +224,9 @@ public class ERSTest
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
         ERSDataGroup h3Docs = new ERSDataGroup(
-                                new ERSByteData(H3A_DATA),
-                                new ERSByteData(H3B_DATA),
-                                new ERSByteData(H3C_DATA));
+            new ERSData[] { new ERSByteData(H3A_DATA),
+                            new ERSByteData(H3B_DATA),
+                            new ERSByteData(H3C_DATA) });
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
         DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
@@ -297,7 +297,7 @@ public class ERSTest
         List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator);
         for (int i = 0; i != h3Hashes.size(); i++)
         {
-            ev.validatePresent(h3Hashes.get(i), new Date());
+            ev.validatePresent((byte[])h3Hashes.get(i), new Date());
         }
 
         X509CertificateHolder tspCert = ev.getSigningCertificate();
@@ -319,9 +319,9 @@ public class ERSTest
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
         ERSDataGroup h3Docs = new ERSDataGroup(
-            new ERSByteData(H3A_DATA),
-            new ERSByteData(H3B_DATA),
-            new ERSByteData(H3C_DATA));
+            new ERSData[] { new ERSByteData(H3A_DATA),
+                            new ERSByteData(H3B_DATA),
+                            new ERSByteData(H3C_DATA) });
         ERSData h4Doc = new ERSByteData(H4_DATA);
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
@@ -348,8 +348,8 @@ public class ERSTest
         throws Exception
     {
         ERSDataGroup h3Docs = new ERSDataGroup(
-            new ERSByteData(H1_DATA),
-            new ERSByteData(H2_DATA)
+            new ERSData[] { new ERSByteData(H1_DATA),
+                            new ERSByteData(H2_DATA) }
         );
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
@@ -357,19 +357,19 @@ public class ERSTest
         trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
 
         h3Docs = new ERSDataGroup(
-            new ERSByteData(H2_DATA),
-            new ERSByteData(H1_DATA)
+            new ERSData[] { new ERSByteData(H2_DATA),
+                            new ERSByteData(H1_DATA) }
         );
 
         trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
 
         h3Docs = new ERSDataGroup(
-            new ERSByteData(H1_DATA),
-            new ERSByteData(H2_DATA),
-            new ERSByteData(H3A_DATA),
-            new ERSByteData(H3B_DATA),
-            new ERSByteData(H3C_DATA),
-            new ERSByteData(H4_DATA)
+            new ERSData[] { new ERSByteData(H1_DATA),
+                            new ERSByteData(H2_DATA),
+                            new ERSByteData(H3A_DATA),
+                            new ERSByteData(H3B_DATA),
+                            new ERSByteData(H3C_DATA),
+                            new ERSByteData(H4_DATA) }
         );
         trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
         trySort(h3Docs, NISTObjectIdentifiers.id_sha224, digestCalculatorProvider);
