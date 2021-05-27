@@ -7,18 +7,20 @@ import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.tsp.MessageImprint;
 import org.bouncycastle.asn1.tsp.TimeStampReq;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 
 /**
  * Generator for RFC 3161 Time Stamp Request objects.
  */
 public class TimeStampRequestGenerator
 {
+    private static final DefaultDigestAlgorithmIdentifierFinder dgstAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
+
     private ASN1ObjectIdentifier reqPolicy;
 
     private ASN1Boolean certReq;
@@ -129,7 +131,7 @@ public class TimeStampRequestGenerator
 
         ASN1ObjectIdentifier digestAlgOID = new ASN1ObjectIdentifier(digestAlgorithmOID);
 
-        AlgorithmIdentifier algID = new AlgorithmIdentifier(digestAlgOID, DERNull.INSTANCE);
+        AlgorithmIdentifier algID = dgstAlgFinder.find(digestAlgOID);
         MessageImprint messageImprint = new MessageImprint(algID, digest);
 
         Extensions  ext = null;
@@ -153,12 +155,12 @@ public class TimeStampRequestGenerator
 
     public TimeStampRequest generate(ASN1ObjectIdentifier digestAlgorithm, byte[] digest)
     {
-        return generate(new AlgorithmIdentifier(digestAlgorithm, DERNull.INSTANCE), digest);
+        return generate(dgstAlgFinder.find(digestAlgorithm), digest);
     }
 
     public TimeStampRequest generate(ASN1ObjectIdentifier digestAlgorithm, byte[] digest, BigInteger nonce)
     {
-        return generate(new AlgorithmIdentifier(digestAlgorithm, DERNull.INSTANCE), digest, nonce);
+        return generate(dgstAlgFinder.find(digestAlgorithm), digest, nonce);
     }
 
     public TimeStampRequest generate(

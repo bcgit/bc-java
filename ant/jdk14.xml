@@ -201,6 +201,12 @@
                 <exclude name="**/MultipartParserTest.java"/>
             </fileset>
         </replaceregexp>
+        <replaceregexp match="\.\.\." replace="[]" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <exclude name="**/MultipartParserTest.java"/>
+            </fileset>
+        </replaceregexp>
         <available classname="com.puppycrawl.tools.checkstyle.CheckStyleTask" property="checkstyle.on"/>
     </target>
 

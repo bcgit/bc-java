@@ -20,7 +20,6 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.ess.ESSCertID;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
@@ -88,7 +87,12 @@ public class TimeStampTokenGenerator
     public static final int R_TENTHS_OF_SECONDS = 1;
 
     /**
-     * Create time-stamps with a resolution of 1 microsecond.
+     * Create time-stamps with a resolution of 1 hundredth of a second.
+     */
+    public static final int R_HUNDREDTHS_OF_SECONDS = 2;
+
+    /**
+     * @deprecated use R_HUNDREDTHS_OF_SECONDS - this field will be deleted!!
      */
     public static final int R_MICROSECONDS = 2;
 
@@ -355,9 +359,7 @@ public class TimeStampTokenGenerator
         Extensions          additionalExtensions)
         throws TSPException
     {
-        ASN1ObjectIdentifier digestAlgOID = request.getMessageImprintAlgOID();
-
-        AlgorithmIdentifier algID = new AlgorithmIdentifier(digestAlgOID, DERNull.INSTANCE);
+        AlgorithmIdentifier algID = request.getMessageImprintAlgID();
         MessageImprint messageImprint = new MessageImprint(algID, request.getMessageImprintDigest());
 
         Accuracy accuracy = null;
@@ -508,7 +510,7 @@ public class TimeStampTokenGenerator
                 sBuild = new StringBuffer(sBuild.toString().substring(0, dotIndex + 2));
             }
             break;
-        case R_MICROSECONDS:
+        case R_HUNDREDTHS_OF_SECONDS:
             if (sBuild.length() > dotIndex + 3)
             {
                 sBuild = new StringBuffer(sBuild.toString().substring(0, dotIndex + 3));

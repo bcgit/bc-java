@@ -17,19 +17,19 @@ class Utils
         }
         if (digestName.equals("SHA-224"))
         {
-            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224, DERNull.INSTANCE);
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224);
         }
         if (digestName.equals("SHA-256"))
         {
-            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
         }
         if (digestName.equals("SHA-384"))
         {
-            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384);
         }
         if (digestName.equals("SHA-512"))
         {
-            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
         }
 
         throw new IllegalArgumentException("unrecognised digest algorithm: " + digestName);
