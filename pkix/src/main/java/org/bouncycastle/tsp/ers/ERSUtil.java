@@ -73,27 +73,7 @@ class ERSUtil
             throw ExpUtil.createIllegalState("unable to calculate hash: " + e.getMessage(), e);
         }
     }
-
-    static byte[] calculateDigest(DigestCalculator digCalc, byte[][] data)
-    {
-        try
-        {
-            OutputStream mdOut = digCalc.getOutputStream();
-            for (int i = 0; i != data.length; i++)
-            {
-                mdOut.write(data[i]);
-            }
-
-            mdOut.close();
-
-            return digCalc.getDigest();
-        }
-        catch (IOException e)
-        {
-            throw ExpUtil.createIllegalState("unable to calculate hash: " + e.getMessage(), e);
-        }
-    }
-
+    
     static byte[] calculateDigest(DigestCalculator digCalc, Iterator<byte[]> dataGroup)
     {
         try
@@ -202,17 +182,18 @@ class ERSUtil
             else
             {
                 int index = 1;
-                while(index < hashes.size() && hashComp.compare(hash, hashes.get(index)) < 0)
+                while(index < hashes.size() && hashComp.compare(hashes.get(index), hash) < 0)
                 {
                     index++;
                 }
+
                 if (index == hashes.size())
                 {
                     hashes.add(hash);
                 }
                 else
                 {
-                    hashes.add(index - 1, hash);
+                    hashes.add(index, hash);
                 }
             }
         }
