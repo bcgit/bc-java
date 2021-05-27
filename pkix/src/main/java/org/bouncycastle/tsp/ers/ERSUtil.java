@@ -130,10 +130,10 @@ class ERSUtil
             hashes.add(computeNodeHash(digCalc, nodes[nodes.length - 1]));
         }
 
-        List<byte[]> newHashes = new ArrayList<byte[]>((hashes.size() + 1 ) / 2);
-
         do
         {
+            List<byte[]> newHashes = new ArrayList<byte[]>((hashes.size() + 1) / 2);
+
             for (int i = 0; i <= hashes.size() - 2; i += 2)
             {
                 newHashes.add(calculateBranchHash(digCalc, (byte[])hashes.get(i), (byte[])hashes.get(i + 1)));
@@ -145,7 +145,6 @@ class ERSUtil
             }
 
             hashes = newHashes;
-            newHashes = new ArrayList<byte[]>((hashes.size() + 1) / 2);
         }
         while (hashes.size() > 1);
 
