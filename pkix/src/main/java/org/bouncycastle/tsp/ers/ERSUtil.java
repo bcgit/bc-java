@@ -117,11 +117,11 @@ class ERSUtil
     static byte[] computeRootHash(DigestCalculator digCalc, PartialHashtree[] nodes)
     {
         List<byte[]> hashes = new ArrayList<byte[]>();
-        for (int i = 0; i < nodes.length - 2; i += 2)
+        for (int i = 0; i <= nodes.length - 2; i += 2)
         {
             byte[] left = computeNodeHash(digCalc, nodes[i]);
             byte[] right = computeNodeHash(digCalc, nodes[i + 1]);
-
+ 
             hashes.add(calculateBranchHash(digCalc, left, right));
         }
 
@@ -134,12 +134,12 @@ class ERSUtil
 
         do
         {
-            for (int i = 0; i < hashes.size() - 2; i += 2)
+            for (int i = 0; i <= hashes.size() - 2; i += 2)
             {
                 newHashes.add(calculateBranchHash(digCalc, (byte[])hashes.get(i), (byte[])hashes.get(i + 1)));
             }
 
-            if (nodes.length % 2 == 1)
+            if (hashes.size() % 2 == 1)
             {
                 newHashes.add(hashes.get(hashes.size() - 1));
             }

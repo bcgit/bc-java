@@ -51,6 +51,7 @@ public class ERSTest
     public static final byte[] H3A_DATA = Strings.toByteArray("This is H3A");
     public static final byte[] H3B_DATA = Strings.toByteArray("This is H3B");
     public static final byte[] H3C_DATA = Strings.toByteArray("This is H3C");
+    public static final byte[] H4_DATA = Strings.toByteArray("This is H4");
 
     public void setUp()
     {
@@ -82,7 +83,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("f1cbfaac8e7eae6c00919ae3293c614515bbc33c5553841494e5f1ef37fa65a6"),
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("1c077180345165b3b593e0b1ee9d040fb8aa8f0e923fe126ed0e2867aebe466e"),
                                             tspReq.getMessageImprintDigest()));
 
 
@@ -95,7 +96,6 @@ public class ERSTest
         KeyPair origKP = TSPTestUtil.makeKeyPair();
         X509Certificate origCert = TSPTestUtil.makeCertificate(origKP,
             origDN, signKP, signDN);
-
 
         List certList = new ArrayList();
         certList.add(origCert);
@@ -242,7 +242,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("f1cbfaac8e7eae6c00919ae3293c614515bbc33c5553841494e5f1ef37fa65a6"),
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("1c077180345165b3b593e0b1ee9d040fb8aa8f0e923fe126ed0e2867aebe466e"),
                                             tspReq.getMessageImprintDigest()));
 
 
@@ -310,5 +310,36 @@ public class ERSTest
         ev2.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
         
         ev2.validatePresent(h3Docs, new Date());
+    }
+
+    public void test4NodeBuild()
+        throws Exception
+    {
+        ERSData h1Doc = new ERSByteData(H1_DATA);
+        ERSData h2Doc = new ERSByteData(H2_DATA);
+        ERSDataGroup h3Docs = new ERSDataGroup(
+            new ERSByteData(H3A_DATA),
+            new ERSByteData(H3B_DATA),
+            new ERSByteData(H3C_DATA));
+        ERSData h4Doc = new ERSByteData(H4_DATA);
+
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+        DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+
+        ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+        ersGen.addData(h1Doc);
+        ersGen.addData(h2Doc);
+        ersGen.addData(h3Docs);
+        ersGen.addData(h4Doc);
+
+        TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+
+        tspReqGen.setCertReq(true);
+
+        TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
+
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("8a51451b8ee6f2911c87e11e9d45348f7b5a7ea2b2b2985605f4cefdf6874c18"),
+            tspReq.getMessageImprintDigest()));
     }
 }
