@@ -20,6 +20,7 @@ import javax.crypto.ShortBufferException;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
@@ -509,9 +510,41 @@ public class IESCipher
     {
         public ECIES()
         {
+            this(createSHA1(), createSHA1());
+        }
+
+        public ECIES(Digest kdfDigest, Digest macDigest)
+        {
             super(new IESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(DigestFactory.createSHA1()),
-                new HMac(DigestFactory.createSHA1())));
+                    new KDF2BytesGenerator(kdfDigest),
+                    new HMac(macDigest)));
+        }
+    }
+
+    static public class ECIESwithSHA256
+            extends ECIES
+    {
+        public ECIESwithSHA256()
+        {
+            super(createSHA256(), createSHA256());
+        }
+    }
+
+    static public class ECIESwithSHA384
+            extends ECIES
+    {
+        public ECIESwithSHA384()
+        {
+            super(createSHA384(), createSHA384());
+        }
+    }
+
+    static public class ECIESwithSHA512
+            extends ECIES
+    {
+        public ECIESwithSHA512()
+        {
+            super(createSHA512(), createSHA512());
         }
     }
 
@@ -520,10 +553,15 @@ public class IESCipher
     {
         public ECIESwithCipher(BlockCipher cipher, int ivLength)
         {
+            this(cipher, ivLength, createSHA1(), createSHA1());
+        }
+
+        public ECIESwithCipher(BlockCipher cipher, int ivLength, Digest kdfDigest, Digest macDigest)
+        {
             super(new IESEngine(new ECDHBasicAgreement(),
-                            new KDF2BytesGenerator(DigestFactory.createSHA1()),
-                            new HMac(DigestFactory.createSHA1()),
-                            new PaddedBufferedBlockCipher(cipher)), ivLength);
+                    new KDF2BytesGenerator(kdfDigest),
+                    new HMac(macDigest),
+                    new PaddedBufferedBlockCipher(cipher)), ivLength);
         }
     }
 
@@ -536,6 +574,33 @@ public class IESCipher
         }
     }
 
+    static public class ECIESwithSHA256andDESedeCBC
+            extends ECIESwithCipher
+    {
+        public ECIESwithSHA256andDESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 8, createSHA256(), createSHA256());
+        }
+    }
+
+    static public class ECIESwithSHA384andDESedeCBC
+            extends ECIESwithCipher
+    {
+        public ECIESwithSHA384andDESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 8, createSHA384(), createSHA384());
+        }
+    }
+
+    static public class ECIESwithSHA512andDESedeCBC
+            extends ECIESwithCipher
+    {
+        public ECIESwithSHA512andDESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 8, createSHA512(), createSHA512());
+        }
+    }
+
     static public class ECIESwithAESCBC
         extends ECIESwithCipher
     {
@@ -543,5 +608,52 @@ public class IESCipher
         {
             super(new CBCBlockCipher(new AESEngine()), 16);
         }
+    }
+
+    static public class ECIESwithSHA256andAESCBC
+            extends ECIESwithCipher
+    {
+        public ECIESwithSHA256andAESCBC()
+        {
+            super(new CBCBlockCipher(new AESEngine()), 16, createSHA256(), createSHA256());
+        }
+    }
+
+    static public class ECIESwithSHA384andAESCBC
+            extends ECIESwithCipher
+    {
+        public ECIESwithSHA384andAESCBC()
+        {
+            super(new CBCBlockCipher(new AESEngine()), 16, createSHA384(), createSHA384());
+        }
+    }
+
+    static public class ECIESwithSHA512andAESCBC
+            extends ECIESwithCipher
+    {
+        public ECIESwithSHA512andAESCBC()
+        {
+            super(new CBCBlockCipher(new AESEngine()), 16, createSHA512(), createSHA512());
+        }
+    }
+
+    private static Digest createSHA1()
+    {
+        return DigestFactory.createSHA1();
+    }
+
+    private static Digest createSHA256()
+    {
+        return DigestFactory.createSHA256();
+    }
+
+    private static Digest createSHA384()
+    {
+        return DigestFactory.createSHA384();
+    }
+
+    private static Digest createSHA512()
+    {
+        return DigestFactory.createSHA512();
     }
 }

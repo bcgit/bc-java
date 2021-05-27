@@ -33,6 +33,16 @@ import org.bouncycastle.util.test.SimpleTest;
 public class ECIESTest
     extends SimpleTest
 {
+    private static final String[] streamCiphers = new String[]{
+            "ECIES", "ECIESwithSHA1", "ECIESwithSHA256", "ECIESwithSHA384", "ECIESwithSHA512"};
+
+    private static final String[] aesCiphers = new String[]{
+            "ECIESwithAES-CBC", "ECIESwithSHA1andAES-CBC", "ECIESwithSHA256andAES-CBC",
+            "ECIESwithSHA384andAES-CBC", "ECIESwithSHA512andAES-CBC"};
+
+    private static final String[] desedeCiphers = new String[]{
+            "ECIESwithDESEDE-CBC", "ECIESwithSHA1andDESEDE-CBC", "ECIESwithSHA256andDESEDE-CBC",
+            "ECIESwithSHA384andDESEDE-CBC", "ECIESwithSHA512andDESEDE-CBC"};
 
     ECIESTest()
     {
@@ -48,127 +58,131 @@ public class ECIESTest
     {
         byte[] derivation = Hex.decode("202122232425262728292a2b2c2d2e2f");
         byte[] encoding   = Hex.decode("303132333435363738393a3b3c3d3e3f");
-        
-        
+
         IESCipher c1 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIES();
         IESCipher c2 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIES();
-        IESParameterSpec params = new IESParameterSpec(derivation,encoding,128);
 
-        // Testing ECIES with default curve in streaming mode
-        KeyPairGenerator    g = KeyPairGenerator.getInstance("EC", "BC");
-        doTest("ECIES with default", g, "ECIES", params);
-        
-        // Testing ECIES with 192-bit curve in streaming mode 
-        g.initialize(192, new SecureRandom());
-        doTest("ECIES with 192-bit", g, "ECIES", params);
-
-        // Testing ECIES with 256-bit curve in streaming mode 
-        g.initialize(256, new SecureRandom());
-        doTest("ECIES with 256-bit", g, "ECIES", params);
-
-        
-        c1 = new IESCipher(new IESEngine(new ECDHBasicAgreement(), 
+        c1 = new IESCipher(new IESEngine(new ECDHBasicAgreement(),
                 new KDF2BytesGenerator(new SHA1Digest()),
                 new HMac(new SHA1Digest()),
                 new PaddedBufferedBlockCipher(new DESEngine())));
-        
-        c2 = new IESCipher(new IESEngine(new ECDHBasicAgreement(), 
+
+        c2 = new IESCipher(new IESEngine(new ECDHBasicAgreement(),
                 new KDF2BytesGenerator(new SHA1Digest()),
                 new HMac(new SHA1Digest()),
-                new PaddedBufferedBlockCipher(new DESEngine())));  
-    
-        params = new IESParameterSpec(derivation, encoding, 128, 128, Hex.decode("0001020304050607"));
-      
+                new PaddedBufferedBlockCipher(new DESEngine())));
+
+        c1 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAESCBC();
+        c2 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAESCBC();
+
+        // Testing ECIES with default curve in streaming mode
+        KeyPairGenerator g = KeyPairGenerator.getInstance("EC", "BC");
+        for (int i = 0; i != streamCiphers.length; i++)
+        {
+            String cipher = streamCiphers[i];
+            IESParameterSpec params = new IESParameterSpec(derivation, encoding,128);
+            doTest(cipher + " with default", g, cipher, params);
+
+            // Testing ECIES with 192-bit curve in streaming mode
+            g.initialize(192, new SecureRandom());
+            doTest(cipher + " with 192-bit", g, cipher, params);
+
+            // Testing ECIES with 256-bit curve in streaming mode
+            g.initialize(256, new SecureRandom());
+            doTest(cipher + " with 256-bit", g, cipher, params);
+        }
+
         // Testing ECIES with default curve using DES
         g = KeyPairGenerator.getInstance("EC", "BC");
 
         // Testing ECIES with 256-bit curve using DES-CBC
-        g.initialize(256, new SecureRandom());
-        doTest("256-bit", g, "ECIESwithDESEDE-CBC", params);
-
-        params = new IESParameterSpec(derivation, encoding, 128, 128, Hex.decode("0001020304050607"));
-        g.initialize(256, new SecureRandom());
-        doTest("256-bit", g, "ECIESwithDESEDE-CBC", params);
-
-        try
+        for (int i = 0; i != desedeCiphers.length; i++)
         {
-            params = new IESParameterSpec(derivation, encoding, 128, 128, new byte[10]);
+            String cipher = desedeCiphers[i];
+            IESParameterSpec params = new IESParameterSpec(
+                    derivation, encoding, 128, 128, Hex.decode("0001020304050607"));
             g.initialize(256, new SecureRandom());
-            doTest("256-bit", g, "ECIESwithDESEDE-CBC", params);
-            fail("DESEDE no exception!");
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            if (!e.getMessage().equals("NONCE in IES Parameters needs to be 8 bytes long"))
+            doTest(cipher + " with 256-bit", g, cipher, params);
+
+            params = new IESParameterSpec(
+                    derivation, encoding, 128, 128, Hex.decode("0001020304050607"));
+            g.initialize(256, new SecureRandom());
+            doTest(cipher + " with 256-bit", g, cipher, params);
+
+            try
             {
-                fail("DESEDE wrong message!");
+                params = new IESParameterSpec(derivation, encoding, 128, 128, new byte[10]);
+                g.initialize(256, new SecureRandom());
+                doTest(cipher + " with 256-bit", g, cipher, params);
+                fail("DESEDE no exception!");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                if (!e.getMessage().equals("NONCE in IES Parameters needs to be 8 bytes long"))
+                {
+                    fail("DESEDE wrong message!");
+                }
             }
         }
-
-        c1 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAESCBC();
-        c2 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAESCBC();
-        params = new IESParameterSpec(derivation, encoding, 128, 128, Hex.decode("000102030405060708090a0b0c0d0e0f"));
 
         // Testing ECIES with 256-bit curve using AES-CBC
-        g.initialize(256, new SecureRandom());
-        doTest("256-bit", g, "ECIESwithAES-CBC", params);
-
-        params = new IESParameterSpec(derivation, encoding, 128, 128, Hex.decode("000102030405060708090a0b0c0d0e0f"));
-        g.initialize(256, new SecureRandom());
-        doTest("256-bit", g, "ECIESwithAES-CBC", params);
-
-        try
+        for (int i = 0; i != aesCiphers.length; i++)
         {
-            params = new IESParameterSpec(derivation, encoding, 128, 128, new byte[10]);
+            String cipher = aesCiphers[i];
+            IESParameterSpec params = new IESParameterSpec(
+                    derivation, encoding, 128, 128, Hex.decode("000102030405060708090a0b0c0d0e0f"));
             g.initialize(256, new SecureRandom());
-            doTest("256-bit", g, "ECIESwithAES-CBC", params);
-            fail("AES no exception!");
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            if (!e.getMessage().equals("NONCE in IES Parameters needs to be 16 bytes long"))
-            {
-                fail("AES wrong message!");
+            doTest(cipher + " with 256-bit", g, cipher, params);
+
+            params = new IESParameterSpec(
+                    derivation, encoding, 128, 128, Hex.decode("000102030405060708090a0b0c0d0e0f"));
+            g.initialize(256, new SecureRandom());
+            doTest(cipher + " with 256-bit", g, cipher, params);
+
+            try {
+                params = new IESParameterSpec(derivation, encoding, 128, 128, new byte[10]);
+                g.initialize(256, new SecureRandom());
+                doTest(cipher + " with 256-bit", g, cipher, params);
+                fail("AES no exception!");
             }
-        }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                if (!e.getMessage().equals("NONCE in IES Parameters needs to be 16 bytes long")) {
+                    fail("AES wrong message!");
+                }
+            }
 
-        KeyPair       keyPair = g.generateKeyPair();
-        ECPublicKey pub = (ECPublicKey)keyPair.getPublic();
-        ECPrivateKey priv = (ECPrivateKey)keyPair.getPrivate();
+            KeyPair keyPair = g.generateKeyPair();
+            ECPublicKey pub = (ECPublicKey) keyPair.getPublic();
+            ECPrivateKey priv = (ECPrivateKey) keyPair.getPrivate();
 
-        Cipher c = Cipher.getInstance("ECIESwithAES-CBC", "BC");
+            Cipher c = Cipher.getInstance("ECIESwithAES-CBC", "BC");
+            try {
+                c.init(Cipher.ENCRYPT_MODE, pub, new IESParameterSpec(derivation, encoding, 128, 128, null));
+                fail("no exception");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+            }
 
-        try
-        {
-            c.init(Cipher.ENCRYPT_MODE, pub, new IESParameterSpec(derivation, encoding, 128, 128, null));
+            try {
+                c.init(Cipher.DECRYPT_MODE, priv);
+                fail("no exception");
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+            }
 
-            fail("no exception");
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
-        }
-
-        try
-        {
-            c.init(Cipher.DECRYPT_MODE, priv);
-
-            fail("no exception");
-        }
-        catch (IllegalArgumentException e)
-        {
-            isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
-        }
-
-        try
-        {
-            c.init(Cipher.DECRYPT_MODE, priv, new IESParameterSpec(derivation, encoding, 128, 128, null));
-
-            fail("no exception");
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+            try {
+                c.init(Cipher.DECRYPT_MODE, priv, new IESParameterSpec(derivation, encoding, 128, 128, null));
+                fail("no exception");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+            }
         }
 
         sealedObjectTest();
@@ -204,13 +218,12 @@ public class ECIESTest
     }
 
     public void doTest(
-        String                testname,
-        KeyPairGenerator     g,
+        String              testname,
+        KeyPairGenerator    g,
         String              cipher,
         IESParameterSpec    p)
         throws Exception
     {
-
         byte[] message = Hex.decode("0102030405060708090a0b0c0d0e0f10111213141516");
         byte[] out1, out2;
 
@@ -231,17 +244,20 @@ public class ECIESTest
         out1 = c1.doFinal(message, 0, message.length);
         out2 = c2.doFinal(out1, 0, out1.length);
         if (!areEqual(out2, message))
+        {
             fail(testname + " test failed with null parameters, DHAES mode false.");
-    
-        
+        }
+
         // Testing with given parameters and DHAES mode off
         c1.init(Cipher.ENCRYPT_MODE, Pub, p, new SecureRandom());
         c2.init(Cipher.DECRYPT_MODE, Priv, p);
         out1 = c1.doFinal(message, 0, message.length);
         out2 = c2.doFinal(out1, 0, out1.length);
         if (!areEqual(out2, message))
+        {
             fail(testname + " test failed with non-null parameters, DHAES mode false.");
-        
+        }
+
         //
         // corrupted data test
         //
@@ -255,7 +271,6 @@ public class ECIESTest
             try
             {
                 c2.doFinal(tmp, 0, tmp.length);
-
                 fail("decrypted corrupted data");
             }
             catch (BadPaddingException e)
@@ -289,8 +304,6 @@ public class ECIESTest
 //            fail(testname + " test failed with non-null parameters, DHAES mode true.");
         
     }
-
-   
 
     public static void main(
         String[]    args)
