@@ -25,7 +25,7 @@ public abstract class ERSCachingData
         AlgorithmIdentifier digAlgID = digestCalculator.getAlgorithmIdentifier();
         if (preCalcs.containsKey(digAlgID))
         {
-            return preCalcs.get(digAlgID);
+            return (byte[])preCalcs.get(digAlgID);
         }
 
         byte[] hash = calculateHash(digestCalculator);
