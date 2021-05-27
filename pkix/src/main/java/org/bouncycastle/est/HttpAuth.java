@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
@@ -459,7 +458,7 @@ public class HttpAuth
 
         if (algorithm.equals("SHA-512-256"))
         {
-            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256, DERNull.INSTANCE);
+            return digestAlgorithmIdentifierFinder.find(NISTObjectIdentifiers.id_sha512_256);
         }
 
         return digestAlgorithmIdentifierFinder.find(algorithm);
