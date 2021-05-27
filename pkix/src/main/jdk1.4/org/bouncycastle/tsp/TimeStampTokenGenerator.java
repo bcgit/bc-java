@@ -44,6 +44,7 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.SignerInfoGenerator;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
@@ -100,6 +101,8 @@ public class TimeStampTokenGenerator
      * Create time-stamps with a resolution of 1 millisecond.
      */
     public static final int R_MILLISECONDS = 3;
+
+    private static final DefaultDigestAlgorithmIdentifierFinder dgstAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
 
     private int resolution = R_SECONDS;
     private Locale locale = null; // default locale
@@ -359,7 +362,9 @@ public class TimeStampTokenGenerator
         Extensions          additionalExtensions)
         throws TSPException
     {
-        AlgorithmIdentifier algID = request.getMessageImprintAlgID();
+        ASN1ObjectIdentifier digestAlgOID = request.getMessageImprintAlgOID();
+
+        AlgorithmIdentifier algID = dgstAlgFinder.find(digestAlgOID);
         MessageImprint messageImprint = new MessageImprint(algID, request.getMessageImprintDigest());
 
         Accuracy accuracy = null;

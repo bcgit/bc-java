@@ -42,6 +42,7 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.SignerInfoGenerator;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
@@ -74,6 +75,8 @@ import org.bouncycastle.util.Store;
  */
 public class TimeStampTokenGenerator
 {
+   private static final DefaultDigestAlgorithmIdentifierFinder dgstAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
+
     private int accuracySeconds = -1;
 
     private int accuracyMillis = -1;
@@ -310,7 +313,7 @@ public class TimeStampTokenGenerator
     {
         ASN1ObjectIdentifier digestAlgOID = request.getMessageImprintAlgOID();
 
-        AlgorithmIdentifier algID = new AlgorithmIdentifier(digestAlgOID, DERNull.INSTANCE);
+        AlgorithmIdentifier algID = dgstAlgFinder.find(digestAlgOID);
         MessageImprint messageImprint = new MessageImprint(algID, request.getMessageImprintDigest());
 
         Accuracy accuracy = null;
