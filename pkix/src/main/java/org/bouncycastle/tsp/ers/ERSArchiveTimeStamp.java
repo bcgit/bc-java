@@ -26,6 +26,8 @@ public class ERSArchiveTimeStamp
     private final DigestCalculator digCalc;
     private final TimeStampToken timeStampToken;
 
+    private ERSRootNodeCalculator rootNodeCalculator = new BinaryTreeRootCalculator();
+
     public ERSArchiveTimeStamp(byte[] archiveTimeStamp, DigestCalculatorProvider digCalcProv)
         throws TSPException, ERSException
     {
@@ -51,7 +53,7 @@ public class ERSArchiveTimeStamp
         }
     }
 
-    ERSArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp, DigestCalculator digCalc)
+    ERSArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp, DigestCalculator digCalc, ERSRootNodeCalculator rootNodeCalculator)
         throws TSPException, ERSException
     {
         try
@@ -59,6 +61,7 @@ public class ERSArchiveTimeStamp
             this.archiveTimeStamp = archiveTimeStamp;
             this.timeStampToken = new TimeStampToken(archiveTimeStamp.getTimeStamp());
             this.digCalc = digCalc;
+            this.rootNodeCalculator = rootNodeCalculator;
         }
         catch (IOException e)
         {
@@ -91,7 +94,7 @@ public class ERSArchiveTimeStamp
         byte[] rootHash;
         if (partialTree != null)
         {
-            rootHash = ERSUtil.computeRootHash(digCalc, archiveTimeStamp.getReducedHashTree());
+            rootHash = rootNodeCalculator.computeRootHash(digCalc, archiveTimeStamp.getReducedHashTree());
         }
         else
         {

@@ -8,7 +8,7 @@ import java.util.List;
 import org.bouncycastle.operator.DigestCalculator;
 
 /**
- * Representation of data groups according to the description provided in RFC4998.
+ * Representation of data groups with more than 1 members according to the description provided in RFC4998.
  * <p>
  * Such data groups represent a set of one or more data objects (e.g. electronic documents) for
  * which an Evidence Record should be generated. Data groups will be encapsulated in a single
