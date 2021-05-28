@@ -26,6 +26,8 @@ public class ERSArchiveTimeStampGenerator
     private final DigestCalculator digCalc;
     private List<ERSData> dataObjects = new ArrayList<ERSData>();
 
+    private ERSRootNodeCalculator rootNodeCalculator = new BinaryTreeRootCalculator();
+
     public ERSArchiveTimeStampGenerator(DigestCalculator digCalc)
     {
         this.digCalc = digCalc;
@@ -41,7 +43,7 @@ public class ERSArchiveTimeStampGenerator
     {
         PartialHashtree[] reducedHashTree = getPartialHashtrees();
 
-        byte[] rootHash = ERSUtil.computeRootHash(digCalc, reducedHashTree);
+        byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
         return tspReqGenerator.generate(digCalc.getAlgorithmIdentifier(), rootHash);
     }
@@ -51,7 +53,7 @@ public class ERSArchiveTimeStampGenerator
     {
         PartialHashtree[] reducedHashTree = getPartialHashtrees();
 
-        byte[] rootHash = ERSUtil.computeRootHash(digCalc, reducedHashTree);
+        byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
         return tspReqGenerator.generate(digCalc.getAlgorithmIdentifier(), rootHash, nonce);
     }
@@ -61,7 +63,7 @@ public class ERSArchiveTimeStampGenerator
     {
         PartialHashtree[] reducedHashTree = getPartialHashtrees();
 
-        byte[] rootHash = ERSUtil.computeRootHash(digCalc, reducedHashTree);
+        byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
         TSTInfo tstInfo = tspResponse.getTimeStampToken().getTimeStampInfo().toASN1Structure();
 
@@ -72,7 +74,7 @@ public class ERSArchiveTimeStampGenerator
 
         if (!Arrays.areEqual(tstInfo.getMessageImprint().getHashedMessage(), rootHash))
         {
-            throw new ERSException("time stamp imprint for wrong algorithm");
+            throw new ERSException("time stamp imprint for wrong root hash");
         }
 
         ArchiveTimeStamp ats;
@@ -88,7 +90,7 @@ public class ERSArchiveTimeStampGenerator
                 tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure());
         }
 
-        return new ERSArchiveTimeStamp(ats, digCalc);
+        return new ERSArchiveTimeStamp(ats, digCalc, rootNodeCalculator);
     }
 
     private PartialHashtree[] getPartialHashtrees()

@@ -2,7 +2,6 @@ package org.bouncycastle.tsp.ers;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -35,7 +34,7 @@ class ERSUtil
 
     static byte[] calculateBranchHash(DigestCalculator digCalc, byte[] a, byte[] b)
     {
-          if (hashComp.compare(a, b) < 0)
+          if (hashComp.compare(a, b) <= 0)
           {
               return calculateDigest(digCalc, a, b);
           }
@@ -94,43 +93,6 @@ class ERSUtil
         }
     }
 
-    static byte[] computeRootHash(DigestCalculator digCalc, PartialHashtree[] nodes)
-    {
-        List<byte[]> hashes = new ArrayList<byte[]>();
-        for (int i = 0; i <= nodes.length - 2; i += 2)
-        {
-            byte[] left = computeNodeHash(digCalc, nodes[i]);
-            byte[] right = computeNodeHash(digCalc, nodes[i + 1]);
- 
-            hashes.add(calculateBranchHash(digCalc, left, right));
-        }
-
-        if (nodes.length % 2 == 1)
-        {
-            hashes.add(computeNodeHash(digCalc, nodes[nodes.length - 1]));
-        }
-
-        do
-        {
-            List<byte[]> newHashes = new ArrayList<byte[]>((hashes.size() + 1) / 2);
-
-            for (int i = 0; i <= hashes.size() - 2; i += 2)
-            {
-                newHashes.add(calculateBranchHash(digCalc, (byte[])hashes.get(i), (byte[])hashes.get(i + 1)));
-            }
-
-            if (hashes.size() % 2 == 1)
-            {
-                newHashes.add(hashes.get(hashes.size() - 1));
-            }
-
-            hashes = newHashes;
-        }
-        while (hashes.size() > 1);
-
-        return (byte[])hashes.get(0);
-    }
-
     static byte[] computeNodeHash(DigestCalculator digCalc, PartialHashtree node)
     {
         byte[][] values = node.getValues();
@@ -182,7 +144,7 @@ class ERSUtil
             else
             {
                 int index = 1;
-                while(index < hashes.size() && hashComp.compare(hashes.get(index), hash) < 0)
+                while(index < hashes.size() && hashComp.compare(hashes.get(index), hash) <= 0)
                 {
                     index++;
                 }
