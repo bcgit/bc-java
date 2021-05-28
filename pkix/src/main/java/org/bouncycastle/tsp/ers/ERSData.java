@@ -3,7 +3,7 @@ package org.bouncycastle.tsp.ers;
 import org.bouncycastle.operator.DigestCalculator;
 
 /**
- * General interface for an ERSData object.
+ * General interface for an ERSData data group object.
  */
 public interface ERSData
 {
