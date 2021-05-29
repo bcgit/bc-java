@@ -22,6 +22,7 @@ abstract class SSLSocketUtil
 
     private static final Method getHandshakeSession;
     private static final Method getSSLParameters;
+    private static final boolean useSocket8;
 
     static
     {
@@ -29,53 +30,72 @@ abstract class SSLSocketUtil
 
         getHandshakeSession = ReflectionUtil.findMethod(methods, "getHandshakeSession");
         getSSLParameters = ReflectionUtil.findMethod(methods, "getSSLParameters");
+
+        // Note that we only need this for the 8u251 update with ALPN methods
+        useSocket8 = ReflectionUtil.hasMethod(methods, "getApplicationProtocol");
     }
 
     /** This factory method is the one used (only) by ProvSSLServerSocket */
     static ProvSSLSocketDirect create(ContextData contextData, boolean enableSessionCreation,
         boolean useClientMode, ProvSSLParameters sslParameters)
     {
-        return new ProvSSLSocketDirect(contextData, enableSessionCreation, useClientMode, sslParameters);
+        return useSocket8
+            ?   new ProvSSLSocketDirect_8(contextData, enableSessionCreation, useClientMode, sslParameters)
+            :   new ProvSSLSocketDirect(contextData, enableSessionCreation, useClientMode, sslParameters);
     }
 
     static ProvSSLSocketDirect create(ContextData contextData)
     {
-        return new ProvSSLSocketDirect(contextData);
+        return useSocket8
+            ?   new ProvSSLSocketDirect_8(contextData)
+            :   new ProvSSLSocketDirect(contextData);
     }
 
     static ProvSSLSocketDirect create(ContextData contextData, InetAddress address, int port,
         InetAddress clientAddress, int clientPort) throws IOException
     {
-        return new ProvSSLSocketDirect(contextData, address, port, clientAddress, clientPort);
+        return useSocket8
+            ?   new ProvSSLSocketDirect_8(contextData, address, port, clientAddress, clientPort)
+            :   new ProvSSLSocketDirect(contextData, address, port, clientAddress, clientPort);
     }
 
     static ProvSSLSocketDirect create(ContextData contextData, InetAddress address, int port)
         throws IOException
     {
-        return new ProvSSLSocketDirect(contextData, address, port);
+        return useSocket8
+            ?   new ProvSSLSocketDirect_8(contextData, address, port)
+            :   new ProvSSLSocketDirect(contextData, address, port);
     }
 
     static ProvSSLSocketDirect create(ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
-        return new ProvSSLSocketDirect(contextData, host, port, clientAddress, clientPort);
+        return useSocket8
+            ?   new ProvSSLSocketDirect_8(contextData, host, port, clientAddress, clientPort)
+            :   new ProvSSLSocketDirect(contextData, host, port, clientAddress, clientPort);
     }
 
     static ProvSSLSocketDirect create(ContextData contextData, String host, int port) throws IOException, UnknownHostException
     {
-        return new ProvSSLSocketDirect(contextData, host, port);
+        return useSocket8
+            ?   new ProvSSLSocketDirect_8(contextData, host, port)
+            :   new ProvSSLSocketDirect(contextData, host, port);
     }
 
     static ProvSSLSocketWrap create(ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
         throws IOException
     {
-        return new ProvSSLSocketWrap(contextData, s, consumed, autoClose);
+        return useSocket8
+            ?   new ProvSSLSocketWrap_8(contextData, s, consumed, autoClose)
+            :   new ProvSSLSocketWrap(contextData, s, consumed, autoClose);
     }
 
     static ProvSSLSocketWrap create(ContextData contextData, Socket s, String host, int port, boolean autoClose)
         throws IOException
     {
-        return new ProvSSLSocketWrap(contextData, s, host, port, autoClose);
+        return useSocket8
+            ?   new ProvSSLSocketWrap_8(contextData, s, host, port, autoClose)
+            :   new ProvSSLSocketWrap(contextData, s, host, port, autoClose);
     }
 
     static void handshakeCompleted(Runnable notifyRunnable)
