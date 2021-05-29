@@ -14,6 +14,7 @@ abstract class SSLEngineUtil
 {
     private static final Method getHandshakeSession;
     private static final Method getSSLParameters;
+    private static final boolean useEngine8;
 
     static
     {
@@ -21,16 +22,23 @@ abstract class SSLEngineUtil
 
         getHandshakeSession = ReflectionUtil.findMethod(methods, "getHandshakeSession");
         getSSLParameters = ReflectionUtil.findMethod(methods, "getSSLParameters");
+
+        // Note that we only need this for the 8u251 update with ALPN methods
+        useEngine8 = ReflectionUtil.hasMethod(methods, "getApplicationProtocol");
     }
 
     static SSLEngine create(ContextData contextData)
     {
-        return new ProvSSLEngine(contextData);
+        return useEngine8
+            ?   new ProvSSLEngine_8(contextData)
+            :   new ProvSSLEngine(contextData);
     }
 
     static SSLEngine create(ContextData contextData, String host, int port)
     {
-        return new ProvSSLEngine(contextData, host, port);
+        return useEngine8
+            ?   new ProvSSLEngine_8(contextData, host, port)
+            :   new ProvSSLEngine(contextData, host, port);
     }
 
     static BCExtendedSSLSession importHandshakeSession(SSLEngine sslEngine)

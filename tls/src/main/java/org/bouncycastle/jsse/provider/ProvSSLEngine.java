@@ -216,7 +216,7 @@ class ProvSSLEngine
         }
     }
 
-    // An SSLEngine method from JDK 9, but also a BCSSLEngine method
+    // An SSLEngine method from JDK 9 (and then 8u251), but also a BCSSLEngine method
     public synchronized String getApplicationProtocol()
     {
         return null == connection ? null : connection.getApplicationProtocol();
@@ -266,7 +266,7 @@ class ProvSSLEngine
         return enableSessionCreation;
     }
 
-    // An SSLEngine method from JDK 9, but also a BCSSLEngine method
+    // An SSLEngine method from JDK 9 (and then 8u251), but also a BCSSLEngine method
     public synchronized String getHandshakeApplicationProtocol()
     {
         return null == handshakeSession ? null : handshakeSession.getApplicationProtocol();

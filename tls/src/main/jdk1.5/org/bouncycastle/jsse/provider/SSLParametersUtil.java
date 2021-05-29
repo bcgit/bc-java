@@ -15,6 +15,8 @@ abstract class SSLParametersUtil
 {
     private static final Method getAlgorithmConstraints;
     private static final Method setAlgorithmConstraints;
+    private static final Method getApplicationProtocols;
+    private static final Method setApplicationProtocols;
     private static final Method getEndpointIdentificationAlgorithm;
     private static final Method setEndpointIdentificationAlgorithm;
     private static final Method getServerNames;
@@ -30,6 +32,8 @@ abstract class SSLParametersUtil
 
         getAlgorithmConstraints = ReflectionUtil.findMethod(methods, "getAlgorithmConstraints");
         setAlgorithmConstraints = ReflectionUtil.findMethod(methods, "setAlgorithmConstraints");
+        getApplicationProtocols = ReflectionUtil.findMethod(methods, "getApplicationProtocols");
+        setApplicationProtocols = ReflectionUtil.findMethod(methods, "setApplicationProtocols");
         getEndpointIdentificationAlgorithm = ReflectionUtil.findMethod(methods, "getEndpointIdentificationAlgorithm");
         setEndpointIdentificationAlgorithm = ReflectionUtil.findMethod(methods, "setEndpointIdentificationAlgorithm");
         getServerNames = ReflectionUtil.findMethod(methods, "getServerNames");
@@ -124,6 +128,17 @@ abstract class SSLParametersUtil
             }
         }
 
+        // From JDK 9 originally, then added to 8u251
+
+        if (null != setApplicationProtocols)
+        {
+            String[] applicationProtocols = prov.getApplicationProtocols();
+            if (null != applicationProtocols)
+            {
+                set(ssl, setApplicationProtocols, applicationProtocols);
+            }
+        }
+
         return ssl;
     }
 
@@ -187,6 +202,17 @@ abstract class SSLParametersUtil
             if (null != matchers)
             {
                 bc.setSNIMatchers(JsseUtils_8.importSNIMatchersDynamic(matchers));
+            }
+        }
+
+        // From JDK 9 originally, then added to 8u251
+
+        if (null != getApplicationProtocols)
+        {
+            String[] applicationProtocols = (String[])get(ssl, getApplicationProtocols);
+            if (null != applicationProtocols)
+            {
+                bc.setApplicationProtocols(applicationProtocols);
             }
         }
 
@@ -324,6 +350,17 @@ abstract class SSLParametersUtil
             if (null != matchers)
             {
                 prov.setSNIMatchers(JsseUtils_8.importSNIMatchersDynamic(matchers));
+            }
+        }
+
+        // From JDK 9 originally, then added to 8u251
+
+        if (null != getApplicationProtocols)
+        {
+            String[] applicationProtocols = (String[])get(ssl, getApplicationProtocols);
+            if (null != applicationProtocols)
+            {
+                prov.setApplicationProtocols(applicationProtocols);
             }
         }
     }

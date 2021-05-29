@@ -10,12 +10,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.StandardConstants;
 
+import org.bouncycastle.jsse.BCApplicationProtocolSelector;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
@@ -24,6 +26,27 @@ import org.bouncycastle.jsse.BCStandardConstants;
 abstract class JsseUtils_8
     extends JsseUtils_7
 {
+    static class ExportAPSelector<T> implements BiFunction<T, List<String>, String>
+    {
+        private final BCApplicationProtocolSelector<T> selector;
+
+        ExportAPSelector(BCApplicationProtocolSelector<T> selector)
+        {
+            this.selector = selector;
+        }
+
+        @Override
+        public String apply(T t, List<String> u)
+        {
+            return selector.select(t, u);
+        }
+
+        BCApplicationProtocolSelector<T> unwrap()
+        {
+            return selector;
+        }
+    }
+
     static class ExportSNIMatcher extends SNIMatcher
     {
         private final BCSNIMatcher matcher;
@@ -44,6 +67,27 @@ abstract class JsseUtils_8
         BCSNIMatcher unwrap()
         {
             return matcher;
+        }
+    }
+
+    static class ImportAPSelector<T> implements BCApplicationProtocolSelector<T>
+    {
+        private final BiFunction<T, List<String>, String> selector;
+
+        ImportAPSelector(BiFunction<T, List<String>, String> selector)
+        {
+            this.selector = selector;
+        }
+
+        @Override
+        public String select(T transport, List<String> protocols)
+        {
+            return selector.apply(transport, protocols);
+        }
+
+        BiFunction<T, List<String>, String> unwrap()
+        {
+            return selector;
         }
     }
 
@@ -78,21 +122,6 @@ abstract class JsseUtils_8
         }
     }
 
-    static SNIMatcher exportSNIMatcher(BCSNIMatcher matcher)
-    {
-        if (null == matcher)
-        {
-            return null;
-        }
-
-        if (matcher instanceof ImportSNIMatcher)
-        {
-            return ((ImportSNIMatcher)matcher).unwrap();
-        }
-
-        return new ExportSNIMatcher(matcher);
-    }
-
     static void addStatusResponses(CertPathBuilder pkixBuilder, PKIXBuilderParameters pkixParameters,
         Map<X509Certificate, byte[]> statusResponseMap)
     {
@@ -123,6 +152,36 @@ abstract class JsseUtils_8
                 pkixParameters.addCertPathChecker(checker);
             }
         }
+    }
+
+    static <T> BiFunction<T, List<String>, String> exportAPSelector(BCApplicationProtocolSelector<T> selector)
+    {
+        if (null == selector)
+        {
+            return null;
+        }
+
+        if (selector instanceof ImportAPSelector)
+        {
+            return ((ImportAPSelector<T>)selector).unwrap();
+        }
+
+        return new ExportAPSelector<T>(selector);
+    }
+
+    static SNIMatcher exportSNIMatcher(BCSNIMatcher matcher)
+    {
+        if (null == matcher)
+        {
+            return null;
+        }
+
+        if (matcher instanceof ImportSNIMatcher)
+        {
+            return ((ImportSNIMatcher)matcher).unwrap();
+        }
+
+        return new ExportSNIMatcher(matcher);
     }
 
     static List<SNIMatcher> exportSNIMatchers(Collection<BCSNIMatcher> matchers)
@@ -200,6 +259,21 @@ abstract class JsseUtils_8
             }
         }
         return null;
+    }
+
+    static <T> BCApplicationProtocolSelector<T> importAPSelector(BiFunction<T, List<String>, String> selector)
+    {
+        if (null == selector)
+        {
+            return null;
+        }
+
+        if (selector instanceof ExportAPSelector)
+        {
+            return ((ExportAPSelector<T>)selector).unwrap();
+        }
+
+        return new ImportAPSelector<T>(selector);
     }
 
     static BCSNIMatcher importSNIMatcher(SNIMatcher matcher)
