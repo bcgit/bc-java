@@ -194,7 +194,7 @@ class ProvSSLSocketWrap
         }
     }
 
-    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
+    // An SSLSocket method from JDK 9 (and then 8u251), but also a BCSSLSocket method
     public synchronized String getApplicationProtocol()
     {
         return null == connection ? null : connection.getApplicationProtocol();
@@ -253,7 +253,7 @@ class ProvSSLSocketWrap
         return enableSessionCreation;
     }
 
-    // An SSLSocket method from JDK 9, but also a BCSSLSocket method
+    // An SSLSocket method from JDK 9 (and then 8u251), but also a BCSSLSocket method
     public synchronized String getHandshakeApplicationProtocol()
     {
         return null == handshakeSession ? null : handshakeSession.getApplicationProtocol();

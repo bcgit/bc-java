@@ -87,9 +87,15 @@ abstract class SSLParametersUtil
             }
         }
 
-        // From JDK 9
+        // From JDK 9 originally, then added to 8u251
 
-        ssl.setApplicationProtocols(prov.getApplicationProtocols());
+        {
+            String[] applicationProtocols = prov.getApplicationProtocols();
+            if (null != applicationProtocols)
+            {
+                ssl.setApplicationProtocols(applicationProtocols);
+            }
+        }
 
         return ssl;
     }
@@ -150,13 +156,13 @@ abstract class SSLParametersUtil
             }
         }
 
-        // From JDK 9
+        // From JDK 9 originally, then added to 8u251
 
         {
-            String[] getApplicationProtocolsResult = ssl.getApplicationProtocols();
-            if (null != getApplicationProtocolsResult)
+            String[] applicationProtocols = ssl.getApplicationProtocols();
+            if (null != applicationProtocols)
             {
-                bc.setApplicationProtocols(getApplicationProtocolsResult);
+                bc.setApplicationProtocols(applicationProtocols);
             }
         }
 
@@ -290,13 +296,13 @@ abstract class SSLParametersUtil
             }
         }
 
-        // From JDK 9
+        // From JDK 9 originally, then added to 8u251
 
         {
-            String[] getApplicationProtocolsResult = ssl.getApplicationProtocols();
-            if (null != getApplicationProtocolsResult)
+            String[] applicationProtocols = ssl.getApplicationProtocols();
+            if (null != applicationProtocols)
             {
-                prov.setApplicationProtocols(getApplicationProtocolsResult);
+                prov.setApplicationProtocols(applicationProtocols);
             }
         }
     }
