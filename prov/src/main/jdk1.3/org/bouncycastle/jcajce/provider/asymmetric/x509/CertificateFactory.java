@@ -99,7 +99,7 @@ public class CertificateFactory
         InputStream in)
         throws IOException, CertificateParsingException
     {
-        ASN1Sequence seq = PEM_CERT_PARSER.readPEMObject(in);
+        ASN1Sequence seq = PEM_CERT_PARSER.readPEMObject(in, true);
 
         if (seq != null)
         {
@@ -120,7 +120,7 @@ public class CertificateFactory
         InputStream in)
         throws IOException, CRLException
     {
-        ASN1Sequence seq = PEM_CRL_PARSER.readPEMObject(in);
+        ASN1Sequence seq = PEM_CRL_PARSER.readPEMObject(in, true);
 
         if (seq != null)
         {

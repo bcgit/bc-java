@@ -77,16 +77,18 @@ class X509CRLObject
         }
 
         byte[] encoding;
+        CRLException ex = null;
         try
         {
             encoding = getEncoded();
         }
         catch (CRLException e)
         {
+            ex = e;
             encoding = null;
         }
 
-        X509CRLInternal temp = new X509CRLInternal(bcHelper, c, sigAlgName,sigAlgParams, isIndirect, encoding);
+        X509CRLInternal temp = new X509CRLInternal(bcHelper, c, sigAlgName,sigAlgParams, isIndirect, encoding, ex);
 
         synchronized (cacheLock)
         {

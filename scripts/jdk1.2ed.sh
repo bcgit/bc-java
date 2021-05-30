@@ -100,3 +100,10 @@ g/private final/s/final//
 w
 q
 %
+
+ed org/bouncycastle/crypto/modes/GCMSIVBlockCipher.java <<%
+g/private final/s/final//
+w
+q
+%
+

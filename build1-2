@@ -46,6 +46,15 @@ mkdir -p $jdk12src
 ((cd pkix/src/main/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pkix/src/test/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pkix/src/main/jdk1.2 && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/main/java && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/main/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/test/java && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/test/jdk1.4 && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/test/jdk1.2 && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd util/src/main/java && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd util/src/main/javadoc && tar cf - * ) | (cd $jdk12src && tar xf -))
 
 find $jdk12src -name "*.java" -exec scripts/trim.sh \{\} \;
 find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
@@ -75,13 +84,13 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/crypto/test/SimpleTestTest.java
     rm -rf org/bouncycastle/util/utiltest
     rm -rf org/bouncycastle/mail
-    rm -rf org/bouncycastle/bcpg
-    rm -rf org/bouncycastle/openpgp
     rm -rf org/bouncycastle/mime
     rm org/bouncycastle/pkix/jcajce/Revocation*.java
     rm org/bouncycastle/pkix/jcajce/X509RevocationChecker.java
     rm org/bouncycastle/pkix/jcajce/RFC3280*.java
     rm org/bouncycastle/cms/jcajce/JceKeyTransAuthEnvelopedRecipient.java
+    rm org/bouncycastle/cms/jcajce/JceAADStream.java
+    rm org/bouncycastle/jcajce/provider/keystore/util/ParameterUtil.java
     rm -rf org/bouncycastle/jce/provider/test/SimpleTestTest.java
     rm -rf org/bouncycastle/sasn1/test
     rm -rf org/bouncycastle/i18n/test
@@ -173,6 +182,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/cert/test/Bc*
     rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
     rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
+    rm  org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java
 
     sh ../../scripts/jdk1.2ed.sh
 
@@ -191,7 +201,7 @@ then
 
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/lcrypto-jdk12-$base && tar xf -)
     ((cd $jdk12src && tar cf - java org/bouncycastle/LICENSE.java \
-    org/bouncycastle/math org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/math org/bouncycastle/pqc/crypto org/bouncycastle/pqc/asn1  ) | (cd $artifacts/lcrypto-jdk12-$base/src && tar xf -)) 
+    org/bouncycastle/math org/bouncycastle/internal org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/math org/bouncycastle/pqc/crypto org/bouncycastle/pqc/asn1  ) | (cd $artifacts/lcrypto-jdk12-$base/src && tar xf -)) 
     (
         cd $artifacts/lcrypto-jdk12-$base;
 
@@ -255,7 +265,7 @@ then
 
         echo "compiling"
 
-        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java )
+        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java internal/*/*/*.java  )
         (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src a*/*/*.java )
         (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [bcdefghijklmnopqrstuv]*/*/*.java )
 
@@ -278,7 +288,7 @@ then
     mkdir $artifacts/jce-jdk12-$base
     mkdir $artifacts/jce-jdk12-$base/src
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/jce-jdk12-$base; tar xf -)
-    ((cd $jdk12src && tar cf - java javax org/bouncycastle/LICENSE.java org/bouncycastle/crypto org/bouncycastle/math org/bouncycastle/pqc org/bouncycastle/asn1 org/bouncycastle/jcajce org/bouncycastle/util org/bouncycastle/jce org/bouncycastle/x509 ) | (cd $artifacts/jce-jdk12-$base/src && tar xf -))
+    ((cd $jdk12src && tar cf - java javax org/bouncycastle/LICENSE.java org/bouncycastle/crypto org/bouncycastle/internal org/bouncycastle/math org/bouncycastle/pqc org/bouncycastle/asn1 org/bouncycastle/jcajce org/bouncycastle/util org/bouncycastle/jce org/bouncycastle/x509 ) | (cd $artifacts/jce-jdk12-$base/src && tar xf -))
 
     (
     cd $artifacts/jce-jdk12-$base; mkdir classes; mkdir javadoc;
@@ -370,7 +380,7 @@ then
     (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src a*/*.java )
     (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [cis]*/*.java )
     (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java a*/*.java a*/*/*.java a*/*/*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java a*/*.java a*/*/*.java a*/*/*/*.java internal/*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [bc]*/*.java [bc]*/*/*.java [bc]*/*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [j]*/*.java [j]*/*/*.java [j]*/*/*/*.java [j]*/*/*/*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [mop]*/*.java [mop]*/*/*.java [mop]*/*/*/*.java [mop]*/*/*/*/*.java)
@@ -481,14 +491,7 @@ then
     mkdir $artifacts/bcpg-jdk12-$base
     mkdir $artifacts/bcpg-jdk12-$base/src
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/bcpg-jdk12-$base; tar xf -)
-    ((cd pg/src/main/java && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
-    ((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
-    ((cd pg/src/main/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
-    ((cd pg/src/test/java && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
-    ((cd pg/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
-    ((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
-    ((cd pg/src/main/javadoc && tar cf - * ) | (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
-    find $artifacts/bcpg-jdk12-$base -name "*.java" -exec scripts/trim.sh \{\} \;
+    ((cd $jdk12src && tar cf - org/bouncycastle/apache org/bouncycastle/openpgp org/bouncycastle/bcpg org/bouncycastle/gpg) |  (cd $artifacts/bcpg-jdk12-$base/src && tar xf -))
     (
     cd $artifacts/bcpg-jdk12-$base; mkdir classes; mkdir javadoc;
 
@@ -515,6 +518,7 @@ then
     rm -f src/org/bouncycastle/openpgp/test/DSA2Test.java
     rm -f src/org/bouncycastle/openpgp/test/PGPUnicodeTest.java
     rm -f src/org/bouncycastle/openpgp/test/PGPKeyRingTest.java
+    rm -f src/org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java
     find src -name AllTests.java -exec rm {} \;
 
     javadoc -windowtitle "$WINDOWTITLE" -doctitle "$DOCTITLE" \

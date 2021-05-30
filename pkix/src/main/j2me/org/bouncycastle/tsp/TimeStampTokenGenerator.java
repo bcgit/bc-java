@@ -308,11 +308,9 @@ public class TimeStampTokenGenerator
         Extensions          additionalExtensions)
         throws TSPException
     {
-        ASN1ObjectIdentifier digestAlgOID = request.getMessageImprintAlgOID();
-
-        AlgorithmIdentifier algID = new AlgorithmIdentifier(digestAlgOID, DERNull.INSTANCE);
+        AlgorithmIdentifier algID = request.getMessageImprintAlgID();
         MessageImprint messageImprint = new MessageImprint(algID, request.getMessageImprintDigest());
-
+        
         Accuracy accuracy = null;
         if (accuracySeconds > 0 || accuracyMillis > 0 || accuracyMicros > 0)
         {

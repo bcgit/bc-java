@@ -576,7 +576,7 @@ class SP80038G
 
     protected static BigInteger num(BigInteger R, short[] x)
     {
-        BigInteger result = BigInteger.ZERO;
+        BigInteger result = BigIntegers.ZERO;
         for (int i = 0; i < x.length; ++i)
         {
             result = result.multiply(R).add(BigInteger.valueOf(x[i] & 0xFFFF));

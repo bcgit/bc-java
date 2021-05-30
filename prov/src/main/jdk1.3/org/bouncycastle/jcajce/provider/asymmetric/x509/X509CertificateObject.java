@@ -203,17 +203,19 @@ class X509CertificateObject
         }
 
         byte[] encoding;
+        CertificateEncodingException ex = null;
         try
         {
             encoding = getEncoded();
         }
         catch (CertificateEncodingException e)
         {
+            ex = e;
             encoding = null;
         }
 
         X509CertificateInternal temp = new X509CertificateInternal(bcHelper, c, basicConstraints, keyUsage, sigAlgName,
-            sigAlgParams, encoding);
+            sigAlgParams, encoding, ex);
 
         synchronized (cacheLock)
         {
