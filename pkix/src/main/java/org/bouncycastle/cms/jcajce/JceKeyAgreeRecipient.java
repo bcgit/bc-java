@@ -124,7 +124,7 @@ public abstract class JceKeyAgreeRecipient
      * Set the algorithm identifier for the private key. You'll want to use this if you are
      * dealing with a HSM and it is not possible to get the encoding of the private key.
      *
-     * @param privKeyAlgID the name of the provider to use.
+     * @param privKeyAlgID the algorithm identifier for the private key.
      * @return this recipient.
      */
     public JceKeyAgreeRecipient setPrivateKeyAlgorithmIdentifier(AlgorithmIdentifier privKeyAlgID)
