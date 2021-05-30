@@ -198,11 +198,36 @@ public class EC
             provider.addAlgorithm("KeyPairGenerator.ECIES", PREFIX + "KeyPairGeneratorSpi$ECDH");
 
             provider.addAlgorithm("Cipher.ECIES", PREFIX + "IESCipher$ECIES");
+            provider.addAlgorithm("Cipher.ECIESwithSHA1", PREFIX + "IESCipher$ECIES");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA1", PREFIX + "IESCipher$ECIES");
+            provider.addAlgorithm("Cipher.ECIESwithSHA256", PREFIX + "IESCipher$ECIESwithSHA256");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA256", PREFIX + "IESCipher$ECIESwithSHA256");
+            provider.addAlgorithm("Cipher.ECIESwithSHA384", PREFIX + "IESCipher$ECIESwithSHA384");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA384", PREFIX + "IESCipher$ECIESwithSHA384");
+            provider.addAlgorithm("Cipher.ECIESwithSHA512", PREFIX + "IESCipher$ECIESwithSHA512");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA512", PREFIX + "IESCipher$ECIESwithSHA512");
 
             provider.addAlgorithm("Cipher.ECIESwithAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
             provider.addAlgorithm("Cipher.ECIESWITHAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
+            provider.addAlgorithm("Cipher.ECIESwithSHA1andAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA1ANDAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
+            provider.addAlgorithm("Cipher.ECIESwithSHA256andAES-CBC", PREFIX + "IESCipher$ECIESwithSHA256andAESCBC");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA256ANDAES-CBC", PREFIX + "IESCipher$ECIESwithSHA256andAESCBC");
+            provider.addAlgorithm("Cipher.ECIESwithSHA384andAES-CBC", PREFIX + "IESCipher$ECIESwithSHA384andAESCBC");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA384ANDAES-CBC", PREFIX + "IESCipher$ECIESwithSHA384andAESCBC");
+            provider.addAlgorithm("Cipher.ECIESwithSHA512andAES-CBC", PREFIX + "IESCipher$ECIESwithSHA512andAESCBC");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA512ANDAES-CBC", PREFIX + "IESCipher$ECIESwithSHA512andAESCBC");
+
             provider.addAlgorithm("Cipher.ECIESwithDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
             provider.addAlgorithm("Cipher.ECIESWITHDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
+            provider.addAlgorithm("Cipher.ECIESwithSHA1andDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA1ANDDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
+            provider.addAlgorithm("Cipher.ECIESwithSHA256andDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA256andDESedeCBC");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA256ANDDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA256andDESedeCBC");
+            provider.addAlgorithm("Cipher.ECIESwithSHA384andDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA384andDESedeCBC");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA384ANDDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA384andDESedeCBC");
+            provider.addAlgorithm("Cipher.ECIESwithSHA512andDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA512andDESedeCBC");
+            provider.addAlgorithm("Cipher.ECIESWITHSHA512ANDDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA512andDESedeCBC");
 
             provider.addAlgorithm("Signature.ECDSA", PREFIX + "SignatureSpi$ecDSA");
             provider.addAlgorithm("Signature.NONEwithECDSA", PREFIX + "SignatureSpi$ecDSAnone");
