@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
 import java.security.cert.CRL;
 import java.security.cert.CRLException;
 import org.bouncycastle.jce.cert.CertPath;
@@ -44,6 +43,7 @@ public class CertificateFactory
 
     private static final PEMUtil PEM_CERT_PARSER = new PEMUtil("CERTIFICATE");
     private static final PEMUtil PEM_CRL_PARSER = new PEMUtil("CRL");
+    private static final PEMUtil PEM_PKCS7_PARSER = new PEMUtil("PKCS7");
 
     private ASN1Set sData = null;
     private int                sDataObjectCount = 0;
@@ -57,8 +57,25 @@ public class CertificateFactory
         ASN1InputStream dIn)
         throws IOException, CertificateParsingException
     {
-        ASN1Sequence seq = (ASN1Sequence)dIn.readObject();
+        return getCertificate(ASN1Sequence.getInstance(dIn.readObject()));
+    }
 
+    private java.security.cert.Certificate readPEMCertificate(
+        InputStream in,
+        boolean isFirst)
+        throws IOException, CertificateParsingException
+    {
+        return getCertificate(PEM_CERT_PARSER.readPEMObject(in, isFirst));
+    }
+
+    private java.security.cert.Certificate getCertificate(ASN1Sequence seq)
+        throws CertificateParsingException
+    {
+        if (seq == null)
+        {
+            return null;
+        }
+        
         if (seq.size() > 1
                 && seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)
         {
@@ -95,48 +112,36 @@ public class CertificateFactory
         return null;
     }
 
-    private java.security.cert.Certificate readPEMCertificate(
-        InputStream in)
-        throws IOException, CertificateParsingException
-    {
-        ASN1Sequence seq = PEM_CERT_PARSER.readPEMObject(in, true);
-
-        if (seq != null)
-        {
-            return new X509CertificateObject(bcHelper,
-                            Certificate.getInstance(seq));
-        }
-
-        return null;
-    }
 
     protected CRL createCRL(CertificateList c)
-    throws CRLException
+        throws CRLException
     {
         return new X509CRLObject(bcHelper, c);
     }
     
     private CRL readPEMCRL(
-        InputStream in)
+        InputStream in,
+        boolean isFirst)
         throws IOException, CRLException
     {
-        ASN1Sequence seq = PEM_CRL_PARSER.readPEMObject(in, true);
-
-        if (seq != null)
-        {
-            return createCRL(
-                            CertificateList.getInstance(seq));
-        }
-
-        return null;
+        return getCRL(PEM_CRL_PARSER.readPEMObject(in, isFirst));
     }
 
     private CRL readDERCRL(
         ASN1InputStream aIn)
         throws IOException, CRLException
     {
-        ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
+        return getCRL(ASN1Sequence.getInstance(aIn.readObject()));
+    }
 
+    private CRL getCRL(ASN1Sequence seq)
+        throws CRLException
+    {
+        if (seq == null)
+        {
+            return null;
+        }
+        
         if (seq.size() > 1
                 && seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)
         {
@@ -144,7 +149,7 @@ public class CertificateFactory
             {
                 sCrlData = SignedData.getInstance(ASN1Sequence.getInstance(
                     (ASN1TaggedObject)seq.getObjectAt(1), true)).getCRLs();
-    
+
                 return getCRL();
             }
         }
@@ -174,6 +179,14 @@ public class CertificateFactory
         InputStream in)
         throws CertificateException
     {
+        return doGenerateCertificate(in, true);
+    }
+
+   private java.security.cert.Certificate doGenerateCertificate(
+            InputStream in,
+            boolean isFirst)
+            throws CertificateException
+   {
         if (currentStream == null)
         {
             currentStream = in;
@@ -225,7 +238,7 @@ public class CertificateFactory
             pis.reset();
             if (tag != 0x30)  // assume ascii PEM encoded.
             {
-                return readPEMCertificate(pis);
+                return readPEMCertificate(pis, isFirst);
             }
             else
             {
@@ -234,7 +247,7 @@ public class CertificateFactory
         }
         catch (Exception e)
         {
-            throw new ExCertificateException(e);
+            throw new ExCertificateException("parsing issue: " + e.getMessage(), e);
         }
     }
 
@@ -251,7 +264,8 @@ public class CertificateFactory
 
         List certs = new ArrayList();
 
-        while ((cert = engineGenerateCertificate(in)) != null)
+        // if we do read some certificates we'll return them even if junk at end of file
+        while ((cert = doGenerateCertificate(in, certs.isEmpty())) != null)
         {
             certs.add(cert);
         }
@@ -265,6 +279,18 @@ public class CertificateFactory
      */
     public CRL engineGenerateCRL(
         InputStream in)
+        throws CRLException
+    {
+        return doGenerateCRL(in, true);
+    }
+
+    /**
+     * Generates a certificate revocation list (CRL) object and initializes
+     * it with the data read from the input stream inStream.
+     */
+    private CRL doGenerateCRL(
+        InputStream in,
+        boolean     isFirst)
         throws CRLException
     {
         if (currentCrlStream == null)
@@ -318,7 +344,7 @@ public class CertificateFactory
             pis.reset();
             if (tag != 0x30)  // assume ascii PEM encoded.
             {
-                return readPEMCRL(pis);
+                return readPEMCRL(pis, isFirst);
             }
             else
             {       // lazy evaluate to help processing of large CRLs
@@ -352,7 +378,8 @@ public class CertificateFactory
         List crls = new ArrayList();
         BufferedInputStream in = new BufferedInputStream(inStream);
 
-        while ((crl = engineGenerateCRL(in)) != null)
+        // if we do read some certificates we'll return them even if junk at end of file
+        while ((crl = doGenerateCRL(in, crls.isEmpty())) != null)
         {
             crls.add(crl);
         }
@@ -362,7 +389,7 @@ public class CertificateFactory
 
     public Iterator engineGetCertPathEncodings()
     {
-        return null; // TODO: PKIXCertPath.certPathEncodings.iterator();
+        return PKIXCertPath.certPathEncodings.iterator();
     }
 
     public CertPath engineGenerateCertPath(

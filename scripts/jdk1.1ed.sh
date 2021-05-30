@@ -63,6 +63,12 @@ w
 q
 %
 
+ed org/bouncycastle/asn1/tsp/PartialHashtree.java <<%
+g/private final /s/final//
+w
+q
+%
+
 ed org/bouncycastle/asn1/pkcs/PBKDF2Params.java <<%
 g/private final ASN1OctetString octStr;/s/final//
 g/private final ASN1Integer iterationCount;/s/final//
@@ -129,6 +135,12 @@ w
 q
 %
 
+ed org/bouncycastle/jcajce/spec/FPEParameterSpec.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
 ed org/bouncycastle/jcajce/spec/MQVParameterSpec.java <<%
 g/private final .*;/s/final//
 w
@@ -156,6 +168,12 @@ q
 ed org/bouncycastle/cms/SignerInformation.java <<%
 g/private final .*;/s/final//
 g/protected final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/its/CertificateType.java <<%
+g/private final .*;/s/final//
 w
 q
 %
@@ -349,6 +367,24 @@ w
 q
 %
 
+ed org/bouncycastle/crypto/params/FPEParameters.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/test/SP80038GTest.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/provider/asymmetric/dh/KeyAgreementSpi.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
 ed org/bouncycastle/jcajce/provider/asymmetric/dh/KeyAgreementSpi.java <<%
 g/private.*final.*;/s/final//
 w
@@ -457,3 +493,16 @@ g/private.*final.*;/s/final//
 w
 q
 %
+
+ed org/bouncycastle/crypto/digests/ParallelHash.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/digests/TupleHash.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
