@@ -18,7 +18,7 @@ import org.bouncycastle.operator.DigestCalculator;
 public class ERSDataGroup
     extends ERSCachingData
 {
-    private List<ERSData> dataObjects;
+    protected List<ERSData> dataObjects;
 
     /**
      * Base constructor for an "array" of data objects.
