@@ -52,6 +52,8 @@ public class RegressionTest
 
     public static void main(String[] args)
     {
+        System.setProperty("org.bouncycastle.bks.enable_v1", "true");
+
         Security.addProvider(new BouncyCastleProvider());
 
         System.out.println("Testing " + Security.getProvider("BC").getInfo() + " version: " + Security.getProvider("BC").getVersion());

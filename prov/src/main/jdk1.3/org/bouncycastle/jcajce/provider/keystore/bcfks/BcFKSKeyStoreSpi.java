@@ -52,7 +52,7 @@ import org.bouncycastle.asn1.bc.ObjectStoreData;
 import org.bouncycastle.asn1.bc.ObjectStoreIntegrityCheck;
 import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.bc.SecretKeyData;
-import org.bouncycastle.asn1.cms.CCMParameters;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
