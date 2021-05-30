@@ -431,6 +431,11 @@ implements BlockCipher
 
     private void setKey(byte[] key)
     {
+        if (key.length < 4 || key.length > 56)
+        {
+            throw new IllegalArgumentException("key length must be in range 32 to 448 bits");
+        }
+
         /*
          * - comments are from _Applied Crypto_, Schneier, p338
          * please be careful comparing the two, AC numbers the

@@ -49,6 +49,35 @@ public class BlowfishTest
         return "Blowfish";
     }
 
+    public void performTest()
+        throws Exception
+    {
+        super.performTest();
+        
+        // key range check
+        BlowfishEngine blowfish = new BlowfishEngine();
+
+        try
+        {
+            blowfish.init(true, new KeyParameter(new byte[1]));
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("key length must be in range 32 to 448 bits", e.getMessage());
+        }
+
+        try
+        {
+            blowfish.init(true, new KeyParameter(new byte[59]));
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("key length must be in range 32 to 448 bits", e.getMessage());
+        }
+    }
+
     public static void main(
         String[]    args)
     {
