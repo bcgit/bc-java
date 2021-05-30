@@ -1,5 +1,8 @@
 package org.bouncycastle.tsp.test;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.Security;
@@ -36,8 +39,10 @@ import org.bouncycastle.tsp.ers.ERSArchiveTimeStampGenerator;
 import org.bouncycastle.tsp.ers.ERSByteData;
 import org.bouncycastle.tsp.ers.ERSData;
 import org.bouncycastle.tsp.ers.ERSDataGroup;
+import org.bouncycastle.tsp.ers.ERSDirectoryDataGroup;
 import org.bouncycastle.tsp.ers.ERSEvidenceRecord;
 import org.bouncycastle.tsp.ers.ERSEvidenceRecordGenerator;
+import org.bouncycastle.tsp.ers.ERSFileData;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
@@ -65,9 +70,9 @@ public class ERSTest
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
         ERSDataGroup h3Docs = new ERSDataGroup(
-            new ERSData[] { new ERSByteData(H3A_DATA),
-                            new ERSByteData(H3B_DATA),
-                            new ERSByteData(H3C_DATA) });
+            new ERSData[]{new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA)});
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
         DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
@@ -85,7 +90,7 @@ public class ERSTest
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
         Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
-                                            tspReq.getMessageImprintDigest()));
+            tspReq.getMessageImprintDigest()));
 
 
         String signDN = "O=Bouncy Castle, C=AU";
@@ -149,9 +154,9 @@ public class ERSTest
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
         ERSDataGroup h3Docs = new ERSDataGroup(
-            new ERSData[] { new ERSByteData(H3A_DATA),
-                            new ERSByteData(H3B_DATA),
-                            new ERSByteData(H3C_DATA) });
+            new ERSData[]{new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA)});
 
         DigestCalculator digestCalculator = new JcaDigestCalculatorProviderBuilder().build().get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
         List<byte[]> hashes = h3Docs.getHashes(
@@ -224,9 +229,9 @@ public class ERSTest
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
         ERSDataGroup h3Docs = new ERSDataGroup(
-            new ERSData[] { new ERSByteData(H3A_DATA),
-                            new ERSByteData(H3B_DATA),
-                            new ERSByteData(H3C_DATA) });
+            new ERSData[]{new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA)});
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
         DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
@@ -244,7 +249,7 @@ public class ERSTest
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
         Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
-                                            tspReq.getMessageImprintDigest()));
+            tspReq.getMessageImprintDigest()));
 
 
         String signDN = "O=Bouncy Castle, C=AU";
@@ -309,7 +314,7 @@ public class ERSTest
         tspCert = ev2.getSigningCertificate();
 
         ev2.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
-        
+
         ev2.validatePresent(h3Docs, new Date());
     }
 
@@ -319,9 +324,9 @@ public class ERSTest
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
         ERSDataGroup h3Docs = new ERSDataGroup(
-            new ERSData[] { new ERSByteData(H3A_DATA),
-                            new ERSByteData(H3B_DATA),
-                            new ERSByteData(H3C_DATA) });
+            new ERSData[]{new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA)});
         ERSData h4Doc = new ERSByteData(H4_DATA);
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
@@ -342,14 +347,102 @@ public class ERSTest
 
         Assert.assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
             tspReq.getMessageImprintDigest()));
+
+        ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+        List<ERSData> dataList = new ArrayList<ERSData>();
+
+        dataList.add(h1Doc);
+        dataList.add(h2Doc);
+        dataList.add(h3Docs);
+        dataList.add(h4Doc);
+
+        ersGen.addAllData(dataList);
+
+        tspReqGen = new TimeStampRequestGenerator();
+
+        tspReqGen.setCertReq(true);
+
+        tspReq = ersGen.generateTimeStampRequest(tspReqGen);
+
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
+            tspReq.getMessageImprintDigest()));
+    }
+
+    public void testDirUtil()
+        throws Exception
+    {
+        File rootDir = File.createTempFile("ers", ".dir");
+        rootDir.delete();
+        if (rootDir.mkdir())
+        {
+            DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+            DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+
+            File h1 = new File(rootDir, "h1");
+            OutputStream fOut = new FileOutputStream(h1);
+            fOut.write(H1_DATA);
+            fOut.close();
+
+            File h2 = new File(rootDir, "h2");
+            fOut = new FileOutputStream(h2);
+            fOut.write(H2_DATA);
+            fOut.close();
+
+            File h3 = new File(rootDir, "h3");
+            h3.mkdir();
+            fOut = new FileOutputStream(new File(h3, "a"));
+            fOut.write(H3A_DATA);
+            fOut.close();
+            fOut = new FileOutputStream(new File(h3, "b"));
+            fOut.write(H3B_DATA);
+            fOut.close();
+            fOut = new FileOutputStream(new File(h3, "c"));
+            fOut.write(H3C_DATA);
+            fOut.close();
+
+            ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+            ersGen.addData(new ERSFileData(h1));
+            ersGen.addData(new ERSFileData(h2));
+            ersGen.addData(new ERSDirectoryDataGroup(h3));
+
+            TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+
+            tspReqGen.setCertReq(true);
+
+            TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
+
+            Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+                tspReq.getMessageImprintDigest()));
+
+            deleteDirectory(rootDir);
+        }
+        else
+        {
+            throw new Exception("can't create temp dir");
+        }
+    }
+
+    private void deleteDirectory(File directory)
+    {
+        File[] files = directory.listFiles();
+        if (files != null)
+        {
+            for (File file : files)
+            {
+                deleteDirectory(file);
+            }
+        }
+        directory.delete();
     }
 
     public void testSort()
         throws Exception
     {
         ERSDataGroup h3Docs = new ERSDataGroup(
-            new ERSData[] { new ERSByteData(H1_DATA),
-                            new ERSByteData(H2_DATA) }
+            new ERSData[]{new ERSByteData(H1_DATA),
+                new ERSByteData(H2_DATA)}
         );
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
@@ -357,19 +450,19 @@ public class ERSTest
         trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
 
         h3Docs = new ERSDataGroup(
-            new ERSData[] { new ERSByteData(H2_DATA),
-                            new ERSByteData(H1_DATA) }
+            new ERSData[]{new ERSByteData(H2_DATA),
+                new ERSByteData(H1_DATA)}
         );
 
         trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
 
         h3Docs = new ERSDataGroup(
-            new ERSData[] { new ERSByteData(H1_DATA),
-                            new ERSByteData(H2_DATA),
-                            new ERSByteData(H3A_DATA),
-                            new ERSByteData(H3B_DATA),
-                            new ERSByteData(H3C_DATA),
-                            new ERSByteData(H4_DATA) }
+            new ERSData[]{new ERSByteData(H1_DATA),
+                new ERSByteData(H2_DATA),
+                new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA),
+                new ERSByteData(H4_DATA)}
         );
         trySort(h3Docs, NISTObjectIdentifiers.id_sha256, digestCalculatorProvider);
         trySort(h3Docs, NISTObjectIdentifiers.id_sha224, digestCalculatorProvider);
@@ -380,10 +473,10 @@ public class ERSTest
         throws OperatorCreationException
     {
         List<byte[]> hashes = h3Docs.getHashes(digestCalculatorProvider.get(
-                                    new AlgorithmIdentifier(sha)));
+            new AlgorithmIdentifier(sha)));
         for (int i = 0; i != hashes.size() - 1; i++)
         {
-              assertTrue(compare((byte[])hashes.get(i), (byte[])hashes.get(i + 1)) < 0);
+            assertTrue(compare((byte[])hashes.get(i), (byte[])hashes.get(i + 1)) < 0);
         }
     }
 
