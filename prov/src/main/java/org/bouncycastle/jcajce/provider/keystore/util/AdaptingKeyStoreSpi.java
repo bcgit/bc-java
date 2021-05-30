@@ -146,7 +146,8 @@ public class AdaptingKeyStoreSpi
         }
         else
         {
-            if (Properties.isOverrideSet(COMPAT_OVERRIDE))
+            // the FIPS BCFKS/JKS compatibility is explicit and doesn't use the override.
+            if (Properties.isOverrideSet(COMPAT_OVERRIDE) || !(primaryStore instanceof PKCS12KeyStoreSpi))
             {
                 if (!stream.markSupported())
                 {
