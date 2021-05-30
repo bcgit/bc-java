@@ -1,17 +1,23 @@
 package org.bouncycastle.tsp.ers;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.bouncycastle.asn1.tsp.PartialHashtree;
 import org.bouncycastle.operator.DigestCalculator;
+import org.bouncycastle.util.io.Streams;
 
 class ERSUtil
 {
+    private ERSUtil()
+    {
+
+    }
+
     private static final Comparator<byte[]> hashComp = new ByteArrayComparator();
 
     static byte[] calculateDigest(DigestCalculator digCalc, byte[] data)
@@ -93,6 +99,24 @@ class ERSUtil
         }
     }
 
+    static byte[] calculateDigest(DigestCalculator digCalc, InputStream inStream)
+    {
+        try
+        {
+            OutputStream mdOut = digCalc.getOutputStream();
+
+            Streams.pipeAll(inStream, mdOut);
+
+            mdOut.close();
+
+            return digCalc.getDigest();
+        }
+        catch (IOException e)
+        {
+            throw ExpUtil.createIllegalState("unable to calculate hash: " + e.getMessage(), e);
+        }
+    }
+
     static byte[] computeNodeHash(DigestCalculator digCalc, PartialHashtree node)
     {
         byte[][] values = node.getValues();
@@ -107,57 +131,25 @@ class ERSUtil
 
     static List<byte[]> buildHashList(byte[][] values)
     {
-        LinkedList<byte[]> hashes = new LinkedList<byte[]>();
+        SortedHashList hashes = new SortedHashList();
 
         for (int i = 0; i != values.length; i++)
         {
-            add(hashes, values[i]);
+            hashes.add(values[i]);
         }
 
-        return hashes;
+        return hashes.toList();
     }
 
     static List<byte[]> buildHashList(DigestCalculator digCalc, List<ERSData> dataObjects)
     {
-        LinkedList<byte[]> hashes = new LinkedList<byte[]>();
+        SortedHashList hashes = new SortedHashList();
 
         for (int i = 0; i != dataObjects.size(); i++)
         {
-            add(hashes, ((ERSData)dataObjects.get(i)).getHash(digCalc));
+            hashes.add(((ERSData)dataObjects.get(i)).getHash(digCalc));
         }
 
-        return hashes;
-    }
-
-    private static void add(LinkedList<byte[]> hashes, byte[] hash)
-    {
-        if (hashes.size() == 0)
-        {
-             hashes.addFirst(hash);
-        }
-        else
-        {
-            if (hashComp.compare(hash, hashes.get(0)) < 0)
-            {
-                hashes.addFirst(hash);
-            }
-            else
-            {
-                int index = 1;
-                while(index < hashes.size() && hashComp.compare(hashes.get(index), hash) <= 0)
-                {
-                    index++;
-                }
-
-                if (index == hashes.size())
-                {
-                    hashes.add(hash);
-                }
-                else
-                {
-                    hashes.add(index, hash);
-                }
-            }
-        }
+        return hashes.toList();
     }
 }

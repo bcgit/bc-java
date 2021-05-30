@@ -38,6 +38,11 @@ public class ERSArchiveTimeStampGenerator
         dataObjects.add(dataObject);
     }
 
+    public void addAllData(List<ERSData> dataObjects)
+    {
+        this.dataObjects.addAll(dataObjects);
+    }
+
     public TimeStampRequest generateTimeStampRequest(TimeStampRequestGenerator tspReqGenerator)
         throws TSPException, IOException
     {
