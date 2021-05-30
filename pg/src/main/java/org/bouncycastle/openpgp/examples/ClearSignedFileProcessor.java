@@ -262,9 +262,9 @@ public class ClearSignedFileProcessor
         Iterator    it = pgpSecKey.getPublicKey().getUserIDs();
         if (it.hasNext())
         {
-            spGen.setSignerUserID(false, (String)it.next());
-            sGen.setHashedSubpackets(spGen.generate());
+            spGen.addSignerUserID(false, (String)it.next());
         }
+        sGen.setHashedSubpackets(spGen.generate());
         
         InputStream fIn = new BufferedInputStream(new FileInputStream(fileName));
         ArmoredOutputStream aOut = new ArmoredOutputStream(out);
