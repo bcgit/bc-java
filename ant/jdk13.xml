@@ -28,6 +28,7 @@
             <fileset dir="pg/src/main/javadoc"/>
             <fileset dir="pkix/src/main/javadoc"/>
             <fileset dir="prov/src/main/javadoc"/>
+            <fileset dir="util/src/main/javadoc"/>
             <fileset dir="core/src/main/java">
                 <exclude name="**/ECPointUtil.java" />
                 <exclude name="**/ECNamedCurveSpec.java" />
@@ -55,6 +56,7 @@
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
             </fileset>
+            <fileset dir="util/src/main/java"/>
             <fileset dir="prov/src/main/java">
                 <exclude name="**/BCFKSStoreParameter.java" />
                 <exclude name="**/ec/ECUtils.java" />
@@ -95,9 +97,11 @@
                 <exclude name="**/provider/ProvOcspRevocationChecker.java"/>
                 <exclude name="**/jcajce/BCFKSLoadStoreParameter.java" />
                 <exclude name="**/jcajce/BCLoadStoreParameter.java" />
+		<exclude name="**/keystore/util/ParameterUtil.java" />
                 <exclude name="**/jcajce/spec/DSTU4145ParameterSpec.java" />
             </fileset>
             <fileset dir="pkix/src/main/java">
+                <exclude name="**/JceAADStream.java"/>
                 <exclude name="**/JceKeyTransAuthEnvelopedRecipient.java"/>
                 <exclude name="**/cert/jcajce/JcaAttributeCertificateIssuer.java" />
                 <exclude name="**/pkix/jcajce/X509Revoc*.java" />
@@ -232,13 +236,7 @@
             <fileset dir="prov/src/test/resources" includes="**/*.p12" />
             <fileset dir="prov/src/test/resources" includes="**/*.cer" />
             <fileset dir="prov/src/test/resources" includes="**/*.crl" />
-            <fileset dir="pkix/src/test/resources" includes="**/*.pem" />
-            <fileset dir="pkix/src/test/resources" includes="**/*.der" />
-            <fileset dir="pkix/src/test/resources" includes="**/*.data" />
-            <fileset dir="pkix/src/test/resources" includes="**/*.sig" />
-            <fileset dir="pkix/src/test/resources" includes="**/*.p7m" />
-            <fileset dir="pkix/src/test/resources" includes="**/*.cvcert" />
-            <fileset dir="pkix/src/test/resources" includes="**/*.csr" />
+            <fileset dir="pkix/src/test/resources" includes="**/*.*" />
             <fileset dir="core/src/test/data" includes="**/*.properties" />
             <fileset dir="core/src/test/data" includes="**/*.eml" />
             <fileset dir="core/src/test/data" includes="**/*.p12" />
@@ -293,6 +291,18 @@
               <include name="**/*.java"/>
             </fileset>
         </replaceregexp>
+        <replaceregexp match="(List|Map|Set) >" replace="\1" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <exclude name="**/MultipartParserTest.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="\.\.\." replace="[]" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <exclude name="**/MultipartParserTest.java"/>
+            </fileset>
+        </replaceregexp>
         <replaceregexp match="java.security.cert.CertStore" replace="org.bouncycastle.jce.cert.CertStore" flags="g" byline="true">
             <fileset dir="${src.dir}">
               <include name="**/*.java"/>
@@ -317,6 +327,7 @@
     </target>
 
     <target name="build" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-util" />
         <ant antfile="ant/bc+-build.xml" dir="." />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-libraries" />
