@@ -3,10 +3,9 @@ package org.bouncycastle.crypto.agreement;
 import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.RawAgreement;
-import org.bouncycastle.crypto.params.*;
-import org.bouncycastle.math.ec.ECAlgorithms;
-import org.bouncycastle.math.ec.ECConstants;
-import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 
 import java.math.BigInteger;
 
@@ -39,7 +38,7 @@ public class XDHBasicAgreement
         if (key instanceof X25519PrivateKeyParameters) {
             this.fieldSize = 32;
         }
-        else if (key instanceof  X448PrivateKeyParameters)
+        else if (key instanceof X448PrivateKeyParameters)
         {
             this.fieldSize = 56;
         }
