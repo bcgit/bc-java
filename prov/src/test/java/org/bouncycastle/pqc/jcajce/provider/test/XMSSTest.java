@@ -497,18 +497,18 @@ public class XMSSTest
 
         assertTrue(sig instanceof StateAwareSignature);
 
-        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+        PrivateKey pKey1 = ((XMSSPrivateKey)kp.getPrivate()).extractKeyShard(5);
 
-        xmssSig.initSign(kp.getPrivate());
+        sig.initSign(pKey1);
 
         for (int i = 0; i != 5; i++)
         {
-            xmssSig.update(msg, 0, msg.length);
+            sig.update(msg, 0, msg.length);
 
-            xmssSig.sign();
+            sig.sign();
         }
 
-        PrivateKey pKey = xmssSig.getUpdatedPrivateKey();
+        PrivateKey pKey = kp.getPrivate();
 
         PrivateKeyInfo pKeyInfo = PrivateKeyInfo.getInstance(pKey.getEncoded());
 
@@ -522,17 +522,17 @@ public class XMSSTest
 
         XMSSKey privKey = (XMSSKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(pKeyInfo.getEncoded()));
 
-        xmssSig.initSign(pKey);
+        sig.initSign(pKey);
 
-        xmssSig.update(msg, 0, msg.length);
+        sig.update(msg, 0, msg.length);
 
-        byte[] sig1 = xmssSig.sign();
+        byte[] sig1 = sig.sign();
 
-        xmssSig.initSign((PrivateKey)privKey);
+        sig.initSign((PrivateKey)privKey);
 
-        xmssSig.update(msg, 0, msg.length);
+        sig.update(msg, 0, msg.length);
 
-        byte[] sig2 = xmssSig.sign();
+        byte[] sig2 = sig.sign();
 
         // make sure we get the same signature as the two keys should now
         // be in the same state.
