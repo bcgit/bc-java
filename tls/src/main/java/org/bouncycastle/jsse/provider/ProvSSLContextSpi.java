@@ -86,25 +86,56 @@ class ProvSSLContextSpi
         ArrayList<String> cs = new ArrayList<String>();
 
         // TLS 1.3+
+
         cs.add("TLS_CHACHA20_POLY1305_SHA256");
         cs.add("TLS_AES_256_GCM_SHA384");
         cs.add("TLS_AES_128_GCM_SHA256");
 
         // TLS 1.2-
+
         cs.add("TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256");
         cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");
         cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
-        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
-        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256");
-        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA");
-        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA");
+
         cs.add("TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256");
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
         cs.add("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+
+        cs.add("TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256");
+        cs.add("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384");
+        cs.add("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384");
+
+        cs.add("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256");
+        cs.add("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256");
+
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384");
+
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256");
         cs.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256");
+
+        cs.add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA256");
+        cs.add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256");
+
+        cs.add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA256");
+        cs.add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256");
+
+        // Legacy
+
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA");
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA");
+
+        cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA");
         cs.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
+
+        cs.add("TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
+        cs.add("TLS_DHE_DSS_WITH_AES_256_CBC_SHA");
+
+        cs.add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA");
+        cs.add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA");
+
+        // Deprecated (not forward secret)
+
         cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
         cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
         cs.add("TLS_RSA_WITH_AES_256_CBC_SHA256");
