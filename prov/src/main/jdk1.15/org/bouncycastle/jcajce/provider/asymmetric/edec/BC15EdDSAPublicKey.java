@@ -8,7 +8,6 @@ import java.security.spec.NamedParameterSpec;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
@@ -35,15 +34,7 @@ class BC15EdDSAPublicKey
     @Override
     public EdECPoint getPoint()
     {
-        byte[] keyData;
-        if (eddsaPublicKey instanceof Ed448PublicKeyParameters)
-        {
-            keyData = ((Ed448PublicKeyParameters)eddsaPublicKey).getEncoded();
-        }
-        else
-        {
-            keyData = ((Ed25519PublicKeyParameters)eddsaPublicKey).getEncoded();
-        }
+        byte[] keyData = getPointEncoding();
 
         Arrays.reverseInPlace(keyData);
 
