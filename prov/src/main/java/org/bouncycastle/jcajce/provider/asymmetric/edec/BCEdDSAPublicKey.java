@@ -57,6 +57,18 @@ public class BCEdDSAPublicKey
         }
     }
 
+    public byte[] getPointEncoding()
+    {
+        if (eddsaPublicKey instanceof Ed448PublicKeyParameters)
+        {
+            return ((Ed448PublicKeyParameters)eddsaPublicKey).getEncoded();
+        }
+        else
+        {
+            return ((Ed25519PublicKeyParameters)eddsaPublicKey).getEncoded();
+        }
+    }
+
     private void populateFromPubKeyInfo(SubjectPublicKeyInfo keyInfo)
     {
         if (EdECObjectIdentifiers.id_Ed448.equals(keyInfo.getAlgorithm().getAlgorithm()))
