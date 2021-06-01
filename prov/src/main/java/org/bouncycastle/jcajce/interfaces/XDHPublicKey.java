@@ -6,7 +6,7 @@ import java.security.PublicKey;
 public interface XDHPublicKey
     extends XDHKey, PublicKey
 {
-    public BigInteger getU();
+    BigInteger getU();
 
-    public byte[] getUEncoding();
+    byte[] getUEncoding();
 }
