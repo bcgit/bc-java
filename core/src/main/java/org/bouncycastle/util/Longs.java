@@ -8,6 +8,16 @@ public class Longs
     public static final int BYTES = Long.BYTES;
     public static final int SIZE = Long.SIZE;
 
+    public static int numberOfLeadingZeros(long i)
+    {
+        return Long.numberOfLeadingZeros(i);
+    }
+
+    public static int numberOfTrailingZeros(long i)
+    {
+        return Long.numberOfTrailingZeros(i);
+    }
+
     public static long reverse(long i)
     {
         return Long.reverse(i);
