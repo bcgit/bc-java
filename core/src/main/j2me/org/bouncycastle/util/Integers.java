@@ -1,11 +1,15 @@
 package org.bouncycastle.util;
 
+import org.bouncycastle.math.raw.Bits;
+
 public class Integers
 {
+    public static final int BYTES = 4;
+    public static final int SIZE = 32;
+
     private static final byte[] DEBRUIJN_TZ = {
-        0x00, 0x01, 0x02, 0x18, 0x03, 0x13, 0x06, 0x19, 0x16, 0x04, 0x14, 0x0A,
-        0x10, 0x07, 0x0C, 0x1A, 0x1F, 0x17, 0x12, 0x05, 0x15, 0x09, 0x0F, 0x0B,
-        0x1E, 0x11, 0x08, 0x0E, 0x1D, 0x0D, 0x1C, 0x1B };
+        0x1F, 0x00, 0x1B, 0x01, 0x1C, 0x0D, 0x17, 0x02, 0x1D, 0x15, 0x13, 0x0E, 0x18, 0x10, 0x03, 0x07,
+        0x1E, 0x1A, 0x0C, 0x16, 0x14, 0x12, 0x0F, 0x06, 0x19, 0x0B, 0x11, 0x05, 0x0A, 0x04, 0x09, 0x08 };
 
     public static int numberOfLeadingZeros(int i)
     {
@@ -25,7 +29,23 @@ public class Integers
 
     public static int numberOfTrailingZeros(int i)
     {
-        return DEBRUIJN_TZ[((i & -i) * 0x04D7651F) >>> 27];
+        int n = DEBRUIJN_TZ[((i & -i) * 0x0EF96A62) >>> 27];
+        int m = (((i & 0xFFFF) | (i >>> 16)) - 1) >> 31;
+        return n - m;
+    }
+
+    public static int reverse(int i)
+    {
+        i = Bits.bitPermuteStepSimple(i, 0x55555555, 1);
+        i = Bits.bitPermuteStepSimple(i, 0x33333333, 2);
+        i = Bits.bitPermuteStepSimple(i, 0x0F0F0F0F, 4);
+        return reverseBytes(i);
+    }
+
+    public static int reverseBytes(int i)
+    {
+        return rotateLeft(i & 0xFF00FF00,  8) |
+               rotateLeft(i & 0x00FF00FF, 24);
     }
 
     public static int rotateLeft(int i, int distance)

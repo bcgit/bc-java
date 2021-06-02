@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
@@ -106,6 +107,27 @@ public class BCXDHPublicKey
     AsymmetricKeyParameter engineGetKeyParameters()
     {
         return xdhPublicKey;
+    }
+
+    public BigInteger getU()
+    {
+        byte[] keyData = getUEncoding();
+
+        Arrays.reverseInPlace(keyData);
+
+        return new BigInteger(1, keyData);
+    }
+
+    public byte[] getUEncoding()
+    {
+        if (xdhPublicKey instanceof X448PublicKeyParameters)
+        {
+            return ((X448PublicKeyParameters)xdhPublicKey).getEncoded();
+        }
+        else
+        {
+            return ((X25519PublicKeyParameters)xdhPublicKey).getEncoded();
+        }
     }
 
     public String toString()
