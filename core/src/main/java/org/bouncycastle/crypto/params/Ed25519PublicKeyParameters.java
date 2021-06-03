@@ -15,6 +15,11 @@ public final class Ed25519PublicKeyParameters
 
     private final byte[] data = new byte[KEY_SIZE];
 
+    public Ed25519PublicKeyParameters(byte[] buf)
+    {
+        this(validate(buf), 0);
+    }
+
     public Ed25519PublicKeyParameters(byte[] buf, int off)
     {
         super(false);
@@ -40,5 +45,14 @@ public final class Ed25519PublicKeyParameters
     public byte[] getEncoded()
     {
         return Arrays.clone(data);
+    }
+
+    private static byte[] validate(byte[] buf)
+    {
+        if (buf.length != KEY_SIZE)
+        {
+            throw new IllegalArgumentException("'buf' must have length " + KEY_SIZE);
+        }
+        return buf;
     }
 }

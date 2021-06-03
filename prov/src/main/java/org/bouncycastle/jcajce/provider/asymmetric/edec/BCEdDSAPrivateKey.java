@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.PrivateKey;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -48,14 +47,15 @@ public class BCEdDSAPrivateKey
     private void populateFromPrivateKeyInfo(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        ASN1Encodable keyOcts = keyInfo.parsePrivateKey();
+        byte[] encoding = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+
         if (EdECObjectIdentifiers.id_Ed448.equals(keyInfo.getPrivateKeyAlgorithm().getAlgorithm()))
         {
-            eddsaPrivateKey = new Ed448PrivateKeyParameters(ASN1OctetString.getInstance(keyOcts).getOctets(), 0);
+            eddsaPrivateKey = new Ed448PrivateKeyParameters(encoding);
         }
         else
         {
-            eddsaPrivateKey = new Ed25519PrivateKeyParameters(ASN1OctetString.getInstance(keyOcts).getOctets(), 0);
+            eddsaPrivateKey = new Ed25519PrivateKeyParameters(encoding);
         }
     }
 

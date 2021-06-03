@@ -24,6 +24,11 @@ public final class X448PrivateKeyParameters
         X448.generatePrivateKey(random, data);
     }
 
+    public X448PrivateKeyParameters(byte[] buf)
+    {
+        this(validate(buf), 0);
+    }
+
     public X448PrivateKeyParameters(byte[] buf, int off)
     {
         super(true);
@@ -66,5 +71,14 @@ public final class X448PrivateKeyParameters
         {
             throw new IllegalStateException("X448 agreement failed");
         }
+    }
+
+    private static byte[] validate(byte[] buf)
+    {
+        if (buf.length != KEY_SIZE)
+        {
+            throw new IllegalArgumentException("'buf' must have length " + KEY_SIZE);
+        }
+        return buf;
     }
 }

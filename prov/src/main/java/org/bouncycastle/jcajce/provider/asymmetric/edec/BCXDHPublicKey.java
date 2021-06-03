@@ -60,13 +60,15 @@ public class BCXDHPublicKey
 
     private void populateFromPubKeyInfo(SubjectPublicKeyInfo keyInfo)
     {
+        byte[] encoding = keyInfo.getPublicKeyData().getOctets();
+
         if (EdECObjectIdentifiers.id_X448.equals(keyInfo.getAlgorithm().getAlgorithm()))
         {
-            xdhPublicKey = new X448PublicKeyParameters(keyInfo.getPublicKeyData().getOctets(), 0);
+            xdhPublicKey = new X448PublicKeyParameters(encoding);
         }
         else
         {
-            xdhPublicKey = new X25519PublicKeyParameters(keyInfo.getPublicKeyData().getOctets(), 0);
+            xdhPublicKey = new X25519PublicKeyParameters(encoding);
         }
     }
 

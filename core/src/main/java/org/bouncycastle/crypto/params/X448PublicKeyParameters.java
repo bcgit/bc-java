@@ -15,6 +15,11 @@ public final class X448PublicKeyParameters
 
     private final byte[] data = new byte[KEY_SIZE];
 
+    public X448PublicKeyParameters(byte[] buf)
+    {
+        this(validate(buf), 0);
+    }
+
     public X448PublicKeyParameters(byte[] buf, int off)
     {
         super(false);
@@ -40,5 +45,14 @@ public final class X448PublicKeyParameters
     public byte[] getEncoded()
     {
         return Arrays.clone(data);
+    }
+
+    private static byte[] validate(byte[] buf)
+    {
+        if (buf.length != KEY_SIZE)
+        {
+            throw new IllegalArgumentException("'buf' must have length " + KEY_SIZE);
+        }
+        return buf;
     }
 }

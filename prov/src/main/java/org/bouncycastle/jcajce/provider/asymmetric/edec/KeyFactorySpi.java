@@ -10,11 +10,10 @@ import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -34,6 +33,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class KeyFactorySpi
@@ -86,10 +86,9 @@ public class KeyFactorySpi
                 //
 
                 ASN1Sequence seq = ASN1Sequence.getInstance(key.getEncoded());
-                DEROctetString val = (DEROctetString)seq.getObjectAt(2);
-                ASN1InputStream in = new ASN1InputStream(val.getOctets());
-
-                return new OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new Ed25519PrivateKeyParameters(ASN1OctetString.getInstance(in.readObject()).getOctets(), 0)));
+                ASN1OctetString val = ASN1OctetString.getInstance(seq.getObjectAt(2));
+                byte[] encoding = ASN1OctetString.getInstance(ASN1Primitive.fromByteArray(val.getOctets())).getOctets();
+                return new OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new Ed25519PrivateKeyParameters(encoding)));
             }
             catch (IOException ex)
             {
@@ -101,7 +100,16 @@ public class KeyFactorySpi
         {
             try
             {
-                return new OpenSSHPublicKeySpec(OpenSSHPublicKeyUtil.encodePublicKey(new Ed25519PublicKeyParameters(key.getEncoded(), Ed25519Prefix.length)));
+                byte[] encoding = key.getEncoded();
+
+                if (!Arrays.areEqual(Ed25519Prefix, 0, Ed25519Prefix.length,
+                    encoding, 0, encoding.length - Ed25519PublicKeyParameters.KEY_SIZE))
+                {
+                    throw new InvalidKeySpecException("Invalid Ed25519 public key encoding");
+                }
+
+                Ed25519PublicKeyParameters publicKey = new Ed25519PublicKeyParameters(encoding, Ed25519Prefix.length);
+                return new OpenSSHPublicKeySpec(OpenSSHPublicKeyUtil.encodePublicKey(publicKey));
             }
             catch (IOException ex)
             {
@@ -189,13 +197,13 @@ public class KeyFactorySpi
             switch (specificBase)
             {
             case x448_type:
-                return new BCXDHPublicKey(new X448PublicKeyParameters(enc, 0));
+                return new BCXDHPublicKey(new X448PublicKeyParameters(enc));
             case x25519_type:
-                return new BCXDHPublicKey(new X25519PublicKeyParameters(enc, 0));
+                return new BCXDHPublicKey(new X25519PublicKeyParameters(enc));
             case Ed448_type:
-                return new BCEdDSAPublicKey(new Ed448PublicKeyParameters(enc, 0));
+                return new BCEdDSAPublicKey(new Ed448PublicKeyParameters(enc));
             case Ed25519_type:
-                return new BCEdDSAPublicKey(new Ed25519PublicKeyParameters(enc, 0));
+                return new BCEdDSAPublicKey(new Ed25519PublicKeyParameters(enc));
             default:
                 throw new InvalidKeySpecException("factory not a specific type, cannot recognise raw encoding");
             }

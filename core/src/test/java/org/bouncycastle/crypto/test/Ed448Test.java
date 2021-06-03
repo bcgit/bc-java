@@ -50,12 +50,12 @@ public class Ed448Test
                 "6c82a562cb808d10d632be89c8513ebf" +
                 "6c929f34ddfa8c9f63c9960ef6e348a3" +
                 "528c8a3fcc2f044e39a3fc5b94492f8f" +
-                "032e7549a20098f95b"), 0);
+                "032e7549a20098f95b"));
         Ed448PublicKeyParameters publicKey = new Ed448PublicKeyParameters(
             Hex.decode("5fd7449b59b461fd2ce787ec616ad46a" +
                 "1da1342485a70e1f8a0ea75d80e96778" +
                 "edf124769b46c7061bd6783df1e50f6c" +
-                "d1fa1abeafe8256180"), 0);
+                "d1fa1abeafe8256180"));
 
         byte[] sig = Hex.decode("533a37f6bbe457251f023c0d88f976ae" +
             "2dfb504a843e34d2074fd823d41a591f" +

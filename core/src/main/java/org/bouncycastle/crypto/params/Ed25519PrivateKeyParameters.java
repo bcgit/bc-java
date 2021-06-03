@@ -26,6 +26,11 @@ public final class Ed25519PrivateKeyParameters
         Ed25519.generatePrivateKey(random, data);
     }
 
+    public Ed25519PrivateKeyParameters(byte[] buf)
+    {
+        this(validate(buf), 0);
+    }
+
     public Ed25519PrivateKeyParameters(byte[] buf, int off)
     {
         super(true);
@@ -115,5 +120,14 @@ public final class Ed25519PrivateKeyParameters
             throw new IllegalArgumentException("algorithm");
         }
         }
+    }
+
+    private static byte[] validate(byte[] buf)
+    {
+        if (buf.length != KEY_SIZE)
+        {
+            throw new IllegalArgumentException("'buf' must have length " + KEY_SIZE);
+        }
+        return buf;
     }
 }
