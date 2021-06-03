@@ -429,9 +429,9 @@ public class ERSTest
         File[] files = directory.listFiles();
         if (files != null)
         {
-            for (File file : files)
+            for (int i = 0; i != files.length; i++)
             {
-                deleteDirectory(file);
+                deleteDirectory(files[i]);
             }
         }
         directory.delete();
