@@ -165,46 +165,6 @@ public class KeyFactorySpi
             }
 
         }
-        else if (spec.isAssignableFrom(org.bouncycastle.jce.spec.OpenSSHPublicKeySpec.class) && key instanceof ECPublicKey)
-        {
-            if (key instanceof BCECPublicKey)
-            {
-                BCECPublicKey bcPk = (BCECPublicKey)key;
-                ECParameterSpec sc = bcPk.getParameters();
-                try
-                {
-                    return new org.bouncycastle.jce.spec.OpenSSHPublicKeySpec(
-                        OpenSSHPublicKeyUtil.encodePublicKey(
-                            new ECPublicKeyParameters(bcPk.getQ(), new ECDomainParameters(sc.getCurve(), sc.getG(), sc.getN(), sc.getH(), sc.getSeed()))));
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
-                }
-            }
-            else
-            {
-                throw new IllegalArgumentException("invalid key type: " + key.getClass().getName());
-            }
-        }
-        else if (spec.isAssignableFrom(org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec.class) && key instanceof ECPrivateKey)
-        {
-            if (key instanceof BCECPrivateKey)
-            {
-                try
-                {
-                    return new org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec(PrivateKeyInfo.getInstance(key.getEncoded()).parsePrivateKey().toASN1Primitive().getEncoded());
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalArgumentException("cannot encoded key: " + e.getMessage());
-                }
-            }
-            else
-            {
-                throw new IllegalArgumentException("invalid key type: " + key.getClass().getName());
-            }
-        }
 
         return super.engineGetKeySpec(key, spec);
     }

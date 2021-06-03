@@ -73,30 +73,6 @@ public class KeyFactorySpi
                 throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
             }
         }
-        else if (spec.isAssignableFrom(org.bouncycastle.jce.spec.OpenSSHPublicKeySpec.class) && key instanceof java.security.interfaces.DSAPublicKey)
-        {
-            DSAPublicKey k = (DSAPublicKey)key;
-            try
-            {
-                return new org.bouncycastle.jce.spec.OpenSSHPublicKeySpec(OpenSSHPublicKeyUtil.encodePublicKey(new DSAPublicKeyParameters(k.getY(), new DSAParameters(k.getParams().getP(), k.getParams().getQ(), k.getParams().getG()))));
-            }
-            catch (IOException e)
-            {
-                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
-            }
-        }
-        else if (spec.isAssignableFrom(org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec.class) && key instanceof java.security.interfaces.DSAPrivateKey)
-        {
-            DSAPrivateKey k = (DSAPrivateKey)key;
-            try
-            {
-                return new org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new DSAPrivateKeyParameters(k.getX(), new DSAParameters(k.getParams().getP(), k.getParams().getQ(), k.getParams().getG()))));
-            }
-            catch (IOException e)
-            {
-                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
-            }
-        }
 
         return super.engineGetKeySpec(key, spec);
     }
