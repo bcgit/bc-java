@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -85,12 +86,10 @@ public class KeyFactorySpi
                 // The DEROctetString at element 2 is an encoded DEROctetString with the private key value
                 // within it.
                 //
-
                 ASN1Sequence seq = ASN1Sequence.getInstance(key.getEncoded());
-                DEROctetString val = (DEROctetString)seq.getObjectAt(2);
-                ASN1InputStream in = new ASN1InputStream(val.getOctets());
-
-                return new OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new Ed25519PrivateKeyParameters(ASN1OctetString.getInstance(in.readObject()).getOctets(), 0)));
+                ASN1OctetString val = ASN1OctetString.getInstance(seq.getObjectAt(2));
+                byte[] encoding = ASN1OctetString.getInstance(ASN1Primitive.fromByteArray(val.getOctets())).getOctets();
+                return new OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new Ed25519PrivateKeyParameters(encoding)));
             }
             catch (IOException ex)
             {
