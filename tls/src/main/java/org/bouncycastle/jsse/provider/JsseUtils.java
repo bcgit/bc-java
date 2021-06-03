@@ -5,8 +5,6 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAPrivateKey;
-import java.security.interfaces.ECPrivateKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -670,30 +668,6 @@ abstract class JsseUtils
         ProtocolVersion protocolVersion = ProvSSLContextSpi.getProtocolVersion(protocol);
 
         return null != protocolVersion && TlsUtils.isTLSv12(protocolVersion); 
-    }
-
-    static boolean isUsableKeyForServerLegacy(int keyExchangeAlgorithm, PrivateKey privateKey)
-    {
-        final String algorithm = getPrivateKeyAlgorithm(privateKey);
-
-        switch (keyExchangeAlgorithm)
-        {
-        case KeyExchangeAlgorithm.DHE_DSS:
-            return privateKey instanceof DSAPrivateKey || "DSA".equalsIgnoreCase(algorithm);
-
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            return privateKey instanceof ECPrivateKey || "EC".equalsIgnoreCase(algorithm);
-
-        case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.ECDHE_RSA:
-        case KeyExchangeAlgorithm.RSA:
-            return "RSA".equalsIgnoreCase(algorithm);
-
-        // NOTE: This method should never be called for TLS 1.3 
-        case KeyExchangeAlgorithm.NULL:
-        default:
-            return false;
-        }
     }
 
     static X500Principal toX500Principal(X500Name name) throws IOException
