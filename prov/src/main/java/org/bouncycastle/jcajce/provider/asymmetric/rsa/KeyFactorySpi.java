@@ -101,44 +101,6 @@ public class KeyFactorySpi
                 throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
             }
         }
-        else if (spec.isAssignableFrom(org.bouncycastle.jce.spec.OpenSSHPublicKeySpec.class) && key instanceof RSAPublicKey)
-        {
-            try
-            {
-                return new org.bouncycastle.jce.spec.OpenSSHPublicKeySpec(
-                    OpenSSHPublicKeyUtil.encodePublicKey(
-                        new RSAKeyParameters(
-                            false,
-                            ((RSAPublicKey)key).getModulus(),
-                            ((RSAPublicKey)key).getPublicExponent())
-                    )
-                );
-            }
-            catch (IOException e)
-            {
-                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
-            }
-        }
-        else if (spec.isAssignableFrom(org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec.class) && key instanceof RSAPrivateCrtKey)
-        {
-            try
-            {
-                return new org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new RSAPrivateCrtKeyParameters(
-                    ((RSAPrivateCrtKey)key).getModulus(),
-                    ((RSAPrivateCrtKey)key).getPublicExponent(),
-                    ((RSAPrivateCrtKey)key).getPrivateExponent(),
-                    ((RSAPrivateCrtKey)key).getPrimeP(),
-                    ((RSAPrivateCrtKey)key).getPrimeQ(),
-                    ((RSAPrivateCrtKey)key).getPrimeExponentP(),
-                    ((RSAPrivateCrtKey)key).getPrimeExponentQ(),
-                    ((RSAPrivateCrtKey)key).getCrtCoefficient()
-                )));
-            }
-            catch (IOException e)
-            {
-                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
-            }
-        }
 
         return super.engineGetKeySpec(key, spec);
     }
