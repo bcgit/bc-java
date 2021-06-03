@@ -19,9 +19,10 @@ import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.jcajce.interfaces.XDHPrivateKey;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
+import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
+import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
-import org.junit.Assert;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -224,7 +225,7 @@ public class XDHKeyTest
         keyAgreement.doPhase(kp1.getPublic(), true);
         byte[] sec2 = keyAgreement.generateSecret();
 
-        Assert.assertTrue(Arrays.areEqual(sec1, sec2));
+        assertTrue(Arrays.areEqual(sec1, sec2));
 
         if (kp1.getPrivate() instanceof XDHPrivateKey)
         {
@@ -232,8 +233,42 @@ public class XDHKeyTest
             keyAgreement.doPhase(((XDHPrivateKey)kp1.getPrivate()).getPublicKey(), true);
             byte[] sec3 = keyAgreement.generateSecret();
 
-            Assert.assertTrue(Arrays.areEqual(sec1, sec3));
+            assertTrue(Arrays.areEqual(sec1, sec3));
         }
+    }
+
+    public void testRawEncodedKeySpec()
+        throws Exception
+    {
+        KeyPair xd1 = generateKP("X448", new XDHParameterSpec(XDHParameterSpec.X448));
+
+        checkRaw(xd1.getPublic(), "X448");
+
+        KeyPair xd2 = generateKP("X25519", new XDHParameterSpec(XDHParameterSpec.X25519));
+
+        checkRaw(xd2.getPublic(), "X25519");
+    }
+
+    private KeyPair generateKP(String algorithm, AlgorithmParameterSpec spec)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, "BC");
+
+        kpGen.initialize(spec);
+
+        return kpGen.generateKeyPair();
+    }
+
+    private void checkRaw(PublicKey key, String algorithm)
+        throws Exception
+    {
+        KeyFactory kf = KeyFactory.getInstance(algorithm, "BC");
+
+        RawEncodedKeySpec rawSpec = (RawEncodedKeySpec)kf.getKeySpec(key, RawEncodedKeySpec.class);
+
+        PublicKey pub = kf.generatePublic(rawSpec);
+
+        assertEquals(key, pub);
     }
 
     private void checkNamedParamSpecXECKey(Key key, String name)
