@@ -244,24 +244,24 @@ public class KeyManagerFactoryTest
         assertNotNull(alias);
         assertNotNull(manager.getCertificateChain(alias));
         assertNotNull(manager.getPrivateKey(alias));
-        assertNotNull(manager.getKeyBC(alias));
 
-        BCX509Key key = manager.chooseServerKeyBC(keyType, null, null);
+        BCX509Key key = manager.chooseServerKeyBC(new String[]{ keyType }, null, null);
         assertNotNull(key);
 
         alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
         assertNull(alias);
 
-        key = manager.chooseServerKeyBC(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
+        key = manager.chooseServerKeyBC(new String[]{ keyType }, new Principal[] { new X500Principal("CN=TLS Test") },
+            null);
         assertNull(key);
 
         alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
         assertNotNull(alias);
         assertNotNull(manager.getCertificateChain(alias));
         assertNotNull(manager.getPrivateKey(alias));
-        assertNotNull(manager.getKeyBC(alias));
 
-        key = manager.chooseServerKeyBC(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+        key = manager.chooseServerKeyBC(new String[]{ keyType },
+            new Principal[]{ new X500Principal("CN=TLS Test CA") }, null);
         assertNotNull(key);
     }
 
