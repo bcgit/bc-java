@@ -1,7 +1,9 @@
 package org.bouncycastle.jsse.provider;
 
+import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ public class BouncyCastleJsseProvider
 {
     public static final String PROVIDER_NAME = "BCJSSE";
 
+    private static final String JSSE_CONFIG_PROPERTY = "org.bouncycastle.jsse.config";
+
     private static final double PROVIDER_VERSION = 1.0012;
     private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.12";
 
@@ -31,7 +35,7 @@ public class BouncyCastleJsseProvider
 
     public BouncyCastleJsseProvider()
     {
-        this(false);
+        this(getPropertyValue(JSSE_CONFIG_PROPERTY, "default"));
     }
 
     public BouncyCastleJsseProvider(boolean fipsMode)
@@ -395,5 +399,27 @@ public class BouncyCastleJsseProvider
                 throw new NoSuchAlgorithmException("Unable to invoke creator for " + getAlgorithm() + ": " + e.getMessage(), e);
             }
         }
+    }
+
+    // added here as not present in FIPS yet.
+    private static String getPropertyValue(final String propertyName, final String defValue)
+    {
+        return AccessController.doPrivileged(new PrivilegedAction<String>()
+        {
+            public String run()
+            {
+                String v = Security.getProperty(propertyName);
+                if (v != null)
+                {
+                    return v;
+                }
+                v = System.getProperty(propertyName);
+                if (v != null)
+                {
+                    return v;
+                }
+                return defValue;
+            }
+        });
     }
 }
