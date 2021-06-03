@@ -2,17 +2,12 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
 
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
@@ -60,36 +55,12 @@ public class JceX448Domain implements TlsECDomain
 
     public PublicKey decodePublicKey(byte[] encoding) throws IOException
     {
-        try
-        {
-            AlgorithmIdentifier algID = new AlgorithmIdentifier(EdECObjectIdentifiers.id_X448);
-            SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo(algID, encoding);
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(spki.getEncoded(ASN1Encoding.DER));
-
-            KeyFactory kf = crypto.getHelper().createKeyFactory("X448");
-            return kf.generatePublic(keySpec);
-        }
-        catch (Exception e)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
-        }
+        return XDHUtil.decodePublicKey(crypto, "X448", EdECObjectIdentifiers.id_X448, encoding);
     }
 
     public byte[] encodePublicKey(PublicKey publicKey) throws IOException
     {
-        try
-        {
-            if ("X.509".equals(publicKey.getFormat()))
-            {
-                SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
-                return spki.getPublicKeyData().getOctets();
-            }
-        }
-        catch (Exception e)
-        {
-        }
-
-        throw new TlsFatalAlert(AlertDescription.internal_error);
+        return XDHUtil.encodePublicKey(publicKey);
     }
 
     public KeyPair generateKeyPair()
