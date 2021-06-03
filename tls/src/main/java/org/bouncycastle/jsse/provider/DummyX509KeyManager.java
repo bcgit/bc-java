@@ -37,18 +37,18 @@ final class DummyX509KeyManager
         return null;
     }
 
-    @Override
-    public BCX509Key getKeyBC(String alias)
-    {
-        return null;
-    }
-
     public PrivateKey getPrivateKey(String alias)
     {
         return null;
     }
 
     public String[] getServerAliases(String keyType, Principal[] issuers)
+    {
+        return null;
+    }
+
+    @Override
+    protected BCX509Key getKeyBC(String keyType, String alias)
     {
         return null;
     }

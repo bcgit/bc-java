@@ -162,9 +162,9 @@ class ProvSSLEngine
         return getContextData().getX509KeyManager().chooseEngineClientKeyBC(keyTypes, JsseUtils.clone(issuers), this);
     }
 
-    public BCX509Key chooseServerKey(String keyType, Principal[] issuers)
+    public BCX509Key chooseServerKey(String[] keyTypes, Principal[] issuers)
     {
-        return getContextData().getX509KeyManager().chooseEngineServerKeyBC(keyType, JsseUtils.clone(issuers), this);
+        return getContextData().getX509KeyManager().chooseEngineServerKeyBC(keyTypes, JsseUtils.clone(issuers), this);
     }
 
     @Override

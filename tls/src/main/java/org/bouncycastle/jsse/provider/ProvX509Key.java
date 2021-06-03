@@ -11,14 +11,14 @@ import org.bouncycastle.tls.TlsUtils;
 class ProvX509Key
     implements BCX509Key
 {
-    static ProvX509Key from(X509KeyManager x509KeyManager, String alias)
+    static ProvX509Key from(X509KeyManager x509KeyManager, String keyType, String alias)
     {
         if (null == x509KeyManager)
         {
             throw new NullPointerException("'x509KeyManager' cannot be null");
         }
 
-        if (null == alias)
+        if (null == keyType || null == alias)
         {
             return null;
         }
@@ -51,14 +51,16 @@ class ProvX509Key
 //            return null;
 //        }
 
-        return new ProvX509Key(privateKey, certificateChain);
+        return new ProvX509Key(keyType, privateKey, certificateChain);
     }
 
+    private final String keyType;
     private final PrivateKey privateKey;
     private final X509Certificate[] certificateChain;
 
-    ProvX509Key(PrivateKey privateKey, X509Certificate[] certificateChain)
+    ProvX509Key(String keyType, PrivateKey privateKey, X509Certificate[] certificateChain)
     {
+        this.keyType = keyType;
         this.privateKey = privateKey;
         this.certificateChain = certificateChain;
     }
@@ -66,6 +68,11 @@ class ProvX509Key
     public X509Certificate[] getCertificateChain()
     {
         return certificateChain.clone();
+    }
+
+    public String getKeyType()
+    {
+        return keyType;
     }
 
     public PrivateKey getPrivateKey()

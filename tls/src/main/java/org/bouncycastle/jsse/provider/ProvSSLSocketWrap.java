@@ -137,9 +137,9 @@ class ProvSSLSocketWrap
         return getContextData().getX509KeyManager().chooseClientKeyBC(keyTypes, JsseUtils.clone(issuers), this);
     }
 
-    public BCX509Key chooseServerKey(String keyType, Principal[] issuers)
+    public BCX509Key chooseServerKey(String[] keyTypes, Principal[] issuers)
     {
-        return getContextData().getX509KeyManager().chooseServerKeyBC(keyType, JsseUtils.clone(issuers), this);
+        return getContextData().getX509KeyManager().chooseServerKeyBC(keyTypes, JsseUtils.clone(issuers), this);
     }
 
     @Override
