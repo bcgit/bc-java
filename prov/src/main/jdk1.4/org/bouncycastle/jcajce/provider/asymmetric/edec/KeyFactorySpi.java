@@ -34,6 +34,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class KeyFactorySpi
@@ -101,7 +102,17 @@ public class KeyFactorySpi
         {
             try
             {
-                return new OpenSSHPublicKeySpec(OpenSSHPublicKeyUtil.encodePublicKey(new Ed25519PublicKeyParameters(key.getEncoded(), Ed25519Prefix.length)));
+                byte[] encoding = key.getEncoded();
+
+                if (!Arrays.areEqual(Ed25519Prefix, 0, Ed25519Prefix.length,
+                    encoding, 0, encoding.length - Ed25519PublicKeyParameters.KEY_SIZE))
+                {
+                    throw new InvalidKeySpecException("Invalid Ed25519 public key encoding");
+                }
+
+                Ed25519PublicKeyParameters publicKey = new Ed25519PublicKeyParameters(encoding, Ed25519Prefix.length);
+
+                return new OpenSSHPublicKeySpec(OpenSSHPublicKeyUtil.encodePublicKey(publicKey));
             }
             catch (IOException ex)
             {
