@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -651,12 +651,11 @@ class ProvTlsClient
          * with some hash/signature algorithm pair in supported_signature_algorithms.
          */
 
-        Set<String> keyManagerMissCache = new HashSet<String>();
-
+        LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap = new LinkedHashMap<String, SignatureSchemeInfo>();
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
             String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
-            if (keyManagerMissCache.contains(keyType))
+            if (keyTypeMap.containsKey(keyType))
             {
                 continue;
             }
@@ -673,40 +672,49 @@ class ProvTlsClient
                 continue;
             }
 
-            BCX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
-            if (null == x509Key)
-            {
-                if (LOG.isLoggable(Level.FINER))
-                {
-                    LOG.finer("Client (1.2) found no credentials for signature scheme '" + signatureSchemeInfo
-                        + "' (keyType '" + keyType + "')");
-                }
-
-                keyManagerMissCache.add(keyType);
-                continue;
-            }
-
-            if (LOG.isLoggable(Level.FINE))
-            {
-                LOG.fine("Client (1.2) selected credentials for signature scheme '" + signatureSchemeInfo
-                    + "' (keyType '" + keyType + "'), with private key algorithm '"
-                    + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
-            }
-
-            return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key,
-                signatureSchemeInfo.getSignatureAndHashAlgorithm());
+            keyTypeMap.put(keyType, signatureSchemeInfo);
         }
 
-        LOG.fine("Client (1.2) did not select any credentials");
+        if (keyTypeMap.isEmpty())
+        {
+            LOG.fine("Client (1.2) found no usable signature schemes");
+            return null;
+        }
 
-        return null;
+        String[] keyTypes = keyTypeMap.keySet().toArray(TlsUtils.EMPTY_STRINGS);
+        BCX509Key x509Key = manager.chooseClientKey(keyTypes, issuers);
+
+        if (null == x509Key)
+        {
+            handleKeyManagerMisses(keyTypeMap, null);
+            LOG.fine("Client (1.2) did not select any credentials");
+            return null;
+        }
+
+        String selectedKeyType = x509Key.getKeyType();
+        handleKeyManagerMisses(keyTypeMap, selectedKeyType);
+
+        SignatureSchemeInfo selectedSignatureSchemeInfo = keyTypeMap.get(selectedKeyType);
+        if (null == selectedSignatureSchemeInfo)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, "Key manager returned invalid key type");
+        }
+
+        if (LOG.isLoggable(Level.FINE))
+        {
+            LOG.fine("Client (1.2) selected credentials for signature scheme '" + selectedSignatureSchemeInfo
+                + "' (keyType '" + selectedKeyType + "'), with private key algorithm '"
+                + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
+        }
+
+        return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key,
+            selectedSignatureSchemeInfo.getSignatureAndHashAlgorithm());
     }
 
     protected TlsCredentials selectClientCredentials13(Principal[] issuers, byte[] certificateRequestContext)
         throws IOException
     {
-        Set<String> keyManagerMissCache = new HashSet<String>();
-
+        LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap = new LinkedHashMap<String, SignatureSchemeInfo>();
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
             if (!signatureSchemeInfo.isSupportedPost13() ||
@@ -716,44 +724,58 @@ class ProvTlsClient
             }
 
             String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
-            if (keyManagerMissCache.contains(keyType))
+            if (keyTypeMap.containsKey(keyType))
             {
                 continue;
             }
 
-            BCX509Key x509Key = manager.chooseClientKey(new String[]{ keyType }, issuers);
-            if (null == x509Key)
-            {
-                if (LOG.isLoggable(Level.FINER))
-                {
-                    LOG.finer("Client (1.3) found no credentials for signature scheme '" + signatureSchemeInfo
-                        + "' (keyType '" + keyType + "')");
-                }
-
-                keyManagerMissCache.add(keyType);
-                continue;
-            }
-
-            if (LOG.isLoggable(Level.FINE))
-            {
-                LOG.fine("Client (1.3) selected credentials for signature scheme '" + signatureSchemeInfo
-                    + "' (keyType '" + keyType + "'), with private key algorithm '"
-                    + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
-            }
-
-            return JsseUtils.createCredentialedSigner13(context, getCrypto(), x509Key,
-                signatureSchemeInfo.getSignatureAndHashAlgorithm(), certificateRequestContext);
+            keyTypeMap.put(keyType, signatureSchemeInfo);
         }
 
-        LOG.fine("Client (1.3) did not select any credentials");
+        if (keyTypeMap.isEmpty())
+        {
+            LOG.fine("Client (1.3) found no usable signature schemes");
+            return null;
+        }
 
-        return null;
+        String[] keyTypes = keyTypeMap.keySet().toArray(TlsUtils.EMPTY_STRINGS);
+        BCX509Key x509Key = manager.chooseClientKey(keyTypes, issuers);
+
+        if (null == x509Key)
+        {
+            handleKeyManagerMisses(keyTypeMap, null);
+            LOG.fine("Client (1.3) did not select any credentials");
+            return null;
+        }
+
+        String selectedKeyType = x509Key.getKeyType();
+        handleKeyManagerMisses(keyTypeMap, selectedKeyType);
+
+        SignatureSchemeInfo selectedSignatureSchemeInfo = keyTypeMap.get(selectedKeyType);
+        if (null == selectedSignatureSchemeInfo)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, "Key manager returned invalid key type");
+        }
+
+        if (LOG.isLoggable(Level.FINE))
+        {
+            LOG.fine("Client (1.3) selected credentials for signature scheme '" + selectedSignatureSchemeInfo
+                + "' (keyType '" + selectedKeyType + "'), with private key algorithm '"
+                + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
+        }
+
+        return JsseUtils.createCredentialedSigner13(context, getCrypto(), x509Key,
+            selectedSignatureSchemeInfo.getSignatureAndHashAlgorithm(), certificateRequestContext);
     }
 
     protected TlsCredentials selectClientCredentialsLegacy(Principal[] issuers, short[] certificateTypes)
         throws IOException
     {
         String[] keyTypes = getKeyTypesLegacy(certificateTypes);
+        if (keyTypes.length < 1)
+        {
+            return null;
+        }
 
         BCX509Key x509Key = manager.chooseClientKey(keyTypes, issuers);
         if (null == x509Key)
@@ -762,5 +784,25 @@ class ProvTlsClient
         }
 
         return JsseUtils.createCredentialedSigner(context, getCrypto(), x509Key, null);
+    }
+
+    private void handleKeyManagerMisses(LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap, String selectedKeyType)
+    {
+        for (Map.Entry<String, SignatureSchemeInfo> entry : keyTypeMap.entrySet())
+        {
+            String keyType = entry.getKey();
+            if (keyType.equals(selectedKeyType))
+            {
+                break;
+            }
+
+            if (LOG.isLoggable(Level.FINER))
+            {
+                SignatureSchemeInfo signatureSchemeInfo = entry.getValue();
+
+                LOG.finer("Client found no credentials for signature scheme '" + signatureSchemeInfo
+                    + "' (keyType '" + keyType + "')");
+            }
+        }
     }
 }
