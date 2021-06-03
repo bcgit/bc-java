@@ -114,9 +114,9 @@ public abstract class AbstractTlsServer
         return null;
     }
 
-    protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits, Vector sigAlgs)
+    protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits,
+        Vector sigAlgs)
     {
-        // TODO[tls13] The version check should be separated out (eventually select ciphersuite before version)
         return TlsUtils.isValidVersionForCipherSuite(cipherSuite, context.getServerVersion())
             && availCurveBits >= TlsECCUtils.getMinimumCurveBits(cipherSuite)
             && availFiniteFieldBits >= TlsDHUtils.getMinimumFiniteFieldBits(cipherSuite)
@@ -388,38 +388,54 @@ public abstract class AbstractTlsServer
     public int getSelectedCipherSuite()
         throws IOException
     {
-        /*
-         * RFC 5246 7.4.3. In order to negotiate correctly, the server MUST check any candidate
-         * cipher suites against the "signature_algorithms" extension before selecting them. This is
-         * somewhat inelegant but is a compromise designed to minimize changes to the original
-         * cipher suite design.
-         */
-        Vector sigAlgs = TlsUtils.getUsableSignatureAlgorithms(
-            context.getSecurityParametersHandshake().getClientSigAlgs());
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
-        /*
-         * RFC 4429 5.1. A server that receives a ClientHello containing one or both of these
-         * extensions MUST use the client's enumerated capabilities to guide its selection of an
-         * appropriate cipher suite. One of the proposed ECC cipher suites must be negotiated only
-         * if the server can successfully complete the handshake while using the curves and point
-         * formats supported by the client [...].
-         */
-        int availCurveBits = getMaximumNegotiableCurveBits();
-        int availFiniteFieldBits = getMaximumNegotiableFiniteFieldBits();
-
-        int[] cipherSuites = TlsUtils.getCommonCipherSuites(offeredCipherSuites, getCipherSuites(),
-            preferLocalCipherSuites());
-
-        for (int i = 0; i < cipherSuites.length; ++i)
+        if (TlsUtils.isTLSv13(negotiatedVersion))
         {
-            int cipherSuite = cipherSuites[i];
-            if (isSelectableCipherSuite(cipherSuite, availCurveBits, availFiniteFieldBits, sigAlgs)
-                && selectCipherSuite(cipherSuite))
+            int commonCipherSuite13 = TlsUtils.getCommonCipherSuite13(negotiatedVersion, offeredCipherSuites,
+                getCipherSuites(), preferLocalCipherSuites());
+
+            if (commonCipherSuite13 >= 0 && selectCipherSuite(commonCipherSuite13))
             {
-                return cipherSuite;
+                return commonCipherSuite13;
             }
         }
-        throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        else
+        {
+            /*
+             * RFC 5246 7.4.3. In order to negotiate correctly, the server MUST check any candidate
+             * cipher suites against the "signature_algorithms" extension before selecting them. This is
+             * somewhat inelegant but is a compromise designed to minimize changes to the original
+             * cipher suite design.
+             */
+            Vector sigAlgs = TlsUtils.getUsableSignatureAlgorithms(securityParameters.getClientSigAlgs());
+
+            /*
+             * RFC 4429 5.1. A server that receives a ClientHello containing one or both of these
+             * extensions MUST use the client's enumerated capabilities to guide its selection of an
+             * appropriate cipher suite. One of the proposed ECC cipher suites must be negotiated only
+             * if the server can successfully complete the handshake while using the curves and point
+             * formats supported by the client [...].
+             */
+            int availCurveBits = getMaximumNegotiableCurveBits();
+            int availFiniteFieldBits = getMaximumNegotiableFiniteFieldBits();
+
+            int[] cipherSuites = TlsUtils.getCommonCipherSuites(offeredCipherSuites, getCipherSuites(),
+                preferLocalCipherSuites());
+
+            for (int i = 0; i < cipherSuites.length; ++i)
+            {
+                int cipherSuite = cipherSuites[i];
+                if (isSelectableCipherSuite(cipherSuite, availCurveBits, availFiniteFieldBits, sigAlgs)
+                    && selectCipherSuite(cipherSuite))
+                {
+                    return cipherSuite;
+                }
+            }
+        }
+
+        throw new TlsFatalAlert(AlertDescription.handshake_failure, "No selectable cipher suite");
     }
 
     // Hashtable is (Integer -> byte[])
