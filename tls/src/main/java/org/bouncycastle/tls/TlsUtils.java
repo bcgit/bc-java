@@ -4124,6 +4124,29 @@ public class TlsUtils
         return v;
     }
 
+    public static int getCommonCipherSuite13(ProtocolVersion negotiatedVersion, int[] peerCipherSuites,
+        int[] localCipherSuites, boolean useLocalOrder)
+    {
+        int[] ordered = peerCipherSuites, unordered = localCipherSuites;
+        if (useLocalOrder)
+        {
+            ordered = localCipherSuites;
+            unordered = peerCipherSuites;
+        }
+
+        for (int i = 0; i < ordered.length; ++i)
+        {
+            int candidate = ordered[i];
+            if (Arrays.contains(unordered, candidate) &&
+                isValidVersionForCipherSuite(candidate, negotiatedVersion))
+            {
+                return candidate;
+            }
+        }
+
+        return -1;
+    }
+
     public static int[] getCommonCipherSuites(int[] peerCipherSuites, int[] localCipherSuites, boolean useLocalOrder)
     {
         int[] ordered = peerCipherSuites, unordered = localCipherSuites;
