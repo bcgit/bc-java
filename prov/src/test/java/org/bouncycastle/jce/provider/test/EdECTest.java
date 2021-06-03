@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
+import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -140,6 +141,7 @@ public class EdECTest
 
         xdhGeneratorTest();
         eddsaGeneratorTest();
+        rawEncodedKeySpecTest();
 
         keyTest("X448");
         keyTest("X25519");
@@ -333,6 +335,48 @@ public class EdECTest
         {
             isEquals("unrecognized curve name: Ed448", e.getMessage());
         }
+    }
+
+    private void rawEncodedKeySpecTest()
+        throws Exception
+    {
+        KeyPair ed1 = generateKP("Ed448", new EdDSAParameterSpec(EdDSAParameterSpec.Ed448));
+
+        checkRaw(ed1.getPublic(), "Ed448");
+
+        KeyPair ed2 = generateKP("Ed25519", new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519));
+
+        checkRaw(ed2.getPublic(), "Ed25519");
+
+        KeyPair xd1 = generateKP("X448", new XDHParameterSpec(XDHParameterSpec.X448));
+
+        checkRaw(xd1.getPublic(), "X448");
+
+        KeyPair xd2 = generateKP("X25519", new XDHParameterSpec(XDHParameterSpec.X25519));
+
+        checkRaw(xd2.getPublic(), "X25519");
+    }
+
+    private KeyPair generateKP(String algorithm, AlgorithmParameterSpec spec)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, "BC");
+
+        kpGen.initialize(spec);
+
+        return kpGen.generateKeyPair();
+    }
+
+    private void checkRaw(PublicKey key, String algorithm)
+        throws Exception
+    {
+        KeyFactory kf = KeyFactory.getInstance(algorithm, "BC");
+
+        RawEncodedKeySpec rawSpec = (RawEncodedKeySpec)kf.getKeySpec(key, RawEncodedKeySpec.class);
+
+        PublicKey pub = kf.generatePublic(rawSpec);
+
+        isEquals(key, pub);
     }
 
     private void eddsaGeneratorTest()
