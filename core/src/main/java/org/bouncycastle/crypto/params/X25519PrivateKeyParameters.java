@@ -24,6 +24,11 @@ public final class X25519PrivateKeyParameters
         X25519.generatePrivateKey(random, data);
     }
 
+    public X25519PrivateKeyParameters(byte[] buf)
+    {
+        this(validate(buf), 0);
+    }
+
     public X25519PrivateKeyParameters(byte[] buf, int off)
     {
         super(true);
@@ -66,5 +71,14 @@ public final class X25519PrivateKeyParameters
         {
             throw new IllegalStateException("X25519 agreement failed");
         }
+    }
+
+    private static byte[] validate(byte[] buf)
+    {
+        if (buf.length != KEY_SIZE)
+        {
+            throw new IllegalArgumentException("'buf' must have length " + KEY_SIZE);
+        }
+        return buf;
     }
 }

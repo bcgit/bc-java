@@ -500,7 +500,7 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            return new X25519PublicKeyParameters(getRawKey(keyInfo, defaultParams, X25519PublicKeyParameters.KEY_SIZE), 0);
+            return new X25519PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
 
@@ -509,7 +509,7 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            return new X448PublicKeyParameters(getRawKey(keyInfo, defaultParams, X448PublicKeyParameters.KEY_SIZE), 0);
+            return new X448PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
 
@@ -518,7 +518,7 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            return new Ed25519PublicKeyParameters(getRawKey(keyInfo, defaultParams, Ed25519PublicKeyParameters.KEY_SIZE), 0);
+            return new Ed25519PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
 
@@ -527,22 +527,17 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            return new Ed448PublicKeyParameters(getRawKey(keyInfo, defaultParams, Ed448PublicKeyParameters.KEY_SIZE), 0);
+            return new Ed448PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
 
-    private static byte[] getRawKey(SubjectPublicKeyInfo keyInfo, Object defaultParams, int expectedSize)
+    private static byte[] getRawKey(SubjectPublicKeyInfo keyInfo, Object defaultParams)
     {
         /*
          * TODO[RFC 8422]
          * - Require defaultParams == null?
          * - Require keyInfo.getAlgorithm().getParameters() == null?
          */
-        byte[] result = keyInfo.getPublicKeyData().getOctets();
-        if (expectedSize != result.length)
-        {
-            throw new RuntimeException("public key encoding has incorrect length");
-        }
-        return result;
+        return keyInfo.getPublicKeyData().getOctets();
     }
 }

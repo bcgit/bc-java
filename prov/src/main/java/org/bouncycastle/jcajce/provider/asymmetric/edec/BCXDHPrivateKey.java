@@ -47,21 +47,22 @@ public class BCXDHPrivateKey
     private void populateFromPrivateKeyInfo(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        ASN1OctetString keyOcts = keyInfo.getPrivateKey();
-        byte[] infoOcts = keyOcts.getOctets();
+        byte[] encoding = keyInfo.getPrivateKey().getOctets();
 
-        if (infoOcts.length != 32 && infoOcts.length != 56) // exact length of X25519/X448 secret used in Java 11
+        // exact length of X25519/X448 secret used in Java 11
+        if (encoding.length != X25519PrivateKeyParameters.KEY_SIZE &&
+            encoding.length != X448PrivateKeyParameters.KEY_SIZE)
         {
-            keyOcts = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
+            encoding = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
         }
 
         if (EdECObjectIdentifiers.id_X448.equals(keyInfo.getPrivateKeyAlgorithm().getAlgorithm()))
         {
-            xdhPrivateKey = new X448PrivateKeyParameters(ASN1OctetString.getInstance(keyOcts).getOctets(), 0);
+            xdhPrivateKey = new X448PrivateKeyParameters(encoding);
         }
         else
         {
-            xdhPrivateKey = new X25519PrivateKeyParameters(ASN1OctetString.getInstance(keyOcts).getOctets(), 0);
+            xdhPrivateKey = new X25519PrivateKeyParameters(encoding);
         }
     }
 
