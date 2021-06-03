@@ -3,8 +3,10 @@ package org.bouncycastle.jcajce.provider.test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -14,9 +16,13 @@ import java.security.spec.NamedParameterSpec;
 import java.util.Base64;
 
 import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
+import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
+import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class EdDSA15Test
     extends TestCase
@@ -167,6 +173,44 @@ public class EdDSA15Test
         }
     }
 
+    public void testRawEncodedKeySpec()
+        throws Exception
+    {
+        KeyPair ed1 = generateKP("Ed448", new EdDSAParameterSpec(EdDSAParameterSpec.Ed448));
+
+        checkRaw(ed1.getPublic(), "Ed448");
+
+        KeyPair ed2 = generateKP("Ed25519", new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519));
+
+        checkRaw(ed2.getPublic(), "Ed25519");
+    }
+
+    private KeyPair generateKP(String algorithm, AlgorithmParameterSpec spec)
+        throws Exception
+    {
+        BouncyCastleProvider BC = new BouncyCastleProvider();
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, BC);
+
+        kpGen.initialize(spec);
+
+        return kpGen.generateKeyPair();
+    }
+
+    private void checkRaw(PublicKey key, String algorithm)
+        throws Exception
+    {
+        BouncyCastleProvider BC = new BouncyCastleProvider();
+
+        KeyFactory kf = KeyFactory.getInstance(algorithm, BC);
+
+        RawEncodedKeySpec rawSpec = (RawEncodedKeySpec)kf.getKeySpec(key, RawEncodedKeySpec.class);
+
+        PublicKey pub = kf.generatePublic(rawSpec);
+
+        assertEquals(key, pub);
+    }
+
     private void checkNamedParamSpecEdECKey(Key key, String name)
     {
         assertTrue(key instanceof EdECKey);
@@ -174,5 +218,16 @@ public class EdDSA15Test
         assertTrue(params instanceof NamedParameterSpec);
         NamedParameterSpec spec = (NamedParameterSpec)params;
         assertEquals(name, spec.getName());
+    }
+
+    public static void main(String args[])
+    {
+        junit.textui.TestRunner.run(EdDSA15Test.class);
+    }
+
+    public static Test suite()
+        throws Exception
+    {
+        return new TestSuite(EdDSA15Test.class);
     }
 }
