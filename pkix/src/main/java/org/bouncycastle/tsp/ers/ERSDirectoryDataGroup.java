@@ -20,24 +20,32 @@ public class ERSDirectoryDataGroup
     public ERSDirectoryDataGroup(File dataDirectory)
         throws FileNotFoundException
     {
+        super(buildGroup(dataDirectory));
+    }
+
+    private static List<ERSData> buildGroup(File dataDirectory)
+        throws FileNotFoundException
+    {
         if (dataDirectory.isDirectory())
         {
             File[] files = dataDirectory.listFiles();
-            this.dataObjects = new ArrayList<ERSData>(files.length);
+            List<ERSData> dataObjects = new ArrayList<ERSData>(files.length);
             for (int i = 0; i != files.length; i++)
             {
                 if (files[i].isDirectory())
                 {
                     if (files[i].listFiles().length != 0)
                     {
-                        this.dataObjects.add(new ERSDirectoryDataGroup(files[i]));
+                        dataObjects.add(new ERSDirectoryDataGroup(files[i]));
                     }
                 }
                 else
                 {
-                    this.dataObjects.add(new ERSFileData(files[i]));
+                    dataObjects.add(new ERSFileData(files[i]));
                 }
             }
+
+            return dataObjects;
         }
         else
         {
