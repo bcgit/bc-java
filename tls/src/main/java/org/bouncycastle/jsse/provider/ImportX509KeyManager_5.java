@@ -60,12 +60,6 @@ final class ImportX509KeyManager_5
         return x509KeyManager.getClientAliases(keyType, issuers);
     }
 
-    @Override
-    public BCX509Key getKeyBC(String alias)
-    {
-        return ProvX509Key.from(x509KeyManager, alias);
-    }
-
     public PrivateKey getPrivateKey(String alias)
     {
         return x509KeyManager.getPrivateKey(alias);
@@ -74,5 +68,11 @@ final class ImportX509KeyManager_5
     public String[] getServerAliases(String keyType, Principal[] issuers)
     {
         return x509KeyManager.getServerAliases(keyType, issuers);
+    }
+
+    @Override
+    protected BCX509Key getKeyBC(String keyType, String alias)
+    {
+        return ProvX509Key.from(x509KeyManager, keyType, alias);
     }
 }

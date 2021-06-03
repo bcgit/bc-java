@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -89,7 +88,7 @@ class ProvX509KeyManager
 
         for (String keyType : keyTypes)
         {
-            if (null != filters.put(keyType.toUpperCase(Locale.ENGLISH), filter))
+            if (null != filters.put(keyType, filter))
             {
                 throw new IllegalStateException("Duplicate keys in filters");
             }
@@ -203,9 +202,9 @@ class ProvX509KeyManager
     }
 
     @Override
-    public BCX509Key chooseEngineServerKeyBC(String keyType, Principal[] issuers, SSLEngine engine)
+    public BCX509Key chooseEngineServerKeyBC(String[] keyTypes, Principal[] issuers, SSLEngine engine)
     {
-        return chooseKeyBC(getKeyTypes(keyType), issuers, TransportData.from(engine), true);
+        return chooseKeyBC(getKeyTypes(keyTypes), issuers, TransportData.from(engine), true);
     }
 
     public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
@@ -214,9 +213,9 @@ class ProvX509KeyManager
     }
 
     @Override
-    public BCX509Key chooseServerKeyBC(String keyType, Principal[] issuers, Socket socket)
+    public BCX509Key chooseServerKeyBC(String[] keyTypes, Principal[] issuers, Socket socket)
     {
-        return chooseKeyBC(getKeyTypes(keyType), issuers, TransportData.from(socket), true);
+        return chooseKeyBC(getKeyTypes(keyTypes), issuers, TransportData.from(socket), true);
     }
 
     public X509Certificate[] getCertificateChain(String alias)
@@ -230,8 +229,19 @@ class ProvX509KeyManager
         return getAliases(getKeyTypes(keyType), issuers, null, false);
     }
 
+    public PrivateKey getPrivateKey(String alias)
+    {
+        KeyStore.PrivateKeyEntry entry = getPrivateKeyEntry(alias);
+        return null == entry ? null : entry.getPrivateKey();
+    }
+
+    public String[] getServerAliases(String keyType, Principal[] issuers)
+    {
+        return getAliases(getKeyTypes(keyType), issuers, null, true);
+    }
+
     @Override
-    public BCX509Key getKeyBC(String alias)
+    protected BCX509Key getKeyBC(String keyType, String alias)
     {
         KeyStore.PrivateKeyEntry entry = getPrivateKeyEntry(alias);
         if (null == entry)
@@ -251,27 +261,7 @@ class ProvX509KeyManager
             return null;
         }
 
-        return new ProvX509Key(privateKey, certificateChain);
-    }
-
-    public PrivateKey getPrivateKey(String alias)
-    {
-        KeyStore.PrivateKeyEntry entry = getPrivateKeyEntry(alias);
-        return null == entry ? null : entry.getPrivateKey();
-    }
-
-    public String[] getServerAliases(String keyType, Principal[] issuers)
-    {
-        return getAliases(getKeyTypes(keyType), issuers, null, true);
-    }
-
-    static KeyPurposeId getRequiredExtendedKeyUsage(boolean forServer)
-    {
-        return !provKeyManagerCheckEKU
-            ?   null
-            :   forServer
-            ?   KeyPurposeId.id_kp_serverAuth
-            :   KeyPurposeId.id_kp_clientAuth;
+        return new ProvX509Key(keyType, privateKey, certificateChain);
     }
 
     private String chooseAlias(List<String> keyTypes, Principal[] issuers, TransportData transportData,
@@ -279,7 +269,7 @@ class ProvX509KeyManager
     {
         Match bestMatch = getBestMatch(keyTypes, issuers, transportData, forServer);
 
-        if (Match.NOTHING != bestMatch)
+        if (bestMatch.compareTo(Match.NOTHING) < 0)
         {
             String alias = getAlias(bestMatch, getNextVersionSuffix());
             LOG.fine("Found matching key, returning alias: " + alias);
@@ -295,12 +285,14 @@ class ProvX509KeyManager
     {
         Match bestMatch = getBestMatch(keyTypes, issuers, transportData, forServer);
 
-        if (Match.NOTHING != bestMatch)
+        if (bestMatch.compareTo(Match.NOTHING) < 0)
         {
             try
             {
-                BCX509Key keyBC = createKeyBC(bestMatch.builderIndex, bestMatch.localAlias, bestMatch.cachedKeyStore,
-                    bestMatch.cachedCertificateChain);
+                String keyType = keyTypes.get(bestMatch.keyTypeIndex);
+
+                BCX509Key keyBC = createKeyBC(keyType, bestMatch.builderIndex, bestMatch.localAlias,
+                    bestMatch.cachedKeyStore, bestMatch.cachedCertificateChain);
                 if (null != keyBC)
                 {
                     LOG.fine("Found matching key, from alias: " + bestMatch.builderIndex + "." + bestMatch.localAlias);
@@ -317,7 +309,7 @@ class ProvX509KeyManager
         return null;
     }
 
-    private BCX509Key createKeyBC(int builderIndex, String localAlias, KeyStore keyStore,
+    private BCX509Key createKeyBC(String keyType, int builderIndex, String localAlias, KeyStore keyStore,
         X509Certificate[] certificateChain)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
@@ -327,7 +319,7 @@ class ProvX509KeyManager
         Key key = KeyStoreUtil.getKey(keyStore, localAlias, protectionParameter);
         if (key instanceof PrivateKey)
         {
-            return new ProvX509Key((PrivateKey)key, certificateChain);
+            return new ProvX509Key(keyType, (PrivateKey)key, certificateChain);
         }
 
         return null;
@@ -384,7 +376,7 @@ class ProvX509KeyManager
         {
             String localAlias = en.nextElement();
 
-            Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, Match.Quality.NONE, keyTypes,
+            Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, Match.NOTHING, keyTypes,
                 uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
 
             if (null != match)
@@ -441,27 +433,27 @@ class ProvX509KeyManager
         KeyStore.Builder builder = builders.get(builderIndex);
         KeyStore keyStore = builder.getKeyStore();
 
-        Match bestMatch = Match.NOTHING;
+        Match bestMatchSoFar = Match.NOTHING;
 
         for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
         {
             String localAlias = en.nextElement();
 
-            Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, bestMatch.quality, keyTypes,
+            Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, bestMatchSoFar, keyTypes,
                 uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
 
             if (null != match)
             {
-                bestMatch = match;
+                bestMatchSoFar = match;
 
-                if (Match.Quality.OK == bestMatch.quality)
+                if (bestMatchSoFar.isIdeal())
                 {
                     break;
                 }
             }
         }
 
-        return bestMatch;
+        return bestMatchSoFar;
     }
 
     private String getNextVersionSuffix()
@@ -470,19 +462,25 @@ class ProvX509KeyManager
     }
 
     private Match getPotentialMatch(int builderIndex, KeyStore.Builder builder, KeyStore keyStore, String localAlias,
-        Match.Quality qualityLimit, List<String> keyTypes, Set<Principal> uniqueIssuers,
+        Match bestMatchSoFar, List<String> keyTypes, Set<Principal> uniqueIssuers,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
         throws KeyStoreException
     {
         if (keyStore.isKeyEntry(localAlias))
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(keyStore.getCertificateChain(localAlias));
-            if (isSuitableChain(chain, keyTypes, uniqueIssuers, algorithmConstraints, forServer))
+            if (!TlsUtils.isNullOrEmpty(chain) && isSuitableChainForIssuers(chain, uniqueIssuers))
             {
-                Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
-                if (quality.compareTo(qualityLimit) < 0)
+                int keyTypeIndex = getSuitableKeyTypeForEECert(chain[0], keyTypes, algorithmConstraints, forServer);
+                if (keyTypeIndex >= 0 && isSuitableChain(chain, algorithmConstraints, forServer))
                 {
-                    return new Match(quality, builderIndex, localAlias, keyStore, chain);
+                    Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
+
+                    Match match = new Match(quality, keyTypeIndex, builderIndex, localAlias, keyStore, chain);
+                    if (match.compareTo(bestMatchSoFar) < 0)
+                    {
+                        return match;
+                    }
                 }
             }
         }
@@ -515,16 +513,9 @@ class ProvX509KeyManager
         return result;
     }
 
-    private boolean isSuitableChain(X509Certificate[] chain, List<String> keyTypes, Set<Principal> uniqueIssuers,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer)
+    private boolean isSuitableChain(X509Certificate[] chain, BCAlgorithmConstraints algorithmConstraints,
+        boolean forServer)
     {
-        if (TlsUtils.isNullOrEmpty(chain)
-            || !isSuitableChainForIssuers(chain, uniqueIssuers)
-            || !isSuitableEECert(chain[0], keyTypes, algorithmConstraints, forServer))
-        {
-            return false;
-        }
-
         try
         {
             Set<X509Certificate> trustedCerts = Collections.emptySet();
@@ -577,6 +568,15 @@ class ProvX509KeyManager
             LOG.log(Level.FINER, "Failed to load PrivateKeyEntry: " + alias, e);
         }
         return null;
+    }
+
+    static KeyPurposeId getRequiredExtendedKeyUsage(boolean forServer)
+    {
+        return !provKeyManagerCheckEKU
+            ?   null
+            :   forServer
+            ?   KeyPurposeId.id_kp_serverAuth
+            :   KeyPurposeId.id_kp_clientAuth;
     }
 
     private static List<Match> addToAllMatches(List<Match> allMatches, List<Match> matches)
@@ -672,15 +672,16 @@ class ProvX509KeyManager
             ArrayList<String> result = new ArrayList<String>(keyTypes.length);
             for (String keyType : keyTypes)
             {
-                if (null != keyType)
+                if (null == keyType)
                 {
-                    result.add(keyType.toUpperCase(Locale.ENGLISH));
+                    throw new IllegalArgumentException("Key types cannot be null");
+                }
+                if (!result.contains(keyType))
+                {
+                    result.add(keyType);
                 }
             }
-            if (!result.isEmpty())
-            {
-                return Collections.unmodifiableList(result);
-            }
+            return Collections.unmodifiableList(result);
         }
         return Collections.emptyList();
     }
@@ -700,6 +701,26 @@ class ProvX509KeyManager
             }
         }
         return null;
+    }
+
+    private static int getSuitableKeyTypeForEECert(X509Certificate eeCert, List<String> keyTypes,
+        BCAlgorithmConstraints algorithmConstraints, boolean forServer)
+    {
+        Map<String, PublicKeyFilter> filters = forServer ? FILTERS_SERVER : FILTERS_CLIENT;
+
+        PublicKey publicKey = eeCert.getPublicKey();
+        boolean[] keyUsage = eeCert.getKeyUsage();
+
+        for (int keyTypeIndex = 0; keyTypeIndex < keyTypes.size(); ++keyTypeIndex)
+        {
+            PublicKeyFilter filter = filters.get(keyTypes.get(keyTypeIndex));
+            if (null != filter && filter.accepts(publicKey, keyUsage, algorithmConstraints))
+            {
+                return keyTypeIndex;
+            }
+        }
+
+        return -1;
     }
 
     private static Set<Principal> getUniquePrincipals(Principal[] principals)
@@ -747,26 +768,6 @@ class ProvX509KeyManager
             && uniqueIssuers.contains(eeCert.getSubjectX500Principal());
     }
 
-    private static boolean isSuitableEECert(X509Certificate eeCert, List<String> keyTypes,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer)
-    {
-        Map<String, PublicKeyFilter> filters = forServer ? FILTERS_SERVER : FILTERS_CLIENT;
-
-        PublicKey publicKey = eeCert.getPublicKey();
-        boolean[] keyUsage = eeCert.getKeyUsage();
-
-        for (String keyType : keyTypes)
-        {
-            PublicKeyFilter filter = filters.get(keyType);
-            if (null != filter && filter.accepts(publicKey, keyUsage, algorithmConstraints))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static final class Match
         implements Comparable<Match>
     {
@@ -783,27 +784,47 @@ class ProvX509KeyManager
             NONE
         }
 
-        static final Match NOTHING = new Match(Quality.NONE, -1, null, null, null);
+        static final Quality INVALID = Quality.MISMATCH_SNI;
+        static final Match NOTHING = new Match(Quality.NONE, -1, -1, null, null, null);
 
         final Quality quality;
+        final int keyTypeIndex;
         final int builderIndex;
         final String localAlias;
         final KeyStore cachedKeyStore;
         final X509Certificate[] cachedCertificateChain;
 
-        Match(Quality quality, int builderIndex, String localAlias, KeyStore cachedKeyStore,
+        Match(Quality quality, int keyTypeIndex, int builderIndex, String localAlias, KeyStore cachedKeyStore,
             X509Certificate[] cachedCertificateChain)
         {
             this.quality = quality;
+            this.keyTypeIndex = keyTypeIndex;
             this.builderIndex = builderIndex;
             this.localAlias = localAlias;
             this.cachedKeyStore = cachedKeyStore;
             this.cachedCertificateChain = cachedCertificateChain;
         }
 
-        public int compareTo(Match other)
+        public int compareTo(Match that)
         {
-            return this.quality.compareTo(other.quality);
+            boolean thisInvalid = this.quality.compareTo(INVALID) >= 0;
+            boolean thatInvalid = that.quality.compareTo(INVALID) >= 0;
+
+            int cmp = Boolean.compare(thisInvalid, thatInvalid);
+            if (cmp == 0)
+            {
+                cmp = Integer.compare(this.keyTypeIndex, that.keyTypeIndex);
+                if (cmp == 0)
+                {
+                    cmp = this.quality.compareTo(that.quality);
+                }
+            }
+            return cmp;
+        }
+
+        boolean isIdeal()
+        {
+            return Quality.OK == quality && 0 == keyTypeIndex;
         }
     }
 

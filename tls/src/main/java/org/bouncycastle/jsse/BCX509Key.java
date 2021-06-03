@@ -7,5 +7,7 @@ public interface BCX509Key
 {
     X509Certificate[] getCertificateChain();
 
+    String getKeyType();
+
     PrivateKey getPrivateKey();
 }

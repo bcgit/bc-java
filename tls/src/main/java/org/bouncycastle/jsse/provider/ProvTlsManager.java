@@ -16,7 +16,7 @@ interface ProvTlsManager
 
     BCX509Key chooseClientKey(String[] keyTypes, Principal[] issuers);
 
-    BCX509Key chooseServerKey(String keyType, Principal[] issuers);
+    BCX509Key chooseServerKey(String[] keyTypes, Principal[] issuers);
 
     boolean getEnableSessionCreation();
 

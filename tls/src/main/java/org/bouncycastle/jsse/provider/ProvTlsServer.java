@@ -968,7 +968,7 @@ class ProvTlsServer
                 continue;
             }
 
-            BCX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+            BCX509Key x509Key = manager.chooseServerKey(new String[]{ keyType }, issuers);
             if (null == x509Key || !signatureSchemeInfo.isUsableWithPrivateKey(x509Key.getPrivateKey()))
             {
                 if (LOG.isLoggable(Level.FINER))
@@ -1016,7 +1016,7 @@ class ProvTlsServer
                 continue;
             }
 
-            BCX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+            BCX509Key x509Key = manager.chooseServerKey(new String[]{ keyType }, issuers);
             if (null == x509Key || !signatureSchemeInfo.isUsableWithPrivateKey(x509Key.getPrivateKey()))
             {
                 if (LOG.isLoggable(Level.FINER))
@@ -1054,7 +1054,7 @@ class ProvTlsServer
             return null;
         }
 
-        BCX509Key x509Key = manager.chooseServerKey(keyType, issuers);
+        BCX509Key x509Key = manager.chooseServerKey(new String[]{ keyType }, issuers);
         if (null == x509Key
             || !JsseUtils.isUsableKeyForServerLegacy(keyExchangeAlgorithm, x509Key.getPrivateKey()))
         {
