@@ -2197,7 +2197,10 @@ public class TlsUtils
             }
             else
             {
-                hash = handshakeHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+                int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+                int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+
+                hash = handshakeHash.getFinalHash(cryptoHashAlgorithm);
             }
 
             signature = credentialedSigner.generateRawSignature(hash);
@@ -2301,7 +2304,10 @@ public class TlsUtils
                 byte[] hash;
                 if (isTLSv12(serverContext))
                 {
-                    hash = handshakeHash.getFinalHash(sigAndHashAlg.getHash());
+                    int signatureScheme = SignatureScheme.from(sigAndHashAlg);
+                    int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+
+                    hash = handshakeHash.getFinalHash(cryptoHashAlgorithm);
                 }
                 else
                 {
@@ -2521,22 +2527,24 @@ public class TlsUtils
         {
             for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
             {
+                /*
+                 * TODO We could validate the signature algorithm part. Currently the impact is
+                 * that we might be tracking extra hashes pointlessly (but there are only a
+                 * limited number of recognized hash algorithms).
+                 */
                 SignatureAndHashAlgorithm signatureAndHashAlgorithm = (SignatureAndHashAlgorithm)
                     supportedSignatureAlgorithms.elementAt(i);
-                short hashAlgorithm = signatureAndHashAlgorithm.getHash();
 
-                if (HashAlgorithm.Intrinsic == hashAlgorithm)
+                int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+                int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+
+                if (cryptoHashAlgorithm >= 0)
                 {
-                    // TODO[RFC 8422]
+                    handshakeHash.trackHashAlgorithm(cryptoHashAlgorithm);
+                }
+                else if (HashAlgorithm.Intrinsic == signatureAndHashAlgorithm.getHash())
+                {
                     handshakeHash.forceBuffering();
-                }
-                else if (HashAlgorithm.isRecognized(hashAlgorithm))
-                {
-                    handshakeHash.trackHashAlgorithm(hashAlgorithm);
-                }
-                else //if (HashAlgorithm.isPrivate(hashAlgorithm))
-                {
-                    // TODO Support values in the "Reserved for Private Use" range
                 }
             }
         }
