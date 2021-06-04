@@ -17,7 +17,7 @@ public interface TlsHandshakeHash
 
     void notifyPRFDetermined();
 
-    void trackHashAlgorithm(short hashAlgorithm);
+    void trackHashAlgorithm(int cryptoHashAlgorithm);
 
     void sealHashAlgorithms();
 
@@ -25,5 +25,5 @@ public interface TlsHandshakeHash
 
     TlsHash forkPRFHash();
 
-    byte[] getFinalHash(short hashAlgorithm);
+    byte[] getFinalHash(int cryptoHashAlgorithm);
 }
