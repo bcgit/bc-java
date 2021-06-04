@@ -271,8 +271,12 @@ class ProvX509KeyManager
 
         if (bestMatch.compareTo(Match.NOTHING) < 0)
         {
+            String keyType = keyTypes.get(bestMatch.keyTypeIndex);
             String alias = getAlias(bestMatch, getNextVersionSuffix());
-            LOG.fine("Found matching key, returning alias: " + alias);
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("Found matching key of type: " + keyType + ", returning alias: " + alias);
+            }
             return alias;
         }
 
@@ -295,7 +299,12 @@ class ProvX509KeyManager
                     bestMatch.cachedKeyStore, bestMatch.cachedCertificateChain);
                 if (null != keyBC)
                 {
-                    LOG.fine("Found matching key, from alias: " + bestMatch.builderIndex + "." + bestMatch.localAlias);
+                    if (LOG.isLoggable(Level.FINE))
+                    {
+                        LOG.fine("Found matching key of type: " + keyType + ", from alias: " + bestMatch.builderIndex
+                            + "." + bestMatch.localAlias);
+                    }
+
                     return keyBC;
                 }
             }
