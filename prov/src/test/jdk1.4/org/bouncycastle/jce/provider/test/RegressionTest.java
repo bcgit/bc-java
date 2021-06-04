@@ -26,6 +26,7 @@ public class RegressionTest
         new GOST3410Test(),
         new ElGamalTest(),
         new ECIESTest(),
+        new XIESTest(),
         new SigTest(),
         new CertTest(),
         new PKCS10CertRequestTest(),

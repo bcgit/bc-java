@@ -29,6 +29,7 @@ public class RegressionTest
         new ImplicitlyCaTest(),
         new ECNRTest(),
         new ECIESTest(),
+        new XIESTest(),
         new ECIESVectorTest(),
         new ECDSA5Test(),
         new GOST3410Test(),

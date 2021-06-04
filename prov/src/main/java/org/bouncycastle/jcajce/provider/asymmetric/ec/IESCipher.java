@@ -1,6 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ec;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -18,18 +20,24 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
+import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.KeyParser;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.XDHBasicAgreement;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
+import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
+import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
@@ -40,8 +48,16 @@ import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
+import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.jcajce.interfaces.XDHKey;
+import org.bouncycastle.jcajce.interfaces.XDHPrivateKey;
+import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
+import org.bouncycastle.jcajce.provider.asymmetric.edec.EdECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
@@ -52,6 +68,7 @@ import org.bouncycastle.jce.interfaces.IESKey;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.io.Streams;
 
 
 public class IESCipher
@@ -100,6 +117,22 @@ public class IESCipher
         if (key instanceof ECKey)
         {
             return ((ECKey)key).getParameters().getCurve().getFieldSize();
+        }
+        else if (key instanceof XDHKey)
+        {
+            String algorithm = ((XDHKey)key).getAlgorithm();
+            if ("X25519".equalsIgnoreCase(algorithm))
+            {
+                return 256;
+            }
+            else if ("X448".equalsIgnoreCase(algorithm))
+            {
+                return 448;
+            }
+            else
+            {
+                throw new IllegalArgumentException("unknown XDH key algorithm " + algorithm);
+            }
         }
         else
         {
@@ -299,7 +332,11 @@ public class IESCipher
         // Parse the recipient's key
         if (opmode == Cipher.ENCRYPT_MODE || opmode == Cipher.WRAP_MODE)
         {
-            if (key instanceof PublicKey)
+            if (key instanceof XDHPublicKey)
+            {
+                this.key = EdECUtil.generatePublicKeyParameter((XDHPublicKey) key);
+            }
+            else if (key instanceof PublicKey)
             {
                 this.key = ECUtils.generatePublicKeyParameter((PublicKey)key);
             }
@@ -317,7 +354,11 @@ public class IESCipher
         }
         else if (opmode == Cipher.DECRYPT_MODE || opmode == Cipher.UNWRAP_MODE)
         {
-            if (key instanceof PrivateKey)
+            if (key instanceof XDHPrivateKey)
+            {
+                this.key = EdECUtil.generatePrivateKeyParameter((XDHPrivateKey) key);
+            }
+            else if (key instanceof PrivateKey)
             {
                 this.key = ECUtil.generatePrivateKeyParameter((PrivateKey)key);
             }
@@ -415,10 +456,6 @@ public class IESCipher
             params = new ParametersWithIV(params, engineSpec.getNonce());
         }
 
-        final ECDomainParameters ecParams = ((ECKeyParameters)key).getParameters();
-
-        final byte[] V;
-
         if (otherKeyParameter != null)
         {
             try
@@ -439,52 +476,97 @@ public class IESCipher
             }
         }
 
-        if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
-        {
-            // Generate the ephemeral key pair
-            ECKeyPairGenerator gen = new ECKeyPairGenerator();
-            gen.init(new ECKeyGenerationParameters(ecParams, random));
+        final byte[] V;
 
-            final boolean usePointCompression = engineSpec.getPointCompression();
-            EphemeralKeyPairGenerator kGen = new EphemeralKeyPairGenerator(gen, new KeyEncoder()
-            {
-                public byte[] getEncoded(AsymmetricKeyParameter keyParameter)
-                {
-                    return ((ECPublicKeyParameters)keyParameter).getQ().getEncoded(usePointCompression);
+        if (key instanceof ECKeyParameters)
+        {
+            final ECDomainParameters ecParams = ((ECKeyParameters) key).getParameters();
+
+            if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE) {
+                // Generate the ephemeral key pair
+                ECKeyPairGenerator gen = new ECKeyPairGenerator();
+                gen.init(new ECKeyGenerationParameters(ecParams, random));
+
+                final boolean usePointCompression = engineSpec.getPointCompression();
+                EphemeralKeyPairGenerator kGen = new EphemeralKeyPairGenerator(gen, new KeyEncoder() {
+                    public byte[] getEncoded(AsymmetricKeyParameter keyParameter) {
+                        return ((ECPublicKeyParameters) keyParameter).getQ().getEncoded(usePointCompression);
+                    }
+                });
+
+                // Encrypt the buffer
+                try {
+                    engine.init(key, params, kGen);
+
+                    return engine.processBlock(in, 0, in.length);
                 }
-            });
-
-            // Encrypt the buffer
-            try
-            {
-                engine.init(key, params, kGen);
-
-                return engine.processBlock(in, 0, in.length);
+                catch (final Exception e)
+                {
+                    throw new BadBlockException("unable to process block", e);
+                }
             }
-            catch (final Exception e)
+            else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
             {
-                throw new BadBlockException("unable to process block", e);
+                // Decrypt the buffer
+                try {
+                    engine.init(key, params, new ECIESPublicKeyParser(ecParams));
+
+                    return engine.processBlock(in, 0, in.length);
+                }
+                catch (InvalidCipherTextException e)
+                {
+                    throw new BadBlockException("unable to process block", e);
+                }
             }
         }
-        else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
+        else if (key instanceof X25519PublicKeyParameters || key instanceof X25519PrivateKeyParameters
+            || key instanceof X448PublicKeyParameters || key instanceof X448PrivateKeyParameters)
         {
-            // Decrypt the buffer
-            try
+            final boolean x25519 = key instanceof X25519PublicKeyParameters || key instanceof X25519PrivateKeyParameters;
+            int fieldSize = x25519 ? 256 : 448;
+            if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
             {
-                engine.init(key, params, new ECIESPublicKeyParser(ecParams));
+                AsymmetricCipherKeyPairGenerator kpGen = x25519 ? new X25519KeyPairGenerator() : new X448KeyPairGenerator();
+                kpGen.init(new KeyGenerationParameters(random, fieldSize));
+                EphemeralKeyPairGenerator epKpGen = new EphemeralKeyPairGenerator(kpGen, new KeyEncoder() {
+                    public byte[] getEncoded(AsymmetricKeyParameter keyParameter)
+                    {
+                        return x25519 ? ((X25519PublicKeyParameters) keyParameter).getEncoded()
+                                : ((X448PublicKeyParameters) keyParameter).getEncoded();
+                    }
+                });
 
-                return engine.processBlock(in, 0, in.length);
+                try {
+                    engine.init(key, params, epKpGen);
+                    return engine.processBlock(in, 0, in.length);
+                } catch (InvalidCipherTextException e)
+                {
+                    throw new BadBlockException("unable to process block", e);
+                }
             }
-            catch (InvalidCipherTextException e)
+            else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
             {
-                throw new BadBlockException("unable to process block", e);
+                try
+                {
+                    KeyParser keyParser = new KeyParser() {
+                        public AsymmetricKeyParameter readKey(InputStream stream) throws IOException
+                        {
+                            int size = x25519 ? 32 : 56;
+                            byte[] V = new byte[size];
+                            Streams.readFully(stream, V, 0, V.length);
+                            return x25519 ? new X25519PublicKeyParameters(V, 0) : new X448PublicKeyParameters(V, 0);
+                        }
+                    };
+                    engine.init(key, params, keyParser);
+                    return engine.processBlock(in, 0, in.length);
+                } catch (InvalidCipherTextException e)
+                {
+                    throw new BadBlockException("unable to process block", e);
+                }
             }
         }
-        else
-        {
-            throw new IllegalStateException("cipher not initialised");
-        }
 
+        throw new IllegalStateException("cipher not initialised");
     }
 
     public int engineDoFinal(
@@ -495,7 +577,6 @@ public class IESCipher
         int outputOffset)
         throws ShortBufferException, IllegalBlockSizeException, BadPaddingException
     {
-
         byte[] buf = engineDoFinal(input, inputOffset, inputLength);
         System.arraycopy(buf, 0, output, outputOffset, buf.length);
         return buf.length;
@@ -632,6 +713,138 @@ public class IESCipher
             extends ECIESwithCipher
     {
         public ECIESwithSHA512andAESCBC()
+        {
+            super(new CBCBlockCipher(new AESEngine()), 16, createSHA512(), createSHA512());
+        }
+    }
+
+    static public class XIES
+            extends IESCipher
+    {
+        public XIES()
+        {
+            this(createSHA1(), createSHA1());
+        }
+
+        public XIES(Digest kdfDigest, Digest macDigest)
+        {
+            super(new IESEngine(new XDHBasicAgreement(),
+                    new KDF2BytesGenerator(kdfDigest),
+                    new HMac(macDigest)));
+        }
+    }
+
+    static public class XIESwithSHA256
+            extends XIES
+    {
+        public XIESwithSHA256()
+        {
+            super(createSHA256(), createSHA256());
+        }
+    }
+
+    static public class XIESwithSHA384
+            extends XIES
+    {
+        public XIESwithSHA384()
+        {
+            super(createSHA384(), createSHA384());
+        }
+    }
+
+    static public class XIESwithSHA512
+            extends XIES
+    {
+        public XIESwithSHA512()
+        {
+            super(createSHA512(), createSHA512());
+        }
+    }
+
+    static public class XIESwithCipher
+            extends IESCipher
+    {
+        public XIESwithCipher(BlockCipher cipher, int ivLength)
+        {
+            this(cipher, ivLength, createSHA1(), createSHA1());
+        }
+
+        public XIESwithCipher(BlockCipher cipher, int ivLength, Digest kdfDigest, Digest macDigest)
+        {
+            super(new IESEngine(new XDHBasicAgreement(),
+                    new KDF2BytesGenerator(kdfDigest),
+                    new HMac(macDigest),
+                    new PaddedBufferedBlockCipher(cipher)), ivLength);
+        }
+    }
+
+    static public class XIESwithDESedeCBC
+            extends XIESwithCipher
+    {
+        public XIESwithDESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 8);
+        }
+    }
+
+    static public class XIESwithSHA256andDESedeCBC
+            extends XIESwithCipher
+    {
+        public XIESwithSHA256andDESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 8, createSHA256(), createSHA256());
+        }
+    }
+
+    static public class XIESwithSHA384andDESedeCBC
+            extends XIESwithCipher
+    {
+        public XIESwithSHA384andDESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 8, createSHA384(), createSHA384());
+        }
+    }
+
+    static public class XIESwithSHA512andDESedeCBC
+            extends XIESwithCipher
+    {
+        public XIESwithSHA512andDESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 8, createSHA512(), createSHA512());
+        }
+    }
+
+    static public class XIESwithAESCBC
+            extends XIESwithCipher
+    {
+        public XIESwithAESCBC()
+        {
+            super(new CBCBlockCipher(new AESEngine()), 16);
+        }
+    }
+
+    static public class XIESwithSHA256andAESCBC
+            extends XIESwithCipher
+    {
+        public XIESwithSHA256andAESCBC()
+        {
+            super(new CBCBlockCipher(new AESEngine()), 16, createSHA256(), createSHA256());
+        }
+    }
+
+    static public class XIESwithSHA384andAESCBC
+            extends XIESwithCipher
+    {
+        public XIESwithSHA384andAESCBC()
+        {
+            super(new CBCBlockCipher(new AESEngine()), 16, createSHA384(), createSHA384());
+        }
+    }
+
+    static public class XIESwithSHA512andAESCBC
+            extends XIESwithCipher
+    {
+        public XIESwithSHA512andAESCBC()
         {
             super(new CBCBlockCipher(new AESEngine()), 16, createSHA512(), createSHA512());
         }
