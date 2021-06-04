@@ -2289,34 +2289,26 @@ public class TlsUtils
         try
         {
             TlsVerifier verifier = verifyingCert.createVerifier(signatureAlgorithm);
-            if (isTLSv13(securityParameters.getNegotiatedVersion()))
+            TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
+
+            if (streamVerifier != null)
             {
-                verified = verify13CertificateVerify(serverContext.getCrypto(), certificateVerify, verifier,
-                    "TLS 1.3, client CertificateVerify", handshakeHash);
+                handshakeHash.copyBufferTo(streamVerifier.getOutputStream());
+                verified = streamVerifier.isVerified();
             }
             else
             {
-                TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
-
-                if (streamVerifier != null)
+                byte[] hash;
+                if (isTLSv12(serverContext))
                 {
-                    handshakeHash.copyBufferTo(streamVerifier.getOutputStream());
-                    verified = streamVerifier.isVerified();
+                    hash = handshakeHash.getFinalHash(sigAndHashAlg.getHash());
                 }
                 else
                 {
-                    byte[] hash;
-                    if (isTLSv12(serverContext))
-                    {
-                        hash = handshakeHash.getFinalHash(sigAndHashAlg.getHash());
-                    }
-                    else
-                    {
-                        hash = securityParameters.getSessionHash();
-                    }
-
-                    verified = verifier.verifyRawSignature(certificateVerify, hash);
+                    hash = securityParameters.getSessionHash();
                 }
+
+                verified = verifier.verifyRawSignature(certificateVerify, hash);
             }
         }
         catch (TlsFatalAlert e)
