@@ -2220,13 +2220,14 @@ public class TlsUtils
             : "TLS 1.3, client CertificateVerify";
 
         byte[] signature = generate13CertificateVerify(context.getCrypto(), credentialedSigner, contextString,
-            handshakeHash, signatureAndHashAlgorithm.getHash());
+            handshakeHash, signatureAndHashAlgorithm);
 
         return new DigitallySigned(signatureAndHashAlgorithm, signature);
     }
 
     private static byte[] generate13CertificateVerify(TlsCrypto crypto, TlsCredentialedSigner credentialedSigner,
-        String contextString, TlsHandshakeHash handshakeHash, short hashAlgorithm) throws IOException
+        String contextString, TlsHandshakeHash handshakeHash, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+            throws IOException
     {
         TlsStreamSigner streamSigner = credentialedSigner.getStreamSigner();
 
@@ -2241,7 +2242,10 @@ public class TlsUtils
             return streamSigner.getSignature();
         }
 
-        TlsHash tlsHash = createHash(crypto, hashAlgorithm);
+        int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+
+        TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
         tlsHash.update(header, 0, header.length);
         tlsHash.update(prfHash, 0, prfHash.length);
         byte[] hash = tlsHash.calculateHash();
@@ -2418,7 +2422,10 @@ public class TlsUtils
             return streamVerifier.isVerified();
         }
 
-        TlsHash tlsHash = createHash(crypto, certificateVerify.getAlgorithm().getHash());
+        int signatureScheme = SignatureScheme.from(certificateVerify.getAlgorithm());
+        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+
+        TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
         tlsHash.update(header, 0, header.length);
         tlsHash.update(prfHash, 0, prfHash.length);
         byte[] hash = tlsHash.calculateHash();
