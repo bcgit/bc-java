@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
@@ -270,8 +271,12 @@ class ProvX509KeyManagerSimple
 
         if (bestMatch.compareTo(Match.NOTHING) < 0)
         {
+            String keyType = keyTypes.get(bestMatch.keyTypeIndex);
             String alias = getAlias(bestMatch);
-            LOG.fine("Found matching key, returning alias: " + alias);
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("Found matching key of type: " + keyType + ", returning alias: " + alias);
+            }
             return alias;
         }
 
@@ -291,7 +296,10 @@ class ProvX509KeyManagerSimple
             BCX509Key keyBC = createKeyBC(keyType, bestMatch.credential);
             if (null != keyBC)
             {
-                LOG.fine("Found matching key, from alias: " + getAlias(bestMatch));
+                if (LOG.isLoggable(Level.FINE))
+                {
+                    LOG.fine("Found matching key of type: " + keyType + ", from alias: " + getAlias(bestMatch));
+                }
                 return keyBC;
             }
         }
