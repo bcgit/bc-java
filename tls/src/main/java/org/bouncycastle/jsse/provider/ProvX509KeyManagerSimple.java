@@ -345,10 +345,11 @@ class ProvX509KeyManagerSimple
         throws Exception
     {
         List<Match> matches = null;
+        int keyTypeLimit = keyTypes.size(); 
 
         for (Credential credential : credentials.values())
         {
-            Match match = getPotentialMatch(credential, Match.NOTHING, keyTypes, uniqueIssuers,
+            Match match = getPotentialMatch(credential, Match.NOTHING, keyTypes, keyTypeLimit, uniqueIssuers,
                 algorithmConstraints, forServer, atDate, requestedHostName);
 
             if (null != match)
@@ -388,10 +389,11 @@ class ProvX509KeyManagerSimple
         throws Exception
     {
         Match bestMatchSoFar = Match.NOTHING;
+        int keyTypeLimit = keyTypes.size(); 
 
         for (Credential credential : credentials.values())
         {
-            Match match = getPotentialMatch(credential, bestMatchSoFar, keyTypes, uniqueIssuers,
+            Match match = getPotentialMatch(credential, bestMatchSoFar, keyTypes, keyTypeLimit, uniqueIssuers,
                 algorithmConstraints, forServer, atDate, requestedHostName);
 
             if (null != match)
@@ -402,6 +404,10 @@ class ProvX509KeyManagerSimple
                 {
                     break;
                 }
+                if (bestMatchSoFar.isValid())
+                {
+                    keyTypeLimit = Math.min(keyTypeLimit, bestMatchSoFar.keyTypeIndex + 1);
+                }
             }
         }
 
@@ -409,13 +415,14 @@ class ProvX509KeyManagerSimple
     }
 
     private Match getPotentialMatch(Credential credential, Match bestMatchSoFar, List<String> keyTypes,
-        Set<Principal> uniqueIssuers, BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate,
-        String requestedHostName) throws Exception
+        int keyTypeLimit, Set<Principal> uniqueIssuers, BCAlgorithmConstraints algorithmConstraints, boolean forServer,
+        Date atDate, String requestedHostName) throws Exception
     {
         X509Certificate[] chain = credential.certificateChain;
         if (!TlsUtils.isNullOrEmpty(chain) && isSuitableChainForIssuers(chain, uniqueIssuers))
         {
-            int keyTypeIndex = getSuitableKeyTypeForEECert(chain[0], keyTypes, algorithmConstraints, forServer);
+            int keyTypeIndex = getSuitableKeyTypeForEECert(chain[0], keyTypes, keyTypeLimit, algorithmConstraints,
+                forServer);
             if (keyTypeIndex >= 0 && isSuitableChain(chain, algorithmConstraints, forServer))
             {
                 Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
@@ -563,7 +570,7 @@ class ProvX509KeyManagerSimple
         return null;
     }
 
-    private static int getSuitableKeyTypeForEECert(X509Certificate eeCert, List<String> keyTypes,
+    private static int getSuitableKeyTypeForEECert(X509Certificate eeCert, List<String> keyTypes, int keyTypeLimit,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer)
     {
         Map<String, PublicKeyFilter> filters = forServer ? FILTERS_SERVER : FILTERS_CLIENT;
@@ -571,7 +578,7 @@ class ProvX509KeyManagerSimple
         PublicKey publicKey = eeCert.getPublicKey();
         boolean[] keyUsage = eeCert.getKeyUsage();
 
-        for (int keyTypeIndex = 0; keyTypeIndex < keyTypes.size(); ++keyTypeIndex)
+        for (int keyTypeIndex = 0; keyTypeIndex < keyTypeLimit; ++keyTypeIndex)
         {
             PublicKeyFilter filter = filters.get(keyTypes.get(keyTypeIndex));
             if (null != filter && filter.accepts(publicKey, keyUsage, algorithmConstraints))
@@ -674,10 +681,7 @@ class ProvX509KeyManagerSimple
 
         public int compareTo(Match that)
         {
-            boolean thisInvalid = this.quality.compareTo(INVALID) >= 0;
-            boolean thatInvalid = that.quality.compareTo(INVALID) >= 0;
-
-            int cmp = Boolean.compare(thisInvalid, thatInvalid);
+            int cmp = Boolean.compare(that.isValid(), this.isValid());
             if (cmp == 0)
             {
                 cmp = Integer.compare(this.keyTypeIndex, that.keyTypeIndex);
@@ -692,6 +696,11 @@ class ProvX509KeyManagerSimple
         boolean isIdeal()
         {
             return Quality.OK == quality && 0 == keyTypeIndex;
+        }
+
+        boolean isValid()
+        {
+            return quality.compareTo(INVALID) < 0;
         }
     }
 
