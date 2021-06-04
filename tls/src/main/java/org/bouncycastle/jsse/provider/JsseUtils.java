@@ -41,6 +41,7 @@ import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.IdentifierType;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
@@ -393,9 +394,14 @@ abstract class JsseUtils
         return jcaSignatureAlgorithm + ":" + keyAlgorithm;
     }
 
-    static String getKeyType(SignatureSchemeInfo signatureSchemeInfo)
+    static String getKeyType13(String keyAlgorithm, int namedGroup13)
     {
-        return signatureSchemeInfo.getKeyAlgorithm();
+        if (namedGroup13 < 0)
+        {
+            return keyAlgorithm;
+        }
+
+        return keyAlgorithm + "/" + NamedGroup.getStandardName(namedGroup13);
     }
 
     static String getKeyTypeLegacyClient(short clientCertificateType)
@@ -668,6 +674,13 @@ abstract class JsseUtils
         ProtocolVersion protocolVersion = ProvSSLContextSpi.getProtocolVersion(protocol);
 
         return null != protocolVersion && TlsUtils.isTLSv12(protocolVersion); 
+    }
+
+    static boolean isTLSv13(String protocol)
+    {
+        ProtocolVersion protocolVersion = ProvSSLContextSpi.getProtocolVersion(protocol);
+
+        return null != protocolVersion && TlsUtils.isTLSv13(protocolVersion); 
     }
 
     static X500Principal toX500Principal(X500Name name) throws IOException
