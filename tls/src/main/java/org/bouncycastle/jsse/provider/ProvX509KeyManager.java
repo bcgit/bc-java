@@ -373,131 +373,96 @@ class ProvX509KeyManager
     {
         if (!builders.isEmpty() && !keyTypes.isEmpty())
         {
+            int keyTypeLimit = keyTypes.size();
             Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
             BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
             Date atDate = new Date();
             String requestedHostName = getRequestedHostName(transportData, forServer);
+            List<Match> matches = null;
 
-            List<Match> allMatches = null;
-
-            for (int i = 0, count = builders.size(); i < count; ++i)
+            for (int builderIndex = 0, count = builders.size(); builderIndex < count; ++builderIndex)
             {
                 try
                 {
-                    List<Match> matches = getAliasesFromBuilder(i, keyTypes, uniqueIssuers, algorithmConstraints,
-                        forServer, atDate, requestedHostName);
+                    KeyStore.Builder builder = builders.get(builderIndex);
+                    KeyStore keyStore = builder.getKeyStore();
 
-                    allMatches = addToAllMatches(allMatches, matches);
+                    for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
+                    {
+                        String localAlias = en.nextElement();
+
+                        Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, keyTypes,
+                            keyTypeLimit, uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
+
+                        if (match.compareTo(Match.NOTHING) < 0)
+                        {
+                            matches = addToMatches(matches, match);
+                        }
+                    }
                 }
-                catch (Exception e)
+                catch (KeyStoreException e)
                 {
+                    LOG.log(Level.WARNING, "Failed to fully process KeyStore.Builder at index " + builderIndex, e);
                 }
             }
 
-            if (null != allMatches && !allMatches.isEmpty())
+            if (null != matches && !matches.isEmpty())
             {
                 // NOTE: We are relying on this being a stable sort
-                Collections.sort(allMatches);
+                Collections.sort(matches);
 
-                return getAliases(allMatches, getNextVersionSuffix());
+                return getAliases(matches, getNextVersionSuffix());
             }
         }
 
         return null;
     }
 
-    private List<Match> getAliasesFromBuilder(int builderIndex, List<String> keyTypes, Set<Principal> uniqueIssuers,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws KeyStoreException
-    {
-        KeyStore.Builder builder = builders.get(builderIndex);
-        KeyStore keyStore = builder.getKeyStore();
-
-        List<Match> matches = null;
-        int keyTypeLimit = keyTypes.size();
-
-        for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
-        {
-            String localAlias = en.nextElement();
-
-            Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, Match.NOTHING, keyTypes,
-                keyTypeLimit, uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
-
-            if (null != match)
-            {
-                matches = addToMatches(matches, match);
-            }
-        }
-
-        return matches;
-    }
-
     private Match getBestMatch(List<String> keyTypes, Principal[] issuers, TransportData transportData,
         boolean forServer)
     {
-        Match bestMatch = Match.NOTHING;
+        Match bestMatchSoFar = Match.NOTHING;
 
         if (!builders.isEmpty() && !keyTypes.isEmpty())
         {
+            int keyTypeLimit = keyTypes.size();
             Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
             BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
             Date atDate = new Date();
             String requestedHostName = getRequestedHostName(transportData, forServer);
 
-            for (int i = 0, count = builders.size(); i < count; ++i)
+            for (int builderIndex = 0, count = builders.size(); builderIndex < count; ++builderIndex)
             {
                 try
                 {
-                    Match match = getBestMatchFromBuilder(i, keyTypes, uniqueIssuers, algorithmConstraints, forServer,
-                        atDate, requestedHostName);
+                    KeyStore.Builder builder = builders.get(builderIndex);
+                    KeyStore keyStore = builder.getKeyStore();
 
-                    if (match.compareTo(bestMatch) < 0)
+                    for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
                     {
-                        bestMatch = match;
+                        String localAlias = en.nextElement();
 
-                        if (Match.Quality.OK == bestMatch.quality)
+                        Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, keyTypes,
+                            keyTypeLimit, uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
+
+                        if (match.compareTo(bestMatchSoFar) < 0)
                         {
-                            break;
+                            bestMatchSoFar = match;
+
+                            if (bestMatchSoFar.isIdeal())
+                            {
+                                return bestMatchSoFar;
+                            }
+                            if (bestMatchSoFar.isValid())
+                            {
+                                keyTypeLimit = Math.min(keyTypeLimit, bestMatchSoFar.keyTypeIndex + 1);
+                            }
                         }
                     }
                 }
-                catch (Exception e)
+                catch (KeyStoreException e)
                 {
-                }
-            }
-        }
-
-        return bestMatch;
-    }
-
-    private Match getBestMatchFromBuilder(int builderIndex, List<String> keyTypes, Set<Principal> uniqueIssuers,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws KeyStoreException
-    {
-        KeyStore.Builder builder = builders.get(builderIndex);
-        KeyStore keyStore = builder.getKeyStore();
-
-        Match bestMatchSoFar = Match.NOTHING;
-        int keyTypeLimit = keyTypes.size(); 
-
-        for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
-        {
-            String localAlias = en.nextElement();
-
-            Match match = getPotentialMatch(builderIndex, builder, keyStore, localAlias, bestMatchSoFar, keyTypes,
-                keyTypeLimit, uniqueIssuers, algorithmConstraints, forServer, atDate, requestedHostName);
-
-            if (null != match)
-            {
-                bestMatchSoFar = match;
-
-                if (bestMatchSoFar.isIdeal())
-                {
-                    break;
-                }
-                if (bestMatchSoFar.isValid())
-                {
-                    keyTypeLimit = Math.min(keyTypeLimit, bestMatchSoFar.keyTypeIndex + 1);
+                    LOG.log(Level.WARNING, "Failed to fully process KeyStore.Builder at index " + builderIndex, e);
                 }
             }
         }
@@ -511,7 +476,7 @@ class ProvX509KeyManager
     }
 
     private Match getPotentialMatch(int builderIndex, KeyStore.Builder builder, KeyStore keyStore, String localAlias,
-        Match bestMatchSoFar, List<String> keyTypes, int keyTypeLimit, Set<Principal> uniqueIssuers,
+        List<String> keyTypes, int keyTypeLimit, Set<Principal> uniqueIssuers,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
         throws KeyStoreException
     {
@@ -526,16 +491,12 @@ class ProvX509KeyManager
                 {
                     Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
 
-                    Match match = new Match(quality, keyTypeIndex, builderIndex, localAlias, keyStore, chain);
-                    if (match.compareTo(bestMatchSoFar) < 0)
-                    {
-                        return match;
-                    }
+                    return new Match(quality, keyTypeIndex, builderIndex, localAlias, keyStore, chain);
                 }
             }
         }
 
-        return null;
+        return Match.NOTHING;
     }
 
     private KeyStore.PrivateKeyEntry getPrivateKeyEntry(String alias)
@@ -627,22 +588,6 @@ class ProvX509KeyManager
             :   forServer
             ?   KeyPurposeId.id_kp_serverAuth
             :   KeyPurposeId.id_kp_clientAuth;
-    }
-
-    private static List<Match> addToAllMatches(List<Match> allMatches, List<Match> matches)
-    {
-        if (null != matches && !matches.isEmpty())
-        {
-            if (null == allMatches)
-            {
-                allMatches = matches;
-            }
-            else
-            {
-                allMatches.addAll(matches);
-            }
-        }
-        return allMatches;
     }
 
     private static List<Match> addToMatches(List<Match> matches, Match match)

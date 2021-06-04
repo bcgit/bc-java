@@ -354,101 +354,66 @@ class ProvX509KeyManagerSimple
     {
         if (!credentials.isEmpty() && !keyTypes.isEmpty())
         {
+            int keyTypeLimit = keyTypes.size(); 
             Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
             BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
             Date atDate = new Date();
             String requestedHostName = getRequestedHostName(transportData, forServer);
+            List<Match> matches = null;
 
-            List<Match> allMatches = null;
-
-            try
+            for (Credential credential : credentials.values())
             {
-                allMatches = getAliasesFromCredentials(keyTypes, uniqueIssuers, algorithmConstraints, forServer, atDate,
-                    requestedHostName);
-            }
-            catch (Exception e)
-            {
+                Match match = getPotentialMatch(credential, keyTypes, keyTypeLimit, uniqueIssuers, algorithmConstraints,
+                    forServer, atDate, requestedHostName);
+
+                if (match.compareTo(Match.NOTHING) < 0)
+                {
+                    matches = addToMatches(matches, match);
+                }
             }
 
-            if (null != allMatches && !allMatches.isEmpty())
+            if (null != matches && !matches.isEmpty())
             {
                 // NOTE: We are relying on this being a stable sort
-                Collections.sort(allMatches);
+                Collections.sort(matches);
 
-                return getAliases(allMatches);
+                return getAliases(matches);
             }
         }
 
         return null;
     }
 
-    private List<Match> getAliasesFromCredentials(List<String> keyTypes, Set<Principal> uniqueIssuers,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws Exception
-    {
-        List<Match> matches = null;
-        int keyTypeLimit = keyTypes.size(); 
-
-        for (Credential credential : credentials.values())
-        {
-            Match match = getPotentialMatch(credential, Match.NOTHING, keyTypes, keyTypeLimit, uniqueIssuers,
-                algorithmConstraints, forServer, atDate, requestedHostName);
-
-            if (null != match)
-            {
-                matches = addToMatches(matches, match);
-            }
-        }
-
-        return matches;
-    }
-
     private Match getBestMatch(List<String> keyTypes, Principal[] issuers, TransportData transportData,
         boolean forServer)
     {
+        Match bestMatchSoFar = Match.NOTHING;
+
         if (!credentials.isEmpty() && !keyTypes.isEmpty())
         {
+            int keyTypeLimit = keyTypes.size(); 
             Set<Principal> uniqueIssuers = getUniquePrincipals(issuers);
             BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
             Date atDate = new Date();
             String requestedHostName = getRequestedHostName(transportData, forServer);
 
-            try
+            for (Credential credential : credentials.values())
             {
-                return getBestMatchFromCredentials(keyTypes, uniqueIssuers, algorithmConstraints, forServer, atDate,
-                    requestedHostName);
-            }
-            catch (Exception e)
-            {
-            }
-        }
+                Match match = getPotentialMatch(credential, keyTypes, keyTypeLimit, uniqueIssuers,
+                    algorithmConstraints, forServer, atDate, requestedHostName);
 
-        return Match.NOTHING;
-    }
-
-    private Match getBestMatchFromCredentials(List<String> keyTypes, Set<Principal> uniqueIssuers,
-        BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName)
-        throws Exception
-    {
-        Match bestMatchSoFar = Match.NOTHING;
-        int keyTypeLimit = keyTypes.size(); 
-
-        for (Credential credential : credentials.values())
-        {
-            Match match = getPotentialMatch(credential, bestMatchSoFar, keyTypes, keyTypeLimit, uniqueIssuers,
-                algorithmConstraints, forServer, atDate, requestedHostName);
-
-            if (null != match)
-            {
-                bestMatchSoFar = match;
-
-                if (bestMatchSoFar.isIdeal())
+                if (match.compareTo(bestMatchSoFar) < 0)
                 {
-                    break;
-                }
-                if (bestMatchSoFar.isValid())
-                {
-                    keyTypeLimit = Math.min(keyTypeLimit, bestMatchSoFar.keyTypeIndex + 1);
+                    bestMatchSoFar = match;
+
+                    if (bestMatchSoFar.isIdeal())
+                    {
+                        return bestMatchSoFar;
+                    }
+                    if (bestMatchSoFar.isValid())
+                    {
+                        keyTypeLimit = Math.min(keyTypeLimit, bestMatchSoFar.keyTypeIndex + 1);
+                    }
                 }
             }
         }
@@ -456,9 +421,9 @@ class ProvX509KeyManagerSimple
         return bestMatchSoFar;
     }
 
-    private Match getPotentialMatch(Credential credential, Match bestMatchSoFar, List<String> keyTypes,
-        int keyTypeLimit, Set<Principal> uniqueIssuers, BCAlgorithmConstraints algorithmConstraints, boolean forServer,
-        Date atDate, String requestedHostName) throws Exception
+    private Match getPotentialMatch(Credential credential, List<String> keyTypes, int keyTypeLimit,
+        Set<Principal> uniqueIssuers, BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate,
+        String requestedHostName)
     {
         X509Certificate[] chain = credential.certificateChain;
         if (!TlsUtils.isNullOrEmpty(chain) && isSuitableChainForIssuers(chain, uniqueIssuers))
@@ -469,14 +434,10 @@ class ProvX509KeyManagerSimple
             {
                 Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
 
-                Match match = new Match(quality, keyTypeIndex, credential);
-                if (match.compareTo(bestMatchSoFar) < 0)
-                {
-                    return match;
-                }
+                return new Match(quality, keyTypeIndex, credential);
             }
         }
-        return null;
+        return Match.NOTHING;
     }
 
     private Credential getCredential(String alias)
