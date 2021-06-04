@@ -457,7 +457,7 @@ class ProvAlgorithmChecker
                 return true;
             }
 
-            ASN1Encodable parameters = algID.getParameters().toASN1Primitive();
+            ASN1Encodable parameters = algID.getParameters();
             if (null != parameters)
             {
                 ASN1Primitive primitive = parameters.toASN1Primitive();
