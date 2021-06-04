@@ -6,7 +6,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
-import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.util.Integers;
 
@@ -90,14 +89,12 @@ class DeferredHash
         }
     }
 
-    public void trackHashAlgorithm(short hashAlgorithm)
+    public void trackHashAlgorithm(int cryptoHashAlgorithm)
     {
         if (sealed)
         {
             throw new IllegalStateException("Too late to track more hash algorithms");
         }
-
-        int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
 
         checkTrackingHash(cryptoHashAlgorithm);
     }
@@ -166,14 +163,12 @@ class DeferredHash
         return prfHash;
     }
 
-    public byte[] getFinalHash(short hashAlgorithm)
+    public byte[] getFinalHash(int cryptoHashAlgorithm)
     {
-        int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
-
         TlsHash d = (TlsHash)hashes.get(box(cryptoHashAlgorithm));
         if (d == null)
         {
-            throw new IllegalStateException("HashAlgorithm." + HashAlgorithm.getText(hashAlgorithm) + " is not being tracked");
+            throw new IllegalStateException("CryptoHashAlgorithm." + cryptoHashAlgorithm + " is not being tracked");
         }
 
         checkStopBuffering();

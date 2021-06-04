@@ -86,7 +86,14 @@ public class SignatureScheme
         case sm2sig_sm3:
             return CryptoHashAlgorithm.sm3;
         default:
-            return TlsCryptoUtils.getHash(getHashAlgorithm(signatureScheme));
+        {
+            short hashAlgorithm = getHashAlgorithm(signatureScheme);
+            if (HashAlgorithm.Intrinsic == hashAlgorithm || !HashAlgorithm.isRecognized(hashAlgorithm))
+            {
+                return -1;
+            }
+            return TlsCryptoUtils.getHash(hashAlgorithm);
+        }
         }
     }
 
