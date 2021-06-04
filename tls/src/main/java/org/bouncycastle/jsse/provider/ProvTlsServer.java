@@ -958,7 +958,7 @@ class ProvTlsServer
 
             String keyType = (legacySignatureAlgorithm == signatureAlgorithm)
                 ?   JsseUtils.getKeyTypeLegacyServer(keyExchangeAlgorithm)
-                :   JsseUtils.getKeyType(signatureSchemeInfo);
+                :   signatureSchemeInfo.getKeyType();
 
             if (keyManagerMissCache.contains(keyType))
             {
@@ -1022,7 +1022,7 @@ class ProvTlsServer
         LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap = new LinkedHashMap<String, SignatureSchemeInfo>();
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
-            String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
+            String keyType = signatureSchemeInfo.getKeyType13();
             if (keyManagerMissCache.contains(keyType))
             {
                 continue;
