@@ -86,6 +86,7 @@ class SignatureSchemeInfo
         private final String jcaSignatureAlgorithm;
         private final String jcaSignatureAlgorithmBC;
         private final String keyAlgorithm;
+        private final String keyType13;
         private final boolean supportedPost13;
         private final boolean supportedPre13;
         private final boolean supportedCerts13;
@@ -119,12 +120,16 @@ class SignatureSchemeInfo
         private All(int signatureScheme, String name, String jcaSignatureAlgorithm, String keyAlgorithm,
             boolean supportedPost13, boolean supportedCerts13, int namedGroup13)
         {
+            String keyType13 = JsseUtils.getKeyType13(keyAlgorithm, namedGroup13);
+            String jcaSignatureAlgorithmBC = JsseUtils.getJcaSignatureAlgorithmBC(jcaSignatureAlgorithm, keyAlgorithm);
+
             this.signatureScheme = signatureScheme;
             this.name = name;
             this.text = name + "(0x" + Integer.toHexString(signatureScheme) + ")";
             this.jcaSignatureAlgorithm = jcaSignatureAlgorithm;
-            this.jcaSignatureAlgorithmBC = JsseUtils.getJcaSignatureAlgorithmBC(jcaSignatureAlgorithm, keyAlgorithm);
+            this.jcaSignatureAlgorithmBC = jcaSignatureAlgorithmBC;
             this.keyAlgorithm = keyAlgorithm;
+            this.keyType13 = keyType13;
             this.supportedPost13 = supportedPost13;
             this.supportedPre13 = (namedGroup13 < 0) || NamedGroup.canBeNegotiated(namedGroup13, ProtocolVersion.TLSv12);
             this.supportedCerts13 = supportedCerts13;
@@ -479,9 +484,14 @@ class SignatureSchemeInfo
         return all.jcaSignatureAlgorithmBC;
     }
 
-    String getKeyAlgorithm()
+    String getKeyType()
     {
         return all.keyAlgorithm;
+    }
+
+    String getKeyType13()
+    {
+        return all.keyType13;
     }
 
     String getName()

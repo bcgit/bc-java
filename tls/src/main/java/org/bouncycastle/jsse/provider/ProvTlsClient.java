@@ -654,7 +654,7 @@ class ProvTlsClient
         LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap = new LinkedHashMap<String, SignatureSchemeInfo>();
         for (SignatureSchemeInfo signatureSchemeInfo : jsseSecurityParameters.peerSigSchemes)
         {
-            String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
+            String keyType = signatureSchemeInfo.getKeyType();
             if (keyTypeMap.containsKey(keyType))
             {
                 continue;
@@ -723,7 +723,7 @@ class ProvTlsClient
                 continue;
             }
 
-            String keyType = JsseUtils.getKeyType(signatureSchemeInfo);
+            String keyType = signatureSchemeInfo.getKeyType13();
             if (keyTypeMap.containsKey(keyType))
             {
                 continue;
