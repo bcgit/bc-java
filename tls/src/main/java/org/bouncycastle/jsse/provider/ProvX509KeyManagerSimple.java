@@ -39,6 +39,7 @@ import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
 
 class ProvX509KeyManagerSimple
@@ -55,6 +56,11 @@ class ProvX509KeyManagerSimple
 
     private static void addECFilter13(Map<String, PublicKeyFilter> filters, int namedGroup13)
     {
+        if (!NamedGroup.canBeNegotiated(namedGroup13, ProtocolVersion.TLSv13))
+        {
+            throw new IllegalStateException("Invalid named group for TLS 1.3 EC filter");
+        }
+
         String curveName = NamedGroup.getCurveName(namedGroup13);
         if (null != curveName)
         {
