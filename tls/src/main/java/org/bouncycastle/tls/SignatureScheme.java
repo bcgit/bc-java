@@ -1,6 +1,7 @@
 package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 
 public class SignatureScheme
 {
@@ -61,6 +62,32 @@ public class SignatureScheme
     public static int from(short hashAlgorithm, short signatureAlgorithm)
     {
         return ((hashAlgorithm & 0xFF) << 8) | (signatureAlgorithm & 0xFF);
+    }
+
+    public static int getCryptoHashAlgorithm(int signatureScheme)
+    {
+        switch (signatureScheme)
+        {
+        case ed25519:
+        case ed448:
+            return -1;
+        case ecdsa_brainpoolP256r1tls13_sha256:
+        case rsa_pss_pss_sha256:
+        case rsa_pss_rsae_sha256:
+            return CryptoHashAlgorithm.sha256;
+        case ecdsa_brainpoolP384r1tls13_sha384:
+        case rsa_pss_pss_sha384:
+        case rsa_pss_rsae_sha384:
+            return CryptoHashAlgorithm.sha384;
+        case ecdsa_brainpoolP512r1tls13_sha512:
+        case rsa_pss_pss_sha512:
+        case rsa_pss_rsae_sha512:
+            return CryptoHashAlgorithm.sha512;
+        case sm2sig_sm3:
+            return CryptoHashAlgorithm.sm3;
+        default:
+            return TlsCryptoUtils.getHash(getHashAlgorithm(signatureScheme));
+        }
     }
 
     public static String getName(int signatureScheme)
@@ -139,6 +166,7 @@ public class SignatureScheme
         }
     }
 
+    /** @deprecated Use {@link #getCryptoHashAlgorithm(int) instead. */
     public static int getRSAPSSCryptoHashAlgorithm(int signatureScheme)
     {
         switch (signatureScheme)

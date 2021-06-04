@@ -43,7 +43,7 @@ public class BcTlsRSAPSSSigner
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        int cryptoHashAlgorithm = SignatureScheme.getRSAPSSCryptoHashAlgorithm(signatureScheme);
+        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
         PSSSigner signer = new PSSSigner(new RSABlindedEngine(), digest, digest.getDigestSize());
