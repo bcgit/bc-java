@@ -408,7 +408,12 @@ public class JcaTlsCrypto
     public AlgorithmParameters getSignatureSchemeAlgorithmParameters(int signatureScheme)
         throws GeneralSecurityException
     {
-        int cryptoHashAlgorithm = SignatureScheme.getRSAPSSCryptoHashAlgorithm(signatureScheme);
+        if (!SignatureScheme.isRSAPSS(signatureScheme))
+        {
+            return null;
+        }
+
+        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
         if (cryptoHashAlgorithm < 0)
         {
             return null;
