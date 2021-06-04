@@ -28,25 +28,30 @@ public class EdDSACredentialsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_ED25519 = 9017;
-    private static final int PORT_NO_ED448 = 9018;
+    private static final int PORT_NO_12_ED25519 = 9020;
+    private static final int PORT_NO_12_ED448 = 9021;
+    private static final int PORT_NO_13_ED25519 = 9022;
+    private static final int PORT_NO_13_ED448 = 9023;
 
-    public static class EdDSAClient
+    static class EdDSAClient
         implements TestProtocolUtil.BlockingCallable
     {
         private final int port;
+        private final String protocol;
         private final KeyStore trustStore;
         private final KeyStore clientStore;
         private final char[] clientKeyPass;
         private final CountDownLatch latch;
 
-        public EdDSAClient(int port, KeyStore clientStore, char[] clientKeyPass, X509Certificate trustAnchor)
-            throws GeneralSecurityException, IOException
+        EdDSAClient(int port, String protocol, KeyStore clientStore, char[] clientKeyPass,
+            X509Certificate trustAnchor) throws GeneralSecurityException, IOException
         {
-            this.port = port;
-            this.trustStore = createKeyStore();
+            KeyStore trustStore = createKeyStore();
             trustStore.setCertificateEntry("server", trustAnchor);
 
+            this.port = port;
+            this.protocol = protocol;
+            this.trustStore = trustStore;
             this.clientStore = clientStore;
             this.clientKeyPass = clientKeyPass;
             this.latch = new CountDownLatch(1);
@@ -70,6 +75,7 @@ public class EdDSACredentialsTest
 
                 SSLSocketFactory fact = clientContext.getSocketFactory();
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
+                cSock.setEnabledProtocols(new String[]{ protocol });
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
@@ -94,24 +100,27 @@ public class EdDSACredentialsTest
         }
     }
 
-    public static class EdDSAServer
+    static class EdDSAServer
         implements TestProtocolUtil.BlockingCallable
     {
         private final int port;
+        private final String protocol;
         private final KeyStore serverStore;
         private final char[] keyPass;
         private final KeyStore trustStore;
         private final CountDownLatch latch;
 
-        EdDSAServer(int port, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
+        EdDSAServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
             throws GeneralSecurityException, IOException
         {
-            this.port = port;
-            this.serverStore = serverStore;
-            this.keyPass = keyPass;
-            this.trustStore = createKeyStore();
+            KeyStore trustStore = createKeyStore();
             trustStore.setCertificateEntry("client", trustAnchor);
 
+            this.port = port;
+            this.protocol = protocol;
+            this.serverStore = serverStore;
+            this.keyPass = keyPass;
+            this.trustStore = trustStore;
             this.latch = new CountDownLatch(1);
         }
 
@@ -140,6 +149,7 @@ public class EdDSACredentialsTest
                 latch.countDown();
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
+                sslSock.setEnabledProtocols(new String[]{ protocol });
 
                 SSLSession session = sslSock.getSession();
                 assertNotNull(session);
@@ -166,28 +176,30 @@ public class EdDSACredentialsTest
         }
     }
 
-    public void testEd25519Credentials() throws Exception
+    public void test12_Ed25519() throws Exception
     {
-        char[] keyPass = "keyPassword".toCharArray();
-
-        KeyPair caKeyPair = TestUtils.generateEd25519KeyPair();
-        X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
-
-        KeyStore serverKs = createKeyStore();
-        serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
-
-        KeyStore clientKs = createKeyStore();
-        clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
-
-        TestProtocolUtil.runClientAndServer(new EdDSAServer(PORT_NO_ED25519, serverKs, keyPass, caCert),
-            new EdDSAClient(PORT_NO_ED25519, clientKs, keyPass, caCert));
+        implTestEdDSACredentials(PORT_NO_12_ED25519, "TLSv1.2", TestUtils.generateEd25519KeyPair());
     }
 
-    public void testEd448Credentials() throws Exception
+    public void test12_Ed448() throws Exception
+    {
+        implTestEdDSACredentials(PORT_NO_12_ED448, "TLSv1.2", TestUtils.generateEd448KeyPair());
+    }
+
+    public void test13_Ed25519() throws Exception
+    {
+        implTestEdDSACredentials(PORT_NO_13_ED25519, "TLSv1.3", TestUtils.generateEd25519KeyPair());
+    }
+
+    public void test13_Ed448() throws Exception
+    {
+        implTestEdDSACredentials(PORT_NO_13_ED448, "TLSv1.3", TestUtils.generateEd448KeyPair());
+    }
+
+    private void implTestEdDSACredentials(int port, String protocol, KeyPair caKeyPair) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
 
-        KeyPair caKeyPair = TestUtils.generateEd448KeyPair();
         X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
 
         KeyStore serverKs = createKeyStore();
@@ -196,8 +208,8 @@ public class EdDSACredentialsTest
         KeyStore clientKs = createKeyStore();
         clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new EdDSAServer(PORT_NO_ED448, serverKs, keyPass, caCert),
-            new EdDSAClient(PORT_NO_ED448, clientKs, keyPass, caCert));
+        TestProtocolUtil.runClientAndServer(new EdDSAServer(port, protocol, serverKs, keyPass, caCert),
+            new EdDSAClient(port, protocol, clientKs, keyPass, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException

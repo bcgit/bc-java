@@ -17,21 +17,27 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.bouncycastle.tls.NamedGroup;
+
 import junit.framework.TestCase;
 
-public class PSSCredentialsTest
+public class ECDSACredentialsTest
     extends TestCase
 {
     protected void setUp()
     {
-        ProviderUtils.setupLowPriority(false);
+        ProviderUtils.setupHighPriority(false);
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_12_PSS = 9018;
-    private static final int PORT_NO_13_PSS = 9019;
+    private static final int PORT_NO_12_secp256r1 = 9030;
+    private static final int PORT_NO_12_secp384r1 = 9031;
+    private static final int PORT_NO_12_secp521r1 = 9032;
+    private static final int PORT_NO_13_secp256r1 = 9033;
+    private static final int PORT_NO_13_secp384r1 = 9034;
+    private static final int PORT_NO_13_secp521r1 = 9035;
 
-    static class PSSClient
+    static class ECDSAClient
         implements TestProtocolUtil.BlockingCallable
     {
         private final int port;
@@ -41,7 +47,7 @@ public class PSSCredentialsTest
         private final char[] clientKeyPass;
         private final CountDownLatch latch;
 
-        PSSClient(int port, String protocol, KeyStore clientStore, char[] clientKeyPass,
+        ECDSAClient(int port, String protocol, KeyStore clientStore, char[] clientKeyPass,
             X509Certificate trustAnchor) throws GeneralSecurityException, IOException
         {
             KeyStore trustStore = createKeyStore();
@@ -98,7 +104,7 @@ public class PSSCredentialsTest
         }
     }
 
-    static class PSSServer
+    static class ECDSAServer
         implements TestProtocolUtil.BlockingCallable
     {
         private final int port;
@@ -108,7 +114,7 @@ public class PSSCredentialsTest
         private final KeyStore trustStore;
         private final CountDownLatch latch;
 
-        PSSServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
+        ECDSAServer(int port, String protocol, KeyStore serverStore, char[] keyPass, X509Certificate trustAnchor)
             throws GeneralSecurityException, IOException
         {
             KeyStore trustStore = createKeyStore();
@@ -174,35 +180,62 @@ public class PSSCredentialsTest
         }
     }
 
-    public void test12() throws Exception
+    public void test12_secp256r1() throws Exception
     {
-        implTestPSSCredentials(PORT_NO_12_PSS, "TLSv1.2");
+        implTestECDSACredentials(PORT_NO_12_secp256r1, "TLSv1.2", NamedGroup.secp256r1);
     }
 
-    public void test13() throws Exception
+    public void test12_secp384r1() throws Exception
     {
-        implTestPSSCredentials(PORT_NO_13_PSS, "TLSv1.3");
+        implTestECDSACredentials(PORT_NO_12_secp384r1, "TLSv1.2", NamedGroup.secp384r1);
     }
 
-    private void implTestPSSCredentials(int port, String protocol) throws Exception
+    public void test12_secp521r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_12_secp521r1, "TLSv1.2", NamedGroup.secp521r1);
+    }
+
+    public void test13_secp256r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_secp256r1, "TLSv1.3", NamedGroup.secp256r1);
+    }
+
+    public void test13_secp384r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_secp384r1, "TLSv1.3", NamedGroup.secp384r1);
+    }
+
+    public void test13_secp521r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_secp521r1, "TLSv1.3", NamedGroup.secp521r1);
+    }
+
+    private void implTestECDSACredentials(int port, String protocol, int namedGroup) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
 
-        KeyPair caKeyPair = TestUtils.generatePSSKeyPair();
+        String curveName = NamedGroup.getCurveName(namedGroup);
+        KeyPair caKeyPair = TestUtils.generateECKeyPair(curveName);
         X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
 
         KeyStore serverKs = createKeyStore();
-        serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
+        serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[] { caCert });
 
         KeyStore clientKs = createKeyStore();
-        clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
+        clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[] { caCert });
 
-        TestProtocolUtil.runClientAndServer(new PSSServer(port, protocol, serverKs, keyPass, caCert),
-            new PSSClient(port, protocol, clientKs, keyPass, caCert));
+        TestProtocolUtil.runClientAndServer(new ECDSAServer(port, protocol, serverKs, keyPass, caCert),
+            new ECDSAClient(port, protocol, clientKs, keyPass, caCert));
     }
 
     private static KeyStore createKeyStore() throws GeneralSecurityException, IOException
     {
+        /*
+         * NOTE: At the time of writing, default JKS implementation can't recover PKCS8 private keys
+         * with version != 0, which e.g. is the case when a public key is included, which the BC
+         * provider currently does for EdDSA.
+         */
+//        KeyStore keyStore = KeyStore.getInstance("JKS");
         KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
         keyStore.load(null, null);
         return keyStore;
