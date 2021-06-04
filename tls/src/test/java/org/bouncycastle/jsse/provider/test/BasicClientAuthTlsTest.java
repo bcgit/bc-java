@@ -31,8 +31,8 @@ public class BasicClientAuthTlsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO_ACCEPTED = 9019;
-    private static final int PORT_NO_REJECTED = 9020;
+    private static final int PORT_NO_ACCEPTED = 9015;
+    private static final int PORT_NO_REJECTED = 9016;
 
     public static class ClientAuthAcceptedClient
         implements TestProtocolUtil.BlockingCallable
