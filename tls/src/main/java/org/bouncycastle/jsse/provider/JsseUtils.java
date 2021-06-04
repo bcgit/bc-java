@@ -19,12 +19,17 @@ import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
@@ -199,6 +204,32 @@ abstract class JsseUtils
     static int getMaxHandshakeMessageSize()
     {
         return provTlsMaxHandshakeMessageSize;
+    }
+
+    static ASN1ObjectIdentifier getNamedCurveOID(PublicKey publicKey)
+    {
+        try
+        {
+            SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+            AlgorithmIdentifier algID = spki.getAlgorithm();
+            if (X9ObjectIdentifiers.id_ecPublicKey.equals(algID.getAlgorithm()))
+            {
+                ASN1Encodable parameters = algID.getParameters();
+                if (null != parameters)
+                {
+                    ASN1Primitive primitive = parameters.toASN1Primitive();
+                    if (primitive instanceof ASN1ObjectIdentifier)
+                    {
+                        return (ASN1ObjectIdentifier)primitive; 
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+        }
+
+        return null;
     }
 
     static String[] resize(String[] data, int count)

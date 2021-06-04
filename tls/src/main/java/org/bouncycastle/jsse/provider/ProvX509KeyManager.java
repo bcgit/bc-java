@@ -32,7 +32,9 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSNIHostName;
@@ -40,6 +42,7 @@ import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsUtils;
 
 class ProvX509KeyManager
@@ -69,6 +72,24 @@ class ProvX509KeyManager
     private static final Map<String, PublicKeyFilter> FILTERS_CLIENT = createFiltersClient();
     private static final Map<String, PublicKeyFilter> FILTERS_SERVER = createFiltersServer();
 
+    private static void addECFilter13(Map<String, PublicKeyFilter> filters, int namedGroup13)
+    {
+        String curveName = NamedGroup.getCurveName(namedGroup13);
+        if (null != curveName)
+        {
+            ASN1ObjectIdentifier standardOID = ECNamedCurveTable.getOID(curveName);
+            if (null != standardOID)
+            {
+                String keyType = JsseUtils.getKeyType13("EC", namedGroup13);
+                PublicKeyFilter filter = new ECPublicKeyFilter13(standardOID);
+                addFilterToMap(filters, keyType, filter);
+                return;
+            }
+        }
+
+        LOG.warning("Failed to register public key filter for EC with " + NamedGroup.getText(namedGroup13));
+    }
+
     private static void addFilter(Map<String, PublicKeyFilter> filters, String keyType)
     {
         String algorithm = keyType;
@@ -84,14 +105,11 @@ class ProvX509KeyManager
     private static void addFilter(Map<String, PublicKeyFilter> filters, int keyUsageBit, String algorithm,
         Class<? extends PublicKey> clazz, String... keyTypes)
     {
-        PublicKeyFilter filter = new PublicKeyFilter(algorithm, clazz, keyUsageBit);
+        PublicKeyFilter filter = new DefaultPublicKeyFilter(algorithm, clazz, keyUsageBit);
 
         for (String keyType : keyTypes)
         {
-            if (null != filters.put(keyType, filter))
-            {
-                throw new IllegalStateException("Duplicate keys in filters");
-            }
+            addFilterToMap(filters, keyType, filter);
         }
     }
 
@@ -119,12 +137,24 @@ class ProvX509KeyManager
         addFilter(filters, keyUsageBit, algorithm, clazz, getKeyTypesLegacyServer(keyExchangeAlgorithms));
     }
 
+    private static void addFilterToMap(Map<String, PublicKeyFilter> filters, String keyType, PublicKeyFilter filter)
+    {
+        if (null != filters.put(keyType, filter))
+        {
+            throw new IllegalStateException("Duplicate keys in filters");
+        }
+    }
+
     private static Map<String, PublicKeyFilter> createFiltersClient()
     {
         Map<String, PublicKeyFilter> filters = new HashMap<String, PublicKeyFilter>();
 
         addFilter(filters, "Ed25519");
         addFilter(filters, "Ed448");
+
+        addECFilter13(filters, NamedGroup.secp256r1);
+        addECFilter13(filters, NamedGroup.secp384r1);
+        addECFilter13(filters, NamedGroup.secp521r1);
 
         // TODO Perhaps check the public key OID explicitly for these
         addFilter(filters, "RSA");
@@ -142,6 +172,10 @@ class ProvX509KeyManager
 
         addFilter(filters, "Ed25519");
         addFilter(filters, "Ed448");
+
+        addECFilter13(filters, NamedGroup.secp256r1);
+        addECFilter13(filters, NamedGroup.secp384r1);
+        addECFilter13(filters, NamedGroup.secp521r1);
 
         // TODO Perhaps check the public key OID explicitly for these
         addFilter(filters, "RSA");
@@ -729,7 +763,8 @@ class ProvX509KeyManager
 
         for (int keyTypeIndex = 0; keyTypeIndex < keyTypeLimit; ++keyTypeIndex)
         {
-            PublicKeyFilter filter = filters.get(keyTypes.get(keyTypeIndex));
+            String keyType = keyTypes.get(keyTypeIndex);
+            PublicKeyFilter filter = filters.get(keyType);
             if (null != filter && filter.accepts(publicKey, keyUsage, algorithmConstraints))
             {
                 return keyTypeIndex;
@@ -846,20 +881,26 @@ class ProvX509KeyManager
         }
     }
 
-    private static final class PublicKeyFilter
+    private static interface PublicKeyFilter
+    {
+        boolean accepts(PublicKey publicKey, boolean[] keyUsage, BCAlgorithmConstraints algorithmConstraints);
+    }
+
+    private static final class DefaultPublicKeyFilter
+        implements PublicKeyFilter
     {
         final String algorithm;
         final Class<? extends PublicKey> clazz;
         final int keyUsageBit;
 
-        PublicKeyFilter(String algorithm, Class<? extends PublicKey> clazz, int keyUsageBit)
+        DefaultPublicKeyFilter(String algorithm, Class<? extends PublicKey> clazz, int keyUsageBit)
         {
             this.algorithm = algorithm;
             this.clazz = clazz;
             this.keyUsageBit = keyUsageBit;
         }
 
-        boolean accepts(PublicKey publicKey, boolean[] keyUsage, BCAlgorithmConstraints algorithmConstraints)
+        public boolean accepts(PublicKey publicKey, boolean[] keyUsage, BCAlgorithmConstraints algorithmConstraints)
         {
             return appliesTo(publicKey)
                 && ProvAlgorithmChecker.permitsKeyUsage(publicKey, keyUsage, keyUsageBit, algorithmConstraints);
@@ -869,6 +910,38 @@ class ProvX509KeyManager
         {
             return (null != algorithm && algorithm.equalsIgnoreCase(JsseUtils.getPublicKeyAlgorithm(publicKey)))
                 || (null != clazz && clazz.isInstance(publicKey));
+        }
+    }
+
+    private static final class ECPublicKeyFilter13
+        implements PublicKeyFilter
+    {
+        final ASN1ObjectIdentifier standardOID;
+
+        ECPublicKeyFilter13(ASN1ObjectIdentifier standardOID)
+        {
+            this.standardOID = standardOID;
+        }
+
+        public boolean accepts(PublicKey publicKey, boolean[] keyUsage, BCAlgorithmConstraints algorithmConstraints)
+        {
+            return appliesTo(publicKey)
+                && ProvAlgorithmChecker.permitsKeyUsage(publicKey, keyUsage, ProvAlgorithmChecker.KU_DIGITAL_SIGNATURE,
+                    algorithmConstraints);
+        }
+
+        private boolean appliesTo(PublicKey publicKey)
+        {
+            if ("EC".equalsIgnoreCase(JsseUtils.getPublicKeyAlgorithm(publicKey))
+                || ECPublicKey.class.isInstance(publicKey))
+            {
+                ASN1ObjectIdentifier oid = JsseUtils.getNamedCurveOID(publicKey);
+                if (standardOID.equals(oid))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
