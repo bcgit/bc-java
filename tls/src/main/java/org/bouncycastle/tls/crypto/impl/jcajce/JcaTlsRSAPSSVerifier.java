@@ -53,7 +53,7 @@ public class JcaTlsRSAPSSVerifier
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        int cryptoHashAlgorithm = SignatureScheme.getRSAPSSCryptoHashAlgorithm(signatureScheme);
+        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
         String digestName = crypto.getDigestName(cryptoHashAlgorithm);
         String sigName = RSAUtil.getDigestSigAlgName(digestName) + "WITHRSAANDMGF1";
 
