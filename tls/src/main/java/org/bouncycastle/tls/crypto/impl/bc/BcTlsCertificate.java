@@ -123,7 +123,6 @@ public class BcTlsCertificate
 
         switch (signatureScheme)
         {
-        // TODO[RFC 8734] The verifier won't match the signatureAlgorithm for brainpool schemes
         case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
         case SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384:
         case SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512:
@@ -131,7 +130,7 @@ public class BcTlsCertificate
         case SignatureScheme.ecdsa_secp384r1_sha384:
         case SignatureScheme.ecdsa_secp521r1_sha512:
         case SignatureScheme.ecdsa_sha1:
-            return new BcTlsECDSAVerifier(crypto, getPubKeyEC());
+            return new BcTlsECDSA13Verifier(crypto, getPubKeyEC(), signatureScheme);
 
         case SignatureScheme.ed25519:
             return new BcTlsEd25519Verifier(crypto, getPubKeyEd25519());
