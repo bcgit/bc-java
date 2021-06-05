@@ -32,6 +32,8 @@ then
     ((cd core/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/test/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd util/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd util/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pkix/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pkix/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pkix/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
@@ -40,6 +42,7 @@ then
     ((cd pg/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pg/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pg/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pg/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
 
     (cd $target;
         rm src/org/bouncycastle/crypto/test/AllTests.java
@@ -73,7 +76,9 @@ then
         rm src/org/bouncycastle/asn1/test/RevokeRequestTest.java
 	rm src/org/bouncycastle/asn1/test/LocaleTest.java
 	rm src/org/bouncycastle/tsp/DataGroup.java
+	rm -rf src/org/bouncycastle/tsp/ers
 	rm src/org/bouncycastle/crypto/util/JournaledAlgorithm.java
+	rm -rf src/org/bouncycastle/crypto/fpe/
         rm -rf src/org/bouncycastle/math/ec/rfc7748/test
         rm -rf src/org/bouncycastle/math/ec/rfc8032/test
         rm -rf src/org/bouncycastle/math/raw/test
@@ -113,6 +118,10 @@ then
         rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
         rm src/org/bouncycastle/crypto/test/HCFamilyVecTest.java
         rm src/org/bouncycastle/crypto/test/RSABlindedTest.java
+        rm src/org/bouncycastle/crypto/test/SP80038GTest.java
+        rm src/org/bouncycastle/crypto/digests/Blake3Digest.java
+        rm src/org/bouncycastle/crypto/macs/Blake3Mac.java
+        rm src/org/bouncycastle/crypto/test/Blake3*.java
         find src -name AllTests.java -exec rm {} \;
         find src -name jcajce -exec rm -r {} \;
         rm src/org/bouncycastle/asn1/test/GetInstanceTest.java
@@ -158,6 +167,16 @@ then
         rm -r src/org/bouncycastle/voms
         rm -r src/org/bouncycastle/math/ec/tools
         rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
+        ed src/org/bouncycastle/cms/CMSSignedDataGenerator.java <<%
+g/LinkedHashSet/s//HashSet/g
+w
+q
+%
+        ed src/org/bouncycastle/openpgp/operator/bc/BcPGPDataEncryptorBuilder.java <<%
+g/public BcPGPDataEncryptorBuilder setWi/s//public PGPDataEncryptorBuilder setWi/g
+w
+q
+%
     )
 
     find $target/src -name "*.java" -exec scripts/trim.sh \{\} \;

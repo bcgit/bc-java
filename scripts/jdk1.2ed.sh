@@ -107,3 +107,9 @@ w
 q
 %
 
+ed org/bouncycastle/cms/CMSSignedDataGenerator.java <<%
+g/LinkedHashSet/s//HashSet/g
+w
+q
+%
+
