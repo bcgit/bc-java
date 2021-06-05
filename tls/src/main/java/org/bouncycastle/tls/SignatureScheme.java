@@ -214,6 +214,19 @@ public class SignatureScheme
         return (signatureScheme >>> 9) == 0xFE; 
     }
 
+    public static boolean isECDSA(int signatureScheme)
+    {
+        switch (signatureScheme)
+        {
+        case ecdsa_brainpoolP256r1tls13_sha256:
+        case ecdsa_brainpoolP384r1tls13_sha384:
+        case ecdsa_brainpoolP512r1tls13_sha512:
+            return true;
+        default:
+            return SignatureAlgorithm.ecdsa == getSignatureAlgorithm(signatureScheme);
+        }
+    }
+
     public static boolean isRSAPSS(int signatureScheme)
     {
         switch (signatureScheme)
