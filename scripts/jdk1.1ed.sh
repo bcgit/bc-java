@@ -433,6 +433,12 @@ w
 q
 %
 
+ed org/bouncycastle/crypto/generators/OpenSSLPBEParametersGenerator.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
 ed org/bouncycastle/crypto/macs/Zuc128Mac.java <<%
 g/private.*final.*;/s/final//
 w

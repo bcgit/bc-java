@@ -37,7 +37,7 @@ public class JKSKeyStoreSpi
     private static final String NOT_IMPLEMENTED_MESSAGE = "BC JKS store is read-only and only supports certificate entries";
 
     private final Hashtable<String, BCJKSTrustedCertEntry> certificateEntries = new Hashtable<String, BCJKSTrustedCertEntry>();
-    private final JcaJceHelper helper;
+    private JcaJceHelper helper;
 
     public JKSKeyStoreSpi(JcaJceHelper helper)
     {
@@ -166,12 +166,13 @@ public class JKSKeyStoreSpi
     {
         synchronized (certificateEntries)
         {
-            for (Enumerator it = certificateEntries.elements(); it.hasNextElement(); )
+            for (Enumeration it = certificateEntries.keys(); it.hasMoreElements(); )
             {
-                BCJKSTrustedCertEntry entry = (BCJKSTrustedCertEntry)it.nextElement();
-                if (entry.getValue().cert.equals(cert))
+                String key = (String)it.nextElement();
+                BCJKSTrustedCertEntry entry = (BCJKSTrustedCertEntry)certificateEntries.get(key);
+                if (entry.cert.equals(cert))
                 {
-                    return (String)entry.getKey();
+                    return key;
                 }
             }
             return null;
@@ -373,7 +374,7 @@ public class JKSKeyStoreSpi
     /**
      * BCJKSTrustedCertEntry is a internal container for the certificate entry.
      */
-    private static final class BCJKSTrustedCertEntry
+    static final class BCJKSTrustedCertEntry
     {
         final Date date;
         final Certificate cert;

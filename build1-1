@@ -54,6 +54,7 @@ mkdir -p $jdk11src
 ((cd pkix/src/test/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd util/src/main/java && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd util/src/test/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd util/src/test/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
 
 find $jdk11src -name "*.java" -exec scripts/trim.sh \{\} \;
 find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
@@ -162,7 +163,6 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
     rm org/bouncycastle/asn1/cms/test/OctetStringTest.java
     rm org/bouncycastle/asn1/cms/test/ParseTest.java
-    rm org/bouncycastle/asn1/esf/test/CMCStatusTest.java
     rm org/bouncycastle/asn1/cmc/test/CMCFailInfoTest.java
     rm org/bouncycastle/asn1/cmc/test/CMCStatusTest.java
     rm org/bouncycastle/asn1/test/ASN1IntegerTest.java
@@ -553,8 +553,12 @@ then
 
     echo "compiling"
 
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip */*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip */*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip c*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip [imo]*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip [deptv]*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip t*/*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip p*/*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip c*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip */*/*/*.java )
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.cert.test.CertTest
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.cert.test.AttrCertTest
@@ -579,6 +583,7 @@ then
     ((cd pg/src/test/java && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/test/jdk1.2 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/test/jdk1.1 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/main/javadoc && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     find $artifacts/bcpg-jdk11-$base -name "*.java" -exec scripts/trim.sh \{\} \;
