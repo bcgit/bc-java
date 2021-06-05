@@ -1191,12 +1191,14 @@ public class TlsExtensionsUtils
         {
             throw new IllegalArgumentException("'extensionData' cannot be null");
         }
+        int diff = 0;
         for (int i = 0; i < extensionData.length; ++i)
         {
-            if (extensionData[i] != 0)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
+            diff |= extensionData[i];
+        }
+        if (diff != 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
         return extensionData.length;
     }

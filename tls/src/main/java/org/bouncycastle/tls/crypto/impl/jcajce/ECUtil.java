@@ -137,6 +137,17 @@ class ECUtil
 
     static ECParameterSpec getECParameterSpec(JcaTlsCrypto crypto, AlgorithmParameterSpec initSpec)
     {
+        KeyPairGenerator kpGen;
+        try
+        {
+            kpGen = crypto.getHelper().createKeyPairGenerator("EC");
+            kpGen.initialize(initSpec, crypto.getSecureRandom());
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+
         // Try the "modern" way
         try
         {
@@ -161,8 +172,6 @@ class ECUtil
          */
         try
         {
-            KeyPairGenerator kpGen = crypto.getHelper().createKeyPairGenerator("EC");
-            kpGen.initialize(initSpec, crypto.getSecureRandom());
             KeyPair kp = kpGen.generateKeyPair();
             return ((ECKey)kp.getPrivate()).getParams();
         }
