@@ -69,6 +69,15 @@ public class JcaDefaultTlsCredentialedSigner
         }
         else if (ECUtil.isECPrivateKey(privateKey))
         {
+            if (signatureAndHashAlgorithm != null)
+            {
+                int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+                if (SignatureScheme.isECDSA(signatureScheme))
+                {
+                    return new JcaTlsECDSA13Signer(crypto, privateKey, signatureScheme);
+                }
+            }
+
             signer = new JcaTlsECDSASigner(crypto, privateKey);
         }
         else if ("Ed25519".equalsIgnoreCase(algorithm))
