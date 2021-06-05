@@ -30,7 +30,6 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
@@ -127,16 +126,6 @@ class CMSSignedHelper
         }
 
         return encryptionAlgOID;
-    }
-
-    AlgorithmIdentifier fixAlgID(AlgorithmIdentifier algId)
-    {
-        if (algId.getParameters() == null)
-        {
-            return new AlgorithmIdentifier(algId.getAlgorithm(), DERNull.INSTANCE);
-        }
-
-        return algId;
     }
 
     AlgorithmIdentifier fixDigestAlgID(AlgorithmIdentifier algId, DigestAlgorithmIdentifierFinder dgstAlgFinder)
