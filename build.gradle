@@ -55,7 +55,7 @@ subprojects {
       targetCompatibility = 1.8
   }
 
-  version = '1.69-SNAPSHOT'
+  version = '1.69'
 
   test {
     systemProperty 'bc.test.data.home', bcTestDataHome
