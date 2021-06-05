@@ -159,7 +159,7 @@ class CMSUtils
         Iterator<SignerInformation> counterSignatureIt = counterSignaturesStore.iterator();
         while (counterSignatureIt.hasNext())
         {
-            SignerInformation counterSigner = counterSignatureIt.next();
+            SignerInformation counterSigner = (SignerInformation)counterSignatureIt.next();
             digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(counterSigner.getDigestAlgorithmID(), dgstAlgFinder));
         }
     }
