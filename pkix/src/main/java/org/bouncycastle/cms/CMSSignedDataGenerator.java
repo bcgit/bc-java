@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -17,6 +19,7 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
  * general class for generating a pkcs7-signature message.
@@ -116,7 +119,7 @@ public class CMSSignedDataGenerator
 //            // TODO signedAttrs must be present for all signers
 //        }
 
-        ASN1EncodableVector  digestAlgs = new ASN1EncodableVector();
+        Set<AlgorithmIdentifier> digestAlgs = new LinkedHashSet<AlgorithmIdentifier>();
         ASN1EncodableVector  signerInfos = new ASN1EncodableVector();
 
         digests.clear();  // clear the current preserved digest state
@@ -127,8 +130,7 @@ public class CMSSignedDataGenerator
         for (Iterator it = _signers.iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID(), digestAlgIdFinder));
-
+            CMSUtils.addDigestAlgs(digestAlgs, signer, digestAlgIdFinder);
             // TODO Verify the content type and calculated digest match the precalculated SignerInfo
             signerInfos.add(signer.toASN1Structure());
         }
@@ -204,7 +206,7 @@ public class CMSSignedDataGenerator
         ContentInfo encInfo = new ContentInfo(contentTypeOID, octs);
 
         SignedData  sd = new SignedData(
-                                 new DERSet(digestAlgs),
+                                 CMSUtils.convertToBERSet(digestAlgs),
                                  encInfo,
                                  certificates,
                                  certrevlist,

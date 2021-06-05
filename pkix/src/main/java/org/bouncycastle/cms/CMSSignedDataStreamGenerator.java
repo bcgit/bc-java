@@ -3,8 +3,10 @@ package org.bouncycastle.cms;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -189,7 +191,7 @@ public class CMSSignedDataStreamGenerator
         
         sigGen.addObject(calculateVersion(eContentType));
         
-        ASN1EncodableVector  digestAlgs = new ASN1EncodableVector();
+        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
 
         //
         // add the precalculated SignerInfo digest algorithms.
@@ -197,9 +199,8 @@ public class CMSSignedDataStreamGenerator
         for (Iterator it = _signers.iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            AlgorithmIdentifier digAlg = CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID(), digestAlgIdFinder);
 
-            digestAlgs.add(digAlg);
+            CMSUtils.addDigestAlgs(digestAlgs, signer, digestAlgIdFinder);
         }
         
         //
@@ -213,7 +214,7 @@ public class CMSSignedDataStreamGenerator
             digestAlgs.add(signerGen.getDigestAlgorithm());
         }
 
-        sigGen.getRawOutputStream().write(new DERSet(digestAlgs).getEncoded());
+        sigGen.getRawOutputStream().write(CMSUtils.convertToBERSet(digestAlgs).getEncoded());
         
         BERSequenceGenerator eiGen = new BERSequenceGenerator(sigGen.getRawOutputStream());
         eiGen.addObject(eContentType);

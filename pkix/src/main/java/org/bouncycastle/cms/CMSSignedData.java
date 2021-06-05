@@ -21,7 +21,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERSequence;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
@@ -509,23 +508,23 @@ public class CMSSignedData
         //
         // replace the signers in the SignedData object
         //
-        ASN1EncodableVector digestAlgs = new ASN1EncodableVector();
+        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
         ASN1EncodableVector vec = new ASN1EncodableVector();
         
         Iterator    it = signerInformationStore.getSigners().iterator();
         while (it.hasNext())
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID(), dgstAlgFinder));
+            CMSUtils.addDigestAlgs(digestAlgs, signer, dgstAlgFinder);
             vec.add(signer.toASN1Structure());
         }
 
-        ASN1Set             digests = new DERSet(digestAlgs);
+        ASN1Set             digests = CMSUtils.convertToBERSet(digestAlgs);
         ASN1Set             signers = new DLSet(vec);
         ASN1Sequence        sD = (ASN1Sequence)signedData.signedData.toASN1Primitive();
 
         vec = new ASN1EncodableVector();
-        
+
         //
         // signers are the last item in the sequence.
         //
@@ -536,16 +535,16 @@ public class CMSSignedData
         {
             vec.add(sD.getObjectAt(i));
         }
-        
+
         vec.add(signers);
-        
+
         cms.signedData = SignedData.getInstance(new BERSequence(vec));
-        
+
         //
         // replace the contentInfo with the new one
         //
         cms.contentInfo = new ContentInfo(cms.contentInfo.getContentType(), cms.signedData);
-        
+
         return cms;
     }
 
