@@ -175,6 +175,7 @@ and has the following implemenations.
 <tr><td><b>EAXBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
 <tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
+<tr><td><b>GCMSIVBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - RFC 8452.</td></tr>
 <tr><td><b>KCCMBlockCipher</b></td><td>BlockCipher</td><td>DSTU 7624 Packet mode - requires all data up front.</td></tr>
 <tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>ChaCha20Poly1305</b></td><td>AEADCipher</td><td>&nbsp;</td></tr>
@@ -315,11 +316,15 @@ implementations
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
 <tr><td><b>Blake2sDigest</b></td><td>128, 160, 224, 256</td><td></td></tr>
 <tr><td><b>Blake2bDigest</b></td><td>224, 256, 384, 512</td><td></td></tr>
+<tr><td><b>Blake3Digest</b></td><td>224, 256, 384, 512</td><td></td></tr>
+<tr><td><b>CSHAKEDigest</b></td><td>XOF</td><td>SP 800-185, based on SHAKE128/SHAKE256</td></tr>
 <tr><td><b>DSTU7564Digest</b></td><td>256, 384, 512</td><td></td></tr>
+<tr><td><b>Kangaroo</b></td><td>XOF</td><td>Built on Keccak-p</td></tr>
 <tr><td><b>KeccakDigest</b></td><td>224, 256, 288, 384, 512</td><td></td></tr>
 <tr><td><b>MD2Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>MD4Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>MD5Digest</b></td><td>128</td><td>&nbsp;</td></tr>
+<tr><td><b>ParallelHash</b></td><td>XOF</td><td>XOF based on cSHAKE (SP 800-185).</td></tr>
 <tr><td><b>RipeMD128Digest</b></td><td>128</td><td>basic RipeMD</td></tr>
 <tr><td><b>RipeMD160Digest</b></td><td>160</td><td>enhanced version of RipeMD</td></tr>
 <tr><td><b>RipeMD256Digest</b></td><td>256</td><td>expanded version of RipeMD128</td></tr>
@@ -334,6 +339,7 @@ implementations
 <tr><td><b>SkeinDigest</b></td><td>any byte length</td><td>256 bit, 512 bit and 1024 state sizes. Additional parameterisation using SkeinParameters.</td></tr>
 <tr><td><b>SM3Digest</b></td><td>256</td><td>The SM3 Digest.</td></tr>
 <tr><td><b>TigerDigest</b></td><td>192</td><td>The Tiger Digest.</td></tr>
+<tr><td><b>TupleHash</b></td><td>XOF</td><td>XOF based on cSHAKE (SP 800-185).</td></tr>
 <tr><td><b>GOST3411Digest</b></td><td>256</td><td>The GOST-3411 Digest.</td></tr>
 <tr><td><b>GOST3411_2012_256Digest</b></td><td>256</td><td>The GOST-3411-2012-256 Digest.</td></tr>
 <tr><td><b>GOST3411_2012_512Digest</b></td><td>512</td><td>The GOST-3411-2012-512 Digest.</td></tr>
@@ -559,19 +565,22 @@ The policy files can be found at the same place you downloaded the JDK.
 
 <p>Modes:
 <ul>
-<li>ECB
-<li>CBC
-<li>OFB(n)
-<li>CFB(n)
-<li>SIC (also known as CTR)
-<li>OpenPGPCFB
-<li>CTS (equivalent to CBC/WithCTS)
-<li>GOFB
-<li>GCFB
-<li>CCM (AEAD)
-<li>EAX (AEAD)
-<li>GCM (AEAD)
-<li>OCB (AEAD)
+<li>ECB</li>
+<li>CBC</li>
+<li>OFB(n)</li>
+<li>CFB(n)</li>
+<li>SIC (also known as CTR)</li>
+<li>OpenPGPCFB</li>
+<li>CTS (equivalent to CBC/WithCTS)</li>
+<li>FF1</li>
+<li>FF3-1</li>
+<li>GOFB</li>
+<li>GCFB</li>
+<li>CCM (AEAD)</li>
+<li>EAX (AEAD)</li>
+<li>GCM (AEAD)</li>
+<li>GCM-SIV (AEAD)</li>
+<li>OCB (AEAD)</li>
 </ul>
 
 <p>
@@ -859,6 +868,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA1withRSA</li>
 <li>RIPEMD128withRSA</li>
 <li>RIPEMD160withRSA</li>
+<li>RIPEMD160withDSA</li>
 <li>RIPEMD160withECDSA</li>
 <li>RIPEMD256withRSA</li>
 <li>SHA1withDSA</li>
@@ -895,6 +905,17 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA3-256withECDSA</li>
 <li>SHA3-384withECDSA</li>
 <li>SHA3-512withECDSA</li>
+<li>SHAKE128withECDSA</li>
+<li>SHAKE256withECDSA</li>
+<li>SHA1withPLAIN-ECDSA</li>
+<li>SHA224withPLAIN-ECDSA</li>
+<li>SHA256withPLAIN-ECDSA</li>
+<li>SHA384withPLAIN-ECDSA</li>
+<li>SHA512withPLAIN-ECDSA</li>
+<li>SHA3-224withPLAIN-ECDSA</li>
+<li>SHA3-256withPLAIN-ECDSA</li>
+<li>SHA3-384withPLAIN-ECDSA</li>
+<li>SHA3-512withPLAIN-ECDSA</li>
 <li>SHA1withECNR</li>
 <li>SHA224withECNR</li>
 <li>SHA256withECNR</li>
