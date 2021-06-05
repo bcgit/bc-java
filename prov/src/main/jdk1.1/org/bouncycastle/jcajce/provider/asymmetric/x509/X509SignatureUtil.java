@@ -27,6 +27,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
+
 
 class X509SignatureUtil
 {
@@ -54,7 +56,14 @@ class X509SignatureUtil
 
             try
             {
-                sigParams = AlgorithmParameters.getInstance(signature.getAlgorithm());
+                if (signature.getAlgorithm().indexOf("MGF1") > 0)
+                {
+                    sigParams = AlgorithmParameters.getInstance("PSS");
+                }
+                else
+                {
+                    sigParams = AlgorithmParameters.getInstance(Strings.toUpperCase(signature.getAlgorithm()));
+                }
             
                 sigParams.init(params.toASN1Primitive().getEncoded());
             }
@@ -76,13 +85,13 @@ class X509SignatureUtil
             {
                 RSASSAPSSparams rsaParams = RSASSAPSSparams.getInstance(params);
                 
-                return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "withRSAandMGF1";
+                return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "WITHRSAANDMGF1";
             }
             if (sigAlgId.getAlgorithm().equals(X9ObjectIdentifiers.ecdsa_with_SHA2))
             {
                 ASN1Sequence ecDsaParams = ASN1Sequence.getInstance(params);
                 
-                return getDigestAlgName((ASN1ObjectIdentifier)ecDsaParams.getObjectAt(0)) + "withECDSA";
+                return getDigestAlgName((ASN1ObjectIdentifier)ecDsaParams.getObjectAt(0)) + "WITHECDSA";
             }
         }
 
