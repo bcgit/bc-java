@@ -37,10 +37,15 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Internal class PKIXCRLUtil could throw a NullPointerException for CRLs with an absent nextUpdate field. This has been fixed.</li>
 <li>PGP ArmoredInputStream now fails earlier on malformed headers.</li>
 <li>The McElieceKobaraImaiCipher was randomly throwing "Bad Padding: invalid ciphertext" exception while decrypting due to leading zeroes been missed during processing of the cipher text. This has been fixed.</li>
+<li>Ed25519 keys being passed in via OpenSSH key spec are now validated in the KeyFactory.</li>
+<li>Blowfish keys are now range checked on cipher construction.</li>
+<li>In some cases PGPSecretKeyRing was failing to search its extraPubKeys list when searching for public keys.<li>
+<li>The BasicConstraintsValidation class in the BC cert path validation tools has improved conformance to RFC 5280.</li>
+<li>AlgorithmIdentifiers involving message digests now attempt to follow the latest conventions for the parameters field (basically DER NULL appears less).</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
-<li>GCM-SIV has been added to the lightweight API.</li>
+<li>GCM-SIV has been added to the lightweight API and the provider.</li>
 <li>Blake3 has been added to the lightweight API.</li>
 <li>The OpenSSL PEMParser can now be extended to add specialised parsers.</li>
 <li>Base32 encoding has now been added, the default alphabet is from RFC 4648.</li>
@@ -63,10 +68,19 @@ to the java.security file. We would be interested in hearing from anyone that ne
 <li>Some highlevel support for RFC 4998 ERS has been added for ArchiveTimeStamp and EvidenceRecord. The new classes are in
 the org.bouncycastle.tsp.ers package.</li>
 <li>ECIES has now also support SHA256, SHA384, and SHA512.</li>
+<li>digestAlgorithms filed in CMS SignedData now includes counter signature digest algorithms where possible.</li>
+<li>A new property "org.bouncycastle.jsse.config" has been added which can be used to configure the BCJSSE provider when it is created using the no-args constructor.</li>
+<li>In line with changes in OpenSSL 1.1.0, OpenSSLPBEParametersGenerator can now be configured with a digest.</li>
+<li>PGPKeyRingGenerator now includes a method for adding a subkey with a primary key binding signature.</li>
+<li>Support for ASN.1 PRIVATE tags has been added.</li>
+<li>Performance enhancements to Nokeon, AES, GCM, and SICBlockCipher.</li>
+<li>Support for ecoding/decoding McElieceCCA2 keys has been added to the PQC API</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>
 <li>There is a small API change in the PKIX package to the DigestAlgorithmIdentifierFinder interface as a find() method that takes an ASN1ObjectIdentifier has been added to it. For people wishing to extend their own implementations, see DefaultDigestAlgorithmIdentifierFinder for a sample implementation.</li>
+<li>A version of the bcmail API supporting Jakarta Mail has now been added (see bcjmail jar).</li>
+<li>Some work has been done on moving out code that does not need to be in the provider jar. This has reduced the size of the provider jar and should also make it easier for developers to patch the classes involved as they no longer need to be signed. bcpkix and bctls are both dependent on the new bcutil jar.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
