@@ -45,6 +45,7 @@ import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -1928,15 +1929,20 @@ public class NewSignedDataTest
             }
         };
 
+        Set digAlgs = s.getDigestAlgorithmIDs();
+
+        assertTrue(digAlgs.size() == 1);
+        assertTrue(digAlgs.contains(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE)));
+
         assertTrue(s.verifySignatures(vProv));
 
         SignerInformation origSigner = (SignerInformation)s.getSignerInfos().getSigners().toArray()[0];
 
         gen = new CMSSignedDataGenerator();
 
-        sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+        ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
 
-        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha1Signer, _origCert));
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha256Signer, _origCert));
 
         SignerInformationStore counterSigners = gen.generateCounterSigners(origSigner);
 
@@ -1972,6 +1978,12 @@ public class NewSignedDataTest
                 }
             }
         };
+
+        digAlgs = s.getDigestAlgorithmIDs();
+
+        assertTrue(digAlgs.size() == 2);
+        assertTrue(digAlgs.contains(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE)));
+        assertTrue(digAlgs.contains(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
 
         // verify sig and counter sig.
         assertTrue(s.verifySignatures(vProv, false));
