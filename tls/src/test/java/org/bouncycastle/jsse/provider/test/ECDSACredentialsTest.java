@@ -24,18 +24,129 @@ import junit.framework.TestCase;
 public class ECDSACredentialsTest
     extends TestCase
 {
+    private static final String HOST = "localhost";
+    private static final int PORT_NO_12_brainpoolP256r1 = 9030;
+    private static final int PORT_NO_12_brainpoolP384r1 = 9031;
+    private static final int PORT_NO_12_brainpoolP512r1 = 9032;
+    private static final int PORT_NO_12_secp256r1 = 9033;
+    private static final int PORT_NO_12_secp384r1 = 9034;
+    private static final int PORT_NO_12_secp521r1 = 9035;
+    private static final int PORT_NO_13_brainpoolP256r1 = 9036;
+    private static final int PORT_NO_13_brainpoolP384r1 = 9037;
+    private static final int PORT_NO_13_brainpoolP512r1 = 9038;
+    private static final int PORT_NO_13_secp256r1 = 9039;
+    private static final int PORT_NO_13_secp384r1 = 9040;
+    private static final int PORT_NO_13_secp521r1 = 9041;
+
+    private static final String PROPERTY_NAMED_GROUPS = "jdk.tls.namedGroups";
+
     protected void setUp()
     {
+        // NOTE: SunEC doesn't support brainpool curves until JDK 11
         ProviderUtils.setupHighPriority(false);
+//        ProviderUtils.setupLowPriority(false);
+
+        System.setProperty(PROPERTY_NAMED_GROUPS,
+            "secp256r1,secp384r1,secp521r1," +
+            "brainpoolP256r1tls13,brainpoolP384r1tls13,brainpoolP512r1tls13," +
+            "brainpoolP256r1,brainpoolP384r1,brainpoolP512r1");
     }
 
-    private static final String HOST = "localhost";
-    private static final int PORT_NO_12_secp256r1 = 9030;
-    private static final int PORT_NO_12_secp384r1 = 9031;
-    private static final int PORT_NO_12_secp521r1 = 9032;
-    private static final int PORT_NO_13_secp256r1 = 9033;
-    private static final int PORT_NO_13_secp384r1 = 9034;
-    private static final int PORT_NO_13_secp521r1 = 9035;
+    protected void tearDown()
+    {
+        System.clearProperty(PROPERTY_NAMED_GROUPS);
+    }
+
+    public void test12_brainpoolP256r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_12_brainpoolP256r1, "TLSv1.2", NamedGroup.brainpoolP256r1);
+    }
+
+    public void test12_brainpoolP384r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_12_brainpoolP384r1, "TLSv1.2", NamedGroup.brainpoolP384r1);
+    }
+
+    public void test12_brainpoolP512r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_12_brainpoolP512r1, "TLSv1.2", NamedGroup.brainpoolP512r1);
+    }
+
+    public void test12_secp256r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_12_secp256r1, "TLSv1.2", NamedGroup.secp256r1);
+    }
+
+    public void test12_secp384r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_12_secp384r1, "TLSv1.2", NamedGroup.secp384r1);
+    }
+
+    public void test12_secp521r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_12_secp521r1, "TLSv1.2", NamedGroup.secp521r1);
+    }
+
+    public void test13_brainpoolP256r1tls13() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_brainpoolP256r1, "TLSv1.3", NamedGroup.brainpoolP256r1tls13);
+    }
+
+    public void test13_brainpoolP384r1tls13() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_brainpoolP384r1, "TLSv1.3", NamedGroup.brainpoolP384r1tls13);
+    }
+
+    public void test13_brainpoolP512r1tls13() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_brainpoolP512r1, "TLSv1.3", NamedGroup.brainpoolP512r1tls13);
+    }
+
+    public void test13_secp256r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_secp256r1, "TLSv1.3", NamedGroup.secp256r1);
+    }
+
+    public void test13_secp384r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_secp384r1, "TLSv1.3", NamedGroup.secp384r1);
+    }
+
+    public void test13_secp521r1() throws Exception
+    {
+        implTestECDSACredentials(PORT_NO_13_secp521r1, "TLSv1.3", NamedGroup.secp521r1);
+    }
+
+    private void implTestECDSACredentials(int port, String protocol, int namedGroup) throws Exception
+    {
+        char[] keyPass = "keyPassword".toCharArray();
+
+        String curveName = NamedGroup.getCurveName(namedGroup);
+        KeyPair caKeyPair = TestUtils.generateECKeyPair(curveName);
+        X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
+
+        KeyStore serverKs = createKeyStore();
+        serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[] { caCert });
+
+        KeyStore clientKs = createKeyStore();
+        clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[] { caCert });
+
+        TestProtocolUtil.runClientAndServer(new ECDSAServer(port, protocol, serverKs, keyPass, caCert),
+            new ECDSAClient(port, protocol, clientKs, keyPass, caCert));
+    }
+
+    private static KeyStore createKeyStore() throws GeneralSecurityException, IOException
+    {
+        /*
+         * NOTE: At the time of writing, default JKS implementation can't recover PKCS8 private keys
+         * with version != 0, which e.g. is the case when a public key is included, which the BC
+         * provider currently does for EdDSA.
+         */
+//        KeyStore keyStore = KeyStore.getInstance("JKS");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
+        keyStore.load(null, null);
+        return keyStore;
+    }
 
     static class ECDSAClient
         implements TestProtocolUtil.BlockingCallable
@@ -178,66 +289,5 @@ public class ECDSACredentialsTest
         {
             latch.await();
         }
-    }
-
-    public void test12_secp256r1() throws Exception
-    {
-        implTestECDSACredentials(PORT_NO_12_secp256r1, "TLSv1.2", NamedGroup.secp256r1);
-    }
-
-    public void test12_secp384r1() throws Exception
-    {
-        implTestECDSACredentials(PORT_NO_12_secp384r1, "TLSv1.2", NamedGroup.secp384r1);
-    }
-
-    public void test12_secp521r1() throws Exception
-    {
-        implTestECDSACredentials(PORT_NO_12_secp521r1, "TLSv1.2", NamedGroup.secp521r1);
-    }
-
-    public void test13_secp256r1() throws Exception
-    {
-        implTestECDSACredentials(PORT_NO_13_secp256r1, "TLSv1.3", NamedGroup.secp256r1);
-    }
-
-    public void test13_secp384r1() throws Exception
-    {
-        implTestECDSACredentials(PORT_NO_13_secp384r1, "TLSv1.3", NamedGroup.secp384r1);
-    }
-
-    public void test13_secp521r1() throws Exception
-    {
-        implTestECDSACredentials(PORT_NO_13_secp521r1, "TLSv1.3", NamedGroup.secp521r1);
-    }
-
-    private void implTestECDSACredentials(int port, String protocol, int namedGroup) throws Exception
-    {
-        char[] keyPass = "keyPassword".toCharArray();
-
-        String curveName = NamedGroup.getCurveName(namedGroup);
-        KeyPair caKeyPair = TestUtils.generateECKeyPair(curveName);
-        X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
-
-        KeyStore serverKs = createKeyStore();
-        serverKs.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[] { caCert });
-
-        KeyStore clientKs = createKeyStore();
-        clientKs.setKeyEntry("client", caKeyPair.getPrivate(), keyPass, new X509Certificate[] { caCert });
-
-        TestProtocolUtil.runClientAndServer(new ECDSAServer(port, protocol, serverKs, keyPass, caCert),
-            new ECDSAClient(port, protocol, clientKs, keyPass, caCert));
-    }
-
-    private static KeyStore createKeyStore() throws GeneralSecurityException, IOException
-    {
-        /*
-         * NOTE: At the time of writing, default JKS implementation can't recover PKCS8 private keys
-         * with version != 0, which e.g. is the case when a public key is included, which the BC
-         * provider currently does for EdDSA.
-         */
-//        KeyStore keyStore = KeyStore.getInstance("JKS");
-        KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
-        keyStore.load(null, null);
-        return keyStore;
     }
 }
