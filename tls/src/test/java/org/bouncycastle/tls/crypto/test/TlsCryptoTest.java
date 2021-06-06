@@ -442,9 +442,10 @@ public abstract class TlsCryptoTest
                 return ProtocolVersion.TLSv13;
             }
         };
-
-        for (int signatureScheme : signatureSchemes)
+        // jdk 1.4 test also
+        for (int i = 0; i != signatureSchemes.length; i++)
         {
+            int signatureScheme = signatureSchemes[i];
             if (!crypto.hasSignatureScheme(signatureScheme))
             {
                 continue;

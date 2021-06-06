@@ -32,6 +32,7 @@ import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateEntry;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
@@ -245,12 +246,11 @@ public class TlsTestUtils
         }
     }
 
-    static TlsCredentialedSigner loadSignerCredentials(TlsContext context, String[] certResources, String keyResource,
-        SignatureAndHashAlgorithm signatureAndHashAlgorithm) throws IOException
+    public static TlsCredentialedSigner loadSignerCredentials(TlsCryptoParameters cryptoParams, TlsCrypto crypto,
+        String[] certResources, String keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+        throws IOException
     {
-        TlsCrypto crypto = context.getCrypto();
-        Certificate certificate = loadCertificateChain(context, certResources);
-        TlsCryptoParameters cryptoParams = new TlsCryptoParameters(context);
+        Certificate certificate = loadCertificateChain(cryptoParams.getServerVersion(), crypto, certResources);
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
         if (crypto instanceof BcTlsCrypto)
@@ -266,6 +266,15 @@ public class TlsTestUtils
 
             return new JcaDefaultTlsCredentialedSigner(cryptoParams, jcaCrypto, privateKey, certificate, signatureAndHashAlgorithm);
         }
+    }
+
+    static TlsCredentialedSigner loadSignerCredentials(TlsContext context, String[] certResources,
+        String keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm) throws IOException
+    {
+        TlsCrypto crypto = context.getCrypto();
+        TlsCryptoParameters cryptoParams = new TlsCryptoParameters(context);
+
+        return loadSignerCredentials(cryptoParams, crypto, certResources, keyResource, signatureAndHashAlgorithm);
     }
 
     static TlsCredentialedSigner loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,
@@ -318,12 +327,10 @@ public class TlsTestUtils
         return loadSignerCredentials(context, supportedSignatureAlgorithms, signatureAlgorithm, certResource, keyResource);
     }
 
-    static Certificate loadCertificateChain(TlsContext context, String[] resources)
+    static Certificate loadCertificateChain(ProtocolVersion protocolVersion, TlsCrypto crypto, String[] resources)
         throws IOException
     {
-        TlsCrypto crypto = context.getCrypto();
-
-        if (TlsUtils.isTLSv13(context))
+        if (TlsUtils.isTLSv13(protocolVersion))
         {
             CertificateEntry[] certificateEntryList = new CertificateEntry[resources.length];
             for (int i = 0; i < resources.length; ++i)
@@ -350,6 +357,12 @@ public class TlsTestUtils
             }
             return new Certificate(chain);
         }
+    }
+
+    static Certificate loadCertificateChain(TlsContext context, String[] resources)
+        throws IOException
+    {
+        return loadCertificateChain(context.getServerVersion(), context.getCrypto(), resources);
     }
 
     static org.bouncycastle.asn1.x509.Certificate loadBcCertificateResource(String resource)
@@ -431,7 +444,7 @@ public class TlsTestUtils
         {
             cause = e;
         }
-        throw new IllegalArgumentException("'resource' doesn't specify a valid private key: " + cause.getMessage());
+        throw new IllegalArgumentException("'resource' doesn't specify a valid private key: " + cause);
     }
 
     static PrivateKey loadJcaPkcs8PrivateKey(JcaTlsCrypto crypto, byte[] encoded) throws GeneralSecurityException
