@@ -194,7 +194,6 @@ public class SignatureScheme
 
     public static short getHashAlgorithm(int signatureScheme)
     {
-        // TODO[RFC 8998] sm2sig_sm3
         return (short)((signatureScheme >>> 8) & 0xFF);
     }
 
@@ -202,6 +201,13 @@ public class SignatureScheme
     {
         // TODO[RFC 8998] sm2sig_sm3
         return (short)(signatureScheme & 0xFF);
+    }
+
+    public static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(int signatureScheme)
+    {
+        return SignatureAndHashAlgorithm.getInstance(
+            getHashAlgorithm(signatureScheme),
+            getSignatureAlgorithm(signatureScheme));
     }
 
     public static String getText(int signatureScheme)
