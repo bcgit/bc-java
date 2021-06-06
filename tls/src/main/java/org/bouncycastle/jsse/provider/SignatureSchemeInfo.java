@@ -239,10 +239,7 @@ class SignatureSchemeInfo
             throw new IllegalArgumentException();
         }
 
-        short hashAlgorithm = SignatureScheme.getHashAlgorithm(signatureScheme);
-        short signatureAlgorithm = SignatureScheme.getSignatureAlgorithm(signatureScheme);
-
-        return SignatureAndHashAlgorithm.getInstance(hashAlgorithm, signatureAlgorithm);
+        return SignatureScheme.getSignatureAndHashAlgorithm(signatureScheme);
     }
 
     static Vector<SignatureAndHashAlgorithm> getSignatureAndHashAlgorithms(List<SignatureSchemeInfo> signatureSchemeInfos)

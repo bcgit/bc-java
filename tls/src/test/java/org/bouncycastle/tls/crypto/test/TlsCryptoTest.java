@@ -451,9 +451,8 @@ public abstract class TlsCryptoTest
                 continue;
             }
 
-            SignatureAndHashAlgorithm signatureAndHashAlgorithm =  SignatureAndHashAlgorithm.getInstance(
-                SignatureScheme.getHashAlgorithm(signatureScheme),
-                SignatureScheme.getSignatureAlgorithm(signatureScheme));
+            SignatureAndHashAlgorithm signatureAndHashAlgorithm = SignatureScheme.getSignatureAndHashAlgorithm(
+                signatureScheme);
 
             TlsCredentialedSigner credentialedSigner = loadCredentialedSigner(cryptoParams,
                 signatureAndHashAlgorithm);
