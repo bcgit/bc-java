@@ -42,6 +42,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>In some cases PGPSecretKeyRing was failing to search its extraPubKeys list when searching for public keys.<li>
 <li>The BasicConstraintsValidation class in the BC cert path validation tools has improved conformance to RFC 5280.</li>
 <li>AlgorithmIdentifiers involving message digests now attempt to follow the latest conventions for the parameters field (basically DER NULL appears less).</li>
+<li>Fix various conversions and interoperability for XDH and EdDSA between BC and SunEC providers.</li>
+<li>TLS: Prevent attempts to use KeyUpdate mechanism in versions before TLS 1.3.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -75,6 +77,14 @@ the org.bouncycastle.tsp.ers package.</li>
 <li>Support for ASN.1 PRIVATE tags has been added.</li>
 <li>Performance enhancements to Nokeon, AES, GCM, and SICBlockCipher.</li>
 <li>Support for ecoding/decoding McElieceCCA2 keys has been added to the PQC API</li>
+<li>BCJSSE: Added support for jdk.tls.maxCertificateChainLength system property (default is 10).</li>
+<li>BCJSSE: Added support for jdk.tls.maxHandshakeMessageSize system property (default is 32768).</li>
+<li>BCJSSE: Added support for jdk.tls.client.enableCAExtension (default is 'false').</li>
+<li>BCJSSE: Added support for jdk.tls.client.cipherSuites system property.</li>
+<li>BCJSSE: Added support for jdk.tls.server.cipherSuites system property.</li>
+<li>BCJSSE: Extended ALPN support via standard JSSE API to JDK 8 versions after u251/u252.</li>
+<li>BCJSSE: Key managers now support EC credentials for use with TLS 1.3 ECDSA signature schemes (including brainpool).</li>
+<li>TLS: Add TLS 1.3 support for brainpool curves per RFC 8734.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>
