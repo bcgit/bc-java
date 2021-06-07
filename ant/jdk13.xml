@@ -297,6 +297,13 @@
                 <exclude name="**/MultipartParserTest.java"/>
             </fileset>
         </replaceregexp>
+        <replaceregexp match="LinkedHashSet" replace="HashSet" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <exclude name="**/MultipartParserTest.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="\.\.\." replace="[]" flags="g" byline="true">
         <replaceregexp match="\.\.\." replace="[]" flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>

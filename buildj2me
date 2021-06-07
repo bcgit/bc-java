@@ -122,6 +122,7 @@ then
         rm src/org/bouncycastle/crypto/digests/Blake3Digest.java
         rm src/org/bouncycastle/crypto/macs/Blake3Mac.java
         rm src/org/bouncycastle/crypto/test/Blake3*.java
+        rm src/org/bouncycastle/crypto/params/Blake3*.java
         find src -name AllTests.java -exec rm {} \;
         find src -name jcajce -exec rm -r {} \;
         rm src/org/bouncycastle/asn1/test/GetInstanceTest.java

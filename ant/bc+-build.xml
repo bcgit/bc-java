@@ -1008,7 +1008,7 @@
         </junitreport>
     </target>
 
-    <target name="javadoc-libraries" depends="javadoc-pkix, javadoc-mail, javadoc-pg" />
+    <target name="javadoc-libraries" depends="javadoc-util, javadoc-pkix, javadoc-mail, javadoc-pg" />
 
     <!--
           Provider JavaDoc
@@ -1143,6 +1143,57 @@
 
         <copy todir="${tls.target.docs.dir}">
              <fileset dir="${artifacts.docs.dir}/bctls" />
+        </copy>
+    </target>
+
+    <!--
+          UTIL JavaDoc
+    -->
+    <target name="javadoc-util" depends="initMacros">
+        <copy todir="${util.target.src.dir}">
+             <fileset dir="${src.dir}">
+		<include name="org/bouncycastle/asn1/bsi/*.java" />
+ 		<include name="org/bouncycastle/asn1/cmp/*.java" />
+ 		<include name="org/bouncycastle/asn1/crmf/*.java" />
+ 		<include name="org/bouncycastle/asn1/eac/*.java" />
+ 		<include name="org/bouncycastle/asn1/ess/*.java" />
+ 		<include name="org/bouncycastle/asn1/icao/*.java" />
+    		<include name="org/bouncycastle/asn1/its/*.java" />
+   		<include name="org/bouncycastle/asn1/tsp/*.java" />
+		<include name="org/bouncycastle/asn1/cmc/*.java" />
+		<include name="org/bouncycastle/asn1/cms/*.java" />
+		<include name="org/bouncycastle/asn1/dvcs/*.java" />
+		<include name="org/bouncycastle/asn1/esf/*.java" />
+		<include name="org/bouncycastle/asn1/est/*.java" />
+		<include name="org/bouncycastle/asn1/isismtt/**/*.java" />
+		<include name="org/bouncycastle/asn1/smime/*.java" />
+                <include name="org/bouncycastle/asn1/bsi/**/*.html" />
+                <include name="org/bouncycastle/asn1/cmp/**/*.html" />
+                <include name="org/bouncycastle/asn1/crmf/**/*.html" />
+                <include name="org/bouncycastle/asn1/eac/**/*.html" />
+                <include name="org/bouncycastle/asn1/ess/**/*.html" />
+                <include name="org/bouncycastle/asn1/icao/**/*.html" />
+                <include name="org/bouncycastle/asn1/its/**/*.html" />
+                <include name="org/bouncycastle/asn1/tsp/**/*.html" />
+                <include name="org/bouncycastle/asn1/cmc/**/*.html" />
+                <include name="org/bouncycastle/asn1/cms/**/*.html" />
+                <include name="org/bouncycastle/asn1/dvcs/**/*.html" />
+                <include name="org/bouncycastle/asn1/esf/**/*.html" />
+                <include name="org/bouncycastle/asn1/est/**/*.html" />
+                <include name="org/bouncycastle/asn1/isismtt/**/*.html" />
+                <include name="org/bouncycastle/asn1/smime/**/*.html" />
+             </fileset>
+        </copy>
+
+        <compile-doc srcDir="${util.target.src.dir}" docsDir="${artifacts.docs.dir}/bcutil">
+            <docElements>
+                <package name="org.bouncycastle.asn1.*" />
+                <group title="Extra ASN.1 Packages" packages="org.bouncycastle.asn1*" />
+            </docElements>
+        </compile-doc>
+
+        <copy todir="${util.target.docs.dir}">
+             <fileset dir="${artifacts.docs.dir}/bcutil" />
         </copy>
     </target>
 

@@ -20,6 +20,8 @@ The **core** module provides all the functionality in the ligthweight APIs.
 
 The **prov** module provides all the JCA/JCE provider functionality.
 
+The **util** module is the home for code which is used by other modules that does not need to be in prov. At the moment this is largely ASN.1 classes for the PKIX module.
+
 The **pkix** module is the home for code for X.509 certificate generation and the APIs for standards that rely on ASN.1 such
 as CMS, TSP, PKCS#12, OCSP, CRMF, and CMP.
 
