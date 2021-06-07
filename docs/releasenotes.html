@@ -39,7 +39,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2021, June 7th.
 <li>The McElieceKobaraImaiCipher was randomly throwing "Bad Padding: invalid ciphertext" exception while decrypting due to leading zeroes been missed during processing of the cipher text. This has been fixed.</li>
 <li>Ed25519 keys being passed in via OpenSSH key spec are now validated in the KeyFactory.</li>
 <li>Blowfish keys are now range checked on cipher construction.</li>
-<li>In some cases PGPSecretKeyRing was failing to search its extraPubKeys list when searching for public keys.<li>
+<li>In some cases PGPSecretKeyRing was failing to search its extraPubKeys list when searching for public keys.</li>
 <li>The BasicConstraintsValidation class in the BC cert path validation tools has improved conformance to RFC 5280.</li>
 <li>AlgorithmIdentifiers involving message digests now attempt to follow the latest conventions for the parameters field (basically DER NULL appears less).</li>
 <li>Fix various conversions and interoperability for XDH and EdDSA between BC and SunEC providers.</li>
