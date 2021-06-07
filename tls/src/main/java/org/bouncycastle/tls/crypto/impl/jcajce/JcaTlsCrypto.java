@@ -614,6 +614,12 @@ public class JcaTlsCrypto
         case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
         case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return true;
+
+        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        case SignatureAlgorithm.gostr34102012_256:
+        case SignatureAlgorithm.gostr34102012_512:
+        // TODO[RFC 8998]
+//        case SignatureAlgorithm.sm2:
         default:
             return false;
         }
@@ -621,15 +627,18 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
-        /*
-         * This is somewhat overkill, but much simpler for now. It's also consistent with SunJSSE behaviour.
-         */
-        if (sigAndHashAlgorithm.getHash() == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
-        {
-            return false;
-        }
+        short signature = sigAndHashAlgorithm.getSignature();
 
-        return hasSignatureAlgorithm(sigAndHashAlgorithm.getSignature());
+        switch (sigAndHashAlgorithm.getHash())
+        {
+        case HashAlgorithm.md5:
+            return SignatureAlgorithm.rsa == signature && hasSignatureAlgorithm(signature);
+        case HashAlgorithm.sha224:
+            // Somewhat overkill, but simpler for now. It's also consistent with SunJSSE behaviour.
+            return !JcaUtils.isSunMSCAPIProviderActive() && hasSignatureAlgorithm(signature);
+        default:
+            return hasSignatureAlgorithm(signature);
+        }
     }
 
     public boolean hasSignatureScheme(int signatureScheme)
@@ -640,17 +649,18 @@ public class JcaTlsCrypto
             return false;
         default:
         {
-            /*
-             * This is somewhat overkill, but much simpler for now. It's also consistent with SunJSSE behaviour.
-             */
-            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            short signature = SignatureScheme.getSignatureAlgorithm(signatureScheme);
 
-            if (cryptoHashAlgorithm == CryptoHashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
+            switch(SignatureScheme.getCryptoHashAlgorithm(signatureScheme))
             {
-                return false;
+            case CryptoHashAlgorithm.md5:
+                return SignatureAlgorithm.rsa == signature && hasSignatureAlgorithm(signature);
+            case CryptoHashAlgorithm.sha224:
+                // Somewhat overkill, but simpler for now. It's also consistent with SunJSSE behaviour.
+                return !JcaUtils.isSunMSCAPIProviderActive() && hasSignatureAlgorithm(signature);
+            default:
+                return hasSignatureAlgorithm(signature);
             }
-
-            return hasSignatureAlgorithm(SignatureScheme.getSignatureAlgorithm(signatureScheme));
         }
         }
     }

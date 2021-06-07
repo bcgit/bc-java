@@ -33,6 +33,7 @@ import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.EncryptionAlgorithm;
+import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -317,9 +318,13 @@ public class BcTlsCrypto
         case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
         case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
         case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
+            return true;
+
+        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        case SignatureAlgorithm.gostr34102012_256:
+        case SignatureAlgorithm.gostr34102012_512:
         // TODO[RFC 8998]
 //        case SignatureAlgorithm.sm2:
-            return true;
         default:
             return false;
         }
@@ -327,7 +332,15 @@ public class BcTlsCrypto
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
-        return hasSignatureAlgorithm(sigAndHashAlgorithm.getSignature());
+        short signature = sigAndHashAlgorithm.getSignature();
+
+        switch (sigAndHashAlgorithm.getHash())
+        {
+        case HashAlgorithm.md5:
+            return SignatureAlgorithm.rsa == signature && hasSignatureAlgorithm(signature);
+        default:
+            return hasSignatureAlgorithm(signature);
+        }
     }
 
     public boolean hasSignatureScheme(int signatureScheme)
@@ -337,7 +350,17 @@ public class BcTlsCrypto
         case SignatureScheme.sm2sig_sm3:
             return false;
         default:
-            return hasSignatureAlgorithm(SignatureScheme.getSignatureAlgorithm(signatureScheme));
+        {
+            short signature = SignatureScheme.getSignatureAlgorithm(signatureScheme);
+
+            switch(SignatureScheme.getCryptoHashAlgorithm(signatureScheme))
+            {
+            case CryptoHashAlgorithm.md5:
+                return SignatureAlgorithm.rsa == signature && hasSignatureAlgorithm(signature);
+            default:
+                return hasSignatureAlgorithm(signature);
+            }
+        }
         }
     }
 
