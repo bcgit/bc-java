@@ -480,7 +480,7 @@ public abstract class TlsCryptoTest
         for (int i = 0; i < signatureAlgorithms.length; ++i)
         {
             short signatureAlgorithm = signatureAlgorithms[i];
-            if (crypto.hasSignatureAlgorithm(signatureAlgorithm))
+            if (!crypto.hasSignatureAlgorithm(signatureAlgorithm))
             {
                 continue;
             }
@@ -524,7 +524,7 @@ public abstract class TlsCryptoTest
             }
         }
 
-        // Signature algorithms usable with HashAlgorithmIntrinsic in TLS 1.2
+        // Signature algorithms usable with HashAlgorithm.Intrinsic in TLS 1.2
         short[] intrinsicSignatureAlgorithms = new short[] { SignatureAlgorithm.ed25519, SignatureAlgorithm.ed448,
             SignatureAlgorithm.gostr34102012_256, SignatureAlgorithm.gostr34102012_512,
             SignatureAlgorithm.rsa_pss_pss_sha256, SignatureAlgorithm.rsa_pss_pss_sha384,
