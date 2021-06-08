@@ -13,7 +13,7 @@ import org.bouncycastle.util.Arrays;
  * A participant in a Password Authenticated Key Exchange by Juggling (J-PAKE) exchange.
  * <p>
  * The J-PAKE exchange is defined by Feng Hao and Peter Ryan in the paper
- * <a href="http://grouper.ieee.org/groups/1363/Research/contributions/hao-ryan-2008.pdf">
+ * <a href="https://grouper.ieee.org/groups/1363/Research/contributions/hao-ryan-2008.pdf">
  * "Password Authenticated Key Exchange by Juggling, 2008."</a>
  * <p>
  * The J-PAKE protocol is symmetric.
