@@ -684,7 +684,7 @@ public class IntegerPolynomial
         int N = coeffs.length;
 
         // upper bound for resultant(f, g) = ||f, 2||^deg(g) * ||g, 2||^deg(f) = squaresum(f)^(N/2) * 2^(deg(f)/2) because g(x)=x^N-1
-        // see http://jondalon.mathematik.uni-osnabrueck.de/staff/phpages/brunsw/CompAlg.pdf chapter 3
+        // see https://jondalon.mathematik.uni-osnabrueck.de/staff/phpages/brunsw/CompAlg.pdf chapter 3
         BigInteger max = squareSum().pow((N + 1) / 2);
         max = max.multiply(BigInteger.valueOf(2).pow((degree() + 1) / 2));
         BigInteger max2 = max.multiply(BigInteger.valueOf(2));
