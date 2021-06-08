@@ -9,7 +9,7 @@ class TlsTestServerProtocol extends TlsServerProtocol
 {
     protected final TlsTestConfig config;
 
-    public TlsTestServerProtocol(InputStream input, OutputStream output, TlsTestConfig config)
+    TlsTestServerProtocol(InputStream input, OutputStream output, TlsTestConfig config)
     {
         super(input, output);
 

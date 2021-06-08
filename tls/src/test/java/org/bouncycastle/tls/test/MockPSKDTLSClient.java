@@ -3,19 +3,16 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.security.SecureRandom;
-import java.util.Hashtable;
 
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.tls.ChannelBinding;
-import org.bouncycastle.tls.MaxFragmentLength;
 import org.bouncycastle.tls.PSKTlsClient;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
-import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsPSKIdentity;
 import org.bouncycastle.tls.TlsServerCertificate;
@@ -131,7 +128,7 @@ class MockPSKDTLSClient
             if (newSession.isResumable())
             {
                 byte[] newSessionID = newSession.getSessionID();
-                String hex = Hex.toHexString(newSessionID);
+                String hex = hex(newSessionID);
 
                 if (this.session != null && Arrays.areEqual(this.session.getSessionID(), newSessionID))
                 {

@@ -11,7 +11,7 @@ class TlsTestClientProtocol extends TlsClientProtocol
 {
     protected final TlsTestConfig config;
 
-    public TlsTestClientProtocol(InputStream input, OutputStream output, TlsTestConfig config)
+    TlsTestClientProtocol(InputStream input, OutputStream output, TlsTestConfig config)
     {
         super(input, output);
 

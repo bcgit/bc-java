@@ -2,7 +2,6 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -31,9 +30,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
-import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -79,7 +76,7 @@ class TlsTestClientImpl
 
     TlsTestClientImpl(TlsTestConfig config)
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        super(TlsTestSuite.getCrypto(config));
 
         this.config = config;
     }
@@ -92,17 +89,6 @@ class TlsTestClientImpl
     short getFirstFatalAlertDescription()
     {
         return firstFatalAlertDescription;
-    }
-
-    public TlsCrypto getCrypto()
-    {
-        switch (config.clientCrypto)
-        {
-        case TlsTestConfig.CRYPTO_JCA:
-            return TlsTestSuite.JCA_CRYPTO;
-        default:
-            return TlsTestSuite.BC_CRYPTO;
-        }
     }
 
     public Hashtable getClientExtensions() throws IOException
@@ -314,7 +300,7 @@ class TlsTestClientImpl
 
                         if (config.clientAuth == TlsTestConfig.CLIENT_AUTH_INVALID_CERT)
                         {
-                            cert = corruptCertificate(context.getCrypto(), cert);
+                            cert = corruptCertificate(cert);
                         }
 
                         return cert;
@@ -334,13 +320,13 @@ class TlsTestClientImpl
         };
     }
 
-    protected org.bouncycastle.tls.Certificate corruptCertificate(TlsCrypto crypto, org.bouncycastle.tls.Certificate cert)
+    protected org.bouncycastle.tls.Certificate corruptCertificate(org.bouncycastle.tls.Certificate cert)
     {
         CertificateEntry[] certEntryList = cert.getCertificateEntryList();
         try
         {
             CertificateEntry ee = certEntryList[0];
-            TlsCertificate corruptCert = corruptCertificateSignature(crypto, ee.getCertificate());
+            TlsCertificate corruptCert = corruptCertificateSignature(ee.getCertificate());
             certEntryList[0] = new CertificateEntry(corruptCert, ee.getExtensions());
         }
         catch (IOException e)
@@ -350,7 +336,7 @@ class TlsTestClientImpl
         return new org.bouncycastle.tls.Certificate(cert.getCertificateRequestContext(), certEntryList);
     }
 
-    protected TlsCertificate corruptCertificateSignature(TlsCrypto crypto, TlsCertificate tlsCertificate) throws IOException
+    protected TlsCertificate corruptCertificateSignature(TlsCertificate tlsCertificate) throws IOException
     {
         Certificate cert = Certificate.getInstance(tlsCertificate.getEncoded());
 
@@ -359,7 +345,9 @@ class TlsTestClientImpl
         v.add(cert.getSignatureAlgorithm());
         v.add(corruptSignature(cert.getSignature()));
 
-        return crypto.createCertificate(Certificate.getInstance(new DERSequence(v)).getEncoded(ASN1Encoding.DER));
+        cert = Certificate.getInstance(new DERSequence(v));
+
+        return getCrypto().createCertificate(cert.getEncoded(ASN1Encoding.DER));
     }
 
     protected DERBitString corruptSignature(DERBitString bs)
