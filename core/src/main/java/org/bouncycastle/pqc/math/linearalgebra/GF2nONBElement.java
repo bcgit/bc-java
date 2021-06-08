@@ -1116,7 +1116,7 @@ public class GF2nONBElement
 
     /**
      * Returns this element as FlexiBigInt. The conversion is <a href =
-     * "http://grouper.ieee.org/groups/1363/">P1363</a>-conform.
+     * "https://grouper.ieee.org/groups/1363/">P1363</a>-conform.
      *
      * @return this element as BigInteger
      */
@@ -1129,7 +1129,7 @@ public class GF2nONBElement
 
     /**
      * Returns this element as byte array. The conversion is <a href =
-     * "http://grouper.ieee.org/groups/1363/">P1363</a>-conform.
+     * "https://grouper.ieee.org/groups/1363/">P1363</a>-conform.
      *
      * @return this element as byte array
      */
