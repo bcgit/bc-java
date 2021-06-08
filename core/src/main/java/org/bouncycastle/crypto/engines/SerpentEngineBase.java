@@ -125,7 +125,7 @@ public abstract class SerpentEngineBase
      * Sam Simpson, whose original notice appears below.
      * <p>
      * For further details see:
-     *      http://fp.gladman.plus.com/cryptography_technology/serpent/
+     *      https://fp.gladman.plus.com/cryptography_technology/serpent/
      */
 
     /* Partially optimised Serpent S Box boolean functions derived  */
