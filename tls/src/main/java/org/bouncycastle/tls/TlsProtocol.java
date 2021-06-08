@@ -537,8 +537,8 @@ public abstract class TlsProtocol
 //                throw new TlsFatalAlert(AlertDescription.unexpected_message);
 //            }
 //            // TODO[RFC 6520]
-////            heartbeatQueue.addData(buf, offset, len);
-////            processHeartbeat();
+////            heartbeatQueue.addData(buf, off, len);
+////            processHeartbeatQueue();
 //            break;
 //        }
         default:
@@ -1704,9 +1704,9 @@ public abstract class TlsProtocol
             return false;
         }
 
-        TlsContext context = getContext();
+        AbstractTlsContext context = getContextAdmin();
 
-        return null != context && null != context.getSecurityParametersHandshake();
+        return null != context && !context.isConnected();
     }
 
     protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
