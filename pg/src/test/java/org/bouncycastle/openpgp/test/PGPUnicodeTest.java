@@ -122,7 +122,7 @@ public class PGPUnicodeTest
             BigInteger keyId = new BigInteger("B7773AF32BE4EC1806B1BACC4680E7F3960C44E7", 16);
 
             // XXX The password text file must not have the UTF-8 BOM !
-            // Ref: http://stackoverflow.com/questions/2223882/whats-different-between-utf-8-and-utf-8-without-bom
+            // Ref: https://stackoverflow.com/questions/2223882/whats-different-between-utf-8-and-utf-8-without-bom
 
             InputStream passwordFile = this.getClass().getResourceAsStream("unicode/" + "passphrase_cyr.txt");
             Reader reader = new InputStreamReader(passwordFile, Charset.forName("UTF-8"));
