@@ -118,7 +118,7 @@ public interface GFElement
 
     /**
      * Returns this element as FlexiBigInt. The conversion is <a
-     * href="http://grouper.ieee.org/groups/1363/">P1363</a>-conform.
+     * href="https://grouper.ieee.org/groups/1363/">P1363</a>-conform.
      *
      * @return this element as BigInt
      */
@@ -126,7 +126,7 @@ public interface GFElement
 
     /**
      * Returns this element as byte array. The conversion is <a href =
-     * "http://grouper.ieee.org/groups/1363/">P1363</a>-conform.
+     * "https://grouper.ieee.org/groups/1363/">P1363</a>-conform.
      *
      * @return this element as byte array
      */
