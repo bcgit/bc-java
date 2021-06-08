@@ -48,7 +48,7 @@ public class Blake2bDigestTest
                 "142709d62e28fcccd0af97fad0f8465b971e82201dc51070faa0372aa43e92484be1c1e73ba10906d5d1853db6a4106e0a7bf9800d373d6dee2d46d62ef2a461"}};
 
     private final static String[][] unkeyedTestVectors =
-        { // from: http://fossies.org/linux/john/src/rawBLAKE2_512_fmt_plug.c
+        { // from: https://fossies.org/linux/john/src/rawBLAKE2_512_fmt_plug.c
             // hash, input/message
             // digests without leading $BLAKE2$
             {
