@@ -83,15 +83,16 @@ public class PBETest
                 salt[i] = (byte)i;
             }
 
-            OpenSSLPBEParametersGenerator   pGen = new OpenSSLPBEParametersGenerator();
+            OpenSSLPBEParametersGenerator   pGen = new OpenSSLPBEParametersGenerator(new SHA256Digest());
 
             pGen.init(
                     PBEParametersGenerator.PKCS5PasswordToBytes(password),
                     salt,
                     iCount);
-
+              System.err.println(new String(password));
+            System.err.println(Hex.toHexString(salt));
             ParametersWithIV params = (ParametersWithIV)pGen.generateDerivedParameters(keySize, ivSize);
-
+             System.err.println(Hex.toHexString(Arrays.concatenate(((KeyParameter)params.getParameters()).getKey(), params.getIV())));
             SecretKeySpec   encKey = new SecretKeySpec(((KeyParameter)params.getParameters()).getKey(), baseAlgorithm);
 
             Cipher          c;
