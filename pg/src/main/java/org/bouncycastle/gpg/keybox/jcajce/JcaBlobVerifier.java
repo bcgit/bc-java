@@ -46,7 +46,7 @@ public class JcaBlobVerifier
             //
 
           /*
-           http://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob;f=kbx/keybox-blob.c;hb=HEAD#l129
+           https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob;f=kbx/keybox-blob.c;hb=HEAD#l129
            SHA-1 checksum (useful for KS syncronisation?)
            Note, that KBX versions before GnuPG 2.1 used an MD5
            checksum.  However it was only created but never checked.
