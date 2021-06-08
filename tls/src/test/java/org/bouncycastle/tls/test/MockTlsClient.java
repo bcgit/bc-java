@@ -168,7 +168,7 @@ class MockTlsClient
             if (newSession.isResumable())
             {
                 byte[] newSessionID = newSession.getSessionID();
-                String hex = Hex.toHexString(newSessionID);
+                String hex = hex(newSessionID);
 
                 if (this.session != null && Arrays.areEqual(this.session.getSessionID(), newSessionID))
                 {
