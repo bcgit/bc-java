@@ -226,7 +226,7 @@ public class KeyGenerator
      * Initializes this key generator with the specified parameter set.
      * <p>
      * If this key generator requires any random bytes, it will get them
-     * using the * <a href="http://java.sun.com/products/jdk/1.2/docs/api/java.security.SecureRandom.html">
+     * using the * <a href="https://java.sun.com/products/jdk/1.2/docs/api/java.security.SecureRandom.html">
      * <code>SecureRandom</code></a> implementation of the highest-priority installed
      * provider as the source of randomness.
      * (If none of the installed providers supply an implementation of
@@ -262,7 +262,7 @@ public class KeyGenerator
      * Initializes this key generator for a certain keysize.
      * <p>
      * If this key generator requires any random bytes, it will get them using the
-     * <a href="http://java.sun.com/products/jdk/1.2/docs/api/java.security.SecureRandom.html">
+     * <a href="https://java.sun.com/products/jdk/1.2/docs/api/java.security.SecureRandom.html">
      * <code>SecureRandom</code></a> implementation of the highest-priority installed provider as
      * the source of randomness. (If none of the installed providers supply an implementation of
      * SecureRandom, a system-provided source of randomness will be used.)

@@ -10,7 +10,7 @@ import java.util.Vector;
  * This class implements the abstract class <tt>GF2nField</tt> for ONB
  * representation. It computes the fieldpolynomial, multiplication matrix and
  * one of its roots mONBRoot, (see for example <a
- * href=http://www2.certicom.com/ecc/intro.htm>Certicoms Whitepapers</a>).
+ * href=https://www2.certicom.com/ecc/intro.htm>Certicoms Whitepapers</a>).
  * GF2nField is used by GF2nONBElement which implements the elements of this
  * field.
  *
