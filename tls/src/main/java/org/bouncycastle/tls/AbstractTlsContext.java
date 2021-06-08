@@ -50,38 +50,47 @@ abstract class AbstractTlsContext
         this.nonceGenerator = createNonceGenerator(crypto, connectionEnd);
     }
 
-    synchronized void handshakeBeginning(TlsPeer peer) throws IOException
+    void handshakeBeginning(TlsPeer peer) throws IOException
     {
-        if (null != securityParametersHandshake)
+        synchronized (this)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error, "Handshake already started");
-        }
+            if (null != securityParametersHandshake)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error, "Handshake already started");
+            }
 
-        securityParametersHandshake = new SecurityParameters();
-        securityParametersHandshake.entity = connectionEnd;
+            this.securityParametersHandshake = new SecurityParameters();
+            this.securityParametersHandshake.entity = connectionEnd;
 
-        if (null != securityParametersConnection)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error, "Renegotiation not supported");
+            if (null != securityParametersConnection)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error, "Renegotiation not supported");
+            }
         }
 
         peer.notifyHandshakeBeginning();
     }
 
-    synchronized void handshakeComplete(TlsPeer peer, TlsSession session) throws IOException
+    void handshakeComplete(TlsPeer peer, TlsSession session) throws IOException
     {
-        if (null == securityParametersHandshake)
+        synchronized (this)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            if (null == securityParametersHandshake)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            this.session = session;
+            this.securityParametersConnection = securityParametersHandshake;
+            this.securityParametersHandshake = null;
         }
 
-        this.session = session;
-
-        securityParametersConnection = securityParametersHandshake;
-
         peer.notifyHandshakeComplete();
+    }
 
-        securityParametersHandshake = null;
+    synchronized boolean isConnected()
+    {
+        return null != securityParametersConnection;
     }
 
     public TlsCrypto getCrypto()
