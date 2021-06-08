@@ -13,7 +13,7 @@ import org.bouncycastle.util.encoders.Hex;
  * using SHA-256-Initialization-Values as data and SHA-256-Data as key.
  * <p>
  * A description of Shacal can be found at:
- *    http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.3.4066
+ *    https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.3.4066
  * Best known cryptanalytic (Wikipedia 11.2013):
  *    Related-key rectangle attack on 44-rounds (Jiqiang Lu, Jongsung Kim).
  * Comments are related to SHA-256-Naming as described in FIPS PUB 180-2
