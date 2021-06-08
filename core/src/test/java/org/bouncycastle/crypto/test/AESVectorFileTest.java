@@ -23,8 +23,8 @@ import org.bouncycastle.util.test.TestResult;
 
 /**
  * Test vectors from the NIST standard tests and Brian Gladman's vector set
- * <a href="http://fp.gladman.plus.com/cryptography_technology/rijndael/">
- * http://fp.gladman.plus.com/cryptography_technology/rijndael/</a>
+ * <a href="https://fp.gladman.plus.com/cryptography_technology/rijndael/">
+ * https://fp.gladman.plus.com/cryptography_technology/rijndael/</a>
  */
 public class AESVectorFileTest
     implements Test
