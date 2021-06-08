@@ -9,7 +9,7 @@ import org.bouncycastle.util.Strings;
  * GnuPG keybox blob.
  * Based on:
  *
- * @see <a href="http://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob;f=kbx/keybox-blob.c;hb=HEAD"></a>
+ * @see <a href="https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob;f=kbx/keybox-blob.c;hb=HEAD"></a>
  */
 
 public class Blob
