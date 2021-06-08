@@ -77,9 +77,6 @@ public class TlsServerTest
                 catch (IOException e)
                 {
                 }
-                finally
-                {
-                }
             }
         }
     }

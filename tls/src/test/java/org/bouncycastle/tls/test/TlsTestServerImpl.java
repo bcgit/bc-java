@@ -2,7 +2,6 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -23,8 +22,6 @@ import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.encoders.Hex;
 
 class TlsTestServerImpl
@@ -74,7 +71,7 @@ class TlsTestServerImpl
 
     TlsTestServerImpl(TlsTestConfig config)
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        super(TlsTestSuite.getCrypto(config));
 
         this.config = config;
     }
@@ -101,17 +98,6 @@ class TlsTestServerImpl
         }
 
         return super.getCredentials();
-    }
-
-    public TlsCrypto getCrypto()
-    {
-        switch (config.serverCrypto)
-        {
-        case TlsTestConfig.CRYPTO_JCA:
-            return TlsTestSuite.JCA_CRYPTO;
-        default:
-            return TlsTestSuite.BC_CRYPTO;
-        }
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)

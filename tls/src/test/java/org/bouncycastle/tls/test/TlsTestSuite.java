@@ -22,6 +22,18 @@ public class TlsTestSuite extends TestSuite
     static TlsCrypto BC_CRYPTO = new BcTlsCrypto(new SecureRandom()); 
     static TlsCrypto JCA_CRYPTO = new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(new SecureRandom());
 
+    static TlsCrypto getCrypto(TlsTestConfig config)
+    {
+        switch (config.clientCrypto)
+        {
+        case TlsTestConfig.CRYPTO_JCA:
+            return JCA_CRYPTO;
+        case TlsTestConfig.CRYPTO_BC:
+        default:
+            return BC_CRYPTO;
+        }
+    }
+
     // Make the access to constants less verbose 
     static abstract class C extends TlsTestConfig {}
 
@@ -299,6 +311,7 @@ public class TlsTestSuite extends TestSuite
         {
         case TlsTestConfig.CRYPTO_JCA:
             return "JCA";
+        case TlsTestConfig.CRYPTO_BC:
         default:
             return "BC";
         }

@@ -5,7 +5,9 @@ import java.util.Vector;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsPeer;
+import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 
 public class TlsTestConfig
 {
@@ -68,7 +70,9 @@ public class TlsTestConfig
     public SignatureAndHashAlgorithm clientAuthSigAlgClaimed = null;
 
     /**
-     * Control the result the client will return from {@link TlsPeer#shouldCheckSigAlgOfPeerCerts()}.
+     * Control whether the client will call
+     * {@link TlsUtils#checkPeerSigAlgs(TlsContext, TlsCertificate[]) to check the
+     * server certificate chain.
      */
     public boolean clientCheckSigAlgOfServerCerts = true;
 
@@ -117,7 +121,9 @@ public class TlsTestConfig
     public Vector serverCertReqSigAlgs = null;
 
     /**
-     * Control the result the server will return from {@link TlsPeer#shouldCheckSigAlgOfPeerCerts()}.
+     * Control whether the server will call
+     * {@link TlsUtils#checkPeerSigAlgs(TlsContext, TlsCertificate[]) to check the
+     * client certificate chain.
      */
     public boolean serverCheckSigAlgOfClientCerts = true;
 
@@ -134,7 +140,7 @@ public class TlsTestConfig
     public ProtocolVersion[] serverSupportedVersions = null;
 
     /**
-     * Configures the connection end that a fatal alert is expected to be raised. Use ConnectionEnd.* constants.
+     * Configures the connection end at which a fatal alert is expected to be raised. Use ConnectionEnd.* constants.
      */
     public int expectFatalAlertConnectionEnd = -1;
 
