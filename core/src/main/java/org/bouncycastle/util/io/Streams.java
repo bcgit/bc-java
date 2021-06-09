@@ -109,7 +109,21 @@ public final class Streams
     public static void pipeAll(InputStream inStr, OutputStream outStr)
         throws IOException
     {
-        byte[] bs = new byte[BUFFER_SIZE];
+        pipeAll(inStr, outStr, BUFFER_SIZE);
+    }
+
+    /**
+     * Write the full contents of inStr to the destination stream outStr.
+     *
+     * @param inStr source input stream.
+     * @param outStr destination output stream.
+     * @param bufferSize the size of temporary buffer to use.
+     * @throws IOException in case of underlying IOException.
+     */
+    public static void pipeAll(InputStream inStr, OutputStream outStr, int bufferSize)
+        throws IOException
+    {
+        byte[] bs = new byte[bufferSize];
         int numRead;
         while ((numRead = inStr.read(bs, 0, bs.length)) >= 0)
         {
