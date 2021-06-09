@@ -48,10 +48,10 @@ public final class XMSSMTPrivateKeyParameters
             int rootSize = n;
             /*
             int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
-			if (privateKey.length != totalSize) {
-				throw new ParseException("private key has wrong size", 0);
-			}
-			*/
+            if (privateKey.length != totalSize) {
+                throw new ParseException("private key has wrong size", 0);
+            }
+            */
             int position = 0;
             index = XMSSUtil.bytesToXBigEndian(privateKey, position, indexSize);
             if (!XMSSUtil.isIndexValid(totalHeight, index))
@@ -67,7 +67,7 @@ public final class XMSSMTPrivateKeyParameters
             position += publicSeedSize;
             root = XMSSUtil.extractBytesAtOffset(privateKey, position, rootSize);
             position += rootSize;
-			/* import BDS state */
+            /* import BDS state */
             byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(privateKey, position, privateKey.length - position);
 
             try

@@ -110,10 +110,10 @@ final class WOTSPlus
         List<Integer> baseWChecksum = convertToBaseW(XMSSUtil.toBytesBigEndian(checksum, len2Bytes),
             params.getWinternitzParameter(), params.getLen2());
 
-		/* msg || checksum */
+        /* msg || checksum */
         baseWMessage.addAll(baseWChecksum);
 
-		/* create signature */
+        /* create signature */
         byte[][] signature = new byte[params.getLen()][];
         for (int i = 0; i < params.getLen(); i++)
         {
@@ -155,7 +155,7 @@ final class WOTSPlus
             throw new NullPointerException("otsHashAddress == null");
         }
         List<Integer> baseWMessage = convertToBaseW(messageDigest, params.getWinternitzParameter(), params.getLen1());
-		/* create checksum */
+        /* create checksum */
         int checksum = 0;
         for (int i = 0; i < params.getLen1(); i++)
         {
@@ -167,7 +167,7 @@ final class WOTSPlus
         List<Integer> baseWChecksum = convertToBaseW(XMSSUtil.toBytesBigEndian(checksum, len2Bytes),
             params.getWinternitzParameter(), params.getLen2());
 
-		/* msg || checksum */
+        /* msg || checksum */
         baseWMessage.addAll(baseWChecksum);
 
         byte[][] publicKey = new byte[params.getLen()][];
@@ -381,7 +381,7 @@ final class WOTSPlus
             throw new NullPointerException("otsHashAddress == null");
         }
         byte[][] publicKey = new byte[params.getLen()][];
-		/* derive public key from secretKeySeed */
+        /* derive public key from secretKeySeed */
         for (int i = 0; i < params.getLen(); i++)
         {
             otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder()

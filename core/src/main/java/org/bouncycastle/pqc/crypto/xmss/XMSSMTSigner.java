@@ -176,7 +176,7 @@ public class XMSSMTSigner
         {
             throw new NullPointerException("publicKey == null");
         }
-		/* (re)create compressed message */
+        /* (re)create compressed message */
         XMSSMTSignature sig = new XMSSMTSignature.Builder(params).withSignature(signature).build();
 
         byte[] concatenated = Arrays.concatenate(sig.getRandom(), publicKey.getRoot(),
@@ -188,14 +188,14 @@ public class XMSSMTSigner
         long indexTree = XMSSUtil.getTreeIndex(globalIndex, xmssHeight);
         int indexLeaf = XMSSUtil.getLeafIndex(globalIndex, xmssHeight);
 
-		/* adjust xmss */
+        /* adjust xmss */
         wotsPlus.importKeys(new byte[params.getTreeDigestSize()], publicKey.getPublicSeed());
         
-		/* prepare addresses */
+        /* prepare addresses */
         OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withTreeAddress(indexTree)
             .withOTSAddress(indexLeaf).build();
 
-		/* get root node on layer 0 */
+        /* get root node on layer 0 */
         XMSSReducedSignature xmssMTSignature = sig.getReducedSignatures().get(0);
         XMSSNode rootNode = XMSSVerifierUtil.getRootNodeFromSignature(wotsPlus, xmssHeight, messageDigest, xmssMTSignature, otsHashAddress, indexLeaf);
         for (int layer = 1; layer < params.getLayers(); layer++)
@@ -204,15 +204,15 @@ public class XMSSMTSigner
             indexLeaf = XMSSUtil.getLeafIndex(indexTree, xmssHeight);
             indexTree = XMSSUtil.getTreeIndex(indexTree, xmssHeight);
 
-			/* adjust address */
+            /* adjust address */
             otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withLayerAddress(layer)
                 .withTreeAddress(indexTree).withOTSAddress(indexLeaf).build();
 
-			/* get root node */
+            /* get root node */
             rootNode = XMSSVerifierUtil.getRootNodeFromSignature(wotsPlus, xmssHeight, rootNode.getValue(), xmssMTSignature, otsHashAddress, indexLeaf);
         }
 
-		/* compare roots */
+        /* compare roots */
         return Arrays.constantTimeAreEqual(rootNode.getValue(), publicKey.getRoot());
     }
 
@@ -226,9 +226,9 @@ public class XMSSMTSigner
         {
             throw new NullPointerException("otsHashAddress == null");
         }
-		/* (re)initialize WOTS+ instance */
+        /* (re)initialize WOTS+ instance */
         wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
-		/* create WOTS+ signature */
+        /* create WOTS+ signature */
         return wotsPlus.sign(messageDigest, otsHashAddress);
     }
 

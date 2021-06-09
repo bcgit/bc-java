@@ -65,7 +65,7 @@ public class SExprParser
         String type;
 
         type = SXprUtils.readString(inputStream, inputStream.read());
-		if (type.equals("protected-private-key")
+        if (type.equals("protected-private-key")
            || type.equals("private-key"))
         {
             SXprUtils.skipOpenParenthesis(inputStream);
@@ -359,10 +359,10 @@ public class SExprParser
 
             SXprUtils.skipCloseParenthesis(inputStream);
             SXprUtils.skipCloseParenthesis(inputStream);
-		}
+        }
         else if (type.equals("d"))
         {
-			return null;
+            return null;
         }
         else
         {
@@ -592,33 +592,33 @@ public class SExprParser
         String type;
         byte[][] basicData = extractData(inputStream, keyProtectionRemoverFactory);
 
-		byte[] keyData;
-		byte[] protectedAt = null;
+        byte[] keyData;
+        byte[] protectedAt = null;
 
-		InputStream keyIn;
-		BigInteger d;
+        InputStream keyIn;
+        BigInteger d;
 
-		if (basicData == null)
-		{
-			keyIn = inputStream;
-			byte[] nBytes = SXprUtils.readBytes(inputStream,
-					inputStream.read());
-			d = new BigInteger(1, nBytes);
+        if (basicData == null)
+        {
+            keyIn = inputStream;
+            byte[] nBytes = SXprUtils.readBytes(inputStream,
+                    inputStream.read());
+            d = new BigInteger(1, nBytes);
 
-			SXprUtils.skipCloseParenthesis(inputStream);
+            SXprUtils.skipCloseParenthesis(inputStream);
 
-		}
-		else
-		{
-			keyData = basicData[0];
-			protectedAt = basicData[1];
+        }
+        else
+        {
+            keyData = basicData[0];
+            protectedAt = basicData[1];
 
-			keyIn = new ByteArrayInputStream(keyData);
+            keyIn = new ByteArrayInputStream(keyData);
 
-			SXprUtils.skipOpenParenthesis(keyIn);
-			SXprUtils.skipOpenParenthesis(keyIn);
-			d = readBigInteger("d", keyIn);
-		}
+            SXprUtils.skipOpenParenthesis(keyIn);
+            SXprUtils.skipOpenParenthesis(keyIn);
+            d = readBigInteger("d", keyIn);
+        }
 
         //
         // parse the secret key S-expr
@@ -628,10 +628,10 @@ public class SExprParser
         BigInteger q = readBigInteger("q", keyIn);
         BigInteger u = readBigInteger("u", keyIn);
 
-		if (basicData == null)
-		{
-			return new BigInteger[] { d, p, q, u };
-		}
+        if (basicData == null)
+        {
+            return new BigInteger[] { d, p, q, u };
+        }
 
         SXprUtils.skipCloseParenthesis(keyIn);
 

@@ -84,12 +84,12 @@ public class Blake2sDigest
     // Tree hashing parameters:
     // The Tree Hashing Mode is not supported but these are used for
     // the XOF implementation
-	private int fanout = 1; // 0-255
-	private int depth = 1; // 0-255
-	private int leafLength= 0;
-	private long nodeOffset = 0L;
-	private int nodeDepth = 0;
-	private int innerHashLength = 0;
+    private int fanout = 1; // 0-255
+    private int depth = 1; // 0-255
+    private int leafLength= 0;
+    private long nodeOffset = 0L;
+    private int nodeDepth = 0;
+    private int innerHashLength = 0;
 
 
     /**

@@ -57,7 +57,7 @@ public final class XMSSMTPublicKeyParameters
         }
         else
         {
-			/* set */
+            /* set */
             if (params.getOid() != null)
             {
                 this.oid = params.getOid().getOid();
@@ -146,7 +146,7 @@ public final class XMSSMTPublicKeyParameters
      */
     public byte[] toByteArray()
     {
-		/* oid || root || seed */
+        /* oid || root || seed */
         int n = params.getTreeDigestSize();
         int oidSize = 4;
         int rootSize = n;
@@ -164,10 +164,10 @@ public final class XMSSMTPublicKeyParameters
         {
             out = new byte[rootSize + publicSeedSize];
         }
-		/* copy root */
+        /* copy root */
         XMSSUtil.copyBytesAtOffset(out, root, position);
         position += rootSize;
-		/* copy public seed */
+        /* copy public seed */
         XMSSUtil.copyBytesAtOffset(out, publicSeed, position);
         return out;
     }
@@ -183,7 +183,7 @@ public final class XMSSMTPublicKeyParameters
     }
 
     public XMSSMTParameters getParameters()
-   	{
-   		return params;
-   	}
+    {
+        return params;
+    }
 }

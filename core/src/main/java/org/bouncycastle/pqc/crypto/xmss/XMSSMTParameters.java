@@ -88,8 +88,8 @@ public final class XMSSMTParameters
         oid = DefaultXMSSMTOid.lookup(getTreeDigest(), getTreeDigestSize(), getWinternitzParameter(),
             getLen(), getHeight(), layers);
         /*
-		 * if (oid == null) { throw new InvalidParameterException(); }
-		 */
+         * if (oid == null) { throw new InvalidParameterException(); }
+         */
     }
 
     private static int xmssTreeHeight(int height, int layers)

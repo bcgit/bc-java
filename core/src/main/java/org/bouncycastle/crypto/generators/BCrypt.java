@@ -461,10 +461,10 @@ public final class BCrypt
     /*
      * This is a part of Eksblowfish function
      *
-     * @param 	table: sub-keys or working key
-     * @param 	salt32Bit: a 16 byte salt as two 32 bit words
-     * @param 	iv1: value from last proceeded table
-     * @param 	iv2: value from last proceeded table
+     * @param     table: sub-keys or working key
+     * @param     salt32Bit: a 16 byte salt as two 32 bit words
+     * @param     iv1: value from last proceeded table
+     * @param     iv2: value from last proceeded table
      */
     private void processTableWithSalt(
         int[] table,

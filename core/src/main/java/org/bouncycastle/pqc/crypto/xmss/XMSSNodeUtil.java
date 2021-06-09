@@ -20,7 +20,7 @@ class XMSSNodeUtil
             throw new NullPointerException("address == null");
         }
         int len = wotsPlus.getParams().getLen();
-    		/* duplicate public key to XMSSNode Array */
+            /* duplicate public key to XMSSNode Array */
         byte[][] publicKeyBytes = publicKey.toByteArray();
         XMSSNode[] publicKeyNodes = new XMSSNode[publicKeyBytes.length];
         for (int i = 0; i < publicKeyBytes.length; i++)
