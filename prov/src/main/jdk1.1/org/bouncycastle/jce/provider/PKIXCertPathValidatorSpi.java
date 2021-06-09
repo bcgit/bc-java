@@ -539,7 +539,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
         }
         
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
+        ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
 
         Enumeration e = qualifiers.getObjects();
 

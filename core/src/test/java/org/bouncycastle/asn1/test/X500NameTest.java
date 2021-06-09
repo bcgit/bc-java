@@ -717,7 +717,7 @@ public class X500NameTest
       n = new X500Name("C=AU, O=The Legion of the Bouncy Castle, L=Melbourne + OU=Ascot Vale");
 
       ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-      ASN1OutputStream aOut = new ASN1OutputStream(bOut);
+      ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
 
       aOut.writeObject(n);
 
