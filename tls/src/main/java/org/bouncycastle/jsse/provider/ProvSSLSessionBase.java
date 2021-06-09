@@ -75,6 +75,8 @@ abstract class ProvSSLSessionBase
 
     protected abstract ProtocolVersion getProtocolTLS();
 
+    protected abstract void invalidateTLS();
+
     SSLSession getExportSSLSession()
     {
         return exportSSLSession;
@@ -281,16 +283,14 @@ abstract class ProvSSLSessionBase
         return Arrays.hashCode(getIDArray());
     }
 
-    public synchronized void invalidate()
+    public final void invalidate()
     {
-        // NOTE: The NULL_SESSION never actually gets invalidated (consistent with SunJSSE)
+        implInvalidate(true);
+    }
 
-        if (null != sslSessionContext)
-        {
-            sslSessionContext.removeSession(getIDArray());
-
-            this.sslSessionContext = null;
-        }
+    final void invalidatedBySessionContext()
+    {
+        implInvalidate(false);
     }
 
     public synchronized boolean isValid()
@@ -340,6 +340,23 @@ abstract class ProvSSLSessionBase
         {
             ((SSLSessionBindingListener)value).valueUnbound(new SSLSessionBindingEvent(this, name));
         }
+    }
+
+    private synchronized void implInvalidate(boolean removeFromSessionContext)
+    {
+        // NOTE: The NULL_SESSION never actually gets invalidated (consistent with SunJSSE)
+
+        if (null != sslSessionContext)
+        {
+            if (removeFromSessionContext)
+            {
+                sslSessionContext.removeSession(getIDArray());
+            }
+
+            this.sslSessionContext = null;
+        }
+
+        invalidateTLS();
     }
 
     @SuppressWarnings("deprecation")
