@@ -693,14 +693,6 @@ public abstract class ECCurve
             this.coord = FP_DEFAULT_COORDS;
         }
 
-        /**
-         * @deprecated use constructor taking order/cofactor
-         */
-        protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b)
-        {
-            this(q, r, a, b, null, null);
-        }
-
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
             super(q);

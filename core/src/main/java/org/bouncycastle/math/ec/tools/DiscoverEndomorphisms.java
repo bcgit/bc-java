@@ -460,13 +460,12 @@ public class DiscoverEndomorphisms
     private static BigInteger[] solveQuadraticEquation(BigInteger n, BigInteger a, BigInteger b, BigInteger c)
     {
         BigInteger det = b.multiply(b).subtract(a.multiply(c).shiftLeft(2)).mod(n);
-        ECFieldElement rootFE = new ECFieldElement.Fp(n, det).sqrt();
-        if (rootFE == null)
+        BigInteger root = modSqrt(det, n);
+        if (root == null)
         {
             throw new IllegalStateException("Solving quadratic equation failed unexpectedly");
         }
 
-        BigInteger root = rootFE.toBigInteger();
         BigInteger invDenom = a.shiftLeft(1).modInverse(n);
 
         BigInteger s1 = root.subtract(b).multiply(invDenom).mod(n);
@@ -525,5 +524,76 @@ public class DiscoverEndomorphisms
         BigInteger tmp = ab[0];
         ab[0] = ab[1];
         ab[1] = tmp;
+    }
+
+    private static BigInteger modSqrt(BigInteger x, BigInteger p)
+    {
+        if (!p.testBit(0))
+        {
+            throw new IllegalStateException();
+        }
+
+        BigInteger pSub1Halved = p.subtract(ECConstants.ONE).shiftRight(1);
+        BigInteger q = pSub1Halved;
+
+        if (!x.modPow(q, p).equals(ECConstants.ONE))
+        {
+            return null;
+        }
+
+        while (!q.testBit(0))
+        {
+            q = q.shiftRight(1);
+
+            if (!x.modPow(q, p).equals(ECConstants.ONE))
+            {
+                return modSqrtComplex(x, q, p, pSub1Halved);
+            }
+        }
+
+        q = q.add(ECConstants.ONE).shiftRight(1);
+
+        return x.modPow(q, p);
+    }
+
+    private static BigInteger modSqrtComplex(BigInteger x, BigInteger q, BigInteger p, BigInteger pSub1Halved)
+    {
+        BigInteger a = firstNonResidue(p, pSub1Halved);
+
+        BigInteger t = pSub1Halved;
+        BigInteger negPow = t;
+
+        while (!q.testBit(0))
+        {
+            q = q.shiftRight(1);
+            t = t.shiftRight(1);
+
+            if (!x.modPow(q, p).equals(a.modPow(t, p)))
+            {
+                t = t.add(negPow);
+            }
+        }
+
+        q = q.subtract(ECConstants.ONE).shiftRight(1);
+        t = t.shiftRight(1);
+
+        BigInteger invX = x.modInverse(p);
+        BigInteger u = invX.modPow(q, p);
+        BigInteger v = a.modPow(t, p);
+        return u.multiply(v).mod(p);
+    }
+
+    private static BigInteger firstNonResidue(BigInteger p, BigInteger pSub1Halved)
+    {
+        for (int a = 2; a < 1000; ++a)
+        {
+            BigInteger A = BigInteger.valueOf(a);
+            if (!A.modPow(pSub1Halved, p).equals(ECConstants.ONE))
+            {
+                return A;
+            }
+        }
+
+        throw new IllegalStateException();
     }
 }

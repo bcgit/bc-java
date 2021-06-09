@@ -14,17 +14,6 @@ public abstract class Mod
     private static final int M30 = 0x3FFFFFFF;
     private static final long M32L = 0xFFFFFFFFL;
 
-    /** @deprecated Will be removed. */
-    public static void add(int[] p, int[] x, int[] y, int[] z)
-    {
-        int len = p.length;
-        int c = Nat.add(len, x, y, z);
-        if (c != 0)
-        {
-            Nat.subFrom(len, p, z);
-        }
-    }
-
     public static void checkedModOddInverse(int[] m, int[] x, int[] z)
     {
         if (0 == modOddInverse(m, x, z))
@@ -52,12 +41,6 @@ public abstract class Mod
         x *= 2 - d * x;                     // d.x == 1 mod 2**48
 //        assert d * x == 1;
         return  x;
-    }
-
-    /** @deprecated Use {@link #checkedModOddInverseVar(int[], int[], int[])} instead. */
-    public static void invert(int[] m, int[] x, int[] z)
-    {
-        checkedModOddInverseVar(m,  x,  z);
     }
 
     public static int modOddInverse(int[] m, int[] x, int[] z)
@@ -226,17 +209,6 @@ public abstract class Mod
         while (Nat.gte(len, s, p));
 
         return s;
-    }
-
-    /** @deprecated Will be removed. */
-    public static void subtract(int[] p, int[] x, int[] y, int[] z)
-    {
-        int len = p.length;
-        int c = Nat.sub(len, x, y, z);
-        if (c != 0)
-        {
-            Nat.addTo(len, p, z);
-        }
     }
 
     private static int add30(int len30, int[] D, int[] M)
