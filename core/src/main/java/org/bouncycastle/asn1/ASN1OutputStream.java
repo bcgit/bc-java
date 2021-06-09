@@ -32,10 +32,7 @@ public class ASN1OutputStream
 
     private OutputStream os;
 
-    /**
-     * @deprecated Use {@link ASN1OutputStream#create(OutputStream)} instead.
-     */
-    public ASN1OutputStream(OutputStream os)
+    ASN1OutputStream(OutputStream os)
     {
         this.os = os;
     }
