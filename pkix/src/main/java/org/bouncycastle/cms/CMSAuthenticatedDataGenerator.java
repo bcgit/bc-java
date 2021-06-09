@@ -126,7 +126,7 @@ public class CMSAuthenticatedDataGenerator
             }
             catch (IOException e)
             {
-                throw new CMSException("exception decoding algorithm parameters.", e);
+                throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
             ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(parameters).toASN1EncodableVector()) : null;
 
@@ -153,7 +153,7 @@ public class CMSAuthenticatedDataGenerator
             }
             catch (IOException e)
             {
-                throw new CMSException("exception decoding algorithm parameters.", e);
+                throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
 
             ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(Collections.emptyMap()).toASN1EncodableVector()) : null;
