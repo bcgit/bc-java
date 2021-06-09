@@ -1,13 +1,13 @@
 package org.bouncycastle.tls.test;
 
 import java.io.IOException;
-import java.security.SecureRandom;
 
-import junit.framework.TestCase;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
+
+import junit.framework.TestCase;
 
 public class TlsProtocolNonBlockingTest
     extends TestCase
@@ -25,13 +25,14 @@ public class TlsProtocolNonBlockingTest
 
     private static void testClientServer(boolean fragment) throws IOException
     {
-        SecureRandom secureRandom = new SecureRandom();
-
         TlsClientProtocol clientProtocol = new TlsClientProtocol();
         TlsServerProtocol serverProtocol = new TlsServerProtocol();
 
-        clientProtocol.connect(new MockTlsClient(null));
-        serverProtocol.accept(new MockTlsServer());
+        MockTlsClient client = new MockTlsClient(null);
+        MockTlsServer server = new MockTlsServer();
+
+        clientProtocol.connect(client);
+        serverProtocol.accept(server);
 
         // pump handshake
         boolean hadDataFromServer = true;
@@ -44,7 +45,8 @@ public class TlsProtocolNonBlockingTest
 
         // send data in both directions
         byte[] data = new byte[1024];
-        secureRandom.nextBytes(data);
+        client.getCrypto().getSecureRandom().nextBytes(data);
+
         writeAndRead(clientProtocol, serverProtocol, data, fragment);
         writeAndRead(serverProtocol, clientProtocol, data, fragment);
 

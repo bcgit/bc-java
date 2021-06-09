@@ -3,7 +3,6 @@ package org.bouncycastle.tls.test;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.security.SecureRandom;
 
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -17,8 +16,6 @@ public class TlsPSKProtocolTest
 {
     public void testClientServer() throws Exception
     {
-        SecureRandom secureRandom = new SecureRandom();
-
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
         PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
         PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
@@ -37,7 +34,7 @@ public class TlsPSKProtocolTest
         int length = 1000;
 
         byte[] data = new byte[length];
-        secureRandom.nextBytes(data);
+        client.getCrypto().getSecureRandom().nextBytes(data);
 
         OutputStream output = clientProtocol.getOutputStream();
         output.write(data);
