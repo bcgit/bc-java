@@ -55,7 +55,7 @@ public class XMSSReducedSignature
         }
         else
         {
-			/* set */
+            /* set */
             WOTSPlusSignature tmpSignature = builder.wotsPlusSignature;
             if (tmpSignature != null)
             {
@@ -123,21 +123,21 @@ public class XMSSReducedSignature
 
     public byte[] toByteArray()
     {
-		/* signature || authentication path */
+        /* signature || authentication path */
         int n = params.getTreeDigestSize();
         int signatureSize = params.getWOTSPlus().getParams().getLen() * n;
         int authPathSize = params.getHeight() * n;
         int totalSize = signatureSize + authPathSize;
         byte[] out = new byte[totalSize];
         int position = 0;
-		/* copy signature */
+        /* copy signature */
         byte[][] signature = this.wotsPlusSignature.toByteArray();
         for (int i = 0; i < signature.length; i++)
         {
             XMSSUtil.copyBytesAtOffset(out, signature[i], position);
             position += n;
         }
-		/* copy authentication path */
+        /* copy authentication path */
         for (int i = 0; i < authPath.size(); i++)
         {
             byte[] value = authPath.get(i).getValue();

@@ -108,10 +108,10 @@ public class XMSSSigner
                 /* generate public key */
 
         int index = sig.getIndex();
-        		/* reinitialize WOTS+ object */
+                /* reinitialize WOTS+ object */
         wotsPlus.importKeys(new byte[params.getTreeDigestSize()], publicKey.getPublicSeed());
 
-        		/* create message digest */
+                /* create message digest */
         byte[] concatenated = Arrays.concatenate(sig.getRandom(), publicKey.getRoot(),
             XMSSUtil.toBytesBigEndian(index, params.getTreeDigestSize()));
         byte[] messageDigest = khf.HMsg(concatenated, message);
@@ -119,7 +119,7 @@ public class XMSSSigner
         int xmssHeight = params.getHeight();
         int indexLeaf = XMSSUtil.getLeafIndex(index, xmssHeight);
 
-        		/* get root from signature */
+                /* get root from signature */
         OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withOTSAddress(index).build();
         XMSSNode rootNodeFromSignature = XMSSVerifierUtil.getRootNodeFromSignature(wotsPlus, xmssHeight, messageDigest, sig, otsHashAddress, indexLeaf);
 
@@ -166,7 +166,7 @@ public class XMSSSigner
         }
         /* (re)initialize WOTS+ instance */
         wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
-		/* create WOTS+ signature */
+        /* create WOTS+ signature */
         return wotsPlus.sign(messageDigest, otsHashAddress);
     }
 }

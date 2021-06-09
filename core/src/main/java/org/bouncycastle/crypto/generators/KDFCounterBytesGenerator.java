@@ -29,11 +29,11 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * </ul>
  * Resulting function calls assuming an 8 bit counter.
  * <ul>
- * <li>1.  KDFCounterParameters(ki, 	null, 									"Label || 0x00 || Context || [L]_2]",	8);</li>
- * <li>2.  KDFCounterParameters(ki, 	"Label || 0x00 || Context || [L]_2]", 	null,									8);</li>
- * <li>3a. KDFCounterParameters(ki, 	"Label || 0x00",						"Context || [L]_2]",					8);</li>
- * <li>3b. KDFCounterParameters(ki, 	"Label || 0x00",						"[L]_2] || Context",					8);</li>
- * <li>3c. KDFCounterParameters(ki, 	"Label", 								"0x00 || Context || [L]_2]",			8);</li>
+ * <li>1.  KDFCounterParameters(ki,     null,                                     "Label || 0x00 || Context || [L]_2]",    8);</li>
+ * <li>2.  KDFCounterParameters(ki,     "Label || 0x00 || Context || [L]_2]",     null,                                    8);</li>
+ * <li>3a. KDFCounterParameters(ki,     "Label || 0x00",                        "Context || [L]_2]",                    8);</li>
+ * <li>3b. KDFCounterParameters(ki,     "Label || 0x00",                        "[L]_2] || Context",                    8);</li>
+ * <li>3c. KDFCounterParameters(ki,     "Label",                                 "0x00 || Context || [L]_2]",            8);</li>
  * </ul>
  */
 public class KDFCounterBytesGenerator

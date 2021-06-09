@@ -25,16 +25,16 @@ class XMSSVerifierUtil
             throw new NullPointerException("otsHashAddress == null");
         }
 
-		/* prepare adresses */
+        /* prepare adresses */
         LTreeAddress lTreeAddress = (LTreeAddress)new LTreeAddress.Builder()
             .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
             .withLTreeAddress(otsHashAddress.getOTSAddress()).build();
         HashTreeAddress hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
             .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
             .withTreeIndex(otsHashAddress.getOTSAddress()).build();
-		/*
-		 * calculate WOTS+ public key and compress to obtain original leaf hash
-		 */
+        /*
+         * calculate WOTS+ public key and compress to obtain original leaf hash
+         */
         WOTSPlusPublicKeyParameters wotsPlusPK = wotsPlus.getPublicKeyFromSignature(messageDigest,
             signature.getWOTSPlusSignature(), otsHashAddress);
         XMSSNode[] node = new XMSSNode[2];

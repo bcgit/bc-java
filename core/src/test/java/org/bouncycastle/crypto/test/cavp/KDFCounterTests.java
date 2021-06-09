@@ -54,14 +54,14 @@ public final class KDFCounterTests
         }
         else if (config.getProperty("CTRLOCATION").matches("MIDDLE_FIXED"))
         {
-        	final byte[] DataBeforeCtrData = Hex.decode(vectors.getProperty("DataBeforeCtrData"));
-        	final byte[] DataAfterCtrData = Hex.decode(vectors.getProperty("DataAfterCtrData"));
+            final byte[] DataBeforeCtrData = Hex.decode(vectors.getProperty("DataBeforeCtrData"));
+            final byte[] DataAfterCtrData = Hex.decode(vectors.getProperty("DataAfterCtrData"));
             final KDFCounterParameters params = new KDFCounterParameters(ki, DataBeforeCtrData, DataAfterCtrData, r);
             gen.init(params);
         }
         else
         {
-        	return; // Unknown CTRLOCATION
+            return; // Unknown CTRLOCATION
         }
     
 

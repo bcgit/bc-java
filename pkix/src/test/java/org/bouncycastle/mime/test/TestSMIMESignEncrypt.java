@@ -121,8 +121,8 @@ public class TestSMIMESignEncrypt
     public void testSignThenEncrypt()
         throws Exception
     { 
-  	
-    	//output that will contain signed and encrypted content
+      
+        //output that will contain signed and encrypted content
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         SMIMEEnvelopedWriter.Builder envBldr = new SMIMEEnvelopedWriter.Builder();

@@ -86,11 +86,11 @@ public class Blake2bDigest
     // Tree hashing parameters:
     // Because this class does not implement the Tree Hashing Mode,
     // these parameters can be treated as constants (see init() function)
-	/*
-	 * private int fanout = 1; // 0-255 private int depth = 1; // 1 - 255
-	 * private int leafLength= 0; private long nodeOffset = 0L; private int
-	 * nodeDepth = 0; private int innerHashLength = 0;
-	 */
+    /*
+     * private int fanout = 1; // 0-255 private int depth = 1; // 1 - 255
+     * private int leafLength= 0; private long nodeOffset = 0L; private int
+     * nodeDepth = 0; private int innerHashLength = 0;
+     */
 
     // whenever this buffer overflows, it will be processed
     // in the compress() function.

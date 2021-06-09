@@ -14,35 +14,35 @@ import org.bouncycastle.util.Arrays;
  * Test cases for XMSSMTPublicKey class.
  */
 public class XMSSMTPublicKeyTest
-	extends TestCase
+    extends TestCase
 {
 
-	public void testPublicKeyParsingSHA256()
-		throws IOException, ClassNotFoundException
-	{
-		XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest());
-		XMSSMT mt = new XMSSMT(params, new SecureRandom());
-		mt.generateKeys();
-		byte[] privateKey = mt.exportPrivateKey();
-		byte[] publicKey = mt.exportPublicKey();
+    public void testPublicKeyParsingSHA256()
+        throws IOException, ClassNotFoundException
+    {
+        XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest());
+        XMSSMT mt = new XMSSMT(params, new SecureRandom());
+        mt.generateKeys();
+        byte[] privateKey = mt.exportPrivateKey();
+        byte[] publicKey = mt.exportPublicKey();
 
-		mt.importState(privateKey, publicKey);
+        mt.importState(privateKey, publicKey);
 
-		assertTrue(Arrays.areEqual(publicKey, mt.exportPublicKey()));
-	}
+        assertTrue(Arrays.areEqual(publicKey, mt.exportPublicKey()));
+    }
 
-	public void testConstructor()
-	{
-		XMSSMTParameters params = new XMSSMTParameters(20, 4, new SHA256Digest());
-		XMSSMTPublicKeyParameters pk = new XMSSMTPublicKeyParameters.Builder(params).build();
+    public void testConstructor()
+    {
+        XMSSMTParameters params = new XMSSMTParameters(20, 4, new SHA256Digest());
+        XMSSMTPublicKeyParameters pk = new XMSSMTPublicKeyParameters.Builder(params).build();
 
-		byte[] pkByte = pk.toByteArray();
-		/* check everything is 0 */
-		for (int i = 5; i < pkByte.length; i++)
-		{
-			assertEquals(0x00, pkByte[i]);
-		}
+        byte[] pkByte = pk.toByteArray();
+        /* check everything is 0 */
+        for (int i = 5; i < pkByte.length; i++)
+        {
+            assertEquals(0x00, pkByte[i]);
+        }
 
-		assertEquals(68, pkByte.length);
-	}
+        assertEquals(68, pkByte.length);
+    }
 }

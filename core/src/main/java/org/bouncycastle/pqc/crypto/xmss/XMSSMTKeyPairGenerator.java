@@ -54,7 +54,7 @@ public final class XMSSMTKeyPairGenerator
         OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withLayerAddress(rootLayerIndex)
             .build();
 
-          		/* store BDS instance of root xmss instance */
+                  /* store BDS instance of root xmss instance */
         BDS bdsRoot = new BDS(xmssParams, privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress);
         XMSSNode root = bdsRoot.getRoot();
         privateKey.getBDSState().put(rootLayerIndex, bdsRoot);

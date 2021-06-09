@@ -86,7 +86,7 @@ public final class XMSSSignature
             /* extract index */
             index = Pack.bigEndianToInt(val, position);
             position += indexSize;
-			/* extract random */
+            /* extract random */
             random = XMSSUtil.extractBytesAtOffset(val, position, randomSize);
             position += randomSize;
             withReducedSignature(XMSSUtil.extractBytesAtOffset(val, position, signatureSize + authPathSize));
@@ -105,7 +105,7 @@ public final class XMSSSignature
      */
     public byte[] toByteArray()
     {
-		/* index || random || signature || authentication path */
+        /* index || random || signature || authentication path */
         int n = getParams().getTreeDigestSize();
         int indexSize = 4;
         int randomSize = n;
@@ -114,20 +114,20 @@ public final class XMSSSignature
         int totalSize = indexSize + randomSize + signatureSize + authPathSize;
         byte[] out = new byte[totalSize];
         int position = 0;
-		/* copy index */
+        /* copy index */
         Pack.intToBigEndian(index, out, position);
         position += indexSize;
-		/* copy random */
+        /* copy random */
         XMSSUtil.copyBytesAtOffset(out, random, position);
         position += randomSize;
-		/* copy signature */
+        /* copy signature */
         byte[][] signature = getWOTSPlusSignature().toByteArray();
         for (int i = 0; i < signature.length; i++)
         {
             XMSSUtil.copyBytesAtOffset(out, signature[i], position);
             position += n;
         }
-		/* copy authentication path */
+        /* copy authentication path */
         for (int i = 0; i < getAuthPath().size(); i++)
         {
             byte[] value = getAuthPath().get(i).getValue();

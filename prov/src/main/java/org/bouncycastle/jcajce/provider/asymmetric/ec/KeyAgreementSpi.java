@@ -715,80 +715,80 @@ public class KeyAgreementSpi
     }
 
     /**
-   	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
-   	 */
-   	public static class ECKAEGwithSHA1KDF
-   			extends KeyAgreementSpi
-   	{
-   		public ECKAEGwithSHA1KDF()
-   		{
-   			super("ECKAEGwithSHA1KDF", new ECDHBasicAgreement(),
+        * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+        */
+       public static class ECKAEGwithSHA1KDF
+               extends KeyAgreementSpi
+       {
+           public ECKAEGwithSHA1KDF()
+           {
+               super("ECKAEGwithSHA1KDF", new ECDHBasicAgreement(),
                    new KDF2BytesGenerator(DigestFactory.createSHA1()));
-   		}
-   	}
+           }
+       }
 
     /**
-   	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
-   	 */
-   	public static class ECKAEGwithRIPEMD160KDF
-   			extends KeyAgreementSpi
-   	{
-   		public ECKAEGwithRIPEMD160KDF()
-   		{
-   			super("ECKAEGwithRIPEMD160KDF", new ECDHBasicAgreement(),
+        * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+        */
+       public static class ECKAEGwithRIPEMD160KDF
+               extends KeyAgreementSpi
+       {
+           public ECKAEGwithRIPEMD160KDF()
+           {
+               super("ECKAEGwithRIPEMD160KDF", new ECDHBasicAgreement(),
                    new KDF2BytesGenerator(new RIPEMD160Digest()));
-   		}
-   	}
+           }
+       }
 
     /**
-   	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
-   	 */
-   	public static class ECKAEGwithSHA224KDF
-   			extends KeyAgreementSpi
-   	{
-   		public ECKAEGwithSHA224KDF()
-   		{
-   			super("ECKAEGwithSHA224KDF", new ECDHBasicAgreement(),
+        * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+        */
+       public static class ECKAEGwithSHA224KDF
+               extends KeyAgreementSpi
+       {
+           public ECKAEGwithSHA224KDF()
+           {
+               super("ECKAEGwithSHA224KDF", new ECDHBasicAgreement(),
                    new KDF2BytesGenerator(DigestFactory.createSHA224()));
-   		}
-   	}
+           }
+       }
 
-	/**
-	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
-	 */
-	public static class ECKAEGwithSHA256KDF
-			extends KeyAgreementSpi
-	{
-		public ECKAEGwithSHA256KDF()
-		{
-			super("ECKAEGwithSHA256KDF", new ECDHBasicAgreement(),
+    /**
+     * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+     */
+    public static class ECKAEGwithSHA256KDF
+            extends KeyAgreementSpi
+    {
+        public ECKAEGwithSHA256KDF()
+        {
+            super("ECKAEGwithSHA256KDF", new ECDHBasicAgreement(),
                 new KDF2BytesGenerator(DigestFactory.createSHA256()));
-		}
-	}
+        }
+    }
 
-	/**
-	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
-	 */
-	public static class ECKAEGwithSHA384KDF
-			extends KeyAgreementSpi
-	{
-		public ECKAEGwithSHA384KDF()
-		{
-			super("ECKAEGwithSHA384KDF", new ECDHBasicAgreement(),
+    /**
+     * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+     */
+    public static class ECKAEGwithSHA384KDF
+            extends KeyAgreementSpi
+    {
+        public ECKAEGwithSHA384KDF()
+        {
+            super("ECKAEGwithSHA384KDF", new ECDHBasicAgreement(),
                 new KDF2BytesGenerator(DigestFactory.createSHA384()));
-		}
-	}
+        }
+    }
 
-	/**
-	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
-	 */
-	public static class ECKAEGwithSHA512KDF
-			extends KeyAgreementSpi
-	{
-		public ECKAEGwithSHA512KDF()
-		{
-			super("ECKAEGwithSHA512KDF", new ECDHBasicAgreement(),
+    /**
+     * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+     */
+    public static class ECKAEGwithSHA512KDF
+            extends KeyAgreementSpi
+    {
+        public ECKAEGwithSHA512KDF()
+        {
+            super("ECKAEGwithSHA512KDF", new ECDHBasicAgreement(),
                 new KDF2BytesGenerator(DigestFactory.createSHA512()));
-		}
-	}
+        }
+    }
 }

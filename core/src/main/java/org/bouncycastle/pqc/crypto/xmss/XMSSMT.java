@@ -57,7 +57,7 @@ public final class XMSSMT
 
     private void importState(XMSSMTPrivateKeyParameters privateKey, XMSSMTPublicKeyParameters publicKey)
     {
-		/* import to xmss */
+        /* import to xmss */
         xmssParams.getWOTSPlus().importKeys(new byte[params.getTreeDigestSize()], this.privateKey.getPublicSeed());
 
         this.privateKey = privateKey;
@@ -93,7 +93,7 @@ public final class XMSSMT
             throw new IllegalStateException("public seed of private key and public key do not match");
         }
         
-		/* import to xmss */
+        /* import to xmss */
         xmssParams.getWOTSPlus().importKeys(new byte[params.getTreeDigestSize()], xmssMTPrivateKey.getPublicSeed());
 
         this.privateKey = xmssMTPrivateKey;

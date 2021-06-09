@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.crypto.xmss;
 public interface XMSSOid
 {
 
-	int getOid();
+    int getOid();
 
-	String toString();
+    String toString();
 }

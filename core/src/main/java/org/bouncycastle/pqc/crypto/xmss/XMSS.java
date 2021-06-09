@@ -158,7 +158,7 @@ public class XMSS
         {
             throw new IllegalStateException("public seed of private key and public key do not match");
         }
-		/* import */
+        /* import */
         this.privateKey = tmpPrivateKey;
         this.publicKey = tmpPublicKey;
         wotsPlus.importKeys(new byte[params.getTreeDigestSize()], this.privateKey.getPublicSeed());
@@ -259,9 +259,9 @@ public class XMSS
         {
             throw new NullPointerException("otsHashAddress == null");
         }
-		/* (re)initialize WOTS+ instance */
+        /* (re)initialize WOTS+ instance */
         wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), getPublicSeed());
-		/* create WOTS+ signature */
+        /* create WOTS+ signature */
         return wotsPlus.sign(messageDigest, otsHashAddress);
     }
 

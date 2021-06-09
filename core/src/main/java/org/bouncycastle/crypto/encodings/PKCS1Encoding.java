@@ -244,13 +244,13 @@ public class PKCS1Encoding
     {
         int correct = 0;
         /*
-		 * Check if the first two bytes are 0 2
-		 */
+         * Check if the first two bytes are 0 2
+         */
         correct |= (encoded[0] ^ 2);
 
-		/*
-		 * Now the padding check, check for no 0 byte in the padding
-		 */
+        /*
+         * Now the padding check, check for no 0 byte in the padding
+         */
         int plen = encoded.length - (
             pLen /* Length of the PMS */
                 + 1 /* Final 0-byte before PMS */
@@ -265,14 +265,14 @@ public class PKCS1Encoding
             correct |= (tmp & 1) - 1;
         }
 
-		/*
-		 * Make sure the padding ends with a 0 byte.
-		 */
+        /*
+         * Make sure the padding ends with a 0 byte.
+         */
         correct |= encoded[encoded.length - (pLen + 1)];
 
-		/*
-		 * Return 0 or 1, depending on the result.
-		 */
+        /*
+         * Return 0 or 1, depending on the result.
+         */
         correct |= correct >> 1;
         correct |= correct >> 2;
         correct |= correct >> 4;
@@ -312,15 +312,15 @@ public class PKCS1Encoding
 
         byte[] data = (useStrictLength & (block.length != engine.getOutputBlockSize())) ? blockBuffer : block;
 
-		/*
-		 * Check the padding.
-		 */
+        /*
+         * Check the padding.
+         */
         int correct = PKCS1Encoding.checkPkcs1Encoding(data, this.pLen);
-		
-		/*
-		 * Now, to a constant time constant memory copy of the decrypted value
-		 * or the random value, depending on the validity of the padding.
-		 */
+        
+        /*
+         * Now, to a constant time constant memory copy of the decrypted value
+         * or the random value, depending on the validity of the padding.
+         */
         byte[] result = new byte[this.pLen];
         for (int i = 0; i < this.pLen; i++)
         {

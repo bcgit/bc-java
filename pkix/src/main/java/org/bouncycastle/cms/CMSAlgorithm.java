@@ -31,9 +31,9 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  AES192_GCM      = NISTObjectIdentifiers.id_aes192_GCM.intern();
     public static final ASN1ObjectIdentifier  AES256_GCM      = NISTObjectIdentifiers.id_aes256_GCM.intern();
 
-//	public static final ASN1ObjectIdentifier  AES128_CBC_CMAC      = BSIObjectIdentifiers.id_aes128_CBC_CMAC;
-//	public static final ASN1ObjectIdentifier  AES192_CBC_CMAC      = BSIObjectIdentifiers.id_aes192_CBC_CMAC;
-//	public static final ASN1ObjectIdentifier  AES256_CBC_CMAC      = BSIObjectIdentifiers.id_aes256_CBC_CMAC;
+//    public static final ASN1ObjectIdentifier  AES128_CBC_CMAC      = BSIObjectIdentifiers.id_aes128_CBC_CMAC;
+//    public static final ASN1ObjectIdentifier  AES192_CBC_CMAC      = BSIObjectIdentifiers.id_aes192_CBC_CMAC;
+//    public static final ASN1ObjectIdentifier  AES256_CBC_CMAC      = BSIObjectIdentifiers.id_aes256_CBC_CMAC;
 
     public static final ASN1ObjectIdentifier  CAMELLIA128_CBC = NTTObjectIdentifiers.id_camellia128_cbc.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA192_CBC = NTTObjectIdentifiers.id_camellia192_cbc.intern();
@@ -77,10 +77,10 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  ECDHGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.intern();
     public static final ASN1ObjectIdentifier  ECDHGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512.intern();
 
-	public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF  = BSIObjectIdentifiers.ecka_eg_X963kdf;
-	public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF_SHA256  = BSIObjectIdentifiers.ecka_eg_X963kdf_SHA256;
-	public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF_SHA384  = BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384;
-	public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF_SHA512  = BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512;
+    public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF  = BSIObjectIdentifiers.ecka_eg_X963kdf;
+    public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF_SHA256  = BSIObjectIdentifiers.ecka_eg_X963kdf_SHA256;
+    public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF_SHA384  = BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384;
+    public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF_SHA512  = BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512;
 
     public static final ASN1ObjectIdentifier  SHA1 = OIWObjectIdentifiers.idSHA1.intern();
     public static final ASN1ObjectIdentifier  SHA224 = NISTObjectIdentifiers.id_sha224.intern();

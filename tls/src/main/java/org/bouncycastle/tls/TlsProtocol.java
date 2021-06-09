@@ -981,7 +981,7 @@ public abstract class TlsProtocol
             throw new IllegalArgumentException("Illegal appDataSplitMode mode: " + appDataSplitMode);
         }
         this.appDataSplitMode = appDataSplitMode;
-	}
+    }
 
     public boolean isResumableHandshake()
     {
