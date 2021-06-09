@@ -625,7 +625,7 @@ class ProvSSLContextSpi
          * TODO Move cipher suite management into CipherSuiteInfo (PerConnection/PerContext pattern
          * like NamedGroupInfo) to avoid unnecessary repetition of these sorts of checks.
          */
-        int[] result = TlsUtils.getSupportedCipherSuites(crypto, candidates, count);
+        int[] result = TlsUtils.getSupportedCipherSuites(crypto, candidates, 0, count);
 
         if (result.length < 1)
         {
