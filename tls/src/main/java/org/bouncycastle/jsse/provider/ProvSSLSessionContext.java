@@ -245,7 +245,7 @@ class ProvSSLSessionContext
         }
         if (session.getCreationTime() < creationTimeLimit)
         {
-            session.invalidate();
+            session.invalidatedBySessionContext();
         }
         return !session.isValid();
     }
