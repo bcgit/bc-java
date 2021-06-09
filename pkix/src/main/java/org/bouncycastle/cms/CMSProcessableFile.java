@@ -9,6 +9,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * a holding class for a file of data to be processed.
@@ -20,7 +21,7 @@ public class CMSProcessableFile
 
     private final ASN1ObjectIdentifier type;
     private final File file;
-    private final byte[] buf;
+    private final int bufSize;
 
     public CMSProcessableFile(
         File file)
@@ -42,26 +43,20 @@ public class CMSProcessableFile
     {
         this.type = type;
         this.file = file;
-        buf = new byte[bufSize];
+        this.bufSize = bufSize;
     }
 
     public InputStream getInputStream()
         throws IOException, CMSException
     {
-        return new BufferedInputStream(new FileInputStream(file), DEFAULT_BUF_SIZE);
+        return new BufferedInputStream(new FileInputStream(file), bufSize);
     }
 
     public void write(OutputStream zOut)
         throws IOException, CMSException
     {
-        FileInputStream     fIn = new FileInputStream(file);
-        int                 len;
-        
-        while ((len = fIn.read(buf, 0, buf.length)) > 0)
-        {
-            zOut.write(buf, 0, len);
-        }
-        
+        FileInputStream fIn = new FileInputStream(file);
+        Streams.pipeAll(fIn, zOut, bufSize);
         fIn.close();
     }
 
