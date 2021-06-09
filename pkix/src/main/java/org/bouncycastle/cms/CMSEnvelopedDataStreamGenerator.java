@@ -2,7 +2,7 @@ package org.bouncycastle.cms;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -299,7 +299,7 @@ public class CMSEnvelopedDataStreamGenerator
 
             if (unprotectedAttributeGenerator != null)
             {
-                AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(new HashMap());
+                AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(Collections.emptyMap());
       
                 ASN1Set unprotectedAttrs = new BERSet(attrTable.toASN1EncodableVector());
 

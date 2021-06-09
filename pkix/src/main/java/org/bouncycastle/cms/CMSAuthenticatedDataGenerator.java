@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -107,13 +106,13 @@ public class CMSAuthenticatedDataGenerator
                 throw new CMSException("unable to perform digest calculation: " + e.getMessage(), e);
             }
 
-            Map parameters = getBaseParameters(typedData.getContentType(), digestCalculator.getAlgorithmIdentifier(), macCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest());
+            Map parameters = Collections.unmodifiableMap(getBaseParameters(typedData.getContentType(), digestCalculator.getAlgorithmIdentifier(), macCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest()));
 
             if (authGen == null)
             {
                 authGen = new DefaultAuthenticatedAttributeTableGenerator();
             }
-            ASN1Set authed = new DERSet(authGen.getAttributes(Collections.unmodifiableMap(parameters)).toASN1EncodableVector());
+            ASN1Set authed = new DERSet(authGen.getAttributes(parameters).toASN1EncodableVector());
 
             try
             {
@@ -129,7 +128,7 @@ public class CMSAuthenticatedDataGenerator
             {
                 throw new CMSException("exception decoding algorithm parameters.", e);
             }
-            ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(Collections.unmodifiableMap(parameters)).toASN1EncodableVector()) : null;
+            ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(parameters).toASN1EncodableVector()) : null;
 
             ContentInfo  eci = new ContentInfo(
                             typedData.getContentType(),
@@ -157,7 +156,7 @@ public class CMSAuthenticatedDataGenerator
                 throw new CMSException("exception decoding algorithm parameters.", e);
             }
 
-            ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(new HashMap()).toASN1EncodableVector()) : null;
+            ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(Collections.emptyMap()).toASN1EncodableVector()) : null;
 
             ContentInfo  eci = new ContentInfo(
                             typedData.getContentType(),
