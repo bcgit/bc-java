@@ -11,6 +11,8 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.BasicTlsSRPIdentity;
+import org.bouncycastle.tls.ChannelBinding;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SRPTlsServer;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -26,6 +28,7 @@ import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 class MockSRPTlsServer
     extends SRPTlsServer
@@ -41,6 +44,14 @@ class MockSRPTlsServer
         throws IOException
     {
         super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager(new BcTlsCrypto(new SecureRandom())));
+    }
+
+    protected Vector getProtocolNames()
+    {
+        Vector protocolNames = new Vector();
+        protocolNames.addElement(ProtocolName.HTTP_2_TLS);
+        protocolNames.addElement(ProtocolName.HTTP_1_1);
+        return protocolNames;
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
@@ -65,18 +76,6 @@ class MockSRPTlsServer
             + AlertDescription.getText(alertDescription));
     }
 
-    public void notifyHandshakeComplete() throws IOException
-    {
-        super.notifyHandshakeComplete();
-
-        byte[] srpIdentity = context.getSecurityParametersConnection().getSRPIdentity();
-        if (srpIdentity != null)
-        {
-            String name = Strings.fromUTF8ByteArray(srpIdentity);
-            System.out.println("TLS-SRP server completed handshake for SRP identity: " + name);
-        }
-    }
-
     public ProtocolVersion getServerVersion() throws IOException
     {
         ProtocolVersion serverVersion = super.getServerVersion();
@@ -86,11 +85,34 @@ class MockSRPTlsServer
         return serverVersion;
     }
 
+    public void notifyHandshakeComplete() throws IOException
+    {
+        super.notifyHandshakeComplete();
+
+        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        if (protocolName != null)
+        {
+            System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
+        }
+
+        byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
+        System.out.println("Server 'tls-server-end-point': " + hex(tlsServerEndPoint));
+
+        byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
+        System.out.println("Server 'tls-unique': " + hex(tlsUnique));
+
+        byte[] srpIdentity = context.getSecurityParametersConnection().getSRPIdentity();
+        if (srpIdentity != null)
+        {
+            String name = Strings.fromUTF8ByteArray(srpIdentity);
+            System.out.println("TLS-SRP server completed handshake for SRP identity: " + name);
+        }
+    }
+
     protected TlsCredentialedSigner getDSASignerCredentials() throws IOException
     {
         Vector clientSigAlgs = context.getSecurityParametersHandshake().getClientSigAlgs();
-        return TlsTestUtils.loadSignerCredentials(context, clientSigAlgs, SignatureAlgorithm.dsa, "x509-server-dsa.pem",
-            "x509-server-key-dsa.pem");
+        return TlsTestUtils.loadSignerCredentialsServer(context, clientSigAlgs, SignatureAlgorithm.dsa);
     }
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
@@ -102,6 +124,11 @@ class MockSRPTlsServer
     protected ProtocolVersion[] getSupportedVersions()
     {
         return ProtocolVersion.TLSv12.only();
+    }
+
+    protected String hex(byte[] data)
+    {
+        return data == null ? "(null)" : Hex.toHexString(data);
     }
 
     static class MyIdentityManager
@@ -117,7 +144,7 @@ class MockSRPTlsServer
 
         public TlsSRPLoginParameters getLoginParameters(byte[] identity)
         {
-            if (Arrays.areEqual(TEST_IDENTITY, identity))
+            if (Arrays.constantTimeAreEqual(TEST_IDENTITY, identity))
             {
                 SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
                 verifierGenerator.init(TEST_GROUP.getN(), TEST_GROUP.getG(), new SHA1Digest());
