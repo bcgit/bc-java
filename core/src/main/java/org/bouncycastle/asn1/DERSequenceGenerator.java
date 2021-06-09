@@ -49,11 +49,20 @@ public class DERSequenceGenerator
      * @param object an ASN.1 encodable object to add.
      * @throws IOException if the target stream cannot be written to or the object cannot be encoded.
      */
-    public void addObject(
-        ASN1Encodable object)
-        throws IOException
+    public void addObject(ASN1Encodable object) throws IOException
     {
         object.toASN1Primitive().encodeTo(_bOut, ASN1Encoding.DER);
+    }
+
+    /**
+     * Add an ASN1.1 primitive to the SEQUENCE being generated.
+     *
+     * @param primitive an ASN.1 primitive to add.
+     * @throws IOException if the target stream cannot be written to or the primitive cannot be encoded.
+     */
+    public void addObject(ASN1Primitive primitive) throws IOException
+    {
+        primitive.encodeTo(_bOut, ASN1Encoding.DER);
     }
 
     /**
