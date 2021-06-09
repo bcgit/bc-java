@@ -6,7 +6,7 @@ import java.io.OutputStream;
 /**
  * Base class for generators for indefinite-length structures.
  */
-public class BERGenerator
+public abstract class BERGenerator
     extends ASN1Generator
 {
     private boolean _tagged = false;
