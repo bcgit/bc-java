@@ -103,9 +103,9 @@ public class PBEFileProcessor
         PGPLiteralData ld = (PGPLiteralData)o;
         InputStream unc = ld.getInputStream();
 
-        OutputStream fOut = new BufferedOutputStream(new FileOutputStream(ld.getFileName()));
+        OutputStream fOut = new FileOutputStream(ld.getFileName());
 
-        Streams.pipeAll(unc, fOut);
+        Streams.pipeAll(unc, fOut, 8192);
 
         fOut.close();
 
