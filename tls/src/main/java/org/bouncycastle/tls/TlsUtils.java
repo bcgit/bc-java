@@ -4185,17 +4185,25 @@ public class TlsUtils
 
     public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites)
     {
-        return getSupportedCipherSuites(crypto, suites, suites.length);
+        return getSupportedCipherSuites(crypto, suites, 0, suites.length);
     }
 
+    /**
+     * @deprecated Use {@link #getSupportedCipherSuites(TlsCrypto, int[], int, int)} instead.
+     */
     public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites, int suitesCount)
+    {
+        return getSupportedCipherSuites(crypto, suites, 0, suitesCount);
+    }
+
+    public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites, int suitesOff, int suitesCount)
     {
         int[] supported = new int[suitesCount];
         int count = 0;
 
         for (int i = 0; i < suitesCount; ++i)
         {
-            int suite = suites[i];
+            int suite = suites[suitesOff + i];
             if (isSupportedCipherSuite(crypto, suite))
             {
                 supported[count++] = suite;
