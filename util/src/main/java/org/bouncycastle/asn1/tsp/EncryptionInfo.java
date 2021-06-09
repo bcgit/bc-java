@@ -22,9 +22,9 @@ import org.bouncycastle.asn1.DLSequence;
  * 1997-ASN.1 EncryptionInfo
  * <p>
  * EncryptionInfo       ::=     SEQUENCE {
- * encryptionInfoType   ENCINFO-TYPE.&id
+ * encryptionInfoType   ENCINFO-TYPE.&amp;id
  * ({SupportedEncryptionAlgorithms}),
- * encryptionInfoValue  ENCINFO-TYPE.&Type
+ * encryptionInfoValue  ENCINFO-TYPE.&amp;Type
  * ({SupportedEncryptionAlgorithms}{@encryptionInfoType})
  * }
  * <p>
