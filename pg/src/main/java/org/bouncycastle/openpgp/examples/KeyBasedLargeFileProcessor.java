@@ -145,9 +145,9 @@ public class KeyBasedLargeFileProcessor
                 }
 
                 InputStream unc = ld.getInputStream();
-                OutputStream fOut =  new BufferedOutputStream(new FileOutputStream(outFileName));
+                OutputStream fOut = new FileOutputStream(outFileName);
 
-                Streams.pipeAll(unc, fOut);
+                Streams.pipeAll(unc, fOut, 8192);
 
                 fOut.close();
             }
