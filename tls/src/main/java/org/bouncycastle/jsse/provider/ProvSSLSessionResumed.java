@@ -59,10 +59,9 @@ class ProvSSLSessionResumed
         return sessionParameters.getNegotiatedVersion();
     }
 
-    public void invalidate()
+    @Override
+    protected void invalidateTLS()
     {
-        super.invalidate();
-
         tlsSession.invalidate();
     }
 
