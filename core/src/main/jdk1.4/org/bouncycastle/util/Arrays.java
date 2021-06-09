@@ -273,14 +273,6 @@ public final class Arrays
         java.util.Arrays.fill(a, val);
     }
 
-    /**
-     * @deprecated Use {@link #fill(byte[], int, int, byte)} instead.
-     */
-    public static void fill(byte[] a, int fromIndex, byte val)
-    {
-        fill(a, fromIndex, a.length, val);
-    }
-
     public static void fill(byte[] a, int fromIndex, int toIndex, byte val)
     {
         java.util.Arrays.fill(a, fromIndex, toIndex, val);
@@ -301,14 +293,6 @@ public final class Arrays
         java.util.Arrays.fill(a, val);
     }
 
-    /**
-     * @deprecated Use {@link #fill(int[], int, int, int)} instead.
-     */
-    public static void fill(int[] a, int fromIndex, int val)
-    {
-        java.util.Arrays.fill(a, fromIndex, a.length, val);
-    }
-
     public static void fill(int[] a, int fromIndex, int toIndex, int val)
     {
         java.util.Arrays.fill(a, fromIndex, toIndex, val);
@@ -317,14 +301,6 @@ public final class Arrays
     public static void fill(long[] a, long val)
     {
         java.util.Arrays.fill(a, val);
-    }
-
-    /**
-     * @deprecated Use {@link #fill(long[], int, int, long)} instead.
-     */
-    public static void fill(long[] a, int fromIndex, long val)
-    {
-        java.util.Arrays.fill(a, fromIndex, a.length, val);
     }
 
     public static void fill(long[] a, int fromIndex, int toIndex, long val)
@@ -345,14 +321,6 @@ public final class Arrays
     public static void fill(short[] a, short val)
     {
         java.util.Arrays.fill(a, val);
-    }
-
-    /**
-     * @deprecated Use {@link #fill(short[], int, int, short)} instead.
-     */
-    public static void fill(short[] a, int fromIndex, short val)
-    {
-        java.util.Arrays.fill(a, fromIndex, a.length, val);
     }
 
     public static void fill(short[] a, int fromIndex, int toIndex, short val)

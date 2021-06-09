@@ -110,14 +110,6 @@ public abstract class ECFieldElement
             return null;
         }
 
-        /**
-         * @deprecated Use ECCurve.fromBigInteger to construct field elements
-         */
-        public Fp(BigInteger q, BigInteger x)
-        {
-            this(q, calculateResidue(q), x);
-        }
-
         Fp(BigInteger q, BigInteger r, BigInteger x)
         {
             if (x == null || x.signum() < 0 || x.compareTo(q) >= 0)
@@ -626,9 +618,8 @@ public abstract class ECFieldElement
          * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
          * represents the reduction polynomial <code>f(z)</code>.
          * @param x The BigInteger representing the value of the field element.
-         * @deprecated Use ECCurve.fromBigInteger to construct field elements
          */
-        public F2m(
+        F2m(
             int m, 
             int k1, 
             int k2, 
