@@ -97,10 +97,9 @@ class ProvSSLSession
         return tlsSession;
     }
 
-    public void invalidate()
+    @Override
+    protected void invalidateTLS()
     {
-        super.invalidate();
-
         if (null != tlsSession)
         {
             tlsSession.invalidate();

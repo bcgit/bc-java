@@ -121,4 +121,9 @@ class ProvSSLSessionHandshake
         }
         return Collections.unmodifiableList(result);
     }
+
+    @Override
+    protected void invalidateTLS()
+    {
+    }
 }
