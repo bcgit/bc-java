@@ -23,11 +23,11 @@ import org.bouncycastle.util.Arrays;
  *  </ul>
  * Resulting function calls assuming an 8 bit counter.
  * <ul>
- * <li>1.  KDFCounterParameters(ki, 	null, 									"Label || 0x00 || Context || [L]_2]",	8); </li>
- * <li>2.  KDFCounterParameters(ki, 	"Label || 0x00 || Context || [L]_2]", 	null,									8); </li>
- * <li>3a. KDFCounterParameters(ki, 	"Label || 0x00",						"Context || [L]_2]",					8);  </li>
- * <li>3b. KDFCounterParameters(ki, 	"Label || 0x00",						"[L]_2] || Context",					8);</li>
- * <li>3c. KDFCounterParameters(ki, 	"Label", 								"0x00 || Context || [L]_2]",			8); </li>
+ * <li>1.  KDFCounterParameters(ki,     null,                                     "Label || 0x00 || Context || [L]_2]",    8); </li>
+ * <li>2.  KDFCounterParameters(ki,     "Label || 0x00 || Context || [L]_2]",     null,                                    8); </li>
+ * <li>3a. KDFCounterParameters(ki,     "Label || 0x00",                        "Context || [L]_2]",                    8);  </li>
+ * <li>3b. KDFCounterParameters(ki,     "Label || 0x00",                        "[L]_2] || Context",                    8);</li>
+ * <li>3c. KDFCounterParameters(ki,     "Label",                                 "0x00 || Context || [L]_2]",            8); </li>
  * </ul>
  */
 public final class KDFCounterParameters
@@ -48,7 +48,7 @@ public final class KDFCounterParameters
      */
     public KDFCounterParameters(byte[] ki, byte[] fixedInputDataCounterSuffix, int r)
     {
-    	this(ki, null, fixedInputDataCounterSuffix, r);
+        this(ki, null, fixedInputDataCounterSuffix, r);
     }
 
     /**
@@ -99,7 +99,7 @@ public final class KDFCounterParameters
 
     public byte[] getFixedInputData()
     {
-    	//Retained for backwards compatibility
+        //Retained for backwards compatibility
         return Arrays.clone(fixedInputDataCounterSuffix);
     }
 

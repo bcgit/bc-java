@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameStyle;
 
 public class RFC4519Style
-	extends AbstractX500NameStyle
+    extends AbstractX500NameStyle
 {
     public static final ASN1ObjectIdentifier businessCategory = new ASN1ObjectIdentifier("2.5.4.15").intern();
     public static final ASN1ObjectIdentifier c = new ASN1ObjectIdentifier("2.5.4.6").intern();
@@ -175,9 +175,9 @@ public class RFC4519Style
         defaultLookUp = copyHashTable(DefaultLookUp);
     }
 
-    protected ASN1Encodable encodeStringValue(ASN1ObjectIdentifier oid,
-    		String value) {
-    	if (oid.equals(dc))
+    protected ASN1Encodable encodeStringValue(ASN1ObjectIdentifier oid, String value)
+    {
+        if (oid.equals(dc))
         {
             return new DERIA5String(value);
         }
@@ -187,7 +187,7 @@ public class RFC4519Style
             return new DERPrintableString(value);
         }
 
-    	return super.encodeStringValue(oid, value);
+        return super.encodeStringValue(oid, value);
     }
 
     public String oidToDisplayName(ASN1ObjectIdentifier oid)

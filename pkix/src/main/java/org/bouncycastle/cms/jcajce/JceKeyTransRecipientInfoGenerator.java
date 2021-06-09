@@ -25,7 +25,7 @@ public class JceKeyTransRecipientInfoGenerator
     public JceKeyTransRecipientInfoGenerator(X509Certificate recipientCert, AsymmetricKeyWrapper wrapper)
         throws CertificateEncodingException
     {
-    	super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), wrapper);
+        super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), wrapper);
     }
 
     public JceKeyTransRecipientInfoGenerator(byte[] subjectKeyIdentifier, PublicKey publicKey)

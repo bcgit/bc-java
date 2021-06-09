@@ -9,8 +9,6 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.util.test.SimpleTestResult;
-import org.bouncycastle.util.test.Test;
 import org.bouncycastle.util.test.TestFailedException;
 import org.bouncycastle.util.test.TestResult;
 
@@ -125,11 +123,11 @@ public class AESWrapTest
 
     private void heapIssueTest()
     {
-   		byte[] key = Hex.decode("d305ef52a6b9e72c810b821261d2d678");
-   		byte[] ciphertext = Hex.decode("d2b2906d209a46261d8f6794eca3179d");
+        byte[] key = Hex.decode("d305ef52a6b9e72c810b821261d2d678");
+        byte[] ciphertext = Hex.decode("d2b2906d209a46261d8f6794eca3179d");
 
-   		Wrapper aes = new AESWrapPadEngine();
-   		aes.init(false, new KeyParameter(key));
+        Wrapper aes = new AESWrapPadEngine();
+        aes.init(false, new KeyParameter(key));
         try
         {
             byte[] result = aes.unwrap(ciphertext, 0, ciphertext.length);

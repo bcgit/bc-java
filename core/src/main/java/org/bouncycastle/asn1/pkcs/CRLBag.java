@@ -67,7 +67,7 @@ public class CRLBag
      *
      * x509CRL BAG-TYPE ::= {OCTET STRING IDENTIFIED BY {certTypes 1}
      * -- DER-encoded X.509 CRL stored in OCTET STRING
-	 *
+     *
      * CRLTypes BAG-TYPE ::= {
      * x509CRL,
      * ... -- For future extensions

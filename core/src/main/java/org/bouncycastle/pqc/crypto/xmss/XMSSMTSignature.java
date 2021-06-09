@@ -64,7 +64,7 @@ public final class XMSSMTSignature
         }
         else
         {
-			/* set */
+            /* set */
             index = builder.index;
             byte[] tmpRandom = builder.random;
             if (tmpRandom != null)
@@ -146,7 +146,7 @@ public final class XMSSMTSignature
 
     public byte[] toByteArray()
     {
-		/* index || random || reduced signatures */
+        /* index || random || reduced signatures */
         int n = params.getTreeDigestSize();
         int len = params.getWOTSPlus().getParams().getLen();
         int indexSize = (int)Math.ceil(params.getHeight() / (double)8);
@@ -156,14 +156,14 @@ public final class XMSSMTSignature
         int totalSize = indexSize + randomSize + reducedSignaturesSizeTotal;
         byte[] out = new byte[totalSize];
         int position = 0;
-		/* copy index */
+        /* copy index */
         byte[] indexBytes = XMSSUtil.toBytesBigEndian(index, indexSize);
         XMSSUtil.copyBytesAtOffset(out, indexBytes, position);
         position += indexSize;
-		/* copy random */
+        /* copy random */
         XMSSUtil.copyBytesAtOffset(out, random, position);
         position += randomSize;
-		/* copy reduced signatures */
+        /* copy reduced signatures */
         for (XMSSReducedSignature reducedSignature : reducedSignatures)
         {
             byte[] signature = reducedSignature.toByteArray();

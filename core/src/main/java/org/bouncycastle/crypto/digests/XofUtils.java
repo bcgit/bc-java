@@ -6,24 +6,24 @@ public class XofUtils
 {
     public static byte[] leftEncode(long strLen)
     {
-    	byte n = 1;
+        byte n = 1;
 
         long v = strLen;
-    	while ((v >>= 8) != 0)
+        while ((v >>= 8) != 0)
         {
-    		n++;
-    	}
+            n++;
+        }
 
         byte[] b = new byte[n + 1];
 
-    	b[0] = n;
+        b[0] = n;
 
-    	for (int i = 1; i <= n; i++)
-    	{
-    		b[i] = (byte)(strLen >> (8 * (n - i)));
-    	}
+        for (int i = 1; i <= n; i++)
+        {
+            b[i] = (byte)(strLen >> (8 * (n - i)));
+        }
 
-    	return b;
+        return b;
     }
 
     public static byte[] rightEncode(long strLen)

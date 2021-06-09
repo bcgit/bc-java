@@ -375,8 +375,8 @@ public class OpenBSDBCrypt
     /*
      * encode the input data producing a Bcrypt base 64 String.
      *
-     * @param 	a byte representation of the salt or the password
-     * @return 	the Bcrypt base64 String
+     * @param     a byte representation of the salt or the password
+     * @return     the Bcrypt base64 String
      */
     private static void encodeData(
         StringBuilder sb,
@@ -428,12 +428,12 @@ public class OpenBSDBCrypt
     /*
      * decodes the bcrypt base 64 encoded SaltString
      *
-     * @param 		a 22 character Bcrypt base 64 encoded String 
-     * @return 		the 16 byte salt
-     * @exception 	DataLengthException if the length 
-     * 				of parameter is not 22
-     * @exception 	InvalidArgumentException if the parameter
-     * 				contains a value other than from Bcrypts base 64 encoding table
+     * @param         a 22 character Bcrypt base 64 encoded String 
+     * @return         the 16 byte salt
+     * @exception     DataLengthException if the length 
+     *                 of parameter is not 22
+     * @exception     InvalidArgumentException if the parameter
+     *                 contains a value other than from Bcrypts base 64 encoding table
      */
     private static byte[] decodeSaltString(
         String saltString)

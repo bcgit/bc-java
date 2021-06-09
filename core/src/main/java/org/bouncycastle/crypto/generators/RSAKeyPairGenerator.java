@@ -91,12 +91,12 @@ public class RSAKeyPairGenerator
                     continue;
                 }
 
-	            /*
+                /*
                  * Require a minimum weight of the NAF representation, since low-weight composites may
-	             * be weak against a version of the number-field-sieve for factoring.
-	             *
-	             * See "The number field sieve for integers of low weight", Oliver Schirokauer.
-	             */
+                 * be weak against a version of the number-field-sieve for factoring.
+                 *
+                 * See "The number field sieve for integers of low weight", Oliver Schirokauer.
+                 */
                 if (WNafUtil.getNafWeight(n) < minWeight)
                 {
                     p = chooseRandomPrime(pbitlength, e, squaredBound);

@@ -59,12 +59,12 @@ public final class XMSSPrivateKeyParameters
             int secretKeyPRFSize = n;
             int publicSeedSize = n;
             int rootSize = n;
-			/*
-			int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
-			if (privateKey.length != totalSize) {
-				throw new ParseException("private key has wrong size", 0);
-			}
-			*/
+            /*
+            int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
+            if (privateKey.length != totalSize) {
+                throw new ParseException("private key has wrong size", 0);
+            }
+            */
             int position = 0;
             int index = Pack.bigEndianToInt(privateKey, position);
             if (!XMSSUtil.isIndexValid(height, index))
@@ -80,7 +80,7 @@ public final class XMSSPrivateKeyParameters
             position += publicSeedSize;
             root = XMSSUtil.extractBytesAtOffset(privateKey, position, rootSize);
             position += rootSize;
-			/* import BDS state */
+            /* import BDS state */
             byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(privateKey, position, privateKey.length - position);
             try
             {
@@ -102,7 +102,7 @@ public final class XMSSPrivateKeyParameters
         }
         else
         {
-			/* set */
+            /* set */
             byte[] tmpSecretKeySeed = builder.secretKeySeed;
             if (tmpSecretKeySeed != null)
             {

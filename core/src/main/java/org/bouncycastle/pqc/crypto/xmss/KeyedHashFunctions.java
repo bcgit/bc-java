@@ -28,9 +28,9 @@ final class KeyedHashFunctions
         byte[] in = XMSSUtil.toBytesBigEndian(fixedValue, digestSize);
         /* fill first n byte of out buffer */
         digest.update(in, 0, in.length);
-		/* add key */
+        /* add key */
         digest.update(key, 0, key.length);
-		/* add index */
+        /* add index */
         digest.update(index, 0, index.length);
 
         byte[] out = new byte[digestSize];

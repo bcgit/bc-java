@@ -132,10 +132,10 @@ public final class Shacal2
             provider.addAlgorithm("Cipher.SHACAL-2", PREFIX + "$ECB");
             provider.addAlgorithm("KeyGenerator.Shacal2", PREFIX + "$KeyGen");        
             provider.addAlgorithm("AlgorithmParameterGenerator.Shacal2", PREFIX + "$AlgParamGen");
-        	provider.addAlgorithm("AlgorithmParameters.Shacal2", PREFIX + "$AlgParams");
+            provider.addAlgorithm("AlgorithmParameters.Shacal2", PREFIX + "$AlgParams");
             provider.addAlgorithm("KeyGenerator.SHACAL-2", PREFIX + "$KeyGen");
             provider.addAlgorithm("AlgorithmParameterGenerator.SHACAL-2", PREFIX + "$AlgParamGen");
-        	provider.addAlgorithm("AlgorithmParameters.SHACAL-2", PREFIX + "$AlgParams");
+            provider.addAlgorithm("AlgorithmParameters.SHACAL-2", PREFIX + "$AlgParams");
         }
     }
 }

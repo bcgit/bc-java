@@ -244,19 +244,19 @@ public final class BDS
             .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
             .build();
 
-		/* iterate indexes */
+        /* iterate indexes */
         for (int indexLeaf = 0; indexLeaf < (1 << treeHeight); indexLeaf++)
         {
-			/* generate leaf */
+            /* generate leaf */
             otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder()
                 .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
                 .withOTSAddress(indexLeaf).withChainAddress(otsHashAddress.getChainAddress())
                 .withHashAddress(otsHashAddress.getHashAddress()).withKeyAndMask(otsHashAddress.getKeyAndMask())
                 .build();
-			/*
-			 * import WOTSPlusSecretKey as its needed to calculate the public
-			 * key on the fly
-			 */
+            /*
+             * import WOTSPlusSecretKey as its needed to calculate the public
+             * key on the fly
+             */
             wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(secretSeed, otsHashAddress), publicSeed);
             WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
             lTreeAddress = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(lTreeAddress.getLayerAddress())
@@ -271,13 +271,13 @@ public final class BDS
                 .withKeyAndMask(hashTreeAddress.getKeyAndMask()).build();
             while (!stack.isEmpty() && stack.peek().getHeight() == node.getHeight())
             {
-				/* add to authenticationPath if leafIndex == 1 */
+                /* add to authenticationPath if leafIndex == 1 */
                 int indexOnHeight = indexLeaf / (1 << node.getHeight());
                 if (indexOnHeight == 1)
                 {
                     authenticationPath.add(node);
                 }
-				/* store next right authentication node */
+                /* store next right authentication node */
                 if (indexOnHeight == 3 && node.getHeight() < (treeHeight - k))
                 {
                     treeHashInstances.get(node.getHeight()).setNode(node);
@@ -311,7 +311,7 @@ public final class BDS
                     .withTreeIndex(hashTreeAddress.getTreeIndex()).withKeyAndMask(hashTreeAddress.getKeyAndMask())
                     .build();
             }
-			/* push to stack */
+            /* push to stack */
             stack.push(node);
         }
         root = stack.pop();
@@ -332,9 +332,9 @@ public final class BDS
             throw new IllegalStateException("index out of bounds");
         }
         
-		/* determine tau */
+        /* determine tau */
         int tau = XMSSUtil.calculateTau(index, treeHeight);
-    	/* parent of leaf on height tau+1 is a left node */
+        /* parent of leaf on height tau+1 is a left node */
         if (((index >> (tau + 1)) & 1) == 0 && (tau < (treeHeight - 1)))
         {
             keep.put(tau, authenticationPath.get(tau));
@@ -348,7 +348,7 @@ public final class BDS
             .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
             .build();
 
-		/* leaf is a left node */
+        /* leaf is a left node */
         if (tau == 0)
         {
             otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder()
@@ -356,10 +356,10 @@ public final class BDS
                 .withOTSAddress(index).withChainAddress(otsHashAddress.getChainAddress())
                 .withHashAddress(otsHashAddress.getHashAddress()).withKeyAndMask(otsHashAddress.getKeyAndMask())
                 .build();
-			/*
-			 * import WOTSPlusSecretKey as its needed to calculate the public
-			 * key on the fly
-			 */
+            /*
+             * import WOTSPlusSecretKey as its needed to calculate the public
+             * key on the fly
+             */
             wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(secretSeed, otsHashAddress), publicSeed);
             WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
             lTreeAddress = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(lTreeAddress.getLayerAddress())
@@ -371,7 +371,7 @@ public final class BDS
         }
         else
         {
-			/* add new left node on height tau to authentication path */
+            /* add new left node on height tau to authentication path */
             hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
                 .withLayerAddress(hashTreeAddress.getLayerAddress())
                 .withTreeAddress(hashTreeAddress.getTreeAddress()).withTreeHeight(tau - 1)
@@ -386,7 +386,7 @@ public final class BDS
             authenticationPath.set(tau, node);
             keep.remove(tau - 1);
 
-			/* add new right nodes to authentication path */
+            /* add new right nodes to authentication path */
             for (int height = 0; height < tau; height++)
             {
                 if (height < (treeHeight - k))
@@ -399,7 +399,7 @@ public final class BDS
                 }
             }
 
-			/* reinitialize treehash instances */
+            /* reinitialize treehash instances */
             int minHeight = Math.min(tau, treeHeight - k);
             for (int height = 0; height < minHeight; height++)
             {
@@ -411,7 +411,7 @@ public final class BDS
             }
         }
  
-		/* update treehash instances */
+        /* update treehash instances */
         for (int i = 0; i < (treeHeight - k) >> 1; i++)
         {
             BDSTreeHash treeHash = getBDSTreeHashInstanceForUpdate();
