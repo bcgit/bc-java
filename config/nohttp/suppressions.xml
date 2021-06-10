@@ -1,0 +1,24 @@
+<!DOCTYPE suppressions PUBLIC "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+  "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+
+  <!-- ignore intellij out directory and out directory -->
+  <suppress files="out.+" checks="NoHttp"/>
+  <suppress files="(core|pg|pkix|prov|tls|util)[\\/]build.+" checks="NoHttp"/>
+
+  <!-- Suppress warnings in certificates, signatures, configs and emails for testing -->
+  <suppress files=".+\.(?:pem|crt|cer|eml|cnf|sig|message)$" checks="NoHttp"/>
+
+  <!-- This tests server doesn't seem to support HTTPS -->
+  <suppress message="http://testrfc7030.com/" checks="NoHttp"/>
+
+  <!-- Suppress warnings for strings that are used in tests -->
+  <suppress message="http://test" files=".+Test.java" checks="NoHttp"/>
+  <suppress message="http://img2.thejournal.ie" files=".+Test.java" checks="NoHttp"/>
+  <suppress message="http://gpgtools.org" files=".+Test.java" checks="NoHttp"/>
+  <suppress message="http://www.tbs-certificats.com" files=".+Test.java" checks="NoHttp"/>
+  <suppress message="http://point-at-infinity.org/ecc/nisttv" files=".+[\\/]nist_ecc.txt" checks="NoHttp"/>
+
+  <!-- Suppress warnings in this file -->
+  <suppress files="config/nohttp/suppressions.xml" checks="NoHttp"/>
+</suppressions> 
