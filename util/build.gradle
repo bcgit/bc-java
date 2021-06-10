@@ -1,19 +1,19 @@
 dependencies {
-  compile project(':core')
+  implementation project(':core')
 
-  testCompile group: 'junit', name: 'junit', version: '4.11'
+  testImplementation group: 'junit', name: 'junit', version: '4.11'
 }
 
-jar.baseName = "bcutil-$vmrange"
+jar.archiveBaseName = "bcutil-$vmrange"
 
 task sourcesJar(type: Jar) {
-  baseName = jar.baseName
+  archiveBaseName = jar.archiveBaseName
   classifier = 'sources'
   from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  baseName = jar.baseName
+  archiveBaseName = jar.archiveBaseName
   classifier = 'javadoc'
   from javadoc.destinationDir
 }
