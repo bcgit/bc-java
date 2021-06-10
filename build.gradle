@@ -1,9 +1,15 @@
+
 buildscript {
   repositories {
     maven {
       url "https://plugins.gradle.org/m2/"
     }
   }
+}
+
+plugins {
+   id "io.spring.nohttp" version "0.0.8"
+   id "checkstyle"
 }
 
 if (JavaVersion.current().isJava8Compatible())
@@ -15,16 +21,20 @@ if (JavaVersion.current().isJava8Compatible())
   }
 }
 
+// this needs to go here, otherwise it can't find config
+apply plugin: 'io.spring.nohttp'
+
 allprojects {
   apply plugin: 'java'
   apply plugin: 'idea'
+  apply plugin: 'checkstyle'
 
   repositories {
     mavenCentral()
   }
 
   dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testImplementation group: 'junit', name: 'junit', version: '4.11'
   }
 }
 
@@ -55,10 +65,11 @@ subprojects {
       targetCompatibility = 1.8
   }
 
-  version = '1.69'
+  version = '1.70-SNAPSHOT'
 
   test {
     systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
 
     filter {
       includeTestsMatching "AllTest*"

@@ -1,18 +1,18 @@
 dependencies {
-    compile project(':core')
+    implementation project(':core')
 }
 
-jar.baseName = "bcprov-$vmrange"
+jar.archiveBaseName = "bcprov-$vmrange"
 
 
 task sourcesJar(type: Jar) {
-  baseName = jar.baseName
+  archiveBaseName = jar.archiveBaseName
   classifier = 'sources'
   from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  baseName = jar.baseName
+  archiveBaseName = jar.archiveBaseName
   classifier = 'javadoc'
   from javadoc.destinationDir
 }

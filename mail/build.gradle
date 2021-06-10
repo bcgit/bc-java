@@ -1,21 +1,22 @@
 dependencies {
-    compile project(':core')
-    compile project(':pkix')
-    compile project(':prov')
+    implementation project(':core')
+    implementation project(':util')
+    implementation project(':pkix')
+    implementation project(':prov')
 
-    compile group: 'javax.mail', name: 'mail', version: '1.4'
+    implementation group: 'javax.mail', name: 'mail', version: '1.4'
 }
 
-jar.baseName = "bcmail-$vmrange"
+jar.archiveBaseName = "bcmail-$vmrange"
 
 task sourcesJar(type: Jar) {
-  baseName = jar.baseName
+  archiveBaseName = jar.archiveBaseName
   classifier = 'sources'
   from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  baseName = jar.baseName
+  archiveBaseName = jar.archiveBaseName
   classifier = 'javadoc'
   from javadoc.destinationDir
 }
