@@ -239,7 +239,7 @@ public class AEADTestUtil
             if (expectedCTUpdateSize != actualCTSize)
             {
                 fail(test, "Encryption update output size did not match calculated for plaintext length " + i,
-                        String.valueOf(expectedCTUpdateSize), String.valueOf(actualCTSize));
+                    String.valueOf(expectedCTUpdateSize), String.valueOf(actualCTSize));
             }
 
             actualCTSize += cipher.doFinal(ciphertext, actualCTSize);
@@ -247,7 +247,7 @@ public class AEADTestUtil
             if (expectedCTOutputSize != actualCTSize)
             {
                 fail(test, "Encryption actual final output size did not match calculated for plaintext length " + i,
-                        String.valueOf(expectedCTOutputSize), String.valueOf(actualCTSize));
+                    String.valueOf(expectedCTOutputSize), String.valueOf(actualCTSize));
             }
 
             cipher.init(false, params);
@@ -257,7 +257,7 @@ public class AEADTestUtil
             if (expectedPTOutputSize != i)
             {
                 fail(test, "Decryption update output size did not original plaintext length " + i,
-                        String.valueOf(expectedPTUpdateSize), String.valueOf(i));
+                    String.valueOf(expectedPTUpdateSize), String.valueOf(i));
             }
 
             int actualPTSize = cipher.processBytes(ciphertext, 0, actualCTSize, plaintext, 0);
@@ -265,7 +265,7 @@ public class AEADTestUtil
             if (expectedPTUpdateSize != actualPTSize)
             {
                 fail(test, "Decryption update output size did not match calculated for plaintext length " + i,
-                        String.valueOf(expectedPTUpdateSize), String.valueOf(actualPTSize));
+                    String.valueOf(expectedPTUpdateSize), String.valueOf(actualPTSize));
             }
 
             actualPTSize += cipher.doFinal(plaintext, actualPTSize);
@@ -273,7 +273,7 @@ public class AEADTestUtil
             if (expectedPTOutputSize != actualPTSize)
             {
                 fail(test, "Decryption update output size did not match calculated for plaintext length " + i,
-                        String.valueOf(expectedPTOutputSize), String.valueOf(actualPTSize));
+                    String.valueOf(expectedPTOutputSize), String.valueOf(actualPTSize));
             }
 
         }
@@ -308,7 +308,8 @@ public class AEADTestUtil
         {
             int outputTrigger = 0;
             // Process bytes until output would be produced
-            for(int i = 0; i < plaintext.length; i++) {
+            for (int i = 0; i < plaintext.length; i++)
+            {
                 if (cipher.getUpdateOutputSize(1) != 0)
                 {
                     outputTrigger = i + 1;
@@ -335,7 +336,7 @@ public class AEADTestUtil
             try
             {
                 cipher.processBytes(plaintext, 0, outputTrigger,
-                        new byte[cipher.getUpdateOutputSize(outputTrigger) - 1], 0);
+                    new byte[cipher.getUpdateOutputSize(outputTrigger) - 1], 0);
                 fail(test, "Encrypt processBytes should validate output buffer length");
             }
             catch (OutputLengthException e)
@@ -401,7 +402,7 @@ public class AEADTestUtil
             try
             {
                 cipher.processBytes(ciphertext, 0, outputTrigger,
-                        new byte[cipher.getUpdateOutputSize(outputTrigger) - 1], 0);
+                    new byte[cipher.getUpdateOutputSize(outputTrigger) - 1], 0);
                 fail(test, "Decrypt processBytes should validate output buffer length");
             }
             catch (OutputLengthException e)

@@ -48,7 +48,8 @@ class SuffixList
         for (int t = 0; t < suffixes.size(); t++)
         {
             String j = suffixes.get(t);
-            if (j.startsWith("*.")) {
+            if (j.startsWith("*.")) 
+            {
                 j = j.substring(2);
             }
             suffixes.set(t, j);

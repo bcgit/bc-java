@@ -54,7 +54,8 @@ public class SM2SignatureTest
         // repetition test
         final int times = 2;
         String random = "";
-        for (int i = 0; i < times; i++) {
+        for (int i = 0; i < times; i++)
+        {
             random += "6CB28D99385C175C94F94E934817663FC176D925DD72B727260DBAAE1FB2F96F";
         }
         signer.initSign(kp.getPrivate(),
@@ -68,7 +69,8 @@ public class SM2SignatureTest
 
         verifier.initVerify(kp.getPublic());
 
-        for (int i = 0; i < times; i++) {
+        for (int i = 0; i < times; i++)
+        {
             signer.update(msg, 0, msg.length);
 
             byte[] sig = signer.sign();

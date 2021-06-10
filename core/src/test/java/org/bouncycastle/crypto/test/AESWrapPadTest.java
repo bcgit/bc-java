@@ -123,7 +123,7 @@ public class AESWrapPadTest
         Wrapper wrapper = new AESWrapPadEngine();
 
         byte[] pText = new byte[5 + key.length];
-        byte[]  cText;
+        byte[] cText;
 
         System.arraycopy(key, 0, pText, 5, key.length);
 
@@ -167,58 +167,74 @@ public class AESWrapPadTest
         performFailTests();
     }
 
-    private void performFailTests() {
+    private void performFailTests()
+    {
         // Tests of specific failure modes. Each failure mode should produce an InvalidCipherTextException
         byte[] kek = Hex.decode("5840df6e29b02af1ab493b705bf16ea1ae8338f4dcc176a8");
         Wrapper wrapper = new AESWrapPadEngine();
         wrapper.init(false, new KeyParameter(kek));
 
-        try {
+        try
+        {
             // not a multiple of 8 bytes, so invalid
-            wrapper.unwrap(new byte[23],0,23);
+            wrapper.unwrap(new byte[23], 0, 23);
             fail("Data which was not a multiple of 8 bytes was accepted");
-        } catch ( InvalidCipherTextException e ) {
+        }
+        catch (InvalidCipherTextException e)
+        {
             // correct behaviour
         }
 
-        try {
+        try
+        {
             // zero bytes is too short
-            wrapper.unwrap(new byte[0],0,0);
+            wrapper.unwrap(new byte[0], 0, 0);
             fail("Data of zero bytes was accepted");
-        } catch ( InvalidCipherTextException e ) {
+        }
+        catch (InvalidCipherTextException e)
+        {
             // correct behaviour
         }
 
-        try {
+        try
+        {
             // only 8 bytes - so too short
-            wrapper.unwrap(new byte[8],0,8);
+            wrapper.unwrap(new byte[8], 0, 8);
             fail("Data which was not a multiple of 8 bytes was accepted");
-        } catch ( InvalidCipherTextException e ) {
+        }
+        catch (InvalidCipherTextException e)
+        {
             // correct behaviour
         }
 
-        try {
+        try
+        {
             // usable number of bytes, but cannot be decrypted.
             // This value produces a negative MLI.
-            wrapper.unwrap(Hex.decode("000000000000000000000000000000000000000000000000"),0,24);
+            wrapper.unwrap(Hex.decode("000000000000000000000000000000000000000000000000"), 0, 24);
             fail("Invalid data was accepted");
-        } catch ( InvalidCipherTextException e ) {
+        }
+        catch (InvalidCipherTextException e)
+        {
             // correct behaviour
         }
 
 
-        try {
+        try
+        {
             // usable number of bytes, but cannot be decrypted.
             // This value produces a large positive MLI
-            wrapper.unwrap(Hex.decode("000000000000000000000000000000000000000000000002"),0,24);
+            wrapper.unwrap(Hex.decode("000000000000000000000000000000000000000000000002"), 0, 24);
             fail("Invalid data was accepted");
-        } catch ( InvalidCipherTextException e ) {
+        }
+        catch (InvalidCipherTextException e)
+        {
             // correct behaviour
         }
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         runTest(new AESWrapPadTest());
     }

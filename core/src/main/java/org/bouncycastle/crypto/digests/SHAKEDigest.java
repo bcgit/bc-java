@@ -34,7 +34,8 @@ public class SHAKEDigest
         super(checkBitLength(bitLength));
     }
 
-    public SHAKEDigest(SHAKEDigest source) {
+    public SHAKEDigest(SHAKEDigest source)
+    {
         super(source);
     }
 

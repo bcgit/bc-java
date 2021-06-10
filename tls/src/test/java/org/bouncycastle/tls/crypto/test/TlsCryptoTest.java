@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.test;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import junit.framework.TestCase;
 import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.DefaultTlsDHGroupVerifier;
 import org.bouncycastle.tls.DigitallySigned;
@@ -35,8 +36,6 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.test.TlsTestUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.TestCase;
 
 public abstract class TlsCryptoTest
     extends TestCase
@@ -216,7 +215,8 @@ public abstract class TlsCryptoTest
             implTestDHDomain(new TlsDHConfig(namedGroup, true));
         }
 
-        new DefaultTlsDHGroupVerifier() {{
+        new DefaultTlsDHGroupVerifier()
+        {{
             for (int i = 0; i < groups.size(); ++i)
             {
                 DHGroup dhGroup = (DHGroup)groups.elementAt(i);

@@ -21,7 +21,7 @@ public final class Kangaroo
      * KangarooTwelve.
      */
     public static class KangarooTwelve
-            extends KangarooBase
+        extends KangarooBase
     {
         /**
          * Constructor.
@@ -33,6 +33,7 @@ public final class Kangaroo
 
         /**
          * Constructor.
+         *
          * @param pLength the digest length
          */
         public KangarooTwelve(final int pLength)
@@ -50,7 +51,7 @@ public final class Kangaroo
      * MarsupilamiFourteen.
      */
     public static class MarsupilamiFourteen
-            extends KangarooBase
+        extends KangarooBase
     {
         /**
          * Constructor.
@@ -62,6 +63,7 @@ public final class Kangaroo
 
         /**
          * Constructor.
+         *
          * @param pLength the digest length
          */
         public MarsupilamiFourteen(final int pLength)
@@ -93,6 +95,7 @@ public final class Kangaroo
 
         /**
          * Obtain the personalisation.
+         *
          * @return the personalisation
          */
         public byte[] getPersonalisation()
@@ -102,6 +105,7 @@ public final class Kangaroo
 
         /**
          * Obtain the maximum output length.
+         *
          * @return the output length
          */
         public long getMaxOutputLength()
@@ -126,6 +130,7 @@ public final class Kangaroo
 
             /**
              * Set the personalisation.
+             *
              * @param pPersonal the personalisation
              * @return the Builder
              */
@@ -137,6 +142,7 @@ public final class Kangaroo
 
             /**
              * Set the maximum output length. (-1=unlimited)
+             *
              * @param pMaxOutLen the maximum output length
              * @return the Builder
              */
@@ -148,6 +154,7 @@ public final class Kangaroo
 
             /**
              * Build the parameters.
+             *
              * @return the parameters
              */
             public KangarooParameters build()
@@ -172,7 +179,7 @@ public final class Kangaroo
      * The Kangaroo Base.
      */
     abstract static class KangarooBase
-            implements ExtendedDigest, Xof
+        implements ExtendedDigest, Xof
     {
         /**
          * Block Size.
@@ -182,22 +189,22 @@ public final class Kangaroo
         /**
          * Single marker.
          */
-        private static final byte[] SINGLE = new byte[] { 7 };
+        private static final byte[] SINGLE = new byte[]{7};
 
         /**
          * Intermediate marker.
          */
-        private static final byte[] INTERMEDIATE = new byte[] { 0xb };
+        private static final byte[] INTERMEDIATE = new byte[]{0xb};
 
         /**
          * Final marker.
          */
-        private static final byte[] FINAL = new byte[] { -1, -1, 6 };
+        private static final byte[] FINAL = new byte[]{-1, -1, 6};
 
         /**
          * First marker.
          */
-        private static final byte[] FIRST = new byte[] { 3, 0, 0, 0, 0, 0, 0, 0 };
+        private static final byte[] FIRST = new byte[]{3, 0, 0, 0, 0, 0, 0, 0};
 
         /**
          * The single byte buffer.
@@ -251,9 +258,10 @@ public final class Kangaroo
 
         /**
          * Constructor.
+         *
          * @param pStrength the strength
-         * @param pRounds the rounds.
-         * @param pLength the digest length
+         * @param pRounds   the rounds.
+         * @param pLength   the digest length
          */
         KangarooBase(final int pStrength,
                      final int pRounds,
@@ -272,6 +280,7 @@ public final class Kangaroo
 
         /**
          * Constructor.
+         *
          * @param pPersonal the personalisation
          */
         private void buildPersonal(final byte[] pPersonal)
@@ -279,9 +288,9 @@ public final class Kangaroo
             /* Build personalisation */
             final int myLen = pPersonal == null ? 0 : pPersonal.length;
             final byte[] myEnc = lengthEncode(myLen);
-            thePersonal = pPersonal  == null
-                          ? new byte[myLen + myEnc.length]
-                          : Arrays.copyOf(pPersonal, myLen + myEnc.length);
+            thePersonal = pPersonal == null
+                ? new byte[myLen + myEnc.length]
+                : Arrays.copyOf(pPersonal, myLen + myEnc.length);
             System.arraycopy(myEnc, 0, thePersonal, myLen, myEnc.length);
         }
 
@@ -292,11 +301,12 @@ public final class Kangaroo
 
         public int getDigestSize()
         {
-            return theXofLen == 0 ? theChainLen >> 1 : (int) theXofLen;
+            return theXofLen == 0 ? theChainLen >> 1 : (int)theXofLen;
         }
 
         /**
          * Initialise the digest.
+         *
          * @param pParams the parameters
          */
         public void init(final KangarooParameters pParams)
@@ -306,7 +316,8 @@ public final class Kangaroo
 
             /* Reject a negative Xof length */
             final long myXofLen = pParams.getMaxOutputLength();
-            if (myXofLen < -1) {
+            if (myXofLen < -1)
+            {
                 throw new IllegalArgumentException("Invalid output length");
             }
             theXofLen = myXofLen;
@@ -371,7 +382,7 @@ public final class Kangaroo
 
             /* Reject if there is insufficient Xof remaining */
             if (pOutLen < 0
-                    || (theXofRemaining > 0  && pOutLen > theXofRemaining))
+                || (theXofRemaining > 0 && pOutLen > theXofRemaining))
             {
                 throw new IllegalArgumentException("Insufficient bytes remaining");
             }
@@ -383,9 +394,10 @@ public final class Kangaroo
 
         /**
          * Process data.
-         * @param pIn the input buffer
+         *
+         * @param pIn       the input buffer
          * @param pInOffSet the starting offset in the input buffer
-         * @param pLen the length of data to process
+         * @param pLen      the length of data to process
          */
         private void processData(final byte[] pIn,
                                  final int pInOffSet,
@@ -413,7 +425,8 @@ public final class Kangaroo
             }
 
             /* Absorb as much as possible into current sponge */
-            if (mySpace > 0) {
+            if (mySpace > 0)
+            {
                 mySponge.absorb(pIn, pInOffSet, mySpace);
                 theProcessed += mySpace;
             }
@@ -448,6 +461,7 @@ public final class Kangaroo
 
         /**
          * Complete Leaf.
+         *
          * @param pMoreToCome is there more data to come? true/false
          */
         private void switchLeaf(final boolean pMoreToCome)
@@ -512,8 +526,8 @@ public final class Kangaroo
             {
                 /* Calculate the number of bytes available */
                 theXofRemaining = theXofLen == -1
-                                  ? -2
-                                  : theXofLen;
+                    ? -2
+                    : theXofLen;
             }
         }
 
@@ -550,6 +564,7 @@ public final class Kangaroo
 
         /**
          * right Encode a length.
+         *
          * @param strLen the length to encode
          * @return the encoded length
          */
@@ -574,7 +589,7 @@ public final class Kangaroo
             /* Encode the length */
             for (int i = 0; i < n; i++)
             {
-                b[i] = (byte) (strLen >> (Bytes.SIZE * (n - i - 1)));
+                b[i] = (byte)(strLen >> (Bytes.SIZE * (n - i - 1)));
             }
 
             /* Return the encoded length */
@@ -590,12 +605,12 @@ public final class Kangaroo
         /**
          * The round constants.
          */
-        private static long[] KeccakRoundConstants = new long[]{ 0x0000000000000001L, 0x0000000000008082L,
-                0x800000000000808aL, 0x8000000080008000L, 0x000000000000808bL, 0x0000000080000001L, 0x8000000080008081L,
-                0x8000000000008009L, 0x000000000000008aL, 0x0000000000000088L, 0x0000000080008009L, 0x000000008000000aL,
-                0x000000008000808bL, 0x800000000000008bL, 0x8000000000008089L, 0x8000000000008003L, 0x8000000000008002L,
-                0x8000000000000080L, 0x000000000000800aL, 0x800000008000000aL, 0x8000000080008081L, 0x8000000000008080L,
-                0x0000000080000001L, 0x8000000080008008L };
+        private static long[] KeccakRoundConstants = new long[]{0x0000000000000001L, 0x0000000000008082L,
+            0x800000000000808aL, 0x8000000080008000L, 0x000000000000808bL, 0x0000000080000001L, 0x8000000080008081L,
+            0x8000000000008009L, 0x000000000000008aL, 0x0000000000000088L, 0x0000000080008009L, 0x000000008000000aL,
+            0x000000008000808bL, 0x800000000000008bL, 0x8000000000008089L, 0x8000000000008003L, 0x8000000000008002L,
+            0x8000000000000080L, 0x000000000000800aL, 0x800000008000000aL, 0x8000000080008081L, 0x8000000000008080L,
+            0x0000000080000001L, 0x8000000080008008L};
 
         /**
          * The number of rounds.
@@ -629,8 +644,9 @@ public final class Kangaroo
 
         /**
          * Constructor.
+         *
          * @param pStrength the strength
-         * @param pRounds the rounds.
+         * @param pRounds   the rounds.
          */
         KangarooSponge(final int pStrength,
                        final int pRounds)
@@ -654,9 +670,10 @@ public final class Kangaroo
 
         /**
          * Absorb data into sponge.
+         *
          * @param data the data buffer
-         * @param off the starting offset in the buffer.
-         * @param len the length of data to absorb
+         * @param off  the starting offset in the buffer.
+         * @param len  the length of data to absorb
          */
         private void absorb(final byte[] data,
                             final int off,
@@ -677,7 +694,8 @@ public final class Kangaroo
                     {
                         KangarooAbsorb(data, off + count);
                         count += theRateBytes;
-                    } while (count <= (len - theRateBytes));
+                    }
+                    while (count <= (len - theRateBytes));
 
                 }
                 else
@@ -717,8 +735,9 @@ public final class Kangaroo
 
         /**
          * Squeeze data out.
-         * @param output the output buffer
-         * @param offset the offset in the output buffer
+         *
+         * @param output       the output buffer
+         * @param offset       the offset in the output buffer
          * @param outputLength the output length
          */
         private void squeeze(final byte[] output,
@@ -748,8 +767,9 @@ public final class Kangaroo
 
         /**
          * Absorb a block of data.
+         *
          * @param data the data to absorb
-         * @param off the starting offset in the data
+         * @param off  the starting offset in the data
          */
         private void KangarooAbsorb(final byte[] data,
                                     final int off)
@@ -780,8 +800,8 @@ public final class Kangaroo
         {
             long[] A = theState;
 
-            long a00 = A[ 0], a01 = A[ 1], a02 = A[ 2], a03 = A[ 3], a04 = A[ 4];
-            long a05 = A[ 5], a06 = A[ 6], a07 = A[ 7], a08 = A[ 8], a09 = A[ 9];
+            long a00 = A[0], a01 = A[1], a02 = A[2], a03 = A[3], a04 = A[4];
+            long a05 = A[5], a06 = A[6], a07 = A[7], a08 = A[8], a09 = A[9];
             long a10 = A[10], a11 = A[11], a12 = A[12], a13 = A[13], a14 = A[14];
             long a15 = A[15], a16 = A[16], a17 = A[17], a18 = A[18], a19 = A[19];
             long a20 = A[20], a21 = A[21], a22 = A[22], a23 = A[23], a24 = A[24];
@@ -802,37 +822,57 @@ public final class Kangaroo
                 long d4 = (c4 << 1 | c4 >>> -1) ^ c2;
                 long d0 = (c0 << 1 | c0 >>> -1) ^ c3;
 
-                a00 ^= d1; a05 ^= d1; a10 ^= d1; a15 ^= d1; a20 ^= d1;
-                a01 ^= d2; a06 ^= d2; a11 ^= d2; a16 ^= d2; a21 ^= d2;
-                a02 ^= d3; a07 ^= d3; a12 ^= d3; a17 ^= d3; a22 ^= d3;
-                a03 ^= d4; a08 ^= d4; a13 ^= d4; a18 ^= d4; a23 ^= d4;
-                a04 ^= d0; a09 ^= d0; a14 ^= d0; a19 ^= d0; a24 ^= d0;
+                a00 ^= d1;
+                a05 ^= d1;
+                a10 ^= d1;
+                a15 ^= d1;
+                a20 ^= d1;
+                a01 ^= d2;
+                a06 ^= d2;
+                a11 ^= d2;
+                a16 ^= d2;
+                a21 ^= d2;
+                a02 ^= d3;
+                a07 ^= d3;
+                a12 ^= d3;
+                a17 ^= d3;
+                a22 ^= d3;
+                a03 ^= d4;
+                a08 ^= d4;
+                a13 ^= d4;
+                a18 ^= d4;
+                a23 ^= d4;
+                a04 ^= d0;
+                a09 ^= d0;
+                a14 ^= d0;
+                a19 ^= d0;
+                a24 ^= d0;
 
                 // rho/pi
-                c1  = a01 <<  1 | a01 >>> 63;
+                c1 = a01 << 1 | a01 >>> 63;
                 a01 = a06 << 44 | a06 >>> 20;
                 a06 = a09 << 20 | a09 >>> 44;
-                a09 = a22 << 61 | a22 >>>  3;
+                a09 = a22 << 61 | a22 >>> 3;
                 a22 = a14 << 39 | a14 >>> 25;
                 a14 = a20 << 18 | a20 >>> 46;
-                a20 = a02 << 62 | a02 >>>  2;
+                a20 = a02 << 62 | a02 >>> 2;
                 a02 = a12 << 43 | a12 >>> 21;
                 a12 = a13 << 25 | a13 >>> 39;
-                a13 = a19 <<  8 | a19 >>> 56;
-                a19 = a23 << 56 | a23 >>>  8;
+                a13 = a19 << 8 | a19 >>> 56;
+                a19 = a23 << 56 | a23 >>> 8;
                 a23 = a15 << 41 | a15 >>> 23;
                 a15 = a04 << 27 | a04 >>> 37;
                 a04 = a24 << 14 | a24 >>> 50;
-                a24 = a21 <<  2 | a21 >>> 62;
-                a21 = a08 << 55 | a08 >>>  9;
+                a24 = a21 << 2 | a21 >>> 62;
+                a21 = a08 << 55 | a08 >>> 9;
                 a08 = a16 << 45 | a16 >>> 19;
                 a16 = a05 << 36 | a05 >>> 28;
                 a05 = a03 << 28 | a03 >>> 36;
                 a03 = a18 << 21 | a18 >>> 43;
                 a18 = a17 << 15 | a17 >>> 49;
                 a17 = a11 << 10 | a11 >>> 54;
-                a11 = a07 <<  6 | a07 >>> 58;
-                a07 = a10 <<  3 | a10 >>> 61;
+                a11 = a07 << 6 | a07 >>> 58;
+                a07 = a10 << 3 | a10 >>> 61;
                 a10 = c1;
 
                 // chi
@@ -880,11 +920,31 @@ public final class Kangaroo
                 a00 ^= KeccakRoundConstants[myBase + i];
             }
 
-            A[ 0] = a00; A[ 1] = a01; A[ 2] = a02; A[ 3] = a03; A[ 4] = a04;
-            A[ 5] = a05; A[ 6] = a06; A[ 7] = a07; A[ 8] = a08; A[ 9] = a09;
-            A[10] = a10; A[11] = a11; A[12] = a12; A[13] = a13; A[14] = a14;
-            A[15] = a15; A[16] = a16; A[17] = a17; A[18] = a18; A[19] = a19;
-            A[20] = a20; A[21] = a21; A[22] = a22; A[23] = a23; A[24] = a24;
+            A[0] = a00;
+            A[1] = a01;
+            A[2] = a02;
+            A[3] = a03;
+            A[4] = a04;
+            A[5] = a05;
+            A[6] = a06;
+            A[7] = a07;
+            A[8] = a08;
+            A[9] = a09;
+            A[10] = a10;
+            A[11] = a11;
+            A[12] = a12;
+            A[13] = a13;
+            A[14] = a14;
+            A[15] = a15;
+            A[16] = a16;
+            A[17] = a17;
+            A[18] = a18;
+            A[19] = a19;
+            A[20] = a20;
+            A[21] = a21;
+            A[22] = a22;
+            A[23] = a23;
+            A[24] = a24;
         }
     }
 }

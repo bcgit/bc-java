@@ -32,11 +32,14 @@ public class OtherMsgTest
         isEquals("otherMsgType", otherMsg.getOtherMsgType(), otherMsgResult.getOtherMsgType());
         isEquals("otherMsgValue", otherMsg.getOtherMsgValue(), otherMsgResult.getOtherMsgValue());
 
-        try {
+        try
+        {
             OtherMsg.getInstance(new DERSequence());
             fail("Sequence should be 3 elements long.");
-        } catch (Throwable t) {
-            isEquals("Sequence size",t.getClass(), IllegalArgumentException.class);
+        }
+        catch (Throwable t)
+        {
+            isEquals("Sequence size", t.getClass(), IllegalArgumentException.class);
         }
     }
 }

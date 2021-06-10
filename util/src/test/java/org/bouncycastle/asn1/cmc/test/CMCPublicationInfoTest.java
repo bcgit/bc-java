@@ -29,7 +29,8 @@ public class CMCPublicationInfoTest
         // Not a real AlgorithmIdentifier
         AlgorithmIdentifier testIA = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.1.2.3"), DERNull.INSTANCE);
         byte[][] hashes = new byte[5][64];
-        for(int i =0; i<hashes.length; i++) {
+        for(int i =0; i<hashes.length; i++)
+        {
             secureRandom.nextBytes(hashes[i]);
         }
 
@@ -44,15 +45,15 @@ public class CMCPublicationInfoTest
         //
         // Test fail on small sequence.
         //
-
         try
         {
             CMCPublicationInfo.getInstance(new DERSequence(new ASN1Encodable[]{testIA}));
             fail("Expecting exception.");
-        } catch (Exception t) {
+        }
+        catch (Exception t)
+        {
             isEquals("Wrong exception: "+t.getMessage(), t.getClass(), IllegalArgumentException.class);
         }
-
     }
 
     public String getName()
@@ -60,8 +61,8 @@ public class CMCPublicationInfoTest
         return "CMCPublicationInfo";
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         runTest(new CMCPublicationInfoTest());
     }
-
 }

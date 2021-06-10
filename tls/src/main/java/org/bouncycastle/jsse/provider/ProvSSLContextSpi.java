@@ -642,7 +642,8 @@ class ProvSSLContextSpi
         String[] enabledProtocols = sslParameters.getProtocolsArray();
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
 
-        SortedSet<ProtocolVersion> result = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>(){
+        SortedSet<ProtocolVersion> result = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>()
+        {
             public int compare(ProtocolVersion o1, ProtocolVersion o2)
             {
                 return o1.isLaterVersionOf(o2) ? -1 : o2.isLaterVersionOf(o1) ? 1 : 0;
