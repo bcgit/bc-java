@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.MarkerPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Strings;
@@ -60,6 +61,10 @@ public class PGPSecretKeyRingCollection
 
         while ((obj = pgpFact.nextObject()) != null)
         {
+            // Marker packets must be ignored
+            if (obj instanceof MarkerPacket) {
+                continue;
+            }
             if (!(obj instanceof PGPSecretKeyRing))
             {
                 throw new PGPException(obj.getClass().getName() + " found where PGPSecretKeyRing expected");
