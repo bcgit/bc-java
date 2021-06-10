@@ -14,7 +14,8 @@ public class CMCFailInfoTest
 {
 
     // From Page 68, CMC: Structures RFC 5272
-    private static Object[][] types = new Object[][]{
+    private static Object[][] types = new Object[][]
+    {
         {"badAlg", new Long(0L) },
         {"badMessageCheck", new Long(1L) },
         {"badRequest", new Long(2L) },
@@ -59,17 +60,21 @@ public class CMCFailInfoTest
         isEquals("Range in CMCFailInfo does not match test data.",range.size(), types.length);
 
         for (Iterator rangeKeys = range.keySet().iterator(); rangeKeys.hasNext(); )
-        {   Object j = rangeKeys.next();
-            if (!typesMap.containsKey(new Long(((ASN1Integer)j).getValue().longValue())))  {
-                fail("The 'range' map in CMCFailInfo contains a value not in the test ('typesMap') map, value was: "+j.toString());
+        {
+            Object j = rangeKeys.next();
+            if (!typesMap.containsKey(new Long(((ASN1Integer)j).getValue().longValue())))
+            {
+                fail("The 'range' map in CMCFailInfo contains a value not in the test ('typesMap') map, value was: " + j.toString());
             }
         }
 
 
         for (Iterator typeKeys = typesMap.keySet().iterator(); typeKeys.hasNext(); )
-        {   Object j = typeKeys.next();
-            if (!range.containsKey(new ASN1Integer(((Long)j).longValue())))  {
-                fail("The 'typesMap' map in CMCFailInfoTest contains a value not in the CMCFailInfo ('range') map, value was: "+j.toString());
+        {
+            Object j = typeKeys.next();
+            if (!range.containsKey(new ASN1Integer(((Long)j).longValue())))
+            {
+                fail("The 'typesMap' map in CMCFailInfoTest contains a value not in the CMCFailInfo ('range') map, value was: " + j.toString());
             }
         }
 

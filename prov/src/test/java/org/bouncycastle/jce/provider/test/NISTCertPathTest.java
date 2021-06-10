@@ -49,7 +49,8 @@ public class NISTCertPathTest
     private static Set TP4;
     private static Set TP1_TP2;
     
-    static {
+    static
+    {
         ANY = new HashSet();
         
         TP1 = new HashSet();

@@ -427,7 +427,8 @@ public class GCMSIVBlockCipher
 
      public int getOutputSize(final int pLen)
      {
-         if (forEncryption) {
+         if (forEncryption)
+         {
              return pLen + thePlain.size() + BUFLEN;
          }
          final int myCurr = pLen + theEncData.size();

@@ -50,7 +50,8 @@ public abstract class KeyPairGeneratorSpi
 
         static private Hashtable    ecParameters;
 
-        static {
+        static
+        {
             ecParameters = new Hashtable();
 
             ecParameters.put(Integers.valueOf(192), new ECGenParameterSpec("prime192v1")); // a.k.a P-192

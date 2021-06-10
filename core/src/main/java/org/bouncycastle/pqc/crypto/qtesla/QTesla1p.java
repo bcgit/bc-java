@@ -8,7 +8,7 @@ import org.bouncycastle.util.Pack;
 class QTesla1p
 {
     private static final int PARAM_N = 1024;
-//    private static final int PARAM_N_LOG = 10;
+    //    private static final int PARAM_N_LOG = 10;
 //    private static final double PARAM_SIGMA = 8.5;
     private static final int PARAM_Q = 343576577;
     private static final int PARAM_Q_LOG = 29;
@@ -19,7 +19,7 @@ class QTesla1p
     private static final int PARAM_B_BITS = 19;
     private static final int PARAM_S_BITS = 8;
     private static final int PARAM_K = 4;
-//    private static final double PARAM_SIGMA_E = PARAM_SIGMA;
+    //    private static final double PARAM_SIGMA_E = PARAM_SIGMA;
     private static final int PARAM_H = 25;
     private static final int PARAM_D = 22;
     private static final int PARAM_GEN_A = 108;
@@ -35,7 +35,7 @@ class QTesla1p
     private static final int CRYPTO_C_BYTES = 32;
     private static final int HM_BYTES = 40;
 
-//    private static final int RADIX = 32;
+    //    private static final int RADIX = 32;
     private static final int RADIX32 = 32;
 
 
@@ -114,7 +114,7 @@ class QTesla1p
     }
 
     static int generateSignature(byte[] signature, byte[] message, int messageOffset, int messageLength,
-        byte[] privateKey, SecureRandom secureRandom)
+                                 byte[] privateKey, SecureRandom secureRandom)
     {
         byte[] c = new byte[CRYPTO_C_BYTES];
         byte[] randomness = new byte[CRYPTO_SEEDBYTES];
@@ -198,7 +198,7 @@ class QTesla1p
     }
 
     static int verifying(byte[] message, final byte[] signature, int signatureOffset, int signatureLength,
-        final byte[] publicKey)
+                         final byte[] publicKey)
     {
         byte c[] = new byte[CRYPTO_C_BYTES];
         byte c_sig[] = new byte[CRYPTO_C_BYTES];
@@ -257,7 +257,7 @@ class QTesla1p
     }
 
     static void encodePrivateKey(byte[] privateKey, int[] secretPolynomial, int[] errorPolynomial,
-        byte[] seed, int seedOffset, byte[] publicKey)
+                                 byte[] seed, int seedOffset, byte[] publicKey)
     {
         int i, k = 0;
         int skPtr = 0;
@@ -567,7 +567,7 @@ class QTesla1p
     static void sample_y(int[] y, byte[] seed, int seedOffset, int nonce)
     { // Sample polynomial y, such that each coefficient is in the range [-B,B]
         int i = 0, pos = 0, nblocks = PARAM_N;
-        byte buf[] = new byte[PARAM_N * BPLUS1BYTES+1];
+        byte buf[] = new byte[PARAM_N * BPLUS1BYTES + 1];
         int nbytes = BPLUS1BYTES;
         short dmsp = (short)(nonce << 8);
 
@@ -617,7 +617,7 @@ class QTesla1p
             // If v[i] > PARAM_Q/2 then v[i] -= PARAM_Q
             int a = v[vpos + i];
             mask = (PARAM_Q / 2 - a) >> (RADIX32 - 1);
-            val =  ((a - PARAM_Q) & mask) | (a & ~mask);
+            val = ((a - PARAM_Q) & mask) | (a & ~mask);
             // If (Abs(val) < PARAM_Q/2 - PARAM_E) then t0 = 0, else t0 = 1
             t0 = (~(absolute(val) - (PARAM_Q / 2 - PARAM_E))) >>> (RADIX32 - 1);
 
@@ -805,7 +805,7 @@ class QTesla1p
         {
             int dmsp = nonce << 8;
 
-            byte samp[] = new byte[CHUNK_SIZE*CDT_COLS * 4]; // This is int32_t in C, we will treat it as byte[] in java
+            byte samp[] = new byte[CHUNK_SIZE * CDT_COLS * 4]; // This is int32_t in C, we will treat it as byte[] in java
             int c[] = new int[CDT_COLS];
             int borrow, sign;
             int mask = (-1) >>> 1;
@@ -815,21 +815,24 @@ class QTesla1p
                 HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
                     samp, 0, CHUNK_SIZE * CDT_COLS * 4, (short)dmsp++, seed, seedOffset, CRYPTO_SEEDBYTES);
 
-                for (int i = 0; i < CHUNK_SIZE; i++) {
-                    poly[ polyOffset+ chunk+i] = 0;
-                    for (int j = 1; j < CDT_ROWS; j++) {
+                for (int i = 0; i < CHUNK_SIZE; i++)
+                {
+                    poly[polyOffset + chunk + i] = 0;
+                    for (int j = 1; j < CDT_ROWS; j++)
+                    {
                         borrow = 0;
-                        for (int k = CDT_COLS-1; k >= 0; k--) {
-                            c[k] = (at(samp, i*CDT_COLS, k) & mask) - (cdt_v[j*CDT_COLS+k] + borrow);
-                            borrow = c[k] >> (RADIX32-1);
+                        for (int k = CDT_COLS - 1; k >= 0; k--)
+                        {
+                            c[k] = (at(samp, i * CDT_COLS, k) & mask) - (cdt_v[j * CDT_COLS + k] + borrow);
+                            borrow = c[k] >> (RADIX32 - 1);
                         }
-                        poly[polyOffset+chunk+i] += ~borrow & 1;
+                        poly[polyOffset + chunk + i] += ~borrow & 1;
                     }
 
 //                    sign =  at(samp,i*CDT_COLS, 0) >> (RADIX32-1);
-                    sign = (int)samp[((i*CDT_COLS) << 2) + 3] >> (RADIX32 - 1);
+                    sign = (int)samp[((i * CDT_COLS) << 2) + 3] >> (RADIX32 - 1);
 
-                    poly[polyOffset+chunk+i] = (sign & -poly[polyOffset+chunk+i]) | (~sign & poly[polyOffset+chunk+i]);
+                    poly[polyOffset + chunk + i] = (sign & -poly[polyOffset + chunk + i]) | (~sign & poly[polyOffset + chunk + i]);
                 }
             }
         }

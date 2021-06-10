@@ -24,17 +24,17 @@ import org.bouncycastle.util.Strings;
 public class SMIMEGenerator
 {
     private static Map BASE_CIPHER_NAMES = new HashMap();
-    
+
     static
     {
-        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.DES_EDE3_CBC,  "DESEDE");
-        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES128_CBC,  "AES");
-        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES192_CBC,  "AES");
-        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES256_CBC,  "AES");
+        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.DES_EDE3_CBC, "DESEDE");
+        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES128_CBC, "AES");
+        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES192_CBC, "AES");
+        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES256_CBC, "AES");
     }
 
-    protected boolean                     useBase64 = true;
-    protected String                      encoding = "base64";  // default sets base64
+    protected boolean useBase64 = true;
+    protected String encoding = "base64";  // default sets base64
 
     /**
      * base constructor
@@ -46,10 +46,10 @@ public class SMIMEGenerator
     /**
      * set the content-transfer-encoding for the CMS block (enveloped data, signature, etc...)  in the message.
      *
-     * @param  encoding the encoding to use, default "base64", use "binary" for a binary encoding.
+     * @param encoding the encoding to use, default "base64", use "binary" for a binary encoding.
      */
     public void setContentTransferEncoding(
-        String  encoding)
+        String encoding)
     {
         this.encoding = encoding;
         this.useBase64 = Strings.toLowerCase(encoding).equals("base64");
@@ -60,7 +60,7 @@ public class SMIMEGenerator
      * with defaults if neccessary.
      */
     protected MimeBodyPart makeContentBodyPart(
-        MimeBodyPart    content)
+        MimeBodyPart content)
         throws SMIMEException
     {
         //
@@ -70,21 +70,24 @@ public class SMIMEGenerator
         //
         try
         {
-            MimeMessage     msg = new MimeMessage((Session) null) {
+            MimeMessage msg = new MimeMessage((Session)null)
+            {
                 // avoid the call of updateMessageID to prevent
                 // DNS issues when trying to evaluate the local host's name
-                protected void updateMessageID() throws MessagingException {
+                protected void updateMessageID()
+                    throws MessagingException
+                {
                     // do nothing
                 }
             };
 
-            Enumeration     e = content.getAllHeaders();
+            Enumeration e = content.getAllHeaders();
 
             msg.setDataHandler(content.getDataHandler());
 
             while (e.hasMoreElements())
             {
-                Header  hdr =(Header)e.nextElement();
+                Header hdr = (Header)e.nextElement();
 
                 msg.setHeader(hdr.getName(), hdr.getValue());
             }
@@ -99,7 +102,7 @@ public class SMIMEGenerator
 
             while (e.hasMoreElements())
             {
-                Header  hdr =(Header)e.nextElement();
+                Header hdr = (Header)e.nextElement();
 
                 if (Strings.toLowerCase(hdr.getName()).startsWith("content-"))
                 {
@@ -119,10 +122,10 @@ public class SMIMEGenerator
      * extract an appropriate body part from the passed in MimeMessage
      */
     protected MimeBodyPart makeContentBodyPart(
-        MimeMessage     message)
+        MimeMessage message)
         throws SMIMEException
     {
-        MimeBodyPart    content = new MimeBodyPart();
+        MimeBodyPart content = new MimeBodyPart();
 
         //
         // add the headers to the body part.
@@ -141,7 +144,7 @@ public class SMIMEGenerator
                     content.setContent(message.getRawInputStream(), message.getContentType());
 
                     extractHeaders(content, message);
-                    
+
                     return content;
                 }
             }
@@ -149,7 +152,7 @@ public class SMIMEGenerator
             {
                 // fall back to usual method below
             }
-       
+
             content.setContent(message.getContent(), message.getContentType());
 
             content.setDataHandler(message.getDataHandler());
@@ -172,10 +175,10 @@ public class SMIMEGenerator
         throws MessagingException
     {
         Enumeration e = message.getAllHeaders();
-        
+
         while (e.hasMoreElements())
         {
-            Header hdr =(Header)e.nextElement();
+            Header hdr = (Header)e.nextElement();
 
             content.addHeader(hdr.getName(), hdr.getValue());
         }
@@ -184,7 +187,7 @@ public class SMIMEGenerator
     protected KeyGenerator createSymmetricKeyGenerator(
         String encryptionOID,
         Provider provider)
-    throws NoSuchAlgorithmException
+        throws NoSuchAlgorithmException
     {
         try
         {

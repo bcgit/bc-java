@@ -330,7 +330,8 @@ public class PBEPBKDF2
     public static class PBKDF2withSM3
         extends BasePBKDF2
     {
-        public PBKDF2withSM3() {
+        public PBKDF2withSM3()
+        {
             super("PBKDF2", PKCS5S2_UTF8, SM3);
         }
     }

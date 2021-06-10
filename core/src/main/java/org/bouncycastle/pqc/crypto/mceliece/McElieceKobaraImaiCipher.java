@@ -271,7 +271,8 @@ public class McElieceKobaraImaiCipher
         byte[] c5 = Conversions.decode(n, t, z);
 
         // if c5 is shorter than expected, pad with leading zeroes
-        if (c5.length < c5Len) {
+        if (c5.length < c5Len)
+        {
             byte[] paddedC5 = new byte[c5Len];
             System.arraycopy(c5, 0, paddedC5, c5Len - c5.length, c5.length);
             c5 = paddedC5;
