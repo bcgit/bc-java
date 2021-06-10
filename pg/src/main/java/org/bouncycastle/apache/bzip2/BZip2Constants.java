@@ -30,7 +30,8 @@ package org.bouncycastle.apache.bzip2;
  *
  * @author <a href="mailto:keiron@aftexsw.com">Keiron Liddle</a>
  */
-public interface BZip2Constants {
+public interface BZip2Constants
+{
 
     int baseBlockSize = 100000;
     int MAX_ALPHA_SIZE = 258;

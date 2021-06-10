@@ -1,30 +1,38 @@
 package org.bouncycastle.crypto.params;
 
-public class CramerShoupKeyParameters extends AsymmetricKeyParameter {
-    
+public class CramerShoupKeyParameters
+    extends AsymmetricKeyParameter
+{
+
     private CramerShoupParameters params;
 
-    protected CramerShoupKeyParameters(boolean isPrivate, CramerShoupParameters params) {
+    protected CramerShoupKeyParameters(boolean isPrivate, CramerShoupParameters params)
+    {
         super(isPrivate);
 
         this.params = params;
     }
 
-    public CramerShoupParameters getParameters() {
+    public CramerShoupParameters getParameters()
+    {
         return params;
     }
 
     public boolean equals(Object obj)
     {
-        if (!(obj instanceof CramerShoupKeyParameters)) {
+        if (!(obj instanceof CramerShoupKeyParameters))
+        {
             return false;
         }
 
-        CramerShoupKeyParameters csKey = (CramerShoupKeyParameters) obj;
+        CramerShoupKeyParameters csKey = (CramerShoupKeyParameters)obj;
 
-        if (params == null) {
+        if (params == null)
+        {
             return csKey.getParameters() == null;
-        } else {
+        }
+        else
+        {
             return params.equals(csKey.getParameters());
         }
     }
@@ -33,7 +41,8 @@ public class CramerShoupKeyParameters extends AsymmetricKeyParameter {
     {
         int code = isPrivate() ? 0 : 1;
 
-        if (params != null) {
+        if (params != null)
+        {
             code ^= params.hashCode();
         }
 
