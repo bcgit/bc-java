@@ -30,8 +30,9 @@ import org.bouncycastle.util.Pack;
  * to that in <b>XOF</b> digests), which would allow the data to be output over multiple calls. Alternatively an extended
  * form of <b>ByteArrayInputStream</b> could be used to deliver the data.</p>
  */
- public class GCMSIVBlockCipher
-         implements AEADBlockCipher {
+public class GCMSIVBlockCipher
+         implements AEADBlockCipher
+{
      /**
       * The buffer length.
       */
