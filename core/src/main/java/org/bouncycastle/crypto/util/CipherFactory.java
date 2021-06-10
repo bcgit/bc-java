@@ -6,8 +6,6 @@ import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.internal.asn1.cms.CCMParameters;
-import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.CAST5CBCParameters;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -38,6 +36,8 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.RC2Parameters;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
+import org.bouncycastle.internal.asn1.cms.GCMParameters;
 
 /**
  * Factory methods for creating Cipher objects and CipherOutputStreams.
@@ -45,7 +45,8 @@ import org.bouncycastle.crypto.params.RC2Parameters;
 public class CipherFactory
 {
 
-    private static final short[] rc2Ekb = {
+    private static final short[] rc2Ekb =
+    {
         0x5d, 0xbe, 0x9b, 0x8b, 0x11, 0x99, 0x6e, 0x4d, 0x59, 0xf3, 0x85, 0xa6, 0x3f, 0xb7, 0x83, 0xc5,
         0xe4, 0x73, 0x6b, 0x3a, 0x68, 0x5a, 0xc0, 0x47, 0xa0, 0x64, 0x34, 0x0c, 0xf1, 0xd0, 0x52, 0xa5,
         0xb9, 0x1e, 0x96, 0x43, 0x41, 0xd8, 0xd4, 0x2c, 0xdb, 0xf8, 0x07, 0x77, 0x2a, 0xca, 0xeb, 0xef,
@@ -67,8 +68,8 @@ public class CipherFactory
     /**
      * Create a content cipher for encrypting bulk data.
      *
-     * @param forEncryption true if the cipher is for encryption, false otherwise.
-     * @param encKey the basic key to use.
+     * @param forEncryption   true if the cipher is for encryption, false otherwise.
+     * @param encKey          the basic key to use.
      * @param encryptionAlgID identifying algorithm OID and parameters to use.
      * @return a StreamCipher or a BufferedBlockCipher depending on the algorithm.
      * @throws IllegalArgumentException
@@ -86,29 +87,31 @@ public class CipherFactory
 
             return cipher;
         }
-        else if(encAlg.equals(NISTObjectIdentifiers.id_aes128_GCM)
+        else if (encAlg.equals(NISTObjectIdentifiers.id_aes128_GCM)
             || encAlg.equals(NISTObjectIdentifiers.id_aes192_GCM)
             || encAlg.equals(NISTObjectIdentifiers.id_aes256_GCM))
         {
             AEADBlockCipher cipher = createAEADCipher(encryptionAlgID.getAlgorithm());
             GCMParameters gcmParameters = GCMParameters.getInstance(encryptionAlgID.getParameters());
-            if(!(encKey instanceof KeyParameter)){
-                throw new IllegalArgumentException("key data must be accessible for GCM operation") ;
+            if (!(encKey instanceof KeyParameter))
+            {
+                throw new IllegalArgumentException("key data must be accessible for GCM operation");
             }
-            AEADParameters aeadParameters = new AEADParameters((KeyParameter) encKey, gcmParameters.getIcvLen() * 8, gcmParameters.getNonce());
+            AEADParameters aeadParameters = new AEADParameters((KeyParameter)encKey, gcmParameters.getIcvLen() * 8, gcmParameters.getNonce());
             cipher.init(forEncryption, aeadParameters);
             return cipher;
         }
-        else if(encAlg.equals(NISTObjectIdentifiers.id_aes128_CCM)
+        else if (encAlg.equals(NISTObjectIdentifiers.id_aes128_CCM)
             || encAlg.equals(NISTObjectIdentifiers.id_aes192_CCM)
             || encAlg.equals(NISTObjectIdentifiers.id_aes256_CCM))
         {
             AEADBlockCipher cipher = createAEADCipher(encryptionAlgID.getAlgorithm());
             CCMParameters ccmParameters = CCMParameters.getInstance(encryptionAlgID.getParameters());
-            if(!(encKey instanceof KeyParameter)){
-                throw new IllegalArgumentException("key data must be accessible for GCM operation") ;
+            if (!(encKey instanceof KeyParameter))
+            {
+                throw new IllegalArgumentException("key data must be accessible for GCM operation");
             }
-            AEADParameters aeadParameters = new AEADParameters((KeyParameter) encKey, ccmParameters.getIcvLen() * 8, ccmParameters.getNonce());
+            AEADParameters aeadParameters = new AEADParameters((KeyParameter)encKey, ccmParameters.getIcvLen() * 8, ccmParameters.getNonce());
             cipher.init(forEncryption, aeadParameters);
             return cipher;
         }
@@ -168,16 +171,17 @@ public class CipherFactory
         }
     }
 
-    private static AEADBlockCipher createAEADCipher(ASN1ObjectIdentifier algorithm){
+    private static AEADBlockCipher createAEADCipher(ASN1ObjectIdentifier algorithm)
+    {
         if (NISTObjectIdentifiers.id_aes128_GCM.equals(algorithm)
-                || NISTObjectIdentifiers.id_aes192_GCM.equals(algorithm)
-                || NISTObjectIdentifiers.id_aes256_GCM.equals(algorithm))
+            || NISTObjectIdentifiers.id_aes192_GCM.equals(algorithm)
+            || NISTObjectIdentifiers.id_aes256_GCM.equals(algorithm))
         {
             return new GCMBlockCipher(new AESEngine());
         }
         if (NISTObjectIdentifiers.id_aes128_CCM.equals(algorithm)
-                || NISTObjectIdentifiers.id_aes192_CCM.equals(algorithm)
-                || NISTObjectIdentifiers.id_aes256_CCM.equals(algorithm))
+            || NISTObjectIdentifiers.id_aes192_CCM.equals(algorithm)
+            || NISTObjectIdentifiers.id_aes256_CCM.equals(algorithm))
         {
             return new CCMBlockCipher(new AESEngine());
         }
@@ -225,7 +229,7 @@ public class CipherFactory
     /**
      * Return a new CipherOutputStream based on the passed in cipher.
      *
-     * @param dOut the output stream to write the processed data to.
+     * @param dOut   the output stream to write the processed data to.
      * @param cipher the cipher to use.
      * @return a BC CipherOutputStream using the cipher and writing to dOut.
      */

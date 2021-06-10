@@ -32,11 +32,14 @@ public class LraPopWitnessTest
         isTrue("BodyIds", Arrays.areEqual(popWitness.getBodyIds(), popWitnessResult.getBodyIds()));
         isEquals("PkiDataBody", popWitness.getPkiDataBodyid(), popWitnessResult.getPkiDataBodyid());
 
-        try {
+        try
+        {
             LraPopWitness.getInstance(new DERSequence());
             fail("Sequence length must be 2");
-        } catch (Throwable t) {
-            isEquals("Exception class",t.getClass(), IllegalArgumentException.class);
+        }
+        catch (Throwable t)
+        {
+            isEquals("Exception class", t.getClass(), IllegalArgumentException.class);
         }
     }
 }

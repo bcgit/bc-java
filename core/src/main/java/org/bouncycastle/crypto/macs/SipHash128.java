@@ -8,7 +8,6 @@ import org.bouncycastle.util.Pack;
  * <p>
  * Based on the {@link SipHash} and the C reference implementation
  * https://github.com/veorq/SipHash.
- * 
  */
 public class SipHash128
     extends SipHash
@@ -19,7 +18,7 @@ public class SipHash128
      */
     public SipHash128()
     {
-      super();
+        super();
     }
 
     /**
@@ -30,7 +29,7 @@ public class SipHash128
      */
     public SipHash128(int c, int d)
     {
-       super(c, d);
+        super(c, d);
     }
 
     public String getAlgorithmName()
@@ -44,7 +43,8 @@ public class SipHash128
     }
 
     public long doFinal()
-        throws DataLengthException, IllegalStateException {
+        throws DataLengthException, IllegalStateException
+    {
         throw new UnsupportedOperationException("doFinal() is not supported");
     }
 

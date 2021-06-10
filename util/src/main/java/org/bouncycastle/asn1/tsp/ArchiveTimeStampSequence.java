@@ -94,8 +94,8 @@ public class ArchiveTimeStampSequence
      * @param chain the {@link ArchiveTimeStampChain} to add
      * @return returns the modified sequence.
      */
-    public ArchiveTimeStampSequence append(ArchiveTimeStampChain chain) {
-
+    public ArchiveTimeStampSequence append(ArchiveTimeStampChain chain)
+    {
         ASN1EncodableVector v = new ASN1EncodableVector(archiveTimeStampChains.size() + 1);
 
         for (int i = 0; i != archiveTimeStampChains.size(); i++)

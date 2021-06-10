@@ -46,12 +46,14 @@ public class BcPGPEd25519JcaKeyPairConversionTest
         convertEd25519KeyFromJcaPGPKeyPairToBcPGPKeyPair(keyFact.generatePublic(new X509EncodedKeySpec(pub2)), keyFact.generatePrivate(new PKCS8EncodedKeySpec(priv2)));
     }
 
-    public static void convertEd25519KeyFromJcaPGPKeyPairToBcPGPKeyPair(PublicKey pubKey, PrivateKey privKey) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException {
+    public static void convertEd25519KeyFromJcaPGPKeyPairToBcPGPKeyPair(PublicKey pubKey, PrivateKey privKey)
+        throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
         Date creationDate = new Date();
         int algorithm = PublicKeyAlgorithmTags.EDDSA;
 
         KeyPair keyPair = new KeyPair(pubKey, privKey);
-        
+
         BcPGPKeyConverter converter = new BcPGPKeyConverter();
         PGPKeyPair jcaPgpPair = new JcaPGPKeyPair(algorithm, keyPair, creationDate);
         AsymmetricKeyParameter publicKey = converter.getPublicKey(jcaPgpPair.getPublicKey());
@@ -61,13 +63,14 @@ public class BcPGPEd25519JcaKeyPairConversionTest
         PGPKeyPair bcKeyPair = new BcPGPKeyPair(algorithm, asymKeyPair, creationDate);
 
         if (!Arrays.equals(jcaPgpPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(),
-                bcKeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded())) {
+            bcKeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded()))
+        {
             throw new PGPException("JcaPGPKeyPair and BcPGPKeyPair private keys are not equal.");
         }
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
 

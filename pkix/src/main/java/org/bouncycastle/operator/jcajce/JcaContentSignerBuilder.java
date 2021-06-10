@@ -236,11 +236,13 @@ public class JcaContentSignerBuilder
     {
         DigestAlgorithmIdentifierFinder digFinder = new DefaultDigestAlgorithmIdentifierFinder();
         AlgorithmIdentifier digId = digFinder.find(pssSpec.getDigestAlgorithm());
-        if (digId.getParameters() == null) {
+        if (digId.getParameters() == null)
+        {
             digId = new AlgorithmIdentifier(digId.getAlgorithm(), DERNull.INSTANCE);
         }
         AlgorithmIdentifier mgfDig = digFinder.find(((MGF1ParameterSpec)pssSpec.getMGFParameters()).getDigestAlgorithm());
-        if (mgfDig.getParameters() == null) {
+        if (mgfDig.getParameters() == null)
+        {
             mgfDig = new AlgorithmIdentifier(mgfDig.getAlgorithm(), DERNull.INSTANCE);
         }
 

@@ -139,7 +139,8 @@ public class ECIESTest
             g.initialize(256, new SecureRandom());
             doTest(cipher + " with 256-bit", g, cipher, params);
 
-            try {
+            try
+            {
                 params = new IESParameterSpec(derivation, encoding, 128, 128, new byte[10]);
                 g.initialize(256, new SecureRandom());
                 doTest(cipher + " with 256-bit", g, cipher, params);
@@ -147,7 +148,8 @@ public class ECIESTest
             }
             catch (InvalidAlgorithmParameterException e)
             {
-                if (!e.getMessage().equals("NONCE in IES Parameters needs to be 16 bytes long")) {
+                if (!e.getMessage().equals("NONCE in IES Parameters needs to be 16 bytes long"))
+                {
                     fail("AES wrong message!");
                 }
             }
@@ -157,7 +159,8 @@ public class ECIESTest
             ECPrivateKey priv = (ECPrivateKey) keyPair.getPrivate();
 
             Cipher c = Cipher.getInstance("ECIESwithAES-CBC", "BC");
-            try {
+            try
+            {
                 c.init(Cipher.ENCRYPT_MODE, pub, new IESParameterSpec(derivation, encoding, 128, 128, null));
                 fail("no exception");
             }
@@ -166,7 +169,8 @@ public class ECIESTest
                 isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
             }
 
-            try {
+            try
+            {
                 c.init(Cipher.DECRYPT_MODE, priv);
                 fail("no exception");
             }
@@ -175,7 +179,8 @@ public class ECIESTest
                 isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
             }
 
-            try {
+            try
+            {
                 c.init(Cipher.DECRYPT_MODE, priv, new IESParameterSpec(derivation, encoding, 128, 128, null));
                 fail("no exception");
             }

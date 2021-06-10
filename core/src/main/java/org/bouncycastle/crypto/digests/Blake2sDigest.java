@@ -86,7 +86,7 @@ public class Blake2sDigest
     // the XOF implementation
     private int fanout = 1; // 0-255
     private int depth = 1; // 0-255
-    private int leafLength= 0;
+    private int leafLength = 0;
     private long nodeOffset = 0L;
     private int nodeDepth = 0;
     private int innerHashLength = 0;
@@ -216,7 +216,8 @@ public class Blake2sDigest
     }
 
     // XOF root hash parameters
-    Blake2sDigest(int digestBytes, byte[] key, byte[] salt, byte[] personalization, long offset) {
+    Blake2sDigest(int digestBytes, byte[] key, byte[] salt, byte[] personalization, long offset)
+    {
         digestLength = digestBytes;
         nodeOffset = offset;
 
@@ -224,7 +225,8 @@ public class Blake2sDigest
     }
 
     // XOF internal hash parameters
-    Blake2sDigest(int digestBytes, int hashLength, long offset) {
+    Blake2sDigest(int digestBytes, int hashLength, long offset)
+    {
         digestLength = digestBytes;
         nodeOffset = offset;
         fanout = 0;
@@ -246,7 +248,7 @@ public class Blake2sDigest
             if (key.length > 32)
             {
                 throw new IllegalArgumentException(
-                        "Keys > 32 bytes are not supported");
+                    "Keys > 32 bytes are not supported");
             }
             this.key = new byte[key.length];
             System.arraycopy(key, 0, this.key, 0, key.length);
@@ -264,11 +266,11 @@ public class Blake2sDigest
                 ^ (digestLength | (keyLength << 8) | ((fanout << 16) | (depth << 24)));
             chainValue[1] = blake2s_IV[1] ^ leafLength;
 
-            int nofHi = (int) (nodeOffset >> 32);
-            int nofLo = (int) nodeOffset;
+            int nofHi = (int)(nodeOffset >> 32);
+            int nofLo = (int)nodeOffset;
             chainValue[2] = blake2s_IV[2] ^ nofLo;
             chainValue[3] = blake2s_IV[3] ^ (nofHi |
-                    (nodeDepth << 16) | (innerHashLength << 24));
+                (nodeDepth << 16) | (innerHashLength << 24));
 
             chainValue[4] = blake2s_IV[4];
             chainValue[5] = blake2s_IV[5];
@@ -277,7 +279,7 @@ public class Blake2sDigest
                 if (salt.length != 8)
                 {
                     throw new IllegalArgumentException(
-                            "Salt length must be exactly 8 bytes");
+                        "Salt length must be exactly 8 bytes");
                 }
                 this.salt = new byte[8];
                 System.arraycopy(salt, 0, this.salt, 0, salt.length);
@@ -293,11 +295,11 @@ public class Blake2sDigest
                 if (personalization.length != 8)
                 {
                     throw new IllegalArgumentException(
-                            "Personalization length must be exactly 8 bytes");
+                        "Personalization length must be exactly 8 bytes");
                 }
                 this.personalization = new byte[8];
                 System.arraycopy(personalization, 0, this.personalization, 0,
-                        personalization.length);
+                    personalization.length);
 
                 chainValue[6] ^= Pack.littleEndianToInt(personalization, 0);
                 chainValue[7] ^= Pack.littleEndianToInt(personalization, 4);

@@ -28,7 +28,7 @@ public class SPHINCS256Signer
     /**
      * Base constructor.
      *
-     * @param nDigest  the "n-digest" must produce 32 bytes of output - used for tree construction.
+     * @param nDigest    the "n-digest" must produce 32 bytes of output - used for tree construction.
      * @param twoNDigest the "2n-digest" must produce 64 bytes of output - used for initial message/key/seed hashing.
      */
     public SPHINCS256Signer(Digest nDigest, Digest twoNDigest)
@@ -47,19 +47,22 @@ public class SPHINCS256Signer
 
     public void init(boolean forSigning, CipherParameters param)
     {
-         if (forSigning)
-         {
-             if (param instanceof ParametersWithRandom) {
-                 // SPHINCS-256 signatures are deterministic, RNG is not required.
-                 keyData = ((SPHINCSPrivateKeyParameters)((ParametersWithRandom) param).getParameters()).getKeyData();
-             } else {
-                 keyData = ((SPHINCSPrivateKeyParameters) param).getKeyData();
-             }
-         }
-         else
-         {
-             keyData = ((SPHINCSPublicKeyParameters)param).getKeyData();
-         }
+        if (forSigning)
+        {
+            if (param instanceof ParametersWithRandom)
+            {
+                // SPHINCS-256 signatures are deterministic, RNG is not required.
+                keyData = ((SPHINCSPrivateKeyParameters)((ParametersWithRandom)param).getParameters()).getKeyData();
+            }
+            else
+            {
+                keyData = ((SPHINCSPrivateKeyParameters)param).getKeyData();
+            }
+        }
+        else
+        {
+            keyData = ((SPHINCSPublicKeyParameters)param).getKeyData();
+        }
     }
 
     public byte[] generateSignature(byte[] message)
@@ -179,7 +182,7 @@ public class SPHINCS256Signer
         }
 
         // copy root
-        System.arraycopy(tree, SPHINCS256Config.HASH_BYTES, root, 0,  SPHINCS256Config.HASH_BYTES);
+        System.arraycopy(tree, SPHINCS256Config.HASH_BYTES, root, 0, SPHINCS256Config.HASH_BYTES);
     }
 
     byte[] crypto_sign(HashFunctions hs, byte[] m, byte[] sk)
@@ -321,29 +324,33 @@ public class SPHINCS256Signer
         int i;
         int smlen = sm.length;
         long leafidx = 0;
-        byte[] wots_pk = new byte[ Wots.WOTS_L * SPHINCS256Config.HASH_BYTES];
-        byte[] pkhash = new byte[ SPHINCS256Config.HASH_BYTES];
-        byte[] root = new byte[ SPHINCS256Config.HASH_BYTES];
-        byte[] sig = new byte[ SPHINCS256Config.CRYPTO_BYTES];
+        byte[] wots_pk = new byte[Wots.WOTS_L * SPHINCS256Config.HASH_BYTES];
+        byte[] pkhash = new byte[SPHINCS256Config.HASH_BYTES];
+        byte[] root = new byte[SPHINCS256Config.HASH_BYTES];
+        byte[] sig = new byte[SPHINCS256Config.CRYPTO_BYTES];
         int sigp;
-        byte[] tpk = new byte[ SPHINCS256Config.CRYPTO_PUBLICKEYBYTES];
+        byte[] tpk = new byte[SPHINCS256Config.CRYPTO_PUBLICKEYBYTES];
 
         if (smlen != SPHINCS256Config.CRYPTO_BYTES)
         {
             throw new IllegalArgumentException("signature wrong size");
         }
 
-        byte[] m_h = new byte[ SPHINCS256Config.MSGHASH_BYTES];
+        byte[] m_h = new byte[SPHINCS256Config.MSGHASH_BYTES];
 
         for (i = 0; i < SPHINCS256Config.CRYPTO_PUBLICKEYBYTES; i++)
+        {
             tpk[i] = pk[i];
+        }
 
         // construct message hash
         {
-            byte[] R = new byte[ SPHINCS256Config.MESSAGE_HASH_SEED_BYTES];
+            byte[] R = new byte[SPHINCS256Config.MESSAGE_HASH_SEED_BYTES];
 
             for (i = 0; i < SPHINCS256Config.MESSAGE_HASH_SEED_BYTES; i++)
+            {
                 R[i] = sm[i];
+            }
 
             System.arraycopy(sm, 0, sig, 0, SPHINCS256Config.CRYPTO_BYTES);
 

@@ -9,9 +9,11 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.util.test.SimpleTest;
 
 
-public class GetCertTest extends SimpleTest
+public class GetCertTest
+    extends SimpleTest
 {
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         runTest(new GetCertTest());
     }
 
@@ -23,18 +25,21 @@ public class GetCertTest extends SimpleTest
     public void performTest()
         throws Exception
     {
-        GetCert gs = new GetCert(new GeneralName(GeneralName.dNSName,"fish"),new BigInteger("109"));
+        GetCert gs = new GetCert(new GeneralName(GeneralName.dNSName, "fish"), new BigInteger("109"));
         byte[] b = gs.getEncoded();
         GetCert gsResp = GetCert.getInstance(b);
 
-        isEquals("Issuer Name",gs.getIssuerName(), gsResp.getIssuerName());
-        isEquals("Serial Number",gs.getSerialNumber(), gsResp.getSerialNumber());
+        isEquals("Issuer Name", gs.getIssuerName(), gsResp.getIssuerName());
+        isEquals("Serial Number", gs.getSerialNumber(), gsResp.getSerialNumber());
 
-        try {
+        try
+        {
             GetCert.getInstance(new DERSequence(new ASN1Integer(1L)));
             fail("Sequence must be length of 2");
-        } catch (Throwable t) {
-            isEquals("Wrong exception",t.getClass(), IllegalArgumentException.class);
+        }
+        catch (Throwable t)
+        {
+            isEquals("Wrong exception", t.getClass(), IllegalArgumentException.class);
         }
 
     }

@@ -278,7 +278,8 @@ public class SkeinTest
         int outputSize = Integer.parseInt(algorithm.substring(algorithm.lastIndexOf('-') + 1));
         SecretKey key = gen.generateKey();
         
-        if (key.getEncoded().length != (outputSize / 8)) {
+        if (key.getEncoded().length != (outputSize / 8))
+        {
             fail(algorithm + " key length should be equal to output size " + (outputSize) + ", but was " + key.getEncoded().length * 8);
         }
     }

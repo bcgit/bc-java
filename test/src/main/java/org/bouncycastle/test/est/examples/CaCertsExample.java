@@ -90,7 +90,9 @@ public class CaCertsExample
                 {
                     label = ExampleUtils.nextArgAsString("CA Label", args, t);
                     t += 1;
-                } else if (arg.equals("--sl")) {
+                }
+                else if (arg.equals("--sl"))
+                {
                     suffixList = ExampleUtils.nextArgAsString("Suffix List", args, t);
                     t += 1;
                 }
@@ -116,7 +118,8 @@ public class CaCertsExample
             System.exit(-1);
         }
 
-        if (suffixList == null) {
+        if (suffixList == null) 
+        {
             System.err.println("Known Suffix List (--sl)  must be defined.");
             System.exit(-1);
         }

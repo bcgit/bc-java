@@ -10,7 +10,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * Bouncy implementation of Blake3Mac.
  */
 public class Blake3Mac
-        implements Mac
+    implements Mac
 {
     /**
      * Digest.
@@ -19,6 +19,7 @@ public class Blake3Mac
 
     /**
      * Create a blake3Mac with the specified digest.
+     *
      * @param pDigest the base digest.
      */
     public Blake3Mac(final Blake3Digest pDigest)
@@ -35,15 +36,18 @@ public class Blake3Mac
     public void init(final CipherParameters pParams)
     {
         CipherParameters myParams = pParams;
-        if (myParams instanceof KeyParameter) {
-            myParams = Blake3Parameters.key(((KeyParameter) myParams).getKey());
+        if (myParams instanceof KeyParameter)
+        {
+            myParams = Blake3Parameters.key(((KeyParameter)myParams).getKey());
         }
-        if (!(myParams instanceof Blake3Parameters)) {
+        if (!(myParams instanceof Blake3Parameters))
+        {
             throw new IllegalArgumentException("Invalid parameter passed to Blake3Mac init - "
-                    + pParams.getClass().getName());
+                + pParams.getClass().getName());
         }
-        final Blake3Parameters myBlakeParams = (Blake3Parameters) myParams;
-        if (myBlakeParams.getKey() == null) {
+        final Blake3Parameters myBlakeParams = (Blake3Parameters)myParams;
+        if (myBlakeParams.getKey() == null)
+        {
             throw new IllegalArgumentException("Blake3Mac requires a key parameter.");
         }
 

@@ -167,8 +167,10 @@ public class CMSTimeStampedDataGeneratorTest
 
         CMSTimeStampedData cmsTimeStampedData = cmsTimeStampedDataGenerator.generate(timeStampToken, baseData);
 
-        for (int i = 0; i <= 3; i++) {
-            switch (i) {
+        for (int i = 0; i <= 3; i++)
+        {
+            switch (i)
+            {
             case 0:
                 algIdentifier =    NISTObjectIdentifiers.id_sha224;
                 break;

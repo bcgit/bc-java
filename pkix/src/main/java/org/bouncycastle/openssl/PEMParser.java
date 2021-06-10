@@ -132,7 +132,8 @@ public class PEMParser
      * @return set of pem object types that can be parsed
      * @see PemObject#getType()
      */
-    public Set<String> getSupportedTypes() {
+    public Set<String> getSupportedTypes()
+    {
         return Collections.unmodifiableSet(parsers.keySet());
     }
 
