@@ -4670,6 +4670,10 @@ public class TlsUtils
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
+            if (securityParameters.isRenegotiating())
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
 
             // There was no server certificate message; check it's OK
             keyExchange.skipServerCredentials();
@@ -4909,6 +4913,49 @@ public class TlsUtils
         System.arraycopy(marker, 0, randomBlock, randomBlock.length - marker.length, marker.length);
     }
 
+    private static boolean areCertificatesEqual(Certificate a, Certificate b)
+    {
+        int length = a.getLength();
+        if (b.getLength() == length)
+        {
+            try
+            {
+                for (int i = 0; i < length; ++i)
+                {
+                    TlsCertificate ai = a.getCertificateAt(i);
+                    TlsCertificate bi = b.getCertificateAt(i);
+
+                    if (!Arrays.areEqual(ai.getEncoded(), bi.getEncoded()))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (IOException e)
+            {
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSafeRenegotiationServerCertificate(TlsClientContext clientContext,
+        Certificate serverCertificate)
+    {
+        SecurityParameters securityParametersConnection = clientContext.getSecurityParametersConnection();
+        if (securityParametersConnection != null)
+        {
+            Certificate previousCertificate = securityParametersConnection.getPeerCertificate();
+            if (null != previousCertificate)
+            {
+                return areCertificatesEqual(previousCertificate, serverCertificate);
+            }
+        }
+
+        return false;
+    }
+
     static TlsAuthentication receiveServerCertificate(TlsClientContext clientContext, TlsClient client,
         ByteArrayInputStream buf) throws IOException
     {
@@ -4930,6 +4977,13 @@ public class TlsUtils
         if (serverCertificate.isEmpty())
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        if (securityParameters.isRenegotiating() &&
+            !isSafeRenegotiationServerCertificate(clientContext, serverCertificate))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                "Server certificate changed unsafely in renegotiation handshake");
         }
 
         securityParameters.peerCertificate = serverCertificate;
