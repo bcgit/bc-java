@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLPermission;
@@ -39,26 +41,25 @@ abstract class ProvSSLSessionBase
 {
     protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
 
-    protected ProvSSLSessionContext sslSessionContext;
+    protected final AtomicReference<ProvSSLSessionContext> sslSessionContext;
     protected final boolean isFips;
     protected final JcaTlsCrypto crypto;
     protected final String peerHost;
     protected final int peerPort;
     protected final long creationTime;
     protected final SSLSession exportSSLSession;
-
-    protected long lastAccessedTime;
+    protected final AtomicLong lastAccessedTime;
 
     ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort)
     {
-        this.sslSessionContext = sslSessionContext;
+        this.sslSessionContext = new AtomicReference<ProvSSLSessionContext>(sslSessionContext);
         this.isFips = (null == sslSessionContext) ? false : sslSessionContext.getSSLContext().isFips();
         this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getCrypto();
         this.peerHost = peerHost;
         this.peerPort = peerPort;
         this.creationTime = System.currentTimeMillis();
         this.exportSSLSession = SSLSessionUtil.exportSSLSession(this);
-        this.lastAccessedTime = creationTime;
+        this.lastAccessedTime = new AtomicLong(creationTime);
     }
 
     protected abstract int getCipherSuiteTLS();
@@ -82,9 +83,13 @@ abstract class ProvSSLSessionBase
         return exportSSLSession;
     }
 
-    synchronized void accessedAt(long accessTime)
+    void accessedAt(long accessTime)
     {
-        this.lastAccessedTime = Math.max(lastAccessedTime, accessTime);
+        long current = lastAccessedTime.get();
+        if (accessTime > current)
+        {
+            lastAccessedTime.compareAndSet(current, accessTime);
+        }
     }
 
     @Override
@@ -127,7 +132,7 @@ abstract class ProvSSLSessionBase
 
     public long getLastAccessedTime()
     {
-        return lastAccessedTime;
+        return lastAccessedTime.get();
     }
 
     public Certificate[] getLocalCertificates()
@@ -261,7 +266,7 @@ abstract class ProvSSLSessionBase
             sm.checkPermission(new SSLPermission("getSSLSessionContext"));
         }
 
-        return sslSessionContext;
+        return sslSessionContext.get();
     }
 
     public Object getValue(String name)
@@ -293,9 +298,9 @@ abstract class ProvSSLSessionBase
         implInvalidate(false);
     }
 
-    public synchronized boolean isValid()
+    public boolean isValid()
     {
-        if (null == sslSessionContext)
+        if (null == sslSessionContext.get())
         {
             return false;
         }
@@ -342,18 +347,21 @@ abstract class ProvSSLSessionBase
         }
     }
 
-    private synchronized void implInvalidate(boolean removeFromSessionContext)
+    private void implInvalidate(boolean removeFromSessionContext)
     {
         // NOTE: The NULL_SESSION never actually gets invalidated (consistent with SunJSSE)
 
-        if (null != sslSessionContext)
+        if (removeFromSessionContext)
         {
-            if (removeFromSessionContext)
+            ProvSSLSessionContext context = sslSessionContext.getAndSet(null);
+            if (null != context)
             {
-                sslSessionContext.removeSession(getIDArray());
+                context.removeSession(getIDArray());
             }
-
-            this.sslSessionContext = null;
+        }
+        else
+        {
+            sslSessionContext.set(null);
         }
 
         invalidateTLS();
