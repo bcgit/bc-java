@@ -473,6 +473,13 @@ public abstract class TlsProtocol
 
                 this.tlsSession = TlsUtils.importSession(this.tlsSession.getSessionID(), this.sessionParameters);
             }
+            else
+            {
+                securityParameters.localCertificate = sessionParameters.getLocalCertificate();
+                securityParameters.peerCertificate = sessionParameters.getPeerCertificate();
+                securityParameters.pskIdentity = sessionParameters.getPSKIdentity();
+                securityParameters.srpIdentity = sessionParameters.getSRPIdentity();
+            }
 
             context.handshakeComplete(getPeer(), this.tlsSession);
         }

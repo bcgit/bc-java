@@ -168,6 +168,11 @@ public class DTLSClientProtocol
                 securityParameters.tlsUnique = securityParameters.getPeerVerifyData();
             }
 
+            securityParameters.localCertificate = state.sessionParameters.getLocalCertificate();
+            securityParameters.peerCertificate = state.sessionParameters.getPeerCertificate();
+            securityParameters.pskIdentity = state.sessionParameters.getPSKIdentity();
+            securityParameters.srpIdentity = state.sessionParameters.getSRPIdentity();
+
             state.clientContext.handshakeComplete(state.client, state.tlsSession);
 
             recordLayer.initHeartbeat(state.heartbeat, HeartbeatMode.peer_allowed_to_send == state.heartbeatPolicy);
