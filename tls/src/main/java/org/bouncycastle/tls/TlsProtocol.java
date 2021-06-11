@@ -222,6 +222,11 @@ public abstract class TlsProtocol
 
     protected abstract TlsPeer getPeer();
 
+    protected int getRenegotiationPolicy()
+    {
+        return RenegotiationPolicy.DENY;
+    }
+
     protected void handleAlertMessage(short alertLevel, short alertDescription)
         throws IOException
     {
@@ -335,6 +340,46 @@ public abstract class TlsProtocol
     protected abstract void handleHandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException;
 
+    protected boolean handleRenegotiation() throws IOException
+    {
+        int renegotiationPolicy = RenegotiationPolicy.DENY;
+
+        // Never renegotiate without secure renegotiation and server certificate authentication.
+        {
+            SecurityParameters securityParameters = getContext().getSecurityParametersConnection();
+            if (null != securityParameters && securityParameters.isSecureRenegotiation())
+            {
+                Certificate serverCertificate = ConnectionEnd.server == securityParameters.getEntity()
+                    ?   securityParameters.getLocalCertificate()
+                    :   securityParameters.getPeerCertificate();
+
+                if (null != serverCertificate && !serverCertificate.isEmpty())
+                {
+                    renegotiationPolicy = getRenegotiationPolicy();
+                }
+            }
+        }
+
+        switch (renegotiationPolicy)
+        {
+        case RenegotiationPolicy.ACCEPT:
+        {
+            beginHandshake(true);
+            return true;
+        }
+        case RenegotiationPolicy.IGNORE:
+        {
+            return false;
+        }
+        case RenegotiationPolicy.DENY:
+        default:
+        {
+            refuseRenegotiation();
+            return false;
+        }
+        }
+    }
+
     protected void applyMaxFragmentLengthExtension(short maxFragmentLength) throws IOException
     {
         if (maxFragmentLength >= 0)
@@ -372,7 +417,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void beginHandshake()
+    protected void beginHandshake(boolean renegotiation)
         throws IOException
     {
         AbstractTlsContext context = getContextAdmin(); 
@@ -386,6 +431,10 @@ public abstract class TlsProtocol
         context.handshakeBeginning(peer);
 
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        if (renegotiation != securityParameters.isRenegotiating())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         securityParameters.extendedPadding = peer.shouldUseExtendedPadding();
     }

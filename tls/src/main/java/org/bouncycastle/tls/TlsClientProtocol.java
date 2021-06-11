@@ -79,7 +79,7 @@ public class TlsClientProtocol
         tlsClient.init(tlsClientContext);
         tlsClient.notifyCloseHandle(this);
 
-        beginHandshake();
+        beginHandshake(false);
 
         if (blocking)
         {
@@ -97,9 +97,9 @@ public class TlsClientProtocol
 //        return allowed;
 //    }
 
-    protected void beginHandshake() throws IOException
+    protected void beginHandshake(boolean renegotiation) throws IOException
     {
-        super.beginHandshake();
+        super.beginHandshake(renegotiation);
 
         establishSession(tlsClient.getSessionToResume());
         tlsClient.notifySessionToResume(tlsSession);
@@ -765,7 +765,7 @@ public class TlsClientProtocol
              */
             if (isApplicationDataReady())
             {
-                refuseRenegotiation();
+                handleRenegotiation();
             }
             break;
         }
@@ -807,6 +807,10 @@ public class TlsClientProtocol
         recordStream.setWriteVersion(legacy_record_version);
 
         final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
+        if (securityParameters.isRenegotiating())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         /*
          * RFC 8446 4.1.4. Upon receipt of a HelloRetryRequest, the client MUST check the
@@ -1059,7 +1063,15 @@ public class TlsClientProtocol
 
         final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
 
-        // NOT renegotiating
+        if (securityParameters.isRenegotiating())
+        {
+            // Check that this matches the negotiated version from the initial handshake
+            if (!server_version.equals(securityParameters.getNegotiatedVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
+        else
         {
             if (!ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), server_version))
             {
@@ -1176,7 +1188,42 @@ public class TlsClientProtocol
 
         byte[] renegExtData = TlsUtils.getExtensionData(this.serverExtensions, EXT_RenegotiationInfo);
 
-        // NOT renegotiating
+        if (securityParameters.isRenegotiating())
+        {
+            /*
+             * RFC 5746 3.5. Client Behavior: Secure Renegotiation
+             * 
+             * This text applies if the connection's "secure_renegotiation" flag is set to TRUE.
+             */
+            if (!securityParameters.isSecureRenegotiation())
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            /*
+             * When a ServerHello is received, the client MUST verify that the "renegotiation_info"
+             * extension is present; if it is not, the client MUST abort the handshake.
+             */
+            if (renegExtData == null)
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+
+            /*
+             * The client MUST then verify that the first half of the "renegotiated_connection"
+             * field is equal to the saved client_verify_data value, and the second half is equal to
+             * the saved server_verify_data value. If they are not, the client MUST abort the
+             * handshake.
+             */
+            SecurityParameters saved = tlsClientContext.getSecurityParametersConnection();
+            byte[] reneg_conn_info = TlsUtils.concat(saved.getLocalVerifyData(), saved.getPeerVerifyData());
+
+            if (!Arrays.constantTimeAreEqual(renegExtData, createRenegotiationInfo(reneg_conn_info)))
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+        }
+        else
         {
             /*
              * RFC 5746 3.4. Client Behavior: Initial Handshake (both full and session-resumption)
@@ -1603,8 +1650,11 @@ public class TlsClientProtocol
         SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
 
         ProtocolVersion client_version;
-
-        // NOT renegotiating
+        if (securityParameters.isRenegotiating())
+        {
+            client_version = tlsClientContext.getClientVersion();
+        }
+        else
         {
             tlsClientContext.setClientSupportedVersions(tlsClient.getProtocolVersions());
 
@@ -1699,7 +1749,27 @@ public class TlsClientProtocol
             securityParameters.clientRandom = createRandomBlock(useGMTUnixTime, tlsClientContext);
         }
 
-        // NOT renegotiating
+        if (securityParameters.isRenegotiating())
+        {
+            /*
+             * RFC 5746 3.5. Client Behavior: Secure Renegotiation
+             * 
+             * This text applies if the connection's "secure_renegotiation" flag is set to TRUE.
+             */
+            if (!securityParameters.isSecureRenegotiation())
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            /*
+             * The client MUST include the "renegotiation_info" extension in the ClientHello,
+             * containing the saved client_verify_data. The SCSV MUST NOT be included.
+             */
+            SecurityParameters saved = tlsClientContext.getSecurityParametersConnection();
+
+            this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(saved.getLocalVerifyData()));
+        }
+        else
         {
             /*
              * RFC 5746 3.4. Client Behavior: Initial Handshake (both full and session-resumption)
