@@ -76,7 +76,7 @@ public class ASN1OutputStream
         os.write(bytes, off, len);
     }
 
-    final void writeElements(ASN1Encodable[] elements)
+    void writeElements(ASN1Encodable[] elements)
         throws IOException
     {
         int count = elements.length;
@@ -84,7 +84,7 @@ public class ASN1OutputStream
         {
             ASN1Primitive primitive = elements[i].toASN1Primitive();
 
-            writePrimitive(primitive, true);
+            primitive.encode(this, true);
         }
     }
 
@@ -261,7 +261,7 @@ public class ASN1OutputStream
         }
     }
 
-    public void writeObject(ASN1Encodable obj) throws IOException
+    public final void writeObject(ASN1Encodable obj) throws IOException
     {
         if (null == obj)
         {
@@ -272,7 +272,7 @@ public class ASN1OutputStream
         flushInternal();
     }
 
-    public void writeObject(ASN1Primitive primitive) throws IOException
+    public final void writeObject(ASN1Primitive primitive) throws IOException
     {
         if (null == primitive)
         {
@@ -286,6 +286,16 @@ public class ASN1OutputStream
     void writePrimitive(ASN1Primitive primitive, boolean withTag) throws IOException
     {
         primitive.encode(this, withTag);
+    }
+
+    void writePrimitives(ASN1Primitive[] primitives)
+        throws IOException
+    {
+        int count = primitives.length;
+        for (int i = 0; i < count; ++i)
+        {
+            primitives[i].encode(this, true);
+        }
     }
 
     public void close()
