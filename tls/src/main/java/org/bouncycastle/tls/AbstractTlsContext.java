@@ -64,7 +64,9 @@ abstract class AbstractTlsContext
 
             if (null != securityParametersConnection)
             {
-                throw new TlsFatalAlert(AlertDescription.internal_error, "Renegotiation not supported");
+                securityParametersHandshake.renegotiating = true;
+                securityParametersHandshake.secureRenegotiation = securityParametersConnection.isSecureRenegotiation();
+                securityParametersHandshake.negotiatedVersion = securityParametersConnection.getNegotiatedVersion();
             }
         }
 
