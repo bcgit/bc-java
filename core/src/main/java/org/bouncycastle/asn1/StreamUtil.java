@@ -59,24 +59,16 @@ class StreamUtil
     static int calculateBodyLength(
         int length)
     {
-        int count = 1;
-
-        if (length > 127)
+        if (length < 128)
         {
-            int size = 1;
-            int val = length;
-
-            while ((val >>>= 8) != 0)
-            {
-                size++;
-            }
-
-            for (int i = (size - 1) * 8; i >= 0; i -= 8)
-            {
-                count++;
-            }
+            return 1;
         }
 
+        int count = 2;
+        while ((length >>>= 8) != 0)
+        {
+            ++count;
+        }
         return count;
     }
 
