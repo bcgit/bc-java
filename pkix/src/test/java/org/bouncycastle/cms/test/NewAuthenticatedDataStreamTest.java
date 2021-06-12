@@ -108,13 +108,16 @@ public class NewAuthenticatedDataStreamTest
     public void testKeyTransDESede()
         throws Exception
     {
-        tryKeyTrans(CMSAlgorithm.DES_EDE3_CBC);
+        tryKeyTrans("Eric H. Echidna".getBytes(), CMSAlgorithm.DES_EDE3_CBC);
+        // force multiple octet-string
+        tryKeyTrans(new byte[2500], CMSAlgorithm.DES_EDE3_CBC);
     }
 
     public void testKeyTransDESedeWithDigest()
         throws Exception
     {
-        tryKeyTransWithDigest(CMSAlgorithm.DES_EDE3_CBC);
+        tryKeyTransWithDigest("Eric H. Echidna".getBytes(), CMSAlgorithm.DES_EDE3_CBC);
+        tryKeyTransWithDigest(new byte[2500], CMSAlgorithm.DES_EDE3_CBC);
     }
 
     public void testOriginatorInfo()
@@ -165,11 +168,9 @@ public class NewAuthenticatedDataStreamTest
         }
     }
 
-    private void tryKeyTrans(ASN1ObjectIdentifier macAlg)
+    private void tryKeyTrans(byte[] data, ASN1ObjectIdentifier macAlg)
         throws Exception
     {
-        byte[]          data     = "Eric H. Echidna".getBytes();
-
         CMSAuthenticatedDataStreamGenerator adGen = new CMSAuthenticatedDataStreamGenerator();
         ByteArrayOutputStream               bOut = new ByteArrayOutputStream();
 
@@ -206,11 +207,9 @@ public class NewAuthenticatedDataStreamTest
         }
     }
 
-    private void tryKeyTransWithDigest(ASN1ObjectIdentifier macAlg)
+    private void tryKeyTransWithDigest(byte[] data, ASN1ObjectIdentifier macAlg)
         throws Exception
     {
-        byte[]          data     = "Eric H. Echidna".getBytes();
-
         CMSAuthenticatedDataStreamGenerator adGen = new CMSAuthenticatedDataStreamGenerator();
         ByteArrayOutputStream               bOut = new ByteArrayOutputStream();
         DigestCalculatorProvider            calcProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
