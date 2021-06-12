@@ -190,7 +190,7 @@ public class CMSAuthenticatedDataStreamGenerator
             eiGen.addObject(dataType);
 
             OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
-                    eiGen.getRawOutputStream(), 0, false, bufferSize);
+                    eiGen.getRawOutputStream(), 0, true, bufferSize);
 
             OutputStream mOut;
 
