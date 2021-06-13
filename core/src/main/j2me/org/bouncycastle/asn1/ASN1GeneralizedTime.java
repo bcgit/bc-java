@@ -228,11 +228,9 @@ public class ASN1GeneralizedTime
         return false;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        int length = time.length;
-
-        return 1 + StreamUtil.calculateBodyLength(length) + length;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, time.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

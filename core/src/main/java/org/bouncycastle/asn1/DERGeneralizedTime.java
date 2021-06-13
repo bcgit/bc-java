@@ -100,11 +100,9 @@ public class DERGeneralizedTime
         }
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        int length = getDERTime().length;
-
-        return 1 + StreamUtil.calculateBodyLength(length) + length;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, getDERTime().length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

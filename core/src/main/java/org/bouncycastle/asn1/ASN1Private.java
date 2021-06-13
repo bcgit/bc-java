@@ -149,7 +149,7 @@ public abstract class ASN1Private
     {
         int contentsLength = octets.length;
 
-        return (withTag ? StreamUtil.calculateTagLength(tag) : 0) + StreamUtil.calculateBodyLength(contentsLength)
+        return (withTag ? StreamUtil.calculateTagLength(tag) : 0) + ASN1OutputStream.getLengthOfDL(contentsLength)
             + contentsLength;
     }
 

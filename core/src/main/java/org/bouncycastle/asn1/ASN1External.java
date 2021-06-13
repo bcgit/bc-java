@@ -142,12 +142,6 @@ public abstract class ASN1External
         return true;
     }
 
-    int encodedLength()
-        throws IOException
-    {
-        return this.getEncoded().length;
-    }
-
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#asn1Equals(org.bouncycastle.asn1.ASN1Primitive)
      */
