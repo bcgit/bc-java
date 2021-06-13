@@ -37,23 +37,27 @@ public class DERTaggedObject
         throws IOException
     {
         ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+
         int length = primitive.encodedLength();
 
         if (explicit)
         {
-            return StreamUtil.calculateTagLength(tagNo) + StreamUtil.calculateBodyLength(length) + length;
+            length += StreamUtil.calculateBodyLength(length);
         }
         else
         {
             // header length already in calculation
-            length = length - 1;
-
-            return StreamUtil.calculateTagLength(tagNo) + length;
+//            length -= primitive.tagLength();
+            length -= 1;
         }
+
+        return StreamUtil.calculateTagLength(tagNo) + length;
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
+//      assert out.getClass().isAssignableFrom(DEROutputStream.class);
+
         ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
 
         int flags = BERTags.TAGGED;
