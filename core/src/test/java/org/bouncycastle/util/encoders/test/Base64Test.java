@@ -70,9 +70,11 @@ public class Base64Test extends AbstractCoderTest
     }
 
     private void lengthCheck(Encoder encoder, String r, byte[] v)
+        throws IOException
     {
         assertEquals(r.length(), encoder.getEncodedLength(v.length));
         assertEquals(((v.length + 2) / 3) * 3, encoder.getMaxDecodedLength(r.length()));
+        assertEquals(r.length(), encoder.encode(v, 0, v.length, new ByteArrayOutputStream()));
     }
 
     public void testInvalidInput()
