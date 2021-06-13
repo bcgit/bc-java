@@ -24,7 +24,7 @@ public class BEROctetString
 {
     private static final int DEFAULT_CHUNK_SIZE = 1000;
 
-    private final int chunkSize;
+    private final int segmentSize;
     private final ASN1OctetString[] octs;
 
     /**
@@ -54,8 +54,7 @@ public class BEROctetString
      * Create an OCTET-STRING object from a byte[]
      * @param string the octets making up the octet string.
      */
-    public BEROctetString(
-        byte[] string)
+    public BEROctetString(byte[] string)
     {
         this(string, DEFAULT_CHUNK_SIZE);
     }
@@ -66,8 +65,7 @@ public class BEROctetString
      *
      * @param octs an array of OCTET STRING to construct the BER OCTET STRING from.
      */
-    public BEROctetString(
-        ASN1OctetString[] octs)
+    public BEROctetString(ASN1OctetString[] octs)
     {
         this(octs, DEFAULT_CHUNK_SIZE);
     }
@@ -75,13 +73,11 @@ public class BEROctetString
     /**
      * Create an OCTET-STRING object from a byte[]
      * @param string the octets making up the octet string.
-     * @param chunkSize the number of octets stored in each DER encoded component OCTET STRING.
+     * @param segmentSize the number of octets stored in each DER encoded component OCTET STRING.
      */
-    public BEROctetString(
-        byte[] string,
-        int    chunkSize)
+    public BEROctetString(byte[] string, int segmentSize)
     {
-        this(string, null, chunkSize);
+        this(string, null, segmentSize);
     }
 
     /**
@@ -89,26 +85,26 @@ public class BEROctetString
      * the result is <i>constructed form</i>.
      *
      * @param octs an array of OCTET STRING to construct the BER OCTET STRING from.
-     * @param chunkSize the number of octets stored in each DER encoded component OCTET STRING.
+     * @param segmentSize the number of octets stored in each DER encoded component OCTET STRING.
      */
-    public BEROctetString(
-        ASN1OctetString[] octs,
-        int chunkSize)
+    public BEROctetString(ASN1OctetString[] octs, int segmentSize)
     {
-        this(toBytes(octs), octs, chunkSize);
+        this(toBytes(octs), octs, segmentSize);
     }
 
-    private BEROctetString(byte[] string, ASN1OctetString[] octs, int chunkSize)
+    private BEROctetString(byte[] string, ASN1OctetString[] octs, int segmentSize)
     {
         super(string);
         this.octs = octs;
-        this.chunkSize = chunkSize;
+        this.segmentSize = segmentSize;
     }
 
     /**
      * Return the OCTET STRINGs that make up this string.
      *
      * @return an Enumeration of the component OCTET STRINGs.
+     * 
+     * @deprecated Will be removed.
      */
     public Enumeration getObjects()
     {
@@ -127,7 +123,7 @@ public class BEROctetString
                 {
                     if (pos < string.length)
                     {
-                        int length = Math.min(string.length - pos, chunkSize);
+                        int length = Math.min(string.length - pos, segmentSize);
                         byte[] chunk = new byte[length];
                         System.arraycopy(string, pos, chunk, 0, length);
                         pos += length;
@@ -169,15 +165,13 @@ public class BEROctetString
         int length = 4;
         if (null == octs)
         {
-            length += string.length;
+            int fullChunks = string.length / segmentSize;
+            length += fullChunks * DEROctetString.encodedLength(true, segmentSize);
 
-            int fullChunks = string.length / chunkSize;
-            length += fullChunks * (1 + StreamUtil.calculateBodyLength(chunkSize));
-
-            int lastChunkSize = string.length - (fullChunks * chunkSize);
-            if (lastChunkSize > 0)
+            int lastSegmentSize = string.length - (fullChunks * segmentSize);
+            if (lastSegmentSize > 0)
             {
-                length += 1 + StreamUtil.calculateBodyLength(lastChunkSize);
+                length += DEROctetString.encodedLength(true, lastSegmentSize);
             }
         }
         else
@@ -203,7 +197,7 @@ public class BEROctetString
             int pos = 0;
             while (pos < string.length)
             {
-                int chunkLength = Math.min(string.length - pos, chunkSize);
+                int chunkLength = Math.min(string.length - pos, segmentSize);
                 DEROctetString.encode(out, true, string, pos, chunkLength);
                 pos += chunkLength;
             }
