@@ -111,10 +111,11 @@ public class Base64Encoder
      *
      * @return the number of bytes produced.
      */
-    public int encode(byte[] buf, int off, int len, OutputStream out) 
+    public int encode(byte[] buf, int off, int len, OutputStream out)
         throws IOException
     {
         byte[] tmp = new byte[72];
+        int total = 0;
         while (len > 0)
         {
             int inLen = Math.min(54, len);
@@ -122,8 +123,9 @@ public class Base64Encoder
             out.write(tmp, 0, outLen);
             off += inLen;
             len -= inLen;
+            total += outLen;
         }
-        return ((len + 2) / 3) * 4;
+        return total;
     }
 
     private boolean ignore(
