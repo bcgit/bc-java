@@ -116,12 +116,12 @@ public class ASN1Boolean
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, 1);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, 1);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.BOOLEAN, value);
+        out.writeEncodingDL(withTag, BERTags.BOOLEAN, value);
     }
 
     boolean asn1Equals(ASN1Primitive other)

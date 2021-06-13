@@ -163,7 +163,7 @@ public class DERBMPString
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length * 2);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, string.length * 2);
     }
 
     void encode(
@@ -175,7 +175,7 @@ public class DERBMPString
         {
             out.write(BERTags.BMP_STRING);
         }
-        out.writeLength(count * 2);
+        out.writeDL(count * 2);
 
         byte[] buf = new byte[8];
 

@@ -321,12 +321,12 @@ public class ASN1ObjectIdentifier
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, getBody().length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, getBody().length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.OBJECT_IDENTIFIER, getBody());
+        out.writeEncodingDL(withTag, BERTags.OBJECT_IDENTIFIER, getBody());
     }
 
     public int hashCode()

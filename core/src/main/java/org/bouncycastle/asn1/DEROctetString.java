@@ -38,12 +38,12 @@ public class DEROctetString
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, string.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.OCTET_STRING, string);
+        out.writeEncodingDL(withTag, BERTags.OCTET_STRING, string);
     }
 
     ASN1Primitive toDERObject()
@@ -58,11 +58,11 @@ public class DEROctetString
 
     static void encode(ASN1OutputStream out, boolean withTag, byte[] buf, int off, int len) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.OCTET_STRING, buf, off, len);
+        out.writeEncodingDL(withTag, BERTags.OCTET_STRING, buf, off, len);
     }
 
     static int encodedLength(boolean withTag, int contentsLength)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, contentsLength);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contentsLength);
     }
 }

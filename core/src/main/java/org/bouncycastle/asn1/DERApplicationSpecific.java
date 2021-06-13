@@ -110,7 +110,7 @@ public class DERApplicationSpecific
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, tag, octets.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, tag, octets.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
@@ -121,6 +121,6 @@ public class DERApplicationSpecific
             flags |= BERTags.CONSTRUCTED;
         }
 
-        out.writeEncoded(withTag, flags, tag, octets);
+        out.writeEncodingDL(withTag, flags, tag, octets);
     }
 }

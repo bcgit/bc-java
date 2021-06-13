@@ -59,6 +59,6 @@ public class BERSequence
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodedIndef(withTag, BERTags.SEQUENCE | BERTags.CONSTRUCTED, elements);
+        out.writeEncodingIL(withTag, BERTags.CONSTRUCTED | BERTags.SEQUENCE, elements);
     }
 }

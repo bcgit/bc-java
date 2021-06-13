@@ -36,41 +36,84 @@ public class ASN1OutputStream
         this.os = os;
     }
 
-    final void writeLength(
-        int length)
-        throws IOException
+    public void close() throws IOException
     {
-        if (length > 127)
+        os.close();
+    }
+
+    public void flush() throws IOException
+    {
+        os.flush();
+    }
+
+    public final void writeObject(ASN1Encodable encodable) throws IOException
+    {
+        if (null == encodable)
         {
-            int size = 1;
-            int val = length;
+            throw new IOException("null object detected");
+        }
 
-            while ((val >>>= 8) != 0)
-            {
-                size++;
-            }
+        writePrimitive(encodable.toASN1Primitive(), true);
+        flushInternal();
+    }
 
-            write((byte)(size | 0x80));
+    public final void writeObject(ASN1Primitive primitive) throws IOException
+    {
+        if (null == primitive)
+        {
+            throw new IOException("null object detected");
+        }
 
-            for (int i = (size - 1) * 8; i >= 0; i -= 8)
-            {
-                write((byte)(length >> i));
-            }
+        writePrimitive(primitive, true);
+        flushInternal();
+    }
+
+    void flushInternal() throws IOException
+    {
+        // Placeholder to support future internal buffering
+    }
+
+    DEROutputStream getDERSubStream()
+    {
+        return new DEROutputStream(os);
+    }
+
+    ASN1OutputStream getDLSubStream()
+    {
+        return new DLOutputStream(os);
+    }
+
+    final void writeDL(int length) throws IOException
+    {
+        if (length < 128)
+        {
+            write(length);
         }
         else
         {
-            write((byte)length);
+            byte[] stack = new byte[5];
+            int pos = stack.length;
+
+            do
+            {
+                stack[--pos] = (byte)length;
+                length >>>= 8;
+            }
+            while (length != 0);
+
+            int count = stack.length - pos;
+            stack[--pos] = (byte)(0x80 | count);
+
+            write(stack, pos, count + 1);
         }
     }
 
-    final void write(int b)
-        throws IOException
+    final void write(int b) throws IOException
     {
         os.write(b);
     }
 
-    final void write(byte[] bytes, int off, int len)
-        throws IOException
+    final void write(byte[] bytes, int off, int len) throws IOException
     {
         os.write(bytes, off, len);
     }
@@ -78,8 +121,7 @@ public class ASN1OutputStream
     void writeElements(ASN1Encodable[] elements)
         throws IOException
     {
-        int count = elements.length;
-        for (int i = 0; i < count; ++i)
+        for (int i = 0, count = elements.length; i < count; ++i)
         {
             ASN1Primitive primitive = elements[i].toASN1Primitive();
 
@@ -87,121 +129,82 @@ public class ASN1OutputStream
         }
     }
 
-    final void writeEncoded(
-        boolean withTag,
-        int     tag,
-        byte    contents)
-        throws IOException
+    final void writeEncodingDL(boolean withID, int identifier, byte contents) throws IOException
     {
-        if (withTag)
-        {
-            write(tag);
-        }
-        writeLength(1);
+        writeIdentifier(withID, identifier);
+        writeDL(1);
         write(contents);
     }
 
-    final void writeEncoded(
-        boolean withTag,
-        int     tag,
-        byte[]  contents)
-        throws IOException
+    final void writeEncodingDL(boolean withID, int identifier, byte[] contents) throws IOException
     {
-        if (withTag)
-        {
-            write(tag);
-        }
-        writeLength(contents.length);
+        writeIdentifier(withID, identifier);
+        writeDL(contents.length);
         write(contents, 0, contents.length);
     }
 
-    final void writeEncoded(
-        boolean withTag,
-        int     tag,
-        byte[]  contents,
-        int     contentsOff,
-        int     contentsLen)
+    final void writeEncodingDL(boolean withID, int identifier, byte[] contents, int contentsOff, int contentsLen)
         throws IOException
     {
-        if (withTag)
-        {
-            write(tag);
-        }
-        writeLength(contentsLen);
+        writeIdentifier(withID, identifier);
+        writeDL(contentsLen);
         write(contents, contentsOff, contentsLen);
     }
 
-    final void writeEncoded(
-        boolean withTag,
-        int     tag,
-        byte    headByte,
-        byte[]  tailBytes)
-        throws IOException
+    final void writeEncodingDL(boolean withID, int identifier, byte contentPrefix, byte[] contents) throws IOException
     {
-        if (withTag)
-        {
-            write(tag);
-        }
-        writeLength(1 + tailBytes.length);
-        write(headByte);
-        write(tailBytes, 0, tailBytes.length);
-    }
-
-    final void writeEncoded(
-        boolean withTag,
-        int     tag,
-        byte    headByte,
-        byte[]  body,
-        int     bodyOff,
-        int     bodyLen,
-        byte    tailByte)
-        throws IOException
-    {
-        if (withTag)
-        {
-            write(tag);
-        }
-        writeLength(2 + bodyLen);
-        write(headByte);
-        write(body, bodyOff, bodyLen);
-        write(tailByte);
-    }
-
-    final void writeEncoded(boolean withTag, int flags, int tagNo, byte[] contents)
-        throws IOException
-    {
-        writeIdentifier(withTag, flags, tagNo);
-        writeLength(contents.length);
+        writeIdentifier(withID, identifier);
+        writeDL(1 + contents.length);
+        write(contentPrefix);
         write(contents, 0, contents.length);
     }
 
-    final void writeEncodedIndef(boolean withTag, int flags, int tagNo, byte[] contents)
-        throws IOException
+    final void writeEncodingDL(boolean withID, int identifier, byte contentsPrefix, byte[] contents, int contentsOff,
+        int contentsLen, byte contentsSuffix) throws IOException
     {
-        writeIdentifier(withTag, flags, tagNo);
+        writeIdentifier(withID, identifier);
+        writeDL(2 + contentsLen);
+        write(contentsPrefix);
+        write(contents, contentsOff, contentsLen);
+        write(contentsSuffix);
+    }
+
+    final void writeEncodingDL(boolean withID, int flags, int tag, byte[] contents) throws IOException
+    {
+        writeIdentifier(withID, flags, tag);
+        writeDL(contents.length);
+        write(contents, 0, contents.length);
+    }
+
+    final void writeEncodingIL(boolean withID, int flags, int tag, byte[] contents) throws IOException
+    {
+        writeIdentifier(withID, flags, tag);
         write(0x80);
         write(contents, 0, contents.length);
         write(0x00);
         write(0x00);
     }
 
-    final void writeEncodedIndef(boolean withTag, int tag, ASN1Encodable[] elements)
-        throws IOException
+    final void writeEncodingIL(boolean withID, int identifier, ASN1Encodable[] elements) throws IOException
     {
-        if (withTag)
-        {
-            write(tag);
-        }
+        writeIdentifier(withID, identifier);
         write(0x80);
         writeElements(elements);
         write(0x00);
         write(0x00);
     }
 
-    final void writeIdentifier(boolean withTag, int flags, int tag)
-        throws IOException
+    final void writeIdentifier(boolean withID, int identifier) throws IOException
     {
-        if (!withTag)
+        if (withID)
+        {
+            write(identifier);
+        }
+    }
+
+    final void writeIdentifier(boolean withID, int flags, int tag) throws IOException
+    {
+        if (!withID)
         {
             // Don't write the identifier
         }
@@ -227,69 +230,17 @@ public class ASN1OutputStream
         }
     }
 
-    public final void writeObject(ASN1Encodable obj) throws IOException
+    void writePrimitive(ASN1Primitive primitive, boolean withID) throws IOException
     {
-        if (null == obj)
-        {
-            throw new IOException("null object detected");
-        }
-
-        writePrimitive(obj.toASN1Primitive(), true);
-        flushInternal();
+        primitive.encode(this, withID);
     }
 
-    public final void writeObject(ASN1Primitive primitive) throws IOException
+    void writePrimitives(ASN1Primitive[] primitives) throws IOException
     {
-        if (null == primitive)
-        {
-            throw new IOException("null object detected");
-        }
-
-        writePrimitive(primitive, true);
-        flushInternal();
-    }
-
-    void writePrimitive(ASN1Primitive primitive, boolean withTag) throws IOException
-    {
-        primitive.encode(this, withTag);
-    }
-
-    void writePrimitives(ASN1Primitive[] primitives)
-        throws IOException
-    {
-        int count = primitives.length;
-        for (int i = 0; i < count; ++i)
+        for (int i = 0, count = primitives.length; i < count; ++i)
         {
             primitives[i].encode(this, true);
         }
-    }
-
-    public void close()
-        throws IOException
-    {
-        os.close();
-    }
-
-    public void flush()
-        throws IOException
-    {
-        os.flush();
-    }
-
-    void flushInternal()
-        throws IOException
-    {
-        // Placeholder to support future internal buffering
-    }
-
-    DEROutputStream getDERSubStream()
-    {
-        return new DEROutputStream(os);
-    }
-
-    ASN1OutputStream getDLSubStream()
-    {
-        return new DLOutputStream(os);
     }
 
     static int getLengthOfDL(int length)
@@ -307,14 +258,14 @@ public class ASN1OutputStream
         return count;
     }
 
-    static int getLengthOfDLEncoding(boolean withTag, int contentsLength)
+    static int getLengthOfEncodingDL(boolean withID, int contentsLength)
     {
-        return (withTag ? 1 : 0) + getLengthOfDL(contentsLength) + contentsLength;
+        return (withID ? 1 : 0) + getLengthOfDL(contentsLength) + contentsLength;
     }
 
-    static int getLengthOfDLEncoding(boolean withTag, int tag, int contentsLength)
+    static int getLengthOfEncodingDL(boolean withID, int tag, int contentsLength)
     {
-        return (withTag ? getLengthOfIdentifier(tag) : 0) + getLengthOfDL(contentsLength) + contentsLength;
+        return (withID ? getLengthOfIdentifier(tag) : 0) + getLengthOfDL(contentsLength) + contentsLength;
     }
 
     static int getLengthOfIdentifier(int tag)

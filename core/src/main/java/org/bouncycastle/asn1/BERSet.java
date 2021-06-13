@@ -74,6 +74,6 @@ public class BERSet
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodedIndef(withTag, BERTags.SET | BERTags.CONSTRUCTED, elements);
+        out.writeEncodingIL(withTag, BERTags.CONSTRUCTED | BERTags.SET, elements);
     }
 }

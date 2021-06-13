@@ -70,7 +70,7 @@ public class DLSequence
 
     int encodedLength(boolean withTag) throws IOException
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, getContentsLength());
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, getContentsLength());
     }
 
     /**
@@ -85,7 +85,7 @@ public class DLSequence
     {
         if (withTag)
         {
-            out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
+            out.write(BERTags.CONSTRUCTED | BERTags.SEQUENCE);
         }
 
         ASN1OutputStream dlOut = out.getDLSubStream();
@@ -93,7 +93,7 @@ public class DLSequence
         int count = elements.length;
         if (contentsLength >= 0 || count > 16)
         {
-            out.writeLength(getContentsLength());
+            out.writeDL(getContentsLength());
 
             for (int i = 0; i < count; ++i)
             {
@@ -113,7 +113,7 @@ public class DLSequence
             }
 
             this.contentsLength = totalLength;
-            out.writeLength(totalLength);
+            out.writeDL(totalLength);
 
             for (int i = 0; i < count; ++i)
             {

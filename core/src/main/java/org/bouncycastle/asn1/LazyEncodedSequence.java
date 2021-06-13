@@ -77,7 +77,7 @@ class LazyEncodedSequence
     {
         if (null != encoded)
         {
-            return ASN1OutputStream.getLengthOfDLEncoding(withTag, encoded.length);
+            return ASN1OutputStream.getLengthOfEncodingDL(withTag, encoded.length);
         }
 
         return super.toDLObject().encodedLength(withTag);
@@ -87,7 +87,7 @@ class LazyEncodedSequence
     {
         if (null != encoded)
         {
-            out.writeEncoded(withTag, BERTags.SEQUENCE | BERTags.CONSTRUCTED, encoded);
+            out.writeEncodingDL(withTag, BERTags.CONSTRUCTED | BERTags.SEQUENCE, encoded);
         }
         else
         {
