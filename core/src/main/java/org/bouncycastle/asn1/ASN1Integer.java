@@ -208,9 +208,9 @@ public class ASN1Integer
         return false;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        return 1 + StreamUtil.calculateBodyLength(bytes.length) + bytes.length;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, bytes.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

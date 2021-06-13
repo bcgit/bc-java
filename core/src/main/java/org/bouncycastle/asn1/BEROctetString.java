@@ -159,29 +159,31 @@ public class BEROctetString
         return true;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
         throws IOException
     {
-        int length = 4;
+        int totalLength = withTag ? 4 : 3;
+
         if (null == octs)
         {
             int fullChunks = string.length / segmentSize;
-            length += fullChunks * DEROctetString.encodedLength(true, segmentSize);
+            totalLength += fullChunks * DEROctetString.encodedLength(true, segmentSize);
 
             int lastSegmentSize = string.length - (fullChunks * segmentSize);
             if (lastSegmentSize > 0)
             {
-                length += DEROctetString.encodedLength(true, lastSegmentSize);
+                totalLength += DEROctetString.encodedLength(true, lastSegmentSize);
             }
         }
         else
         {
             for (int i = 0; i < octs.length; ++i)
             {
-                length += octs[i].encodedLength();
+                totalLength += octs[i].encodedLength(true);
             }
         }
-        return length;
+
+        return totalLength;
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

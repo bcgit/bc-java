@@ -114,9 +114,9 @@ public class ASN1Boolean
         return false;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        return 3;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, 1);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

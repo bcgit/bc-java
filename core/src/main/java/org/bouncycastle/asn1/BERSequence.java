@@ -44,18 +44,17 @@ public class BERSequence
         super(elements);
     }
 
-    int encodedLength() throws IOException
+    int encodedLength(boolean withTag) throws IOException
     {
-        int count = elements.length;
-        int totalLength = 0;
+        int totalLength = withTag ? 4 : 3;
 
-        for (int i = 0; i < count; ++i)
+        for (int i = 0, count = elements.length; i < count; ++i)
         {
             ASN1Primitive p = elements[i].toASN1Primitive();
-            totalLength += p.encodedLength();
+            totalLength += p.encodedLength(true);
         }
 
-        return 2 + totalLength + 2;
+        return totalLength;
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

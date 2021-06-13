@@ -23,9 +23,9 @@ public class DERNull
         return false;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        return 2;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, 0);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

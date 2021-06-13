@@ -107,9 +107,9 @@ public class DLBitString
         return false;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        return 1 + StreamUtil.calculateBodyLength(data.length + 1) + data.length + 1;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, 1 + data.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

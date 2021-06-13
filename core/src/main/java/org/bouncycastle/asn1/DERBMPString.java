@@ -161,9 +161,9 @@ public class DERBMPString
         return false;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        return 1 + StreamUtil.calculateBodyLength(string.length * 2) + (string.length * 2);
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length * 2);
     }
 
     void encode(
