@@ -147,15 +147,9 @@ public abstract class ASN1Private
 
     int encodedLength(boolean withTag)
     {
-        int contentsLength = octets.length;
-
-        return (withTag ? StreamUtil.calculateTagLength(tag) : 0) + ASN1OutputStream.getLengthOfDL(contentsLength)
-            + contentsLength;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, tag, octets.length);
     }
 
-    /* (non-Javadoc)
-     * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
-     */
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         int flags = BERTags.PRIVATE;

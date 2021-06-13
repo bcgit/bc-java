@@ -28,19 +28,18 @@ public class DLTaggedObject
         return explicit || obj.toASN1Primitive().toDLObject().isConstructed();
     }
 
-
     int encodedLength(boolean withTag) throws IOException
     {
         ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
 
-        int length = primitive.encodedLength(explicit); 
+        int length = primitive.encodedLength(explicit);
 
         if (explicit)
         {
             length += ASN1OutputStream.getLengthOfDL(length);
         }
 
-        length += withTag ? StreamUtil.calculateTagLength(tagNo) : 0;
+        length += withTag ? ASN1OutputStream.getLengthOfIdentifier(tagNo) : 0;
 
         return length;
     }

@@ -320,4 +320,25 @@ public class ASN1OutputStream
     {
         return (withTag ? 1 : 0) + getLengthOfDL(contentsLength) + contentsLength;
     }
+
+    static int getLengthOfDLEncoding(boolean withTag, int tag, int contentsLength)
+    {
+        return (withTag ? getLengthOfIdentifier(tag) : 0) + getLengthOfDL(contentsLength) + contentsLength;
+    }
+
+    static int getLengthOfIdentifier(int tag)
+    {
+        if (tag < 31)
+        {
+            return 1;
+        }
+
+        int length = 2;
+        while (tag > 127)
+        {
+            ++length;
+            tag >>>= 7;
+        }
+        return length;
+    }
 }
