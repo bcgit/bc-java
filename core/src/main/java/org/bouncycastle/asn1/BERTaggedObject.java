@@ -79,7 +79,7 @@ public class BERTaggedObject
                 flags |= BERTags.CONSTRUCTED;
             }
 
-            out.writeTag(withTag, flags, tagNo);
+            out.writeIdentifier(withTag, flags, tagNo);
         }
 
         if (explicit)
