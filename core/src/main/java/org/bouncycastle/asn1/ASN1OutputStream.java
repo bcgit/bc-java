@@ -170,7 +170,7 @@ public class ASN1OutputStream
     final void writeEncoded(boolean withTag, int flags, int tagNo, byte[] contents)
         throws IOException
     {
-        writeTag(withTag, flags, tagNo);
+        writeIdentifier(withTag, flags, tagNo);
         writeLength(contents.length);
         write(contents, 0, contents.length);
     }
@@ -178,7 +178,7 @@ public class ASN1OutputStream
     final void writeEncodedIndef(boolean withTag, int flags, int tagNo, byte[] contents)
         throws IOException
     {
-        writeTag(withTag, flags, tagNo);
+        writeIdentifier(withTag, flags, tagNo);
         write(0x80);
         write(contents, 0, contents.length);
         write(0x00);
@@ -198,41 +198,32 @@ public class ASN1OutputStream
         write(0x00);
     }
 
-    final void writeTag(boolean withTag, int flags, int tagNo)
+    final void writeIdentifier(boolean withTag, int flags, int tag)
         throws IOException
     {
         if (!withTag)
         {
-            return;
+            // Don't write the identifier
         }
-
-        if (tagNo < 31)
+        else if (tag < 31)
         {
-            write(flags | tagNo);
+            write(flags | tag);
         }
         else
         {
-            write(flags | 0x1f);
-            if (tagNo < 128)
+            byte[] stack = new byte[6];
+            int pos = stack.length;
+
+            stack[--pos] = (byte)(tag & 0x7F);
+            while (tag > 127)
             {
-                write(tagNo);
+                tag >>>= 7;
+                stack[--pos] = (byte)(tag & 0x7F | 0x80);
             }
-            else
-            {
-                byte[] stack = new byte[5];
-                int pos = stack.length;
 
-                stack[--pos] = (byte)(tagNo & 0x7F);
+            stack[--pos] = (byte)(flags | 0x1F);
 
-                do
-                {
-                    tagNo >>= 7;
-                    stack[--pos] = (byte)(tagNo & 0x7F | 0x80);
-                }
-                while (tagNo > 127);
-
-                write(stack, pos, stack.length - pos);
-            }
+            write(stack, pos, stack.length - pos);
         }
     }
 
