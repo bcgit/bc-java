@@ -108,9 +108,11 @@ public class DERApplicationSpecific
         return bOut.toByteArray();
     }
 
-    /* (non-Javadoc)
-     * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
-     */
+    int encodedLength(boolean withTag)
+    {
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, tag, octets.length);
+    }
+
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         int flags = BERTags.APPLICATION;
