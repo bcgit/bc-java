@@ -145,22 +145,6 @@ public abstract class ASN1ApplicationSpecific
         return ASN1Primitive.fromByteArray(tmp);
     }
 
-    int encodedLength(boolean withTag)
-    {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, tag, octets.length);
-    }
-
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        int flags = BERTags.APPLICATION;
-        if (isConstructed)
-        {
-            flags |= BERTags.CONSTRUCTED;
-        }
-
-        out.writeEncoded(withTag, flags, tag, octets);
-    }
-
     boolean asn1Equals(
         ASN1Primitive o)
     {
