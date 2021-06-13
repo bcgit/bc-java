@@ -135,9 +135,9 @@ public class DERNumericString
         return false;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

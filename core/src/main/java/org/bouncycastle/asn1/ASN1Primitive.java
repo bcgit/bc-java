@@ -105,12 +105,7 @@ public abstract class ASN1Primitive
      */
     abstract boolean isConstructed();
 
-    /**
-     * Return the length of the encoding this object will produce.
-     * @return the length of the object's encoding.
-     * @throws IOException if the encoding length cannot be calculated.
-     */
-    abstract int encodedLength() throws IOException;
+    abstract int encodedLength(boolean withTag) throws IOException;
 
     abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
 

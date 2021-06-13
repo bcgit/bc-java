@@ -36,9 +36,9 @@ public class DEROctetString
         return false;
     }
 
-    int encodedLength()
+    int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(true, string.length);
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException

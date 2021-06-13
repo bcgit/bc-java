@@ -49,25 +49,20 @@ public class BERTaggedObject
         return explicit || obj.toASN1Primitive().isConstructed();
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength(boolean withTag) throws IOException
     {
         ASN1Primitive primitive = obj.toASN1Primitive();
 
-        int length = primitive.encodedLength();
+        int length = primitive.encodedLength(explicit); 
 
         if (explicit)
         {
             length += 3;
         }
-        else
-        {
-            // header length already in calculation
-//            length -= primitive.tagLength();
-            length -= 1;
-        }
 
-        return StreamUtil.calculateTagLength(tagNo) + length;
+        length += withTag ? StreamUtil.calculateTagLength(tagNo) : 0;
+
+        return length;
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
@@ -76,13 +71,16 @@ public class BERTaggedObject
 
         ASN1Primitive primitive = obj.toASN1Primitive();
 
-        int flags = BERTags.TAGGED;
-        if (explicit || primitive.isConstructed())
+        if (withTag)
         {
-            flags |= BERTags.CONSTRUCTED;
-        }
+            int flags = BERTags.TAGGED;
+            if (explicit || primitive.isConstructed())
+            {
+                flags |= BERTags.CONSTRUCTED;
+            }
 
-        out.writeTag(withTag, flags, tagNo);
+            out.writeTag(withTag, flags, tagNo);
+        }
 
         if (explicit)
         {

@@ -123,10 +123,9 @@ public class DERUTF8String
         return false;
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength(boolean withTag)
     {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
