@@ -53,14 +53,14 @@ public class BERTaggedObject
     {
         ASN1Primitive primitive = obj.toASN1Primitive();
 
-        int length = primitive.encodedLength(explicit); 
+        int length = primitive.encodedLength(explicit);
 
         if (explicit)
         {
             length += 3;
         }
 
-        length += withTag ? StreamUtil.calculateTagLength(tagNo) : 0;
+        length += withTag ? ASN1OutputStream.getLengthOfIdentifier(tagNo) : 0;
 
         return length;
     }
