@@ -313,12 +313,9 @@ public class ASN1ObjectIdentifier
         return false;
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength(boolean withTag)
     {
-        int length = getBody().length;
-
-        return 1 + StreamUtil.calculateBodyLength(length) + length;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, getBody().length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
