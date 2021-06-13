@@ -300,4 +300,24 @@ public class ASN1OutputStream
     {
         return new DLOutputStream(os);
     }
+
+    static int getLengthOfDL(int length)
+    {
+        if (length < 128)
+        {
+            return 1;
+        }
+
+        int count = 2;
+        while ((length >>>= 8) != 0)
+        {
+            ++count;
+        }
+        return count;
+    }
+
+    static int getLengthOfDLEncoding(boolean withTag, int contentsLength)
+    {
+        return (withTag ? 1 : 0) + getLengthOfDL(contentsLength) + contentsLength;
+    }
 }

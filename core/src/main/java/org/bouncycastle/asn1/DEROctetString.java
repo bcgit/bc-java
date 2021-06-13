@@ -38,7 +38,7 @@ public class DEROctetString
 
     int encodedLength()
     {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
+        return ASN1OutputStream.getLengthOfDLEncoding(true, string.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
@@ -56,8 +56,13 @@ public class DEROctetString
         return this;
     }
 
-    static void encode(ASN1OutputStream derOut, boolean withTag, byte[] buf, int off, int len) throws IOException
+    static void encode(ASN1OutputStream out, boolean withTag, byte[] buf, int off, int len) throws IOException
     {
-        derOut.writeEncoded(withTag, BERTags.OCTET_STRING, buf, off, len);
+        out.writeEncoded(withTag, BERTags.OCTET_STRING, buf, off, len);
+    }
+
+    static int encodedLength(boolean withTag, int contentsLength)
+    {
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, contentsLength);
     }
 }
