@@ -14,6 +14,11 @@ class DLOutputStream
         super(os);
     }
 
+    ASN1OutputStream getDLSubStream()
+    {
+        return this;
+    }
+
     void writeElements(ASN1Encodable[] elements)
         throws IOException
     {
@@ -37,10 +42,5 @@ class DLOutputStream
         {
             primitives[i].toDLObject().encode(this, true);
         }
-    }
-
-    ASN1OutputStream getDLSubStream()
-    {
-        return this;
     }
 }

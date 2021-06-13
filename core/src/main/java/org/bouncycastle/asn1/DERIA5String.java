@@ -139,12 +139,12 @@ public class DERIA5String
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, string.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.IA5_STRING, string);
+        out.writeEncodingDL(withTag, BERTags.IA5_STRING, string);
     }
 
     public int hashCode()

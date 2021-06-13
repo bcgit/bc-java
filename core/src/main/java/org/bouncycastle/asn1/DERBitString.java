@@ -109,7 +109,7 @@ public class DERBitString
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, 1 + data.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, 1 + data.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
@@ -119,12 +119,12 @@ public class DERBitString
             || 0 == padBits
             || (data[len - 1] == (byte)(data[len - 1] & (0xFF << padBits))))
         {
-            out.writeEncoded(withTag, BERTags.BIT_STRING, (byte)padBits, data);
+            out.writeEncodingDL(withTag, BERTags.BIT_STRING, (byte)padBits, data);
         }
         else
         {
             byte der = (byte)(data[len - 1] & (0xFF << padBits));
-            out.writeEncoded(withTag, BERTags.BIT_STRING, (byte)padBits, data, 0, len - 1, der);
+            out.writeEncodingDL(withTag, BERTags.BIT_STRING, (byte)padBits, data, 0, len - 1, der);
         }
     }
 

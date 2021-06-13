@@ -82,7 +82,7 @@ public class DERSet
 
     int encodedLength(boolean withTag) throws IOException
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, getContentsLength());
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, getContentsLength());
     }
 
     /*
@@ -97,7 +97,7 @@ public class DERSet
     {
         if (withTag)
         {
-            out.write(BERTags.SET | BERTags.CONSTRUCTED);
+            out.write(BERTags.CONSTRUCTED | BERTags.SET);
         }
 
         DEROutputStream derOut = out.getDERSubStream();
@@ -105,7 +105,7 @@ public class DERSet
         int count = elements.length;
         if (contentsLength >= 0 || count > 16)
         {
-            out.writeLength(getContentsLength());
+            out.writeDL(getContentsLength());
 
             for (int i = 0; i < count; ++i)
             {
@@ -126,7 +126,7 @@ public class DERSet
             }
 
             this.contentsLength = totalLength;
-            out.writeLength(totalLength);
+            out.writeDL(totalLength);
 
             for (int i = 0; i < count; ++i)
             {

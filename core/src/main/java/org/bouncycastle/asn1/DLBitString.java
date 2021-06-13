@@ -109,12 +109,12 @@ public class DLBitString
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, 1 + data.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, 1 + data.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.BIT_STRING, (byte)padBits, data);
+        out.writeEncodingDL(withTag, BERTags.BIT_STRING, (byte)padBits, data);
     }
 
     ASN1Primitive toDLObject()

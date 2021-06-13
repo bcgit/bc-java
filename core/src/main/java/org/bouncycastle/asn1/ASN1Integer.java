@@ -210,12 +210,12 @@ public class ASN1Integer
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, bytes.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, bytes.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.INTEGER, bytes);
+        out.writeEncodingDL(withTag, BERTags.INTEGER, bytes);
     }
 
     public int hashCode()

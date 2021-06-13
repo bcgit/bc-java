@@ -107,6 +107,6 @@ public class BERApplicationSpecific
             flags |= BERTags.CONSTRUCTED;
         }
 
-        out.writeEncodedIndef(withTag, flags, tag, octets);
+        out.writeEncodingIL(withTag, flags, tag, octets);
     }
 }

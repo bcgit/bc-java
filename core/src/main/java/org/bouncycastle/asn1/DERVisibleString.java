@@ -115,12 +115,12 @@ public class DERVisibleString
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, string.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.VISIBLE_STRING, this.string);
+        out.writeEncodingDL(withTag, BERTags.VISIBLE_STRING, this.string);
     }
 
     boolean asn1Equals(

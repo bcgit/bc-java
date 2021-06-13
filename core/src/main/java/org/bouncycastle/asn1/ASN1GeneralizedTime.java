@@ -446,12 +446,12 @@ public class ASN1GeneralizedTime
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, time.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, time.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.GENERALIZED_TIME, time);
+        out.writeEncodingDL(withTag, BERTags.GENERALIZED_TIME, time);
     }
 
     ASN1Primitive toDERObject()

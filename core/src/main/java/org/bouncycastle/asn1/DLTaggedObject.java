@@ -58,12 +58,12 @@ public class DLTaggedObject
                 flags |= BERTags.CONSTRUCTED;
             }
 
-            out.writeIdentifier(withTag, flags, tagNo);
+            out.writeIdentifier(true, flags, tagNo);
         }
 
         if (explicit)
         {
-            out.writeLength(primitive.encodedLength(true));
+            out.writeDL(primitive.encodedLength(true));
         }
 
         primitive.encode(out.getDLSubStream(), explicit);

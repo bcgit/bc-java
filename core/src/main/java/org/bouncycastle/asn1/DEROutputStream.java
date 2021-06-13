@@ -14,6 +14,11 @@ class DEROutputStream
         super(os);
     }
 
+    DEROutputStream getDERSubStream()
+    {
+        return this;
+    }
+
     void writeElements(ASN1Encodable[] elements)
         throws IOException
     {
@@ -37,10 +42,5 @@ class DEROutputStream
         {
             primitives[i].toDERObject().encode(this, true);
         }
-    }
-
-    DEROutputStream getDERSubStream()
-    {
-        return this;
     }
 }

@@ -102,12 +102,12 @@ public class DERGeneralizedTime
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, getDERTime().length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, getDERTime().length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.GENERALIZED_TIME, getDERTime());
+        out.writeEncodingDL(withTag, BERTags.GENERALIZED_TIME, getDERTime());
     }
 
     ASN1Primitive toDERObject()
