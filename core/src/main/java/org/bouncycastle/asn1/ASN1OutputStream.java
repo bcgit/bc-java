@@ -243,19 +243,19 @@ public class ASN1OutputStream
         }
     }
 
-    static int getLengthOfDL(int length)
+    static int getLengthOfDL(int dl)
     {
-        if (length < 128)
+        if (dl < 128)
         {
             return 1;
         }
 
-        int count = 2;
-        while ((length >>>= 8) != 0)
+        int length = 2;
+        while ((dl >>>= 8) != 0)
         {
-            ++count;
+            ++length;
         }
-        return count;
+        return length;
     }
 
     static int getLengthOfEncodingDL(boolean withID, int contentsLength)
@@ -276,10 +276,9 @@ public class ASN1OutputStream
         }
 
         int length = 2;
-        while (tag > 127)
+        while ((tag >>>= 7) != 0)
         {
             ++length;
-            tag >>>= 7;
         }
         return length;
     }
