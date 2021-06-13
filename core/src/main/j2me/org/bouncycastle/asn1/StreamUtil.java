@@ -30,30 +30,6 @@ class StreamUtil
         return Integer.MAX_VALUE;
     }
 
-    static int calculateBodyLength(
-        int length)
-    {
-        int count = 1;
-
-        if (length > 127)
-        {
-            int size = 1;
-            int val = length;
-
-            while ((val >>>= 8) != 0)
-            {
-                size++;
-            }
-
-            for (int i = (size - 1) * 8; i >= 0; i -= 8)
-            {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
     static int calculateTagLength(int tagNo)
         throws IOException
     {

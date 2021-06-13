@@ -56,22 +56,6 @@ class StreamUtil
         return (int)MAX_MEMORY;
     }
 
-    static int calculateBodyLength(
-        int length)
-    {
-        if (length < 128)
-        {
-            return 1;
-        }
-
-        int count = 2;
-        while ((length >>>= 8) != 0)
-        {
-            ++count;
-        }
-        return count;
-    }
-
     static int calculateTagLength(int tagNo)
     {
         int length = 1;
