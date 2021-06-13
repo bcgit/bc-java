@@ -210,19 +210,6 @@ public class ASN1OutputStream
         write(0x00);
     }
 
-    final void writeEncodedIndef(boolean withTag, int tag, Enumeration elements)
-        throws IOException
-    {
-        if (withTag)
-        {
-            write(tag);
-        }
-        write(0x80);
-        writeElements(elements);
-        write(0x00);
-        write(0x00);
-    }
-
     final void writeTag(boolean withTag, int flags, int tagNo)
         throws IOException
     {

@@ -166,18 +166,55 @@ public class BEROctetString
     int encodedLength()
         throws IOException
     {
-        int length = 0;
-        for (Enumeration e = getObjects(); e.hasMoreElements();)
+        int length = 4;
+        if (null == octs)
         {
-            length += ((ASN1Encodable)e.nextElement()).toASN1Primitive().encodedLength();
-        }
+            length += string.length;
 
-        return 2 + length + 2;
+            int fullChunks = string.length / chunkSize;
+            length += fullChunks * (1 + StreamUtil.calculateBodyLength(chunkSize));
+
+            int lastChunkSize = string.length - (fullChunks * chunkSize);
+            if (lastChunkSize > 0)
+            {
+                length += 1 + StreamUtil.calculateBodyLength(lastChunkSize);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < octs.length; ++i)
+            {
+                length += octs[i].encodedLength();
+            }
+        }
+        return length;
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodedIndef(withTag, BERTags.CONSTRUCTED | BERTags.OCTET_STRING,  getObjects());
+        if (withTag)
+        {
+            out.write(BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
+        }
+        out.write(0x80);
+
+        if (null == octs)
+        {
+            int pos = 0;
+            while (pos < string.length)
+            {
+                int chunkLength = Math.min(string.length - pos, chunkSize);
+                DEROctetString.encode(out, true, string, pos, chunkLength);
+                pos += chunkLength;
+            }
+        }
+        else
+        {
+            out.writePrimitives(octs);
+        }
+
+        out.write(0x00);
+        out.write(0x00);
     }
 
     static BEROctetString fromSequence(ASN1Sequence seq)
