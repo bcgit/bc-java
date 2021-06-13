@@ -8,7 +8,7 @@ import java.io.IOException;
 public class DLSequence
     extends ASN1Sequence
 {
-    private int bodyLength = -1;
+    private int contentsLength = -1;
 
     /**
      * Create an empty sequence
@@ -49,9 +49,9 @@ public class DLSequence
         super(elements, clone);
     }
 
-    private int getBodyLength() throws IOException
+    private int getContentsLength() throws IOException
     {
-        if (bodyLength < 0)
+        if (contentsLength < 0)
         {
             int count = elements.length;
             int totalLength = 0;
@@ -59,20 +59,18 @@ public class DLSequence
             for (int i = 0; i < count; ++i)
             {
                 ASN1Primitive dlObject = elements[i].toASN1Primitive().toDLObject();
-                totalLength += dlObject.encodedLength();
+                totalLength += dlObject.encodedLength(true);
             }
 
-            this.bodyLength = totalLength;
+            this.contentsLength = totalLength;
         }
 
-        return bodyLength;
+        return contentsLength;
     }
 
-    int encodedLength() throws IOException
+    int encodedLength(boolean withTag) throws IOException
     {
-        int length = getBodyLength();
-
-        return 1 + StreamUtil.calculateBodyLength(length) + length;
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, getContentsLength());
     }
 
     /**
@@ -93,9 +91,9 @@ public class DLSequence
         ASN1OutputStream dlOut = out.getDLSubStream();
 
         int count = elements.length;
-        if (bodyLength >= 0 || count > 16)
+        if (contentsLength >= 0 || count > 16)
         {
-            out.writeLength(getBodyLength());
+            out.writeLength(getContentsLength());
 
             for (int i = 0; i < count; ++i)
             {
@@ -111,10 +109,10 @@ public class DLSequence
             {
                 ASN1Primitive dlObject = elements[i].toASN1Primitive().toDLObject();
                 dlObjects[i] = dlObject;
-                totalLength += dlObject.encodedLength();
+                totalLength += dlObject.encodedLength(true);
             }
 
-            this.bodyLength = totalLength;
+            this.contentsLength = totalLength;
             out.writeLength(totalLength);
 
             for (int i = 0; i < count; ++i)

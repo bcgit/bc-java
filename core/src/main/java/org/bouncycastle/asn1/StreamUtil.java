@@ -73,7 +73,6 @@ class StreamUtil
     }
 
     static int calculateTagLength(int tagNo)
-        throws IOException
     {
         int length = 1;
 

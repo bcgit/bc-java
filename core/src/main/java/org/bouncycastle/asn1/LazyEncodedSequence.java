@@ -72,15 +72,15 @@ class LazyEncodedSequence
         return super.toArrayInternal();
     }
 
-    synchronized int encodedLength()
+    synchronized int encodedLength(boolean withTag)
         throws IOException
     {
         if (null != encoded)
         {
-            return 1 + StreamUtil.calculateBodyLength(encoded.length) + encoded.length;
+            return ASN1OutputStream.getLengthOfDLEncoding(withTag, encoded.length);
         }
 
-        return super.toDLObject().encodedLength();
+        return super.toDLObject().encodedLength(withTag);
     }
 
     synchronized void encode(ASN1OutputStream out, boolean withTag) throws IOException

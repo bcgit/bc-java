@@ -58,33 +58,49 @@ public class DLExternal
         return this;
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength(boolean withTag) throws IOException
     {
-        return this.getEncoded().length;
-    }
-
-    /* (non-Javadoc)
-     * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
-     */
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int contentsLength = 0;
         if (directReference != null)
         {
-            baos.write(directReference.getEncoded(ASN1Encoding.DL));
+            contentsLength += directReference.encodedLength(true);
         }
         if (indirectReference != null)
         {
-            baos.write(indirectReference.getEncoded(ASN1Encoding.DL));
+            contentsLength += indirectReference.encodedLength(true);
         }
         if (dataValueDescriptor != null)
         {
-            baos.write(dataValueDescriptor.getEncoded(ASN1Encoding.DL));
+            contentsLength += dataValueDescriptor.toDLObject().encodedLength(true);
         }
-        ASN1TaggedObject obj = new DLTaggedObject(true, encoding, externalContent);
-        baos.write(obj.getEncoded(ASN1Encoding.DL));
-        
-        out.writeEncoded(withTag, BERTags.CONSTRUCTED, BERTags.EXTERNAL, baos.toByteArray());
+
+        contentsLength += new DLTaggedObject(true, encoding, externalContent).encodedLength(true);
+
+        return ASN1OutputStream.getLengthOfDLEncoding(withTag, contentsLength);
+    }
+
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ASN1OutputStream aOut = ASN1OutputStream.create(bOut, ASN1Encoding.DL);
+
+        if (directReference != null)
+        {
+            aOut.writePrimitive(directReference, true);
+        }
+        if (indirectReference != null)
+        {
+            aOut.writePrimitive(indirectReference, true);
+        }
+        if (dataValueDescriptor != null)
+        {
+            aOut.writePrimitive(dataValueDescriptor, true);
+        }
+
+        aOut.writePrimitive(new DLTaggedObject(true, encoding, externalContent), true);
+
+        aOut.flushInternal();
+
+        out.writeEncoded(withTag, BERTags.CONSTRUCTED | BERTags.EXTERNAL, bOut.toByteArray());
     }
 }

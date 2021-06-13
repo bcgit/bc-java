@@ -145,10 +145,12 @@ public abstract class ASN1ApplicationSpecific
         return ASN1Primitive.fromByteArray(tmp);
     }
 
-    int encodedLength()
-        throws IOException
+    int encodedLength(boolean withTag)
     {
-        return StreamUtil.calculateTagLength(tag) + StreamUtil.calculateBodyLength(octets.length) + octets.length;
+        int contentsLength = octets.length;
+
+        return (withTag ? StreamUtil.calculateTagLength(tag) : 0) + ASN1OutputStream.getLengthOfDL(contentsLength)
+            + contentsLength;
     }
 
     /* (non-Javadoc)
