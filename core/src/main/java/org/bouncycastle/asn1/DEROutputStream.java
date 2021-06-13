@@ -7,7 +7,7 @@ import java.io.OutputStream;
  * Stream that outputs encoding based on distinguished encoding rules.
  */
 class DEROutputStream
-    extends ASN1OutputStream
+    extends DLOutputStream
 {
     DEROutputStream(OutputStream os)
     {
@@ -40,11 +40,6 @@ class DEROutputStream
     }
 
     DEROutputStream getDERSubStream()
-    {
-        return this;
-    }
-
-    ASN1OutputStream getDLSubStream()
     {
         return this;
     }
