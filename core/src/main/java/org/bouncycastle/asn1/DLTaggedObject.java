@@ -31,23 +31,28 @@ public class DLTaggedObject
     int encodedLength()
         throws IOException
     {
-        int length = obj.toASN1Primitive().toDLObject().encodedLength();
+        ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
+
+        int length = primitive.encodedLength();
 
         if (explicit)
         {
-            return  StreamUtil.calculateTagLength(tagNo) + StreamUtil.calculateBodyLength(length) + length;
+            length += StreamUtil.calculateBodyLength(length);
         }
         else
         {
             // header length already in calculation
-            length = length - 1;
-
-            return StreamUtil.calculateTagLength(tagNo) + length;
+//            length -= primitive.tagLength();
+            length -= 1;
         }
+
+        return StreamUtil.calculateTagLength(tagNo) + length;
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
+//        assert out.getClass().isAssignableFrom(DLOutputStream.class);
+
         ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
 
         int flags = BERTags.TAGGED;
@@ -63,7 +68,7 @@ public class DLTaggedObject
             out.writeLength(primitive.encodedLength());
         }
 
-        out.getDLSubStream().writePrimitive(primitive, explicit);
+        primitive.encode(out.getDLSubStream(), explicit);
     }
 
     ASN1Primitive toDLObject()
