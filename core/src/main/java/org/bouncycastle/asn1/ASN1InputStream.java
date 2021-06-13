@@ -183,13 +183,17 @@ public class ASN1InputStream
 
                     return new BEROctetString(strings);
                 case SEQUENCE:
-                    if (lazyEvaluate)
+                    if (defIn.getRemaining() < 1)
+                    {
+                        return DLFactory.EMPTY_SEQUENCE;
+                    }
+                    else if (lazyEvaluate)
                     {
                         return new LazyEncodedSequence(defIn.toByteArray());
                     }
                     else
                     {
-                        return DLFactory.createSequence(readVector(defIn));   
+                        return DLFactory.createSequence(readVector(defIn));
                     }
                 case SET:
                     return DLFactory.createSet(readVector(defIn));
@@ -293,7 +297,7 @@ public class ASN1InputStream
         return v;
     }
 
-    ASN1EncodableVector readVector(DefiniteLengthInputStream dIn) throws IOException
+    static ASN1EncodableVector readVector(DefiniteLengthInputStream dIn) throws IOException
     {
         if (dIn.getRemaining() < 1)
         {
