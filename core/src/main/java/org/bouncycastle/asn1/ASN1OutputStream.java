@@ -2,7 +2,6 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Enumeration;
 
 /**
  * Stream that produces output based on the default encoding for the passed in objects.
@@ -85,17 +84,6 @@ public class ASN1OutputStream
             ASN1Primitive primitive = elements[i].toASN1Primitive();
 
             primitive.encode(this, true);
-        }
-    }
-
-    final void writeElements(Enumeration elements)
-        throws IOException
-    {
-        while (elements.hasMoreElements())
-        {
-            ASN1Primitive primitive = ((ASN1Encodable)elements.nextElement()).toASN1Primitive();
-
-            writePrimitive(primitive, true);
         }
     }
 
