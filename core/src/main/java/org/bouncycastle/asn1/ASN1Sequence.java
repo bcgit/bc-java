@@ -383,8 +383,6 @@ public abstract class ASN1Sequence
         return true;
     }
 
-    abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
-
     public String toString() 
     {
         // NOTE: Call size() here to 'force' a LazyEncodedSequence
