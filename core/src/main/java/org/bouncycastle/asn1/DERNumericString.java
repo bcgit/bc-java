@@ -137,12 +137,12 @@ public class DERNumericString
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, string.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, string.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.NUMERIC_STRING, string);
+        out.writeEncodingDL(withTag, BERTags.NUMERIC_STRING, string);
     }
 
     public int hashCode()

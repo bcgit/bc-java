@@ -81,7 +81,7 @@ public class DERExternal
 
         contentsLength += new DERTaggedObject(true, encoding, externalContent).encodedLength(true);
 
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, contentsLength);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contentsLength);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
@@ -106,6 +106,6 @@ public class DERExternal
 
         aOut.flushInternal();
 
-        out.writeEncoded(withTag, BERTags.CONSTRUCTED | BERTags.EXTERNAL, bOut.toByteArray());
+        out.writeEncodingDL(withTag, BERTags.CONSTRUCTED | BERTags.EXTERNAL, bOut.toByteArray());
     }
 }

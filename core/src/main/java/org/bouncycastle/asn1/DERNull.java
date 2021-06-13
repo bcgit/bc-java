@@ -25,11 +25,11 @@ public class DERNull
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, 0);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, 0);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.NULL, zeroBytes);
+        out.writeEncodingDL(withTag, BERTags.NULL, zeroBytes);
     }
 }

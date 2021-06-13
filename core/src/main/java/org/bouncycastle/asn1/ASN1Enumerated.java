@@ -159,12 +159,12 @@ public class ASN1Enumerated
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, bytes.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, bytes.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.ENUMERATED, bytes);
+        out.writeEncodingDL(withTag, BERTags.ENUMERATED, bytes);
     }
 
     boolean asn1Equals(
