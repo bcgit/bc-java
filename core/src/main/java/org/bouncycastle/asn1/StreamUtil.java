@@ -55,35 +55,4 @@ class StreamUtil
 
         return (int)MAX_MEMORY;
     }
-
-    static int calculateTagLength(int tagNo)
-    {
-        int length = 1;
-
-        if (tagNo >= 31)
-        {
-            if (tagNo < 128)
-            {
-                length++;
-            }
-            else
-            {
-                byte[] stack = new byte[5];
-                int pos = stack.length;
-
-                stack[--pos] = (byte)(tagNo & 0x7F);
-
-                do
-                {
-                    tagNo >>= 7;
-                    stack[--pos] = (byte)(tagNo & 0x7F | 0x80);
-                }
-                while (tagNo > 127);
-
-                length += stack.length - pos;
-            }
-        }
-
-        return length;
-    }
 }
