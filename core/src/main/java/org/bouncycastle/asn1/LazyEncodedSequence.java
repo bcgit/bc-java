@@ -113,16 +113,19 @@ class LazyEncodedSequence
     {
         if (null != encoded)
         {
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            Enumeration en = new LazyConstructionEnumeration(encoded);
-            while (en.hasMoreElements())
+            ASN1InputStream aIn = new ASN1InputStream(encoded, true);
+            try
             {
-                v.add((ASN1Primitive)en.nextElement());
-            }
+                ASN1EncodableVector v = aIn.readVector();
+                aIn.close();
 
-            this.elements = v.takeElements();
-            this.encoded = null;
+                this.elements = v.takeElements();
+                this.encoded = null;
+            }
+            catch (IOException e)
+            {
+                throw new ASN1ParsingException("malformed ASN.1: " + e, e);
+            }
         }
     }
 }
