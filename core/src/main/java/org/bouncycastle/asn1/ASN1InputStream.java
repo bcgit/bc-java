@@ -203,23 +203,6 @@ public class ASN1InputStream
         return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
     }
 
-    ASN1EncodableVector readVector(DefiniteLengthInputStream dIn) throws IOException
-    {
-        if (dIn.getRemaining() < 1)
-        {
-            return new ASN1EncodableVector(0);
-        }
-
-        ASN1InputStream subStream = new ASN1InputStream(dIn);
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        ASN1Primitive p;
-        while ((p = subStream.readObject()) != null)
-        {
-            v.add(p);
-        }
-        return v;
-    }
-
     public ASN1Primitive readObject()
         throws IOException
     {
@@ -297,6 +280,27 @@ public class ASN1InputStream
                 throw new ASN1Exception("corrupted stream detected", e);
             }
         }
+    }
+
+    ASN1EncodableVector readVector() throws IOException
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1Primitive p;
+        while ((p = readObject()) != null)
+        {
+            v.add(p);
+        }
+        return v;
+    }
+
+    ASN1EncodableVector readVector(DefiniteLengthInputStream dIn) throws IOException
+    {
+        if (dIn.getRemaining() < 1)
+        {
+            return new ASN1EncodableVector(0);
+        }
+
+        return new ASN1InputStream(dIn).readVector();
     }
 
     static int readTagNumber(InputStream s, int tag) 
