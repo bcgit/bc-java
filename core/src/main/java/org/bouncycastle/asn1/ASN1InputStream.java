@@ -141,70 +141,72 @@ public class ASN1InputStream
 
         DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, limit);
 
-        if ((tag & PRIVATE) == PRIVATE)
+        int tagClass = tag & PRIVATE;
+        if (0 != tagClass)
         {
-            return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
-        }
+            if (PRIVATE == tagClass)
+            {
+                return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
+            }
 
-        if ((tag & APPLICATION) != 0)
-        {
-            return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
-        }
+            if (APPLICATION == tagClass)
+            {
+                return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
+            }
 
-        if ((tag & TAGGED) != 0)
-        {
             return new ASN1StreamParser(defIn).readTaggedObject(isConstructed, tagNo);
         }
 
-        if (isConstructed)
+        if (!isConstructed)
         {
-            // TODO There are other tags that may be constructed (e.g. BIT_STRING)
-            switch (tagNo)
-            {
-                case OCTET_STRING:
-                    //
-                    // yes, people actually do this...
-                    //
-                    ASN1EncodableVector v = readVector(defIn);
-                    ASN1OctetString[] strings = new ASN1OctetString[v.size()];
-
-                    for (int i = 0; i != strings.length; i++)
-                    {
-                        ASN1Encodable asn1Obj = v.get(i);
-                        if (asn1Obj instanceof ASN1OctetString)
-                        {
-                            strings[i] = (ASN1OctetString)asn1Obj;
-                        }
-                        else
-                        {
-                            throw new ASN1Exception("unknown object encountered in constructed OCTET STRING: " + asn1Obj.getClass());
-                        }
-                    }
-
-                    return new BEROctetString(strings);
-                case SEQUENCE:
-                    if (defIn.getRemaining() < 1)
-                    {
-                        return DLFactory.EMPTY_SEQUENCE;
-                    }
-                    else if (lazyEvaluate)
-                    {
-                        return new LazyEncodedSequence(defIn.toByteArray());
-                    }
-                    else
-                    {
-                        return DLFactory.createSequence(readVector(defIn));
-                    }
-                case SET:
-                    return DLFactory.createSet(readVector(defIn));
-                case EXTERNAL:
-                    return new DLExternal(readVector(defIn));
-                default:
-                    throw new IOException("unknown tag " + tagNo + " encountered");
-            }
+            return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
         }
 
-        return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
+        // TODO There are other tags that may be constructed (e.g. BIT_STRING)
+        switch (tagNo)
+        {
+        case OCTET_STRING:
+            //
+            // yes, people actually do this...
+            //
+            ASN1EncodableVector v = readVector(defIn);
+            ASN1OctetString[] strings = new ASN1OctetString[v.size()];
+    
+            for (int i = 0; i != strings.length; i++)
+            {
+                ASN1Encodable asn1Obj = v.get(i);
+                if (asn1Obj instanceof ASN1OctetString)
+                {
+                    strings[i] = (ASN1OctetString)asn1Obj;
+                }
+                else
+                {
+                    throw new ASN1Exception(
+                        "unknown object encountered in constructed OCTET STRING: " + asn1Obj.getClass());
+                }
+            }
+    
+            return new BEROctetString(strings);
+        case SEQUENCE:
+            if (defIn.getRemaining() < 1)
+            {
+                return DLFactory.EMPTY_SEQUENCE;
+            }
+            else if (lazyEvaluate)
+            {
+                return new LazyEncodedSequence(defIn.toByteArray());
+            }
+            else
+            {
+                return DLFactory.createSequence(readVector(defIn));
+            }
+        case SET:
+            return DLFactory.createSet(readVector(defIn));
+        case EXTERNAL:
+            return new DLExternal(readVector(defIn));
+        default:
+            throw new IOException("unknown tag " + tagNo + " encountered");
+        }
     }
 
     public ASN1Primitive readObject()
@@ -221,60 +223,12 @@ public class ASN1InputStream
             return null;
         }
 
-        //
-        // calculate tag number
-        //
         int tagNo = readTagNumber(this, tag);
-
-        boolean isConstructed = (tag & CONSTRUCTED) != 0;
-
-        //
-        // calculate length
-        //
         int length = readLength();
 
-        if (length < 0) // indefinite-length method
+        if (length >= 0)
         {
-            if (!isConstructed)
-            {
-                throw new IOException("indefinite-length primitive encoding encountered");
-            }
-
-            IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
-            ASN1StreamParser sp = new ASN1StreamParser(indIn, limit);
-
-            if ((tag & PRIVATE) == PRIVATE)
-            {
-                return new BERPrivateParser(tagNo, sp).getLoadedObject();
-            }
-
-            if ((tag & APPLICATION) != 0)
-            {
-                return new BERApplicationSpecificParser(tagNo, sp).getLoadedObject();
-            }
-
-            if ((tag & TAGGED) != 0)
-            {
-                return new BERTaggedObjectParser(true, tagNo, sp).getLoadedObject();
-            }
-
-            // TODO There are other tags that may be constructed (e.g. BIT_STRING)
-            switch (tagNo)
-            {
-                case OCTET_STRING:
-                    return new BEROctetStringParser(sp).getLoadedObject();
-                case SEQUENCE:
-                    return new BERSequenceParser(sp).getLoadedObject();
-                case SET:
-                    return new BERSetParser(sp).getLoadedObject();
-                case EXTERNAL:
-                    return new DERExternalParser(sp).getLoadedObject();
-                default:
-                    throw new IOException("unknown BER object encountered");
-            }
-        }
-        else
-        {
+            // definite-length
             try
             {
                 return buildObject(tag, tagNo, length);
@@ -283,6 +237,47 @@ public class ASN1InputStream
             {
                 throw new ASN1Exception("corrupted stream detected", e);
             }
+        }
+
+        // indefinite-length
+
+        if (0 == (tag & CONSTRUCTED))
+        {
+            throw new IOException("indefinite-length primitive encoding encountered");
+        }
+
+        IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
+        ASN1StreamParser sp = new ASN1StreamParser(indIn, limit);
+
+        int tagClass = tag & PRIVATE;
+        if (0 != tagClass)
+        {
+            if (PRIVATE == tagClass)
+            {
+                return new BERPrivateParser(tagNo, sp).getLoadedObject();
+            }
+
+            if (APPLICATION == tagClass)
+            {
+                return new BERApplicationSpecificParser(tagNo, sp).getLoadedObject();
+            }
+
+            return new BERTaggedObjectParser(true, tagNo, sp).getLoadedObject();
+        }
+
+        // TODO There are other tags that may be constructed (e.g. BIT_STRING)
+        switch (tagNo)
+        {
+        case OCTET_STRING:
+            return new BEROctetStringParser(sp).getLoadedObject();
+        case SEQUENCE:
+            return new BERSequenceParser(sp).getLoadedObject();
+        case SET:
+            return new BERSetParser(sp).getLoadedObject();
+        case EXTERNAL:
+            return new DERExternalParser(sp).getLoadedObject();
+        default:
+            throw new IOException("unknown BER object encountered");
         }
     }
 
