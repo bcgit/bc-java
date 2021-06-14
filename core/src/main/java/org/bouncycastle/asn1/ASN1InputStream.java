@@ -95,10 +95,15 @@ public class ASN1InputStream
         int         limit,
         boolean     lazyEvaluate)
     {
+        this(input, limit, lazyEvaluate, new byte[11][]);
+    }
+
+    private ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate, byte[][] tmpBuffers)
+    {
         super(input);
         this.limit = limit;
         this.lazyEvaluate = lazyEvaluate;
-        this.tmpBuffers = new byte[11][];
+        this.tmpBuffers = tmpBuffers;
     }
 
     int getLimit()
@@ -292,14 +297,15 @@ public class ASN1InputStream
         return v;
     }
 
-    static ASN1EncodableVector readVector(DefiniteLengthInputStream dIn) throws IOException
+    ASN1EncodableVector readVector(DefiniteLengthInputStream defIn) throws IOException
     {
-        if (dIn.getRemaining() < 1)
+        int remaining = defIn.getRemaining();
+        if (remaining < 1)
         {
             return new ASN1EncodableVector(0);
         }
 
-        return new ASN1InputStream(dIn).readVector();
+        return new ASN1InputStream(defIn, remaining, lazyEvaluate, tmpBuffers).readVector();
     }
 
     static int readTagNumber(InputStream s, int tag) 
