@@ -156,12 +156,17 @@ public class BEROctetString
 
     boolean isConstructed()
     {
-        return true;
+        return null != octs || string.length > segmentSize;
     }
 
     int encodedLength(boolean withTag)
         throws IOException
     {
+        if (!isConstructed())
+        {
+            return DEROctetString.encodedLength(withTag, string.length);
+        }
+
         int totalLength = withTag ? 4 : 3;
 
         if (null == octs)
@@ -188,6 +193,12 @@ public class BEROctetString
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
+        if (!isConstructed())
+        {
+            DEROctetString.encode(out, withTag, string, 0, string.length);
+            return;
+        }
+
         if (withTag)
         {
             out.write(BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
