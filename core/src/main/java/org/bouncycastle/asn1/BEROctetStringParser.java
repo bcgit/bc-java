@@ -38,7 +38,7 @@ public class BEROctetStringParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-        return new BEROctetString(Streams.readAll(getOctetStream()));
+        return parse(_parser);
     }
 
     /**
@@ -56,5 +56,10 @@ public class BEROctetStringParser
         {
             throw new ASN1ParsingException("IOException converting stream to byte array: " + e.getMessage(), e);
         }
+    }
+
+    static BEROctetString parse(ASN1StreamParser sp) throws IOException
+    {
+        return new BEROctetString(Streams.readAll(new ConstructedOctetStream(sp)));
     }
 }

@@ -10,29 +10,29 @@ import java.io.InputStream;
 public class ASN1StreamParser
 {
     private final InputStream _in;
-    private final int         _limit;
+    private final int _limit;
     private final byte[][] tmpBuffers;
 
-    public ASN1StreamParser(
-        InputStream in)
+    public ASN1StreamParser(InputStream in)
     {
         this(in, StreamUtil.findLimit(in));
     }
 
-    public ASN1StreamParser(
-        InputStream in,
-        int         limit)
+    public ASN1StreamParser(byte[] encoding)
+    {
+        this(new ByteArrayInputStream(encoding), encoding.length);
+    }
+
+    public ASN1StreamParser(InputStream in, int limit)
+    {
+        this(in, limit, new byte[11][]);
+    }
+
+    ASN1StreamParser(InputStream in, int limit, byte[][] tmpBuffers)
     {
         this._in = in;
         this._limit = limit;
-
-        this.tmpBuffers = new byte[11][];
-    }
-
-    public ASN1StreamParser(
-        byte[] encoding)
-    {
-        this(new ByteArrayInputStream(encoding), encoding.length);
+        this.tmpBuffers = tmpBuffers;
     }
 
     ASN1Encodable readIndef(int tagValue) throws IOException
@@ -153,7 +153,7 @@ public class ASN1StreamParser
             }
 
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
-            ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit);
+            ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit, tmpBuffers);
 
             int tagClass = tag & BERTags.PRIVATE;
             if (0 != tagClass)
@@ -190,44 +190,47 @@ public class ASN1StreamParser
                     return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
                 }
 
-                return new BERTaggedObjectParser(isConstructed, tagNo, new ASN1StreamParser(defIn));
+                return new BERTaggedObjectParser(isConstructed, tagNo,
+                    new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers));
             }
 
-            if (isConstructed)
+            if (!isConstructed)
             {
-                // TODO There are other tags that may be constructed (e.g. BIT_STRING)
+                // Some primitive encodings can be handled by parsers too...
                 switch (tagNo)
                 {
                 case BERTags.OCTET_STRING:
-                    //
-                    // yes, people actually do this...
-                    //
-                    return new BEROctetStringParser(new ASN1StreamParser(defIn));
-                case BERTags.SEQUENCE:
-                    return new DLSequenceParser(new ASN1StreamParser(defIn));
-                case BERTags.SET:
-                    return new DLSetParser(new ASN1StreamParser(defIn));
-                case BERTags.EXTERNAL:
-                    return new DERExternalParser(new ASN1StreamParser(defIn));
-                default:
-                    throw new IOException("unknown tag " + tagNo + " encountered");
+                    return new DEROctetStringParser(defIn);
+                }
+
+                try
+                {
+                    return ASN1InputStream.createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new ASN1Exception("corrupted stream detected", e);
                 }
             }
 
-            // Some primitive encodings can be handled by parsers too...
+            ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
+
+            // TODO There are other tags that may be constructed (e.g. BIT_STRING)
             switch (tagNo)
             {
             case BERTags.OCTET_STRING:
-                return new DEROctetStringParser(defIn);
-            }
-
-            try
-            {
-                return ASN1InputStream.createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
-            }
-            catch (IllegalArgumentException e)
-            {
-                throw new ASN1Exception("corrupted stream detected", e);
+                //
+                // yes, people actually do this...
+                //
+                return new BEROctetStringParser(sp);
+            case BERTags.SEQUENCE:
+                return new DLSequenceParser(sp);
+            case BERTags.SET:
+                return new DLSetParser(sp);
+            case BERTags.EXTERNAL:
+                return new DERExternalParser(sp);
+            default:
+                throw new IOException("unknown tag " + tagNo + " encountered");
             }
         }
     }
