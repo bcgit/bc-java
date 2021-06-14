@@ -469,8 +469,6 @@ public abstract class ASN1Set
         return true;
     }
 
-    abstract void encode(ASN1OutputStream out, boolean withTag) throws IOException;
-
     public String toString() 
     {
         int count = size();
