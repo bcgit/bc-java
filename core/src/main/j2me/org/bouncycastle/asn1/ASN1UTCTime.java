@@ -215,12 +215,12 @@ public class ASN1UTCTime
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfDLEncoding(withTag, time.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, time.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncoded(withTag, BERTags.UTC_TIME, time);
+        out.writeEncodingDL(withTag, BERTags.UTC_TIME, time);
     }
 
     boolean asn1Equals(
