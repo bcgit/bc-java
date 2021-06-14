@@ -25,18 +25,18 @@ class DefiniteLengthInputStream
     {
         super(in, limit);
 
-        if (length < 0)
+        if (length <= 0)
         {
-            throw new IllegalArgumentException("negative lengths not allowed");
+            if (length < 0)
+            {
+                throw new IllegalArgumentException("negative lengths not allowed");
+            }
+
+            setParentEofDetect(true);
         }
 
         this._originalLength = length;
         this._remaining = length;
-
-        if (length == 0)
-        {
-            setParentEofDetect(true);
-        }
     }
 
     int getRemaining()
