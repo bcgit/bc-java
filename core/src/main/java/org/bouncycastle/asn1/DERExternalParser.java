@@ -35,14 +35,7 @@ public class DERExternalParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-        try
-        {
-            return new DLExternal(_parser.readVector());
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new ASN1Exception(e.getMessage(), e);
-        }
+        return parse(_parser);
     }
 
     /**
@@ -63,6 +56,18 @@ public class DERExternalParser
         catch (IllegalArgumentException ioe)
         {
             throw new ASN1ParsingException("unable to get DER object", ioe);
+        }
+    }
+
+    static DLExternal parse(ASN1StreamParser sp) throws IOException
+    {
+        try
+        {
+            return new DLExternal(sp.readVector());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ASN1Exception(e.getMessage(), e);
         }
     }
 }

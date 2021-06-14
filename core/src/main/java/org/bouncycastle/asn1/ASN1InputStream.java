@@ -20,11 +20,9 @@ public class ASN1InputStream
 {
     private final int limit;
     private final boolean lazyEvaluate;
-
     private final byte[][] tmpBuffers;
 
-    public ASN1InputStream(
-        InputStream is)
+    public ASN1InputStream(InputStream is)
     {
         this(is, StreamUtil.findLimit(is));
     }
@@ -35,8 +33,7 @@ public class ASN1InputStream
      * 
      * @param input array containing ASN.1 encoded data.
      */
-    public ASN1InputStream(
-        byte[] input)
+    public ASN1InputStream(byte[] input)
     {
         this(new ByteArrayInputStream(input), input.length);
     }
@@ -48,22 +45,18 @@ public class ASN1InputStream
      * @param input array containing ASN.1 encoded data.
      * @param lazyEvaluate true if parsing inside constructed objects can be delayed.
      */
-    public ASN1InputStream(
-        byte[] input,
-        boolean lazyEvaluate)
+    public ASN1InputStream(byte[] input, boolean lazyEvaluate)
     {
         this(new ByteArrayInputStream(input), input.length, lazyEvaluate);
     }
-    
+
     /**
      * Create an ASN1InputStream where no DER object will be longer than limit.
      * 
      * @param input stream containing ASN.1 encoded data.
      * @param limit maximum size of a DER encoded object.
      */
-    public ASN1InputStream(
-        InputStream input,
-        int         limit)
+    public ASN1InputStream(InputStream input, int limit)
     {
         this(input, limit, false);
     }
@@ -75,9 +68,7 @@ public class ASN1InputStream
      * @param input stream containing ASN.1 encoded data.
      * @param lazyEvaluate true if parsing inside constructed objects can be delayed.
      */
-    public ASN1InputStream(
-        InputStream input,
-        boolean     lazyEvaluate)
+    public ASN1InputStream(InputStream input, boolean lazyEvaluate)
     {
         this(input, StreamUtil.findLimit(input), lazyEvaluate);
     }
@@ -90,10 +81,7 @@ public class ASN1InputStream
      * @param limit maximum size of a DER encoded object.
      * @param lazyEvaluate true if parsing inside constructed objects can be delayed.
      */
-    public ASN1InputStream(
-        InputStream input,
-        int         limit,
-        boolean     lazyEvaluate)
+    public ASN1InputStream(InputStream input, int limit, boolean lazyEvaluate)
     {
         this(input, limit, lazyEvaluate, new byte[11][]);
     }
@@ -159,7 +147,7 @@ public class ASN1InputStream
                 return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
             }
 
-            return new ASN1StreamParser(defIn).readTaggedObject(isConstructed, tagNo);
+            return new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers).readTaggedObject(isConstructed, tagNo);
         }
 
         if (!isConstructed)
@@ -252,35 +240,35 @@ public class ASN1InputStream
         }
 
         IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
-        ASN1StreamParser sp = new ASN1StreamParser(indIn, limit);
+        ASN1StreamParser sp = new ASN1StreamParser(indIn, limit, tmpBuffers);
 
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
         {
             if (PRIVATE == tagClass)
             {
-                return new BERPrivateParser(tagNo, sp).getLoadedObject();
+                return new BERPrivate(tagNo, sp.readVector());
             }
 
             if (APPLICATION == tagClass)
             {
-                return new BERApplicationSpecificParser(tagNo, sp).getLoadedObject();
+                return new BERApplicationSpecific(tagNo, sp.readVector());
             }
 
-            return new BERTaggedObjectParser(true, tagNo, sp).getLoadedObject();
+            return sp.readTaggedObject(true, tagNo);
         }
 
         // TODO There are other tags that may be constructed (e.g. BIT_STRING)
         switch (tagNo)
         {
         case OCTET_STRING:
-            return new BEROctetStringParser(sp).getLoadedObject();
+            return BEROctetStringParser.parse(sp);
         case SEQUENCE:
-            return new BERSequenceParser(sp).getLoadedObject();
+            return new BERSequence(sp.readVector());
         case SET:
-            return new BERSetParser(sp).getLoadedObject();
+            return new BERSet(sp.readVector());
         case EXTERNAL:
-            return new DERExternalParser(sp).getLoadedObject();
+            return DERExternalParser.parse(sp);
         default:
             throw new IOException("unknown BER object encountered");
         }
@@ -478,48 +466,48 @@ public class ASN1InputStream
     {
         switch (tagNo)
         {
-            case BIT_STRING:
-                return ASN1BitString.fromInputStream(defIn.getRemaining(), defIn);
-            case BMP_STRING:
-                return new DERBMPString(getBMPCharBuffer(defIn));
-            case BOOLEAN:
-                return ASN1Boolean.fromOctetString(getBuffer(defIn, tmpBuffers));
-            case ENUMERATED:
-                return ASN1Enumerated.fromOctetString(getBuffer(defIn, tmpBuffers));
-            case GENERALIZED_TIME:
-                return new ASN1GeneralizedTime(defIn.toByteArray());
-            case GENERAL_STRING:
-                return new DERGeneralString(defIn.toByteArray());
-            case IA5_STRING:
-                return new DERIA5String(defIn.toByteArray());
-            case INTEGER:
-                return new ASN1Integer(defIn.toByteArray(), false);
-            case NULL:
-                return DERNull.INSTANCE;   // actual content is ignored (enforce 0 length?)
-            case NUMERIC_STRING:
-                return new DERNumericString(defIn.toByteArray());
-            case OBJECT_IDENTIFIER:
-                return ASN1ObjectIdentifier.fromOctetString(getBuffer(defIn, tmpBuffers));
-            case OCTET_STRING:
-                return new DEROctetString(defIn.toByteArray());
-            case PRINTABLE_STRING:
-                return new DERPrintableString(defIn.toByteArray());
-            case T61_STRING:
-                return new DERT61String(defIn.toByteArray());
-            case UNIVERSAL_STRING:
-                return new DERUniversalString(defIn.toByteArray());
-            case UTC_TIME:
-                return new ASN1UTCTime(defIn.toByteArray());
-            case UTF8_STRING:
-                return new DERUTF8String(defIn.toByteArray());
-            case VISIBLE_STRING:
-                return new DERVisibleString(defIn.toByteArray());
-            case GRAPHIC_STRING:
-                return new DERGraphicString(defIn.toByteArray());
-            case VIDEOTEX_STRING:
-                return new DERVideotexString(defIn.toByteArray());
-            default:
-                throw new IOException("unknown tag " + tagNo + " encountered");
+        case BIT_STRING:
+            return ASN1BitString.fromInputStream(defIn.getRemaining(), defIn);
+        case BMP_STRING:
+            return new DERBMPString(getBMPCharBuffer(defIn));
+        case BOOLEAN:
+            return ASN1Boolean.fromOctetString(getBuffer(defIn, tmpBuffers));
+        case ENUMERATED:
+            return ASN1Enumerated.fromOctetString(getBuffer(defIn, tmpBuffers));
+        case GENERALIZED_TIME:
+            return new ASN1GeneralizedTime(defIn.toByteArray());
+        case GENERAL_STRING:
+            return new DERGeneralString(defIn.toByteArray());
+        case IA5_STRING:
+            return new DERIA5String(defIn.toByteArray());
+        case INTEGER:
+            return new ASN1Integer(defIn.toByteArray(), false);
+        case NULL:
+            return DERNull.INSTANCE;   // actual content is ignored (enforce 0 length?)
+        case NUMERIC_STRING:
+            return new DERNumericString(defIn.toByteArray());
+        case OBJECT_IDENTIFIER:
+            return ASN1ObjectIdentifier.fromOctetString(getBuffer(defIn, tmpBuffers));
+        case OCTET_STRING:
+            return new DEROctetString(defIn.toByteArray());
+        case PRINTABLE_STRING:
+            return new DERPrintableString(defIn.toByteArray());
+        case T61_STRING:
+            return new DERT61String(defIn.toByteArray());
+        case UNIVERSAL_STRING:
+            return new DERUniversalString(defIn.toByteArray());
+        case UTC_TIME:
+            return new ASN1UTCTime(defIn.toByteArray());
+        case UTF8_STRING:
+            return new DERUTF8String(defIn.toByteArray());
+        case VISIBLE_STRING:
+            return new DERVisibleString(defIn.toByteArray());
+        case GRAPHIC_STRING:
+            return new DERGraphicString(defIn.toByteArray());
+        case VIDEOTEX_STRING:
+            return new DERVideotexString(defIn.toByteArray());
+        default:
+            throw new IOException("unknown tag " + tagNo + " encountered");
         }
     }
 }
