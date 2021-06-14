@@ -42,16 +42,16 @@ public class ASN1StreamParser
         // TODO There are other tags that may be constructed (e.g. BIT_STRING)
         switch (tagValue)
         {
-            case BERTags.EXTERNAL:
-                return new DERExternalParser(this);
-            case BERTags.OCTET_STRING:
-                return new BEROctetStringParser(this);
-            case BERTags.SEQUENCE:
-                return new BERSequenceParser(this);
-            case BERTags.SET:
-                return new BERSetParser(this);
-            default:
-                throw new ASN1Exception("unknown BER object encountered: 0x" + Integer.toHexString(tagValue));
+        case BERTags.EXTERNAL:
+            return new DERExternalParser(this);
+        case BERTags.OCTET_STRING:
+            return new BEROctetStringParser(this);
+        case BERTags.SEQUENCE:
+            return new BERSequenceParser(this);
+        case BERTags.SET:
+            return new BERSetParser(this);
+        default:
+            throw new ASN1Exception("unknown BER object encountered: 0x" + Integer.toHexString(tagValue));
         }
     }
 
@@ -71,24 +71,24 @@ public class ASN1StreamParser
         {
             switch (tag)
             {
-                case BERTags.SET:
-                    return new DLSetParser(this);
-                case BERTags.SEQUENCE:
-                    return new DLSequenceParser(this);
-                case BERTags.OCTET_STRING:
-                    return new BEROctetStringParser(this);
+            case BERTags.SET:
+                return new DLSetParser(this);
+            case BERTags.SEQUENCE:
+                return new DLSequenceParser(this);
+            case BERTags.OCTET_STRING:
+                return new BEROctetStringParser(this);
             }
         }
         else
         {
             switch (tag)
             {
-                case BERTags.SET:
-                    throw new ASN1Exception("sequences must use constructed encoding (see X.690 8.9.1/8.10.1)");
-                case BERTags.SEQUENCE:
-                    throw new ASN1Exception("sets must use constructed encoding (see X.690 8.11.1/8.12.1)");
-                case BERTags.OCTET_STRING:
-                    return new DEROctetStringParser((DefiniteLengthInputStream)_in);
+            case BERTags.SET:
+                throw new ASN1Exception("sequences must use constructed encoding (see X.690 8.9.1/8.10.1)");
+            case BERTags.SEQUENCE:
+                throw new ASN1Exception("sets must use constructed encoding (see X.690 8.11.1/8.12.1)");
+            case BERTags.OCTET_STRING:
+                return new DEROctetStringParser((DefiniteLengthInputStream)_in);
             }
         }
 
@@ -155,18 +155,19 @@ public class ASN1StreamParser
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
             ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit);
 
-            if ((tag & BERTags.PRIVATE) == BERTags.PRIVATE)
+            int tagClass = tag & BERTags.PRIVATE;
+            if (0 != tagClass)
             {
-                return new BERPrivateParser(tagNo, sp);
-            }
+                if (BERTags.PRIVATE == tagClass)
+                {
+                    return new BERPrivateParser(tagNo, sp);
+                }
 
-            if ((tag & BERTags.APPLICATION) != 0)
-            {
-                return new BERApplicationSpecificParser(tagNo, sp);
-            }
+                if (BERTags.APPLICATION == tagClass)
+                {
+                    return new BERApplicationSpecificParser(tagNo, sp);
+                }
 
-            if ((tag & BERTags.TAGGED) != 0)
-            {
                 return new BERTaggedObjectParser(true, tagNo, sp);
             }
 
@@ -176,18 +177,19 @@ public class ASN1StreamParser
         {
             DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length, _limit);
 
-            if ((tag & BERTags.PRIVATE) == BERTags.PRIVATE)
+            int tagClass = tag & BERTags.PRIVATE;
+            if (0 != tagClass)
             {
-                return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
-            }
+                if (BERTags.PRIVATE == tagClass)
+                {
+                    return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
+                }
 
-            if ((tag & BERTags.APPLICATION) != 0)
-            {
-                return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
-            }
+                if (BERTags.APPLICATION == tagClass)
+                {
+                    return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
+                }
 
-            if ((tag & BERTags.TAGGED) != 0)
-            {
                 return new BERTaggedObjectParser(isConstructed, tagNo, new ASN1StreamParser(defIn));
             }
 
@@ -196,27 +198,27 @@ public class ASN1StreamParser
                 // TODO There are other tags that may be constructed (e.g. BIT_STRING)
                 switch (tagNo)
                 {
-                    case BERTags.OCTET_STRING:
-                        //
-                        // yes, people actually do this...
-                        //
-                        return new BEROctetStringParser(new ASN1StreamParser(defIn));
-                    case BERTags.SEQUENCE:
-                        return new DLSequenceParser(new ASN1StreamParser(defIn));
-                    case BERTags.SET:
-                        return new DLSetParser(new ASN1StreamParser(defIn));
-                    case BERTags.EXTERNAL:
-                        return new DERExternalParser(new ASN1StreamParser(defIn));
-                    default:
-                        throw new IOException("unknown tag " + tagNo + " encountered");
+                case BERTags.OCTET_STRING:
+                    //
+                    // yes, people actually do this...
+                    //
+                    return new BEROctetStringParser(new ASN1StreamParser(defIn));
+                case BERTags.SEQUENCE:
+                    return new DLSequenceParser(new ASN1StreamParser(defIn));
+                case BERTags.SET:
+                    return new DLSetParser(new ASN1StreamParser(defIn));
+                case BERTags.EXTERNAL:
+                    return new DERExternalParser(new ASN1StreamParser(defIn));
+                default:
+                    throw new IOException("unknown tag " + tagNo + " encountered");
                 }
             }
 
             // Some primitive encodings can be handled by parsers too...
             switch (tagNo)
             {
-                case BERTags.OCTET_STRING:
-                    return new DEROctetStringParser(defIn);
+            case BERTags.OCTET_STRING:
+                return new DEROctetStringParser(defIn);
             }
 
             try
