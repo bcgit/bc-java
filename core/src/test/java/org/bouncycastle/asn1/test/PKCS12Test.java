@@ -120,9 +120,22 @@ public class PKCS12Test
         + "XVHdWhPmOoqNdBQdRgAAAAAAAAAAAAAAAAAAAAAAADA8MCEwCQYFKw4DAhoF"
         + "AAQUJMZn7MEKv4vW/+voCVyHBa6B0EMEFJOzH/BEjRtNNsZWlo/4L840aE5r"
         + "AgFkAAA=");
-    
-    public void performTest()
-        throws Exception
+
+    public void performTest() throws Exception
+    {
+        byte[] pfxEncoding1 = implTest(pkcs12);
+        byte[] pfxEncoding2 = implTest(pfxEncoding1);
+
+        //
+        // comparison test
+        //
+        if (!Arrays.areEqual(pfxEncoding1, pfxEncoding2))
+        {
+            fail("failed comparison test");
+        }
+    }
+
+    private byte[] implTest(byte[] pkcs12) throws Exception
     {
         ASN1InputStream     aIn = new ASN1InputStream(new ByteArrayInputStream(pkcs12));
         ASN1Sequence        obj = (ASN1Sequence)aIn.readObject();
@@ -191,14 +204,7 @@ public class PKCS12Test
 
         bag = new Pfx(info, mData);
 
-        //
-        // comparison test
-        //
-        byte[] pfxEncoding = bag.getEncoded();
-        if (!Arrays.areEqual(pfxEncoding, pkcs12))
-        {
-            fail("failed comparison test");
-        }
+        return bag.getEncoded();
     }
 
     public String getName()
