@@ -4,17 +4,18 @@ import java.io.IOException;
 
 /**
  * A parser for indefinite-length ASN.1 Private objects.
+ * 
+ * @deprecated Test for {@link BERTaggedObjectParser} with
+ *             {@link ASN1TaggedObjectParser#getTagClass() tag class} of
+ *             {@link BERTags#PRIVATE}.
  */
 public class BERPrivateParser
+    extends BERTaggedObjectParser
     implements ASN1PrivateParser
 {
-    private final int tag;
-    private final ASN1StreamParser parser;
-
-    BERPrivateParser(int tag, ASN1StreamParser parser)
+    BERPrivateParser(int tagNo, boolean constructed, ASN1StreamParser parser)
     {
-        this.tag = tag;
-        this.parser = parser;
+        super(BERTags.PRIVATE, tagNo, constructed, parser);
     }
 
     /**
@@ -25,35 +26,6 @@ public class BERPrivateParser
     public ASN1Encodable readObject()
         throws IOException
     {
-        return parser.readObject();
-    }
-
-    /**
-     * Return an in-memory, encodable, representation of the private object.
-     *
-     * @return a BERPrivate.
-     * @throws IOException if there is an issue loading the data.
-     */
-    public ASN1Primitive getLoadedObject()
-        throws IOException
-    {
-         return new BERPrivate(tag, parser.readVector());
-    }
-
-    /**
-     * Return a BERPrivate representing this parser and its contents.
-     *
-     * @return a BERPrivate
-     */
-    public ASN1Primitive toASN1Primitive()
-    {
-        try
-        {
-            return getLoadedObject();
-        }
-        catch (IOException e)
-        {
-            throw new ASN1ParsingException(e.getMessage(), e);
-        }
+        return _parser.readObject();
     }
 }

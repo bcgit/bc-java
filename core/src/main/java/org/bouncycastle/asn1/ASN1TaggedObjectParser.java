@@ -9,8 +9,16 @@ public interface ASN1TaggedObjectParser
     extends ASN1Encodable, InMemoryRepresentable
 {
     /**
-     * Return the tag number associated with the underlying tagged object.
-     * @return the object's tag number.
+     * Return the tag class associated with this object.
+     *
+     * @return the tag class.
+     */
+    int getTagClass();
+
+    /**
+     * Return the tag number associated with this object.
+     *
+     * @return the tag number.
      */
     int getTagNo();
 
