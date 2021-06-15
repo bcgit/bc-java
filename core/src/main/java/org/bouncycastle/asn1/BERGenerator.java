@@ -43,7 +43,7 @@ public abstract class BERGenerator
     {
         if (_tagged)
         {
-            int tagNum = _tagNo | BERTags.TAGGED;
+            int tagNum = _tagNo | BERTags.CONTEXT_SPECIFIC;
 
             if (_isExplicit)
             {

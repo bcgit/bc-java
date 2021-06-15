@@ -62,10 +62,10 @@ public abstract class ASN1TaggedObject
      */
     protected ASN1TaggedObject(boolean explicit, int tagNo, ASN1Encodable obj)
     {
-        this(explicit, BERTags.TAGGED, tagNo, obj);
+        this(explicit, BERTags.CONTEXT_SPECIFIC, tagNo, obj);
     }
 
-    ASN1TaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
+    protected ASN1TaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
     {
         if (null == obj)
         {
@@ -204,7 +204,7 @@ public abstract class ASN1TaggedObject
         {
         case BERTags.APPLICATION:
             return "APPLICATION " + tagNo;
-        case BERTags.TAGGED:
+        case BERTags.CONTEXT_SPECIFIC:
             return "CONTEXT " + tagNo;
         case BERTags.PRIVATE:
             return "PRIVATE " + tagNo;
@@ -224,13 +224,11 @@ public abstract class ASN1TaggedObject
             {
             case BERTags.APPLICATION:
                 return new BERApplicationSpecific(tagNo, contentsElements);
-            case BERTags.PRIVATE:
-                return new BERPrivate(tagNo, contentsElements);
             default:
             {
                 return maybeExplicit
-                    ?   new BERTaggedObject(true, tagNo, contentsElements.get(0))
-                    :   new BERTaggedObject(false, tagNo, BERFactory.createSequence(contentsElements));
+                    ?   new BERTaggedObject(true, tagClass, tagNo, contentsElements.get(0))
+                    :   new BERTaggedObject(false, tagClass, tagNo, BERFactory.createSequence(contentsElements));
             }
             }
         }
@@ -238,14 +236,12 @@ public abstract class ASN1TaggedObject
         switch (tagClass)
         {
         case BERTags.APPLICATION:
-            return new BERApplicationSpecific(tagNo, contentsElements);
-        case BERTags.PRIVATE:
-            return new BERPrivate(tagNo, contentsElements);
+            return new DLApplicationSpecific(tagNo, contentsElements);
         default:
         {
             return maybeExplicit
-                ?   new DLTaggedObject(true, tagNo, contentsElements.get(0))
-                :   new DLTaggedObject(false, tagNo, DLFactory.createSequence(contentsElements));
+                ?   new DLTaggedObject(true, tagClass, tagNo, contentsElements.get(0))
+                :   new DLTaggedObject(false, tagClass, tagNo, DLFactory.createSequence(contentsElements));
         }
         }
     }
@@ -256,8 +252,6 @@ public abstract class ASN1TaggedObject
         {
         case BERTags.APPLICATION:
             return new DLApplicationSpecific(false, tagNo, contentsOctets);
-        case BERTags.PRIVATE:
-            return new DLPrivate(false, tagNo, contentsOctets);
         default:
             // Note: !CONSTRUCTED => IMPLICIT
             return new DLTaggedObject(false, tagClass, tagNo, new DEROctetString(contentsOctets));

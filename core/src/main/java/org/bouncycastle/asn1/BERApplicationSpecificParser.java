@@ -25,6 +25,7 @@ public class BERApplicationSpecificParser
     public ASN1Encodable readObject()
         throws IOException
     {
-        return _parser.readObject();
+        // NOTE: No way to say you're looking for an implicitly-tagged object via ASN1ApplicationSpecificParser
+        return getObjectParser(_tagNo, true);
     }
 }

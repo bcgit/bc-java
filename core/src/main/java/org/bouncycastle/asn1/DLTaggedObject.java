@@ -20,7 +20,7 @@ public class DLTaggedObject
         super(explicit, tagNo, obj);
     }
 
-    DLTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
+    public DLTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
     {
         super(explicit, tagClass, tagNo, obj);
     }
