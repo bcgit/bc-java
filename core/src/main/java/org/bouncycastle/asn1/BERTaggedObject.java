@@ -11,12 +11,19 @@ public class BERTaggedObject
     extends ASN1TaggedObject
 {
     /**
+     * create an implicitly tagged object that contains a zero
+     * length sequence.
+     */
+    public BERTaggedObject(int tagNo)
+    {
+        super(false, tagNo, new BERSequence());
+    }
+
+    /**
      * @param tagNo the tag number for this object.
      * @param obj the tagged object.
      */
-    public BERTaggedObject(
-        int             tagNo,
-        ASN1Encodable    obj)
+    public BERTaggedObject(int tagNo, ASN1Encodable obj)
     {
         super(true, tagNo, obj);
     }
@@ -26,22 +33,14 @@ public class BERTaggedObject
      * @param tagNo the tag number for this object.
      * @param obj the tagged object.
      */
-    public BERTaggedObject(
-        boolean         explicit,
-        int             tagNo,
-        ASN1Encodable    obj)
+    public BERTaggedObject(boolean explicit, int tagNo, ASN1Encodable obj)
     {
         super(explicit, tagNo, obj);
     }
 
-    /**
-     * create an implicitly tagged object that contains a zero
-     * length sequence.
-     */
-    public BERTaggedObject(
-        int             tagNo)
+    BERTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
     {
-        super(false, tagNo, new BERSequence());
+        super(explicit, tagClass, tagNo, obj);
     }
 
     boolean isConstructed()
@@ -73,7 +72,7 @@ public class BERTaggedObject
 
         if (withTag)
         {
-            int flags = BERTags.TAGGED;
+            int flags = tagClass;
             if (explicit || primitive.isConstructed())
             {
                 flags |= BERTags.CONSTRUCTED;

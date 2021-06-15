@@ -10,22 +10,24 @@ import java.io.IOException;
 public class DERTaggedObject
     extends ASN1TaggedObject
 {
+    public DERTaggedObject(int tagNo, ASN1Encodable encodable)
+    {
+        super(true, tagNo, encodable);
+    }
+
     /**
      * @param explicit true if an explicitly tagged object.
      * @param tagNo the tag number for this object.
      * @param obj the tagged object.
      */
-    public DERTaggedObject(
-        boolean       explicit,
-        int           tagNo,
-        ASN1Encodable obj)
+    public DERTaggedObject(boolean explicit, int tagNo, ASN1Encodable obj)
     {
         super(explicit, tagNo, obj);
     }
 
-    public DERTaggedObject(int tagNo, ASN1Encodable encodable)
+    DERTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
     {
-        super(true, tagNo, encodable);
+        super(explicit, tagClass, tagNo, obj);
     }
 
     boolean isConstructed()
@@ -57,7 +59,7 @@ public class DERTaggedObject
 
         if (withTag)
         {
-            int flags = BERTags.TAGGED;
+            int flags = tagClass;
             if (explicit || primitive.isConstructed())
             {
                 flags |= BERTags.CONSTRUCTED;
