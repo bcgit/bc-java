@@ -48,7 +48,7 @@ public class DERPrivateTest
 
         // Type2 ::= [PRIVATE 3] IMPLICIT Type1
         explicit = false;
-        DERPrivate type2 = new DERPrivate(explicit, 3, type1);
+        ASN1TaggedObject type2 = new DERTaggedObject(explicit, BERTags.PRIVATE, 3, type1);
         // type2.isConstructed()
         if (!Arrays.areEqual(Hex.decode("C3054A6F6E6573"), type2.getEncoded()))
         {
@@ -65,7 +65,7 @@ public class DERPrivateTest
 
         // Type4 ::= [PRIVATE 7] IMPLICIT Type3
         explicit = false;
-        DERPrivate type4 = new DERPrivate(explicit, 7, type3);
+        ASN1TaggedObject type4 = new DERTaggedObject(explicit, BERTags.PRIVATE, 7, type3);
         if (!Arrays.areEqual(Hex.decode("E707C3054A6F6E6573"), type4.getEncoded()))
         {
             fail("ERROR: expected value doesn't match!");
@@ -86,38 +86,38 @@ public class DERPrivateTest
     {
         testTaggedObject();
 
-        ASN1Private privateSpec = (ASN1Private)ASN1Primitive.fromByteArray(sampleData);
+        ASN1TaggedObject privateSpec = (ASN1TaggedObject)ASN1Primitive.fromByteArray(sampleData);
 
-        if (1 != privateSpec.getPrivateTag())
+        if (BERTags.PRIVATE != privateSpec.getTagClass() || 1 != privateSpec.getTagNo())
         {
             fail("wrong tag detected");
         }
 
         ASN1Integer value = new ASN1Integer(9);
 
-        DERPrivate tagged = new DERPrivate(false, 3, value);
+        ASN1TaggedObject tagged = new DERTaggedObject(false, BERTags.PRIVATE, 3, value);
 
         if (!areEqual(impData, tagged.getEncoded()))
         {
             fail("implicit encoding failed");
         }
 
-        ASN1Integer recVal = (ASN1Integer)tagged.getObject(BERTags.INTEGER);
+        ASN1Integer recVal = ASN1Integer.getInstance(tagged, false);
 
         if (!value.equals(recVal))
         {
             fail("implicit read back failed");
         }
 
-        ASN1Private certObj = (ASN1Private) ASN1Primitive.fromByteArray(certData);
+        ASN1TaggedObject certObj = (ASN1TaggedObject)ASN1Primitive.fromByteArray(certData);
 
-        if (!certObj.isConstructed() || certObj.getPrivateTag() != 33)
+        if (certObj.isExplicit() || BERTags.PRIVATE != certObj.getTagClass() || 33 != certObj.getTagNo())
         {
             fail("parsing of certificate data failed");
         }
 
         byte[] encoded = certObj.getEncoded(ASN1Encoding.DER);
-    
+
         if (!Arrays.areEqual(certData, encoded))
         {
             fail("re-encoding of certificate data failed");

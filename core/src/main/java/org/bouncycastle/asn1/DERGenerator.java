@@ -85,11 +85,11 @@ public abstract class DERGenerator
     {
         if (_tagged)
         {
-            int tagNum = _tagNo | BERTags.TAGGED;
+            int tagNum = _tagNo | BERTags.CONTEXT_SPECIFIC;
 
             if (_isExplicit)
             {
-                int newTag = _tagNo | BERTags.CONSTRUCTED | BERTags.TAGGED;
+                int newTag = _tagNo | BERTags.CONSTRUCTED | BERTags.CONTEXT_SPECIFIC;
 
                 ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 

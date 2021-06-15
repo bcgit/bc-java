@@ -148,11 +148,6 @@ public class ASN1StreamParser
             int tagClass = tag & BERTags.PRIVATE;
             if (0 != tagClass)
             {
-                if (BERTags.PRIVATE == tagClass)
-                {
-                    return new BERPrivateParser(tagNo, true, sp);
-                }
-
                 if (BERTags.APPLICATION == tagClass)
                 {
                     return new BERApplicationSpecificParser(tagNo, true, sp);
@@ -173,22 +168,13 @@ public class ASN1StreamParser
                 ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
 
                 /*
-                 * TODO We'd prefer to let the parser produce these from an ASN1EncodableVector,
-                 * but currently they would convert the vector immediately back to octets for
-                 * constructed encodings.
+                 * TODO Exceptional case can be removed safely once application specific stuff
+                 * is removed in favour of uniform tagged object handling. User code might be
+                 * checking the specific type at the moment.
                  */
                 {
-                    if (BERTags.PRIVATE == tagClass)
-                    {
-                        // TODO Need to adapt ASN.1 tests before switching
-    //                    return new BERPrivateParser(tagNo, isConstructed, sp);
-                        return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
-                    }
-    
                     if (BERTags.APPLICATION == tagClass)
                     {
-                        // TODO Need to adapt ASN.1 tests before switching
-    //                    return new BERApplicationSpecificParser(tagNo, isConstructed, sp);
                         return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
                     }
                 }
