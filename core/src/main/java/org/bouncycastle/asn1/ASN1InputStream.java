@@ -137,27 +137,7 @@ public class ASN1InputStream
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
         {
-            /*
-             * TODO We'd prefer to let the parser produce these from an ASN1EncodableVector,
-             * but currently they would convert the vector immediately back to octets.
-             */
-            if (isConstructed)
-            {
-                if (PRIVATE == tagClass)
-                {
-                    return new DLPrivate(true, tagNo, defIn.toByteArray());
-                }
-
-                if (APPLICATION == tagClass)
-                {
-                    return new DLApplicationSpecific(true, tagNo, defIn.toByteArray());
-                }
-            }
-
-            // TODO Need to adapt ASN.1 tests before switching
-//            return readTaggedObject(tagClass, tagNo, isConstructed, defIn);
-            ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
-            return sp.readTaggedObject(tagClass, tagNo, isConstructed);
+            return readTaggedObject(tagClass, tagNo, isConstructed, defIn);
         }
 
         if (!isConstructed)
@@ -169,6 +149,7 @@ public class ASN1InputStream
         switch (tagNo)
         {
         case OCTET_STRING:
+        {
             //
             // yes, people actually do this...
             //
@@ -190,7 +171,9 @@ public class ASN1InputStream
             }
     
             return new BEROctetString(strings);
+        }
         case SEQUENCE:
+        {
             if (defIn.getRemaining() < 1)
             {
                 return DLFactory.EMPTY_SEQUENCE;
@@ -203,6 +186,7 @@ public class ASN1InputStream
             {
                 return DLFactory.createSequence(readVector(defIn));
             }
+        }
         case SET:
             return DLFactory.createSet(readVector(defIn));
         case EXTERNAL:
@@ -281,6 +265,15 @@ public class ASN1InputStream
         {
             byte[] contentsOctets = defIn.toByteArray();
             return ASN1TaggedObject.createPrimitive(tagClass, tagNo, contentsOctets);
+        }
+
+        /*
+         * TODO We'd prefer to produce this from an ASN1EncodableVector, but currently
+         * it would convert the vector immediately back to octets.
+         */
+        if (APPLICATION == tagClass)
+        {
+            return new DLApplicationSpecific(true, tagNo, defIn.toByteArray());
         }
 
         boolean isIL = false;

@@ -38,7 +38,7 @@ public class BERTaggedObject
         super(explicit, tagNo, obj);
     }
 
-    BERTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
+    public BERTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
     {
         super(explicit, tagClass, tagNo, obj);
     }

@@ -117,7 +117,7 @@ public class ASN1Dump
 
             ASN1TaggedObject o = (ASN1TaggedObject)obj;
 
-            buf.append(Integer.toString(o.getTagNo()));
+            buf.append(getTagText(o));
             buf.append(']');
 
             if (!o.isExplicit())
@@ -414,5 +414,21 @@ public class ASN1Dump
         }
 
         return buf.toString();
+    }
+
+    private static String getTagText(ASN1TaggedObject tagged)
+    {
+        int tagClass = tagged.getTagClass(), tagNo = tagged.getTagNo();
+        switch (tagClass)
+        {
+        case BERTags.APPLICATION:
+            return "APPLICATION " + tagNo;
+        case BERTags.CONTEXT_SPECIFIC:
+            return "CONTEXT " + tagNo;
+        case BERTags.PRIVATE:
+            return "PRIVATE " + tagNo;
+        default:
+            return Integer.toString(tagNo);
+        }
     }
 }

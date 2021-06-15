@@ -25,7 +25,7 @@ public class DERTaggedObject
         super(explicit, tagNo, obj);
     }
 
-    DERTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
+    public DERTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
     {
         super(explicit, tagClass, tagNo, obj);
     }
