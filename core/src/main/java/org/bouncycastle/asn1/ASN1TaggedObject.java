@@ -11,8 +11,9 @@ public abstract class ASN1TaggedObject
     extends ASN1Primitive
     implements ASN1TaggedObjectParser
 {
-    final int           tagNo;
     final boolean       explicit;
+    final int           tagClass;
+    final int           tagNo;
     final ASN1Encodable obj;
 
     static public ASN1TaggedObject getInstance(
@@ -59,18 +60,25 @@ public abstract class ASN1TaggedObject
      * @param tagNo the tag number for this object.
      * @param obj the tagged object.
      */
-    public ASN1TaggedObject(
-        boolean         explicit,
-        int             tagNo,
-        ASN1Encodable   obj)
+    protected ASN1TaggedObject(boolean explicit, int tagNo, ASN1Encodable obj)
+    {
+        this(explicit, BERTags.TAGGED, tagNo, obj);
+    }
+
+    ASN1TaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
     {
         if (null == obj)
         {
             throw new NullPointerException("'obj' cannot be null");
         }
+        if (tagClass == BERTags.UNIVERSAL || (tagClass & BERTags.PRIVATE) != tagClass)
+        {
+            throw new IllegalArgumentException("invalid tag class: " + tagClass);
+        }
 
-        this.tagNo = tagNo;
         this.explicit = explicit || (obj instanceof ASN1Choice);
+        this.tagClass = tagClass;
+        this.tagNo = tagNo;
         this.obj = obj;
     }
 
@@ -83,7 +91,9 @@ public abstract class ASN1TaggedObject
 
         ASN1TaggedObject that = (ASN1TaggedObject)other;
 
-        if (this.tagNo != that.tagNo || this.explicit != that.explicit)
+        if (this.tagNo != that.tagNo ||
+            this.tagClass != that.tagClass ||
+            this.explicit != that.explicit)
         {
             return false;
         }
@@ -96,7 +106,12 @@ public abstract class ASN1TaggedObject
 
     public int hashCode()
     {
-        return tagNo ^ (explicit ? 0x0F : 0xF0) ^ obj.toASN1Primitive().hashCode();
+        return (tagClass * 7919) ^ tagNo ^ (explicit ? 0x0F : 0xF0) ^ obj.toASN1Primitive().hashCode();
+    }
+
+    public int getTagClass()
+    {
+        return tagClass;
     }
 
     /**
@@ -170,16 +185,31 @@ public abstract class ASN1TaggedObject
 
     ASN1Primitive toDERObject()
     {
-        return new DERTaggedObject(explicit, tagNo, obj);
+        return new DERTaggedObject(explicit, tagClass, tagNo, obj);
     }
 
     ASN1Primitive toDLObject()
     {
-        return new DLTaggedObject(explicit, tagNo, obj);
+        return new DLTaggedObject(explicit, tagClass, tagNo, obj);
     }
 
     public String toString()
     {
-        return "[" + tagNo + "]" + obj;
+        return "[" + getTagText(tagClass, tagNo) + "]" + obj;
+    }
+
+    private static String getTagText(int tagClass, int tagNo)
+    {
+        switch (tagClass)
+        {
+        case BERTags.APPLICATION:
+            return "APPLICATION " + tagNo;
+        case BERTags.TAGGED:
+            return "CONTEXT " + tagNo;
+        case BERTags.PRIVATE:
+            return "PRIVATE " + tagNo;
+        default:
+            return Integer.toString(tagNo);
+        }
     }
 }

@@ -15,12 +15,14 @@ public class DLTaggedObject
      * @param tagNo the tag number for this object.
      * @param obj the tagged object.
      */
-    public DLTaggedObject(
-        boolean explicit,
-        int tagNo,
-        ASN1Encodable obj)
+    public DLTaggedObject(boolean explicit, int tagNo, ASN1Encodable obj)
     {
         super(explicit, tagNo, obj);
+    }
+
+    DLTaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
+    {
+        super(explicit, tagClass, tagNo, obj);
     }
 
     boolean isConstructed()
@@ -52,7 +54,7 @@ public class DLTaggedObject
 
         if (withTag)
         {
-            int flags = BERTags.TAGGED;
+            int flags = tagClass;
             if (explicit || primitive.isConstructed())
             {
                 flags |= BERTags.CONSTRUCTED;
