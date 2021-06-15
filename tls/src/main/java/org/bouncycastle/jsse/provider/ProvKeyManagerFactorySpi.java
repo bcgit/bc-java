@@ -60,11 +60,11 @@ class ProvKeyManagerFactorySpi
         {
             if (null == ksPath)
             {
-                LOG.config("Initializing empty key store");
+                LOG.config("Initializing default key store as empty");
             }
             else
             {
-                LOG.config("Initializing with key store at path: " + ksPath);
+                LOG.config("Initializing default key store from path: " + ksPath);
                 ksInput = new BufferedInputStream(new FileInputStream(ksPath));
             }
 
