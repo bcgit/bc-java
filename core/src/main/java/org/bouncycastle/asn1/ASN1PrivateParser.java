@@ -4,6 +4,8 @@ import java.io.IOException;
 
 /**
  * Interface to parse ASN.1 Private objects.
+ * 
+ * @deprecated Will be removed with {@link BERPrivateParser).
  */
 public interface ASN1PrivateParser
     extends ASN1Encodable, InMemoryRepresentable

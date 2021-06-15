@@ -212,4 +212,55 @@ public abstract class ASN1TaggedObject
             return Integer.toString(tagNo);
         }
     }
+
+    static ASN1Primitive createConstructed(int tagClass, int tagNo, boolean isIL,
+        ASN1EncodableVector contentsElements)
+    {
+        boolean maybeExplicit = (contentsElements.size() == 1);
+
+        if (isIL)
+        {
+            switch (tagClass)
+            {
+            case BERTags.APPLICATION:
+                return new BERApplicationSpecific(tagNo, contentsElements);
+            case BERTags.PRIVATE:
+                return new BERPrivate(tagNo, contentsElements);
+            default:
+            {
+                return maybeExplicit
+                    ?   new BERTaggedObject(true, tagNo, contentsElements.get(0))
+                    :   new BERTaggedObject(false, tagNo, BERFactory.createSequence(contentsElements));
+            }
+            }
+        }
+
+        switch (tagClass)
+        {
+        case BERTags.APPLICATION:
+            return new BERApplicationSpecific(tagNo, contentsElements);
+        case BERTags.PRIVATE:
+            return new BERPrivate(tagNo, contentsElements);
+        default:
+        {
+            return maybeExplicit
+                ?   new DLTaggedObject(true, tagNo, contentsElements.get(0))
+                :   new DLTaggedObject(false, tagNo, DLFactory.createSequence(contentsElements));
+        }
+        }
+    }
+
+    static ASN1Primitive createPrimitive(int tagClass, int tagNo, byte[] contentsOctets)
+    {
+        switch (tagClass)
+        {
+        case BERTags.APPLICATION:
+            return new DLApplicationSpecific(false, tagNo, contentsOctets);
+        case BERTags.PRIVATE:
+            return new DLPrivate(false, tagNo, contentsOctets);
+        default:
+            // Note: !CONSTRUCTED => IMPLICIT
+            return new DLTaggedObject(false, tagClass, tagNo, new DEROctetString(contentsOctets));
+        }
+    }
 }

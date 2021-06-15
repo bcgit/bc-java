@@ -4,6 +4,8 @@ import java.io.IOException;
 
 /**
  * Interface to parse ASN.1 ApplicationSpecific objects.
+ * 
+ * @deprecated Will be removed with {@link BERApplicationSpecificParser).
  */
 public interface ASN1ApplicationSpecificParser
     extends ASN1Encodable, InMemoryRepresentable
