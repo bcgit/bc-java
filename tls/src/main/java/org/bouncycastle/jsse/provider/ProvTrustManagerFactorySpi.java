@@ -88,7 +88,7 @@ class ProvTrustManagerFactorySpi
 
         KeyStore ks = createTrustStore(defaultType);
 
-        String tsPasswordProp = PropertyUtils.getStringSystemProperty("javax.net.ssl.trustStorePassword");
+        String tsPasswordProp = PropertyUtils.getSensitiveStringSystemProperty("javax.net.ssl.trustStorePassword");
         if (null != tsPasswordProp)
         {
             tsPassword = tsPasswordProp.toCharArray();
@@ -99,11 +99,11 @@ class ProvTrustManagerFactorySpi
         {
             if (null == tsPath)
             {
-                LOG.info("Initializing empty trust store");
+                LOG.config("Initializing empty trust store");
             }
             else
             {
-                LOG.info("Initializing with trust store at path: " + tsPath);
+                LOG.config("Initializing with trust store at path: " + tsPath);
                 tsInput = new BufferedInputStream(new FileInputStream(tsPath));
             }
 

@@ -49,7 +49,7 @@ class ProvKeyManagerFactorySpi
 
         KeyStore ks = createKeyStore(defaultType);
 
-        String ksPasswordProp = PropertyUtils.getStringSystemProperty("javax.net.ssl.keyStorePassword");
+        String ksPasswordProp = PropertyUtils.getSensitiveStringSystemProperty("javax.net.ssl.keyStorePassword");
         if (null != ksPasswordProp)
         {
             ksPassword = ksPasswordProp.toCharArray();
@@ -60,11 +60,11 @@ class ProvKeyManagerFactorySpi
         {
             if (null == ksPath)
             {
-                LOG.info("Initializing empty key store");
+                LOG.config("Initializing empty key store");
             }
             else
             {
-                LOG.info("Initializing with key store at path: " + ksPath);
+                LOG.config("Initializing with key store at path: " + ksPath);
                 ksInput = new BufferedInputStream(new FileInputStream(ksPath));
             }
 
