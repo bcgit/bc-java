@@ -114,6 +114,17 @@ class PropertyUtils
         return defaultValue;
     }
 
+    static String getSensitiveStringSystemProperty(String propertyName)
+    {
+        String propertyValue = getSystemProperty(propertyName);
+        if (null != propertyValue)
+        {
+            LOG.info("Found sensitive string system property [" + propertyName + "]");
+            return propertyValue;
+        }
+        return null;
+    }
+
     static String getStringSecurityProperty(String propertyName)
     {
         String propertyValue = getSecurityProperty(propertyName);
