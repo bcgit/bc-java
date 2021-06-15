@@ -256,10 +256,10 @@ public class ParserTest
         doOpenSslRsaTest("rc2_64_cbc");
 
         doDudPasswordTest("7fd98", 0, "corrupted stream - out of bounds length found: 599005160 >= 447");
-        doDudPasswordTest("ef677", 1, "corrupted stream - out of bounds length found: 2087569732 >= 447");
+        doDudPasswordTest("ef677", 1, "corrupted stream - out of bounds length found: 2087569732 >= 66");
         doDudPasswordTest("800ce", 2, "unknown tag 26 encountered");
         doDudPasswordTest("b6cd8", 3, "DEF length 81 object truncated by 56");
-        doDudPasswordTest("28ce09", 4, "DEF length 110 object truncated by 28");
+        doDudPasswordTest("28ce09", 4, "corrupted stream - out of bounds length found: 110 >= 84");
         doDudPasswordTest("2ac3b9", 5, "DER length more than 4 bytes: 11");
         doDudPasswordTest("2cba96", 6, "DEF length 100 object truncated by 35");
         doDudPasswordTest("2e3354", 7, "DEF length 42 object truncated by 9");
