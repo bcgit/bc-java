@@ -99,11 +99,11 @@ class ProvTrustManagerFactorySpi
         {
             if (null == tsPath)
             {
-                LOG.config("Initializing empty trust store");
+                LOG.config("Initializing default trust store as empty");
             }
             else
             {
-                LOG.config("Initializing with trust store at path: " + tsPath);
+                LOG.config("Initializing default trust store from path: " + tsPath);
                 tsInput = new BufferedInputStream(new FileInputStream(tsPath));
             }
 
@@ -179,7 +179,7 @@ class ProvTrustManagerFactorySpi
             catch (Exception e)
             {
                 LOG.log(Level.WARNING, "Skipped default trust store", e);
-                throw new KeyStoreException("Failed to load default trust store", e);
+                throw new KeyStoreException("Failed to load default trust store", e);
             }
         }
 
