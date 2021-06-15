@@ -137,17 +137,27 @@ public class ASN1InputStream
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
         {
-            if (PRIVATE == tagClass)
+            /*
+             * TODO We'd prefer to let the parser produce these from an ASN1EncodableVector,
+             * but currently they would convert the vector immediately back to octets.
+             */
+            if (isConstructed)
             {
-                return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
+                if (PRIVATE == tagClass)
+                {
+                    return new DLPrivate(true, tagNo, defIn.toByteArray());
+                }
+
+                if (APPLICATION == tagClass)
+                {
+                    return new DLApplicationSpecific(true, tagNo, defIn.toByteArray());
+                }
             }
 
-            if (APPLICATION == tagClass)
-            {
-                return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
-            }
-
-            return new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers).readTaggedObject(isConstructed, tagNo);
+            // TODO Need to adapt ASN.1 tests before switching
+//            return readTaggedObject(tagClass, tagNo, isConstructed, defIn);
+            ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
+            return sp.readTaggedObject(tagClass, tagNo, isConstructed);
         }
 
         if (!isConstructed)
@@ -245,17 +255,7 @@ public class ASN1InputStream
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
         {
-            if (PRIVATE == tagClass)
-            {
-                return new BERPrivate(tagNo, sp.readVector());
-            }
-
-            if (APPLICATION == tagClass)
-            {
-                return new BERApplicationSpecific(tagNo, sp.readVector());
-            }
-
-            return sp.readTaggedObject(true, tagNo);
+            return sp.readTaggedObject(tagClass, tagNo, true);
         }
 
         // TODO There are other tags that may be constructed (e.g. BIT_STRING)
@@ -272,6 +272,20 @@ public class ASN1InputStream
         default:
             throw new IOException("unknown BER object encountered");
         }
+    }
+
+    ASN1Primitive readTaggedObject(int tagClass, int tagNo, boolean constructed, DefiniteLengthInputStream defIn)
+        throws IOException
+    {
+        if (!constructed)
+        {
+            byte[] contentsOctets = defIn.toByteArray();
+            return ASN1TaggedObject.createPrimitive(tagClass, tagNo, contentsOctets);
+        }
+
+        boolean isIL = false;
+        ASN1EncodableVector contentsElements = readVector(defIn);
+        return ASN1TaggedObject.createConstructed(tagClass, tagNo, isIL, contentsElements);
     }
 
     ASN1EncodableVector readVector() throws IOException

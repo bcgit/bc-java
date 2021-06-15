@@ -8,18 +8,27 @@ import java.io.IOException;
 public class BERTaggedObjectParser
     implements ASN1TaggedObjectParser
 {
+    private int _tagClass;
+    protected int _tagNo;
     private boolean _constructed;
-    private int _tagNumber;
-    private ASN1StreamParser _parser;
+    ASN1StreamParser _parser;
 
-    BERTaggedObjectParser(
-        boolean             constructed,
-        int                 tagNumber,
-        ASN1StreamParser    parser)
+    BERTaggedObjectParser(int tagClass, int tagNo, boolean constructed, ASN1StreamParser parser)
     {
+        _tagClass = tagClass;
+        _tagNo = tagNo;
         _constructed = constructed;
-        _tagNumber = tagNumber;
         _parser = parser;
+    }
+
+    public int getTagClass()
+    {
+        return _tagClass;
+    }
+
+    public int getTagNo()
+    {
+        return _tagNo;
     }
 
     /**
@@ -30,16 +39,6 @@ public class BERTaggedObjectParser
     public boolean isConstructed()
     {
         return _constructed;
-    }
-
-    /**
-     * Return the tag number associated with this object.
-     *
-     * @return the tag number.
-     */
-    public int getTagNo()
-    {
-        return _tagNumber;
     }
 
     /**
@@ -76,7 +75,7 @@ public class BERTaggedObjectParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-        return _parser.readTaggedObject(_constructed, _tagNumber);
+        return _parser.readTaggedObject(_tagClass, _tagNo, _constructed);
     }
 
     /**
@@ -88,7 +87,7 @@ public class BERTaggedObjectParser
     {
         try
         {
-            return this.getLoadedObject();
+            return getLoadedObject();
         }
         catch (IOException e)
         {

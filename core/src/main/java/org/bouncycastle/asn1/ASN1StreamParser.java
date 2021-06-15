@@ -95,27 +95,17 @@ public class ASN1StreamParser
         throw new ASN1Exception("implicit tagging not implemented");
     }
 
-    ASN1Primitive readTaggedObject(boolean constructed, int tag) throws IOException
+    ASN1Primitive readTaggedObject(int tagClass, int tagNo, boolean constructed) throws IOException
     {
         if (!constructed)
         {
-            // Note: !CONSTRUCTED => IMPLICIT
-            DefiniteLengthInputStream defIn = (DefiniteLengthInputStream)_in;
-            return new DLTaggedObject(false, tag, new DEROctetString(defIn.toByteArray()));
+            byte[] contentsOctets = ((DefiniteLengthInputStream) _in).toByteArray();
+            return ASN1TaggedObject.createPrimitive(tagClass, tagNo, contentsOctets);
         }
 
-        ASN1EncodableVector v = readVector();
-
-        if (_in instanceof IndefiniteLengthInputStream)
-        {
-            return v.size() == 1
-                ?   new BERTaggedObject(true, tag, v.get(0))
-                :   new BERTaggedObject(false, tag, BERFactory.createSequence(v));
-        }
-
-        return v.size() == 1
-            ?   new DLTaggedObject(true, tag, v.get(0))
-            :   new DLTaggedObject(false, tag, DLFactory.createSequence(v));
+        boolean isIL = (_in instanceof IndefiniteLengthInputStream);
+        ASN1EncodableVector contentsElements = readVector();
+        return ASN1TaggedObject.createConstructed(tagClass, tagNo, isIL, contentsElements);
     }
 
     public ASN1Encodable readObject()
@@ -160,15 +150,15 @@ public class ASN1StreamParser
             {
                 if (BERTags.PRIVATE == tagClass)
                 {
-                    return new BERPrivateParser(tagNo, sp);
+                    return new BERPrivateParser(tagNo, true, sp);
                 }
 
                 if (BERTags.APPLICATION == tagClass)
                 {
-                    return new BERApplicationSpecificParser(tagNo, sp);
+                    return new BERApplicationSpecificParser(tagNo, true, sp);
                 }
 
-                return new BERTaggedObjectParser(true, tagNo, sp);
+                return new BERTaggedObjectParser(tagClass, tagNo, true, sp);
             }
 
             return sp.readIndef(tagNo);
@@ -180,18 +170,30 @@ public class ASN1StreamParser
             int tagClass = tag & BERTags.PRIVATE;
             if (0 != tagClass)
             {
-                if (BERTags.PRIVATE == tagClass)
+                ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
+
+                /*
+                 * TODO We'd prefer to let the parser produce these from an ASN1EncodableVector,
+                 * but currently they would convert the vector immediately back to octets for
+                 * constructed encodings.
+                 */
                 {
-                    return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
+                    if (BERTags.PRIVATE == tagClass)
+                    {
+                        // TODO Need to adapt ASN.1 tests before switching
+    //                    return new BERPrivateParser(tagNo, isConstructed, sp);
+                        return new DLPrivate(isConstructed, tagNo, defIn.toByteArray());
+                    }
+    
+                    if (BERTags.APPLICATION == tagClass)
+                    {
+                        // TODO Need to adapt ASN.1 tests before switching
+    //                    return new BERApplicationSpecificParser(tagNo, isConstructed, sp);
+                        return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
+                    }
                 }
 
-                if (BERTags.APPLICATION == tagClass)
-                {
-                    return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
-                }
-
-                return new BERTaggedObjectParser(isConstructed, tagNo,
-                    new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers));
+                return new BERTaggedObjectParser(tagClass, tagNo, isConstructed, sp);
             }
 
             if (!isConstructed)
