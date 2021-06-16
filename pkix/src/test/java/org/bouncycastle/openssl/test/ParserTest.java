@@ -259,7 +259,7 @@ public class ParserTest
         doDudPasswordTest("ef677", 1, "corrupted stream - out of bounds length found: 2087569732 >= 66");
         doDudPasswordTest("800ce", 2, "unknown tag 26 encountered");
         doDudPasswordTest("b6cd8", 3, "DEF length 81 object truncated by 56");
-        doDudPasswordTest("28ce09", 4, "corrupted stream - out of bounds length found: 110 >= 84");
+        doDudPasswordTest("28ce09", 4, "corrupted stream - high tag number < 31 found");
         doDudPasswordTest("2ac3b9", 5, "DER length more than 4 bytes: 11");
         doDudPasswordTest("2cba96", 6, "corrupted stream - out of bounds length found: 100 >= 67");
         doDudPasswordTest("2e3354", 7, "corrupted stream - out of bounds length found: 42 >= 35");
