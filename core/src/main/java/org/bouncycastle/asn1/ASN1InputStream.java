@@ -490,6 +490,10 @@ public class ASN1InputStream
         case INTEGER:
             return new ASN1Integer(defIn.toByteArray(), false);
         case NULL:
+            if (0 != defIn.getRemaining())
+            {
+                throw new IOException("malformed NULL encoding encountered");
+            }
             return DERNull.INSTANCE;   // actual content is ignored (enforce 0 length?)
         case NUMERIC_STRING:
             return new DERNumericString(defIn.toByteArray());
