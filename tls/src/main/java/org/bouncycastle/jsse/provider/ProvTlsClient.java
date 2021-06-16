@@ -292,6 +292,18 @@ class ProvTlsClient
                     jsseSecurityParameters.peerSigSchemesCert = (serverSigAlgs == serverSigAlgsCert)
                         ?   jsseSecurityParameters.peerSigSchemes
                         :   contextData.getSignatureSchemes(serverSigAlgsCert);
+
+                    if (LOG.isLoggable(Level.FINEST))
+                    {
+                        LOG.finest(JsseUtils.getSignatureAlgorithmsReport("Peer signature_algorithms",
+                            jsseSecurityParameters.peerSigSchemes));
+
+                        if (jsseSecurityParameters.peerSigSchemesCert != jsseSecurityParameters.peerSigSchemes)
+                        {
+                            LOG.finest(JsseUtils.getSignatureAlgorithmsReport("Peer signature_algorithms_cert",
+                                jsseSecurityParameters.peerSigSchemesCert));
+                        }
+                    }
                 }
 
                 if (DummyX509KeyManager.INSTANCE == contextData.getX509KeyManager())

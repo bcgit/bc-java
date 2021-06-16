@@ -501,11 +501,20 @@ class ProvX509KeyManager
             {
                 int keyTypeIndex = getSuitableKeyTypeForEECert(chain[0], keyTypes, keyTypeLimit, algorithmConstraints,
                     forServer);
-                if (keyTypeIndex >= 0 && isSuitableChain(chain, algorithmConstraints, forServer))
+                if (keyTypeIndex >= 0)
                 {
-                    Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
+                    String keyType = keyTypes.get(keyTypeIndex);
 
-                    return new Match(quality, keyTypeIndex, builderIndex, localAlias, keyStore, chain);
+                    LOG.finer("EE cert potentially usable for key type: " + keyType);
+
+                    if (isSuitableChain(chain, algorithmConstraints, forServer))
+                    {
+                        Match.Quality quality = getCertificateQuality(chain[0], atDate, requestedHostName);
+    
+                        return new Match(quality, keyTypeIndex, builderIndex, localAlias, keyStore, chain);
+                    }
+
+                    LOG.finer("Unsuitable chain for key type: " + keyType);
                 }
             }
         }
@@ -549,13 +558,14 @@ class ProvX509KeyManager
 
             ProvAlgorithmChecker.checkChain(isInFipsMode, helper, algorithmConstraints, trustedCerts, chain, ekuOID,
                 kuBit);
+
+            return true;
         }
         catch (CertPathValidatorException e)
         {
+            LOG.log(Level.FINEST, "Certificate chain check failed", e);
             return false;
         }
-
-        return true;
     }
 
     private KeyStore.PrivateKeyEntry loadPrivateKeyEntry(String alias)
