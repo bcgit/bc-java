@@ -3,6 +3,8 @@ package org.bouncycastle.jsse.provider;
 import java.security.AlgorithmParameters;
 import java.security.Key;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
@@ -10,6 +12,8 @@ import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 class ProvAlgorithmConstraints
     extends AbstractAlgorithmConstraints
 {
+    private static final Logger LOG = Logger.getLogger(ProvAlgorithmConstraints.class.getName());
+
     /*
      * NOTE: In case these security properties are absent, we supply defaults drawn from recent
      * JDKs. This is an incompatibility with SunJSSE (which treats these absent properties as simply
@@ -69,6 +73,10 @@ class ProvAlgorithmConstraints
 
             if (!isSupportedSignatureAlgorithm(algorithmBC))
             {
+                if (LOG.isLoggable(Level.FINEST))
+                {
+                    LOG.finest("Signature algorithm '" + algorithmBC + "' not in supported signature algorithms");
+                }
                 return false;
             }
         }
@@ -129,6 +137,10 @@ class ProvAlgorithmConstraints
 
             if (!isSupportedSignatureAlgorithm(algorithmBC))
             {
+                if (LOG.isLoggable(Level.FINEST))
+                {
+                    LOG.finest("Signature algorithm '" + algorithmBC + "' not in supported signature algorithms");
+                }
                 return false;
             }
         }
