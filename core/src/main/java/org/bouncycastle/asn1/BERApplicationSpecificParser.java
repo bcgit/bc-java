@@ -27,6 +27,6 @@ public class BERApplicationSpecificParser
         throws IOException
     {
         // NOTE: No way to say you're looking for an implicitly-tagged object via ASN1ApplicationSpecificParser
-        return getObjectParser(-1, true);
+        return parseBaseUniversal(true, -1);
     }
 }

@@ -1,126 +1,83 @@
 package org.bouncycastle.asn1;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
  * A DER encoding version of an application specific object.
+ * 
+ * @deprecated Will be removed. See comments for
+ *             {@link ASN1ApplicationSpecific}.
  */
 public class DLApplicationSpecific
     extends ASN1ApplicationSpecific
 {
-    DLApplicationSpecific(
-        boolean isConstructed,
-        int     tag,
-        byte[]  octets)
-    {
-        super(isConstructed, tag, octets);
-    }
-
     /**
      * Create an application specific object from the passed in data. This will assume
      * the data does not represent a constructed object.
      *
-     * @param tag the tag number for this object.
-     * @param octets the encoding of the object's body.
+     * @param tagNo the tag number for this object.
+     * @param contentsOctets the encoding of the object's body.
      */
-    public DLApplicationSpecific(
-        int    tag,
-        byte[] octets)
+    public DLApplicationSpecific(int tagNo, byte[] contentsOctets)
     {
-        this(false, tag, octets);
+        super(new DLTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(contentsOctets)));
     }
 
     /**
      * Create an application specific object with a tagging of explicit/constructed.
      *
-     * @param tag the tag number for this object.
-     * @param object the object to be contained.
+     * @param tagNo the tag number for this object.
+     * @param baseEncodable the object to be contained.
      */
-    public DLApplicationSpecific(
-        int           tag,
-        ASN1Encodable object)
-        throws IOException
+    public DLApplicationSpecific(int tagNo, ASN1Encodable baseEncodable) throws IOException
     {
-        this(true, tag, object);
+        this(true, tagNo, baseEncodable);
     }
 
     /**
-     * Create an application specific object with the tagging style given by the value of constructed.
+     * Create an application specific object with the tagging style given by the value of explicit.
      *
-     * @param constructed true if the object is constructed.
-     * @param tag the tag number for this object.
-     * @param object the object to be contained.
+     * @param explicit true if the object is explicitly tagged.
+     * @param tagNo the tag number for this object.
+     * @param baseEncodable the object to be contained.
      */
-    public DLApplicationSpecific(
-        boolean      constructed,
-        int          tag,
-        ASN1Encodable object)
-        throws IOException
+    public DLApplicationSpecific(boolean explicit, int tagNo, ASN1Encodable baseEncodable) throws IOException
     {
-        super(constructed || object.toASN1Primitive().isConstructed(), tag, getEncoding(constructed, object));
-    }
-
-    private static byte[] getEncoding(boolean explicit, ASN1Encodable object)
-        throws IOException
-    {
-        byte[] data = object.toASN1Primitive().getEncoded(ASN1Encoding.DL);
-
-        if (explicit)
-        {
-            return data;
-        }
-        else
-        {
-            int lenBytes = getLengthOfHeader(data);
-            byte[] tmp = new byte[data.length - lenBytes];
-            System.arraycopy(data, lenBytes, tmp, 0, tmp.length);
-            return tmp;
-        }
+        super(new DLTaggedObject(explicit, BERTags.APPLICATION, tagNo, baseEncodable));
     }
 
     /**
      * Create an application specific object which is marked as constructed
      *
      * @param tagNo the tag number for this object.
-     * @param vec the objects making up the application specific object.
+     * @param contentsElements   the objects making up the application specific object.
      */
-    public DLApplicationSpecific(int tagNo, ASN1EncodableVector vec)
+    public DLApplicationSpecific(int tagNo, ASN1EncodableVector contentsElements)
     {
-        super(true, tagNo, getEncodedVector(vec));
+        super(createConstructed(tagNo, contentsElements));
     }
 
-    private static byte[] getEncodedVector(ASN1EncodableVector vec)
+    DLApplicationSpecific(ASN1TaggedObject taggedObject)
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        for (int i = 0; i != vec.size(); i++)
-        {
-            try
-            {
-                bOut.write(((ASN1Object)vec.get(i)).getEncoded(ASN1Encoding.DL));
-            }
-            catch (IOException e)
-            {
-                throw new ASN1ParsingException("malformed object: " + e, e);
-            }
-        }
-        return bOut.toByteArray();
+        super(taggedObject);
     }
 
-    int encodedLength(boolean withTag)
+    String getASN1Encoding()
     {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, tag, octets.length);
+        return ASN1Encoding.DL;
     }
 
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    ASN1Primitive toDLObject()
     {
-        int flags = BERTags.APPLICATION;
-        if (isConstructed)
-        {
-            flags |= BERTags.CONSTRUCTED;
-        }
+        return this;
+    }
 
-        out.writeEncodingDL(withTag, flags, tag, octets);
+    private static DLTaggedObject createConstructed(int tagNo, ASN1EncodableVector contentsElements)
+    {
+        boolean maybeExplicit = (contentsElements.size() == 1);
+
+        return maybeExplicit
+            ?   new DLTaggedObject(true, BERTags.APPLICATION, tagNo, contentsElements.get(0))
+            :   new DLTaggedObject(false, BERTags.APPLICATION, tagNo, DLFactory.createSequence(contentsElements));
     }
 }
