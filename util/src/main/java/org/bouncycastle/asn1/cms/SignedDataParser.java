@@ -86,12 +86,15 @@ public class SignedDataParser
         _certsCalled = true;
         _nextObject = _seq.readObject();
 
-        if (_nextObject instanceof ASN1TaggedObjectParser && ((ASN1TaggedObjectParser)_nextObject).getTagNo() == 0)
+        if (_nextObject instanceof ASN1TaggedObjectParser)
         {
-            ASN1SetParser certs = (ASN1SetParser)((ASN1TaggedObjectParser)_nextObject).getObjectParser(BERTags.SET, false);
-            _nextObject = null;
-
-            return certs;
+            ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)_nextObject;
+            if (o.hasContextTag(0))
+            {
+                ASN1SetParser certs = (ASN1SetParser)o.parseBaseUniversal(false, BERTags.SET_OF);
+                _nextObject = null;
+                return certs;
+            }
         }
 
         return null;
@@ -112,12 +115,15 @@ public class SignedDataParser
             _nextObject = _seq.readObject();
         }
 
-        if (_nextObject instanceof ASN1TaggedObjectParser && ((ASN1TaggedObjectParser)_nextObject).getTagNo() == 1)
+        if (_nextObject instanceof ASN1TaggedObjectParser)
         {
-            ASN1SetParser crls = (ASN1SetParser)((ASN1TaggedObjectParser)_nextObject).getObjectParser(BERTags.SET, false);
-            _nextObject = null;
-
-            return crls;
+            ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)_nextObject;
+            if (o.hasContextTag(1))
+            {
+                ASN1SetParser crls = (ASN1SetParser)o.parseBaseUniversal(false, BERTags.SET_OF);
+                _nextObject = null;
+                return crls;
+            }
         }
 
         return null;
