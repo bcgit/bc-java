@@ -84,6 +84,11 @@ public abstract class ASN1TaggedObject
 
     boolean asn1Equals(ASN1Primitive other)
     {
+        if (other instanceof ASN1ApplicationSpecific)
+        {
+            return other.equals(this);
+        }
+
         if (!(other instanceof ASN1TaggedObject))
         {
             return false;
@@ -178,9 +183,9 @@ public abstract class ASN1TaggedObject
         throw new ASN1Exception("implicit tagging not implemented for tag: " + tag);
     }
 
-    public ASN1Primitive getLoadedObject()
+    public final ASN1Primitive getLoadedObject()
     {
-        return this.toASN1Primitive();
+        return this;
     }
 
     ASN1Primitive toDERObject()
@@ -248,12 +253,12 @@ public abstract class ASN1TaggedObject
 
     static ASN1Primitive createPrimitive(int tagClass, int tagNo, byte[] contentsOctets)
     {
+        // Note: !CONSTRUCTED => IMPLICIT
         switch (tagClass)
         {
         case BERTags.APPLICATION:
-            return new DLApplicationSpecific(false, tagNo, contentsOctets);
+            return new DLApplicationSpecific(tagNo, contentsOctets);
         default:
-            // Note: !CONSTRUCTED => IMPLICIT
             return new DLTaggedObject(false, tagClass, tagNo, new DEROctetString(contentsOctets));
         }
     }
