@@ -358,48 +358,48 @@ public class ASN1InputStream
         throws IOException
     {
         int length = s.read();
+        if (0 == (length >>> 7))
+        {
+            // definite-length short form 
+            return length;
+        }
+        if (0x80 == length)
+        {
+            // indefinite-length
+            return -1;
+        }
         if (length < 0)
         {
             throw new EOFException("EOF found when length expected");
         }
-
-        if (length == 0x80)
+        if (0xFF == length)
         {
-            return -1;      // indefinite-length encoding
+            throw new IOException("invalid long form definite-length 0xFF");
         }
 
-        if (length > 127)
+        int octetsCount = length & 0x7F, octetsPos = 0;
+
+        length = 0;
+        do
         {
-            int size = length & 0x7f;
-
-            // Note: The invalid long form "0xff" (see X.690 8.1.3.5c) will be caught here
-            if (size > 4)
+            int octet = s.read();
+            if (octet < 0)
             {
-                throw new IOException("DER length more than 4 bytes: " + size);
+                throw new EOFException("EOF found reading length");
             }
 
-            length = 0;
-            for (int i = 0; i < size; i++)
+            if ((length >>> 23) != 0)
             {
-                int next = s.read();
-
-                if (next < 0)
-                {
-                    throw new EOFException("EOF found reading length");
-                }
-
-                length = (length << 8) + next;
+                throw new IOException("long form definite-length more than 31 bits");
             }
 
-            if (length < 0)
-            {
-                throw new IOException("corrupted stream - negative length found");
-            }
+            length = (length << 8) + octet;
+        }
+        while (++octetsPos < octetsCount);
 
-            if (length >= limit && !isParsing)   // after all we must have read at least 1 byte
-            {
-                throw new IOException("corrupted stream - out of bounds length found: " + length + " >= " + limit);
-            }
+        if (length >= limit && !isParsing)   // after all we must have read at least 1 byte
+        {
+            throw new IOException("corrupted stream - out of bounds length found: " + length + " >= " + limit);
         }
 
         return length;
@@ -506,7 +506,7 @@ public class ASN1InputStream
             {
                 throw new IOException("malformed NULL encoding encountered");
             }
-            return DERNull.INSTANCE;   // actual content is ignored (enforce 0 length?)
+            return DERNull.INSTANCE;
         case NUMERIC_STRING:
             return new DERNumericString(defIn.toByteArray());
         case OBJECT_IDENTIFIER:
