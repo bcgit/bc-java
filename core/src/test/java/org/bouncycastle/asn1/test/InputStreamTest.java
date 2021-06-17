@@ -38,12 +38,13 @@ public class InputStreamTest
         }
         catch (IOException e)
         {
-            if (!e.getMessage().startsWith("DER length more than 4 bytes"))
+            if (!e.getMessage().equals("invalid long form definite-length 0xFF"))
             {
                 fail("wrong exception: " + e.getMessage());
             }
         }
 
+        // NOTE: Not really a "negative" length, but 32 bits
         aIn = new ASN1InputStream(negativeLength);
 
         try
@@ -53,7 +54,7 @@ public class InputStreamTest
         }
         catch (IOException e)
         {
-            if (!e.getMessage().equals("corrupted stream - negative length found"))
+            if (!e.getMessage().equals("long form definite-length more than 31 bits"))
             {
                 fail("wrong exception: " + e.getMessage());
             }
