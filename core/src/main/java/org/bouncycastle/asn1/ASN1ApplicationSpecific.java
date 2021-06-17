@@ -216,7 +216,8 @@ public abstract class ASN1ApplicationSpecific
 //        return taggedObject;
 //    }
 
-    boolean asn1Equals(ASN1Primitive o)    {
+    boolean asn1Equals(ASN1Primitive o)
+    {
         ASN1TaggedObject that;
         if (o instanceof ASN1ApplicationSpecific)
         {
