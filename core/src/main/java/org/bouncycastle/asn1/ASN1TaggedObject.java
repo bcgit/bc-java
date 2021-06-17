@@ -84,6 +84,11 @@ public abstract class ASN1TaggedObject
 
     boolean asn1Equals(ASN1Primitive other)
     {
+        if (other instanceof ASN1ApplicationSpecific)
+        {
+            return other.equals(this);
+        }
+
         if (!(other instanceof ASN1TaggedObject))
         {
             return false;
@@ -124,6 +129,16 @@ public abstract class ASN1TaggedObject
         return tagNo;
     }
 
+    public boolean hasContextTag(int tagNo)
+    {
+        return this.tagClass == BERTags.CONTEXT_SPECIFIC && this.tagNo == tagNo;
+    }
+
+    public boolean hasTag(int tagClass, int tagNo)
+    {
+        return this.tagClass == tagClass && this.tagNo == tagNo;
+    }
+
     /**
      * return whether or not the object may be explicitly tagged. 
      * <p>
@@ -155,32 +170,39 @@ public abstract class ASN1TaggedObject
      * the type of the passed in tag. If the object doesn't have a parser
      * associated with it, the base object is returned.
      */
-    public ASN1Encodable getObjectParser(
-        int     tag,
-        boolean isExplicit)
-        throws IOException
+    public ASN1Encodable getObjectParser(int tag, boolean isExplicit) throws IOException
     {
-        switch (tag)
+        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
         {
-        case BERTags.SET:
-            return ASN1Set.getInstance(this, isExplicit).parser();
-        case BERTags.SEQUENCE:
-            return ASN1Sequence.getInstance(this, isExplicit).parser();
-        case BERTags.OCTET_STRING:
-            return ASN1OctetString.getInstance(this, isExplicit).parser();
+            throw new ASN1Exception("this method only valid for CONTEXT_SPECIFIC tags");
         }
 
-        if (isExplicit)
+        return parseBaseUniversal(isExplicit, tag);
+    }
+
+    public ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException
+    {
+        switch (baseTagNo)
+        {
+        case BERTags.SET:
+            return ASN1Set.getInstance(this, declaredExplicit).parser();
+        case BERTags.SEQUENCE:
+            return ASN1Sequence.getInstance(this, declaredExplicit).parser();
+        case BERTags.OCTET_STRING:
+            return ASN1OctetString.getInstance(this, declaredExplicit).parser();
+        }
+
+        if (declaredExplicit)
         {
             return getObject();
         }
 
-        throw new ASN1Exception("implicit tagging not implemented for tag: " + tag);
+        throw new ASN1Exception("implicit tagging not implemented for tag: " + baseTagNo);
     }
 
-    public ASN1Primitive getLoadedObject()
+    public final ASN1Primitive getLoadedObject()
     {
-        return this.toASN1Primitive();
+        return this;
     }
 
     ASN1Primitive toDERObject()
@@ -195,22 +217,7 @@ public abstract class ASN1TaggedObject
 
     public String toString()
     {
-        return "[" + getTagText(tagClass, tagNo) + "]" + obj;
-    }
-
-    private static String getTagText(int tagClass, int tagNo)
-    {
-        switch (tagClass)
-        {
-        case BERTags.APPLICATION:
-            return "APPLICATION " + tagNo;
-        case BERTags.CONTEXT_SPECIFIC:
-            return "CONTEXT " + tagNo;
-        case BERTags.PRIVATE:
-            return "PRIVATE " + tagNo;
-        default:
-            return Integer.toString(tagNo);
-        }
+        return ASN1Util.getTagText(tagClass, tagNo) + obj;
     }
 
     static ASN1Primitive createConstructed(int tagClass, int tagNo, boolean isIL,
@@ -248,12 +255,12 @@ public abstract class ASN1TaggedObject
 
     static ASN1Primitive createPrimitive(int tagClass, int tagNo, byte[] contentsOctets)
     {
+        // Note: !CONSTRUCTED => IMPLICIT
         switch (tagClass)
         {
         case BERTags.APPLICATION:
-            return new DLApplicationSpecific(false, tagNo, contentsOctets);
+            return new DLApplicationSpecific(tagNo, contentsOctets);
         default:
-            // Note: !CONSTRUCTED => IMPLICIT
             return new DLTaggedObject(false, tagClass, tagNo, new DEROctetString(contentsOctets));
         }
     }

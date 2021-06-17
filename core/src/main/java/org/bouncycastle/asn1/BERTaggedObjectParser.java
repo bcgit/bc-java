@@ -31,6 +31,16 @@ public class BERTaggedObjectParser
         return _tagNo;
     }
 
+    public boolean hasContextTag(int tagNo)
+    {
+        return this._tagClass == BERTags.CONTEXT_SPECIFIC && this._tagNo == tagNo;
+    }
+
+    public boolean hasTag(int tagClass, int tagNo)
+    {
+        return this._tagClass == tagClass && this._tagNo == tagNo;
+    }
+
     /**
      * Return true if this tagged object is marked as constructed.
      *
@@ -49,21 +59,14 @@ public class BERTaggedObjectParser
      * @return an ASN.1 encodable object parser.
      * @throws IOException if there is an issue building the object parser from the stream.
      */
-    public ASN1Encodable getObjectParser(
-        int     tag,
-        boolean isExplicit)
-        throws IOException
+    public ASN1Encodable getObjectParser(int tag, boolean isExplicit) throws IOException
     {
-        if (isExplicit)
+        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
         {
-            if (!_constructed)
-            {
-                throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
-            }
-            return _parser.readObject();
+            throw new ASN1Exception("this method only valid for CONTEXT_SPECIFIC tags");
         }
 
-        return _parser.readImplicit(_constructed, tag);
+        return parseBaseUniversal(isExplicit, tag);
     }
 
     /**
@@ -76,6 +79,20 @@ public class BERTaggedObjectParser
         throws IOException
     {
         return _parser.readTaggedObject(_tagClass, _tagNo, _constructed);
+    }
+
+    public ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException
+    {
+        if (declaredExplicit)
+        {
+            if (!_constructed)
+            {
+                throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
+            }
+            return _parser.readObject();
+        }
+
+        return _parser.readImplicit(_constructed, baseTagNo);
     }
 
     /**

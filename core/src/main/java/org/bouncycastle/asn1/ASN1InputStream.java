@@ -267,15 +267,6 @@ public class ASN1InputStream
             return ASN1TaggedObject.createPrimitive(tagClass, tagNo, contentsOctets);
         }
 
-        /*
-         * TODO We'd prefer to produce this from an ASN1EncodableVector, but currently
-         * it would convert the vector immediately back to octets.
-         */
-        if (APPLICATION == tagClass)
-        {
-            return new DLApplicationSpecific(true, tagNo, defIn.toByteArray());
-        }
-
         boolean isIL = false;
         ASN1EncodableVector contentsElements = readVector(defIn);
         return ASN1TaggedObject.createConstructed(tagClass, tagNo, isIL, contentsElements);
