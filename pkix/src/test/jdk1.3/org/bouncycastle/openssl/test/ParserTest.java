@@ -259,24 +259,24 @@ public class ParserTest
         doOpenSslDsaTest("rc2_64_cbc");
         doOpenSslRsaTest("rc2_64_cbc");
 
-        doDudPasswordTest("7fd98", 0, "corrupted stream - out of bounds length found");
-        doDudPasswordTest("ef677", 1, "corrupted stream - out of bounds length found");
+        doDudPasswordTest("7fd98", 0, "corrupted stream - out of bounds length found: 599005160 >= 19");
+        doDudPasswordTest("ef677", 1, "corrupted stream - out of bounds length found: 2087569732 >= 66");
         doDudPasswordTest("800ce", 2, "unknown tag 26 encountered");
         doDudPasswordTest("b6cd8", 3, "DEF length 81 object truncated by 56");
-        doDudPasswordTest("28ce09", 4, "DEF length 110 object truncated by 28");
-        doDudPasswordTest("2ac3b9", 5, "DER length more than 4 bytes: 11");
-        doDudPasswordTest("2cba96", 6, "DEF length 100 object truncated by 35");
-        doDudPasswordTest("2e3354", 7, "DEF length 42 object truncated by 9");
-        doDudPasswordTest("2f4142", 8, "DER length more than 4 bytes: 14");
-        doDudPasswordTest("2fe9bb", 9, "DER length more than 4 bytes: 65");
-        doDudPasswordTest("3ee7a8", 10, "DER length more than 4 bytes: 57");
+        doDudPasswordTest("28ce09", 4, "corrupted stream - high tag number < 31 found");
+        doDudPasswordTest("2ac3b9", 5, "long form definite-length more than 31 bits");
+        doDudPasswordTest("2cba96", 6, "corrupted stream - out of bounds length found: 100 >= 67");
+        doDudPasswordTest("2e3354", 7, "corrupted stream - out of bounds length found: 42 >= 35");
+        doDudPasswordTest("2f4142", 8, "long form definite-length more than 31 bits");
+        doDudPasswordTest("2fe9bb", 9, "long form definite-length more than 31 bits");
+        doDudPasswordTest("3ee7a8", 10, "long form definite-length more than 31 bits");
         doDudPasswordTest("41af75", 11, "unknown tag 16 encountered");
         doDudPasswordTest("1704a5", 12, "corrupted stream detected");
-        doDudPasswordTest("1c5822", 13, "unknown object in getInstance: org.bouncycastle.asn1.DERUTF8String");
+        doDudPasswordTest("1c5822", 13, "Extra data detected in stream");
         doDudPasswordTest("5a3d16", 14, "corrupted stream detected");
         doDudPasswordTest("8d0c97", 15, "corrupted stream detected");
         doDudPasswordTest("bc0daf", 16, "corrupted stream detected");
-        doDudPasswordTest("aaf9c4d",17, "corrupted stream - out of bounds length found");
+        doDudPasswordTest("aaf9c4d", 17, "corrupted stream - out of bounds length found: 1580418590 >= 447");
 
         doNoPasswordTest();
 
