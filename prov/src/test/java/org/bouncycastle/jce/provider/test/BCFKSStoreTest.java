@@ -166,6 +166,14 @@ public class BCFKSStoreTest
         checkEmptyStore(testPassword);
     }
 
+    public void shouldWorkWithNullLoadStoreParameter()
+        throws Exception
+    {
+        KeyStore ks = KeyStore.getInstance("BCFKS", "BC");
+
+        ks.load(null);
+    }
+
     private void checkEmptyStore(char[] passwd)
         throws KeyStoreException, NoSuchProviderException, IOException, NoSuchAlgorithmException, CertificateException
     {
@@ -1594,6 +1602,7 @@ public class BCFKSStoreTest
         shouldStoreUsingKWP();
         //shouldRejectInconsistentKeys();
         shouldStoreOnePrivateKeyWithChainEdDSA();
+        shouldWorkWithNullLoadStoreParameter();
         testJKS();
     }
 
