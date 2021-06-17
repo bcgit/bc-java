@@ -1,112 +1,61 @@
 package org.bouncycastle.asn1;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
  * An indefinite-length encoding version of an ASN.1 ApplicationSpecific object.
+ * 
+ * @deprecated Will be removed. See comments for
+ *             {@link ASN1ApplicationSpecific}.
  */
 public class BERApplicationSpecific
     extends ASN1ApplicationSpecific
 {
-    BERApplicationSpecific(
-        boolean isConstructed,
-        int tag,
-        byte[] octets)
+    /**
+     * Create an application specific object with an explicit tag
+     *
+     * @param tagNo the tag number for this object.
+     * @param baseEncodable the object to be contained.
+     */
+    public BERApplicationSpecific(int tagNo, ASN1Encodable baseEncodable) throws IOException
     {
-        super(isConstructed, tag, octets);
+        this(true, tagNo, baseEncodable);
     }
 
     /**
-     * Create an application specific object with a tagging of explicit/constructed.
+     * Create an application specific object with the tagging style given by the value of explicit.
      *
-     * @param tag the tag number for this object.
-     * @param object the object to be contained.
+     * @param explicit true if the object is explicitly tagged.
+     * @param tagNo the tag number for this object.
+     * @param baseEncodable the object to be contained.
      */
-    public BERApplicationSpecific(
-        int tag,
-        ASN1Encodable object)
-        throws IOException
+    public BERApplicationSpecific(boolean explicit, int tagNo, ASN1Encodable baseEncodable) throws IOException
     {
-        this(true, tag, object);
-    }
-
-    /**
-     * Create an application specific object with the tagging style given by the value of constructed.
-     *
-     * @param constructed true if the object is constructed.
-     * @param tag the tag number for this object.
-     * @param object the object to be contained.
-     */
-    public BERApplicationSpecific(
-        boolean constructed,
-        int tag,
-        ASN1Encodable object)
-        throws IOException
-    {
-        super(constructed || object.toASN1Primitive().isConstructed(), tag, getEncoding(constructed, object));
-    }
-
-    private static byte[] getEncoding(boolean explicit, ASN1Encodable object)
-        throws IOException
-    {
-        byte[] data = object.toASN1Primitive().getEncoded(ASN1Encoding.BER);
-
-        if (explicit)
-        {
-            return data;
-        }
-        else
-        {
-            int lenBytes = getLengthOfHeader(data);
-            byte[] tmp = new byte[data.length - lenBytes];
-            System.arraycopy(data, lenBytes, tmp, 0, tmp.length);
-            return tmp;
-        }
+        super(new BERTaggedObject(explicit, BERTags.APPLICATION, tagNo, baseEncodable));
     }
 
     /**
      * Create an application specific object which is marked as constructed
      *
      * @param tagNo the tag number for this object.
-     * @param vec the objects making up the application specific object.
+     * @param contentsElements the objects making up the application specific object.
      */
-    public BERApplicationSpecific(int tagNo, ASN1EncodableVector vec)
+    public BERApplicationSpecific(int tagNo, ASN1EncodableVector contentsElements)
     {
-        super(true, tagNo, getEncodedVector(vec));
+        super(createConstructed(tagNo, contentsElements));
     }
 
-    private static byte[] getEncodedVector(ASN1EncodableVector vec)
+    String getASN1Encoding()
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        for (int i = 0; i != vec.size(); i++)
-        {
-            try
-            {
-                bOut.write(((ASN1Object)vec.get(i)).getEncoded(ASN1Encoding.BER));
-            }
-            catch (IOException e)
-            {
-                throw new ASN1ParsingException("malformed object: " + e, e);
-            }
-        }
-        return bOut.toByteArray();
+        return ASN1Encoding.BER;
     }
 
-    int encodedLength(boolean withTag)
+    private static BERTaggedObject createConstructed(int tagNo, ASN1EncodableVector contentsElements)
     {
-        return (withTag ? ASN1OutputStream.getLengthOfIdentifier(tag) : 0) + 3 + octets.length;
-    }
+        boolean maybeExplicit = (contentsElements.size() == 1);
 
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        int flags = BERTags.APPLICATION;
-        if (isConstructed)
-        {
-            flags |= BERTags.CONSTRUCTED;
-        }
-
-        out.writeEncodingIL(withTag, flags, tag, octets);
+        return maybeExplicit
+            ?   new BERTaggedObject(true, BERTags.APPLICATION, tagNo, contentsElements.get(0))
+            :   new BERTaggedObject(false, BERTags.APPLICATION, tagNo, BERFactory.createSequence(contentsElements));
     }
 }
