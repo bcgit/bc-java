@@ -4,9 +4,10 @@ import java.io.IOException;
 
 /**
  * A parser for indefinite-length ASN.1 ApplicationSpecific objects.
- * @deprecated Test for {@link BERTaggedObjectParser} with
+ * 
+ * @deprecated Test for {@link ASN1TaggedObjectParser} with
  *             {@link ASN1TaggedObjectParser#getTagClass() tag class} of
- *             {@link BERTags#APPLICATION}.
+ *             {@link BERTags#APPLICATION} instead.
  */
 public class BERApplicationSpecificParser
     extends BERTaggedObjectParser
@@ -26,6 +27,6 @@ public class BERApplicationSpecificParser
         throws IOException
     {
         // NOTE: No way to say you're looking for an implicitly-tagged object via ASN1ApplicationSpecificParser
-        return getObjectParser(_tagNo, true);
+        return parseBaseUniversal(true, -1);
     }
 }

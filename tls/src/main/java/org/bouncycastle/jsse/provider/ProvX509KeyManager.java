@@ -805,7 +805,7 @@ class ProvX509KeyManager
         }
 
         static final Quality INVALID = Quality.MISMATCH_SNI;
-        static final Match NOTHING = new Match(Quality.NONE, -1, -1, null, null, null);
+        static final Match NOTHING = new Match(Quality.NONE, Integer.MAX_VALUE, -1, null, null, null);
 
         final Quality quality;
         final int keyTypeIndex;

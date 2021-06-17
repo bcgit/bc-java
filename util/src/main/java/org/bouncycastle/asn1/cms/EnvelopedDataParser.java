@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1SetParser;
 import org.bouncycastle.asn1.ASN1TaggedObjectParser;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BERTags;
 
 /** 
@@ -51,14 +52,18 @@ public class EnvelopedDataParser
         {
             _nextObject = _seq.readObject();
         }
-        
-        if (_nextObject instanceof ASN1TaggedObjectParser && ((ASN1TaggedObjectParser)_nextObject).getTagNo() == 0)
+
+        if (_nextObject instanceof ASN1TaggedObjectParser)
         {
-            ASN1SequenceParser originatorInfo = (ASN1SequenceParser) ((ASN1TaggedObjectParser)_nextObject).getObjectParser(BERTags.SEQUENCE, false);
-            _nextObject = null;
-            return OriginatorInfo.getInstance(originatorInfo.toASN1Primitive());
+            ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)_nextObject;
+            if (o.hasContextTag(0))
+            {
+                ASN1SequenceParser originatorInfo = (ASN1SequenceParser)o.parseBaseUniversal(false, BERTags.SEQUENCE);
+                _nextObject = null;
+                return OriginatorInfo.getInstance(originatorInfo.getLoadedObject());
+            }
         }
-        
+
         return null;
     }
     
@@ -106,15 +111,14 @@ public class EnvelopedDataParser
         {
             _nextObject = _seq.readObject();
         }
-        
-        
+
         if (_nextObject != null)
         {
-            ASN1Encodable o = _nextObject;
+            ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)_nextObject;
             _nextObject = null;
-            return (ASN1SetParser)((ASN1TaggedObjectParser)o).getObjectParser(BERTags.SET, false);
+            return (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 1, false, BERTags.SET_OF);
         }
-        
+
         return null;
     }
 }
