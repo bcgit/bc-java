@@ -167,16 +167,11 @@ public class ASN1StreamParser
             {
                 ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
 
-                /*
-                 * TODO Exceptional case can be removed safely once application specific stuff
-                 * is removed in favour of uniform tagged object handling. User code might be
-                 * checking the specific type at the moment.
-                 */
+                // TODO Special handling can be removed once ASN1ApplicationSpecific types removed.
+                if (BERTags.APPLICATION == tagClass)
                 {
-                    if (BERTags.APPLICATION == tagClass)
-                    {
-                        return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
-                    }
+                    // This cast is ensuring the current user-expected return type.
+                    return (DLApplicationSpecific)sp.readTaggedObject(tagClass, tagNo, isConstructed);
                 }
 
                 return new BERTaggedObjectParser(tagClass, tagNo, isConstructed, sp);

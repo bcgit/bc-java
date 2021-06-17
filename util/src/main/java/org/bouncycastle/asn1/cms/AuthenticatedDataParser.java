@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1SetParser;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1TaggedObjectParser;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
@@ -63,11 +64,15 @@ public class AuthenticatedDataParser
             nextObject = seq.readObject();
         }
 
-        if (nextObject instanceof ASN1TaggedObjectParser && ((ASN1TaggedObjectParser)nextObject).getTagNo() == 0)
+        if (nextObject instanceof ASN1TaggedObjectParser)
         {
-            ASN1SequenceParser originatorInfo = (ASN1SequenceParser) ((ASN1TaggedObjectParser)nextObject).getObjectParser(BERTags.SEQUENCE, false);
-            nextObject = null;
-            return OriginatorInfo.getInstance(originatorInfo.toASN1Primitive());
+            ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)nextObject;
+            if (o.hasContextTag(0))
+            {
+                ASN1SequenceParser originatorInfo = (ASN1SequenceParser)o.parseBaseUniversal(false, BERTags.SEQUENCE);
+                nextObject = null;
+                return OriginatorInfo.getInstance(originatorInfo.getLoadedObject());
+            }
         }
 
         return null;
@@ -155,9 +160,9 @@ public class AuthenticatedDataParser
 
         if (nextObject instanceof ASN1TaggedObjectParser)
         {
-            ASN1Encodable o = nextObject;
+            ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)nextObject;
             nextObject = null;
-            return (ASN1SetParser)((ASN1TaggedObjectParser)o).getObjectParser(BERTags.SET, false);
+            return (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 2, false, BERTags.SET_OF);
         }
 
         return null;
@@ -187,9 +192,9 @@ public class AuthenticatedDataParser
 
         if (nextObject != null)
         {
-            ASN1Encodable o = nextObject;
+            ASN1TaggedObject o = (ASN1TaggedObject)nextObject;
             nextObject = null;
-            return (ASN1SetParser)((ASN1TaggedObjectParser)o).getObjectParser(BERTags.SET, false);
+            return (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 3, false, BERTags.SET_OF);
         }
 
         return null;

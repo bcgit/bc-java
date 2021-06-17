@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1TaggedObjectParser;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -48,6 +49,6 @@ public class EncryptedContentInfoParser
         int  tag) 
         throws IOException
     {
-        return _encryptedContent.getObjectParser(tag, false);
+        return ASN1Util.parseContextBaseUniversal(_encryptedContent, 0, false, tag);
     }
 }
