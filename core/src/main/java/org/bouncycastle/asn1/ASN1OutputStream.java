@@ -78,7 +78,7 @@ public class ASN1OutputStream
         return new DEROutputStream(os);
     }
 
-    ASN1OutputStream getDLSubStream()
+    DLOutputStream getDLSubStream()
     {
         return new DLOutputStream(os);
     }
