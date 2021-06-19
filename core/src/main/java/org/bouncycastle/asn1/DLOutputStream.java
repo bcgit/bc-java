@@ -14,7 +14,7 @@ class DLOutputStream
         super(os);
     }
 
-    ASN1OutputStream getDLSubStream()
+    DLOutputStream getDLSubStream()
     {
         return this;
     }
