@@ -54,10 +54,13 @@ public class BERTaggedObjectParser
     /**
      * Return an object parser for the contents of this tagged object.
      *
-     * @param tag the actual tag number of the object (needed if implicit).
-     * @param isExplicit true if the contained object was explicitly tagged, false if implicit.
+     * @param tag        the actual tag number of the object (needed if implicit).
+     * @param isExplicit true if the contained object was explicitly tagged, false
+     *                   if implicit.
      * @return an ASN.1 encodable object parser.
-     * @throws IOException if there is an issue building the object parser from the stream.
+     * @throws IOException if there is an issue building the object parser from the
+     *                     stream.
+     * @deprecated See {@link ASN1TaggedObjectParser#getObjectParser(int, boolean)}.
      */
     public ASN1Encodable getObjectParser(int tag, boolean isExplicit) throws IOException
     {
