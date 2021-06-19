@@ -8,8 +8,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.OEROptional;
-import org.bouncycastle.oer.OEROutputStream;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.CertificateBase;
 import org.bouncycastle.oer.its.CertificateType;
@@ -53,8 +53,7 @@ public class ITSCertificateBuilder
 
         try
         {
-            sOut.write(
-                OEROutputStream.encodeToBytes(tbsCertificate, IEEE1609dot2.tbsCertificate));
+            sOut.write(OEREncoder.toByteArray(tbsCertificate, IEEE1609dot2.tbsCertificate));
 
             sOut.close();
         }
