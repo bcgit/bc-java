@@ -157,30 +157,30 @@ public class ToBeSignedCertificate
         return verificationKeyIndicator;
     }
 
+    /**
+     * <pre>
+     * ToBeSignedCertificate ::= SEQUENCE  {
+     * id                     CertificateId,
+     * cracaId                HashedId3,
+     * crlSeries              CrlSeries,
+     * validityPeriod         ValidityPeriod,
+     * region                 GeographicRegion OPTIONAL,
+     * assuranceLevel         SubjectAssurance OPTIONAL,
+     * appPermissions         SequenceOfPsidSsp OPTIONAL,
+     * certIssuePermissions   SequenceOfPsidGroupPermissions OPTIONAL,
+     * certRequestPermissions SequenceOfPsidGroupPermissions OPTIONAL,
+     * canRequestRollover     NULL OPTIONAL,
+     * encryptionKey          PublicEncryptionKey OPTIONAL,
+     * verifyKeyIndicator     VerificationKeyIndicator,
+     * ...
+     * }
+     * (WITH COMPONENTS { ..., appPermissions PRESENT} |
+     * WITH COMPONENTS { ..., certIssuePermissions PRESENT} |
+     * WITH COMPONENTS { ..., certRequestPermissions PRESENT})
+     * </pre>
+     */
     public ASN1Primitive toASN1Primitive()
     {
-
-        /**
-         * ToBeSignedCertificate ::= SEQUENCE  {
-         * id                     CertificateId,
-         * cracaId                HashedId3,
-         * crlSeries              CrlSeries,
-         * validityPeriod         ValidityPeriod,
-         * region                 GeographicRegion OPTIONAL,
-         * assuranceLevel         SubjectAssurance OPTIONAL,
-         * appPermissions         SequenceOfPsidSsp OPTIONAL,
-         * certIssuePermissions   SequenceOfPsidGroupPermissions OPTIONAL,
-         * certRequestPermissions SequenceOfPsidGroupPermissions OPTIONAL,
-         * canRequestRollover     NULL OPTIONAL,
-         * encryptionKey          PublicEncryptionKey OPTIONAL,
-         * verifyKeyIndicator     VerificationKeyIndicator,
-         * ...
-         * }
-         * (WITH COMPONENTS { ..., appPermissions PRESENT} |
-         * WITH COMPONENTS { ..., certIssuePermissions PRESENT} |
-         * WITH COMPONENTS { ..., certRequestPermissions PRESENT})
-         */
-
         return Utils.toSequence(
             certificateId,
             cracaId,
@@ -194,13 +194,11 @@ public class ToBeSignedCertificate
             canRequestRollover,
             encryptionKey,
             verificationKeyIndicator);
-
     }
 
 
     public static class Builder
     {
-
         private CertificateId certificateId;
         private HashedId cracaId;
         private CrlSeries crlSeries;
@@ -213,7 +211,6 @@ public class ToBeSignedCertificate
         private OEROptional canRequestRollover = OEROptional.ABSENT;
         private OEROptional encryptionKey = OEROptional.ABSENT;
         private VerificationKeyIndicator verificationKeyIndicator;
-
 
         public Builder setCertificateId(CertificateId certificateId)
         {
@@ -303,8 +300,5 @@ public class ToBeSignedCertificate
                 encryptionKey,
                 verificationKeyIndicator);
         }
-
-
     }
-
 }
