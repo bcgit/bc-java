@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.oer.OEROutputStream;
+import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.IssuerIdentifier;
 import org.bouncycastle.oer.its.Signature;
@@ -40,7 +40,7 @@ public class ITSCertificate
         OutputStream verOut = contentVerifier.getOutputStream();
 
         verOut.write(
-            OEROutputStream.encodeToBytes(certificate.getCertificateBase().getToBeSignedCertificate(),
+            OEREncoder.toByteArray(certificate.getCertificateBase().getToBeSignedCertificate(),
                 IEEE1609dot2.tbsCertificate));
 
         verOut.close();
@@ -58,7 +58,6 @@ public class ITSCertificate
     public byte[] getEncoded()
         throws IOException
     {
-        return OEROutputStream.encodeToBytes(certificate.getCertificateBase(),
-                               IEEE1609dot2.certificate);
+        return OEREncoder.toByteArray(certificate.getCertificateBase(), IEEE1609dot2.certificate);
     }
 }
