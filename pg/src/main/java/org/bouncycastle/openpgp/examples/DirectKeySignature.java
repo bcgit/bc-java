@@ -87,7 +87,6 @@ public class DirectKeySignature
         {
             System.err.println("usage: DirectKeySignature secretKeyFile secretKeyPass publicKeyFile(key to be signed) NotationName NotationValue");
             System.err.println("or: DirectKeySignature signedPublicKeyFile");
-
         }
     }
 
@@ -103,7 +102,7 @@ public class DirectKeySignature
 
         boolean isHumanReadable = true;
 
-        spGen.setNotationData(true, isHumanReadable, notationName, notationValue);
+        spGen.addNotationData(true, isHumanReadable, notationName, notationValue);
 
         PGPSignatureSubpacketVector packetVector = spGen.generate();
 
