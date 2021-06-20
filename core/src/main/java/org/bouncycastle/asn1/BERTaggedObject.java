@@ -64,7 +64,7 @@ public class BERTaggedObject
         return length;
     }
 
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag, int tagClass, int tagNo) throws IOException
     {
 //        assert out.getClass().isAssignableFrom(ASN1OutputStream.class);
 
@@ -92,5 +92,10 @@ public class BERTaggedObject
         {
             primitive.encode(out, false);
         }
+    }
+
+    String getASN1Encoding()
+    {
+        return ASN1Encoding.BER;
     }
 }

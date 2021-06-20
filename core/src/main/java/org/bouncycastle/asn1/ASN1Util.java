@@ -4,14 +4,34 @@ import java.io.IOException;
 
 public abstract class ASN1Util
 {
+    public static String getTagText(ASN1TaggedObject taggedObject)
+    {
+        return getTagText(taggedObject.getTagClass(), taggedObject.getTagNo());
+    }
+
+    public static String getTagText(int tagClass, int tagNo)
+    {
+        switch (tagClass)
+        {
+        case BERTags.APPLICATION:
+            return "[APPLICATION " + tagNo + "]";
+        case BERTags.CONTEXT_SPECIFIC:
+            return "[CONTEXT " + tagNo + "]";
+        case BERTags.PRIVATE:
+            return "[PRIVATE " + tagNo + "]";
+        default:
+            return "[UNIVERSAL " + tagNo + "]";
+        }
+    }
+
 //    public static ASN1Encodable parseBaseObject(ASN1TaggedObjectParser taggedObjectParser, int tagClass, int tagNo,
 //        boolean declaredExplicit, int baseTagClass, int baseTagNo, boolean baseDeclaredExplicit) throws IOException
 //    {
 //        if (!taggedObjectParser.hasTag(tagClass, tagNo))
 //        {
-//            String requested = getTagText(tagClass, tagNo);
+//            String expected = getTagText(tagClass, tagNo);
 //            String found = getTagText(taggedObjectParser.getTagClass(), taggedObjectParser.getTagNo());
-//            throw new ASN1Exception("Requested " + requested + " tag but found " + found);
+//            throw new ASN1Exception("Expected " + expected + " tag but found " + found);
 //        }
 //
 //        return taggedObjectParser.parseBaseObject(declaredExplicit, baseTagClass, baseTagNo, baseDeclaredExplicit);
@@ -22,9 +42,9 @@ public abstract class ASN1Util
     {
         if (!taggedObjectParser.hasTag(tagClass, tagNo))
         {
-            String requested = getTagText(tagClass, tagNo);
+            String expected = getTagText(tagClass, tagNo);
             String found = getTagText(taggedObjectParser.getTagClass(), taggedObjectParser.getTagNo());
-            throw new ASN1Exception("Requested " + requested + " tag but found " + found);
+            throw new ASN1Exception("Expected " + expected + " tag but found " + found);
         }
 
         return taggedObjectParser.parseBaseUniversal(declaredExplicit, baseTagNo);
@@ -76,20 +96,5 @@ public abstract class ASN1Util
         boolean declaredExplicit, int baseTagNo) throws IOException
     {
         return tryParseBaseUniversal(taggedObjectParser, BERTags.CONTEXT_SPECIFIC, tagNo, declaredExplicit, baseTagNo);
-    }
-
-    static String getTagText(int tagClass, int tagNo)
-    {
-        switch (tagClass)
-        {
-        case BERTags.APPLICATION:
-            return "[APPLICATION " + tagNo + "]";
-        case BERTags.CONTEXT_SPECIFIC:
-            return "[" + tagNo + "]";
-        case BERTags.PRIVATE:
-            return "[PRIVATE " + tagNo + "]";
-        default:
-            return "U" + Integer.toString(tagNo);
-        }
     }
 }

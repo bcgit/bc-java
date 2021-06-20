@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERPrintableString;
@@ -131,11 +132,12 @@ public class DLExternalTest
         isTrue("check type is a tagged object: " + content.getClass(), content instanceof ASN1TaggedObject);
 
         ASN1TaggedObject msBind = (ASN1TaggedObject)content;
-        isEquals("check tag", 16, msBind.getTagNo());
+        isTrue("check tag", msBind.hasContextTag(16));
         isEquals("check explicit", true, msBind.isExplicit());
-        isEquals("check tagged object is a DLSet: " + msBind.getObject().getClass(), DLSet.class.getName(), msBind.getObject().getClass().getName());
+        isEquals("check tagged object is a DLSet: " + msBind.getBaseUniversal(true, BERTags.SET).getClass(),
+            DLSet.class.getName(), msBind.getBaseUniversal(true, BERTags.SET).getClass().getName());
 
-        DLSet msBindSet = (DLSet)msBind.getObject();
+        DLSet msBindSet = (DLSet)msBind.getBaseUniversal(true, BERTags.SET);
         isEquals("check number of elements", 2, msBindSet.size());
         isEquals("check first element in set: " + msBindSet.getObjectAt(0).getClass(), DLApplicationSpecific.class.getName(), msBindSet.getObjectAt(0).getClass().getName());
 
@@ -156,27 +158,27 @@ public class DLExternalTest
         isEquals("check A", "viaT", ((DERPrintableString)objNameAppl.getObject()).getString());
         isEquals("check third element in set: " + objNameElems.getObjectAt(2).getClass(), DLTaggedObject.class.getName(), objNameElems.getObjectAt(2).getClass().getName());
         DLTaggedObject objNameTagged = (DLTaggedObject)objNameElems.getObjectAt(2);
-        isEquals("check tag number", 3, objNameTagged.getTagNo());
+        isTrue("check tag", objNameTagged.hasContextTag(3));
         isEquals("check implicit", false, objNameTagged.isExplicit());
-        isEquals("check tagged object: " + objNameTagged.getObject().getClass(), DEROctetString.class.getName(), objNameTagged.getObject().getClass().getName());
-        isEquals("check O", "Organization", new String(((DEROctetString)objNameTagged.getObject()).getOctets(), "8859_1"));
+        isEquals("check tagged object: " + objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass(), DEROctetString.class.getName(), objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass().getName());
+        isEquals("check O", "Organization", new String(((DEROctetString)objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets(), "8859_1"));
         isEquals("check fourth element in set: " + objNameElems.getObjectAt(3).getClass(), DLTaggedObject.class.getName(), objNameElems.getObjectAt(3).getClass().getName());
         objNameTagged = (DLTaggedObject)objNameElems.getObjectAt(3);
-        isEquals("check tag number", 5, objNameTagged.getTagNo());
+        isTrue("check tag", objNameTagged.hasContextTag(5));
         isEquals("check implicit", true, objNameTagged.isExplicit());
         isEquals("check tagged object: " + objNameTagged.getObject().getClass(), DLTaggedObject.class.getName(), objNameTagged.getObject().getClass().getName());
         objNameTagged = (DLTaggedObject)objNameTagged.getObject();
-        isEquals("check tag number", 0, objNameTagged.getTagNo());
+        isTrue("check tag", objNameTagged.hasContextTag(0));
         isEquals("check implicit", false, objNameTagged.isExplicit());
-        isEquals("check tagged object: " + objNameTagged.getObject().getClass(), DEROctetString.class.getName(), objNameTagged.getObject().getClass().getName());
-        isEquals("check CN", "Common Name", new String(((DEROctetString)objNameTagged.getObject()).getOctets(), "8859_1"));
+        isEquals("check tagged object: " + objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass(), DEROctetString.class.getName(), objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass().getName());
+        isEquals("check CN", "Common Name", new String(((DEROctetString)objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets(), "8859_1"));
 
         isEquals("check second element in set: " + msBind.getObject().getClass(), DLTaggedObject.class.getName(), msBindSet.getObjectAt(1).getClass().getName());
         DLTaggedObject password = (DLTaggedObject)msBindSet.getObjectAt(1);
-        isEquals("check tag number", 2, password.getTagNo());
+        isTrue("check tag", password.hasContextTag(2));
         isEquals("check explicit", true, password.isExplicit());
-        isEquals("check tagged object: " + password.getObject().getClass(), DERIA5String.class.getName(), password.getObject().getClass().getName());
-        isEquals("check password", "SomePassword", ((DERIA5String)password.getObject()).getString());
+        isEquals("check tagged object: " + password.getBaseUniversal(true, BERTags.IA5_STRING).getClass(), DERIA5String.class.getName(), password.getBaseUniversal(true, BERTags.IA5_STRING).getClass().getName());
+        isEquals("check password", "SomePassword", ((DERIA5String)password.getBaseUniversal(true, BERTags.IA5_STRING)).getString());
     }
 
     private ASN1EncodableVector createRealDataExample()
