@@ -13,7 +13,13 @@ public abstract class ASN1TaggedObject
     extends ASN1Primitive
     implements ASN1TaggedObjectParser
 {
-    final boolean       explicit;
+    private static final int DECLARED_EXPLICIT = 1;
+    private static final int DECLARED_IMPLICIT = 2;
+    // TODO It will probably be better to track parsing constructed vs primitive instead
+    private static final int PARSED_EXPLICIT = 3;
+    private static final int PARSED_IMPLICIT = 4;
+
+    final int           explicitness;
     final int           tagClass;
     final int           tagNo;
     final ASN1Encodable obj;
@@ -69,6 +75,11 @@ public abstract class ASN1TaggedObject
 
     protected ASN1TaggedObject(boolean explicit, int tagClass, int tagNo, ASN1Encodable obj)
     {
+        this(explicit ? DECLARED_EXPLICIT : DECLARED_IMPLICIT, tagClass, tagNo, obj);
+    }
+
+    ASN1TaggedObject(int explicitness, int tagClass, int tagNo, ASN1Encodable obj)
+    {
         if (null == obj)
         {
             throw new NullPointerException("'obj' cannot be null");
@@ -78,7 +89,7 @@ public abstract class ASN1TaggedObject
             throw new IllegalArgumentException("invalid tag class: " + tagClass);
         }
 
-        this.explicit = explicit || (obj instanceof ASN1Choice);
+        this.explicitness = (obj instanceof ASN1Choice) ? DECLARED_EXPLICIT : explicitness;
         this.tagClass = tagClass;
         this.tagNo = tagNo;
         this.obj = obj;
@@ -99,10 +110,21 @@ public abstract class ASN1TaggedObject
         ASN1TaggedObject that = (ASN1TaggedObject)other;
 
         if (this.tagNo != that.tagNo ||
-            this.tagClass != that.tagClass ||
-            this.explicit != that.explicit)
+            this.tagClass != that.tagClass)
         {
             return false;
+        }
+
+        if (this.explicitness != that.explicitness)
+        {
+            /*
+             * TODO This seems incorrect for some cases of implicit tags e.g. if one is a
+             * declared-implicit SET and the other a parsed object.
+             */
+            if (this.isExplicit() != that.isExplicit())
+            {
+                return false;
+            }
         }
 
         ASN1Primitive p1 = this.obj.toASN1Primitive();
@@ -113,7 +135,7 @@ public abstract class ASN1TaggedObject
 
     public int hashCode()
     {
-        return (tagClass * 7919) ^ tagNo ^ (explicit ? 0x0F : 0xF0) ^ obj.toASN1Primitive().hashCode();
+        return (tagClass * 7919) ^ tagNo ^ (isExplicit() ? 0x0F : 0xF0) ^ obj.toASN1Primitive().hashCode();
     }
 
     public int getTagClass()
@@ -152,7 +174,15 @@ public abstract class ASN1TaggedObject
      */
     public boolean isExplicit()
     {
-        return explicit;
+        // TODO New methods like 'isKnownExplicit' etc. to distinguish uncertain cases?
+        switch (explicitness)
+        {
+        case DECLARED_EXPLICIT:
+        case PARSED_EXPLICIT:
+            return true;
+        default:
+            return false;
+        }
     }
 
     /**
@@ -304,12 +334,12 @@ public abstract class ASN1TaggedObject
 
     ASN1Primitive toDERObject()
     {
-        return new DERTaggedObject(explicit, tagClass, tagNo, obj);
+        return new DERTaggedObject(explicitness, tagClass, tagNo, obj);
     }
 
     ASN1Primitive toDLObject()
     {
-        return new DLTaggedObject(explicit, tagClass, tagNo, obj);
+        return new DLTaggedObject(explicitness, tagClass, tagNo, obj);
     }
 
     public String toString()
@@ -324,41 +354,45 @@ public abstract class ASN1TaggedObject
 
         if (isIL)
         {
+            ASN1TaggedObject taggedObject = maybeExplicit
+                ?   new BERTaggedObject(PARSED_EXPLICIT, tagClass, tagNo, contentsElements.get(0))
+                :   new BERTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, BERFactory.createSequence(contentsElements));
+
             switch (tagClass)
             {
             case BERTags.APPLICATION:
-                return new BERApplicationSpecific(tagNo, contentsElements);
+                return new BERApplicationSpecific(taggedObject);
             default:
-            {
-                return maybeExplicit
-                    ?   new BERTaggedObject(true, tagClass, tagNo, contentsElements.get(0))
-                    :   new BERTaggedObject(false, tagClass, tagNo, BERFactory.createSequence(contentsElements));
-            }
+                return taggedObject;
             }
         }
+        else
+        {
+            ASN1TaggedObject taggedObject = maybeExplicit
+                ?   new DLTaggedObject(PARSED_EXPLICIT, tagClass, tagNo, contentsElements.get(0))
+                :   new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, DLFactory.createSequence(contentsElements));
 
-        switch (tagClass)
-        {
-        case BERTags.APPLICATION:
-            return new DLApplicationSpecific(tagNo, contentsElements);
-        default:
-        {
-            return maybeExplicit
-                ?   new DLTaggedObject(true, tagClass, tagNo, contentsElements.get(0))
-                :   new DLTaggedObject(false, tagClass, tagNo, DLFactory.createSequence(contentsElements));
-        }
+            switch (tagClass)
+            {
+            case BERTags.APPLICATION:
+                return new DLApplicationSpecific(taggedObject);
+            default:
+                return taggedObject;
+            }
         }
     }
 
     static ASN1Primitive createPrimitive(int tagClass, int tagNo, byte[] contentsOctets)
     {
         // Note: !CONSTRUCTED => IMPLICIT
+        ASN1TaggedObject taggedObject = new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, new DEROctetString(contentsOctets));
+
         switch (tagClass)
         {
         case BERTags.APPLICATION:
-            return new DLApplicationSpecific(tagNo, contentsOctets);
+            return new DLApplicationSpecific(taggedObject);
         default:
-            return new DLTaggedObject(false, tagClass, tagNo, new DEROctetString(contentsOctets));
+            return taggedObject;
         }
     }
 }

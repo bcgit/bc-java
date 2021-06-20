@@ -42,15 +42,11 @@ public class BERApplicationSpecific
      */
     public BERApplicationSpecific(int tagNo, ASN1EncodableVector contentsElements)
     {
-        super(createConstructed(tagNo, contentsElements));
+        super(new BERTaggedObject(false, BERTags.APPLICATION, tagNo, BERFactory.createSequence(contentsElements)));
     }
 
-    private static BERTaggedObject createConstructed(int tagNo, ASN1EncodableVector contentsElements)
+    BERApplicationSpecific(ASN1TaggedObject taggedObject)
     {
-        boolean maybeExplicit = (contentsElements.size() == 1);
-
-        return maybeExplicit
-            ?   new BERTaggedObject(true, BERTags.APPLICATION, tagNo, contentsElements.get(0))
-            :   new BERTaggedObject(false, BERTags.APPLICATION, tagNo, BERFactory.createSequence(contentsElements));
+        super(taggedObject);
     }
 }
