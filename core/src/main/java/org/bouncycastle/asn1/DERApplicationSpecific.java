@@ -62,11 +62,6 @@ public class DERApplicationSpecific
         super(taggedObject);
     }
 
-    String getASN1Encoding()
-    {
-        return ASN1Encoding.DER;
-    }
-
     ASN1Primitive toDERObject()
     {
         return this;

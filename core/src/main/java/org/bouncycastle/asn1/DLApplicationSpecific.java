@@ -62,11 +62,6 @@ public class DLApplicationSpecific
         super(taggedObject);
     }
 
-    String getASN1Encoding()
-    {
-        return ASN1Encoding.DL;
-    }
-
     ASN1Primitive toDLObject()
     {
         return this;

@@ -17,7 +17,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTCTime;
-import org.bouncycastle.asn1.BERApplicationSpecific;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERSet;
@@ -101,6 +101,21 @@ public class ASN1Dump
                 }
             }
         }
+        else if (obj instanceof ASN1ApplicationSpecific)
+        {
+            if (obj instanceof DERApplicationSpecific)
+            {
+                buf.append(outputApplicationSpecific("DER", indent, verbose, obj, nl));
+            }
+            else if (obj instanceof DLApplicationSpecific)
+            {
+                buf.append(outputApplicationSpecific("", indent, verbose, obj, nl));
+            }
+            else
+            {
+                buf.append(outputApplicationSpecific("BER", indent, verbose, obj, nl));
+            }
+        }
         else if (obj instanceof ASN1TaggedObject)
         {
             String          tab = indent + TAB;
@@ -108,17 +123,16 @@ public class ASN1Dump
             buf.append(indent);
             if (obj instanceof BERTaggedObject)
             {
-                buf.append("BER Tagged [");
+                buf.append("BER Tagged ");
             }
             else
             {
-                buf.append("Tagged [");
+                buf.append("Tagged ");
             }
 
             ASN1TaggedObject o = (ASN1TaggedObject)obj;
 
-            buf.append(getTagText(o));
-            buf.append(']');
+            buf.append(ASN1Util.getTagText(o));
 
             if (!o.isExplicit())
             {
@@ -256,18 +270,6 @@ public class ASN1Dump
         {
             buf.append(indent + "GeneralizedTime(" + ((ASN1GeneralizedTime)obj).getTime() + ") " + nl);
         }
-        else if (obj instanceof BERApplicationSpecific)
-        {
-            buf.append(outputApplicationSpecific("BER", indent, verbose, obj, nl));
-        }
-        else if (obj instanceof DERApplicationSpecific)
-        {
-            buf.append(outputApplicationSpecific("DER", indent, verbose, obj, nl));
-        }
-        else if (obj instanceof DLApplicationSpecific)
-        {
-            buf.append(outputApplicationSpecific("", indent, verbose, obj, nl));
-        }
         else if (obj instanceof ASN1Enumerated)
         {
             ASN1Enumerated en = (ASN1Enumerated) obj;
@@ -304,15 +306,17 @@ public class ASN1Dump
         ASN1ApplicationSpecific app = ASN1ApplicationSpecific.getInstance(obj);
         StringBuffer buf = new StringBuffer();
 
+        String tagText = ASN1Util.getTagText(BERTags.APPLICATION, app.getApplicationTag());
+
         if (app.isConstructed())
         {
             try
             {
                 ASN1Sequence s = ASN1Sequence.getInstance(app.getObject(BERTags.SEQUENCE));
-                buf.append(indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "]" + nl);
-                for (Enumeration e = s.getObjects(); e.hasMoreElements();)
+                buf.append(indent + type + tagText + nl);
+                for (int i = 0, count = s.size(); i < count; ++i)
                 {
-                    _dumpAsString(indent + TAB, verbose, (ASN1Primitive)e.nextElement(), buf);
+                    _dumpAsString(indent + TAB, verbose, s.getObjectAt(i).toASN1Primitive(), buf);
                 }
             }
             catch (IOException e)
@@ -322,7 +326,7 @@ public class ASN1Dump
             return buf.toString();
         }
 
-        return indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "] (" + Strings.fromByteArray(Hex.encode(app.getContents())) + ")" + nl;
+        return indent + type + tagText + " (" + Strings.fromByteArray(Hex.encode(app.getContents())) + ")" + nl;
     }
 
     /**
@@ -414,21 +418,5 @@ public class ASN1Dump
         }
 
         return buf.toString();
-    }
-
-    private static String getTagText(ASN1TaggedObject tagged)
-    {
-        int tagClass = tagged.getTagClass(), tagNo = tagged.getTagNo();
-        switch (tagClass)
-        {
-        case BERTags.APPLICATION:
-            return "APPLICATION " + tagNo;
-        case BERTags.CONTEXT_SPECIFIC:
-            return "CONTEXT " + tagNo;
-        case BERTags.PRIVATE:
-            return "PRIVATE " + tagNo;
-        default:
-            return Integer.toString(tagNo);
-        }
     }
 }

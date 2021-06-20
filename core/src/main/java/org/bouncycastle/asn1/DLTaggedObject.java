@@ -46,7 +46,7 @@ public class DLTaggedObject
         return length;
     }
 
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag, int tagClass, int tagNo) throws IOException
     {
 //        assert out.getClass().isAssignableFrom(DLOutputStream.class);
 
@@ -69,6 +69,11 @@ public class DLTaggedObject
         }
 
         primitive.encode(out.getDLSubStream(), explicit);
+    }
+
+    String getASN1Encoding()
+    {
+        return ASN1Encoding.DL;
     }
 
     ASN1Primitive toDLObject()
