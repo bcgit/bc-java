@@ -6,9 +6,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
 /**
  * <pre>
@@ -69,23 +66,6 @@ public class Signature
     {
         return choice;
     }
-
-
-    public AlgorithmIdentifier getAlgorithmIdentifier()
-    {
-        switch (choice)
-        {
-        case ecdsaNistP256Signature:
-            return new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256, value);
-        case ecdsaBrainpoolP256r1Signature:
-            return new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.brainpoolP256r1);
-        case ecdsaBrainpoolP384r1Signature:
-            return new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.brainpoolP384r1);
-        default:
-            throw new IllegalStateException("unknown choice option " + choice);
-        }
-    }
-
 
     public ASN1Encodable getValue()
     {
