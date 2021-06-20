@@ -20,7 +20,7 @@ public class DLApplicationSpecific
      */
     public DLApplicationSpecific(int tagNo, byte[] contentsOctets)
     {
-        super(new DLTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(contentsOctets)));
+        super(createPrimitive(tagNo, contentsOctets));
     }
 
     /**
@@ -79,5 +79,11 @@ public class DLApplicationSpecific
         return maybeExplicit
             ?   new DLTaggedObject(true, BERTags.APPLICATION, tagNo, contentsElements.get(0))
             :   new DLTaggedObject(false, BERTags.APPLICATION, tagNo, DLFactory.createSequence(contentsElements));
+    }
+
+    private static DLTaggedObject createPrimitive(int tagNo, byte[] contentsOctets)
+    {
+        // Note: !CONSTRUCTED => IMPLICIT
+        return new DLTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(contentsOctets));
     }
 }
