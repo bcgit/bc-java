@@ -365,6 +365,8 @@
                  <exclude name="org/bouncycastle/mime/**" />
                  <exclude name="org/bouncycastle/mail/**" />
                  <exclude name="org/bouncycastle/gpg/**" />
+                 <exclude name="org/bouncycastle/its/**" />
+                 <exclude name="org/bouncycastle/oer/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
                  <exclude name="org/bouncycastle/mozilla/**" />
@@ -743,6 +745,7 @@
                  <include name="org/bouncycastle/asn1/its/**" />
                  <include name="org/bouncycastle/asn1/smime/**" />
                  <include name="org/bouncycastle/asn1/tsp/**" />
+                 <include name="org/bouncycastle/oer/**" />
              </fileset>
         </copy>
 
@@ -786,6 +789,7 @@
                  <include name="org/bouncycastle/est/**" />
                  <include name="org/bouncycastle/cmc/**" />
                  <include name="org/bouncycastle/cert/**/*.java" />
+                 <include name="org/bouncycastle/its/**/*.java" />
                  <include name="org/bouncycastle/mime/**/*.java" />
                  <include name="org/bouncycastle/mozilla/**/*.java" />
                  <include name="org/bouncycastle/openssl/**/*.java" />
