@@ -20,7 +20,7 @@ public class DERApplicationSpecific
      */
     public DERApplicationSpecific(int tagNo, byte[] contentsOctets)
     {
-        super(createPrimitive(tagNo, contentsOctets));
+        super(new DERTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(contentsOctets)));
     }
 
     /**
@@ -54,7 +54,7 @@ public class DERApplicationSpecific
      */
     public DERApplicationSpecific(int tagNo, ASN1EncodableVector contentsElements)
     {
-        super(createConstructed(tagNo, contentsElements));
+        super(new DERTaggedObject(false, BERTags.APPLICATION, tagNo, DERFactory.createSequence(contentsElements)));
     }
 
     DERApplicationSpecific(ASN1TaggedObject taggedObject)
@@ -70,20 +70,5 @@ public class DERApplicationSpecific
     ASN1Primitive toDLObject()
     {
         return this;
-    }
-
-    private static DERTaggedObject createConstructed(int tagNo, ASN1EncodableVector contentsElements)
-    {
-        boolean maybeExplicit = (contentsElements.size() == 1);
-
-        return maybeExplicit
-            ?   new DERTaggedObject(true, BERTags.APPLICATION, tagNo, contentsElements.get(0))
-            :   new DERTaggedObject(false, BERTags.APPLICATION, tagNo, DERFactory.createSequence(contentsElements));
-    }
-
-    private static DERTaggedObject createPrimitive(int tagNo, byte[] contentsOctets)
-    {
-        // Note: !CONSTRUCTED => IMPLICIT
-        return new DERTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(contentsOctets));
     }
 }
