@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.util.BigIntegers;
@@ -214,17 +215,21 @@ public class OEROutputStream
             }
             else if (item instanceof ASN1TaggedObject)
             {
-                //
-                // Context specific tag prefix.
-                //
-                tag = ((ASN1TaggedObject)item).getTagNo();
-                bb.writeBit(1).writeBit(0);
-                item = ((ASN1TaggedObject)item).getObject();
+                ASN1TaggedObject taggedObject = (ASN1TaggedObject)item;
 
+                //
+                // Tag prefix.
+                //
+                int tagClass = taggedObject.getTagClass(); 
+                bb.writeBit(tagClass & BERTags.CONTEXT_SPECIFIC)
+                  .writeBit(tagClass & BERTags.APPLICATION);
+
+                tag = taggedObject.getTagNo();
+                item = taggedObject.getObject();
             }
             else
             {
-                throw new IllegalStateException("only support ContextSpecific");
+                throw new IllegalStateException("only support tagged objects");
             }
 
             //
