@@ -20,7 +20,7 @@ public class DERApplicationSpecific
      */
     public DERApplicationSpecific(int tagNo, byte[] contentsOctets)
     {
-        super(new DERTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(contentsOctets)));
+        super(createPrimitive(tagNo, contentsOctets));
     }
 
     /**
@@ -84,5 +84,11 @@ public class DERApplicationSpecific
         return maybeExplicit
             ?   new DERTaggedObject(true, BERTags.APPLICATION, tagNo, contentsElements.get(0))
             :   new DERTaggedObject(false, BERTags.APPLICATION, tagNo, DERFactory.createSequence(contentsElements));
+    }
+
+    private static DERTaggedObject createPrimitive(int tagNo, byte[] contentsOctets)
+    {
+        // Note: !CONSTRUCTED => IMPLICIT
+        return new DERTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(contentsOctets));
     }
 }
