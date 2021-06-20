@@ -102,7 +102,7 @@ public class DERPrivateTest
             fail("implicit encoding failed");
         }
 
-        ASN1Integer recVal = ASN1Integer.getInstance(tagged, false);
+        ASN1Integer recVal = (ASN1Integer)tagged.getBaseUniversal(false, BERTags.INTEGER);
 
         if (!value.equals(recVal))
         {

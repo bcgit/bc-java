@@ -45,11 +45,6 @@ public class BERApplicationSpecific
         super(createConstructed(tagNo, contentsElements));
     }
 
-    String getASN1Encoding()
-    {
-        return ASN1Encoding.BER;
-    }
-
     private static BERTaggedObject createConstructed(int tagNo, ASN1EncodableVector contentsElements)
     {
         boolean maybeExplicit = (contentsElements.size() == 1);

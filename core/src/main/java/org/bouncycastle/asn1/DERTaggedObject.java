@@ -51,7 +51,7 @@ public class DERTaggedObject
         return length;
     }
 
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag, int tagClass, int tagNo) throws IOException
     {
 //      assert out.getClass().isAssignableFrom(DEROutputStream.class);
 
@@ -74,6 +74,11 @@ public class DERTaggedObject
         }
 
         primitive.encode(out.getDERSubStream(), explicit);
+    }
+
+    String getASN1Encoding()
+    {
+        return ASN1Encoding.DER;
     }
 
     ASN1Primitive toDERObject()

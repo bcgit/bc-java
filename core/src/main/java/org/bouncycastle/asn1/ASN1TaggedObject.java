@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
@@ -154,21 +156,111 @@ public abstract class ASN1TaggedObject
     }
 
     /**
+     * Return the contents of this object as a byte[]
+     *
+     * @return the encoded contents of the object.
+     */
+    // TODO Need this public if/when ASN1ApplicationSpecific extends ASN1TaggedObject
+    byte[] getContents()
+    {
+        try
+        {
+            byte[] baseEncoding = obj.toASN1Primitive().getEncoded(getASN1Encoding());
+            if (isExplicit())
+            {
+                return baseEncoding;
+            }
+
+            ByteArrayInputStream input = new ByteArrayInputStream(baseEncoding);
+            int tag = input.read();
+            ASN1InputStream.readTagNumber(input, tag);
+            int length = ASN1InputStream.readLength(input, input.available(), false);
+            int remaining = input.available();
+
+            // For indefinite form, account for end-of-contents octets
+            int contentsLength = length < 0 ? remaining - 2 : remaining;
+            if (contentsLength < 0)
+            {
+                throw new IllegalStateException();
+            }
+
+            byte[] contents = new byte[contentsLength];
+            System.arraycopy(baseEncoding, baseEncoding.length - remaining, contents, 0, contentsLength);
+            return contents;
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
      * Return whatever was following the tag.
      * <p>
-     * Note: tagged objects are generally context dependent if you're
-     * trying to extract a tagged object you should be going via the
-     * appropriate getInstance method.
+     * Note: tagged objects are generally context dependent. If you're trying to
+     * extract a tagged object you should be going via the appropriate getInstance
+     * method.
+     * 
+     * @deprecated Tagged objects now include the {@link #getTagClass() tag class}.
+     *             This method will raise an exception if it is not
+     *             {@link BERTags#CONTEXT_SPECIFIC}. Use
+     *             {@link #getBaseUniversal(boolean, int)} only after confirming the
+     *             expected tag class.
      */
     public ASN1Primitive getObject()
     {
+        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
+        {
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
+        }
+
         return obj.toASN1Primitive();
     }
 
     /**
-     * Return the object held in this tagged object as a parser assuming it has
-     * the type of the passed in tag. If the object doesn't have a parser
-     * associated with it, the base object is returned.
+     * Note: tagged objects are generally context dependent. Before trying to
+     * extract a tagged object this way, make sure you have checked that both the
+     * {@link #getTagClass() tag class} and {@link #getTagNo() tag number} match
+     * what you are looking for.
+     * 
+     * @param declaredExplicit Whether the tagged type for this object was declared
+     *                         EXPLICIT.
+     * @param tagNo            The universal {@link BERTags tag number} of the
+     *                         expected base object.
+     */
+    public ASN1Primitive getBaseUniversal(boolean declaredExplicit, int tagNo) throws IOException
+    {
+        if (tagNo < 1 || tagNo >= 0x1F)
+        {
+            throw new IOException("unsupported tag number");
+        }
+
+        if (declaredExplicit)
+        {
+            if (!isExplicit())
+            {
+                throw new IllegalArgumentException("object implicit - explicit expected.");
+            }
+
+            return obj.toASN1Primitive();
+        }
+
+        // TODO If this wasn't a parsed object AND it's marked explicit, this should be an error
+
+        // Handle implicit objects generically by re-encoding with new tag
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        ASN1OutputStream output = ASN1OutputStream.create(buf, getASN1Encoding());
+        encode(output, true, BERTags.UNIVERSAL, tagNo);
+        output.flushInternal();
+
+        byte[] encoding = buf.toByteArray();
+
+        return ASN1Primitive.fromByteArray(encoding);
+    }
+
+    /**
+     * @deprecated See {@link ASN1TaggedObjectParser#getObjectParser(int, boolean)}.
      */
     public ASN1Encodable getObjectParser(int tag, boolean isExplicit) throws IOException
     {
@@ -182,6 +274,7 @@ public abstract class ASN1TaggedObject
 
     public ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException
     {
+        // TODO These method use getInstance that should only work for BERTags.CONTEXT_SPECIFIC
         switch (baseTagNo)
         {
         case BERTags.SET:
@@ -192,18 +285,22 @@ public abstract class ASN1TaggedObject
             return ASN1OctetString.getInstance(this, declaredExplicit).parser();
         }
 
-        if (declaredExplicit)
-        {
-            return getObject();
-        }
-
-        throw new ASN1Exception("implicit tagging not implemented for tag: " + baseTagNo);
+        return getBaseUniversal(declaredExplicit, baseTagNo);
     }
 
     public final ASN1Primitive getLoadedObject()
     {
         return this;
     }
+
+    final void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    {
+        encode(out, withTag, getTagClass(), getTagNo());
+    }
+
+    abstract void encode(ASN1OutputStream out, boolean withTag, int tagClass, int tagNo) throws IOException;
+
+    abstract String getASN1Encoding();
 
     ASN1Primitive toDERObject()
     {
