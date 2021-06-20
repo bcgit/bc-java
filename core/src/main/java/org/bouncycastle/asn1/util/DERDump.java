@@ -32,10 +32,6 @@ public class DERDump
     public static String dumpAsString(
         ASN1Encodable obj)
     {
-        StringBuffer buf = new StringBuffer();
-
-        _dumpAsString("", false, obj.toASN1Primitive(), buf);
-
-        return buf.toString();
+        return dumpAsString(obj.toASN1Primitive());
     }
 }
