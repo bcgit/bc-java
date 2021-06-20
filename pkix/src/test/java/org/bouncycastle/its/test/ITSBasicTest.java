@@ -5,9 +5,7 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
@@ -21,7 +19,6 @@ import org.bouncycastle.its.bc.BcITSContentVerifierProvider;
 import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.oer.IEEE1609dot2;
-import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.encoders.Hex;
 
 public class ITSBasicTest
@@ -60,13 +57,13 @@ public class ITSBasicTest
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
-        ITSCertificateBuilder bldr = new ITSCertificateBuilder(subject.toASN1Structure().getCertificateBase().getToBeSignedCertificate(), new JcaDigestCalculatorProviderBuilder().build().get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
+        ITSCertificateBuilder bldr = new ITSCertificateBuilder(subject.toASN1Structure().getCertificateBase().getToBeSignedCertificate());
         BcITSContentSigner signer = new BcITSContentSigner((ECPrivateKeyParameters)kp.getPrivate(), issuer);
 
         ITSCertificate genCert = bldr.build(signer);
 
         assertEquals(subject.getIssuer(), genCert.getIssuer());
-//   TODO: signature creation confirmed.
+//   TODO: signature creation is confirmed, but need a way of generating root certificate
 //        BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(issuer);
 //        boolean valid = genCert.isSignatureValid(provider);
 //        TestCase.assertTrue(valid);
