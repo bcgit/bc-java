@@ -30,14 +30,20 @@ public class DERTaggedObject
         super(explicit, tagClass, tagNo, obj);
     }
 
+    DERTaggedObject(int explicitness, int tagClass, int tagNo, ASN1Encodable obj)
+    {
+        super(explicitness, tagClass, tagNo, obj);
+    }
+
     boolean isConstructed()
     {
-        return explicit || obj.toASN1Primitive().toDERObject().isConstructed();
+        return isExplicit() || obj.toASN1Primitive().toDERObject().isConstructed();
     }
 
     int encodedLength(boolean withTag) throws IOException
     {
         ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+        boolean explicit = isExplicit();
 
         int length = primitive.encodedLength(explicit);
 
@@ -56,6 +62,7 @@ public class DERTaggedObject
 //      assert out.getClass().isAssignableFrom(DEROutputStream.class);
 
         ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+        boolean explicit = isExplicit();
 
         if (withTag)
         {

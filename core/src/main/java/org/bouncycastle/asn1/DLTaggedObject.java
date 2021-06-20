@@ -25,14 +25,20 @@ public class DLTaggedObject
         super(explicit, tagClass, tagNo, obj);
     }
 
+    DLTaggedObject(int explicitness, int tagClass, int tagNo, ASN1Encodable obj)
+    {
+        super(explicitness, tagClass, tagNo, obj);
+    }
+
     boolean isConstructed()
     {
-        return explicit || obj.toASN1Primitive().toDLObject().isConstructed();
+        return isExplicit() || obj.toASN1Primitive().toDLObject().isConstructed();
     }
 
     int encodedLength(boolean withTag) throws IOException
     {
         ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
+        boolean explicit = isExplicit();
 
         int length = primitive.encodedLength(explicit);
 
@@ -51,6 +57,7 @@ public class DLTaggedObject
 //        assert out.getClass().isAssignableFrom(DLOutputStream.class);
 
         ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
+        boolean explicit = isExplicit();
 
         if (withTag)
         {

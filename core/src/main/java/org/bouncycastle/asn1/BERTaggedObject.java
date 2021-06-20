@@ -43,14 +43,20 @@ public class BERTaggedObject
         super(explicit, tagClass, tagNo, obj);
     }
 
+    BERTaggedObject(int explicitness, int tagClass, int tagNo, ASN1Encodable obj)
+    {
+        super(explicitness, tagClass, tagNo, obj);
+    }
+
     boolean isConstructed()
     {
-        return explicit || obj.toASN1Primitive().isConstructed();
+        return isExplicit() || obj.toASN1Primitive().isConstructed();
     }
 
     int encodedLength(boolean withTag) throws IOException
     {
         ASN1Primitive primitive = obj.toASN1Primitive();
+        boolean explicit = isExplicit();
 
         int length = primitive.encodedLength(explicit);
 
@@ -69,6 +75,7 @@ public class BERTaggedObject
 //        assert out.getClass().isAssignableFrom(ASN1OutputStream.class);
 
         ASN1Primitive primitive = obj.toASN1Primitive();
+        boolean explicit = isExplicit();
 
         if (withTag)
         {
