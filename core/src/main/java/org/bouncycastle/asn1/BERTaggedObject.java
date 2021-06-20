@@ -13,6 +13,8 @@ public class BERTaggedObject
     /**
      * create an implicitly tagged object that contains a zero
      * length sequence.
+     * 
+     * @deprecated Will be removed.
      */
     public BERTaggedObject(int tagNo)
     {
@@ -26,6 +28,11 @@ public class BERTaggedObject
     public BERTaggedObject(int tagNo, ASN1Encodable obj)
     {
         super(true, tagNo, obj);
+    }
+
+    public BERTaggedObject(int tagClass, int tagNo, ASN1Encodable obj)
+    {
+        super(true, tagClass, tagNo, obj);
     }
 
     /**
