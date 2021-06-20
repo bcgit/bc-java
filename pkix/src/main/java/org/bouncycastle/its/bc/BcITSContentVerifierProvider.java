@@ -3,10 +3,6 @@ package org.bouncycastle.its.bc;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
@@ -20,63 +16,43 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.its.ITSCertificate;
-import org.bouncycastle.its.ITSContentVerifierProvider;
+import org.bouncycastle.its.operator.ITSContentVerifierProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.oer.its.EccCurvePoint;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.EccP384CurvePoint;
-import org.bouncycastle.oer.its.EcdsaP256Signature;
-import org.bouncycastle.oer.its.EcdsaP384Signature;
 import org.bouncycastle.oer.its.PublicVerificationKey;
-import org.bouncycastle.oer.its.Signature;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
-import org.bouncycastle.util.BigIntegers;
 
 public class BcITSContentVerifierProvider
     implements ITSContentVerifierProvider
 {
     private final ITSCertificate issuer;
     private final byte[] parentData;
+    private final AlgorithmIdentifier digestAlgo;
+    private final ECPublicKeyParameters pubParams;
+    private final int sigChoice;
 
     public BcITSContentVerifierProvider(ITSCertificate issuer)
         throws IOException
     {
         this.issuer = issuer;
         this.parentData = issuer.getEncoded();
-    }
-
-    public ITSCertificate getAssociatedCertificate()
-    {
-        return issuer;
-    }
-
-    public boolean hasAssociatedCertificate()
-    {
-        return issuer != null;
-    }
-
-    @Override
-    public ContentVerifier get(final AlgorithmIdentifier verifierAlgorithmIdentifier)
-        throws OperatorCreationException
-    {
-
-        // Get Issuer public key
-
         ToBeSignedCertificate toBeSignedCertificate =
             issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate();
         VerificationKeyIndicator vki = toBeSignedCertificate.getVerificationKeyIndicator();
-        final AlgorithmIdentifier digestAlgo;
-        final ECPublicKeyParameters pubParams;
 
         if (vki.getObject() instanceof PublicVerificationKey)
         {
             PublicVerificationKey pvi = PublicVerificationKey.getInstance(vki.getObject());
             X9ECParameters params;
+
+            sigChoice = pvi.getChoice();
 
             switch (pvi.getChoice())
             {
@@ -152,100 +128,93 @@ public class BcITSContentVerifierProvider
                     params.getN(),
                     params.getH(),
                     params.getSeed()));
-
-            final Digest digest = BcDefaultDigestProvider.INSTANCE.get(digestAlgo);
-
-            final byte[] parentDigest = new byte[digest.getDigestSize()];
-
-            digest.update(parentData, 0, parentData.length);
-
-            digest.doFinal(parentDigest, 0);
-
-            final OutputStream os = new OutputStream()
-            {
-                @Override
-                public void write(int b)
-                    throws IOException
-                {
-                    digest.update((byte)b);
-                }
-
-                @Override
-                public void write(byte[] b)
-                    throws IOException
-                {
-                    digest.update(b, 0, b.length);
-                }
-
-                @Override
-                public void write(byte[] b, int off, int len)
-                    throws IOException
-                {
-                    digest.update(b, off, len);
-                }
-            };
-
-            return new ContentVerifier()
-            {
-                final DSADigestSigner signer = new DSADigestSigner(new ECDSASigner(),
-                    BcDefaultDigestProvider.INSTANCE.get(digestAlgo));
-
-                public AlgorithmIdentifier getAlgorithmIdentifier()
-                {
-                    return verifierAlgorithmIdentifier;
-                }
-
-                public OutputStream getOutputStream()
-                {
-                    return os;
-                }
-                
-                public boolean verify(byte[] expected)
-                {
-                    Signature signature = Signature.getInstance(expected);
-
-                    byte[] r;
-                    byte[] s;
-                    if (signature.getChoice() == Signature.ecdsaNistP256Signature || signature.getChoice() == Signature.ecdsaBrainpoolP256r1Signature)
-                    {
-                        EcdsaP256Signature sig = EcdsaP256Signature.getInstance(signature.getValue());
-                        r = ASN1OctetString.getInstance(sig.getrSig().getValue()).getOctets();
-                        s = sig.getsSig().getOctets();
-                    }
-                    else
-                    {
-                        EcdsaP384Signature sig = EcdsaP384Signature.getInstance(signature.getValue());
-                        r = ASN1OctetString.getInstance(sig.getrSig().getValue()).getOctets();
-                        s = sig.getsSig().getOctets();
-                    }
-                    byte[] enc;
-                    try
-                    {
-                        enc = new DERSequence(new ASN1Encodable[] { new ASN1Integer(BigIntegers.fromUnsignedByteArray(r)),
-                            new ASN1Integer(BigIntegers.fromUnsignedByteArray(s)) }).getEncoded();
-                    }
-                    catch (IOException ioException)
-                    {
-                        throw new RuntimeException("der encoding r & s");
-                    }
-
-                    byte[] clientCertDigest = new byte[digest.getDigestSize()];
-
-                    digest.doFinal(clientCertDigest, 0);
-
-                    signer.init(false, pubParams);
-
-                    signer.update(clientCertDigest, 0, clientCertDigest.length);
-                    
-                    signer.update(parentDigest, 0, parentDigest.length);
-
-                    return signer.verifySignature(enc);
-                }
-            };
         }
         else
         {
             throw new IllegalStateException("not public verification key");
         }
+    }
+
+    public ITSCertificate getAssociatedCertificate()
+    {
+        return issuer;
+    }
+
+    public boolean hasAssociatedCertificate()
+    {
+        return issuer != null;
+    }
+
+    @Override
+    public ContentVerifier get(final int verifierAlgorithmIdentifier)
+        throws OperatorCreationException
+    {
+        if (sigChoice != verifierAlgorithmIdentifier)
+        {
+            throw new OperatorCreationException("wrong verifier for algorithm: " + verifierAlgorithmIdentifier);
+        }
+        
+        final Digest digest = BcDefaultDigestProvider.INSTANCE.get(digestAlgo);
+
+        final byte[] parentDigest = new byte[digest.getDigestSize()];
+
+        digest.update(parentData, 0, parentData.length);
+
+        digest.doFinal(parentDigest, 0);
+
+        final OutputStream os = new OutputStream()
+        {
+            @Override
+            public void write(int b)
+                throws IOException
+            {
+                digest.update((byte)b);
+            }
+
+            @Override
+            public void write(byte[] b)
+                throws IOException
+            {
+                digest.update(b, 0, b.length);
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len)
+                throws IOException
+            {
+                digest.update(b, off, len);
+            }
+        };
+
+        return new ContentVerifier()
+        {
+            final DSADigestSigner signer = new DSADigestSigner(new ECDSASigner(),
+                BcDefaultDigestProvider.INSTANCE.get(digestAlgo));
+
+            public AlgorithmIdentifier getAlgorithmIdentifier()
+            {
+                return null;
+            }
+
+            public OutputStream getOutputStream()
+            {
+                return os;
+            }
+
+            public boolean verify(byte[] expected)
+            {
+                byte[] clientCertDigest = new byte[digest.getDigestSize()];
+
+                digest.doFinal(clientCertDigest, 0);
+
+                signer.init(false, pubParams);
+
+                signer.update(clientCertDigest, 0, clientCertDigest.length);
+
+                signer.update(parentDigest, 0, parentDigest.length);
+
+                return signer.verifySignature(expected);
+            }
+        };
     }
 }

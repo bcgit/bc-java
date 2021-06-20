@@ -3,7 +3,8 @@ package org.bouncycastle.its;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.its.operator.ECDSAEncoder;
+import org.bouncycastle.its.operator.ITSContentVerifierProvider;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.IssuerIdentifier;
@@ -27,15 +28,10 @@ public class ITSCertificate
         return certificate.getCertificateBase().getIssuer();
     }
 
-    public AlgorithmIdentifier getSignatureAlgorithmIdentifier()
-    {
-        return certificate.getCertificateBase().getSignature().getAlgorithmIdentifier();
-    }
-
     public boolean isSignatureValid(ITSContentVerifierProvider verifierProvider)
         throws Exception
     {
-        ContentVerifier contentVerifier = verifierProvider.get(certificate.getCertificateBase().getSignature().getAlgorithmIdentifier());
+        ContentVerifier contentVerifier = verifierProvider.get(certificate.getCertificateBase().getSignature().getChoice());
 
         OutputStream verOut = contentVerifier.getOutputStream();
 
@@ -47,7 +43,7 @@ public class ITSCertificate
         
         Signature sig = certificate.getCertificateBase().getSignature();
 
-        return contentVerifier.verify(sig.getEncoded());
+        return contentVerifier.verify(ECDSAEncoder.toX962(sig));
     }
 
     public Certificate toASN1Structure()
