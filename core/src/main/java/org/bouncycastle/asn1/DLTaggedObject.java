@@ -10,6 +10,16 @@ import java.io.IOException;
 public class DLTaggedObject
     extends ASN1TaggedObject
 {
+    public DLTaggedObject(int tagNo, ASN1Encodable encodable)
+    {
+        super(true, tagNo, encodable);
+    }
+
+    public DLTaggedObject(int tagClass, int tagNo, ASN1Encodable encodable)
+    {
+        super(true, tagClass, tagNo, encodable);
+    }
+
     /**
      * @param explicit true if an explicitly tagged object.
      * @param tagNo the tag number for this object.
