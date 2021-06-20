@@ -258,11 +258,11 @@ public abstract class ASN1TaggedObject
      * @param tagNo            The universal {@link BERTags tag number} of the
      *                         expected base object.
      */
-    public ASN1Primitive getBaseUniversal(boolean declaredExplicit, int tagNo) throws IOException
+    public ASN1Primitive getBaseUniversal(boolean declaredExplicit, int tagNo)
     {
         if (tagNo < 1 || tagNo >= 0x1F)
         {
-            throw new IOException("unsupported tag number");
+            throw new IllegalArgumentException("unsupported tag number: " + tagNo);
         }
 
         if (declaredExplicit)
@@ -279,14 +279,21 @@ public abstract class ASN1TaggedObject
 
         // Handle implicit objects generically by re-encoding with new tag
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        ASN1OutputStream output = ASN1OutputStream.create(buf, getASN1Encoding());
-        encode(output, true, BERTags.UNIVERSAL, tagNo);
-        output.flushInternal();
-
-        byte[] encoding = buf.toByteArray();
-
-        return ASN1Primitive.fromByteArray(encoding);
+        try
+        {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            ASN1OutputStream output = ASN1OutputStream.create(buf, getASN1Encoding());
+            encode(output, true, BERTags.UNIVERSAL, tagNo);
+            output.flushInternal();
+    
+            byte[] encoding = buf.toByteArray();
+    
+            return ASN1Primitive.fromByteArray(encoding);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("failed to re-tag implicit object", e);
+        }
     }
 
     /**
