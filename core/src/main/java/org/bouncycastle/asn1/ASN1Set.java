@@ -98,33 +98,13 @@ public abstract class ASN1Set
     extends ASN1Primitive
     implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
-    static class TYPE
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Set.class, BERTags.SET)
     {
-        static ASN1Set checkedCast(ASN1Primitive primitive)
-        {
-            if (primitive instanceof ASN1Set)
-            {
-                return (ASN1Set)primitive;
-            }
-
-            throw new IllegalStateException("unexpected object: " + primitive.getClass().getName());
-        }
-
-        static ASN1Set fromByteArray(byte[] bytes) throws IOException
-        {
-            return (ASN1Set)ASN1Primitive.fromByteArray(bytes);
-        }
-
-        static ASN1Set fromImplicitPrimitive(DEROctetString octetString)
-        {
-            throw new IllegalStateException("unexpected implicit primitive encoding");
-        }
-
-        static ASN1Set fromImplicitConstructed(ASN1Sequence sequence)
+        ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
         {
             return sequence.toASN1Set();
         }
-    }
+    };
 
     /**
      * return an ASN1Set from the given object.
@@ -152,7 +132,7 @@ public abstract class ASN1Set
         {
             try
             {
-                return TYPE.fromByteArray((byte[])obj);
+                return (ASN1Set)TYPE.fromByteArray((byte[])obj);
             }
             catch (IOException e)
             {

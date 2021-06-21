@@ -100,33 +100,18 @@ public abstract class ASN1OctetString
     extends ASN1Primitive
     implements ASN1OctetStringParser
 {
-    static class TYPE
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1OctetString.class, BERTags.OCTET_STRING)
     {
-        static ASN1OctetString checkedCast(ASN1Primitive primitive)
-        {
-            if (primitive instanceof ASN1OctetString)
-            {
-                return (ASN1OctetString)primitive;
-            }
-
-            throw new IllegalStateException("unexpected object: " + primitive.getClass().getName());
-        }
-
-        static ASN1OctetString fromByteArray(byte[] bytes) throws IOException
-        {
-            return (ASN1OctetString)ASN1Primitive.fromByteArray(bytes);
-        }
-
-        static ASN1OctetString fromImplicitPrimitive(DEROctetString octetString)
+        ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
             return octetString;
         }
 
-        static ASN1OctetString fromImplicitConstructed(ASN1Sequence sequence)
+        ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
         {
             return sequence.toASN1OctetString();
         }
-    }
+    };
 
     /**
      * return an Octet String from a tagged object.
@@ -172,7 +157,7 @@ public abstract class ASN1OctetString
         {
             try
             {
-                return TYPE.fromByteArray((byte[])obj);
+                return (ASN1OctetString)TYPE.fromByteArray((byte[])obj);
             }
             catch (IOException e)
             {
