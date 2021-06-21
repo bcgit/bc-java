@@ -98,8 +98,33 @@ public abstract class ASN1Set
     extends ASN1Primitive
     implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
-    protected final ASN1Encodable[] elements;
-    protected final boolean isSorted;
+    static class TYPE
+    {
+        static ASN1Set checkedCast(ASN1Primitive primitive)
+        {
+            if (primitive instanceof ASN1Set)
+            {
+                return (ASN1Set)primitive;
+            }
+
+            throw new IllegalStateException("unexpected object: " + primitive.getClass().getName());
+        }
+
+        static ASN1Set fromByteArray(byte[] bytes) throws IOException
+        {
+            return (ASN1Set)ASN1Primitive.fromByteArray(bytes);
+        }
+
+        static ASN1Set fromImplicitPrimitive(DEROctetString octetString)
+        {
+            throw new IllegalStateException("unexpected implicit primitive encoding");
+        }
+
+        static ASN1Set fromImplicitConstructed(ASN1Sequence sequence)
+        {
+            return sequence.toASN1Set();
+        }
+    }
 
     /**
      * return an ASN1Set from the given object.
@@ -108,35 +133,30 @@ public abstract class ASN1Set
      * @exception IllegalArgumentException if the object cannot be converted.
      * @return an ASN1Set instance, or null.
      */
-    public static ASN1Set getInstance(
-        Object  obj)
+    public static ASN1Set getInstance(Object obj)
     {
         if (obj == null || obj instanceof ASN1Set)
         {
             return (ASN1Set)obj;
         }
-        else if (obj instanceof ASN1SetParser)
+//      else if (obj instanceof ASN1SetParser)
+        else if (obj instanceof ASN1Encodable)
         {
-            return ASN1Set.getInstance(((ASN1SetParser)obj).toASN1Primitive());
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+            if (primitive instanceof ASN1Set)
+            {
+                return (ASN1Set)primitive;
+            }
         }
         else if (obj instanceof byte[])
         {
             try
             {
-                return ASN1Set.getInstance(ASN1Primitive.fromByteArray((byte[])obj));
+                return TYPE.fromByteArray((byte[])obj);
             }
             catch (IOException e)
             {
                 throw new IllegalArgumentException("failed to construct set from byte[]: " + e.getMessage());
-            }
-        }
-        else if (obj instanceof ASN1Encodable)
-        {
-            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
-
-            if (primitive instanceof ASN1Set)
-            {
-                return (ASN1Set)primitive;
             }
         }
 
@@ -160,58 +180,18 @@ public abstract class ASN1Set
      *          be converted.
      * @return an ASN1Set instance.
      */
-    public static ASN1Set getInstance(
-        ASN1TaggedObject    taggedObject,
-        boolean             explicit)
+    public static ASN1Set getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (explicit)
+        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
         {
-            if (!taggedObject.isExplicit())
-            {
-                throw new IllegalArgumentException("object implicit - explicit expected.");
-            }
-
-            return getInstance(taggedObject.getObject());
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
         }
 
-        ASN1Primitive o = taggedObject.getObject();
-
-        /*
-         * constructed object which appears to be explicitly tagged and it's really implicit means
-         * we have to add the surrounding set.
-         */
-        if (taggedObject.isExplicit())
-        {
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return new BERSet(o);
-            }
-
-            return new DLSet(o);
-        }
-
-        if (o instanceof ASN1Set)
-        {
-            ASN1Set s = (ASN1Set)o;
-
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return s;
-            }
-
-            return (ASN1Set)s.toDLObject();
-        }
-
-        /*
-         * in this case the parser returns a sequence, convert it into a set.
-         */
-        if (o instanceof ASN1Sequence)
-        {
-            return ((ASN1Sequence)o).toASN1Set(); 
-        }
-
-        throw new IllegalArgumentException("unknown object in getInstance: " + taggedObject.getClass().getName());
+        return (ASN1Set)taggedObject.getBaseUniversal(explicit, BERTags.SET);
     }
+
+    protected final ASN1Encodable[] elements;
+    protected final boolean isSorted;
 
     protected ASN1Set()
     {

@@ -100,7 +100,33 @@ public abstract class ASN1OctetString
     extends ASN1Primitive
     implements ASN1OctetStringParser
 {
-    byte[]  string;
+    static class TYPE
+    {
+        static ASN1OctetString checkedCast(ASN1Primitive primitive)
+        {
+            if (primitive instanceof ASN1OctetString)
+            {
+                return (ASN1OctetString)primitive;
+            }
+
+            throw new IllegalStateException("unexpected object: " + primitive.getClass().getName());
+        }
+
+        static ASN1OctetString fromByteArray(byte[] bytes) throws IOException
+        {
+            return (ASN1OctetString)ASN1Primitive.fromByteArray(bytes);
+        }
+
+        static ASN1OctetString fromImplicitPrimitive(DEROctetString octetString)
+        {
+            return octetString;
+        }
+
+        static ASN1OctetString fromImplicitConstructed(ASN1Sequence sequence)
+        {
+            return sequence.toASN1OctetString();
+        }
+    }
 
     /**
      * return an Octet String from a tagged object.
@@ -111,70 +137,14 @@ public abstract class ASN1OctetString
      * @exception IllegalArgumentException if the tagged object cannot
      *              be converted.
      */
-    public static ASN1OctetString getInstance(
-        ASN1TaggedObject    taggedObject,
-        boolean             explicit)
+    public static ASN1OctetString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (explicit)
+        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
         {
-            if (!taggedObject.isExplicit())
-            {
-                throw new IllegalArgumentException("object implicit - explicit expected.");
-            }
-
-            return getInstance(taggedObject.getObject());
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
         }
 
-        ASN1Primitive o = taggedObject.getObject();
-
-        /*
-         * constructed object which appears to be explicitly tagged and it's really implicit means
-         * we have to add the surrounding octet string.
-         */
-        if (taggedObject.isExplicit())
-        {
-            ASN1OctetString singleSegment = getInstance(o);
-
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return new BEROctetString(new ASN1OctetString[]{ singleSegment });
-            }
-
-            // TODO Should really be similar to the BERTaggedObject case above:
-//            return new DLOctetString(new ASN1OctetString[]{ singleSegment });
-            return (ASN1OctetString)new BEROctetString(new ASN1OctetString[]{ singleSegment }).toDLObject();
-        }
-
-        if (o instanceof ASN1OctetString)
-        {
-            ASN1OctetString s = (ASN1OctetString)o;
-
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return s;
-            }
-
-            return (ASN1OctetString)s.toDLObject();
-        }
-
-        /*
-         * in this case the parser returns a sequence, convert it into an octet string.
-         */
-        if (o instanceof ASN1Sequence)
-        {
-            ASN1Sequence s = (ASN1Sequence)o;
-
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return BEROctetString.fromSequence(s);
-            }
-
-            // TODO Should really be similar to the BERTaggedObject case above:
-//            return DLOctetString.fromSequence(s);
-            return (ASN1OctetString)BEROctetString.fromSequence(s).toDLObject();
-        }
-
-        throw new IllegalArgumentException("unknown object in getInstance: " + taggedObject.getClass().getName());
+        return (ASN1OctetString)taggedObject.getBaseUniversal(explicit, BERTags.OCTET_STRING);
     }
 
     /**
@@ -183,36 +153,39 @@ public abstract class ASN1OctetString
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
-    public static ASN1OctetString getInstance(
-        Object  obj)
+    public static ASN1OctetString getInstance(Object obj)
     {
         if (obj == null || obj instanceof ASN1OctetString)
         {
             return (ASN1OctetString)obj;
         }
+//      else if (obj instanceof ASN1OctetStringParser)
+        else if (obj instanceof ASN1Encodable)
+        {
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+            if (primitive instanceof ASN1OctetString)
+            {
+                return (ASN1OctetString)primitive;
+            }
+        }
         else if (obj instanceof byte[])
         {
             try
             {
-                return getInstance(fromByteArray((byte[])obj));
+                return TYPE.fromByteArray((byte[])obj);
             }
             catch (IOException e)
             {
                 throw new IllegalArgumentException("failed to construct OCTET STRING from byte[]: " + e.getMessage());
             }
         }
-        else if (obj instanceof ASN1Encodable)
-        {
-            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
-
-            if (primitive instanceof ASN1OctetString)
-            {
-                return (ASN1OctetString)primitive;
-            }
-        }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
     }
+
+    static final byte[] EMPTY_OCTETS = new byte[0];
+
+    byte[] string;
 
     /**
      * Base constructor.
