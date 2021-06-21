@@ -16,6 +16,14 @@ import java.io.IOException;
 public class ASN1Boolean
     extends ASN1Primitive
 {
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Integer.class, BERTags.INTEGER)
+    {
+        ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
+        {
+            return ASN1Boolean.fromOctetString(octetString.getOctets());
+        }
+    };
+
     private static final byte FALSE_VALUE = 0x00;
     private static final byte TRUE_VALUE = (byte)0xFF;
 
@@ -44,7 +52,7 @@ public class ASN1Boolean
             byte[] enc = (byte[])obj;
             try
             {
-                return (ASN1Boolean)fromByteArray(enc);
+                return (ASN1Boolean)TYPE.fromByteArray(enc);
             }
             catch (IOException e)
             {
@@ -78,25 +86,21 @@ public class ASN1Boolean
     /**
      * Return a Boolean from a tagged object.
      *
-     * @param obj the tagged object holding the object we want
+     * @param taggedObject the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
      * @return an ASN1Boolean instance.
      */
-    public static ASN1Boolean getInstance(ASN1TaggedObject obj, boolean explicit)
+    public static ASN1Boolean getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
+        {
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
+        }
 
-        if (explicit || o instanceof ASN1Boolean)
-        {
-            return getInstance(o);
-        }
-        else
-        {
-            return ASN1Boolean.fromOctetString(ASN1OctetString.getInstance(o).getOctets());
-        }
+        return (ASN1Boolean)taggedObject.getBaseUniversal(explicit, BERTags.BOOLEAN);
     }
 
     private ASN1Boolean(byte value)
