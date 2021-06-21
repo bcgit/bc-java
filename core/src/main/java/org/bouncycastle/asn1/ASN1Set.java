@@ -207,17 +207,7 @@ public abstract class ASN1Set
          */
         if (o instanceof ASN1Sequence)
         {
-            ASN1Sequence s = (ASN1Sequence)o;
-
-            // NOTE: Will force() a LazyEncodedSequence
-            ASN1Encodable[] elements = s.toArrayInternal();
-
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return new BERSet(false, elements);
-            }
-
-            return new DLSet(false, elements);
+            return ((ASN1Sequence)o).toASN1Set(); 
         }
 
         throw new IllegalArgumentException("unknown object in getInstance: " + taggedObject.getClass().getName());

@@ -95,6 +95,11 @@ class LazyEncodedSequence
         }
     }
 
+    ASN1Set toASN1Set()
+    {
+        return ((ASN1Sequence)toDLObject()).toASN1Set();
+    }
+
     synchronized ASN1Primitive toDERObject()
     {
         force();

@@ -131,6 +131,12 @@ public class DERSequence
         }
     }
 
+    ASN1Set toASN1Set()
+    {
+        // NOTE: DLSet is intentional, we don't want sorting
+        return new DLSet(false, toArrayInternal());
+    }
+
     ASN1Primitive toDERObject()
     {
         return this;
