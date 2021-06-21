@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
@@ -30,24 +29,35 @@ public class BEROctetString
     /**
      * Convert a vector of octet strings into a single byte string
      */
-    static private byte[] toBytes(
-        ASN1OctetString[]  octs)
+    private static byte[] toBytes(ASN1OctetString[] octs)
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        for (int i = 0; i != octs.length; i++)
+        int count = octs.length;
+        switch (count)
         {
-            try
+        case 0:
+            return EMPTY_OCTETS;
+        case 1:
+            return octs[0].getOctets();
+        default:
+        {
+            int totalOctets = 0;
+            for (int i = 0; i < count; ++i)
             {
-                bOut.write(octs[i].getOctets());
+                totalOctets += octs[i].getOctets().length;
             }
-            catch (IOException e)
-            {
-                throw new IllegalArgumentException("exception converting octets " + e.toString());
-            }
-        }
 
-        return bOut.toByteArray();
+            byte[] string = new byte[totalOctets];
+            for (int i = 0, pos = 0; i < count; ++i)
+            {
+                byte[] octets = octs[i].getOctets();
+                System.arraycopy(octets, 0, string, pos, octets.length);
+                pos += octets.length;
+            }
+
+//            assert pos == totalOctets;
+            return string;
+        }
+        }
     }
 
     /**
