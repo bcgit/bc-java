@@ -95,6 +95,11 @@ class LazyEncodedSequence
         }
     }
 
+    ASN1OctetString toASN1OctetString()
+    {
+        return ((ASN1Sequence)toDLObject()).toASN1OctetString();
+    }
+
     ASN1Set toASN1Set()
     {
         return ((ASN1Sequence)toDLObject()).toASN1Set();

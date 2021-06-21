@@ -113,6 +113,11 @@ public class BERTaggedObject
         return ASN1Encoding.BER;
     }
 
+    ASN1Sequence rebuildConstructed(ASN1Primitive primitive)
+    {
+        return new BERSequence(primitive);
+    }
+
     ASN1TaggedObject replaceTag(int tagClass, int tagNo)
     {
         return new BERTaggedObject(explicitness, tagClass, tagNo, obj);

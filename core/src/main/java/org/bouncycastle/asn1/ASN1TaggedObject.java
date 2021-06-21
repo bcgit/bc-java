@@ -39,12 +39,20 @@ public abstract class ASN1TaggedObject
         throw new IllegalArgumentException("this method not valid for implicitly tagged tagged objects");
     }
 
-    static public ASN1TaggedObject getInstance(
-        Object obj) 
+    static public ASN1TaggedObject getInstance(Object obj)
     {
         if (obj == null || obj instanceof ASN1TaggedObject) 
         {
             return (ASN1TaggedObject)obj;
+        }
+//      else if (obj instanceof ASN1TaggedObjectParser)
+        else if (obj instanceof ASN1Encodable)
+        {
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+            if (primitive instanceof ASN1TaggedObject)
+            {
+                return (ASN1TaggedObject)primitive;
+            }
         }
         else if (obj instanceof byte[])
         {
@@ -55,15 +63,6 @@ public abstract class ASN1TaggedObject
             catch (IOException e)
             {
                 throw new IllegalArgumentException("failed to construct tagged object from byte[]: " + e.getMessage());
-            }
-        }
-        else if (obj instanceof ASN1Encodable)
-        {
-            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
-
-            if (primitive instanceof ASN1TaggedObject)
-            {
-                return (ASN1TaggedObject)primitive;
             }
         }
 
@@ -324,6 +323,18 @@ public abstract class ASN1TaggedObject
                 throw new IllegalArgumentException("object implicit - explicit expected.");
             }
 
+            // TODO Should there be a fromExplicit() method on the types?
+
+            switch (tagNo)
+            {
+            case BERTags.OCTET_STRING:
+                return ASN1OctetString.TYPE.checkedCast(obj.toASN1Primitive());
+            case BERTags.SEQUENCE:
+                return ASN1Sequence.TYPE.checkedCast(obj.toASN1Primitive());
+            case BERTags.SET:
+                return ASN1Set.TYPE.checkedCast(obj.toASN1Primitive());
+            }
+
             // TODO Ideally we check the type here, based on tagNo
             return obj.toASN1Primitive();
         }
@@ -334,6 +345,66 @@ public abstract class ASN1TaggedObject
         }
 
         // TODO Type-specific optimized handling without re-encoding
+        switch (tagNo)
+        {
+        case BERTags.OCTET_STRING:
+        {
+            ASN1Primitive primitive = obj.toASN1Primitive();
+            switch (explicitness)
+            {
+            case PARSED_EXPLICIT:
+                return ASN1OctetString.TYPE.fromImplicitConstructed(rebuildConstructed(primitive));
+            case PARSED_IMPLICIT:
+            {
+                if (primitive instanceof ASN1Sequence)
+                {
+                    return ASN1OctetString.TYPE.fromImplicitConstructed((ASN1Sequence)primitive);
+                }
+                return ASN1OctetString.TYPE.fromImplicitPrimitive((DEROctetString)primitive);
+            }
+            default:
+                return ASN1OctetString.TYPE.checkedCast(primitive);
+            }
+        }
+        case BERTags.SEQUENCE:
+        {
+            ASN1Primitive primitive = obj.toASN1Primitive();
+            switch (explicitness)
+            {
+            case PARSED_EXPLICIT:
+                return ASN1Sequence.TYPE.fromImplicitConstructed(rebuildConstructed(primitive));
+            case PARSED_IMPLICIT:
+            {
+                if (primitive instanceof ASN1Sequence)
+                {
+                    return ASN1Sequence.TYPE.fromImplicitConstructed((ASN1Sequence)primitive);
+                }
+                return ASN1Sequence.TYPE.fromImplicitPrimitive((DEROctetString)primitive);
+            }
+            default:
+                return ASN1Sequence.TYPE.checkedCast(primitive);
+            }
+        }
+        case BERTags.SET:
+        {
+            ASN1Primitive primitive = obj.toASN1Primitive();
+            switch (explicitness)
+            {
+            case PARSED_EXPLICIT:
+                return ASN1Set.TYPE.fromImplicitConstructed(rebuildConstructed(primitive));
+            case PARSED_IMPLICIT:
+            {
+                if (primitive instanceof ASN1Sequence)
+                {
+                    return ASN1Set.TYPE.fromImplicitConstructed((ASN1Sequence)primitive);
+                }
+                return ASN1Set.TYPE.fromImplicitPrimitive((DEROctetString)primitive);
+            }
+            default:
+                return ASN1Set.TYPE.checkedCast(primitive);
+            }
+        }
+        }
 
         // Handle implicit objects generically by re-encoding with new tag
 
@@ -396,6 +467,8 @@ public abstract class ASN1TaggedObject
     abstract void encode(ASN1OutputStream out, boolean withTag, int tagClass, int tagNo) throws IOException;
 
     abstract String getASN1Encoding();
+
+    abstract ASN1Sequence rebuildConstructed(ASN1Primitive primitive);
 
     abstract ASN1TaggedObject replaceTag(int tagClass, int tagNo);
 

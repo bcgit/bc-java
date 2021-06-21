@@ -122,6 +122,11 @@ public class DLSequence
         }
     }
 
+    ASN1OctetString toASN1OctetString()
+    {
+        return (ASN1OctetString)BEROctetString.fromSequence(this).toDLObject();
+    }
+
     ASN1Set toASN1Set()
     {
         return new DLSet(false, toArrayInternal());

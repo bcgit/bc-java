@@ -93,6 +93,11 @@ public class DERTaggedObject
         return ASN1Encoding.DER;
     }
 
+    ASN1Sequence rebuildConstructed(ASN1Primitive primitive)
+    {
+        return new DERSequence(primitive);
+    }
+
     ASN1TaggedObject replaceTag(int tagClass, int tagNo)
     {
         return new DERTaggedObject(explicitness, tagClass, tagNo, obj);
