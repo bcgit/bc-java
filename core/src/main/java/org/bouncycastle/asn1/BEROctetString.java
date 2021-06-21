@@ -29,27 +29,27 @@ public class BEROctetString
     /**
      * Convert a vector of octet strings into a single byte string
      */
-    private static byte[] toBytes(ASN1OctetString[] octs)
+    static byte[] flattenOctetStrings(ASN1OctetString[] octetStrings)
     {
-        int count = octs.length;
+        int count = octetStrings.length;
         switch (count)
         {
         case 0:
             return EMPTY_OCTETS;
         case 1:
-            return octs[0].getOctets();
+            return octetStrings[0].getOctets();
         default:
         {
             int totalOctets = 0;
             for (int i = 0; i < count; ++i)
             {
-                totalOctets += octs[i].getOctets().length;
+                totalOctets += octetStrings[i].getOctets().length;
             }
 
             byte[] string = new byte[totalOctets];
             for (int i = 0, pos = 0; i < count; ++i)
             {
-                byte[] octets = octs[i].getOctets();
+                byte[] octets = octetStrings[i].getOctets();
                 System.arraycopy(octets, 0, string, pos, octets.length);
                 pos += octets.length;
             }
@@ -99,7 +99,7 @@ public class BEROctetString
      */
     public BEROctetString(ASN1OctetString[] octs, int segmentSize)
     {
-        this(toBytes(octs), octs, segmentSize);
+        this(flattenOctetStrings(octs), octs, segmentSize);
     }
 
     private BEROctetString(byte[] string, ASN1OctetString[] octs, int segmentSize)
@@ -233,15 +233,5 @@ public class BEROctetString
         out.write(0x00);
         out.write(0x00);
     }
-
-    static BEROctetString fromSequence(ASN1Sequence seq)
-    {
-        int count = seq.size();
-        ASN1OctetString[] v = new ASN1OctetString[count];
-        for (int i = 0; i < count; ++i)
-        {
-            v[i] = ASN1OctetString.getInstance(seq.getObjectAt(i));
-        }
-        return new BEROctetString(v);
-    }
 }
+

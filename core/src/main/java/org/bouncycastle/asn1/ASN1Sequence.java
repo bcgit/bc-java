@@ -403,4 +403,15 @@ public abstract class ASN1Sequence
     {
         return new Arrays.Iterator<ASN1Encodable>(elements);
     }
+
+    ASN1OctetString[] getConstructedOctetStrings()
+    {
+        int count = elements.length;
+        ASN1OctetString[] octetStrings = new ASN1OctetString[count];
+        for (int i = 0; i < count; ++i)
+        {
+            octetStrings[i] = ASN1OctetString.getInstance(elements[i]);
+        }
+        return octetStrings;
+    }
 }

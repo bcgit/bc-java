@@ -133,7 +133,7 @@ public class DERSequence
 
     ASN1OctetString toASN1OctetString()
     {
-        return (ASN1OctetString)BEROctetString.fromSequence(this).toDERObject();
+        return new DEROctetString(BEROctetString.flattenOctetStrings(getConstructedOctetStrings()));
     }
 
     ASN1Set toASN1Set()
