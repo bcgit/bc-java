@@ -62,6 +62,11 @@ public class BERSequence
         out.writeEncodingIL(withTag, BERTags.CONSTRUCTED | BERTags.SEQUENCE, elements);
     }
 
+    ASN1OctetString toASN1OctetString()
+    {
+        return BEROctetString.fromSequence(this);
+    }
+
     ASN1Set toASN1Set()
     {
         return new BERSet(false, toArrayInternal());

@@ -131,6 +131,11 @@ public class DERSequence
         }
     }
 
+    ASN1OctetString toASN1OctetString()
+    {
+        return (ASN1OctetString)BEROctetString.fromSequence(this).toDERObject();
+    }
+
     ASN1Set toASN1Set()
     {
         // NOTE: DLSet is intentional, we don't want sorting
