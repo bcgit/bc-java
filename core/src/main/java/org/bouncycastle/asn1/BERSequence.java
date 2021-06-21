@@ -64,7 +64,7 @@ public class BERSequence
 
     ASN1OctetString toASN1OctetString()
     {
-        return BEROctetString.fromSequence(this);
+        return new BEROctetString(getConstructedOctetStrings());
     }
 
     ASN1Set toASN1Set()
