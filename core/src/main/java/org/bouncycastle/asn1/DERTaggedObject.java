@@ -93,6 +93,11 @@ public class DERTaggedObject
         return ASN1Encoding.DER;
     }
 
+    ASN1TaggedObject replaceTag(int tagClass, int tagNo)
+    {
+        return new DERTaggedObject(explicitness, tagClass, tagNo, obj);
+    }
+
     ASN1Primitive toDERObject()
     {
         return this;

@@ -112,4 +112,9 @@ public class BERTaggedObject
     {
         return ASN1Encoding.BER;
     }
+
+    ASN1TaggedObject replaceTag(int tagClass, int tagNo)
+    {
+        return new BERTaggedObject(explicitness, tagClass, tagNo, obj);
+    }
 }
