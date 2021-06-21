@@ -42,12 +42,11 @@ public interface TlsAEADCipherImpl
      * @param input array holding input data to the cipher.
      * @param inputOffset offset into input array data starts at.
      * @param inputLength length of the input data in the array.
-     * @param extraInput extra input data to the cipher. Only allowed when encrypting.
      * @param output array to hold the cipher output.
      * @param outputOffset offset into output array to start saving output.
      * @return the amount of data written to output.
      * @throws IOException in case of failure.
      */
-    int doFinal(byte[] input, int inputOffset, int inputLength, byte[] extraInput, byte[] output, int outputOffset)
+    int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
         throws IOException;
 }

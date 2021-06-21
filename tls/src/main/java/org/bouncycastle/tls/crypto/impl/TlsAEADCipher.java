@@ -170,8 +170,10 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        int extraLength = (isTLSv13 ? 1 : 0);
+
         // TODO[tls13] If we support adding padding to TLSInnerPlaintext, this will need review
-        int encryptionLength = encryptCipher.getOutputSize(plaintextLength + (isTLSv13 ? 1 : 0));
+        int encryptionLength = encryptCipher.getOutputSize(plaintextLength + extraLength);
         int ciphertextLength = record_iv_length + encryptionLength;
 
         byte[] output = new byte[headerAllocation + ciphertextLength];
@@ -191,10 +193,13 @@ public class TlsAEADCipher
         {
             encryptCipher.init(nonce, macSize, additionalData);
 
-            byte[] extraInput = isTLSv13 ? new byte[] { (byte)contentType } : TlsUtils.EMPTY_BYTES;
+            System.arraycopy(plaintext, plaintextOffset, output, outputPos, plaintextLength);
+            if (isTLSv13)
+            {
+                output[outputPos + plaintextLength] = (byte)contentType;
+            }
 
-            outputPos += encryptCipher.doFinal(plaintext, plaintextOffset, plaintextLength, extraInput, output,
-                outputPos);
+            outputPos += encryptCipher.doFinal(output, outputPos, plaintextLength + extraLength, output, outputPos);
         }
         catch (RuntimeException e)
         {
@@ -247,8 +252,8 @@ public class TlsAEADCipher
         try
         {
             decryptCipher.init(nonce, macSize, additionalData);
-            outputPos = decryptCipher.doFinal(ciphertext, encryptionOffset, encryptionLength, TlsUtils.EMPTY_BYTES,
-                ciphertext, encryptionOffset);
+            outputPos = decryptCipher.doFinal(ciphertext, encryptionOffset, encryptionLength, ciphertext,
+                encryptionOffset);
         }
         catch (RuntimeException e)
         {
