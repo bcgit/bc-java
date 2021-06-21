@@ -24,16 +24,19 @@ public abstract class ASN1TaggedObject
     final int           tagNo;
     final ASN1Encodable obj;
 
-    static public ASN1TaggedObject getInstance(
-        ASN1TaggedObject    obj,
-        boolean             explicit)
+    public static ASN1TaggedObject getInstance(ASN1TaggedObject obj, boolean explicit)
     {
-        if (explicit)
+        if (BERTags.CONTEXT_SPECIFIC != obj.getTagClass())
         {
-            return getInstance(obj.getObject());
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
         }
 
-        throw new IllegalArgumentException("implicitly tagged tagged object");
+        if (explicit)
+        {
+            return obj.getExplicitBaseTagged();
+        }
+
+        throw new IllegalArgumentException("this method not valid for implicitly tagged tagged objects");
     }
 
     static public ASN1TaggedObject getInstance(
@@ -52,6 +55,15 @@ public abstract class ASN1TaggedObject
             catch (IOException e)
             {
                 throw new IllegalArgumentException("failed to construct tagged object from byte[]: " + e.getMessage());
+            }
+        }
+        else if (obj instanceof ASN1Encodable)
+        {
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+
+            if (primitive instanceof ASN1TaggedObject)
+            {
+                return (ASN1TaggedObject)primitive;
             }
         }
 
@@ -247,6 +259,46 @@ public abstract class ASN1TaggedObject
         return obj.toASN1Primitive();
     }
 
+    public ASN1TaggedObject getExplicitBaseTagged()
+    {
+        if (!isExplicit())
+        {
+            throw new IllegalStateException("object implicit - explicit expected.");
+        }
+
+        return checkedCast(obj.toASN1Primitive());
+    }
+
+    public ASN1TaggedObject getImplicitBaseTagged(int baseTagClass, int baseTagNo)
+    {
+        if (baseTagClass == BERTags.UNIVERSAL || (baseTagClass & BERTags.PRIVATE) != baseTagClass)
+        {
+            throw new IllegalArgumentException("invalid base tag class: " + baseTagClass);
+        }
+
+        switch (explicitness)
+        {
+        case DECLARED_EXPLICIT:
+            throw new IllegalStateException("object explicit - implicit expected.");
+
+        case DECLARED_IMPLICIT:
+        {
+            ASN1TaggedObject declared = checkedCast(obj.toASN1Primitive());
+            if (!declared.hasTag(baseTagClass, baseTagNo))
+            {
+                String expected = ASN1Util.getTagText(tagClass, tagNo);
+                String found = ASN1Util.getTagText(declared);
+                throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+            }
+            return declared;
+        }
+
+        // Parsed; return a virtual tag (i.e. that couldn't have been present in the encoding)
+        default:
+            return replaceTag(baseTagClass, baseTagNo);
+        }
+    }
+
     /**
      * Note: tagged objects are generally context dependent. Before trying to
      * extract a tagged object this way, make sure you have checked that both the
@@ -272,10 +324,16 @@ public abstract class ASN1TaggedObject
                 throw new IllegalArgumentException("object implicit - explicit expected.");
             }
 
+            // TODO Ideally we check the type here, based on tagNo
             return obj.toASN1Primitive();
         }
 
-        // TODO If this wasn't a parsed object AND it's marked explicit, this should be an error
+        if (DECLARED_EXPLICIT == explicitness)
+        {
+            throw new IllegalArgumentException("object explicit - implicit expected.");
+        }
+
+        // TODO Type-specific optimized handling without re-encoding
 
         // Handle implicit objects generically by re-encoding with new tag
 
@@ -339,6 +397,8 @@ public abstract class ASN1TaggedObject
 
     abstract String getASN1Encoding();
 
+    abstract ASN1TaggedObject replaceTag(int tagClass, int tagNo);
+
     ASN1Primitive toDERObject()
     {
         return new DERTaggedObject(explicitness, tagClass, tagNo, obj);
@@ -401,5 +461,15 @@ public abstract class ASN1TaggedObject
         default:
             return taggedObject;
         }
+    }
+
+    private static ASN1TaggedObject checkedCast(ASN1Primitive primitive)
+    {
+        if (primitive instanceof ASN1TaggedObject)
+        {
+            return (ASN1TaggedObject)primitive;
+        }
+
+        throw new IllegalStateException("unexpected object: " + primitive.getClass().getName());
     }
 }

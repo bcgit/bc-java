@@ -93,6 +93,11 @@ public class DLTaggedObject
         return ASN1Encoding.DL;
     }
 
+    ASN1TaggedObject replaceTag(int tagClass, int tagNo)
+    {
+        return new DLTaggedObject(explicitness, tagClass, tagNo, obj);
+    }
+
     ASN1Primitive toDLObject()
     {
         return this;
