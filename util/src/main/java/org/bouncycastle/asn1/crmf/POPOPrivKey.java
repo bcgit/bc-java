@@ -65,7 +65,7 @@ public class POPOPrivKey
 
     public static POPOPrivKey getInstance(ASN1TaggedObject obj, boolean explicit)
     {
-        return getInstance(ASN1TaggedObject.getInstance(obj, explicit));
+        return getInstance(ASN1TaggedObject.getInstance(obj, true));
     }
 
     public POPOPrivKey(PKMACValue agreeMac)
