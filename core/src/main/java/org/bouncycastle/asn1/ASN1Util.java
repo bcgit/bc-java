@@ -9,6 +9,11 @@ public abstract class ASN1Util
         return getTagText(taggedObject.getTagClass(), taggedObject.getTagNo());
     }
 
+    public static String getTagText(ASN1TaggedObjectParser taggedObjectParser)
+    {
+        return getTagText(taggedObjectParser.getTagClass(), taggedObjectParser.getTagNo());
+    }
+
     public static String getTagText(int tagClass, int tagNo)
     {
         switch (tagClass)
@@ -24,13 +29,45 @@ public abstract class ASN1Util
         }
     }
 
+    public static ASN1TaggedObject getExplicitBaseTagged(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
+    {
+        if (!taggedObject.hasTag(tagClass, tagNo))
+        {
+            String expected = getTagText(tagClass, tagNo);
+            String found = getTagText(taggedObject);
+            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+        }
+
+        return taggedObject.getExplicitBaseTagged();
+    }
+
+    public static ASN1TaggedObject getExplicitContextBaseTagged(ASN1TaggedObject taggedObject, int tagNo)
+    {
+        return getExplicitBaseTagged(taggedObject, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    public static ASN1TaggedObject tryGetExplicitBaseTagged(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
+    {
+        if (!taggedObject.hasTag(tagClass, tagNo))
+        {
+            return null;
+        }
+
+        return taggedObject.getExplicitBaseTagged();
+    }
+
+    public static ASN1TaggedObject tryGetExplicitContextBaseTagged(ASN1TaggedObject taggedObject, int tagNo)
+    {
+        return tryGetExplicitBaseTagged(taggedObject, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
 //    public static ASN1Encodable parseBaseObject(ASN1TaggedObjectParser taggedObjectParser, int tagClass, int tagNo,
 //        boolean declaredExplicit, int baseTagClass, int baseTagNo, boolean baseDeclaredExplicit) throws IOException
 //    {
 //        if (!taggedObjectParser.hasTag(tagClass, tagNo))
 //        {
 //            String expected = getTagText(tagClass, tagNo);
-//            String found = getTagText(taggedObjectParser.getTagClass(), taggedObjectParser.getTagNo());
+//            String found = getTagText(taggedObjectParser);
 //            throw new ASN1Exception("Expected " + expected + " tag but found " + found);
 //        }
 //
@@ -43,7 +80,7 @@ public abstract class ASN1Util
         if (!taggedObjectParser.hasTag(tagClass, tagNo))
         {
             String expected = getTagText(tagClass, tagNo);
-            String found = getTagText(taggedObjectParser.getTagClass(), taggedObjectParser.getTagNo());
+            String found = getTagText(taggedObjectParser);
             throw new ASN1Exception("Expected " + expected + " tag but found " + found);
         }
 
