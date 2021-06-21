@@ -378,6 +378,8 @@ public abstract class ASN1Sequence
         return new DLSequence(elements, false);
     }
 
+    abstract ASN1Set toASN1Set();
+
     boolean isConstructed()
     {
         return true;

@@ -61,4 +61,9 @@ public class BERSequence
     {
         out.writeEncodingIL(withTag, BERTags.CONSTRUCTED | BERTags.SEQUENCE, elements);
     }
+
+    ASN1Set toASN1Set()
+    {
+        return new BERSet(false, toArrayInternal());
+    }
 }

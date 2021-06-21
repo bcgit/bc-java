@@ -122,6 +122,11 @@ public class DLSequence
         }
     }
 
+    ASN1Set toASN1Set()
+    {
+        return new DLSet(false, toArrayInternal());
+    }
+
     ASN1Primitive toDLObject()
     {
         return this;
