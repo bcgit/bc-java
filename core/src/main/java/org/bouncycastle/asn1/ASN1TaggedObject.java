@@ -311,10 +311,7 @@ public abstract class ASN1TaggedObject
      */
     public ASN1Primitive getBaseUniversal(boolean declaredExplicit, int tagNo)
     {
-        if (tagNo < 1 || tagNo >= 0x1F)
-        {
-            throw new IllegalArgumentException("unsupported tag number: " + tagNo);
-        }
+        ASN1UniversalType universalType = ASN1UniversalTypes.get(tagNo);
 
         if (declaredExplicit)
         {
@@ -323,20 +320,13 @@ public abstract class ASN1TaggedObject
                 throw new IllegalArgumentException("object implicit - explicit expected.");
             }
 
-            // TODO Should there be a fromExplicit() method on the types?
-
-            switch (tagNo)
+            // TODO Implement all universal types, then remove this block
+            if (null == universalType)
             {
-            case BERTags.OCTET_STRING:
-                return ASN1OctetString.TYPE.checkedCast(obj.toASN1Primitive());
-            case BERTags.SEQUENCE:
-                return ASN1Sequence.TYPE.checkedCast(obj.toASN1Primitive());
-            case BERTags.SET:
-                return ASN1Set.TYPE.checkedCast(obj.toASN1Primitive());
+                return obj.toASN1Primitive();
             }
 
-            // TODO Ideally we check the type here, based on tagNo
-            return obj.toASN1Primitive();
+            return universalType.checkedCast(obj.toASN1Primitive());
         }
 
         if (DECLARED_EXPLICIT == explicitness)
@@ -344,84 +334,42 @@ public abstract class ASN1TaggedObject
             throw new IllegalArgumentException("object explicit - implicit expected.");
         }
 
-        // TODO Type-specific optimized handling without re-encoding
-        switch (tagNo)
+        // TODO Implement all universal types, then remove this block
+        if (null == universalType)
         {
-        case BERTags.OCTET_STRING:
-        {
-            ASN1Primitive primitive = obj.toASN1Primitive();
-            switch (explicitness)
+            // Handle implicit objects generically by re-encoding with new tag
+            try
             {
-            case PARSED_EXPLICIT:
-                return ASN1OctetString.TYPE.fromImplicitConstructed(rebuildConstructed(primitive));
-            case PARSED_IMPLICIT:
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                ASN1OutputStream output = ASN1OutputStream.create(buf, getASN1Encoding());
+                encode(output, true, BERTags.UNIVERSAL, tagNo);
+                output.flushInternal();
+        
+                byte[] encoding = buf.toByteArray();
+        
+                return ASN1Primitive.fromByteArray(encoding);
+            }
+            catch (IOException e)
             {
-                if (primitive instanceof ASN1Sequence)
-                {
-                    return ASN1OctetString.TYPE.fromImplicitConstructed((ASN1Sequence)primitive);
-                }
-                return ASN1OctetString.TYPE.fromImplicitPrimitive((DEROctetString)primitive);
+                throw new IllegalStateException("failed to re-tag implicit object", e);
             }
-            default:
-                return ASN1OctetString.TYPE.checkedCast(primitive);
-            }
-        }
-        case BERTags.SEQUENCE:
-        {
-            ASN1Primitive primitive = obj.toASN1Primitive();
-            switch (explicitness)
-            {
-            case PARSED_EXPLICIT:
-                return ASN1Sequence.TYPE.fromImplicitConstructed(rebuildConstructed(primitive));
-            case PARSED_IMPLICIT:
-            {
-                if (primitive instanceof ASN1Sequence)
-                {
-                    return ASN1Sequence.TYPE.fromImplicitConstructed((ASN1Sequence)primitive);
-                }
-                return ASN1Sequence.TYPE.fromImplicitPrimitive((DEROctetString)primitive);
-            }
-            default:
-                return ASN1Sequence.TYPE.checkedCast(primitive);
-            }
-        }
-        case BERTags.SET:
-        {
-            ASN1Primitive primitive = obj.toASN1Primitive();
-            switch (explicitness)
-            {
-            case PARSED_EXPLICIT:
-                return ASN1Set.TYPE.fromImplicitConstructed(rebuildConstructed(primitive));
-            case PARSED_IMPLICIT:
-            {
-                if (primitive instanceof ASN1Sequence)
-                {
-                    return ASN1Set.TYPE.fromImplicitConstructed((ASN1Sequence)primitive);
-                }
-                return ASN1Set.TYPE.fromImplicitPrimitive((DEROctetString)primitive);
-            }
-            default:
-                return ASN1Set.TYPE.checkedCast(primitive);
-            }
-        }
         }
 
-        // Handle implicit objects generically by re-encoding with new tag
-
-        try
+        ASN1Primitive primitive = obj.toASN1Primitive();
+        switch (explicitness)
         {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            ASN1OutputStream output = ASN1OutputStream.create(buf, getASN1Encoding());
-            encode(output, true, BERTags.UNIVERSAL, tagNo);
-            output.flushInternal();
-    
-            byte[] encoding = buf.toByteArray();
-    
-            return ASN1Primitive.fromByteArray(encoding);
+        case PARSED_EXPLICIT:
+            return universalType.fromImplicitConstructed(rebuildConstructed(primitive));
+        case PARSED_IMPLICIT:
+        {
+            if (primitive instanceof ASN1Sequence)
+            {
+                return universalType.fromImplicitConstructed((ASN1Sequence)primitive);
+            }
+            return universalType.fromImplicitPrimitive((DEROctetString)primitive);
         }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("failed to re-tag implicit object", e);
+        default:
+            return universalType.checkedCast(primitive);
         }
     }
 

@@ -12,6 +12,14 @@ import org.bouncycastle.util.Properties;
 public class ASN1Integer
     extends ASN1Primitive
 {
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Integer.class, BERTags.INTEGER)
+    {
+        ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
+        {
+            return new ASN1Integer(octetString.getOctets(), false);
+        }
+    };
+
     static final int SIGN_EXT_SIGNED = 0xFFFFFFFF;
     static final int SIGN_EXT_UNSIGNED = 0xFF;
 
@@ -37,7 +45,7 @@ public class ASN1Integer
         {
             try
             {
-                return (ASN1Integer)fromByteArray((byte[])obj);
+                return (ASN1Integer)TYPE.fromByteArray((byte[])obj);
             }
             catch (Exception e)
             {
@@ -51,27 +59,21 @@ public class ASN1Integer
     /**
      * Return an Integer from a tagged object.
      *
-     * @param obj      the tagged object holding the object we want
+     * @param taggedObject the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
      * @return an ASN1Integer instance.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
      */
-    public static ASN1Integer getInstance(
-        ASN1TaggedObject obj,
-        boolean explicit)
+    public static ASN1Integer getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
+        {
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
+        }
 
-        if (explicit || o instanceof ASN1Integer)
-        {
-            return getInstance(o);
-        }
-        else
-        {
-            return new ASN1Integer(ASN1OctetString.getInstance(o).getOctets());
-        }
+        return (ASN1Integer)taggedObject.getBaseUniversal(explicit, BERTags.INTEGER);
     }
 
     /**
