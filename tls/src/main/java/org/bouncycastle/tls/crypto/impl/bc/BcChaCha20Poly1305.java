@@ -29,22 +29,14 @@ public class BcChaCha20Poly1305 implements TlsAEADCipherImpl
         this.isEncrypting = isEncrypting;
     }
 
-    public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] extraInput, byte[] output,
-        int outputOffset) throws IOException
+    public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        throws IOException
     {
-        int extraInputLength = extraInput.length;
-
         if (isEncrypting)
         {
-            int ciphertextLength = inputLength + extraInputLength;
+            int ciphertextLength = inputLength;
 
             int outputLength = cipher.processBytes(input, inputOffset, inputLength, output, outputOffset);
-            if (extraInputLength > 0)
-            {
-                outputLength += cipher.processBytes(extraInput, 0, extraInputLength, output,
-                    outputOffset + outputLength);
-            }
-
             if (ciphertextLength != outputLength)
             {
                 throw new IllegalStateException();
@@ -63,11 +55,6 @@ public class BcChaCha20Poly1305 implements TlsAEADCipherImpl
         }
         else
         {
-            if (extraInputLength > 0)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
             int ciphertextLength = inputLength - 16;
 
             updateMAC(input, inputOffset, ciphertextLength);

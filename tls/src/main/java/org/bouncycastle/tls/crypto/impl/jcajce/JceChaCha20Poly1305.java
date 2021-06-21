@@ -36,8 +36,8 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
         this.cipherMode = isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
     }
 
-    public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] extraInput, byte[] output,
-        int outputOffset) throws IOException
+    public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        throws IOException
     {
         /*
          * NOTE: When using the Cipher class, output may be buffered prior to calling doFinal, so
@@ -48,15 +48,12 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
          */
         try
         {
-            int extraInputLength = extraInput.length;
-
             if (cipherMode == Cipher.ENCRYPT_MODE)
             {
-                int ciphertextLength = inputLength + extraInputLength;
+                int ciphertextLength = inputLength;
 
                 byte[] tmp = new byte[64 + ciphertextLength];
                 System.arraycopy(input, inputOffset, tmp, 64, inputLength);
-                System.arraycopy(extraInput, 0, tmp, 64 + inputLength, extraInputLength);
 
                 runCipher(tmp);
 
@@ -77,11 +74,6 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
             }
             else
             {
-                if (extraInputLength > 0)
-                {
-                    throw new TlsFatalAlert(AlertDescription.internal_error);
-                }
-
                 int ciphertextLength = inputLength - 16;
 
                 byte[] tmp = new byte[64 + ciphertextLength];
