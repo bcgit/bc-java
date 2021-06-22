@@ -1,4 +1,4 @@
-package org.bouncycastle.oer.its.oer;
+package org.bouncycastle.oer.its.template;
 
 
 import java.math.BigInteger;
@@ -46,6 +46,17 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder Time32 = UINT32.label("Time32");
     public static final OERDefinition.Builder Time64 = UINT64.label("Time64");
 
+    /**
+     * Duration ::= CHOICE {
+     *     microseconds  Uint16,
+     *     milliseconds  Uint16,
+     *     seconds       Uint16,
+     *     minutes       Uint16,
+     *     hours         Uint16,
+     *     sixtyHours    Uint16,
+     *     years         Uint16
+     *   }
+     */
     public static final OERDefinition.Builder Duration = choice(
         UINT16.label("microseconds"),
         UINT16.label("milliseconds"),
@@ -56,6 +67,13 @@ public class Ieee1609Dot2BaseTypes
         UINT16.label("years")
     ).label("Duration");
 
+
+    /**
+     * ValidityPeriod ::= SEQUENCE {
+     *     start     Time32,
+     *     duration  Duration
+     *   }
+     */
     public static final OERDefinition.Builder ValidityPeriod = seq(Time32, Duration).label("ValidityPeriod");
 
     //
@@ -70,7 +88,7 @@ public class Ieee1609Dot2BaseTypes
     /**
      * Hostname ::= UTF8String (SIZE(0..255))
      */
-    public static final OERDefinition.Builder Hostname = octets(9).label("Hostname");
+    public static final OERDefinition.Builder Hostname = octets(0,255).label("Hostname");
 
     /**
      * LinkageValue ::= OCTET STRING (SIZE(9))

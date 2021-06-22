@@ -1,4 +1,4 @@
-package org.bouncycastle.oer.its.oer;
+package org.bouncycastle.oer.its.template;
 
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.oer.OERDefinition;
@@ -14,17 +14,17 @@ import static org.bouncycastle.oer.OERDefinition.octets;
 import static org.bouncycastle.oer.OERDefinition.optional;
 import static org.bouncycastle.oer.OERDefinition.seq;
 import static org.bouncycastle.oer.OERDefinition.seqof;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.CrlSeries;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.GeographicRegion;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.HashAlgorithm;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.HashId3;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.HashId8;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.PublicEncryptionKey;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.SequenceOfPsidSsp;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.Signature;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.SubjectAssurance;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.UINT8;
-import static org.bouncycastle.oer.its.oer.Ieee1609Dot2BaseTypes.ValidityPeriod;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.CrlSeries;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.GeographicRegion;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.HashAlgorithm;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.HashId3;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.HashId8;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.PublicEncryptionKey;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.SequenceOfPsidSsp;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.Signature;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.SubjectAssurance;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.UINT8;
+import static org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes.ValidityPeriod;
 
 /**
  * OER forward definition builders for OER encoded data.

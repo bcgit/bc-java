@@ -19,7 +19,7 @@ import org.bouncycastle.oer.its.IssuerIdentifier;
 import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.Signature;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
-import org.bouncycastle.oer.its.oer.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.util.Arrays;
 
 public class ITSCertificateBuilder

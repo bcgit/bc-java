@@ -272,7 +272,10 @@ public class OERInputStream
             data = allocateArray(readSize);
 
 
-            Streams.readFully(this, data);
+            if (Streams.readFully(this, data) != readSize)
+            {
+                throw new IOException("did not read all of " + element.label);
+            }
 
             if (debugOutput != null)
             {

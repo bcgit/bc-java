@@ -19,15 +19,18 @@ import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.operator.ITSContentVerifierProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.EccCurvePoint;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.EccP384CurvePoint;
 import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
+import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
+import org.bouncycastle.util.Arrays;
 
 public class BcITSContentVerifierProvider
     implements ITSContentVerifierProvider
@@ -153,7 +156,7 @@ public class BcITSContentVerifierProvider
         {
             throw new OperatorCreationException("wrong verifier for algorithm: " + verifierAlgorithmIdentifier);
         }
-        
+
         final Digest digest = BcDefaultDigestProvider.INSTANCE.get(digestAlgo);
 
         final byte[] parentDigest = new byte[digest.getDigestSize()];
@@ -161,6 +164,15 @@ public class BcITSContentVerifierProvider
         digest.update(parentData, 0, parentData.length);
 
         digest.doFinal(parentDigest, 0);
+
+        final byte[] parentTBSDigest = issuer.getIssuer().isSelf() ? new byte[digest.getDigestSize()] : null;
+
+        if (parentTBSDigest != null)
+        {
+            byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate(), IEEE1609dot2.tbsCertificate);
+            digest.update(enc, 0, enc.length);
+            digest.doFinal(parentTBSDigest, 0);
+        }
 
         final OutputStream os = new OutputStream()
         {
@@ -211,8 +223,16 @@ public class BcITSContentVerifierProvider
 
                 signer.update(clientCertDigest, 0, clientCertDigest.length);
 
-                signer.update(parentDigest, 0, parentDigest.length);
-
+                if (parentTBSDigest != null && Arrays.areEqual(clientCertDigest, parentTBSDigest))
+                {
+                    byte[] empty = new byte[digest.getDigestSize()];
+                    digest.doFinal(empty, 0);
+                    signer.update(empty, 0, empty.length);
+                }
+                else
+                {
+                    signer.update(parentDigest, 0, parentDigest.length);
+                }
                 return signer.verifySignature(expected);
             }
         };
