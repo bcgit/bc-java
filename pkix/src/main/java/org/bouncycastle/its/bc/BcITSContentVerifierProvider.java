@@ -223,6 +223,10 @@ public class BcITSContentVerifierProvider
 
                 signer.update(clientCertDigest, 0, clientCertDigest.length);
 
+                //
+                // if this is true we are a self signed certificate verifying our own
+                // signature.
+                //
                 if (parentTBSDigest != null && Arrays.areEqual(clientCertDigest, parentTBSDigest))
                 {
                     byte[] empty = new byte[digest.getDigestSize()];
@@ -233,6 +237,7 @@ public class BcITSContentVerifierProvider
                 {
                     signer.update(parentDigest, 0, parentDigest.length);
                 }
+
                 return signer.verifySignature(expected);
             }
         };
