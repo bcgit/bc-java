@@ -11,8 +11,13 @@ import org.bouncycastle.util.Arrays;
 public class ASN1Enumerated
     extends ASN1Primitive
 {
-    private final byte[] bytes;
-    private final int start;
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Enumerated.class, BERTags.ENUMERATED)
+    {
+        ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
+        {
+            return fromOctetString(octetString.getOctets());
+        }
+    };
 
     /**
      * return an enumerated from the passed in object
@@ -33,7 +38,7 @@ public class ASN1Enumerated
         {
             try
             {
-                return (ASN1Enumerated)fromByteArray((byte[])obj);
+                return (ASN1Enumerated)TYPE.fromByteArray((byte[])obj);
             }
             catch (Exception e)
             {
@@ -47,28 +52,25 @@ public class ASN1Enumerated
     /**
      * return an Enumerated from a tagged object.
      *
-     * @param obj the tagged object holding the object we want
+     * @param taggedObject the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
      * @return an ASN1Enumerated instance, or null.
      */
-    public static ASN1Enumerated getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+    public static ASN1Enumerated getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
+        {
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
+        }
 
-        if (explicit || o instanceof ASN1Enumerated)
-        {
-            return getInstance(o);
-        }
-        else
-        {
-            return fromOctetString(ASN1OctetString.getInstance(o).getOctets());
-        }
+        return (ASN1Enumerated)taggedObject.getBaseUniversal(explicit, BERTags.ENUMERATED);
     }
+
+    private final byte[] bytes;
+    private final int start;
 
     /**
      * Constructor from int.
