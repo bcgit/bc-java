@@ -42,6 +42,13 @@ public class ITSCertificateBuilder
     public ITSCertificate build(
         ITSContentSigner signer)
     {
+        if (signer.isForSelfSigning())
+        {
+            //
+            // TODO: check issuer ID against self and ITSContentSigner
+            //
+        }
+
         OutputStream sOut = signer.getOutputStream();
 
         try

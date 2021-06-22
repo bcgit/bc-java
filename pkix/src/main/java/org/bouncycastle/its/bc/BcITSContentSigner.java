@@ -16,10 +16,8 @@ import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.operator.ITSContentSigner;
-import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
-import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.util.Arrays;
 
 public class BcITSContentSigner
@@ -31,8 +29,17 @@ public class BcITSContentSigner
     private final Digest digest;
     private final byte[] parentData;
     private final ASN1ObjectIdentifier curveID;
-    private final DigestCalculator digestCalculator;
     private final byte[] parentDigest;
+
+    /**
+     * Constructor for self-signing.
+     *
+     * @param privKey
+     */
+    public BcITSContentSigner(ECPrivateKeyParameters privKey)
+    {
+        this(privKey, null);
+    }
 
     public BcITSContentSigner(ECPrivateKeyParameters privKey, ITSCertificate signerCert)
     {
@@ -59,21 +66,32 @@ public class BcITSContentSigner
         try
         {
             this.digest = BcDefaultDigestProvider.INSTANCE.get(digestAlgo);
-            this.parentData = signerCert.getEncoded();
-            this.digestCalculator = new BcDigestCalculatorProvider().get(digestAlgo);
-            this.parentDigest = new byte[digest.getDigestSize()];
-
-            digest.update(parentData, 0, parentData.length);
-
-            digest.doFinal(parentDigest, 0);
         }
         catch (OperatorCreationException e)
         {
-            throw new IllegalStateException("cannot create digest: " + e.getMessage());
+            throw new IllegalStateException("cannot recognise digest type: " + digestAlgo.getAlgorithm());
         }
-        catch (IOException e)
+
+        if (signerCert != null)
         {
-            throw new IllegalStateException("signer certificate encoding failed: " + e.getMessage());
+            try
+            {
+                this.parentData = signerCert.getEncoded();
+                this.parentDigest = new byte[digest.getDigestSize()];
+
+                digest.update(parentData, 0, parentData.length);
+
+                digest.doFinal(parentDigest, 0);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("signer certificate encoding failed: " + e.getMessage());
+            }
+        }
+        else
+        {
+            this.parentData = null;
+            this.parentDigest = null;
         }
     }
 
@@ -91,15 +109,15 @@ public class BcITSContentSigner
     {
         return digestAlgo;
     }
-
-    public AlgorithmIdentifier getAlgorithmIdentifier()
-    {
-        return null;   // TODO: guessing sha256/sha384 with ECDSA, or maybe deletion
-    }
     
     public OutputStream getOutputStream()
     {
         return new DigestOutputStream(digest);
+    }
+
+    public boolean isForSelfSigning()
+    {
+        return parentDigest == null;
     }
 
     public byte[] getSignature()
@@ -114,7 +132,19 @@ public class BcITSContentSigner
 
         signer.update(clientCertDigest, 0, clientCertDigest.length);
 
-        signer.update(parentDigest, 0, parentDigest.length);
+        //
+        // if parent digest is null we've been created specifically to sign ourselves.
+        //
+        if (parentDigest == null)
+        {
+            byte[] empty = new byte[digest.getDigestSize()];
+            digest.doFinal(empty, 0);
+            signer.update(empty, 0, empty.length);
+        }
+        else
+        {
+            signer.update(parentDigest, 0, parentDigest.length);
+        }
 
         return signer.generateSignature();
     }
