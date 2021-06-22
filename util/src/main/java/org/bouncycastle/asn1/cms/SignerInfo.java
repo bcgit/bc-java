@@ -180,10 +180,7 @@ public class SignerInfo
         this.unauthenticatedAttributes = ASN1Set.getInstance(unauthenticatedAttributes);
     }
 
-    /**
-     * @deprecated use getInstance() method.
-     */
-    public SignerInfo(
+    private SignerInfo(
         ASN1Sequence seq)
     {
         Enumeration     e = seq.getObjects();
