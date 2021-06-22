@@ -151,6 +151,15 @@ public class ASN1OutputStream
         write(contents, contentsOff, contentsLen);
     }
 
+    final void writeEncodingDL(boolean withID, int identifier, byte contentsPrefix, byte[] contents, int contentsOff,
+        int contentsLen) throws IOException
+    {
+        writeIdentifier(withID, identifier);
+        writeDL(1 + contentsLen);
+        write(contentsPrefix);
+        write(contents, contentsOff, contentsLen);
+    }
+
     final void writeEncodingDL(boolean withID, int identifier, byte[] contents, int contentsOff, int contentsLen,
         byte contentsSuffix) throws IOException
     {
