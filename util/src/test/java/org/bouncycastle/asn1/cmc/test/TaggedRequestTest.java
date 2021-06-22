@@ -81,7 +81,7 @@ public class TaggedRequestTest
             TaggedRequest tr = new TaggedRequest(
                 new CertReqMsg(new CertRequest(
                     new ASN1Integer(1L),
-                    CertTemplate.getInstance(new DERSequence(new DERTaggedObject(0,new ASN1Integer(3L)))),
+                    CertTemplate.getInstance(new DERSequence(new DERTaggedObject(false, 0, new ASN1Integer(3L)))),
                     new Controls(new AttributeTypeAndValue(PKCSObjectIdentifiers.pkcs_9,new ASN1Integer(3)))),
                     proofOfPossession,
                     new AttributeTypeAndValue[0])
