@@ -76,15 +76,20 @@ public class IssuerIdentifier
         }
     }
 
+    public boolean isSelf()
+    {
+        return choice == self;
+    }
+
     public int getChoice()
     {
         return choice;
     }
 
     public ASN1Encodable getValue()
-        {
-            return value;
-        }
+    {
+        return value;
+    }
 
     public ASN1Primitive toASN1Primitive()
     {

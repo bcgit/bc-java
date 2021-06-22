@@ -9,7 +9,7 @@ import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.IssuerIdentifier;
 import org.bouncycastle.oer.its.Signature;
-import org.bouncycastle.oer.its.oer.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.util.Encodable;
 
