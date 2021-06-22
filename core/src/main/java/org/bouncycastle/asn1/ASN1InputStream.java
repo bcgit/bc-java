@@ -247,12 +247,12 @@ public class ASN1InputStream
         {
         case OCTET_STRING:
             return BEROctetStringParser.parse(sp);
-        case SEQUENCE:
-            return new BERSequence(sp.readVector());
-        case SET:
-            return new BERSet(sp.readVector());
         case EXTERNAL:
             return DERExternalParser.parse(sp);
+        case SEQUENCE:
+            return BERSequenceParser.parse(sp);
+        case SET:
+            return BERSetParser.parse(sp);
         default:
             throw new IOException("unknown BER object encountered");
         }
