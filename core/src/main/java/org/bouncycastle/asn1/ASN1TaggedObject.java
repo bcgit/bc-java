@@ -410,18 +410,19 @@ public abstract class ASN1TaggedObject
 
     public ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException
     {
-        // TODO These method use getInstance that should only work for BERTags.CONTEXT_SPECIFIC
+        ASN1Primitive primitive = getBaseUniversal(declaredExplicit, baseTagNo);
+
         switch (baseTagNo)
         {
-        case BERTags.SET:
-            return ASN1Set.getInstance(this, declaredExplicit).parser();
-        case BERTags.SEQUENCE:
-            return ASN1Sequence.getInstance(this, declaredExplicit).parser();
         case BERTags.OCTET_STRING:
-            return ASN1OctetString.getInstance(this, declaredExplicit).parser();
+            return ((ASN1OctetString)primitive).parser();
+        case BERTags.SET:
+            return ((ASN1Set)primitive).parser();
+        case BERTags.SEQUENCE:
+            return ((ASN1Sequence)primitive).parser();
         }
 
-        return getBaseUniversal(declaredExplicit, baseTagNo);
+        return primitive;
     }
 
     public final ASN1Primitive getLoadedObject()
