@@ -44,10 +44,7 @@ public class Time
         return getInstance(obj.getObject());
     }
 
-    /**
-     * @deprecated use getInstance()
-     */
-    public Time(
+    private Time(
         ASN1Primitive   time)
     {
         if (!(time instanceof ASN1UTCTime)
@@ -152,7 +149,7 @@ public class Time
     }
 
     /**
-     * Get the date+tine as a String in full form century format.
+     * Get the date and time as a String in full form century format.
      */
     public String getTime()
     {

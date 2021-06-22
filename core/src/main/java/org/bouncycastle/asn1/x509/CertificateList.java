@@ -56,11 +56,7 @@ public class CertificateList
         return null;
     }
 
-    /**
-     * @deprecated use getInstance() method.
-     * @param seq
-     */
-    public CertificateList(
+    private CertificateList(
         ASN1Sequence seq)
     {
         if (seq.size() == 3)
