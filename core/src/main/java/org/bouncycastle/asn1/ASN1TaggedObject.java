@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * ASN.1 TaggedObject - in ASN.1 notation this is any object preceded by
  * a [n] where n is some number - these are assumed to follow the construction
@@ -141,7 +143,30 @@ public abstract class ASN1TaggedObject
         ASN1Primitive p1 = this.obj.toASN1Primitive();
         ASN1Primitive p2 = that.obj.toASN1Primitive();
 
-        return p1 == p2 || p1.asn1Equals(p2);
+        if (p1 == p2)
+        {
+            return true;
+        }
+
+        if (!this.isExplicit())
+        {
+            try
+            {
+                byte[] d1 = p1.getEncoded();
+                byte[] d2 = p2.getEncoded();
+
+                // TODO: the issue here is an implicit tagged object needs to
+                // be compared using it's value octets. We're only dealing with simple tags here.
+                d1[0] = d2[0];
+                return Arrays.areEqual(d1, d2);
+            }
+            catch (IOException e)
+            {
+                return false;
+            }
+        }
+
+        return p1.asn1Equals(p2);
     }
 
     public int hashCode()
