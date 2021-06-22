@@ -477,7 +477,7 @@ public class ASN1InputStream
         switch (tagNo)
         {
         case BIT_STRING:
-            return ASN1BitString.fromInputStream(defIn.getRemaining(), defIn);
+            return ASN1BitString.createPrimitive(defIn.toByteArray());
         case BMP_STRING:
             return new DERBMPString(getBMPCharBuffer(defIn));
         case BOOLEAN:
