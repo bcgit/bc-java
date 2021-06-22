@@ -18,6 +18,8 @@ final class ASN1UniversalTypes
             return ASN1OctetString.TYPE;
         case BERTags.NULL:
             return ASN1Null.TYPE;
+        case BERTags.OBJECT_IDENTIFIER:
+            return ASN1ObjectIdentifier.TYPE;
         case BERTags.ENUMERATED:
             return ASN1Enumerated.TYPE;
         case BERTags.SEQUENCE:
