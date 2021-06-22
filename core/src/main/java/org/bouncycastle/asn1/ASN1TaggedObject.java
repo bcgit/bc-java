@@ -152,12 +152,9 @@ public abstract class ASN1TaggedObject
         {
             try
             {
-                byte[] d1 = p1.getEncoded();
-                byte[] d2 = p2.getEncoded();
-
-                // TODO: the issue here is an implicit tagged object needs to
-                // be compared using it's value octets. We're only dealing with simple tags here.
-                d1[0] = d2[0];
+                byte[] d1 = this.getEncoded();
+                byte[] d2 = that.getEncoded();
+                
                 return Arrays.areEqual(d1, d2);
             }
             catch (IOException e)
