@@ -500,6 +500,8 @@ public class ASN1InputStream
             return DERNull.INSTANCE;
         case NUMERIC_STRING:
             return new DERNumericString(defIn.toByteArray());
+        case OBJECT_DESCRIPTOR:
+            return ASN1ObjectDescriptor.createPrimitive(defIn.toByteArray());
         case OBJECT_IDENTIFIER:
             return ASN1ObjectIdentifier.fromOctetString(getBuffer(defIn, tmpBuffers));
         case OCTET_STRING:
