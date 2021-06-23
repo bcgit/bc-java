@@ -485,7 +485,7 @@ public class ASN1InputStream
         case ENUMERATED:
             return ASN1Enumerated.fromOctetString(getBuffer(defIn, tmpBuffers));
         case GENERALIZED_TIME:
-            return new ASN1GeneralizedTime(defIn.toByteArray());
+            return ASN1GeneralizedTime.createPrimitive(defIn.toByteArray());
         case GENERAL_STRING:
             return new DERGeneralString(defIn.toByteArray());
         case IA5_STRING:
@@ -513,7 +513,7 @@ public class ASN1InputStream
         case UNIVERSAL_STRING:
             return new DERUniversalString(defIn.toByteArray());
         case UTC_TIME:
-            return new ASN1UTCTime(defIn.toByteArray());
+            return ASN1UTCTime.createPrimitive(defIn.toByteArray());
         case UTF8_STRING:
             return new DERUTF8String(defIn.toByteArray());
         case VISIBLE_STRING:
