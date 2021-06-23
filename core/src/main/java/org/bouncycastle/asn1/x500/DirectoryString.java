@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERT61String;
@@ -43,9 +44,9 @@ public class DirectoryString
             return new DirectoryString((DERUniversalString)o);
         }
 
-        if (o instanceof DERUTF8String)
+        if (o instanceof ASN1UTF8String)
         {
-            return new DirectoryString((DERUTF8String)o);
+            return new DirectoryString((ASN1UTF8String)o);
         }
 
         if (o instanceof DERBMPString)
@@ -85,7 +86,7 @@ public class DirectoryString
     }
 
     private DirectoryString(
-        DERUTF8String string)
+        ASN1UTF8String string)
     {
         this.string = string;
     }

@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
@@ -43,10 +44,10 @@ public class CMCStatusInfoV2
 {
     private final CMCStatus cMCStatus;
     private final ASN1Sequence bodyList;
-    private final DERUTF8String statusString;
+    private final ASN1UTF8String statusString;
     private final OtherStatusInfo otherStatusInfo;
 
-    CMCStatusInfoV2(CMCStatus cMCStatus, ASN1Sequence bodyList, DERUTF8String statusString, OtherStatusInfo otherStatusInfo)
+    CMCStatusInfoV2(CMCStatus cMCStatus, ASN1Sequence bodyList, ASN1UTF8String statusString, OtherStatusInfo otherStatusInfo)
     {
         this.cMCStatus = cMCStatus;
         this.bodyList = bodyList;
@@ -67,12 +68,12 @@ public class CMCStatusInfoV2
         {
             if (seq.size() == 4)
             {
-                this.statusString = DERUTF8String.getInstance(seq.getObjectAt(2));
+                this.statusString = ASN1UTF8String.getInstance(seq.getObjectAt(2));
                 this.otherStatusInfo = OtherStatusInfo.getInstance(seq.getObjectAt(3));
             }
-            else if (seq.getObjectAt(2) instanceof DERUTF8String)
+            else if (seq.getObjectAt(2) instanceof ASN1UTF8String)
             {
-                this.statusString = DERUTF8String.getInstance(seq.getObjectAt(2));
+                this.statusString = ASN1UTF8String.getInstance(seq.getObjectAt(2));
                 this.otherStatusInfo = null;
             }
             else
@@ -99,7 +100,15 @@ public class CMCStatusInfoV2
         return Utils.toBodyPartIDArray(bodyList);
     }
 
+    /**
+     * @deprecated Use {@link #getStatusStringUTF8()} instead.
+     */
     public DERUTF8String getStatusString()
+    {
+        return DERUTF8String.getInstance(statusString);
+    }
+
+    public ASN1UTF8String getStatusStringUTF8()
     {
         return statusString;
     }

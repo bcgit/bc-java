@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.cmc;
 
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
@@ -9,7 +10,7 @@ public class CMCStatusInfoV2Builder
     private final CMCStatus cMCStatus;
     private final ASN1Sequence bodyList;
 
-    private DERUTF8String statusString;
+    private ASN1UTF8String statusString;
     private OtherStatusInfo otherInfo;
 
     public CMCStatusInfoV2Builder(CMCStatus cMCStatus, BodyPartID bodyPartID)

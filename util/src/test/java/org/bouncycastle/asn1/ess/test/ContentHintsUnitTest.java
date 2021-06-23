@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.ess.ContentHints;
 import org.bouncycastle.asn1.util.test.ASN1UnitTest;
@@ -20,7 +21,7 @@ public class ContentHintsUnitTest
     public void performTest()
         throws Exception
     {
-        DERUTF8String contentDescription = new DERUTF8String("Description");
+        ASN1UTF8String contentDescription = new DERUTF8String("Description");
         ASN1ObjectIdentifier contentType = new ASN1ObjectIdentifier("1.2.2.3");
 
         ContentHints hints = new ContentHints(contentType);
@@ -53,7 +54,7 @@ public class ContentHintsUnitTest
     private void checkConstruction(
         ContentHints hints,
         ASN1ObjectIdentifier contentType,
-        DERUTF8String description)
+        ASN1UTF8String description)
         throws IOException
     {
         checkValues(hints, contentType, description);
@@ -74,10 +75,10 @@ public class ContentHintsUnitTest
     private void checkValues(
         ContentHints hints,
         ASN1ObjectIdentifier contentType,
-        DERUTF8String description)
+        ASN1UTF8String description)
     {
         checkMandatoryField("contentType", contentType, hints.getContentType());
-        checkOptionalField("description", description, hints.getContentDescription());
+        checkOptionalField("description", description, hints.getContentDescriptionUTF8());
     }
 
     public static void main(

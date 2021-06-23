@@ -516,7 +516,7 @@ public class ASN1InputStream
         case UTC_TIME:
             return ASN1UTCTime.createPrimitive(defIn.toByteArray());
         case UTF8_STRING:
-            return new DERUTF8String(defIn.toByteArray());
+            return ASN1UTF8String.createPrimitive(defIn.toByteArray());
         case VISIBLE_STRING:
             return new DERVisibleString(defIn.toByteArray());
         case GRAPHIC_STRING:

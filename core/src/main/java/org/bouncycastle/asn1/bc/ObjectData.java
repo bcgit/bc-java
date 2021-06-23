@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -41,11 +42,11 @@ public class ObjectData
     private ObjectData(ASN1Sequence seq)
     {
         this.type = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue();
-        this.identifier = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        this.identifier = ASN1UTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.creationDate = ASN1GeneralizedTime.getInstance(seq.getObjectAt(2));
         this.lastModifiedDate = ASN1GeneralizedTime.getInstance(seq.getObjectAt(3));
         this.data = ASN1OctetString.getInstance(seq.getObjectAt(4));
-        this.comment = (seq.size() == 6) ? DERUTF8String.getInstance(seq.getObjectAt(5)).getString() : null;
+        this.comment = (seq.size() == 6) ? ASN1UTF8String.getInstance(seq.getObjectAt(5)).getString() : null;
     }
 
     public ObjectData(BigInteger type, String identifier, Date creationDate, Date lastModifiedDate, byte[] data, String comment)

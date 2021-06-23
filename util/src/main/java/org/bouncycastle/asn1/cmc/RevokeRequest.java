@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -35,14 +36,14 @@ public class RevokeRequest
 
     private ASN1GeneralizedTime invalidityDate;
     private ASN1OctetString passphrase;
-    private DERUTF8String comment;
+    private ASN1UTF8String comment;
 
     public RevokeRequest(X500Name name,
                          ASN1Integer serialNumber,
                          CRLReason reason,
                          ASN1GeneralizedTime invalidityDate,
                          ASN1OctetString passphrase,
-                         DERUTF8String comment)
+                         ASN1UTF8String comment)
     {
         this.name = name;
         this.serialNumber = serialNumber;
@@ -71,9 +72,9 @@ public class RevokeRequest
         {
             this.passphrase = ASN1OctetString.getInstance(seq.getObjectAt(index++));
         }
-        if (seq.size() > index && seq.getObjectAt(index).toASN1Primitive() instanceof DERUTF8String)
+        if (seq.size() > index && seq.getObjectAt(index).toASN1Primitive() instanceof ASN1UTF8String)
         {
-            this.comment = DERUTF8String.getInstance(seq.getObjectAt(index));
+            this.comment = ASN1UTF8String.getInstance(seq.getObjectAt(index));
         }
     }
 
@@ -127,12 +128,20 @@ public class RevokeRequest
         this.passphrase = passphrase;
     }
 
+    /**
+     * @deprecated Use {@link #getCommentUTF8()} instead.
+     */
     public DERUTF8String getComment()
+    {
+        return DERUTF8String.getInstance(comment);
+    }
+
+    public ASN1UTF8String getCommentUTF8()
     {
         return comment;
     }
 
-    public void setComment(DERUTF8String comment)
+    public void setComment(ASN1UTF8String comment)
     {
         this.comment = comment;
     }

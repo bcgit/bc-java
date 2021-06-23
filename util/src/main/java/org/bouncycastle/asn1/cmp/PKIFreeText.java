@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
@@ -43,7 +44,7 @@ public class PKIFreeText
         Enumeration e = seq.getObjects();
         while (e.hasMoreElements())
         {
-            if (!(e.nextElement() instanceof DERUTF8String))
+            if (!(e.nextElement() instanceof ASN1UTF8String))
             {
                 throw new IllegalArgumentException("attempt to insert non UTF8 STRING into PKIFreeText");
             }
@@ -53,7 +54,7 @@ public class PKIFreeText
     }
 
     public PKIFreeText(
-        DERUTF8String p)
+        ASN1UTF8String p)
     {
         strings = new DERSequence(p);
     }
@@ -65,7 +66,7 @@ public class PKIFreeText
     }
 
     public PKIFreeText(
-        DERUTF8String[] strs)
+        ASN1UTF8String[] strs)
     {
         strings = new DERSequence(strs);
     }
@@ -96,13 +97,24 @@ public class PKIFreeText
      * 
      * @param i index of the string of interest
      * @return the string at index i.
+     * @deprecated Use {@link #getStringAtUTF8()} instead.
      */
-    public DERUTF8String getStringAt(
-        int i)
+    public DERUTF8String getStringAt(int i)
     {
-        return (DERUTF8String)strings.getObjectAt(i);
+        return DERUTF8String.getInstance(getStringAtUTF8(i));
     }
-    
+
+    /**
+     * Return the UTF8STRING at index i.
+     * 
+     * @param i index of the string of interest
+     * @return the string at index i.
+     */
+    public ASN1UTF8String getStringAtUTF8(int i)
+    {
+        return (ASN1UTF8String)strings.getObjectAt(i);
+    }
+
     /**
      * <pre>
      * PKIFreeText ::= SEQUENCE SIZE (1..MAX) OF UTF8String
