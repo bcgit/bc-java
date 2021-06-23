@@ -90,12 +90,7 @@ public class ASN1UTCTime
      */
     public static ASN1UTCTime getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1UTCTime)taggedObject.getBaseUniversal(explicit, BERTags.UTC_TIME);
+        return (ASN1UTCTime)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     final byte[] contents;

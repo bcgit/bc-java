@@ -63,12 +63,7 @@ public abstract class ASN1Null
 
     public static ASN1Null getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1Null)taggedObject.getBaseUniversal(explicit, BERTags.NULL);
+        return (ASN1Null)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     ASN1Null()

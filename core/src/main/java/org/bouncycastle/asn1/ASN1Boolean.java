@@ -95,12 +95,7 @@ public class ASN1Boolean
      */
     public static ASN1Boolean getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1Boolean)taggedObject.getBaseUniversal(explicit, BERTags.BOOLEAN);
+        return (ASN1Boolean)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     private ASN1Boolean(byte value)

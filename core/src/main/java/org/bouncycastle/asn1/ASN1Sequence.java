@@ -124,12 +124,7 @@ public abstract class ASN1Sequence
      */
     public static ASN1Sequence getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1Sequence) taggedObject.getBaseUniversal(explicit, BERTags.SEQUENCE);
+        return (ASN1Sequence)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     // NOTE: Only non-final to support LazyEncodedSequence
