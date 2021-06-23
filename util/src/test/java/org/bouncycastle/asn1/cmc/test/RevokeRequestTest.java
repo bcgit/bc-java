@@ -76,8 +76,7 @@ public class RevokeRequestTest
             isEquals("reason", rr.getReason(), rrResp.getReason());
             isEquals("invalidityDate", rr.getInvalidityDate(), rrResp.getInvalidityDate());
             isTrue("passphrase", areEqual(rr.getPassPhrase(), rrResp.getPassPhrase()));
-            isEquals("comment", rr.getComment(), rrResp.getComment());
-
+            isEquals("comment", rr.getCommentUTF8(), rrResp.getCommentUTF8());
         }
 
         try

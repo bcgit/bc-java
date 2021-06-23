@@ -111,7 +111,7 @@ public class TimeStampResponse
             PKIFreeText text = resp.getStatus().getStatusString();
             for (int i = 0; i != text.size(); i++)
             {
-                statusStringBuf.append(text.getStringAt(i).getString());
+                statusStringBuf.append(text.getStringAtUTF8(i).getString());
             }
             return statusStringBuf.toString();
         }
