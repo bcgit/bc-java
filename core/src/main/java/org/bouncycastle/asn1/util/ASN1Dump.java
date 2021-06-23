@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.ASN1Util;
+import org.bouncycastle.asn1.ASN1VideotexString;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERSet;
@@ -34,7 +35,6 @@ import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERT61String;
-import org.bouncycastle.asn1.DERVideotexString;
 import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.asn1.DLApplicationSpecific;
 import org.bouncycastle.util.Strings;
@@ -233,9 +233,9 @@ public class ASN1Dump
         {
             buf.append(indent + "GraphicString(" + ((DERGraphicString)obj).getString() + ") " + nl);
         }
-        else if (obj instanceof DERVideotexString)
+        else if (obj instanceof ASN1VideotexString)
         {
-            buf.append(indent + "VideotexString(" + ((DERVideotexString)obj).getString() + ") " + nl);
+            buf.append(indent + "VideotexString(" + ((ASN1VideotexString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1UTCTime)
         {
