@@ -30,6 +30,8 @@ final class ASN1UniversalTypes
             return ASN1Sequence.TYPE;
         case BERTags.SET:
             return ASN1Set.TYPE;
+        case BERTags.NUMERIC_STRING:            // [UNIVERSAL 18] IMPLICIT OCTET STRING (encode as if)
+            return ASN1NumericString.TYPE;
         case BERTags.VIDEOTEX_STRING:           // [UNIVERSAL 21] IMPLICIT OCTET STRING (encode as if)
             return ASN1VideotexString.TYPE;
         case BERTags.UTC_TIME:                  // [UNIVERSAL 23] IMPLICIT VisibleString (restricted values)
@@ -42,7 +44,6 @@ final class ASN1UniversalTypes
         // TODO Handle remaining valid tags 
         case BERTags.BIT_STRING:
         case BERTags.EXTERNAL:
-        case BERTags.NUMERIC_STRING:            // [UNIVERSAL 18] IMPLICIT OCTET STRING (encode as if)
         case BERTags.PRINTABLE_STRING:          // [UNIVERSAL 19] IMPLICIT OCTET STRING (encode as if)
         case BERTags.T61_STRING:                // [UNIVERSAL 20] IMPLICIT OCTET STRING (encode as if)
         case BERTags.IA5_STRING:                // [UNIVERSAL 22] IMPLICIT OCTET STRING (encode as if)
