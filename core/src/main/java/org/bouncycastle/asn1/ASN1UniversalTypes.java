@@ -30,22 +30,22 @@ final class ASN1UniversalTypes
         // TODO Handle remaining valid tags 
         case BERTags.BIT_STRING:
         case BERTags.EXTERNAL:
-        case BERTags.UTF8_STRING:
-        case BERTags.NUMERIC_STRING:
-        case BERTags.PRINTABLE_STRING:
-        case BERTags.T61_STRING:
-        case BERTags.VIDEOTEX_STRING:
-        case BERTags.IA5_STRING:
-        case BERTags.UTC_TIME:
-        case BERTags.GENERALIZED_TIME:
-        case BERTags.GRAPHIC_STRING:
-        case BERTags.VISIBLE_STRING:
-        case BERTags.GENERAL_STRING:
-        case BERTags.UNIVERSAL_STRING:
-        case BERTags.BMP_STRING:
+        case BERTags.UTF8_STRING:               // [UNIVERSAL 12] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.NUMERIC_STRING:            // [UNIVERSAL 18] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.PRINTABLE_STRING:          // [UNIVERSAL 19] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.T61_STRING:                // [UNIVERSAL 20] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.VIDEOTEX_STRING:           // [UNIVERSAL 21] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.IA5_STRING:                // [UNIVERSAL 22] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.UTC_TIME:                  // [UNIVERSAL 23] IMPLICIT VisibleString (restricted values)
+        case BERTags.GENERALIZED_TIME:          // [UNIVERSAL 24] IMPLICIT VisibleString (restricted values)
+        case BERTags.GRAPHIC_STRING:            // [UNIVERSAL 25] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.VISIBLE_STRING:            // [UNIVERSAL 26] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.GENERAL_STRING:            // [UNIVERSAL 27] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.UNIVERSAL_STRING:          // [UNIVERSAL 28] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.BMP_STRING:                // [UNIVERSAL 30] IMPLICIT OCTET STRING (encode as if)
             return null;
 
-        case BERTags.OBJECT_DESCRIPTOR:
+        case BERTags.OBJECT_DESCRIPTOR:         // [UNIVERSAL 7] IMPLICIT GraphicString
         case BERTags.REAL:
         case BERTags.EMBEDDED_PDV:
         case BERTags.RELATIVE_OID:
