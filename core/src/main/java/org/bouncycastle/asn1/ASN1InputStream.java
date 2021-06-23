@@ -517,7 +517,7 @@ public class ASN1InputStream
         case VISIBLE_STRING:
             return new DERVisibleString(defIn.toByteArray());
         case GRAPHIC_STRING:
-            return new DERGraphicString(defIn.toByteArray());
+            return ASN1GraphicString.createPrimitive(defIn.toByteArray());
         case VIDEOTEX_STRING:
             return new DERVideotexString(defIn.toByteArray());
         default:
