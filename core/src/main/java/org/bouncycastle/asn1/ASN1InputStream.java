@@ -522,7 +522,7 @@ public class ASN1InputStream
         case GRAPHIC_STRING:
             return ASN1GraphicString.createPrimitive(defIn.toByteArray());
         case VIDEOTEX_STRING:
-            return new DERVideotexString(defIn.toByteArray());
+            return ASN1VideotexString.createPrimitive(defIn.toByteArray());
         default:
             throw new IOException("unknown tag " + tagNo + " encountered");
         }
