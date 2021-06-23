@@ -20,6 +20,8 @@ final class ASN1UniversalTypes
             return ASN1Null.TYPE;
         case BERTags.OBJECT_IDENTIFIER:
             return ASN1ObjectIdentifier.TYPE;
+        case BERTags.OBJECT_DESCRIPTOR:         // [UNIVERSAL 7] IMPLICIT GraphicString
+            return ASN1ObjectDescriptor.TYPE;
         case BERTags.ENUMERATED:
             return ASN1Enumerated.TYPE;
         case BERTags.SEQUENCE:
@@ -46,7 +48,6 @@ final class ASN1UniversalTypes
         case BERTags.BMP_STRING:                // [UNIVERSAL 30] IMPLICIT OCTET STRING (encode as if)
             return null;
 
-        case BERTags.OBJECT_DESCRIPTOR:         // [UNIVERSAL 7] IMPLICIT GraphicString
         case BERTags.REAL:
         case BERTags.EMBEDDED_PDV:
         case BERTags.RELATIVE_OID:
