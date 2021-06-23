@@ -57,6 +57,8 @@ public class X500NameTest
         "CN=\\ Test X\\ ,O=\\ Test,C=GB"          // expected
     };
 
+    private static final String dnqSubject = "DNQ=Legion of the Bouncy Castle Inc.";
+
     public String getName()
     {
         return "X500Name";
@@ -178,6 +180,11 @@ public class X500NameTest
             fail("Failed same object test");
         }
 
+        // basic style test
+        X500Name dnqName = new X500Name(DNQStyle.INSTANCE, dnqSubject);
+
+        isEquals(dnqName.toString(), "DNQ=Legion of the Bouncy Castle Inc.");
+        
 //        if (!name1.equals(name1, true))
 //        {
 //            fail("Failed same object test - in Order");
@@ -666,6 +673,18 @@ public class X500NameTest
         throws Exception
     {
         IETFUtils.valueToString(new DERUTF8String(" "));
+    }
+
+    public static class DNQStyle
+        extends BCStyle
+    {
+        public static final DNQStyle INSTANCE = new DNQStyle();
+
+        private DNQStyle()
+        {
+             defaultLookUp.put("dnq", BCStyle.DN_QUALIFIER);
+             defaultSymbols.put(BCStyle.DN_QUALIFIER, "DNQ");
+        }
     }
 
     /*
