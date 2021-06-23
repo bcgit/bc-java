@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.util;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ApplicationSpecific;
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -10,6 +11,7 @@ import org.bouncycastle.asn1.ASN1External;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Null;
+import org.bouncycastle.asn1.ASN1ObjectDescriptor;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -25,7 +27,6 @@ import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERBMPString;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERGraphicString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERPrintableString;
@@ -190,13 +191,14 @@ public class ASN1Dump
         {
             buf.append(indent + "Integer(" + ((ASN1Integer)obj).getValue() + ")" + nl);
         }
-        else if (obj instanceof DERBitString)
+        else if (obj instanceof ASN1BitString)
         {
-            DERBitString bt = (DERBitString)obj;
-            buf.append(indent + "DER Bit String" + "[" + bt.getBytes().length + ", " + bt.getPadBits() + "] ");
+            ASN1BitString bt = (ASN1BitString)obj;
+            byte[] bytes = bt.getBytes();
+            buf.append(indent + "DER Bit String" + "[" + bytes.length + ", " + bt.getPadBits() + "] ");
             if (verbose)
             {
-                buf.append(dumpBinaryDataAsString(indent, bt.getBytes()));
+                buf.append(dumpBinaryDataAsString(indent, bytes));
             }
             else
             {
@@ -247,6 +249,11 @@ public class ASN1Dump
         {
             ASN1Enumerated en = (ASN1Enumerated) obj;
             buf.append(indent + "DER Enumerated(" + en.getValue() + ")" + nl);
+        }
+        else if (obj instanceof ASN1ObjectDescriptor)
+        {
+            ASN1ObjectDescriptor od = (ASN1ObjectDescriptor)obj;
+            buf.append(indent + "ObjectDescriptor(" + od.getBaseGraphicString().getString() + ") " + nl);
         }
         else if (obj instanceof ASN1External)
         {
