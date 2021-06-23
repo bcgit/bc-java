@@ -199,7 +199,7 @@ public class OpenSSHPrivateKeyUtil
                     && sequence.getObjectAt(2) instanceof ASN1TaggedObject)
                 {
                     ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(sequence);
-                    ASN1ObjectIdentifier curveOID = (ASN1ObjectIdentifier)ecPrivateKey.getParameters();
+                    ASN1ObjectIdentifier curveOID = ASN1ObjectIdentifier.getInstance(ecPrivateKey.getParametersObject());
                     X9ECParameters x9Params = ECNamedCurveTable.getByOID(curveOID);
                     result = new ECPrivateKeyParameters(
                         ecPrivateKey.getKey(),

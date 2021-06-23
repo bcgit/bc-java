@@ -280,6 +280,22 @@ public abstract class ASN1TaggedObject
         return obj.toASN1Primitive();
     }
 
+    /**
+     * Needed for open types, until we have better type-guided parsing support. Use
+     * sparingly for other purposes, and prefer {@link #getExplicitBaseTagged()} or
+     * {@link #getBaseUniversal(boolean, int)} where possible. Before using, check
+     * for matching tag {@link #getTagClass() class} and {@link #getTagNo() number}.
+     */
+    public ASN1Object getExplicitBaseObject()
+    {
+        if (!isExplicit())
+        {
+            throw new IllegalStateException("object implicit - explicit expected.");
+        }
+
+        return obj instanceof ASN1Object ? (ASN1Object)obj : obj.toASN1Primitive();
+    }
+
     public ASN1TaggedObject getExplicitBaseTagged()
     {
         if (!isExplicit())
