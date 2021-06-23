@@ -16,7 +16,7 @@ import java.io.IOException;
 public class ASN1Boolean
     extends ASN1Primitive
 {
-    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Integer.class, BERTags.INTEGER)
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Boolean.class, BERTags.BOOLEAN)
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
