@@ -483,7 +483,8 @@ public class ASN1InputStream
         case BOOLEAN:
             return ASN1Boolean.fromOctetString(getBuffer(defIn, tmpBuffers));
         case ENUMERATED:
-            return ASN1Enumerated.fromOctetString(getBuffer(defIn, tmpBuffers));
+            // TODO Ideally only clone if we used a buffer
+            return ASN1Enumerated.createPrimitive(getBuffer(defIn, tmpBuffers), true);
         case GENERALIZED_TIME:
             return ASN1GeneralizedTime.createPrimitive(defIn.toByteArray());
         case GENERAL_STRING:
@@ -503,7 +504,7 @@ public class ASN1InputStream
         case OBJECT_DESCRIPTOR:
             return ASN1ObjectDescriptor.createPrimitive(defIn.toByteArray());
         case OBJECT_IDENTIFIER:
-            return ASN1ObjectIdentifier.fromOctetString(getBuffer(defIn, tmpBuffers));
+            return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers));
         case OCTET_STRING:
             return new DEROctetString(defIn.toByteArray());
         case PRINTABLE_STRING:

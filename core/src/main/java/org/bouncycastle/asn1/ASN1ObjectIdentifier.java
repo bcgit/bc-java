@@ -18,7 +18,7 @@ public class ASN1ObjectIdentifier
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            return ASN1ObjectIdentifier.fromOctetString(octetString.getOctets());
+            return createPrimitive(octetString.getOctets());
         }
     };
 
@@ -467,13 +467,13 @@ public class ASN1ObjectIdentifier
         }
     }
 
-    static ASN1ObjectIdentifier fromOctetString(byte[] enc)
+    static ASN1ObjectIdentifier createPrimitive(byte[] contents)
     {
-        final OidHandle hdl = new OidHandle(enc);
+        final OidHandle hdl = new OidHandle(contents);
         ASN1ObjectIdentifier oid = pool.get(hdl);
         if (oid == null)
         {
-            return new ASN1ObjectIdentifier(enc);
+            return new ASN1ObjectIdentifier(contents);
         }
         return oid;
     }
