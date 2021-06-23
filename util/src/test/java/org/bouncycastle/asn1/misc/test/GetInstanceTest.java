@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.Vector;
 
-import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -14,6 +13,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTCTime;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERGeneralString;
@@ -287,6 +287,8 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Base64;
 
+import junit.framework.TestCase;
+
 public class GetInstanceTest
     extends TestCase
 {
@@ -509,7 +511,7 @@ public class GetInstanceTest
         PKIFreeText.getInstance(null);
         doFullGetInstanceTest(PKIFreeText.class, new PKIFreeText("hello world"));
         doFullGetInstanceTest(PKIFreeText.class, new PKIFreeText(new String[]{"hello", "world"}));
-        doFullGetInstanceTest(PKIFreeText.class, new PKIFreeText(new DERUTF8String[]{new DERUTF8String("hello"), new DERUTF8String("world")}));
+        doFullGetInstanceTest(PKIFreeText.class, new PKIFreeText(new ASN1UTF8String[]{new DERUTF8String("hello"), new DERUTF8String("world")}));
         PKIHeader.getInstance(null);
         PKIMessage.getInstance(null);
         PKIMessages.getInstance(null);

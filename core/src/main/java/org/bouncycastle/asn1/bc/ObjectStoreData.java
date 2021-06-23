@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -54,7 +55,7 @@ public class ObjectStoreData
         this.creationDate = ASN1GeneralizedTime.getInstance(seq.getObjectAt(2));
         this.lastModifiedDate = ASN1GeneralizedTime.getInstance(seq.getObjectAt(3));
         this.objectDataSequence = ObjectDataSequence.getInstance(seq.getObjectAt(4));
-        this.comment = (seq.size() == 6) ? DERUTF8String.getInstance(seq.getObjectAt(5)).getString() : null;
+        this.comment = (seq.size() == 6) ? ASN1UTF8String.getInstance(seq.getObjectAt(5)).getString() : null;
     }
 
     public static ObjectStoreData getInstance(Object o)

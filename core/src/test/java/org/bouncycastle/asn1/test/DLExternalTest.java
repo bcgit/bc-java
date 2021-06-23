@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
@@ -68,7 +69,7 @@ public class DLExternalTest
         isTrue("check data value descriptor", dle.getDataValueDescriptor() != null);
         dvdType = dle.getDataValueDescriptor().getClass().getName();
         isEquals("check type of value descriptor: " + dvdType, DERUTF8String.class.getName(), dvdType);
-        isEquals("check value", "something completely different", ((DERUTF8String)dle.getDataValueDescriptor()).getString());
+        isEquals("check value", "something completely different", ((ASN1UTF8String)dle.getDataValueDescriptor()).getString());
         isEquals("check encoding", 1, dle.getEncoding());
         isTrue("check existence of external content", dle.getExternalContent() != null);
         ecType = dle.getExternalContent().getClass().getName();
@@ -87,7 +88,7 @@ public class DLExternalTest
         isTrue("check existence of data value descriptor", dle.getDataValueDescriptor() != null);
         dvdType = dle.getDataValueDescriptor().getClass().getName();
         isEquals("check type of value descriptor: " + dvdType, DERUTF8String.class.getName(), dvdType);
-        isEquals("check value", "something completely different", ((DERUTF8String)dle.getDataValueDescriptor()).getString());
+        isEquals("check value", "something completely different", ((ASN1UTF8String)dle.getDataValueDescriptor()).getString());
         isEquals("check encoding", 1, dle.getEncoding());
         isTrue("check existence of external content", dle.getExternalContent() != null);
         ecType = dle.getExternalContent().getClass().getName();

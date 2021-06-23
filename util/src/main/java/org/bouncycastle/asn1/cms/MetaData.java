@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -26,13 +27,13 @@ public class MetaData
     extends ASN1Object
 {
     private ASN1Boolean hashProtected;
-    private DERUTF8String fileName;
+    private ASN1UTF8String fileName;
     private DERIA5String  mediaType;
     private Attributes otherMetaData;
 
     public MetaData(
         ASN1Boolean hashProtected,
-        DERUTF8String fileName,
+        ASN1UTF8String fileName,
         DERIA5String mediaType,
         Attributes otherMetaData)
     {
@@ -48,9 +49,9 @@ public class MetaData
 
         int index = 1;
 
-        if (index < seq.size() && seq.getObjectAt(index) instanceof DERUTF8String)
+        if (index < seq.size() && seq.getObjectAt(index) instanceof ASN1UTF8String)
         {
-            this.fileName = DERUTF8String.getInstance(seq.getObjectAt(index++));
+            this.fileName = ASN1UTF8String.getInstance(seq.getObjectAt(index++));
         }
         if (index < seq.size() && seq.getObjectAt(index) instanceof DERIA5String)
         {
@@ -118,7 +119,15 @@ public class MetaData
         return hashProtected.isTrue();
     }
 
+    /**
+     * @deprecated Use {@link #getFileNameUTF8()} instead.
+     */
     public DERUTF8String getFileName()
+    {
+        return DERUTF8String.getInstance(getFileNameUTF8());
+    }
+
+    public ASN1UTF8String getFileNameUTF8()
     {
         return this.fileName;
     }

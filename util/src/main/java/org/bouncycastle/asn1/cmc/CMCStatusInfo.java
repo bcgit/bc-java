@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
@@ -31,10 +32,10 @@ public class CMCStatusInfo
 {
     private final CMCStatus cMCStatus;
     private final ASN1Sequence bodyList;
-    private final DERUTF8String statusString;
+    private final ASN1UTF8String statusString;
     private final OtherInfo otherInfo;
 
-    CMCStatusInfo(CMCStatus cMCStatus, ASN1Sequence bodyList, DERUTF8String statusString, OtherInfo otherInfo)
+    CMCStatusInfo(CMCStatus cMCStatus, ASN1Sequence bodyList, ASN1UTF8String statusString, OtherInfo otherInfo)
     {
         this.cMCStatus = cMCStatus;
         this.bodyList = bodyList;
@@ -53,14 +54,14 @@ public class CMCStatusInfo
 
         if (seq.size() > 3)
         {
-            this.statusString = DERUTF8String.getInstance(seq.getObjectAt(2));
+            this.statusString = ASN1UTF8String.getInstance(seq.getObjectAt(2));
             this.otherInfo = OtherInfo.getInstance(seq.getObjectAt(3));
         }
         else if (seq.size() > 2)
         {
-            if (seq.getObjectAt(2) instanceof  DERUTF8String)
+            if (seq.getObjectAt(2) instanceof ASN1UTF8String)
             {
-                this.statusString = DERUTF8String.getInstance(seq.getObjectAt(2));
+                this.statusString = ASN1UTF8String.getInstance(seq.getObjectAt(2));
                 this.otherInfo = null;
             }
             else
@@ -117,7 +118,15 @@ public class CMCStatusInfo
         return Utils.toBodyPartIDArray(bodyList);
     }
 
+    /**
+     * @deprecated Use {@link #getStatusStringUTF8()} instead.
+     */
     public DERUTF8String getStatusString()
+    {
+        return DERUTF8String.getInstance(statusString);
+    }
+
+    public ASN1UTF8String getStatusStringUTF8()
     {
         return statusString;
     }

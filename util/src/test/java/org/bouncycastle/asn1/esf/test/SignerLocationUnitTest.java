@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -23,13 +24,13 @@ public class SignerLocationUnitTest
     public void performTest() 
         throws Exception
     {
-        DERUTF8String countryName = new DERUTF8String("Australia");
+        ASN1UTF8String countryName = new DERUTF8String("Australia");
         
         SignerLocation sl = new SignerLocation(countryName, null, null);
 
         checkConstruction(sl, DirectoryString.getInstance(countryName), null, null);
 
-        DERUTF8String localityName = new DERUTF8String("Melbourne");
+        ASN1UTF8String localityName = new DERUTF8String("Melbourne");
         
         sl = new SignerLocation(null, localityName, null);
 

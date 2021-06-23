@@ -16,9 +16,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -397,13 +397,15 @@ public class OEROutputStream
             break;
         }
         case UTF8_STRING:
-            DERUTF8String utf8 = DERUTF8String.getInstance(encodable);
+        {
+            ASN1UTF8String utf8 = ASN1UTF8String.getInstance(encodable);
             byte[] encoded = Strings.toUTF8ByteArray(utf8.getString());
             encodeLength(encoded.length);
             out.write(encoded);
             debugPrint(oerElement.appendLabel(""));
             out.flush();
             break;
+        }
         case BIT_STRING:
         {
 

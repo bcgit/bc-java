@@ -24,6 +24,8 @@ final class ASN1UniversalTypes
             return ASN1ObjectDescriptor.TYPE;
         case BERTags.ENUMERATED:
             return ASN1Enumerated.TYPE;
+        case BERTags.UTF8_STRING:               // [UNIVERSAL 12] IMPLICIT OCTET STRING (encode as if)
+            return ASN1UTF8String.TYPE;
         case BERTags.SEQUENCE:
             return ASN1Sequence.TYPE;
         case BERTags.SET:
@@ -38,7 +40,6 @@ final class ASN1UniversalTypes
         // TODO Handle remaining valid tags 
         case BERTags.BIT_STRING:
         case BERTags.EXTERNAL:
-        case BERTags.UTF8_STRING:               // [UNIVERSAL 12] IMPLICIT OCTET STRING (encode as if)
         case BERTags.NUMERIC_STRING:            // [UNIVERSAL 18] IMPLICIT OCTET STRING (encode as if)
         case BERTags.PRINTABLE_STRING:          // [UNIVERSAL 19] IMPLICIT OCTET STRING (encode as if)
         case BERTags.T61_STRING:                // [UNIVERSAL 20] IMPLICIT OCTET STRING (encode as if)
