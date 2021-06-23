@@ -162,12 +162,7 @@ public abstract class ASN1Set
      */
     public static ASN1Set getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1Set)taggedObject.getBaseUniversal(explicit, BERTags.SET);
+        return (ASN1Set)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     protected final ASN1Encodable[] elements;

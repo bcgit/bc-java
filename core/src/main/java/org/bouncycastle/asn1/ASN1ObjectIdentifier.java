@@ -75,12 +75,7 @@ public class ASN1ObjectIdentifier
      */
     public static ASN1ObjectIdentifier getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1ObjectIdentifier)taggedObject.getBaseUniversal(explicit, BERTags.OBJECT_IDENTIFIER);
+        return (ASN1ObjectIdentifier)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7f;

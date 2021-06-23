@@ -100,12 +100,7 @@ public class ASN1GeneralizedTime
      */
     public static ASN1GeneralizedTime getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1GeneralizedTime)taggedObject.getBaseUniversal(explicit, BERTags.GENERALIZED_TIME);
+        return (ASN1GeneralizedTime)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     final byte[] contents;

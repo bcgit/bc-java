@@ -64,12 +64,7 @@ public abstract class ASN1GraphicString
      */
     public static ASN1GraphicString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1GraphicString)taggedObject.getBaseUniversal(explicit, BERTags.GRAPHIC_STRING);
+        return (ASN1GraphicString)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     private final byte[] contents;

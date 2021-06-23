@@ -68,12 +68,7 @@ public class ASN1Integer
      */
     public static ASN1Integer getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1Integer)taggedObject.getBaseUniversal(explicit, BERTags.INTEGER);
+        return (ASN1Integer)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     /**

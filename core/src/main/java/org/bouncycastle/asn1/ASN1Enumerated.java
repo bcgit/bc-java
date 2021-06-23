@@ -61,12 +61,7 @@ public class ASN1Enumerated
      */
     public static ASN1Enumerated getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1Enumerated)taggedObject.getBaseUniversal(explicit, BERTags.ENUMERATED);
+        return (ASN1Enumerated)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     private final byte[] contents;

@@ -124,12 +124,7 @@ public abstract class ASN1OctetString
      */
     public static ASN1OctetString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1OctetString)taggedObject.getBaseUniversal(explicit, BERTags.OCTET_STRING);
+        return (ASN1OctetString)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     /**
