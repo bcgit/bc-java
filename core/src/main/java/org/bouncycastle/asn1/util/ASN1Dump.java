@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1External;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Null;
+import org.bouncycastle.asn1.ASN1NumericString;
 import org.bouncycastle.asn1.ASN1ObjectDescriptor;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -212,6 +213,10 @@ public class ASN1Dump
         else if (obj instanceof ASN1UTF8String)
         {
             buf.append(indent + "UTF8String(" + ((ASN1UTF8String)obj).getString() + ") " + nl);
+        }
+        else if (obj instanceof ASN1NumericString)
+        {
+            buf.append(indent + "NumericString(" + ((ASN1NumericString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof DERPrintableString)
         {
