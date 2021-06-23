@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.DERGraphicString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERNumericString;
+import org.bouncycastle.asn1.DERObjectDescriptor;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
@@ -66,6 +67,7 @@ public class EqualsAndHashCodeTest
                 DERNull.INSTANCE,
                 new DERNumericString("123456"),
                 new ASN1ObjectIdentifier("1.1.1.10000.1"),
+                new DERObjectDescriptor(new DERGraphicString(Hex.decode("feedface"))),
                 new DEROctetString(data),
                 new DERPrintableString("hello world"),
                 new DERSequence(new DERPrintableString("hello world")),
