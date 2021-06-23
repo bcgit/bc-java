@@ -296,6 +296,21 @@ public abstract class ASN1TaggedObject
         return obj instanceof ASN1Object ? (ASN1Object)obj : obj.toASN1Primitive();
     }
 
+    public ASN1Object getExplicitContextBaseObject()
+    {
+        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
+        {
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
+        }
+
+        if (!isExplicit())
+        {
+            throw new IllegalStateException("object implicit - explicit expected.");
+        }
+
+        return obj instanceof ASN1Object ? (ASN1Object)obj : obj.toASN1Primitive();
+    }
+
     public ASN1TaggedObject getExplicitBaseTagged()
     {
         if (!isExplicit())
