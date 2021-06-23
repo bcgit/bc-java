@@ -31,11 +31,16 @@ abstract class ASN1UniversalType
 
     ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
     {
-        throw new IllegalStateException("unexpected implicit primitive encoding");
+        throw new IllegalStateException("unexpected implicit constructed encoding");
     }
 
     final ASN1Primitive fromByteArray(byte[] bytes) throws IOException
     {
         return checkedCast(ASN1Primitive.fromByteArray(bytes));
+    }
+
+    final ASN1Tag getTag()
+    {
+        return tag;
     }
 }
