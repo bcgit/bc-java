@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -125,7 +126,7 @@ public class DisplayText
    private DisplayText(ASN1String de)
    {
       contents = de;
-      if (de instanceof DERUTF8String)
+      if (de instanceof ASN1UTF8String)
       {
          contentType = CONTENT_TYPE_UTF8STRING;
       }

@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTCTime;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
@@ -33,7 +34,6 @@ import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERT61String;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERVideotexString;
 import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.asn1.DLApplicationSpecific;
@@ -209,9 +209,9 @@ public class ASN1Dump
         {
             buf.append(indent + "IA5String(" + ((DERIA5String)obj).getString() + ") " + nl);
         }
-        else if (obj instanceof DERUTF8String)
+        else if (obj instanceof ASN1UTF8String)
         {
-            buf.append(indent + "UTF8String(" + ((DERUTF8String)obj).getString() + ") " + nl);
+            buf.append(indent + "UTF8String(" + ((ASN1UTF8String)obj).getString() + ") " + nl);
         }
         else if (obj instanceof DERPrintableString)
         {

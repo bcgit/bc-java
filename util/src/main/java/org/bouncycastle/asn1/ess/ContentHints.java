@@ -6,13 +6,14 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
 public class ContentHints
     extends ASN1Object
 {
-    private DERUTF8String contentDescription;
+    private ASN1UTF8String contentDescription;
     private ASN1ObjectIdentifier contentType;
 
     public static ContentHints getInstance(Object o)
@@ -35,9 +36,9 @@ public class ContentHints
     private ContentHints(ASN1Sequence seq)
     {
         ASN1Encodable field = seq.getObjectAt(0);
-        if (field.toASN1Primitive() instanceof DERUTF8String)
+        if (field.toASN1Primitive() instanceof ASN1UTF8String)
         {
-            contentDescription = DERUTF8String.getInstance(field);
+            contentDescription = ASN1UTF8String.getInstance(field);
             contentType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(1));
         }
         else
@@ -55,7 +56,7 @@ public class ContentHints
 
     public ContentHints(
         ASN1ObjectIdentifier contentType,
-        DERUTF8String contentDescription)
+        ASN1UTF8String contentDescription)
     {
         this.contentType = contentType;
         this.contentDescription = contentDescription;
@@ -66,7 +67,15 @@ public class ContentHints
         return contentType;
     }
 
+    /**
+     * @deprecated Use {@link #getContentDescriptionUTF8()} instead.
+     */
     public DERUTF8String getContentDescription()
+    {
+        return DERUTF8String.getInstance(contentDescription);
+    }
+
+    public ASN1UTF8String getContentDescriptionUTF8()
     {
         return contentDescription;
     }

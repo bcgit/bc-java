@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -36,7 +37,7 @@ public class EncKeyWithID
 
         if (seq.size() > 1)
         {
-            if (!(seq.getObjectAt(1) instanceof DERUTF8String))
+            if (!(seq.getObjectAt(1) instanceof ASN1UTF8String))
             {
                 this.identifier = GeneralName.getInstance(seq.getObjectAt(1));
             }
@@ -57,7 +58,7 @@ public class EncKeyWithID
         this.identifier = null;
     }
 
-    public EncKeyWithID(PrivateKeyInfo privKeyInfo, DERUTF8String str)
+    public EncKeyWithID(PrivateKeyInfo privKeyInfo, ASN1UTF8String str)
     {
         this.privKeyInfo = privKeyInfo;
         this.identifier = str;
@@ -81,7 +82,7 @@ public class EncKeyWithID
 
     public boolean isIdentifierUTF8String()
     {
-        return identifier instanceof DERUTF8String;
+        return identifier instanceof ASN1UTF8String;
     }
 
     public ASN1Encodable getIdentifier()

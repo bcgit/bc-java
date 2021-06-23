@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -92,8 +93,8 @@ public class SignerLocation
     }
 
     public SignerLocation(
-        DERUTF8String   countryName,
-        DERUTF8String   localityName,
+        ASN1UTF8String   countryName,
+        ASN1UTF8String   localityName,
         ASN1Sequence    postalAddress)
     {
         this(DirectoryString.getInstance(countryName), DirectoryString.getInstance(localityName), postalAddress);
