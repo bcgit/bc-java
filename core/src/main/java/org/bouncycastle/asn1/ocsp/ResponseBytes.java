@@ -31,10 +31,7 @@ public class ResponseBytes
         this.response = response;
     }
 
-    /**
-     * @deprecated use getInstance()
-     */
-    public ResponseBytes(
+    private ResponseBytes(
         ASN1Sequence    seq)
     {
         responseType = (ASN1ObjectIdentifier)seq.getObjectAt(0);

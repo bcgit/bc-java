@@ -42,10 +42,7 @@ public class AttributeCertificate
         this.signatureValue = signatureValue;
     }
 
-    /**
-     * @deprecated use getInstance() method.
-     */
-    public AttributeCertificate(
+    private AttributeCertificate(
         ASN1Sequence    seq)
     {
         if (seq.size() != 3)

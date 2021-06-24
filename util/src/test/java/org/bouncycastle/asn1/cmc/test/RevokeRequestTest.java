@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -45,7 +46,7 @@ public class RevokeRequestTest
         {
             ASN1GeneralizedTime invalidityDate = null;
             ASN1OctetString passphrase = null;
-            DERUTF8String comment = null;
+            ASN1UTF8String comment = null;
 
             if ((t & 1) == 1)
             {
@@ -75,8 +76,7 @@ public class RevokeRequestTest
             isEquals("reason", rr.getReason(), rrResp.getReason());
             isEquals("invalidityDate", rr.getInvalidityDate(), rrResp.getInvalidityDate());
             isTrue("passphrase", areEqual(rr.getPassPhrase(), rrResp.getPassPhrase()));
-            isEquals("comment", rr.getComment(), rrResp.getComment());
-
+            isEquals("comment", rr.getCommentUTF8(), rrResp.getCommentUTF8());
         }
 
         try

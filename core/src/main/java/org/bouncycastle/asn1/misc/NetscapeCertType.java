@@ -49,6 +49,6 @@ public class NetscapeCertType
 
     public String toString()
     {
-        return "NetscapeCertType: 0x" + Integer.toHexString(data[0] & 0xff);
+        return "NetscapeCertType: 0x" + Integer.toHexString(intValue());
     }
 }

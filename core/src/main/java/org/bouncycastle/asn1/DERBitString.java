@@ -24,7 +24,7 @@ public class DERBitString
         }
         if (obj instanceof DLBitString)
         {
-            return new DERBitString(((DLBitString)obj).data, ((DLBitString)obj).padBits);
+            return new DERBitString(((DLBitString)obj).contents, false);
         }
         if (obj instanceof byte[])
         {
@@ -63,7 +63,7 @@ public class DERBitString
         }
         else
         {
-            return fromOctetString(ASN1OctetString.getInstance(o).getOctets());
+            return fromOctetString(ASN1OctetString.getInstance(o));
         }
     }
 
@@ -102,6 +102,11 @@ public class DERBitString
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER), 0);
     }
 
+    DERBitString(byte[] contents, boolean check)
+    {
+        super(contents, check);
+    }
+
     boolean isConstructed()
     {
         return false;
@@ -109,22 +114,25 @@ public class DERBitString
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, 1 + data.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contents.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        int len = data.length;
-        if (0 == len
-            || 0 == padBits
-            || (data[len - 1] == (byte)(data[len - 1] & (0xFF << padBits))))
+        int padBits = contents[0] & 0xFF;
+        int length = contents.length;
+        int last = length - 1;
+
+        byte lastOctet = contents[last];
+        byte lastOctetDER = (byte)(contents[last] & (0xFF << padBits));
+
+        if (lastOctet == lastOctetDER)
         {
-            out.writeEncodingDL(withTag, BERTags.BIT_STRING, (byte)padBits, data);
+            out.writeEncodingDL(withTag, BERTags.BIT_STRING, contents);
         }
         else
         {
-            byte der = (byte)(data[len - 1] & (0xFF << padBits));
-            out.writeEncodingDL(withTag, BERTags.BIT_STRING, (byte)padBits, data, 0, len - 1, der);
+            out.writeEncodingDL(withTag, BERTags.BIT_STRING, contents, 0, last, lastOctetDER);
         }
     }
 
@@ -138,21 +146,8 @@ public class DERBitString
         return this;
     }
 
-    static DERBitString fromOctetString(byte[] bytes)
+    static DERBitString fromOctetString(ASN1OctetString octetString)
     {
-        if (bytes.length < 1)
-        {
-            throw new IllegalArgumentException("truncated BIT STRING detected");
-        }
-
-        int padBits = bytes[0];
-        byte[] data = new byte[bytes.length - 1];
-
-        if (data.length != 0)
-        {
-            System.arraycopy(bytes, 1, data, 0, bytes.length - 1);
-        }
-
-        return new DERBitString(data, padBits);
+        return new DERBitString(octetString.getOctets(), true);
     }
 }

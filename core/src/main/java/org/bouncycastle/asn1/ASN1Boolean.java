@@ -16,7 +16,7 @@ import java.io.IOException;
 public class ASN1Boolean
     extends ASN1Primitive
 {
-    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Integer.class, BERTags.INTEGER)
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Boolean.class, BERTags.BOOLEAN)
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
@@ -95,12 +95,7 @@ public class ASN1Boolean
      */
     public static ASN1Boolean getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return (ASN1Boolean)taggedObject.getBaseUniversal(explicit, BERTags.BOOLEAN);
+        return (ASN1Boolean)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     private ASN1Boolean(byte value)

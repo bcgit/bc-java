@@ -247,12 +247,12 @@ public class ASN1InputStream
         {
         case OCTET_STRING:
             return BEROctetStringParser.parse(sp);
-        case SEQUENCE:
-            return new BERSequence(sp.readVector());
-        case SET:
-            return new BERSet(sp.readVector());
         case EXTERNAL:
             return DERExternalParser.parse(sp);
+        case SEQUENCE:
+            return BERSequenceParser.parse(sp);
+        case SET:
+            return BERSetParser.parse(sp);
         default:
             throw new IOException("unknown BER object encountered");
         }
@@ -477,15 +477,16 @@ public class ASN1InputStream
         switch (tagNo)
         {
         case BIT_STRING:
-            return ASN1BitString.fromInputStream(defIn.getRemaining(), defIn);
+            return ASN1BitString.createPrimitive(defIn.toByteArray());
         case BMP_STRING:
             return new DERBMPString(getBMPCharBuffer(defIn));
         case BOOLEAN:
             return ASN1Boolean.fromOctetString(getBuffer(defIn, tmpBuffers));
         case ENUMERATED:
-            return ASN1Enumerated.fromOctetString(getBuffer(defIn, tmpBuffers));
+            // TODO Ideally only clone if we used a buffer
+            return ASN1Enumerated.createPrimitive(getBuffer(defIn, tmpBuffers), true);
         case GENERALIZED_TIME:
-            return new ASN1GeneralizedTime(defIn.toByteArray());
+            return ASN1GeneralizedTime.createPrimitive(defIn.toByteArray());
         case GENERAL_STRING:
             return new DERGeneralString(defIn.toByteArray());
         case IA5_STRING:
@@ -499,9 +500,11 @@ public class ASN1InputStream
             }
             return DERNull.INSTANCE;
         case NUMERIC_STRING:
-            return new DERNumericString(defIn.toByteArray());
+            return ASN1NumericString.createPrimitive(defIn.toByteArray());
+        case OBJECT_DESCRIPTOR:
+            return ASN1ObjectDescriptor.createPrimitive(defIn.toByteArray());
         case OBJECT_IDENTIFIER:
-            return ASN1ObjectIdentifier.fromOctetString(getBuffer(defIn, tmpBuffers));
+            return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers));
         case OCTET_STRING:
             return new DEROctetString(defIn.toByteArray());
         case PRINTABLE_STRING:
@@ -511,15 +514,15 @@ public class ASN1InputStream
         case UNIVERSAL_STRING:
             return new DERUniversalString(defIn.toByteArray());
         case UTC_TIME:
-            return new ASN1UTCTime(defIn.toByteArray());
+            return ASN1UTCTime.createPrimitive(defIn.toByteArray());
         case UTF8_STRING:
-            return new DERUTF8String(defIn.toByteArray());
+            return ASN1UTF8String.createPrimitive(defIn.toByteArray());
         case VISIBLE_STRING:
             return new DERVisibleString(defIn.toByteArray());
         case GRAPHIC_STRING:
-            return new DERGraphicString(defIn.toByteArray());
+            return ASN1GraphicString.createPrimitive(defIn.toByteArray());
         case VIDEOTEX_STRING:
-            return new DERVideotexString(defIn.toByteArray());
+            return ASN1VideotexString.createPrimitive(defIn.toByteArray());
         default:
             throw new IOException("unknown tag " + tagNo + " encountered");
         }

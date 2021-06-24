@@ -8,11 +8,6 @@ final class ASN1UniversalTypes
 
     static ASN1UniversalType get(int tagNumber)
     {
-        if (tagNumber < 1 || tagNumber > 30)
-        {
-            throw new IllegalArgumentException("unsupported tag number: " + tagNumber);
-        }
-
         switch (tagNumber)
         {
         case BERTags.BOOLEAN:
@@ -21,15 +16,49 @@ final class ASN1UniversalTypes
             return ASN1Integer.TYPE;
         case BERTags.OCTET_STRING:
             return ASN1OctetString.TYPE;
+        case BERTags.NULL:
+            return ASN1Null.TYPE;
+        case BERTags.OBJECT_IDENTIFIER:
+            return ASN1ObjectIdentifier.TYPE;
+        case BERTags.OBJECT_DESCRIPTOR:         // [UNIVERSAL 7] IMPLICIT GraphicString
+            return ASN1ObjectDescriptor.TYPE;
+        case BERTags.ENUMERATED:
+            return ASN1Enumerated.TYPE;
+        case BERTags.UTF8_STRING:               // [UNIVERSAL 12] IMPLICIT OCTET STRING (encode as if)
+            return ASN1UTF8String.TYPE;
         case BERTags.SEQUENCE:
             return ASN1Sequence.TYPE;
         case BERTags.SET:
             return ASN1Set.TYPE;
+        case BERTags.NUMERIC_STRING:            // [UNIVERSAL 18] IMPLICIT OCTET STRING (encode as if)
+            return ASN1NumericString.TYPE;
+        case BERTags.VIDEOTEX_STRING:           // [UNIVERSAL 21] IMPLICIT OCTET STRING (encode as if)
+            return ASN1VideotexString.TYPE;
+        case BERTags.UTC_TIME:                  // [UNIVERSAL 23] IMPLICIT VisibleString (restricted values)
+            return ASN1UTCTime.TYPE;
+        case BERTags.GENERALIZED_TIME:          // [UNIVERSAL 24] IMPLICIT VisibleString (restricted values)
+            return ASN1GeneralizedTime.TYPE;
+        case BERTags.GRAPHIC_STRING:            // [UNIVERSAL 25] IMPLICIT OCTET STRING (encode as if)
+            return ASN1GraphicString.TYPE;
 
-        // TODO Handle all valid tags, then change to throw 
-        default:
-//            throw new IllegalArgumentException("unsupported tag number: " + tagNumber);
+        // TODO Handle remaining valid tags 
+        case BERTags.BIT_STRING:
+        case BERTags.EXTERNAL:
+        case BERTags.PRINTABLE_STRING:          // [UNIVERSAL 19] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.T61_STRING:                // [UNIVERSAL 20] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.IA5_STRING:                // [UNIVERSAL 22] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.VISIBLE_STRING:            // [UNIVERSAL 26] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.GENERAL_STRING:            // [UNIVERSAL 27] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.UNIVERSAL_STRING:          // [UNIVERSAL 28] IMPLICIT OCTET STRING (encode as if)
+        case BERTags.BMP_STRING:                // [UNIVERSAL 30] IMPLICIT OCTET STRING (encode as if)
             return null;
+
+        case BERTags.REAL:
+        case BERTags.EMBEDDED_PDV:
+        case BERTags.RELATIVE_OID:
+        case BERTags.UNRESTRICTED_STRING:
+        default:
+            throw new IllegalArgumentException("unsupported tag number: " + tagNumber);
         }
     }
 }

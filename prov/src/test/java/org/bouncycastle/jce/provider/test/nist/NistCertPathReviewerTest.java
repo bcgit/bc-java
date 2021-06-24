@@ -1,5 +1,6 @@
 package org.bouncycastle.jce.provider.test.nist;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.Security;
@@ -14,6 +15,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.i18n.ErrorBundle;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.x509.PKIXCertPathReviewer;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
@@ -686,7 +689,47 @@ public class NistCertPathReviewerTest
         
         return dataHome + "/PKITS";
     }
-    
+
+    // extended key usage chain
+       static byte[] extEE = Base64.decode("MIICtDCCAh2gAwIBAgIBAzANBgkqhkiG9w0BAQUFADCBkjELMAkGA1UEBhMCQVUxKDAmBgNVBAoMH1RoZSBMZWdpb24gb2YgdGhlIEJvdW5jeSBDYXN0bGUxKDAmBgNVBAsMH0JvdW5jeSBJbnRlcm1lZGlhdGUgQ2VydGlmaWNhdGUxLzAtBgkqhkiG9w0BCQEWIGZlZWRiYWNrLWNyeXB0b0Bib3VuY3ljYXN0bGUub3JnMB4XDTE1MDMyNDAzNTEwOVoXDTE1MDUyMzAzNTEwOVowgZYxCzAJBgNVBAYTAkFVMSgwJgYDVQQKDB9UaGUgTGVnaW9uIG9mIHRoZSBCb3VuY3kgQ2FzdGxlMRIwEAYDVQQHDAlNZWxib3VybmUxGDAWBgNVBAMMD0VyaWMgSC4gRWNoaWRuYTEvMC0GCSqGSIb3DQEJARYgZmVlZGJhY2stY3J5cHRvQGJvdW5jeWNhc3RsZS5vcmcwWjANBgkqhkiG9w0BAQEFAANJADBGAkEAtKfkYXBXTxapcIKyK+WLaipil5hBm+EocqS9umJs+umQD3ar+xITnc5d5WVk+rK2VDFloEDGBoh0IOM9ke1+1wIBEaNaMFgwHQYDVR0OBBYEFNBs7G01g7xVEhsMyz7+1yamFmRoMB8GA1UdIwQYMBaAFJQIM28yQPeHN9rRIKrtLqduyckeMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMDMA0GCSqGSIb3DQEBBQUAA4GBAICrsNswvaXFMreUHHRHrhU4QqPOds8XJe0INx3v/5TfyjPPDMihMEm8WtWbVpFgFAqUQoZscf8cE/SO5375unYFgxrK+p2/je9E82VLF4Xb0cWizjQoWvvTmvFYjt43cGGXgySFLTrW87ju9uNFr/l4W9xvI0hoLI96vEW7Ccho");
+       static byte[] extCA = Base64.decode("MIIDIzCCAoygAwIBAgIBAjANBgkqhkiG9w0BAQUFADBcMQswCQYDVQQGEwJBVTEoMCYGA1UECgwfVGhlIExlZ2lvbiBvZiB0aGUgQm91bmN5IENhc3RsZTEjMCEGA1UECwwaQm91bmN5IFByaW1hcnkgQ2VydGlmaWNhdGUwHhcNMTUwMzI0MDM1MTA5WhcNMTUwNTIzMDM1MTA5WjCBkjELMAkGA1UEBhMCQVUxKDAmBgNVBAoMH1RoZSBMZWdpb24gb2YgdGhlIEJvdW5jeSBDYXN0bGUxKDAmBgNVBAsMH0JvdW5jeSBJbnRlcm1lZGlhdGUgQ2VydGlmaWNhdGUxLzAtBgkqhkiG9w0BCQEWIGZlZWRiYWNrLWNyeXB0b0Bib3VuY3ljYXN0bGUub3JnMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCN4NETxec2lpyNKwR6JD+P4Y7a1kzenoQtNmkjDKSG98/d4fjuxU0ZBf/wSsyF5hCT4YDK3GzqQH8ZPUS7DpRJuNu0l4TNnjYmDDngapRymZeMbtgwByTohxmM/t4g8/veZY+ivQeL6Uajkr00nytJxIbiDEBViOMGcGyQFzCOaQIDAP//o4G9MIG6MB0GA1UdDgQWBBSUCDNvMkD3hzfa0SCq7S6nbsnJHjCBhAYDVR0jBH0we4AUwDYZB63EiJeoXnJvawnr5ebxKVyhYKReMFwxCzAJBgNVBAYTAkFVMSgwJgYDVQQKDB9UaGUgTGVnaW9uIG9mIHRoZSBCb3VuY3kgQ2FzdGxlMSMwIQYDVQQLDBpCb3VuY3kgUHJpbWFyeSBDZXJ0aWZpY2F0ZYIBATASBgNVHRMBAf8ECDAGAQH/AgEAMA0GCSqGSIb3DQEBBQUAA4GBAJqUlDjse7Og+7qkkFsiXHzQ8FxT82hzfcji8W7bPwZddCPBEluxCJiJBPYXWsLvwo6BEmCDzT9lLQZ+QZyL1fVbOVHiI24hAalbEBEIrEO4GXMD9spqRQ5yoTJ8CgZHTPo0rJkH/ebprp0YHtahVF440zBOvuLM0QTYpERgO2Oe");
+       static byte[] extTrust = Base64.decode("MIICJTCCAY4CAQEwDQYJKoZIhvcNAQEFBQAwXDELMAkGA1UEBhMCQVUxKDAmBgNVBAoMH1RoZSBMZWdpb24gb2YgdGhlIEJvdW5jeSBDYXN0bGUxIzAhBgNVBAsMGkJvdW5jeSBQcmltYXJ5IENlcnRpZmljYXRlMB4XDTE1MDMyNDAzNTEwOVoXDTE1MDUyMzAzNTEwOVowXDELMAkGA1UEBhMCQVUxKDAmBgNVBAoMH1RoZSBMZWdpb24gb2YgdGhlIEJvdW5jeSBDYXN0bGUxIzAhBgNVBAsMGkJvdW5jeSBQcmltYXJ5IENlcnRpZmljYXRlMIGdMA0GCSqGSIb3DQEBAQUAA4GLADCBhwKBgQCyWdLW5ienaMlL42Fkwtn8edl6q5JTFA5b8XdRGXcx1vdUDSUJ57n/7gpwpuJtVuktLt1/hauoVgC2kInzX2vb88KY4FhCU12fBk5rA5HLfTBuCi0gxN+057SalkC96ibBCtacPwUAfOJRPO5Ez+AZmOYrbDY30/wDkQebJu421QIBETANBgkqhkiG9w0BAQUFAAOBgQCDNfqQnQbbmnGzZTl7ccWIyw7SPzWnijpKsQpuRNGkoXfkCcuQLZudytEFZGEL0cycNBnierjJWAn78zGpCQtab01r1GwytRMYz8qO5IIrhsJ4XNafNypYZbi0WtPa07UCQp8tipMbfQNLzSkvkIAaD5IfhdaWKLrSQJwmGg7YAg==");
+
+       public void testValidateWithExtendedKeyUsage()
+           throws Exception
+       {
+           CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+   
+           X509Certificate rootCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(extTrust));
+           X509Certificate interCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(extCA));
+           X509Certificate finalCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(extEE));
+
+           List list = new ArrayList();
+           list.add(rootCert);
+           list.add(interCert);
+           list.add(finalCert);
+
+           CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(list);
+           CertStore store = CertStore.getInstance("Collection", ccsp, "BC");
+           Date validDate = new Date(rootCert.getNotBefore().getTime() + 60 * 60 * 1000);
+           //validating path
+           List certchain = new ArrayList();
+           certchain.add(finalCert);
+           certchain.add(interCert);
+           CertPath cp = CertificateFactory.getInstance("X.509", "BC").generateCertPath(certchain);
+           Set trust = new HashSet();
+           trust.add(new TrustAnchor(rootCert, null));
+
+           PKIXParameters param = new PKIXParameters(trust);
+           param.addCertStore(store);
+           param.setDate(validDate);
+           param.setRevocationEnabled(false);
+
+           PKIXCertPathReviewer result = new PKIXCertPathReviewer(cp,param);
+
+           assertTrue(result.isValidCertPath());
+       }
+
     public static void main (String[] args) 
         throws Exception
     {   

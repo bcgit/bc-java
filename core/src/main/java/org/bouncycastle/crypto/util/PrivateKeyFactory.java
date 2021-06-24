@@ -129,12 +129,12 @@ public class PrivateKeyFactory
         else if (algOID.equals(X9ObjectIdentifiers.id_dsa))
         {
             ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
-            ASN1Encodable de = algId.getParameters();
+            ASN1Encodable algParameters = algId.getParameters();
 
             DSAParameters parameters = null;
-            if (de != null)
+            if (algParameters != null)
             {
-                DSAParameter params = DSAParameter.getInstance(de.toASN1Primitive());
+                DSAParameter params = DSAParameter.getInstance(algParameters.toASN1Primitive());
                 parameters = new DSAParameters(params.getP(), params.getQ(), params.getG());
             }
 
@@ -191,13 +191,13 @@ public class PrivateKeyFactory
                 algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) ||
                 algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
         {
-            GOST3410PublicKeyAlgParameters gostParams = GOST3410PublicKeyAlgParameters.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+            ASN1Encodable algParameters = algId.getParameters();
+            GOST3410PublicKeyAlgParameters gostParams = GOST3410PublicKeyAlgParameters.getInstance(algParameters);
             ECGOST3410Parameters ecSpec = null;
             BigInteger d = null;
-            ASN1Primitive p = keyInfo.getPrivateKeyAlgorithm().getParameters().toASN1Primitive();
+            ASN1Primitive p = algParameters.toASN1Primitive();
             if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
             {
-
                 X9ECParameters ecP = ECGOST3410NamedCurves.getByOIDX9(gostParams.getPublicKeyParamSet());
 
                 ecSpec = new ECGOST3410Parameters(
@@ -228,7 +228,7 @@ public class PrivateKeyFactory
             }
             else
             {
-                X962Parameters params = X962Parameters.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+                X962Parameters params = X962Parameters.getInstance(algId.getParameters());
 
                 if (params.isNamedCurve())
                 {
