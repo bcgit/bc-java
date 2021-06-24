@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 
@@ -286,13 +287,18 @@ public class OERInputStream
         }
         case UTF8_STRING:
         {
+            // 27.3 and 27.4 a length determinant followed by a number of octets.
             byte[] data = allocateArray(readLength().intLength());
-            Streams.readFully(this, data);
+            if (Streams.readFully(this, data) != data.length)
+            {
+                throw new IOException("could not read all of utf 8 string");
+            }
+            String content = Strings.fromUTF8ByteArray(data);
             if (debugOutput != null)
             {
-                debugPrint(element.appendLabel("UTF8 String (" + data.length + ") = " + new String(data).substring(32)));
+                debugPrint(element.appendLabel("UTF8 String (" + data.length + ") = " + content));
             }
-            return DERUTF8String.getInstance(data);
+            return new DERUTF8String(content);
         }
         case BIT_STRING:
         {

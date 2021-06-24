@@ -2,11 +2,16 @@ package org.bouncycastle.oer.its;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1Choice;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
  * <pre>
@@ -20,121 +25,151 @@ import org.bouncycastle.asn1.DERNull;
  */
 public class SspRange
     extends ASN1Object
+    implements ASN1Choice
 {
-    private final boolean isAll;
-    private final SequenceOfOctetString opaque;
-    private final BitmapSspRange bitmapSspRange;
 
-    private SspRange()
-    {
-        isAll = true;
-        opaque = null;
-        bitmapSspRange = null;
-    }
+    private static final int opaque = 0;
+    private static final int all = 1;
+    private static final int extension = 2;
+    private static final int bitmapSspRange = 3;
 
-    private SspRange(SequenceOfOctetString seq)
+    private final int choice;
+    private final ASN1Encodable value;
+
+
+    public SspRange(int choice, ASN1Encodable value)
     {
-        this.isAll = false;
-        if (seq.size() != 2)
+
+        switch (choice)
         {
-            opaque = seq;
-            bitmapSspRange = null;
-        }
-        else
-        {
-            // ambiguous
-            opaque = SequenceOfOctetString.getInstance(seq);
-
-            BitmapSspRange bitMapRange;
-            try
+        case opaque:
+            if (!(value instanceof SequenceOfOctetString))
             {
-                bitMapRange = BitmapSspRange.getInstance(seq);
+                throw new IllegalArgumentException("value is not SequenceOfOctetString");
             }
-            catch (IllegalArgumentException e)
+            break;
+        case all:
+            if (!(value instanceof ASN1Null))
             {
-                bitMapRange = null;
+                throw new IllegalArgumentException("value is not ASN1Null");
             }
-
-            bitmapSspRange = bitMapRange;
+            break;
+        case extension:
+            if (!(value instanceof ASN1OctetString))
+            {
+                throw new IllegalArgumentException("value is not ASN1OctetString");
+            }
+            break;
+        case bitmapSspRange:
+            if (!(value instanceof BitmapSspRange))
+            {
+                throw new IllegalArgumentException("value is not BitmapSspRange");
+            }
+            break;
         }
+
+
+        this.choice = choice;
+        this.value = value;
     }
 
-    public SspRange(BitmapSspRange range)
-    {
-        this.isAll = false;
-        this.bitmapSspRange = range;
-        this.opaque = null;
-    }
 
     public static SspRange getInstance(Object src)
     {
-        if (src == null)
-        {
-            return null;
-        }
-
         if (src instanceof SspRange)
         {
             return (SspRange)src;
         }
 
-        if (src instanceof ASN1Null)
-        {
-            return new SspRange();
-        }
+        ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(src);
+        int item = taggedObject.getTagNo();
 
-        if (src instanceof ASN1Sequence)
+        switch (item)
         {
-            return new SspRange(SequenceOfOctetString.getInstance(src));
-        }
-
-        if (src instanceof byte[])
-        {
+        case opaque:
+            return new SspRange(opaque,
+                SequenceOfOctetString.getInstance(taggedObject.getObject()));
+        case all:
+            return new SspRange(all, DERNull.INSTANCE);
+        case extension:
             try
             {
-                return getInstance(ASN1Primitive.fromByteArray((byte[])src));
+                return new SspRange(extension, new DEROctetString(taggedObject.getObject().getEncoded()));
             }
-            catch (IOException e)
+            catch (IOException ioException)
             {
-                throw new IllegalArgumentException("unable to parse encoded general name");
+                throw new RuntimeException(ioException.getMessage(), ioException);
             }
+
+        case bitmapSspRange:
+            return new SspRange(bitmapSspRange, BitmapSspRange.getInstance(taggedObject.getObject()));
         }
 
-        throw new IllegalArgumentException("unknown object in getInstance: " + src.getClass().getName());
+        throw new IllegalStateException("unknown choice " + item);
+
     }
 
-    public boolean isAll()
-    {
-        return isAll;
-    }
-
-    public boolean maybeOpaque()
-    {
-        return opaque != null;
-    }
-
-    public BitmapSspRange getBitmapSspRange()
-    {
-        return bitmapSspRange;
-    }
-
-    public SequenceOfOctetString getOpaque()
-    {
-        return opaque;
-    }
 
     public ASN1Primitive toASN1Primitive()
     {
-        if (isAll)
+        return new DERTaggedObject(choice, value);
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private int choice;
+        private ASN1Encodable value;
+
+        public Builder setChoice(int choice)
         {
-            return DERNull.INSTANCE;
+            this.choice = choice;
+            return this;
         }
 
-        if (bitmapSspRange != null)
+        public Builder setValue(ASN1Encodable value)
         {
-            return bitmapSspRange.toASN1Primitive();
+            this.value = value;
+            return this;
         }
 
-        return opaque.toASN1Primitive();
+        public Builder opaque(SequenceOfOctetString value)
+        {
+            this.value = value;
+            this.choice = opaque;
+            return this;
+        }
+
+        public Builder all()
+        {
+            this.value = DERNull.INSTANCE;
+            this.choice = opaque;
+            return this;
+        }
+
+        // byte array
+        public Builder extension(byte[] value)
+        {
+            this.value = new DEROctetString(value);
+            this.choice = extension;
+            return this;
+        }
+
+        public Builder bitmapSSPRange(BitmapSspRange value)
+        {
+            this.value = value;
+            this.choice = bitmapSspRange;
+            return this;
+        }
+
+        public SspRange createSspRange()
+        {
+            return new SspRange(choice, value);
+        }
+
     }
 }

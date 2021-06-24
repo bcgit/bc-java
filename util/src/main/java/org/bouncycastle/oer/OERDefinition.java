@@ -30,7 +30,8 @@ public class OERDefinition
     public enum BaseType
     {
         SEQ, SEQ_OF, CHOICE, ENUM, INT, OCTET_STRING,
-        UTF8_STRING, BIT_STRING, NULL, EXTENSION, ENUM_ITEM, BOOLEAN
+        UTF8_STRING, BIT_STRING, NULL, EXTENSION, ENUM_ITEM, BOOLEAN, IS0646String, PrintableString, NumericString,
+        BMPString, UniversalString, IA5String, VisibleString
     }
 
     public static class Element
@@ -300,9 +301,19 @@ public class OERDefinition
         return new Builder(BaseType.OCTET_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
     }
 
+    public static Builder utf8String()
+    {
+        return new Builder(BaseType.UTF8_STRING);
+    }
+
     public static Builder utf8String(int size)
     {
         return new Builder(BaseType.UTF8_STRING).rangeToMAX(size);
+    }
+
+    public static Builder utf8String(int lowerBound, int upperBound)
+    {
+        return new Builder(BaseType.UTF8_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
     }
 
     public static Builder opaque()

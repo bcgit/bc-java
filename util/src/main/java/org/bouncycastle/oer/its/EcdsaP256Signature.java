@@ -25,7 +25,6 @@ public class EcdsaP256Signature
             .setrSig(EccP256CurvePoint.getInstance(it.getObjectAt(0)))
             .setsSig(ASN1OctetString.getInstance(it.getObjectAt(1)))
             .createEcdsaP256Signature();
-
     }
 
     public EcdsaP256Signature(EccP256CurvePoint rSig, ASN1OctetString sSig)
@@ -49,9 +48,14 @@ public class EcdsaP256Signature
         return Utils.toSequence(rSig, sSig);
     }
 
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
-
         private EccP256CurvePoint rSig;
         private ASN1OctetString sSig;
 

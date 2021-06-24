@@ -1,9 +1,11 @@
 package org.bouncycastle.oer.its;
 
 import org.bouncycastle.asn1.ASN1Choice;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -21,13 +23,14 @@ public class PublicVerificationKey
 
     public final static int ecdsaNistP256 = 0;
     public final static int ecdsaBrainpoolP256r1 = 1;
-    public final static int ecdsaBrainpoolP384r1 = 2;
+    public final static int extension = 2;
+    public final static int ecdsaBrainpoolP384r1 = 3;
 
     final int choice;
-    final EccCurvePoint curvePoint;
+    final ASN1Encodable curvePoint;
 
 
-    public PublicVerificationKey(int choice, EccCurvePoint curvePoint)
+    public PublicVerificationKey(int choice, ASN1Encodable curvePoint)
     {
         this.choice = choice;
         this.curvePoint = curvePoint;
@@ -42,12 +45,15 @@ public class PublicVerificationKey
         }
 
         ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(object);
-        EccCurvePoint point;
+        ASN1Encodable point;
         switch (taggedObject.getTagNo())
         {
         case ecdsaNistP256:
         case ecdsaBrainpoolP256r1:
             point = EccP256CurvePoint.getInstance(taggedObject.getObject());
+            break;
+        case extension:
+            point = DEROctetString.getInstance(taggedObject.getObject());
             break;
         case ecdsaBrainpoolP384r1:
             point = EccP384CurvePoint.getInstance(taggedObject.getObject());
@@ -55,7 +61,7 @@ public class PublicVerificationKey
         default:
             throw new IllegalArgumentException("unknown tag value " + taggedObject.getTagNo());
         }
-        return new Builder().setChoice(taggedObject.getTagNo()).setCurvePoint(point).createPublicVerificationKey();
+        return new PublicVerificationKey(taggedObject.getTagNo(), point);
     }
 
 
@@ -64,7 +70,7 @@ public class PublicVerificationKey
         return choice;
     }
 
-    public EccCurvePoint getCurvePoint()
+    public ASN1Encodable getCurvePoint()
     {
         return curvePoint;
     }
@@ -75,11 +81,16 @@ public class PublicVerificationKey
     }
 
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
 
         private int choice;
-        private EccCurvePoint curvePoint;
+        private ASN1Encodable curvePoint;
 
         public Builder setChoice(int choice)
         {
@@ -93,9 +104,35 @@ public class PublicVerificationKey
             return this;
         }
 
+        public Builder ecdsaNistP256(EccP256CurvePoint point)
+        {
+            this.curvePoint = point;
+            return this;
+        }
+
+        public Builder ecdsaBrainpoolP256r1(EccP256CurvePoint point)
+        {
+            this.curvePoint = point;
+            return this;
+        }
+
+        public Builder ecdsaBrainpoolP384r1(EccP384CurvePoint point)
+        {
+            this.curvePoint = point;
+            return this;
+        }
+
+        public Builder extension(byte[] value)
+        {
+            this.curvePoint = new DEROctetString(value);
+            return this;
+        }
+
         public PublicVerificationKey createPublicVerificationKey()
         {
             return new PublicVerificationKey(choice, curvePoint);
         }
+
+
     }
 }

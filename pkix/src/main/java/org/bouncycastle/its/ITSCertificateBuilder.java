@@ -11,14 +11,16 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.its.operator.ECDSAEncoder;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.OEREncoder;
-import org.bouncycastle.oer.OEROptional;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.CertificateBase;
 import org.bouncycastle.oer.its.CertificateType;
+import org.bouncycastle.oer.its.HashAlgorithm;
+import org.bouncycastle.oer.its.HashedId;
 import org.bouncycastle.oer.its.IssuerIdentifier;
 import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.Signature;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.util.Arrays;
 
@@ -42,11 +44,17 @@ public class ITSCertificateBuilder
     public ITSCertificate build(
         ITSContentSigner signer)
     {
+        ToBeSignedCertificate signerCert;
+        VerificationKeyIndicator verificationKeyIndicator;
         if (signer.isForSelfSigning())
         {
-            //
-            // TODO: check issuer ID against self and ITSContentSigner
-            //
+            signerCert = null;
+            verificationKeyIndicator = tbsCertificate.getVerificationKeyIndicator();
+        }
+        else
+        {
+            signerCert = signer.getAssociatedCertificate().toASN1Structure().getCertificateBase().getToBeSignedCertificate();
+            verificationKeyIndicator = signerCert.getVerificationKeyIndicator();
         }
 
         OutputStream sOut = signer.getOutputStream();
@@ -62,9 +70,8 @@ public class ITSCertificateBuilder
             throw new IllegalArgumentException("cannot produce certificate signature");
         }
 
-        ToBeSignedCertificate signerCert = signer.getAssociatedCertificate().toASN1Structure().getCertificateBase().getToBeSignedCertificate();
         Signature sig = null;        // TODO: signature actually optional.
-        switch (signerCert.getVerificationKeyIndicator().getChoice())
+        switch (verificationKeyIndicator.getChoice())
         {
         case PublicVerificationKey.ecdsaNistP256:
             sig = ECDSAEncoder.toITS(SECObjectIdentifiers.secp256r1, signer.getSignature());
@@ -81,27 +88,55 @@ public class ITSCertificateBuilder
 
         CertificateBase.Builder baseBldr = new CertificateBase.Builder();
 
-        byte[] parentDigest = signer.getAssociatedCertificateDigest();
-        byte[] hashedID = Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length);
 
-        baseBldr.setVersion(new ASN1Integer(3));
-        baseBldr.setType(CertificateType.Explicit);
+
+        IssuerIdentifier.Builder issuerIdentifierBuilder = IssuerIdentifier.builder();
+
         ASN1ObjectIdentifier digestAlg = signer.getDigestAlgorithm().getAlgorithm();
-        if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
+
+
+        if (signer.isForSelfSigning())
         {
-            baseBldr.setIssuer(new IssuerIdentifier(IssuerIdentifier.sha256AndDigest, hashedID));
-        }
-        else if (digestAlg.equals(NISTObjectIdentifiers.id_sha384))
-        {
-            baseBldr.setIssuer(new IssuerIdentifier(IssuerIdentifier.sha384AndDigest, hashedID));
+
+            if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
+            {
+                issuerIdentifierBuilder.self(HashAlgorithm.sha256);
+            }
+            else if (digestAlg.equals(NISTObjectIdentifiers.id_sha384))
+            {
+                issuerIdentifierBuilder.self(HashAlgorithm.sha384);
+            }
+            else
+            {
+                throw new IllegalStateException("unknown digest");
+            }
+
         }
         else
         {
-            throw new IllegalStateException("unknown digest");
+            byte[] parentDigest = signer.getAssociatedCertificateDigest();
+            HashedId.HashedId8 hashedID = new HashedId.HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
+            if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
+            {
+                issuerIdentifierBuilder.sha256AndDigest(hashedID);
+            }
+            else if (digestAlg.equals(NISTObjectIdentifiers.id_sha384))
+            {
+                issuerIdentifierBuilder.sha384AndDigest(hashedID);
+            }
+            else
+            {
+                throw new IllegalStateException("unknown digest");
+            }
         }
 
+
+        baseBldr.setVersion(new ASN1Integer(3));
+        baseBldr.setType(CertificateType.Explicit);
+        baseBldr.setIssuer(issuerIdentifierBuilder.createIssuerIdentifier());
+
         baseBldr.setToBeSignedCertificate(tbsCertificate);
-        baseBldr.setSignature(OEROptional.getInstance(sig));
+        baseBldr.setSignature(sig);
 
         Certificate.Builder bldr = new Certificate.Builder();
 
