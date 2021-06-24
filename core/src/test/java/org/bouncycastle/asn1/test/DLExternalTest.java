@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
@@ -68,7 +69,7 @@ public class DLExternalTest
         isTrue("check data value descriptor", dle.getDataValueDescriptor() != null);
         dvdType = dle.getDataValueDescriptor().getClass().getName();
         isEquals("check type of value descriptor: " + dvdType, DERUTF8String.class.getName(), dvdType);
-        isEquals("check value", "something completely different", ((DERUTF8String)dle.getDataValueDescriptor()).getString());
+        isEquals("check value", "something completely different", ((ASN1UTF8String)dle.getDataValueDescriptor()).getString());
         isEquals("check encoding", 1, dle.getEncoding());
         isTrue("check existence of external content", dle.getExternalContent() != null);
         ecType = dle.getExternalContent().getClass().getName();
@@ -87,7 +88,7 @@ public class DLExternalTest
         isTrue("check existence of data value descriptor", dle.getDataValueDescriptor() != null);
         dvdType = dle.getDataValueDescriptor().getClass().getName();
         isEquals("check type of value descriptor: " + dvdType, DERUTF8String.class.getName(), dvdType);
-        isEquals("check value", "something completely different", ((DERUTF8String)dle.getDataValueDescriptor()).getString());
+        isEquals("check value", "something completely different", ((ASN1UTF8String)dle.getDataValueDescriptor()).getString());
         isEquals("check encoding", 1, dle.getEncoding());
         isTrue("check existence of external content", dle.getExternalContent() != null);
         ecType = dle.getExternalContent().getClass().getName();
@@ -165,15 +166,15 @@ public class DLExternalTest
         isEquals("check fourth element in set: " + objNameElems.getObjectAt(3).getClass(), DLTaggedObject.class.getName(), objNameElems.getObjectAt(3).getClass().getName());
         objNameTagged = (DLTaggedObject)objNameElems.getObjectAt(3);
         isTrue("check tag", objNameTagged.hasContextTag(5));
-        isEquals("check implicit", true, objNameTagged.isExplicit());
-        isEquals("check tagged object: " + objNameTagged.getObject().getClass(), DLTaggedObject.class.getName(), objNameTagged.getObject().getClass().getName());
-        objNameTagged = (DLTaggedObject)objNameTagged.getObject();
+        isEquals("check explicit", true, objNameTagged.isExplicit());
+        isEquals("check tagged object: " + objNameTagged.getExplicitBaseTagged().getClass(), DLTaggedObject.class.getName(), objNameTagged.getExplicitBaseTagged().getClass().getName());
+        objNameTagged = (DLTaggedObject)objNameTagged.getExplicitBaseTagged();
         isTrue("check tag", objNameTagged.hasContextTag(0));
         isEquals("check implicit", false, objNameTagged.isExplicit());
         isEquals("check tagged object: " + objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass(), DEROctetString.class.getName(), objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass().getName());
         isEquals("check CN", "Common Name", new String(((DEROctetString)objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets(), "8859_1"));
 
-        isEquals("check second element in set: " + msBind.getObject().getClass(), DLTaggedObject.class.getName(), msBindSet.getObjectAt(1).getClass().getName());
+        isEquals("check second element in set: " + msBindSet.getObjectAt(1).getClass(), DLTaggedObject.class.getName(), msBindSet.getObjectAt(1).getClass().getName());
         DLTaggedObject password = (DLTaggedObject)msBindSet.getObjectAt(1);
         isTrue("check tag", password.hasContextTag(2));
         isEquals("check explicit", true, password.isExplicit());

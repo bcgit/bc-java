@@ -264,7 +264,8 @@ public class PEMParser
                 ASN1Sequence seq = ASN1Sequence.getInstance(encoding);
 
                 org.bouncycastle.asn1.sec.ECPrivateKey pKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(seq);
-                AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, pKey.getParameters());
+                AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey,
+                    pKey.getParametersObject());
                 PrivateKeyInfo privInfo = new PrivateKeyInfo(algId, pKey);
 
                 if (pKey.getPublicKey() != null)

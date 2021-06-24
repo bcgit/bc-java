@@ -710,6 +710,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         try
         {
             X509Certificate cert = (X509Certificate) certs.get(certs.size() - 1);
+
             Collection trustColl = getTrustAnchors(cert,pkixParams.getTrustAnchors());
             if (trustColl.size() > 1)
             {
@@ -740,6 +741,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 {
                     trustPublicKey = trust.getCAPublicKey();
                 }
+
                 try
                 {
                     CertPathValidatorUtilities.verifyX509Certificate(cert, trustPublicKey,
@@ -812,7 +814,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         AlgorithmIdentifier workingAlgId = null;
         ASN1ObjectIdentifier workingPublicKeyAlgorithm = null;
         ASN1Encodable workingPublicKeyParameters = null;
-        
+
         if (trust != null)
         {
             sign = trust.getTrustedCert();
@@ -838,7 +840,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 addError(msg);
                 workingAlgId = null;
             }
-            
         }
 
         // Basic cert checks
@@ -860,7 +861,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             // first time from the TrustAnchor
             //
             cert = (X509Certificate) certs.get(index);
-
             // verify signature
             if (workingPublicKey != null)
             {
@@ -1842,7 +1842,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             
             //
-            // process critical extesions for each certificate
+            // process critical extensions for each certificate
             //
             
             X509Certificate cert = null;
@@ -1869,7 +1869,11 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 criticalExtensions.remove(BASIC_CONSTRAINTS);
                 criticalExtensions.remove(SUBJECT_ALTERNATIVE_NAME);
                 criticalExtensions.remove(NAME_CONSTRAINTS);
-                
+
+                if (index == 0)     // EE certificate
+                {
+                    criticalExtensions.remove(Extension.extendedKeyUsage.getId());
+                }
                 // process qcStatements extension
                 if (criticalExtensions.contains(QC_STATEMENT))
                 {
@@ -2482,11 +2486,11 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 ASN1OctetString oct = (ASN1OctetString)ASN1Primitive.fromByteArray(ext);
                 AuthorityKeyIdentifier authID = AuthorityKeyIdentifier.getInstance(ASN1Primitive.fromByteArray(oct.getOctets()));
 
-                certSelectX509.setSerialNumber(authID.getAuthorityCertSerialNumber());
-                byte[] keyID = authID.getKeyIdentifier();
-                if (keyID != null)
+                // we ignore key identifier as if set, selector expects parent to have subjectKeyID
+                BigInteger serial = authID.getAuthorityCertSerialNumber();
+                if (serial != null)
                 {
-                    certSelectX509.setSubjectKeyIdentifier(new DEROctetString(keyID).getEncoded());
+                    certSelectX509.setSerialNumber(authID.getAuthorityCertSerialNumber());
                 }
             }
         }

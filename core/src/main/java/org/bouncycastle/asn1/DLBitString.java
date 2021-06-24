@@ -63,7 +63,7 @@ public class DLBitString
         }
         else
         {
-            return fromOctetString(ASN1OctetString.getInstance(o).getOctets());
+            return fromOctetString(ASN1OctetString.getInstance(o));
         }
     }
 
@@ -102,6 +102,11 @@ public class DLBitString
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER), 0);
     }
 
+    DLBitString(byte[] contents, boolean check)
+    {
+        super(contents, check);
+    }
+
     boolean isConstructed()
     {
         return false;
@@ -109,12 +114,12 @@ public class DLBitString
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, 1 + data.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contents.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodingDL(withTag, BERTags.BIT_STRING, (byte)padBits, data);
+        out.writeEncodingDL(withTag, BERTags.BIT_STRING, contents);
     }
 
     ASN1Primitive toDLObject()
@@ -122,21 +127,8 @@ public class DLBitString
         return this;
     }
 
-    static DLBitString fromOctetString(byte[] bytes)
+    static DLBitString fromOctetString(ASN1OctetString octetString)
     {
-        if (bytes.length < 1)
-        {
-            throw new IllegalArgumentException("truncated BIT STRING detected");
-        }
-
-        int padBits = bytes[0];
-        byte[] data = new byte[bytes.length - 1];
-
-        if (data.length != 0)
-        {
-            System.arraycopy(bytes, 1, data, 0, bytes.length - 1);
-        }
-
-        return new DLBitString(data, padBits);
+        return new DLBitString(octetString.getOctets(), true);
     }
 }

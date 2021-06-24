@@ -14,9 +14,13 @@ import org.bouncycastle.util.Arrays;
 public class ASN1ObjectIdentifier
     extends ASN1Primitive
 {
-    private final String identifier;
-
-    private byte[] body;
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1ObjectIdentifier.class, BERTags.OBJECT_IDENTIFIER)
+    {
+        ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
+        {
+            return createPrimitive(octetString.getOctets());
+        }
+    };
 
     /**
      * Return an OID from the passed in object
@@ -48,7 +52,7 @@ public class ASN1ObjectIdentifier
             byte[] enc = (byte[])obj;
             try
             {
-                return (ASN1ObjectIdentifier)fromByteArray(enc);
+                return (ASN1ObjectIdentifier)TYPE.fromByteArray(enc);
             }
             catch (IOException e)
             {
@@ -62,30 +66,23 @@ public class ASN1ObjectIdentifier
     /**
      * Return an OBJECT IDENTIFIER from a tagged object.
      *
-     * @param obj      the tagged object holding the object we want
+     * @param taggedObject      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
      * @return an ASN1ObjectIdentifier instance, or null.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
      */
-    public static ASN1ObjectIdentifier getInstance(
-        ASN1TaggedObject obj,
-        boolean explicit)
+    public static ASN1ObjectIdentifier getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
-
-        if (explicit || o instanceof ASN1ObjectIdentifier)
-        {
-            return getInstance(o);
-        }
-        else
-        {
-            return ASN1ObjectIdentifier.fromOctetString(ASN1OctetString.getInstance(o).getOctets());
-        }
+        return (ASN1ObjectIdentifier)TYPE.getContextInstance(taggedObject, explicit);
     }
 
     private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7f;
+
+    private final String identifier;
+
+    private byte[] body;
 
     ASN1ObjectIdentifier(
         byte[] bytes)
@@ -465,13 +462,13 @@ public class ASN1ObjectIdentifier
         }
     }
 
-    static ASN1ObjectIdentifier fromOctetString(byte[] enc)
+    static ASN1ObjectIdentifier createPrimitive(byte[] contents)
     {
-        final OidHandle hdl = new OidHandle(enc);
+        final OidHandle hdl = new OidHandle(contents);
         ASN1ObjectIdentifier oid = pool.get(hdl);
         if (oid == null)
         {
-            return new ASN1ObjectIdentifier(enc);
+            return new ASN1ObjectIdentifier(contents);
         }
         return oid;
     }

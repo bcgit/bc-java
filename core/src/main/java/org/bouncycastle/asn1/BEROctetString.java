@@ -21,10 +21,10 @@ import java.util.NoSuchElementException;
 public class BEROctetString
     extends ASN1OctetString
 {
-    private static final int DEFAULT_CHUNK_SIZE = 1000;
+    private static final int DEFAULT_SEGMENT_LIMIT = 1000;
 
-    private final int segmentSize;
-    private final ASN1OctetString[] octs;
+    private final int segmentLimit;
+    private final ASN1OctetString[] elements;
 
     /**
      * Convert a vector of octet strings into a single byte string
@@ -37,19 +37,19 @@ public class BEROctetString
         case 0:
             return EMPTY_OCTETS;
         case 1:
-            return octetStrings[0].getOctets();
+            return octetStrings[0].string;
         default:
         {
             int totalOctets = 0;
             for (int i = 0; i < count; ++i)
             {
-                totalOctets += octetStrings[i].getOctets().length;
+                totalOctets += octetStrings[i].string.length;
             }
 
             byte[] string = new byte[totalOctets];
             for (int i = 0, pos = 0; i < count; ++i)
             {
-                byte[] octets = octetStrings[i].getOctets();
+                byte[] octets = octetStrings[i].string;
                 System.arraycopy(octets, 0, string, pos, octets.length);
                 pos += octets.length;
             }
@@ -66,47 +66,47 @@ public class BEROctetString
      */
     public BEROctetString(byte[] string)
     {
-        this(string, DEFAULT_CHUNK_SIZE);
+        this(string, DEFAULT_SEGMENT_LIMIT);
     }
 
     /**
      * Multiple {@link ASN1OctetString} data blocks are input,
      * the result is <i>constructed form</i>.
      *
-     * @param octs an array of OCTET STRING to construct the BER OCTET STRING from.
+     * @param elements an array of OCTET STRING to construct the BER OCTET STRING from.
      */
-    public BEROctetString(ASN1OctetString[] octs)
+    public BEROctetString(ASN1OctetString[] elements)
     {
-        this(octs, DEFAULT_CHUNK_SIZE);
+        this(elements, DEFAULT_SEGMENT_LIMIT);
     }
 
     /**
      * Create an OCTET-STRING object from a byte[]
      * @param string the octets making up the octet string.
-     * @param segmentSize the number of octets stored in each DER encoded component OCTET STRING.
+     * @param segmentLimit the number of octets stored in each DER encoded component OCTET STRING.
      */
-    public BEROctetString(byte[] string, int segmentSize)
+    public BEROctetString(byte[] string, int segmentLimit)
     {
-        this(string, null, segmentSize);
+        this(string, null, segmentLimit);
     }
 
     /**
      * Multiple {@link ASN1OctetString} data blocks are input,
      * the result is <i>constructed form</i>.
      *
-     * @param octs an array of OCTET STRING to construct the BER OCTET STRING from.
-     * @param segmentSize the number of octets stored in each DER encoded component OCTET STRING.
+     * @param elements an array of OCTET STRING to construct the BER OCTET STRING from.
+     * @param segmentLimit the number of octets stored in each DER encoded component OCTET STRING.
      */
-    public BEROctetString(ASN1OctetString[] octs, int segmentSize)
+    public BEROctetString(ASN1OctetString[] elements, int segmentLimit)
     {
-        this(flattenOctetStrings(octs), octs, segmentSize);
+        this(flattenOctetStrings(elements), elements, segmentLimit);
     }
 
-    private BEROctetString(byte[] string, ASN1OctetString[] octs, int segmentSize)
+    private BEROctetString(byte[] string, ASN1OctetString[] elements, int segmentLimit)
     {
         super(string);
-        this.octs = octs;
-        this.segmentSize = segmentSize;
+        this.elements = elements;
+        this.segmentLimit = segmentLimit;
     }
 
     /**
@@ -118,7 +118,7 @@ public class BEROctetString
      */
     public Enumeration getObjects()
     {
-        if (octs == null)
+        if (elements == null)
         {
             return new Enumeration()
             {
@@ -133,11 +133,11 @@ public class BEROctetString
                 {
                     if (pos < string.length)
                     {
-                        int length = Math.min(string.length - pos, segmentSize);
-                        byte[] chunk = new byte[length];
-                        System.arraycopy(string, pos, chunk, 0, length);
+                        int length = Math.min(string.length - pos, segmentLimit);
+                        byte[] segment = new byte[length];
+                        System.arraycopy(string, pos, segment, 0, length);
                         pos += length;
-                        return new DEROctetString(chunk);
+                        return new DEROctetString(segment);
                     }
                     throw new NoSuchElementException();
                 }
@@ -150,14 +150,14 @@ public class BEROctetString
 
             public boolean hasMoreElements()
             {
-                return counter < octs.length;
+                return counter < elements.length;
             }
 
             public Object nextElement()
             {
-                if (counter < octs.length)
+                if (counter < elements.length)
                 {
-                    return octs[counter++];
+                    return elements[counter++];
                 }
                 throw new NoSuchElementException();
             }
@@ -166,7 +166,7 @@ public class BEROctetString
 
     boolean isConstructed()
     {
-        return null != octs || string.length > segmentSize;
+        return null != elements || string.length > segmentLimit;
     }
 
     int encodedLength(boolean withTag)
@@ -179,22 +179,22 @@ public class BEROctetString
 
         int totalLength = withTag ? 4 : 3;
 
-        if (null == octs)
+        if (null != elements)
         {
-            int fullChunks = string.length / segmentSize;
-            totalLength += fullChunks * DEROctetString.encodedLength(true, segmentSize);
-
-            int lastSegmentSize = string.length - (fullChunks * segmentSize);
-            if (lastSegmentSize > 0)
+            for (int i = 0; i < elements.length; ++i)
             {
-                totalLength += DEROctetString.encodedLength(true, lastSegmentSize);
+                totalLength += elements[i].encodedLength(true);
             }
         }
         else
         {
-            for (int i = 0; i < octs.length; ++i)
+            int fullSegments = string.length / segmentLimit;
+            totalLength += fullSegments * DEROctetString.encodedLength(true, segmentLimit);
+
+            int lastSegmentLength = string.length - (fullSegments * segmentLimit);
+            if (lastSegmentLength > 0)
             {
-                totalLength += octs[i].encodedLength(true);
+                totalLength += DEROctetString.encodedLength(true, lastSegmentLength);
             }
         }
 
@@ -215,19 +215,19 @@ public class BEROctetString
         }
         out.write(0x80);
 
-        if (null == octs)
+        if (null != elements)
+        {
+            out.writePrimitives(elements);
+        }
+        else
         {
             int pos = 0;
             while (pos < string.length)
             {
-                int chunkLength = Math.min(string.length - pos, segmentSize);
-                DEROctetString.encode(out, true, string, pos, chunkLength);
-                pos += chunkLength;
+                int segmentLength = Math.min(string.length - pos, segmentLimit);
+                DEROctetString.encode(out, true, string, pos, segmentLength);
+                pos += segmentLength;
             }
-        }
-        else
-        {
-            out.writePrimitives(octs);
         }
 
         out.write(0x00);

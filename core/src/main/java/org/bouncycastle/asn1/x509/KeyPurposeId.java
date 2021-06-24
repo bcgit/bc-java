@@ -140,15 +140,6 @@ public class KeyPurposeId
         this.id = id;
     }
 
-    /**
-     * @param id string representation of an OID.
-     * @deprecated use getInstance and an OID or one of the constants above.
-     */
-    public KeyPurposeId(String id)
-    {
-        this(new ASN1ObjectIdentifier(id));
-    }
-
     public static KeyPurposeId getInstance(Object o)
     {
         if (o instanceof KeyPurposeId)

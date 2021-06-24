@@ -38,7 +38,7 @@ class MetaDataUtil
     {
         if (metaData != null)
         {
-            return convertString(metaData.getFileName());
+            return convertString(metaData.getFileNameUTF8());
         }
 
         return null;

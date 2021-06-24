@@ -34,10 +34,7 @@ public class OriginatorPublicKey
         this.publicKey = new DERBitString(publicKey);
     }
 
-    /**
-     * @deprecated use getInstance()
-     */
-    public OriginatorPublicKey(
+    private OriginatorPublicKey(
         ASN1Sequence seq)
     {
         algorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));

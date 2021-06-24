@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -54,9 +55,9 @@ public class CertificateTrustBlock
             {
                 this.prohibitions = ASN1Sequence.getInstance((ASN1TaggedObject)obj, false);
             }
-            else if (obj instanceof DERUTF8String)
+            else if (obj instanceof ASN1UTF8String)
             {
-                this.alias = DERUTF8String.getInstance(obj).getString();
+                this.alias = ASN1UTF8String.getInstance(obj).getString();
             }
         }
     }

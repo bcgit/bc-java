@@ -60,7 +60,7 @@ public class TaggedRequestTest
             TaggedRequest trResult = TaggedRequest.getInstance(b);
             isEquals("Tag", tr.getTagNo(), trResult.getTagNo());
             isEquals("Is TCR tag", TaggedRequest.TCR, tr.getTagNo());
-            isEquals("Value", tr.getValue(), trResult.getValue());
+            isEquals("Value 1", tr.getValue(), trResult.getValue());
         }
 
         { // CertReqMsg
@@ -90,12 +90,12 @@ public class TaggedRequestTest
             TaggedRequest trResult = TaggedRequest.getInstance(b);
             isEquals("Tag", tr.getTagNo(), trResult.getTagNo());
             isEquals("Is CRM tag", TaggedRequest.CRM, tr.getTagNo());
-            isEquals("Value", tr.getValue(), trResult.getValue());
+            isEquals("Value 2", tr.getValue(), trResult.getValue());
         }
 
 
         { // ORM
-            TaggedRequest tr = TaggedRequest.getInstance( new DERTaggedObject(TaggedRequest.ORM, new DERSequence(new ASN1Encodable[]{
+            TaggedRequest tr = TaggedRequest.getInstance( new DERTaggedObject(false, TaggedRequest.ORM, new DERSequence(new ASN1Encodable[]{
                 new BodyPartID(1L),
                 PKCSObjectIdentifiers.data,
                 new DERSet(new ASN1Encodable[]{new ASN1Integer(5L)})
@@ -104,7 +104,7 @@ public class TaggedRequestTest
             TaggedRequest trResult = TaggedRequest.getInstance(b);
             isEquals("Tag", tr.getTagNo(), trResult.getTagNo());
             isEquals("Is ORM tag", TaggedRequest.ORM, tr.getTagNo());
-            isEquals("Value", tr.getValue(), trResult.getValue());
+            isEquals("Value 3", tr.getValue(), trResult.getValue());
         }
 
     }
