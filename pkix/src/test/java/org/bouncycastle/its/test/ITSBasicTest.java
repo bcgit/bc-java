@@ -4,20 +4,49 @@ import java.io.ByteArrayInputStream;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.ITSCertificateBuilder;
 import org.bouncycastle.its.bc.BcITSContentSigner;
 import org.bouncycastle.its.bc.BcITSContentVerifierProvider;
+import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.its.Certificate;
+import org.bouncycastle.oer.its.CertificateId;
+import org.bouncycastle.oer.its.CrlSeries;
+import org.bouncycastle.oer.its.Duration;
+import org.bouncycastle.oer.its.EccP256CurvePoint;
+import org.bouncycastle.oer.its.EndEntityType;
+import org.bouncycastle.oer.its.HashedId;
+import org.bouncycastle.oer.its.Hostname;
+import org.bouncycastle.oer.its.Psid;
+import org.bouncycastle.oer.its.PsidGroupPermissions;
+import org.bouncycastle.oer.its.PsidSsp;
+import org.bouncycastle.oer.its.PsidSspRange;
+import org.bouncycastle.oer.its.PublicVerificationKey;
+import org.bouncycastle.oer.its.SequenceOfPsidGroupPermissions;
+import org.bouncycastle.oer.its.SequenceOfPsidSsp;
+import org.bouncycastle.oer.its.SequenceOfPsidSspRange;
+import org.bouncycastle.oer.its.ServiceSpecificPermissions;
+import org.bouncycastle.oer.its.SspRange;
+import org.bouncycastle.oer.its.SubjectAssurance;
+import org.bouncycastle.oer.its.SubjectPermissions;
+import org.bouncycastle.oer.its.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ValidityPeriod;
+import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -25,12 +54,136 @@ public class ITSBasicTest
     extends TestCase
 {
 
+    public void testBuildSelfSigned()
+        throws Exception
+    {
+        SecureRandom rand = new SecureRandom();
+
+        byte[] ca = Hex.decode("800300810038811B45545349205465737420524341204320636572746966696361746500000000001A5617008466A8C001028002026E810201018002027081030201380102A080010E80012482080301FFFC03FF0003800125820A0401FFFFFF04FF00000080018982060201E002FF1F80018A82060201C002FF3F80018B820E0601000000FFF806FF000000000780018C820A0401FFFFE004FF00001F00018D0001600001610001620001630001640001650001660102C0208001018002026F82060201FE02FF01C0808082A4C29A1DDE0E1AEA8D36858B59016A45DB4A4968A2D5A1073B8EABC842C1D5948080B58B1A7CE9848D3EC315C70183D08E6E8B21C0FDA15A7839445AEEA636C794BA4ED59903EADC60372A542D21D77BFFB3E65B5B8BA3FB14BCE7CDA91268B177BC");
+        ITSCertificate caCert = loadCertificate(ca);
+
+        Object j = caCert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getCertificateId();
+
+
+        ECKeyPairGenerator generator = new ECKeyPairGenerator();
+        X9ECParameters parameters = NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1);
+        generator.init(new ECKeyGenerationParameters(new ECDomainParameters(parameters), rand));
+        AsymmetricCipherKeyPair kp = generator.generateKeyPair();
+
+        ECPublicKeyParameters pub = (ECPublicKeyParameters)kp.getPublic();
+        ECPrivateKeyParameters privateKeyParameters = (ECPrivateKeyParameters)kp.getPrivate();
+
+
+        ToBeSignedCertificate.Builder tbsBuilder = new ToBeSignedCertificate.Builder();
+        tbsBuilder.setAppPermissions(
+            SequenceOfPsidSsp.builder()
+                .setItem(PsidSsp.builder()
+                    .setPsid(new Psid(622))
+                    .setSsp(ServiceSpecificPermissions.builder()
+                        .bitmapSsp(new DEROctetString(Hex.decode("0101")))
+                        .createServiceSpecificPermissions())
+                    .createPsidSsp())
+                .setItem(PsidSsp.builder()
+                    .setPsid(new Psid(624))
+                    .setSsp(ServiceSpecificPermissions.builder()
+                        .bitmapSsp(new DEROctetString(Hex.decode("020138")))
+                        .createServiceSpecificPermissions())
+                    .createPsidSsp())
+                .createSequenceOfPsidSsp()); // App Permissions
+        tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
+        // builder.setCanRequestRollover(OEROptional.ABSENT);
+        tbsBuilder.setCertIssuePermissions(
+            SequenceOfPsidGroupPermissions.builder()
+                .addGroupPermission(PsidGroupPermissions.builder()
+                    .setSubjectPermissions(
+                        SubjectPermissions.builder().explicit(
+                            SequenceOfPsidSspRange.builder()
+                                .add(PsidSspRange.builder()
+                                    .setPsid(36).setSspRange(SspRange.builder().extension(Hex.decode("0301fffc03ff0003")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(37).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFFF04FF000000")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(137).setSspRange(SspRange.builder().extension(Hex.decode("0201E002FF1F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(138).setSspRange(SspRange.builder().extension(Hex.decode("0201C002FF3F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(139).setSspRange(SspRange.builder().extension(Hex.decode("0601000000FFF806FF0000000007")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(140).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFE004FF00001F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(98).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(99).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(100).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(101).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(102).createPsidSspRange())
+                                .build()
+                        ).createSubjectPermissions())
+                    .setMinChainLength(2)
+                    .setChainLengthRange(0)
+                    .setEeType(new EndEntityType(0xC0))
+
+                    .createPsidGroupPermissions())
+                .addGroupPermission(PsidGroupPermissions.builder()
+                    .setSubjectPermissions(SubjectPermissions.builder()
+                        .explicit(SequenceOfPsidSspRange.builder()
+                            .add(PsidSspRange.builder()
+                                .setPsid(623)
+                                .setSspRange(
+                                    SspRange.builder()
+                                        .extension(Hex.decode("0201FE02FF01"))
+                                        .createSspRange()).createPsidSspRange())
+                            .build())
+                        .createSubjectPermissions())
+                    .setMinChainLength(1)
+                    .setChainLengthRange(0)
+                    .setEeType(new EndEntityType(0xC0))
+                    .createPsidGroupPermissions())
+                .createSequenceOfPsidGroupPermissions());
+        tbsBuilder.setVerificationKeyIndicator(
+            VerificationKeyIndicator.builder()
+                .publicVerificationKey(PublicVerificationKey.builder()
+                    .ecdsaNistP256(EccP256CurvePoint.builder()
+                        .uncompressedP256(
+                            pub.getQ().getAffineXCoord().toBigInteger(),
+                            pub.getQ().getAffineYCoord().toBigInteger())
+                        .createEccP256CurvePoint())
+                    .createPublicVerificationKey())
+                .createVerificationKeyIndicator());
+
+        tbsBuilder.setCertificateId(CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId());
+        tbsBuilder.setCracaId(new HashedId.HashedId3(new byte[]{0, 1, 2}));
+        tbsBuilder.setCrlSeries(new CrlSeries(1));
+        tbsBuilder.setValidityPeriod(ValidityPeriod.builder()
+            .setTime32(new ASN1Integer(System.currentTimeMillis() / 1000))
+            .setDuration(new Duration(Duration.years, 1)).createValidityPeriod());
+
+
+        ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
+        ITSCertificateBuilder itsCertificateBuilder = new ITSCertificateBuilder(tbsBuilder.createToBeSignedCertificate());
+
+        ITSCertificate newCert = itsCertificateBuilder.build(itsContentSigner);
+
+
+
+
+
+        BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(newCert);
+        boolean valid = newCert.isSignatureValid(provider);
+
+      ///  TestCase.assertTrue(valid);
+
+
+        System.out.println();
+    }
+
+
     public void testSelfSignedCA()
         throws Exception
     {
         byte[] ca = Hex.decode("800300810038811B45545349205465737420524341204320636572746966696361746500000000001A5617008466A8C001028002026E810201018002027081030201380102A080010E80012482080301FFFC03FF0003800125820A0401FFFFFF04FF00000080018982060201E002FF1F80018A82060201C002FF3F80018B820E0601000000FFF806FF000000000780018C820A0401FFFFE004FF00001F00018D0001600001610001620001630001640001650001660102C0208001018002026F82060201FE02FF01C0808082A4C29A1DDE0E1AEA8D36858B59016A45DB4A4968A2D5A1073B8EABC842C1D5948080B58B1A7CE9848D3EC315C70183D08E6E8B21C0FDA15A7839445AEEA636C794BA4ED59903EADC60372A542D21D77BFFB3E65B5B8BA3FB14BCE7CDA91268B177BC");
         ITSCertificate caCert = loadCertificate(ca);
-
         BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(caCert);
         boolean valid = caCert.isSignatureValid(provider);
         TestCase.assertTrue(valid);

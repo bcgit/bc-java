@@ -18,17 +18,13 @@ public class EndEntityType
 
     private final ASN1BitString type;
 
-    public EndEntityType(int type)
+    public EndEntityType(int eeType)
     {
-        if (type != app && type != enrol)
-        {
-            throw new IllegalArgumentException("value out of range");
-        }
-
-        this.type = new DERBitString(type);
+        this(new DERBitString(eeType));
     }
 
-    private EndEntityType(DERBitString str)
+
+    public EndEntityType(DERBitString str)
     {
         this.type = str;
     }

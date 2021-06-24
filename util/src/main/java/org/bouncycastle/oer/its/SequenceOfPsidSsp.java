@@ -11,6 +11,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * SequenceOfPsidSsp ::= SEQUENCE OF PsidSsp
+ */
 public class SequenceOfPsidSsp
     extends ASN1Object
 {
@@ -52,6 +55,10 @@ public class SequenceOfPsidSsp
         }
 
         return new DERSequence(avec);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static class Builder

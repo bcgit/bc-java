@@ -24,14 +24,14 @@ public class CertificateBase
     private CertificateType type;
     private IssuerIdentifier issuer;
     private ToBeSignedCertificate toBeSignedCertificate;
-    private OEROptional signature;
+    private Signature signature;
 
 
     public CertificateBase(ASN1Integer version,
                            CertificateType type,
                            IssuerIdentifier issuer,
                            ToBeSignedCertificate toBeSignedCertificate,
-                           OEROptional signature)
+                           Signature signature)
     {
         this.version = version;
         this.type = type;
@@ -52,7 +52,7 @@ public class CertificateBase
         CertificateType type = CertificateType.getInstance(seq.getObjectAt(1));
         IssuerIdentifier issuerIdentifier = IssuerIdentifier.getInstance(seq.getObjectAt(2));
         ToBeSignedCertificate cert = ToBeSignedCertificate.getInstance(seq.getObjectAt(3));
-        OEROptional signature = OEROptional.getInstance(seq.getObjectAt(4));
+        Signature signature = OEROptional.getValue(Signature.class, seq.getObjectAt(4));
         return new Builder()
             .setVersion(version)
             .setType(type)
@@ -84,7 +84,7 @@ public class CertificateBase
 
     public Signature getSignature()
     {
-        return Signature.getInstance(signature.get());
+        return signature;
     }
 
     public ASN1Primitive toASN1Primitive()
@@ -96,7 +96,12 @@ public class CertificateBase
          *         toBeSigned ToBeSignedCertificate,
          *         signature Signature OPTIONAL
          */
-        return Utils.toSequence(version, type, issuer, toBeSignedCertificate, signature);
+        return Utils.toSequence(version, type, issuer, toBeSignedCertificate, OEROptional.getInstance(signature));
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
     }
 
     public static class Builder
@@ -106,7 +111,7 @@ public class CertificateBase
         private CertificateType type;
         private IssuerIdentifier issuer;
         private ToBeSignedCertificate toBeSignedCertificate;
-        private OEROptional signature;
+        private Signature signature;
 
         public Builder setVersion(ASN1Integer version)
         {
@@ -132,7 +137,7 @@ public class CertificateBase
             return this;
         }
 
-        public Builder setSignature(OEROptional signature)
+        public Builder setSignature(Signature signature)
         {
             this.signature = signature;
             return this;

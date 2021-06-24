@@ -3,8 +3,10 @@ package org.bouncycastle.oer.its;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -20,7 +22,8 @@ public class ServiceSpecificPermissions
 {
 
     public static final int opaque = 0;
-    public static final int bitmapSsp = 1;
+    public static final int extension = 1;
+    public static final int bitmapSsp = 2;
 
     private final int choice;
     private final ASN1Encodable object;
@@ -35,11 +38,10 @@ public class ServiceSpecificPermissions
         switch (dto.getTagNo())
         {
         case opaque:
+        case extension:
+            return new ServiceSpecificPermissions(dto.getTagNo(), DEROctetString.getInstance(dto.getObject()));
         case bitmapSsp:
-            return new Builder()
-                .setChoice(dto.getTagNo())
-                .setObject(dto.getObject())
-                .createServiceSpecificPermissions();
+            return new ServiceSpecificPermissions(dto.getTagNo(), BitmapSsp.getInstance(dto.getObject()));
         default:
             throw new IllegalArgumentException("unknown choice " + dto.getTagNo());
         }
@@ -67,6 +69,11 @@ public class ServiceSpecificPermissions
         return new DERTaggedObject(choice, object);
     }
 
+    public static Builder builder()
+    {
+        return new ServiceSpecificPermissions.Builder();
+    }
+
     public static class Builder
     {
         private int choice;
@@ -82,6 +89,21 @@ public class ServiceSpecificPermissions
         {
             this.object = object;
             return this;
+        }
+
+        public Builder opaque()
+        {
+            return setChoice(ServiceSpecificPermissions.opaque);
+        }
+
+        public Builder extension(byte[] data)
+        {
+            return setChoice(ServiceSpecificPermissions.bitmapSsp).setObject(new DEROctetString(data));
+        }
+
+        public Builder bitmapSsp(ASN1OctetString octetString)
+        {
+            return setChoice(ServiceSpecificPermissions.bitmapSsp).setObject(octetString);
         }
 
         public ServiceSpecificPermissions createServiceSpecificPermissions()

@@ -3,6 +3,7 @@ package org.bouncycastle.its.bc;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
@@ -75,48 +76,27 @@ public class BcITSContentVerifierProvider
                 throw new IllegalStateException("unknown key type");
             }
             ECCurve curve = params.getCurve();
-            final EccCurvePoint itsPoint = pvi.getCurvePoint();
+
+            ASN1Encodable pviCurvePoint = pvi.getCurvePoint();
+            final EccCurvePoint itsPoint;
+            if (pviCurvePoint instanceof EccCurvePoint)
+            {
+                itsPoint = (EccCurvePoint)pvi.getCurvePoint();
+            }
+            else
+            {
+                throw new IllegalStateException("extension to public verification key not supported");
+            }
+
             byte[] key;
 
             if (itsPoint instanceof EccP256CurvePoint)
             {
-                byte[] originalKey = itsPoint.getKeyBytes();
-                key = new byte[originalKey.length + 1];
-                System.arraycopy(originalKey, 0, key, 1, originalKey.length);
-                switch (((EccP256CurvePoint)itsPoint).getChoice())
-                {
-                case EccP256CurvePoint.compressedY0:
-                    key[0] = 0x02;
-                    break;
-                case EccP256CurvePoint.compressedY1:
-                    key[0] = 0x03;
-                    break;
-                case EccP256CurvePoint.uncompressedP256:
-                    key[0] = 0x04;
-                    break;
-                case EccP256CurvePoint.xOnly:
-                    throw new IllegalStateException("x Only not implemented");
-                }
+                key = itsPoint.getEncodedPoint();
             }
             else if (itsPoint instanceof EccP384CurvePoint)
             {
-                byte[] originalKey = itsPoint.getKeyBytes();
-                key = new byte[originalKey.length + 1];
-                System.arraycopy(originalKey, 0, key, 1, originalKey.length);
-                switch (((EccP384CurvePoint)itsPoint).getChoice())
-                {
-                case EccP384CurvePoint.compressedY0:
-                    key[0] = 0x02;
-                    break;
-                case EccP384CurvePoint.compressedY1:
-                    key[0] = 0x03;
-                    break;
-                case EccP384CurvePoint.uncompressedP384:
-                    key[0] = 0x04;
-                    break;
-                case EccP384CurvePoint.xOnly:
-                    throw new IllegalStateException("x Only not implemented");
-                }
+                key = itsPoint.getEncodedPoint();
             }
             else
             {

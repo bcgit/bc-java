@@ -25,24 +25,12 @@ public class IssuerIdentifier
 
     public static final int sha256AndDigest = 0;
     public static final int self = 1;
-    public static final int sha384AndDigest = 2;
+    public static final int extension = 2;
+    public static final int sha384AndDigest = 3;
 
     private final int choice;
     private final ASN1Encodable value;
 
-    /**
-     * @param choice one of sha256AndDigest,self or sha384AndDigest
-     * @param value  the associated value.
-     */
-    public IssuerIdentifier(int choice, byte[] value)
-    {
-        this(choice, new DEROctetString(value));
-    }
-
-    public IssuerIdentifier(HashAlgorithm value)
-    {
-        this(self, value);
-    }
 
     public IssuerIdentifier(int choice, ASN1Encodable value)
     {
@@ -95,4 +83,63 @@ public class IssuerIdentifier
     {
         return new DERTaggedObject(choice, value);
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        public int choice;
+        public ASN1Encodable value;
+
+        public Builder setChoice(int choice)
+        {
+            this.choice = choice;
+            return this;
+        }
+
+        public Builder setValue(ASN1Encodable value)
+        {
+            this.value = value;
+            return this;
+        }
+
+        public Builder sha256AndDigest(HashedId id)
+        {
+            this.choice = sha256AndDigest;
+            this.value = id;
+            return this;
+        }
+
+        public Builder self(HashAlgorithm alg)
+        {
+            this.choice = self;
+            this.value = alg;
+            return this;
+        }
+
+        public Builder extension(byte[] ext)
+        {
+            this.choice = extension;
+            this.value = new DEROctetString(ext);
+            return this;
+        }
+
+        public Builder sha384AndDigest(HashedId id)
+        {
+            this.choice = sha384AndDigest;
+            this.value = id;
+            return this;
+        }
+
+        public IssuerIdentifier createIssuerIdentifier()
+        {
+            return new IssuerIdentifier(choice, value);
+        }
+
+
+    }
+
 }

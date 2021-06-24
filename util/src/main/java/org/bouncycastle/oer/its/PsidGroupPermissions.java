@@ -2,10 +2,13 @@ package org.bouncycastle.oer.its;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.oer.OEROptional;
 
 /**
  * <pre>
@@ -21,22 +24,41 @@ public class PsidGroupPermissions
     extends ASN1Object
 {
     private final SubjectPermissions subjectPermissions;
-    private final BigInteger minChainLength;
-    private final BigInteger chainLengthRange;
-    private final Object eeType;
+    private final ASN1Integer minChainLength;
+    private final ASN1Integer chainLengthRange;
+    private final EndEntityType eeType;
 
     private PsidGroupPermissions(ASN1Sequence seq)
     {
-        if (seq.size() != 2)
-        {
-            throw new IllegalArgumentException("sequence not length 2");
-        }
-
         this.subjectPermissions = SubjectPermissions.getInstance(seq.getObjectAt(0));
-        this.minChainLength = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue();
-        this.chainLengthRange = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue();
-        this.eeType = EndEntityType.getInstance(seq.getObjectAt(3));
+        this.minChainLength = OEROptional.getInstance(seq.getObjectAt(1)).getObject(ASN1Integer.class);
+        this.chainLengthRange = OEROptional.getInstance(seq.getObjectAt(2)).getObject(ASN1Integer.class);
+        this.eeType = OEROptional.getInstance(seq.getObjectAt(3)).getObject(EndEntityType.class);
     }
+
+    public PsidGroupPermissions(SubjectPermissions subjectPermissions, ASN1Integer minChainLength, ASN1Integer chainLengthRange, EndEntityType eeType)
+    {
+        this.subjectPermissions = subjectPermissions;
+        this.minChainLength = minChainLength;
+        this.chainLengthRange = chainLengthRange;
+        this.eeType = eeType;
+    }
+
+    public SubjectPermissions getSubjectPermissions()
+    {
+        return subjectPermissions;
+    }
+
+    public ASN1Integer getMinChainLength()
+    {
+        return minChainLength;
+    }
+
+    public EndEntityType getEeType()
+    {
+        return eeType;
+    }
+
 
     public static PsidGroupPermissions getInstance(Object src)
     {
@@ -54,6 +76,88 @@ public class PsidGroupPermissions
 
     public ASN1Primitive toASN1Primitive()
     {
-        return null;
+        return new DERSequence(new ASN1Encodable[]{
+            subjectPermissions,
+            OEROptional.getInstance(minChainLength),
+            OEROptional.getInstance(chainLengthRange),
+            OEROptional.getInstance(eeType)
+        });
+    }
+
+    public ASN1Integer getChainLengthRange()
+    {
+        return chainLengthRange;
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private SubjectPermissions subjectPermissions;
+        private ASN1Integer minChainLength;
+        private ASN1Integer chainLengthRange;
+        private EndEntityType eeType;
+
+        public Builder()
+        {
+        }
+
+        public Builder setSubjectPermissions(SubjectPermissions subjectPermissions)
+        {
+            this.subjectPermissions = subjectPermissions;
+            return this;
+        }
+
+        public Builder setMinChainLength(BigInteger minChainLength)
+        {
+            this.minChainLength = new ASN1Integer(minChainLength);
+            return this;
+        }
+
+        public Builder setMinChainLength(long minChainLength)
+        {
+            this.minChainLength = new ASN1Integer(minChainLength);
+            return this;
+        }
+
+        public Builder setChainLengthRange(ASN1Integer chainLengthRange)
+        {
+            this.chainLengthRange = chainLengthRange;
+            return this;
+        }
+
+        public Builder setMinChainLength(ASN1Integer minChainLength)
+        {
+            this.minChainLength = minChainLength;
+            return this;
+        }
+
+        public Builder setChainLengthRange(BigInteger chainLengthRange)
+        {
+            this.chainLengthRange = new ASN1Integer(chainLengthRange);
+            return this;
+        }
+
+        public Builder setChainLengthRange(long chainLengthRange)
+        {
+            this.chainLengthRange = new ASN1Integer(chainLengthRange);
+            return this;
+        }
+
+
+        public Builder setEeType(EndEntityType eeType)
+        {
+            this.eeType = eeType;
+            return this;
+        }
+
+
+        public PsidGroupPermissions createPsidGroupPermissions()
+        {
+            return new PsidGroupPermissions(subjectPermissions, minChainLength, chainLengthRange, eeType);
+        }
     }
 }

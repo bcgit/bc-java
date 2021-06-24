@@ -29,6 +29,17 @@ public class OEROptional
         return ABSENT;
     }
 
+    public static <T> T getValue(Class<T> type, Object src)
+    {
+        OEROptional o = OEROptional.getInstance(src);
+        if (!o.defined)
+        {
+            return null;
+        }
+        return o.getObject(type);
+    }
+
+
     private final boolean defined;
     private final ASN1Encodable value;
 
@@ -88,6 +99,9 @@ public class OEROptional
 
     public ASN1Primitive toASN1Primitive()
     {
+        if (!defined) {
+            throw new RuntimeException("bang");
+        }
         return get().toASN1Primitive();
     }
 
