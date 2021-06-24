@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
@@ -56,6 +57,8 @@ public class X500NameTest
         "CN=\\20Test\\20X\\20,O=\\20Test,C=GB",    // input
         "CN=\\ Test X\\ ,O=\\ Test,C=GB"          // expected
     };
+
+    private static final String dnqSubject = "DNQ=Legion of the Bouncy Castle Inc.";
 
     public String getName()
     {
@@ -119,11 +122,11 @@ public class X500NameTest
         throws IOException
     {
         ASN1Encodable converted = createEntryValue(oid, value);
-        if (!(converted instanceof DERUTF8String))
+        if (!(converted instanceof ASN1UTF8String))
         {
-            fail("encoding for " + oid + " not IA5String");
+            fail("encoding for " + oid + " not UTF8String");
         }
-        if (!value.equals((DERUTF8String.getInstance(converted.toASN1Primitive().getEncoded()).getString())))
+        if (!value.equals((ASN1UTF8String.getInstance(converted.toASN1Primitive().getEncoded()).getString())))
         {
             fail("decoding not correct");
         }
@@ -178,6 +181,11 @@ public class X500NameTest
             fail("Failed same object test");
         }
 
+        // basic style test
+        X500Name dnqName = new X500Name(DNQStyle.INSTANCE, dnqSubject);
+
+        isEquals(dnqName.toString(), "DNQ=Legion of the Bouncy Castle Inc.");
+        
 //        if (!name1.equals(name1, true))
 //        {
 //            fail("Failed same object test - in Order");
@@ -522,12 +530,12 @@ public class X500NameTest
             fail("failed to recover tagged name");
         }
 
-        DERUTF8String testString = new DERUTF8String("The Legion of the Bouncy Castle");
+        ASN1UTF8String testString = new DERUTF8String("The Legion of the Bouncy Castle");
         byte[] encodedBytes = testString.getEncoded();
         byte[] hexEncodedBytes = Hex.encode(encodedBytes);
         String hexEncodedString = "#" + new String(hexEncodedBytes);
 
-        DERUTF8String converted = (DERUTF8String)
+        ASN1UTF8String converted = (ASN1UTF8String)
             new X509DefaultEntryConverter().getConvertedValue(
                 BCStyle.L , hexEncodedString);
 
@@ -539,7 +547,7 @@ public class X500NameTest
         //
         // try escaped.
         //
-        converted = (DERUTF8String)
+        converted = (ASN1UTF8String)
             new X509DefaultEntryConverter().getConvertedValue(
                 BCStyle.L , "\\" + hexEncodedString);
 
@@ -666,6 +674,18 @@ public class X500NameTest
         throws Exception
     {
         IETFUtils.valueToString(new DERUTF8String(" "));
+    }
+
+    public static class DNQStyle
+        extends BCStyle
+    {
+        public static final DNQStyle INSTANCE = new DNQStyle();
+
+        private DNQStyle()
+        {
+             defaultLookUp.put("dnq", BCStyle.DN_QUALIFIER);
+             defaultSymbols.put(BCStyle.DN_QUALIFIER, "DNQ");
+        }
     }
 
     /*

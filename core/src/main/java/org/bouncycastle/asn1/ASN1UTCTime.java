@@ -34,7 +34,13 @@ import org.bouncycastle.util.Strings;
 public class ASN1UTCTime
     extends ASN1Primitive
 {
-    private byte[]      time;
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1UTCTime.class, BERTags.UTC_TIME)
+    {
+        ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
+        {
+            return createPrimitive(octetString.getOctets());
+        }
+    };
 
     /**
      * Return an UTC Time from the passed in object.
@@ -50,12 +56,19 @@ public class ASN1UTCTime
         {
             return (ASN1UTCTime)obj;
         }
-
+        if (obj instanceof ASN1Encodable)
+        {
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+            if (primitive instanceof ASN1UTCTime)
+            {
+                return (ASN1UTCTime)primitive;
+            }
+        }
         if (obj instanceof byte[])
         {
             try
             {
-                return (ASN1UTCTime)fromByteArray((byte[])obj);
+                return (ASN1UTCTime)TYPE.fromByteArray((byte[])obj);
             }
             catch (Exception e)
             {
@@ -69,28 +82,18 @@ public class ASN1UTCTime
     /**
      * Return an UTC Time from a tagged object.
      *
-     * @param obj the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
-     *              tagged false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
-     *               be converted.
+     * @param taggedObject the tagged object holding the object we want
+     * @param explicit     true if the object is meant to be explicitly tagged false
+     *                     otherwise.
+     * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return an ASN1UTCTime instance, or null.
      */
-    public static ASN1UTCTime getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+    public static ASN1UTCTime getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        ASN1Object o = obj.getObject();
-
-        if (explicit || o instanceof ASN1UTCTime)
-        {
-            return getInstance(o);
-        }
-        else
-        {
-            return new ASN1UTCTime(ASN1OctetString.getInstance(o).getOctets());
-        }
+        return (ASN1UTCTime)TYPE.getContextInstance(taggedObject, explicit);
     }
+
+    final byte[] contents;
 
     /**
      * The correct format for this is YYMMDDHHMMSSZ (it used to be that seconds were
@@ -105,7 +108,7 @@ public class ASN1UTCTime
     public ASN1UTCTime(
         String time)
     {
-        this.time = Strings.toByteArray(time);
+        this.contents = Strings.toByteArray(time);
         try
         {
             this.getDate();
@@ -127,7 +130,7 @@ public class ASN1UTCTime
 
         dateF.setTimeZone(new SimpleTimeZone(0,"Z"));
 
-        this.time = Strings.toByteArray(dateF.format(time));
+        this.contents = Strings.toByteArray(dateF.format(time));
     }
 
     /**
@@ -145,17 +148,16 @@ public class ASN1UTCTime
 
         dateF.setTimeZone(new SimpleTimeZone(0,"Z"));
 
-        this.time = Strings.toByteArray(dateF.format(time));
+        this.contents = Strings.toByteArray(dateF.format(time));
     }
 
-    ASN1UTCTime(
-        byte[] time)
+    ASN1UTCTime(byte[] contents)
     {
-        if (time.length < 2)
+        if (contents.length < 2)
         {
             throw new IllegalArgumentException("UTCTime string too short");
         }
-        this.time = time;
+        this.contents = contents;
         if (!(isDigit(0) && isDigit(1)))
         {
             throw new IllegalArgumentException("illegal characters in UTCTime string");
@@ -212,7 +214,7 @@ public class ASN1UTCTime
      */
     public String getTime()
     {
-        String stime = Strings.fromByteArray(time);
+        String stime = Strings.fromByteArray(contents);
 
         //
         // standardise the format.
@@ -273,22 +275,22 @@ public class ASN1UTCTime
 
     private boolean isDigit(int pos)
     {
-        return time.length > pos && time[pos] >= '0' && time[pos] <= '9';
+        return contents.length > pos && contents[pos] >= '0' && contents[pos] <= '9';
     }
 
-    boolean isConstructed()
+    final boolean isConstructed()
     {
         return false;
     }
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, time.length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contents.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodingDL(withTag, BERTags.UTC_TIME, time);
+        out.writeEncodingDL(withTag, BERTags.UTC_TIME, contents);
     }
 
     boolean asn1Equals(
@@ -299,16 +301,21 @@ public class ASN1UTCTime
             return false;
         }
 
-        return Arrays.areEqual(time, ((ASN1UTCTime)o).time);
+        return Arrays.areEqual(contents, ((ASN1UTCTime)o).contents);
     }
 
     public int hashCode()
     {
-        return Arrays.hashCode(time);
+        return Arrays.hashCode(contents);
     }
 
     public String toString()
     {
-      return Strings.fromByteArray(time);
+      return Strings.fromByteArray(contents);
+    }
+
+    static ASN1UTCTime createPrimitive(byte[] contents)
+    {
+        return new ASN1UTCTime(contents);
     }
 }

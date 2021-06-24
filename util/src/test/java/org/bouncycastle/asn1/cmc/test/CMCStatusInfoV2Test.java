@@ -40,7 +40,7 @@ public class CMCStatusInfoV2Test
 
             CMCStatusInfoV2 cmsInfo = bldr.build();
 
-            isTrue("Has statusString", null == cmsInfo.getStatusString());
+            isTrue("Has statusString", null == cmsInfo.getStatusStringUTF8());
             isEquals("Has other info", false, cmsInfo.hasOtherInfo());
 
             byte[] b = cmsInfo.getEncoded();

@@ -51,10 +51,7 @@ public class PasswordRecipientInfo
         this.encryptedKey = encryptedKey;
     }
 
-    /**
-     * @deprecated use getInstance() method.
-     */
-    public PasswordRecipientInfo(
+    private PasswordRecipientInfo(
         ASN1Sequence seq)
     {
         version = (ASN1Integer)seq.getObjectAt(0);

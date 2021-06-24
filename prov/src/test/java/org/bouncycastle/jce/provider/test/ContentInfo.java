@@ -69,10 +69,7 @@ class ContentInfo
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
-    /**
-     * @deprecated use getInstance()
-     */
-    public ContentInfo(
+    private ContentInfo(
         ASN1Sequence  seq)
     {
         if (seq.size() < 1 || seq.size() > 2)

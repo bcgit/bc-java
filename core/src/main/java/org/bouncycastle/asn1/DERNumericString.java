@@ -1,10 +1,5 @@
 package org.bouncycastle.asn1;
 
-import java.io.IOException;
-
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
-
 /**
  * DER NumericString object - this is an ascii string of characters {0,1,2,3,4,5,6,7,8,9, }.
  * ASN.1 NUMERIC-STRING object.
@@ -16,17 +11,16 @@ import org.bouncycastle.util.Strings;
  * Explicit character set escape sequences are not allowed.
  */
 public class DERNumericString
-    extends ASN1Primitive
-    implements ASN1String
+    extends ASN1NumericString
 {
-    private final byte[]  string;
-
     /**
      * Return a Numeric string from the passed in object
      *
      * @param obj a DERNumericString or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
      * @return a DERNumericString instance, or null
+     * 
+     * @deprecated Use {@link ASN1NumericString#getInstance(Object)} instead.
      */
     public static DERNumericString getInstance(
         Object  obj)
@@ -54,12 +48,15 @@ public class DERNumericString
     /**
      * Return an Numeric String from a tagged object.
      *
-     * @param obj the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
-     *              tagged false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
-     *               be converted.
+     * @param obj      the tagged object holding the object we want
+     * @param explicit true if the object is meant to be explicitly tagged false
+     *                 otherwise.
+     * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return a DERNumericString instance, or null.
+     * 
+     * @deprecated Use
+     *             {@link ASN1NumericString#getInstance(ASN1TaggedObject, boolean)}
+     *             instead.
      */
     public static DERNumericString getInstance(
         ASN1TaggedObject obj,
@@ -73,24 +70,14 @@ public class DERNumericString
         }
         else
         {
-            return new DERNumericString(ASN1OctetString.getInstance(o).getOctets());
+            return new DERNumericString(ASN1OctetString.getInstance(o).getOctets(), true);
         }
-    }
-
-    /**
-     * Basic constructor - with bytes.
-     */
-    DERNumericString(
-        byte[]   string)
-    {
-        this.string = string;
     }
 
     /**
      * Basic constructor -  without validation..
      */
-    public DERNumericString(
-        String   string)
+    public DERNumericString(String string)
     {
         this(string, false);
     }
@@ -103,92 +90,13 @@ public class DERNumericString
      * @throws IllegalArgumentException if validate is true and the string
      * contains characters that should not be in a NumericString.
      */
-    public DERNumericString(
-        String   string,
-        boolean  validate)
+    public DERNumericString(String string, boolean validate)
     {
-        if (validate && !isNumericString(string))
-        {
-            throw new IllegalArgumentException("string contains illegal characters");
-        }
-
-        this.string = Strings.toByteArray(string);
+        super(string, validate);
     }
 
-    public String getString()
+    DERNumericString(byte[] contents, boolean clone)
     {
-        return Strings.fromByteArray(string);
-    }
-
-    public String toString()
-    {
-        return getString();
-    }
-
-    public byte[] getOctets()
-    {
-        return Arrays.clone(string);
-    }
-
-    boolean isConstructed()
-    {
-        return false;
-    }
-
-    int encodedLength(boolean withTag)
-    {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, string.length);
-    }
-
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        out.writeEncodingDL(withTag, BERTags.NUMERIC_STRING, string);
-    }
-
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
-    }
-
-    boolean asn1Equals(
-        ASN1Primitive o)
-    {
-        if (!(o instanceof DERNumericString))
-        {
-            return false;
-        }
-
-        DERNumericString  s = (DERNumericString)o;
-
-        return Arrays.areEqual(string, s.string);
-    }
-
-    /**
-     * Return true if the string can be represented as a NumericString ('0'..'9', ' ')
-     *
-     * @param str string to validate.
-     * @return true if numeric, fale otherwise.
-     */
-    public static boolean isNumericString(
-        String  str)
-    {
-        for (int i = str.length() - 1; i >= 0; i--)
-        {
-            char    ch = str.charAt(i);
-
-            if (ch > 0x007f)
-            {
-                return false;
-            }
-
-            if (('0' <= ch && ch <= '9') || ch == ' ')
-            {
-                continue;
-            }
-
-            return false;
-        }
-
-        return true;
+        super(contents, clone);
     }
 }

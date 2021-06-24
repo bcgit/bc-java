@@ -49,10 +49,7 @@ public class KeyAgreeRecipientInfo
         this.recipientEncryptedKeys = recipientEncryptedKeys;
     }
 
-    /**
-     * @deprecated use getInstance()
-     */
-    public KeyAgreeRecipientInfo(
+    private KeyAgreeRecipientInfo(
         ASN1Sequence seq)
     {
         int index = 0;

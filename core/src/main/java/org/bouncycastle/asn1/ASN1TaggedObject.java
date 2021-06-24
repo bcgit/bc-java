@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * ASN.1 TaggedObject - in ASN.1 notation this is any object preceded by
  * a [n] where n is some number - these are assumed to follow the construction
@@ -141,7 +143,27 @@ public abstract class ASN1TaggedObject
         ASN1Primitive p1 = this.obj.toASN1Primitive();
         ASN1Primitive p2 = that.obj.toASN1Primitive();
 
-        return p1 == p2 || p1.asn1Equals(p2);
+        if (p1 == p2)
+        {
+            return true;
+        }
+
+        if (!this.isExplicit())
+        {
+            try
+            {
+                byte[] d1 = this.getEncoded();
+                byte[] d2 = that.getEncoded();
+                
+                return Arrays.areEqual(d1, d2);
+            }
+            catch (IOException e)
+            {
+                return false;
+            }
+        }
+
+        return p1.asn1Equals(p2);
     }
 
     public int hashCode()
@@ -256,6 +278,37 @@ public abstract class ASN1TaggedObject
         }
 
         return obj.toASN1Primitive();
+    }
+
+    /**
+     * Needed for open types, until we have better type-guided parsing support. Use
+     * sparingly for other purposes, and prefer {@link #getExplicitBaseTagged()} or
+     * {@link #getBaseUniversal(boolean, int)} where possible. Before using, check
+     * for matching tag {@link #getTagClass() class} and {@link #getTagNo() number}.
+     */
+    public ASN1Object getExplicitBaseObject()
+    {
+        if (!isExplicit())
+        {
+            throw new IllegalStateException("object implicit - explicit expected.");
+        }
+
+        return obj instanceof ASN1Object ? (ASN1Object)obj : obj.toASN1Primitive();
+    }
+
+    public ASN1Object getExplicitContextBaseObject()
+    {
+        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
+        {
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
+        }
+
+        if (!isExplicit())
+        {
+            throw new IllegalStateException("object implicit - explicit expected.");
+        }
+
+        return obj instanceof ASN1Object ? (ASN1Object)obj : obj.toASN1Primitive();
     }
 
     public ASN1TaggedObject getExplicitBaseTagged()
@@ -388,18 +441,19 @@ public abstract class ASN1TaggedObject
 
     public ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException
     {
-        // TODO These method use getInstance that should only work for BERTags.CONTEXT_SPECIFIC
+        ASN1Primitive primitive = getBaseUniversal(declaredExplicit, baseTagNo);
+
         switch (baseTagNo)
         {
-        case BERTags.SET:
-            return ASN1Set.getInstance(this, declaredExplicit).parser();
-        case BERTags.SEQUENCE:
-            return ASN1Sequence.getInstance(this, declaredExplicit).parser();
         case BERTags.OCTET_STRING:
-            return ASN1OctetString.getInstance(this, declaredExplicit).parser();
+            return ((ASN1OctetString)primitive).parser();
+        case BERTags.SET:
+            return ((ASN1Set)primitive).parser();
+        case BERTags.SEQUENCE:
+            return ((ASN1Sequence)primitive).parser();
         }
 
-        return getBaseUniversal(declaredExplicit, baseTagNo);
+        return primitive;
     }
 
     public final ASN1Primitive getLoadedObject()

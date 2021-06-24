@@ -61,10 +61,7 @@ public class EnvelopedData
         this.unprotectedAttrs = ASN1Set.getInstance(unprotectedAttrs);
     }
 
-    /**
-     * @deprecated use getInstance()
-     */
-    public EnvelopedData(
+    private EnvelopedData(
         ASN1Sequence seq)
     {
         int     index = 0;

@@ -31,11 +31,27 @@ abstract class ASN1UniversalType
 
     ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
     {
-        throw new IllegalStateException("unexpected implicit primitive encoding");
+        throw new IllegalStateException("unexpected implicit constructed encoding");
     }
 
     final ASN1Primitive fromByteArray(byte[] bytes) throws IOException
     {
         return checkedCast(ASN1Primitive.fromByteArray(bytes));
+    }
+
+    // TODO Use for existing getInstance(ASN1TaggedObject, boolean) methods
+    final ASN1Primitive getContextInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
+        {
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
+        }
+
+        return checkedCast(taggedObject.getBaseUniversal(declaredExplicit, getTag().getTagNumber()));
+    }
+
+    final ASN1Tag getTag()
+    {
+        return tag;
     }
 }
