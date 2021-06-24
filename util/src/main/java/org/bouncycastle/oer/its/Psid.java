@@ -38,7 +38,7 @@ public class Psid
 
     private void validate()
     {
-        if (BigInteger.ZERO.compareTo(getValue()) < 0)
+        if (BigInteger.ZERO.compareTo(getValue()) >= 0)
         {
             throw new IllegalStateException("psid must be greater than zero");
         }

@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.util.Arrays;
 
 /**
  * EccP384CurvePoint ::= CHOICE  {
@@ -90,9 +91,42 @@ public class EccP384CurvePoint
 
 
     @Override
-    public byte[] getKeyBytes()
+    public byte[] getEncodedPoint()
     {
-        return DEROctetString.getInstance(value).getOctets();
+
+        byte[] key;
+        switch (choice)
+        {
+        case compressedY0:
+        {
+            byte[] originalKey = DEROctetString.getInstance(value).getOctets();
+            key = new byte[originalKey.length + 1];
+            key[0] = 0x02;
+            System.arraycopy(originalKey, 0, key, 1, originalKey.length);
+        }
+        break;
+        case compressedY1:
+        {
+            byte[] originalKey = DEROctetString.getInstance(value).getOctets();
+            key = new byte[originalKey.length + 1];
+            key[0] = 0x03;
+            System.arraycopy(originalKey, 0, key, 1, originalKey.length);
+        }
+        break;
+        case uncompressedP384:
+            ASN1Sequence sequence = ASN1Sequence.getInstance(value);
+            byte[] x = DEROctetString.getInstance(sequence.getObjectAt(0)).getOctets();
+            byte[] y = DEROctetString.getInstance(sequence.getObjectAt(1)).getOctets();
+            key = Arrays.concatenate(new byte[]{0x04}, x, y);
+            break;
+        case xOnly:
+            throw new IllegalStateException("x Only not implemented");
+        default:
+            throw new IllegalStateException("unknown point choice");
+        }
+
+        return key;
+
     }
 
     public static class Builder

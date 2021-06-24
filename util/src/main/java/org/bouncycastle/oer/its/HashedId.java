@@ -11,7 +11,7 @@ public class HashedId
 {
     private final byte[] string;
 
-    public HashedId(byte[] string)
+    protected HashedId(byte[] string)
     {
         this.string = Arrays.clone(string);
     }
@@ -27,15 +27,76 @@ public class HashedId
         switch (octetString.length)
         {
         case 3:
+            return new HashedId3(octetString);
         case 8:
+            return new HashedId8(octetString);
         case 10:
+            return new HashedId10(octetString);
         case 32:
-            return new HashedId(octetString);
+            return new HashedId32(octetString);
         default:
             throw new IllegalStateException("hash id of unsupported length, length was: " + octetString.length);
         }
 
     }
+
+
+    public static class HashedId3
+        extends HashedId
+    {
+
+        public HashedId3(byte[] string)
+        {
+            super(string);
+            if (string.length != 3)
+            {
+                throw new IllegalStateException("hash id not 32 bytes");
+            }
+        }
+    }
+
+    public static class HashedId8
+        extends HashedId
+    {
+
+        public HashedId8(byte[] string)
+        {
+            super(string);
+            if (string.length != 8)
+            {
+                throw new IllegalStateException("hash id not 8 bytes");
+            }
+        }
+    }
+
+    public static class HashedId10
+        extends HashedId
+    {
+
+        public HashedId10(byte[] string)
+        {
+            super(string);
+            if (string.length != 10)
+            {
+                throw new IllegalStateException("hash id not 10 bytes");
+            }
+        }
+    }
+
+    public static class HashedId32
+        extends HashedId
+    {
+
+        public HashedId32(byte[] string)
+        {
+            super(string);
+            if (string.length != 32)
+            {
+                throw new IllegalStateException("hash id not 32 bytes");
+            }
+        }
+    }
+
 
     public ASN1Primitive toASN1Primitive()
     {

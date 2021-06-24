@@ -17,12 +17,19 @@ import org.bouncycastle.oer.OEROptional;
 public class PsidSspRange
     extends ASN1Object
 {
-    private ASN1Integer psid;
-    private OEROptional sspRange;
+    private final ASN1Integer psid;
+    private final OEROptional sspRange;
 
-    public PsidSspRange()
+    public PsidSspRange(ASN1Integer psid, OEROptional sspRange)
     {
+        this.psid = psid;
+        this.sspRange = sspRange;
+    }
 
+    public PsidSspRange(ASN1Integer psid, SspRange sspRange)
+    {
+        this.psid = psid;
+        this.sspRange = OEROptional.getInstance(sspRange);
     }
 
     public static PsidSspRange getInstance(Object src)
@@ -38,21 +45,9 @@ public class PsidSspRange
         else
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(src);
-            PsidSspRange psidSspRange = new PsidSspRange();
-            if (seq.size() < 1 || seq.size() > 2)
-            {
-                throw new IllegalStateException("expected sequences with one or optionally two items");
-            }
-
-            if (seq.size() == 1)
-            {
-                psidSspRange.psid = (ASN1Integer)seq.getObjectAt(0);
-            }
-            if (seq.size() == 2)
-            {
-                psidSspRange.sspRange = OEROptional.getInstance(seq.getObjectAt(1));
-            }
-            return psidSspRange;
+            return new PsidSspRange(
+                ASN1Integer.getInstance(seq.getObjectAt(0)),
+                OEROptional.getInstance(seq.getObjectAt(1)));
         }
     }
 
@@ -62,19 +57,9 @@ public class PsidSspRange
         return psid;
     }
 
-    public void setPsid(ASN1Integer psid)
-    {
-        this.psid = psid;
-    }
-
     public OEROptional getSspRange()
     {
         return sspRange;
-    }
-
-    public void setSspRange(OEROptional sspRange)
-    {
-        this.sspRange = sspRange;
     }
 
     public ASN1Primitive toASN1Primitive()
@@ -87,4 +72,47 @@ public class PsidSspRange
         }
         return new DERSequence(avec);
     }
+
+
+
+
+
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private ASN1Integer psid;
+        private OEROptional sspRange = OEROptional.ABSENT;
+
+        public Builder setPsid(ASN1Integer psid)
+        {
+            this.psid = psid;
+            return this;
+        }
+
+        public Builder setPsid(long psid)
+        {
+            this.psid = new ASN1Integer(psid);
+            return this;
+        }
+
+
+        public Builder setSspRange(SspRange sspRange)
+        {
+            this.sspRange = OEROptional.getInstance(sspRange);
+            return this;
+        }
+
+
+        public PsidSspRange createPsidSspRange()
+        {
+            return new PsidSspRange(psid, sspRange);
+        }
+
+    }
+
 }

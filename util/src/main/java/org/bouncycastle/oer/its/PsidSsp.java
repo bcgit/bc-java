@@ -3,7 +3,14 @@ package org.bouncycastle.oer.its;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.oer.OEROptional;
 
+/**
+ * PsidSsp ::= SEQUENCE {
+ * psid  Psid,
+ * ssp   ServiceSpecificPermissions OPTIONAL
+ * }
+ */
 public class PsidSsp
     extends ASN1Object
 {
@@ -24,10 +31,9 @@ public class PsidSsp
         }
 
         ASN1Sequence seq = ASN1Sequence.getInstance(nextElement);
-        return new Builder()
-            .setPsid(Psid.getInstance(seq.getObjectAt(0)))
-            .setSsp(ServiceSpecificPermissions.getInstance(seq.getObjectAt(1)))
-            .createPsidSsp();
+
+        return new PsidSsp(Psid.getInstance(seq.getObjectAt(0)),
+            OEROptional.getValue(ServiceSpecificPermissions.class, seq.getObjectAt(1)));
     }
 
     public Psid getPsid()
@@ -42,7 +48,13 @@ public class PsidSsp
 
     public ASN1Primitive toASN1Primitive()
     {
-        return Utils.toSequence(psid, ssp);
+        return Utils.toSequence(psid, OEROptional.getInstance(ssp));
+    }
+
+
+    public static Builder builder()
+    {
+        return new Builder();
     }
 
     public static class Builder

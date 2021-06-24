@@ -1,5 +1,7 @@
 package org.bouncycastle.oer.its;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1Object;
@@ -7,8 +9,12 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * EccP256CurvePoint ::= CHOICE {
@@ -88,14 +94,51 @@ public class EccP256CurvePoint
     }
 
     @Override
-    public byte[] getKeyBytes()
+    public byte[] getEncodedPoint()
     {
-        return DEROctetString.getInstance(value).getOctets();
+        byte[] key;
+        switch (choice)
+        {
+        case compressedY0:
+        {
+            byte[] originalKey = DEROctetString.getInstance(value).getOctets();
+            key = new byte[originalKey.length + 1];
+            key[0] = 0x02;
+            System.arraycopy(originalKey, 0, key, 1, originalKey.length);
+        }
+        break;
+        case compressedY1:
+        {
+            byte[] originalKey = DEROctetString.getInstance(value).getOctets();
+            key = new byte[originalKey.length + 1];
+            key[0] = 0x03;
+            System.arraycopy(originalKey, 0, key, 1, originalKey.length);
+        }
+        break;
+        case uncompressedP256:
+            ASN1Sequence sequence = ASN1Sequence.getInstance(value);
+            byte[] x = DEROctetString.getInstance(sequence.getObjectAt(0)).getOctets();
+            byte[] y = DEROctetString.getInstance(sequence.getObjectAt(1)).getOctets();
+            key = Arrays.concatenate(new byte[]{0x04}, x, y);
+            break;
+        case xOnly:
+            throw new IllegalStateException("x Only not implemented");
+        default:
+            throw new IllegalStateException("unknown point choice");
+        }
+
+        return key;
+
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
 
     public static class Builder
     {
-
 
         private int choice;
         private ASN1Encodable value;
@@ -111,6 +154,43 @@ public class EccP256CurvePoint
             this.value = value;
             return this;
         }
+
+        public Builder xOnly(BigInteger x)
+        {
+            this.choice = xOnly;
+            this.value = new DEROctetString(BigIntegers.asUnsignedByteArray(x));
+            return this;
+        }
+
+        public Builder fill()
+        {
+            this.choice = fill;
+            this.value = DERNull.INSTANCE;
+            return this;
+        }
+
+        public Builder compressedY0(BigInteger y)
+        {
+            this.choice = compressedY0;
+            throw new IllegalStateException("not fully implemented.");
+        }
+
+        public Builder compressedY1(BigInteger y)
+        {
+            this.choice = compressedY1;
+            throw new IllegalStateException("not fully implemented.");
+        }
+
+        public Builder uncompressedP256(BigInteger x, BigInteger y)
+        {
+            choice = uncompressedP256;
+            value = new DERSequence(new ASN1Encodable[]{
+                new DEROctetString(BigIntegers.asUnsignedByteArray(32, x)),
+                new DEROctetString(BigIntegers.asUnsignedByteArray(32, y)),
+            });
+            return this;
+        }
+
 
         public EccP256CurvePoint createEccP256CurvePoint()
         {

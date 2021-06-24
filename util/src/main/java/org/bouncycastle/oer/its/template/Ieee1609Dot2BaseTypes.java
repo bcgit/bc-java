@@ -16,6 +16,7 @@ import static org.bouncycastle.oer.OERDefinition.octets;
 import static org.bouncycastle.oer.OERDefinition.optional;
 import static org.bouncycastle.oer.OERDefinition.seq;
 import static org.bouncycastle.oer.OERDefinition.seqof;
+import static org.bouncycastle.oer.OERDefinition.utf8String;
 
 
 public class Ieee1609Dot2BaseTypes
@@ -48,14 +49,14 @@ public class Ieee1609Dot2BaseTypes
 
     /**
      * Duration ::= CHOICE {
-     *     microseconds  Uint16,
-     *     milliseconds  Uint16,
-     *     seconds       Uint16,
-     *     minutes       Uint16,
-     *     hours         Uint16,
-     *     sixtyHours    Uint16,
-     *     years         Uint16
-     *   }
+     * microseconds  Uint16,
+     * milliseconds  Uint16,
+     * seconds       Uint16,
+     * minutes       Uint16,
+     * hours         Uint16,
+     * sixtyHours    Uint16,
+     * years         Uint16
+     * }
      */
     public static final OERDefinition.Builder Duration = choice(
         UINT16.label("microseconds"),
@@ -70,9 +71,9 @@ public class Ieee1609Dot2BaseTypes
 
     /**
      * ValidityPeriod ::= SEQUENCE {
-     *     start     Time32,
-     *     duration  Duration
-     *   }
+     * start     Time32,
+     * duration  Duration
+     * }
      */
     public static final OERDefinition.Builder ValidityPeriod = seq(Time32, Duration).label("ValidityPeriod");
 
@@ -88,7 +89,7 @@ public class Ieee1609Dot2BaseTypes
     /**
      * Hostname ::= UTF8String (SIZE(0..255))
      */
-    public static final OERDefinition.Builder Hostname = octets(0,255).label("Hostname");
+    public static final OERDefinition.Builder Hostname = utf8String(0, 255).label("Hostname");
 
     /**
      * LinkageValue ::= OCTET STRING (SIZE(9))

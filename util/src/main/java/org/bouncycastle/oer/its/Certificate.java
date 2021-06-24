@@ -33,6 +33,10 @@ public class Certificate
         return certificateBase;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder
     {
 

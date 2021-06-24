@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -23,7 +24,8 @@ public class Signature
 {
     public static final int ecdsaNistP256Signature = 0;
     public static final int ecdsaBrainpoolP256r1Signature = 1;
-    public static final int ecdsaBrainpoolP384r1Signature = 2;
+    private static final int extension = 2;
+    public static final int ecdsaBrainpoolP384r1Signature = 3;
 
     private final int choice;
     private final ASN1Encodable value;
@@ -34,17 +36,18 @@ public class Signature
         {
             return (Signature)objectAt;
         }
-        
+
         ASN1TaggedObject ato = ASN1TaggedObject.getInstance(objectAt);
         ASN1Encodable value;
 
         switch (ato.getTagNo())
         {
         case ecdsaNistP256Signature:
-            value = EcdsaP256Signature.getInstance(ato.getObject());
-            break;
         case ecdsaBrainpoolP256r1Signature:
             value = EcdsaP256Signature.getInstance(ato.getObject());
+            break;
+        case extension:
+            value = DEROctetString.getInstance(ato.getObject());
             break;
         case ecdsaBrainpoolP384r1Signature:
             value = EcdsaP384Signature.getInstance(ato.getObject());
@@ -76,4 +79,49 @@ public class Signature
     {
         return new DERTaggedObject(choice, value);
     }
+
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private int choice;
+        private ASN1Encodable value;
+/*
+    ecdsaNistP256Signature EcdsaP256Signature,
+ *         ecdsaBrainpoolP256r1Signature EcdsaP256Signature,
+ *         ...
+ *         ecdsaBrainpoolP384r1Signature EcdsaP384Signature
+ */
+
+        public Builder ecdsaNistP256Signature(EcdsaP256Signature signature)
+        {
+            choice = ecdsaNistP256Signature;
+            value = signature;
+            return this;
+        }
+
+        public Builder ecdsaBrainpoolP256r1Signature(EcdsaP256Signature signature)
+        {
+            choice = ecdsaBrainpoolP256r1Signature;
+            value = signature;
+            return this;
+        }
+
+        public Builder ecdsaBrainpoolP384r1Signature(EcdsaP384Signature signature)
+        {
+            choice = ecdsaBrainpoolP384r1Signature;
+            value = signature;
+            return this;
+        }
+
+        public Signature createSignature()
+        {
+            return new Signature(choice, value);
+        }
+    }
+
 }
