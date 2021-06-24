@@ -2,7 +2,7 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
-public abstract class ASN1ObjectDescriptor
+public final class ASN1ObjectDescriptor
     extends ASN1Primitive
 {
     static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1ObjectDescriptor.class, BERTags.OBJECT_DESCRIPTOR)
@@ -65,7 +65,7 @@ public abstract class ASN1ObjectDescriptor
 
     private final ASN1GraphicString baseGraphicString;
 
-    ASN1ObjectDescriptor(ASN1GraphicString baseGraphicString)
+    public ASN1ObjectDescriptor(ASN1GraphicString baseGraphicString)
     {
         this.baseGraphicString = baseGraphicString;
     }
@@ -75,23 +75,23 @@ public abstract class ASN1ObjectDescriptor
         return baseGraphicString;
     }
 
-    final boolean isConstructed()
+    boolean isConstructed()
     {
         return false;
     }
 
-    final int encodedLength(boolean withTag)
+    int encodedLength(boolean withTag)
     {
         return baseGraphicString.encodedLength(withTag);
     }
 
-    final void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         out.writeIdentifier(withTag, BERTags.OBJECT_DESCRIPTOR);
         baseGraphicString.encode(out, false);
     }
 
-    final boolean asn1Equals(ASN1Primitive other)
+    boolean asn1Equals(ASN1Primitive other)
     {
         if (!(other instanceof ASN1ObjectDescriptor))
         {
@@ -103,13 +103,13 @@ public abstract class ASN1ObjectDescriptor
         return this.baseGraphicString.asn1Equals(that.baseGraphicString);
     }
 
-    public final int hashCode()
+    public int hashCode()
     {
         return ~baseGraphicString.hashCode();
     }
 
     static ASN1ObjectDescriptor createPrimitive(byte[] contents)
     {
-        return new DERObjectDescriptor(ASN1GraphicString.createPrimitive(contents));
+        return new ASN1ObjectDescriptor(ASN1GraphicString.createPrimitive(contents));
     }
 }
