@@ -19,7 +19,6 @@ import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 public class BcITSContentSigner
     implements ITSContentSigner
@@ -91,8 +90,10 @@ public class BcITSContentSigner
         }
         else
         {
+            // self signed so we use a null digest for the parent.
             this.parentData = null;
-            this.parentDigest = null;
+            this.parentDigest = new byte[digest.getDigestSize()];
+            digest.doFinal(parentDigest, 0);
         }
     }
 
@@ -118,7 +119,7 @@ public class BcITSContentSigner
 
     public boolean isForSelfSigning()
     {
-        return parentDigest == null;
+        return parentData == null;
     }
 
     public byte[] getSignature()
@@ -128,39 +129,13 @@ public class BcITSContentSigner
 
         digest.doFinal(clientCertDigest, 0);
 
-        //System.out.println("Generate tbs hash: " + Hex.toHexString(clientCertDigest));
-
-        final DSADigestSigner signer;
-
-        try
-        {
-            signer = new DSADigestSigner(new ECDSASigner(), BcDefaultDigestProvider.INSTANCE.get(digestAlgo));
-        }
-        catch (OperatorCreationException e)
-        {
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        final DSADigestSigner signer = new DSADigestSigner(new ECDSASigner(), digest);
 
         signer.init(true, privKey);
 
         signer.update(clientCertDigest, 0, clientCertDigest.length);
 
-        //
-        // if parent digest is null we've been created specifically to sign ourselves.
-        //
-        if (parentDigest == null)
-        {
-            byte[] empty = new byte[digest.getDigestSize()];
-            digest.doFinal(empty, 0);
-
-            //System.out.println("gen " + Hex.toHexString(empty));
-
-            signer.update(empty, 0, empty.length);
-        }
-        else
-        {
-            signer.update(parentDigest, 0, parentDigest.length);
-        }
+        signer.update(parentDigest, 0, parentDigest.length);
 
         return signer.generateSignature();
     }
