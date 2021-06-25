@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -20,10 +21,12 @@ public class BasePublicEncryptionKey
 {
     public static final int eciesNistP256 = 0;
     public static final int eciesBrainpoolP256r1 = 1;
+    public static final int extension = 2;
 
 
     private final int choice;
     private final ASN1Encodable value;
+
 
     public static BasePublicEncryptionKey getInstance(Object objectAt)
     {
@@ -33,19 +36,22 @@ public class BasePublicEncryptionKey
         }
         ASN1TaggedObject dto = ASN1TaggedObject.getInstance(objectAt);
 
-        EccCurvePoint point;
+        ASN1Encodable value;
 
         switch (dto.getTagNo())
         {
         case eciesNistP256:
         case eciesBrainpoolP256r1:
-            point = EccP256CurvePoint.getInstance(dto.getObject());
+            value = EccP256CurvePoint.getInstance(dto.getObject());
+            break;
+        case extension:
+            value = DEROctetString.getInstance(dto.getObject());
             break;
         default:
             throw new IllegalStateException("unknown choice " + dto.getTagNo());
         }
 
-        return new Builder().setChoice(dto.getTagNo()).setValue(point).createBasePublicEncryptionKey();
+        return new BasePublicEncryptionKey(dto.getTagNo(), value);
     }
 
     public BasePublicEncryptionKey(int choice, ASN1Encodable value)
