@@ -266,7 +266,7 @@ public class ITSBasicTest
         ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
         BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
 
-        ITSCertificate newCert = itsCertificateBuilder.build(publicVerificationKey, null);
+        ITSCertificate newCert = itsCertificateBuilder.build(publicVerificationKey);
 
         BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(newCert);
         boolean valid = newCert.isSignatureValid(provider);
