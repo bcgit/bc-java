@@ -66,7 +66,7 @@ public class DERUTF8String
         }
         else
         {
-            return new DERUTF8String(ASN1OctetString.getInstance(o).getOctets(), false);
+            return new DERUTF8String(ASN1OctetString.getInstance(o).getOctets(), true);
         }
     }
 
