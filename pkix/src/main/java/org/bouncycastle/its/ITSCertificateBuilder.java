@@ -1,7 +1,11 @@
 package org.bouncycastle.its;
 
+import java.util.Date;
+
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.oer.its.Duration;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ValidityPeriod;
 
 public class ITSCertificateBuilder
 {
@@ -33,9 +37,17 @@ public class ITSCertificateBuilder
      * @param version  certificate version.
      * @return  the current builder.
      */
-    public ITSCertificateBuilder setVersion(ASN1Integer version)
+    public ITSCertificateBuilder setVersion(int version)
     {
-        this.version = version;
+        this.version = new ASN1Integer(version);
+        return this;
+    }
+
+    public ITSCertificateBuilder setValidityPeriod(Date startDate, Duration duration)
+    {
+        tbsCertificateBuilder.setValidityPeriod(ValidityPeriod.builder()
+            .setTime32(new ASN1Integer(startDate.getTime() / 1000))
+            .setDuration(duration).createValidityPeriod());
         return this;
     }
 }

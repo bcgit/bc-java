@@ -3,10 +3,13 @@ package org.bouncycastle.oer.its;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Primitive;
 
 public class Uint16
-    extends ASN1Integer
+    extends ASN1Object
 {
+    private final int value;
 
     public static Uint16 getInstance(Object o)
     {
@@ -20,33 +23,33 @@ public class Uint16
         }
     }
 
-    public Uint16(long value)
+    public Uint16(int value)
     {
-        super(value);
-        verify();
+        this.value = verify(value);
     }
 
     public Uint16(BigInteger value)
     {
-        super(value);
-        verify();
+        this.value = value.intValue();
     }
 
-    public Uint16(byte[] bytes)
+    protected int verify(int value)
     {
-        super(bytes);
-        verify();
+        if (value < 0)
+        {
+            throw new IllegalArgumentException("Uint16 must be >= 0");
+        }
+        if (value > 0xFFFF)
+        {
+            throw new IllegalArgumentException("Uint16 must be <= 0xFFFF");
+        }
+
+        return value;
     }
 
-    private void verify()
+    @Override
+    public ASN1Primitive toASN1Primitive()
     {
-        if (getValue().compareTo(BigInteger.ZERO) < 0)
-        {
-            throw new IllegalStateException("uint16 must be >=0");
-        }
-        if (getValue().compareTo(BigInteger.valueOf(255)) > 0)
-        {
-            throw new IllegalStateException("uint16 must be <=255");
-        }
+        return new ASN1Integer(value);
     }
 }

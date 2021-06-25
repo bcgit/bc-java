@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
-
 /**
  * <pre>
  *     Duration ::= CHOICE {
@@ -41,6 +40,10 @@ public class Duration
         this.tag = tag;
         this.value = value;
 
+        if (tag < 0 || tag > 6)
+        {
+            throw new IllegalArgumentException("tag must be 0 <= tag <= 6");
+        }
         if (value < 0 || value > 0xFFFF)
         {
             throw new IllegalArgumentException("value must be 0 <= value <= 0xFFFF");
@@ -95,8 +98,4 @@ public class Duration
     {
         return value;
     }
-
-
-
-
 }
