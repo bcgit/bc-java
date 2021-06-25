@@ -199,6 +199,9 @@ public class BcITSContentVerifierProvider
 
                 digest.doFinal(clientCertDigest, 0);
 
+                // System.out.println("Verify: "+ Hex.toHexString(clientCertDigest));
+
+
                 signer.init(false, pubParams);
 
                 signer.update(clientCertDigest, 0, clientCertDigest.length);
@@ -211,6 +214,9 @@ public class BcITSContentVerifierProvider
                 {
                     byte[] empty = new byte[digest.getDigestSize()];
                     digest.doFinal(empty, 0);
+
+                    // System.out.println("Empty: "+Hex.toHexString(empty));
+
                     signer.update(empty, 0, empty.length);
                 }
                 else
