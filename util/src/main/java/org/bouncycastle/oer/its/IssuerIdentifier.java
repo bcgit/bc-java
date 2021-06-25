@@ -138,8 +138,7 @@ public class IssuerIdentifier
         {
             return new IssuerIdentifier(choice, value);
         }
-
-
     }
+
 
 }

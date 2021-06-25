@@ -96,7 +96,12 @@ public class CertificateBase
          *         toBeSigned ToBeSignedCertificate,
          *         signature Signature OPTIONAL
          */
-        return Utils.toSequence(version, type, issuer, toBeSignedCertificate, OEROptional.getInstance(signature));
+        return Utils.toSequence(
+            version,
+            type,
+            issuer,
+            toBeSignedCertificate,
+            OEROptional.getInstance(signature));
     }
 
     public static Builder builder()
