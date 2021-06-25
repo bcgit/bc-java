@@ -166,16 +166,11 @@ public class ITSBasicTest
         ITSCertificate newCert = itsCertificateBuilder.build(itsContentSigner);
 
 
-
-
-
         BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(newCert);
         boolean valid = newCert.isSignatureValid(provider);
 
-      ///  TestCase.assertTrue(valid);
+        TestCase.assertTrue(valid);
 
-
-        System.out.println();
     }
 
 
