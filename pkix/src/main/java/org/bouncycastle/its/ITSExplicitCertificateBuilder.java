@@ -16,6 +16,7 @@ import org.bouncycastle.oer.its.CertificateType;
 import org.bouncycastle.oer.its.HashAlgorithm;
 import org.bouncycastle.oer.its.HashedId;
 import org.bouncycastle.oer.its.IssuerIdentifier;
+import org.bouncycastle.oer.its.PublicEncryptionKey;
 import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.Signature;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
@@ -31,7 +32,7 @@ public class ITSExplicitCertificateBuilder
     /**
      * Base constructor for an ITS certificate.
      *
-     * @param signer the content signer to be used to generate the signature validating the certificate.
+     * @param signer         the content signer to be used to generate the signature validating the certificate.
      * @param tbsCertificate
      */
     // TODO: temp constructor to get signing working.
@@ -41,11 +42,12 @@ public class ITSExplicitCertificateBuilder
         this.signer = signer;
     }
 
-    public ITSCertificate build(PublicVerificationKey verificationKey)
+    public ITSCertificate build(PublicVerificationKey verificationKey, PublicEncryptionKey publicEncryptionKey)
     {
         tbsCertificateBuilder.setVerificationKeyIndicator(
             VerificationKeyIndicator.builder().publicVerificationKey(verificationKey)
                 .createVerificationKeyIndicator());
+        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
 
         ToBeSignedCertificate tbsCertificate = tbsCertificateBuilder.createToBeSignedCertificate();
 
