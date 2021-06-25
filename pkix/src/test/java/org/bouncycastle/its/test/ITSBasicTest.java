@@ -156,17 +156,15 @@ public class ITSBasicTest
             .setDuration(new Duration(Duration.years, 1)).createValidityPeriod());
 
 
-        ITSImplicitCertificateBuilder certificateBuilder = new ITSImplicitCertificateBuilder(tbsBuilder);
-        certificateBuilder.setIssuer(caCert);
-        ITSCertificate cert = certificateBuilder.build(BigInteger.ONE, BigIntegers.TWO, new BcDigestCalculatorProvider());
+        ITSImplicitCertificateBuilder certificateBuilder = new ITSImplicitCertificateBuilder(caCert, new BcDigestCalculatorProvider(), tbsBuilder);
 
+        ITSCertificate cert = certificateBuilder.build(BigInteger.ONE, BigIntegers.TWO);
 
         IssuerIdentifier caIssuerIdentifier = IssuerIdentifier
             .builder()
             .sha256AndDigest(new HashedId.HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length)))
             .createIssuerIdentifier();
         assertTrue(cert.getIssuer().equals(caIssuerIdentifier));
-
 
         VerificationKeyIndicator vki = cert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getVerificationKeyIndicator();
         assertEquals(vki.getChoice(), VerificationKeyIndicator.reconstructionValue);
@@ -262,16 +260,6 @@ public class ITSBasicTest
                     .setEeType(new EndEntityType(0xC0))
                     .createPsidGroupPermissions())
                 .createSequenceOfPsidGroupPermissions());
-        tbsBuilder.setVerificationKeyIndicator(
-            VerificationKeyIndicator.builder()
-                .publicVerificationKey(PublicVerificationKey.builder()
-                    .ecdsaNistP256(EccP256CurvePoint.builder()
-                        .uncompressedP256(
-                            pub.getQ().getAffineXCoord().toBigInteger(),
-                            pub.getQ().getAffineYCoord().toBigInteger())
-                        .createEccP256CurvePoint())
-                    .createPublicVerificationKey())
-                .createVerificationKeyIndicator());
 
         tbsBuilder.setCertificateId(CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId());
         tbsBuilder.setCracaId(new HashedId.HashedId3(new byte[]{0, 1, 2}));
@@ -279,13 +267,19 @@ public class ITSBasicTest
         tbsBuilder.setValidityPeriod(ValidityPeriod.builder()
             .setTime32(new ASN1Integer(System.currentTimeMillis() / 1000))
             .setDuration(new Duration(Duration.years, 1)).createValidityPeriod());
-
-
+        
         ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
-        ITSExplicitCertificateBuilder itsCertificateBuilder = new ITSExplicitCertificateBuilder(tbsBuilder);
+        ITSExplicitCertificateBuilder itsCertificateBuilder = new ITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
 
-        ITSCertificate newCert = itsCertificateBuilder.build(itsContentSigner);
+        PublicVerificationKey publicVerificationKey = PublicVerificationKey.builder()
+            .ecdsaNistP256(EccP256CurvePoint.builder()
+                .uncompressedP256(
+                    pub.getQ().getAffineXCoord().toBigInteger(),
+                    pub.getQ().getAffineYCoord().toBigInteger())
+                .createEccP256CurvePoint())
+            .createPublicVerificationKey();
 
+        ITSCertificate newCert = itsCertificateBuilder.build(publicVerificationKey);
 
         BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(newCert);
         boolean valid = newCert.isSignatureValid(provider);

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -24,21 +23,12 @@ import org.bouncycastle.util.Arrays;
 public class ITSImplicitCertificateBuilder
     extends ITSCertificateBuilder
 {
+    private final IssuerIdentifier issuerIdentifier;
 
-    private ITSCertificate issuer;
-    private ASN1Integer version = new ASN1Integer(3);
-
-    public ITSImplicitCertificateBuilder(ToBeSignedCertificate.Builder tbsCertificate)
+    public ITSImplicitCertificateBuilder(ITSCertificate issuer, DigestCalculatorProvider digestCalculatorProvider, ToBeSignedCertificate.Builder tbsCertificate)
     {
-        super(tbsCertificate);
-    }
-
-    public ITSCertificate build(BigInteger x, BigInteger y, DigestCalculatorProvider digestCalculatorProvider)
-    {
-        EccP256CurvePoint reconstructionValue = EccP256CurvePoint.builder()
-            .uncompressedP256(x, y).createEccP256CurvePoint();
-
-        // TODO is this always true
+        super(issuer, tbsCertificate);
+        // TODO is this always true?
         AlgorithmIdentifier digestAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
         ASN1ObjectIdentifier digestAlg = digestAlgId.getAlgorithm();
         DigestCalculator calculator;
@@ -65,7 +55,6 @@ public class ITSImplicitCertificateBuilder
         byte[] parentDigest = calculator.getDigest();
 
         IssuerIdentifier.Builder issuerIdentifierBuilder = IssuerIdentifier.builder();
-
         HashedId.HashedId8 hashedID = new HashedId.HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
         if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
         {
@@ -79,7 +68,13 @@ public class ITSImplicitCertificateBuilder
         {
             throw new IllegalStateException("unknown digest");
         }
+        this.issuerIdentifier = issuerIdentifierBuilder.createIssuerIdentifier();
+    }
 
+    public ITSCertificate build(BigInteger x, BigInteger y)
+    {
+        EccP256CurvePoint reconstructionValue = EccP256CurvePoint.builder()
+            .uncompressedP256(x, y).createEccP256CurvePoint();
 
         tbsCertificateBuilder.setVerificationKeyIndicator(VerificationKeyIndicator.builder()
             .reconstructionValue(reconstructionValue)
@@ -89,7 +84,8 @@ public class ITSImplicitCertificateBuilder
 
         baseBldr.setVersion(version);
         baseBldr.setType(CertificateType.Implicit);
-        baseBldr.setIssuer(issuerIdentifierBuilder.createIssuerIdentifier());
+
+        baseBldr.setIssuer(issuerIdentifier);
 
         baseBldr.setToBeSignedCertificate(tbsCertificateBuilder.createToBeSignedCertificate());
 
@@ -98,16 +94,5 @@ public class ITSImplicitCertificateBuilder
         bldr.setCertificateBase(baseBldr.createCertificateBase());
 
         return new ITSCertificate(bldr.createCertificate());
-    }
-
-
-    public ITSCertificate getIssuer()
-    {
-        return issuer;
-    }
-
-    public void setIssuer(ITSCertificate issuer)
-    {
-        this.issuer = issuer;
     }
 }
