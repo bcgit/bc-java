@@ -46,7 +46,7 @@ public class SequenceOfPsidSspRange
 
     public static class Builder
     {
-        private ArrayList<PsidSspRange> psidSspRanges = new ArrayList<>();
+        private ArrayList<PsidSspRange> psidSspRanges = new ArrayList<PsidSspRange>();
 
         public Builder add(PsidSspRange... ranges)
         {
