@@ -13,6 +13,7 @@ import org.bouncycastle.oer.its.CertificateType;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.HashedId;
 import org.bouncycastle.oer.its.IssuerIdentifier;
+import org.bouncycastle.oer.its.PublicEncryptionKey;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.operator.DigestCalculator;
@@ -71,7 +72,7 @@ public class ITSImplicitCertificateBuilder
         this.issuerIdentifier = issuerIdentifierBuilder.createIssuerIdentifier();
     }
 
-    public ITSCertificate build(BigInteger x, BigInteger y)
+    public ITSCertificate build(BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
     {
         EccP256CurvePoint reconstructionValue = EccP256CurvePoint.builder()
             .uncompressedP256(x, y).createEccP256CurvePoint();
@@ -79,6 +80,8 @@ public class ITSImplicitCertificateBuilder
         tbsCertificateBuilder.setVerificationKeyIndicator(VerificationKeyIndicator.builder()
             .reconstructionValue(reconstructionValue)
             .createVerificationKeyIndicator());
+
+        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
 
         CertificateBase.Builder baseBldr = new CertificateBase.Builder();
 
