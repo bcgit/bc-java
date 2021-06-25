@@ -44,10 +44,15 @@ public class ITSExplicitCertificateBuilder
 
     public ITSCertificate build(PublicVerificationKey verificationKey, PublicEncryptionKey publicEncryptionKey)
     {
+        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
+        return build(verificationKey);
+    }
+
+    public ITSCertificate build(PublicVerificationKey verificationKey)
+    {
         tbsCertificateBuilder.setVerificationKeyIndicator(
             VerificationKeyIndicator.builder().publicVerificationKey(verificationKey)
                 .createVerificationKeyIndicator());
-        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
 
         ToBeSignedCertificate tbsCertificate = tbsCertificateBuilder.createToBeSignedCertificate();
 

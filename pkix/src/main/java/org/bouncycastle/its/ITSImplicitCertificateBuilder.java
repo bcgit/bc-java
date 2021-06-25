@@ -74,6 +74,12 @@ public class ITSImplicitCertificateBuilder
 
     public ITSCertificate build(BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
     {
+        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
+        return build(x, y);
+    }
+
+    public ITSCertificate build(BigInteger x, BigInteger y)
+    {
         EccP256CurvePoint reconstructionValue = EccP256CurvePoint.builder()
             .uncompressedP256(x, y).createEccP256CurvePoint();
 
@@ -81,7 +87,6 @@ public class ITSImplicitCertificateBuilder
             .reconstructionValue(reconstructionValue)
             .createVerificationKeyIndicator());
 
-        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
 
         CertificateBase.Builder baseBldr = new CertificateBase.Builder();
 
