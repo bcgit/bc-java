@@ -12,6 +12,7 @@ import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.CertificateBase;
+import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.CertificateType;
 import org.bouncycastle.oer.its.HashAlgorithm;
 import org.bouncycastle.oer.its.HashedId;
@@ -42,14 +43,15 @@ public class ITSExplicitCertificateBuilder
         this.signer = signer;
     }
 
-    public ITSCertificate build(PublicVerificationKey verificationKey, PublicEncryptionKey publicEncryptionKey)
+    public ITSCertificate build(CertificateId certificateId, PublicVerificationKey verificationKey, PublicEncryptionKey publicEncryptionKey)
     {
         tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
-        return build(verificationKey);
+        return build(certificateId, verificationKey);
     }
 
-    public ITSCertificate build(PublicVerificationKey verificationKey)
+    public ITSCertificate build(CertificateId certificateId, PublicVerificationKey verificationKey)
     {
+        tbsCertificateBuilder.setCertificateId(certificateId);
         tbsCertificateBuilder.setVerificationKeyIndicator(
             VerificationKeyIndicator.builder().publicVerificationKey(verificationKey)
                 .createVerificationKeyIndicator());
