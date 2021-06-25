@@ -113,9 +113,22 @@ public abstract class ASN1ApplicationSpecific
      *
      * @return  the resulting object
      * @throws IOException if reconstruction fails.
+     * 
+     * @deprecated Will be removed. Use {@link #getEnclosedObject()} instead.
      */
     public ASN1Primitive getObject()
         throws IOException 
+    {
+        return getEnclosedObject();
+    }
+
+    /**
+     * Return the enclosed object assuming explicit tagging.
+     *
+     * @return  the resulting object
+     * @throws IOException if reconstruction fails.
+     */
+    public ASN1Primitive getEnclosedObject() throws IOException
     {
         // Bypass getObject() to avoid any tag class restriction
         return taggedObject.obj.toASN1Primitive();
