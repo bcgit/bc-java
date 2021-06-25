@@ -5,15 +5,15 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTF8String;
-import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -103,7 +103,7 @@ public class X500NameTest
     private void testEncodingPrintableString(ASN1ObjectIdentifier oid, String value)
     {
         ASN1Encodable converted = createEntryValue(oid, value);
-        if (!(converted instanceof DERPrintableString))
+        if (!(converted instanceof ASN1PrintableString))
         {
             fail("encoding for " + oid + " not printable string");
         }
@@ -112,7 +112,7 @@ public class X500NameTest
     private void testEncodingIA5String(ASN1ObjectIdentifier oid, String value)
     {
         ASN1Encodable converted = createEntryValue(oid, value);
-        if (!(converted instanceof DERIA5String))
+        if (!(converted instanceof ASN1IA5String))
         {
             fail("encoding for " + oid + " not IA5String");
         }

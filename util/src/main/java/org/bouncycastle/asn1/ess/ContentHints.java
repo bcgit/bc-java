@@ -72,7 +72,9 @@ public class ContentHints
      */
     public DERUTF8String getContentDescription()
     {
-        return DERUTF8String.getInstance(contentDescription);
+        return null == contentDescription || contentDescription instanceof DERUTF8String
+            ?   (DERUTF8String)contentDescription
+            :   new DERUTF8String(contentDescription.getString());
     }
 
     public ASN1UTF8String getContentDescriptionUTF8()

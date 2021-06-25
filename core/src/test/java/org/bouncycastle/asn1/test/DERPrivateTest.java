@@ -40,7 +40,7 @@ public class DERPrivateTest
         boolean explicit = false;
 
         // Type1 ::= VisibleString
-        DERVisibleString type1 = new DERVisibleString("Jones");
+        ASN1VisibleString type1 = new DERVisibleString("Jones");
         if (!Arrays.areEqual(Hex.decode("1A054A6F6E6573"), type1.getEncoded()))
         {
             fail("ERROR: expected value doesn't match!");

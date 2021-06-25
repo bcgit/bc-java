@@ -38,6 +38,7 @@ import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -45,7 +46,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.AccessDescription;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -2399,7 +2399,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     {
                         if (generalNames[j].getTagNo() == GeneralName.uniformResourceIdentifier)
                         {
-                            String url = ((DERIA5String) generalNames[j].getName()).getString();
+                            String url = ((ASN1IA5String)generalNames[j].getName()).getString();
                             urls.add(url);
                         }
                     }
@@ -2423,7 +2423,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     GeneralName name = ads[i].getAccessLocation();
                     if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
                     {
-                        String url = ((DERIA5String) name.getName()).getString();
+                        String url = ((ASN1IA5String)name.getName()).getString();
                         urls.add(url);
                     }
                 }

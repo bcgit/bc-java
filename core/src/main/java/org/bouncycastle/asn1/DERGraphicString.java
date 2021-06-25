@@ -19,7 +19,10 @@ public class DERGraphicString
         {
             return (DERGraphicString)obj;
         }
-
+        if (obj instanceof ASN1GraphicString)
+        {
+            return new DERGraphicString(((ASN1GraphicString)obj).contents, false);
+        }
         if (obj instanceof byte[])
         {
             try

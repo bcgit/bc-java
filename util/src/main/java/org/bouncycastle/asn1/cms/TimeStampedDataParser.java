@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.cms;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -26,7 +27,7 @@ import org.bouncycastle.asn1.DERIA5String;
 public class TimeStampedDataParser
 {
     private ASN1Integer version;
-    private DERIA5String dataUri;
+    private ASN1IA5String dataUri;
     private MetaData metaData;
     private ASN1OctetStringParser content;
     private Evidence temporalEvidence;
@@ -40,9 +41,9 @@ public class TimeStampedDataParser
 
         ASN1Encodable obj = parser.readObject();
 
-        if (obj instanceof DERIA5String)
+        if (obj instanceof ASN1IA5String)
         {
-            this.dataUri = DERIA5String.getInstance(obj);
+            this.dataUri = ASN1IA5String.getInstance(obj);
             obj = parser.readObject();
         }
         if (obj instanceof MetaData || obj instanceof ASN1SequenceParser)
@@ -75,8 +76,18 @@ public class TimeStampedDataParser
     {
         return version.getValue().intValue();
     }
-    
+
+    /**
+     * @deprecated Use {@link #getDataUriIA5()} instead.
+     */
     public DERIA5String getDataUri()
+    {
+        return null == dataUri || dataUri instanceof DERIA5String
+            ?   (DERIA5String)dataUri
+            :   new DERIA5String(dataUri.getString(), false);
+    }
+
+    public ASN1IA5String getDataUriIA5()
     {
         return dataUri;
     }

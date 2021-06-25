@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.test;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -179,7 +180,7 @@ public class DLExternalTest
         isTrue("check tag", password.hasContextTag(2));
         isEquals("check explicit", true, password.isExplicit());
         isEquals("check tagged object: " + password.getBaseUniversal(true, BERTags.IA5_STRING).getClass(), DERIA5String.class.getName(), password.getBaseUniversal(true, BERTags.IA5_STRING).getClass().getName());
-        isEquals("check password", "SomePassword", ((DERIA5String)password.getBaseUniversal(true, BERTags.IA5_STRING)).getString());
+        isEquals("check password", "SomePassword", ((ASN1IA5String)password.getBaseUniversal(true, BERTags.IA5_STRING)).getString());
     }
 
     private ASN1EncodableVector createRealDataExample()

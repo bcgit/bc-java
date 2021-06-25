@@ -1,12 +1,13 @@
 package org.bouncycastle.asn1.misc;
 
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.DERIA5String;
 
 public class VerisignCzagExtension
     extends DERIA5String
 {
     public VerisignCzagExtension(
-        DERIA5String str)
+        ASN1IA5String str)
     {
         super(str.getString());
     }

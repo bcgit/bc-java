@@ -17,6 +17,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -103,7 +104,7 @@ public class NetscapeCertRequest
                         + pkac.size());
             }
 
-            challenge = ((DERIA5String)pkac.getObjectAt(1)).getString();
+            challenge = ((ASN1IA5String)pkac.getObjectAt(1)).getString();
 
             //this could be dangerous, as ASN.1 decoding/encoding
             //could potentially alter the bytes

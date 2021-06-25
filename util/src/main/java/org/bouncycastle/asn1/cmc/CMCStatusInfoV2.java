@@ -105,7 +105,9 @@ public class CMCStatusInfoV2
      */
     public DERUTF8String getStatusString()
     {
-        return DERUTF8String.getInstance(statusString);
+        return null == statusString || statusString instanceof DERUTF8String
+            ?   (DERUTF8String)statusString
+            :   new DERUTF8String(statusString.getString());
     }
 
     public ASN1UTF8String getStatusStringUTF8()

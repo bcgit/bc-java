@@ -30,7 +30,7 @@ public abstract class ASN1GraphicString
         {
             return (ASN1GraphicString)obj;
         }
-        else if (obj instanceof ASN1Encodable)
+        if (obj instanceof ASN1Encodable)
         {
             ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
             if (primitive instanceof ASN1GraphicString)
@@ -67,7 +67,7 @@ public abstract class ASN1GraphicString
         return (ASN1GraphicString)TYPE.getContextInstance(taggedObject, explicit);
     }
 
-    private final byte[] contents;
+    final byte[] contents;
 
     ASN1GraphicString(byte[] contents, boolean clone)
     {

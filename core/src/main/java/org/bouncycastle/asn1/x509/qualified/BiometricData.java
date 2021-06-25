@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.x509.qualified;
 import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -27,7 +28,7 @@ public class BiometricData
     private TypeOfBiometricData typeOfBiometricData;
     private AlgorithmIdentifier hashAlgorithm;
     private ASN1OctetString     biometricDataHash;
-    private DERIA5String        sourceDataUri;
+    private ASN1IA5String       sourceDataUri;
     
     public static BiometricData getInstance(
         Object obj)
@@ -58,7 +59,7 @@ public class BiometricData
         // sourceDataUri
         if (e.hasMoreElements())
         {
-            sourceDataUri = DERIA5String.getInstance(e.nextElement());
+            sourceDataUri = ASN1IA5String.getInstance(e.nextElement());
         }
     }
     
@@ -66,7 +67,7 @@ public class BiometricData
         TypeOfBiometricData typeOfBiometricData,
         AlgorithmIdentifier hashAlgorithm,
         ASN1OctetString     biometricDataHash,
-        DERIA5String        sourceDataUri)
+        ASN1IA5String       sourceDataUri)
     {
         this.typeOfBiometricData = typeOfBiometricData;
         this.hashAlgorithm = hashAlgorithm;
@@ -99,12 +100,22 @@ public class BiometricData
     {
         return biometricDataHash;
     }
-    
+
+    /**
+     * @deprecated Use {@link #getSourceDataUriIA5()} instead.
+     */
     public DERIA5String getSourceDataUri()
+    {
+        return null == sourceDataUri || sourceDataUri instanceof DERIA5String
+            ?   (DERIA5String)sourceDataUri
+            :   new DERIA5String(sourceDataUri.getString(), false);
+    }
+
+    public ASN1IA5String getSourceDataUriIA5()
     {
         return sourceDataUri;
     }
-    
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector seq = new ASN1EncodableVector(4);

@@ -1,26 +1,20 @@
 package org.bouncycastle.asn1;
 
-import java.io.IOException;
-
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
-
 /**
  * DER T61String (also the teletex string), try not to use this if you don't need to. The standard support the encoding for
  * this has been withdrawn.
  */
 public class DERT61String
-    extends ASN1Primitive
-    implements ASN1String
+    extends ASN1T61String
 {
-    private byte[] string;
-
     /**
      * Return a T61 string from the passed in object.
      *
      * @param obj a DERT61String or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
      * @return a DERT61String instance, or null
+     * 
+     * @deprecated Use {@link ASN1T61String#getInstance(Object)} instead.
      */
     public static DERT61String getInstance(
         Object  obj)
@@ -29,7 +23,10 @@ public class DERT61String
         {
             return (DERT61String)obj;
         }
-
+        if (obj instanceof ASN1T61String)
+        {
+            return new DERT61String(((ASN1T61String)obj).contents, false);
+        }
         if (obj instanceof byte[])
         {
             try
@@ -48,12 +45,14 @@ public class DERT61String
     /**
      * Return an T61 String from a tagged object.
      *
-     * @param obj the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
-     *              tagged false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
-     *               be converted.
+     * @param obj      the tagged object holding the object we want
+     * @param explicit true if the object is meant to be explicitly tagged false
+     *                 otherwise.
+     * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return a DERT61String instance, or null
+     * 
+     * @deprecated Use {@link ASN1T61String#getInstance(ASN1TaggedObject, boolean)}
+     *             instead.
      */
     public static DERT61String getInstance(
         ASN1TaggedObject obj,
@@ -67,19 +66,8 @@ public class DERT61String
         }
         else
         {
-            return new DERT61String(ASN1OctetString.getInstance(o).getOctets());
+            return new DERT61String(ASN1OctetString.getInstance(o).getOctets(), true);
         }
-    }
-
-    /**
-     * Basic constructor - string encoded as a sequence of bytes.
-     *
-     * @param string the byte encoding of the string to be wrapped.
-     */
-    public DERT61String(
-        byte[]   string)
-    {
-        this.string = Arrays.clone(string);
     }
 
     /**
@@ -87,63 +75,23 @@ public class DERT61String
      *
      * @param string the string to be wrapped.
      */
-    public DERT61String(
-        String   string)
+    public DERT61String(String string)
     {
-        this.string = Strings.toByteArray(string);
+        super(string);
     }
 
     /**
-     * Decode the encoded string and return it, 8 bit encoding assumed.
-     * @return the decoded String
+     * Basic constructor - string encoded as a sequence of bytes.
+     *
+     * @param string the byte encoding of the string to be wrapped.
      */
-    public String getString()
+    public DERT61String(byte[] string)
     {
-        return Strings.fromByteArray(string);
+        this(string, true);
     }
 
-    public String toString()
+    DERT61String(byte[] contents, boolean clone)
     {
-        return getString();
-    }
-
-    boolean isConstructed()
-    {
-        return false;
-    }
-
-    int encodedLength(boolean withTag)
-    {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, string.length);
-    }
-
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        out.writeEncodingDL(withTag, BERTags.T61_STRING, string);
-    }
-
-    /**
-     * Return the encoded string as a byte array.
-     * @return the actual bytes making up the encoded body of the T61 string.
-     */
-    public byte[] getOctets()
-    {
-        return Arrays.clone(string);
-    }
-
-    boolean asn1Equals(
-        ASN1Primitive o)
-    {
-        if (!(o instanceof DERT61String))
-        {
-            return false;
-        }
-
-        return Arrays.areEqual(string, ((DERT61String)o).string);
-    }
-    
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
+        super(contents, clone);
     }
 }

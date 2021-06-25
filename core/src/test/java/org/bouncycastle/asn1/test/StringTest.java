@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
+import org.bouncycastle.asn1.ASN1T61String;
+import org.bouncycastle.asn1.ASN1UniversalString;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERGeneralString;
@@ -57,7 +59,7 @@ public class StringTest
             fail("DERBitString.toString() result incorrect");
         }
 
-        DERUniversalString us = new DERUniversalString(
+        ASN1UniversalString us = new DERUniversalString(
             new byte[] { (byte)0x01,(byte)0x23,(byte)0x45,(byte)0x67,(byte)0x89,(byte)0xab,(byte)0xcd,(byte)0xef });
 
         if (!us.getString().equals("#1C080123456789ABCDEF"))
@@ -85,7 +87,7 @@ public class StringTest
 
         byte[] t61Bytes = new byte[] { -1, -2, -3, -4, -5, -6, -7, -8 };
         String t61String = new String(t61Bytes, "iso-8859-1");
-        DERT61String t61 = new DERT61String(Strings.fromByteArray(t61Bytes));
+        ASN1T61String t61 = new DERT61String(Strings.fromByteArray(t61Bytes));
 
         if (!t61.getString().equals(t61String))
         {
