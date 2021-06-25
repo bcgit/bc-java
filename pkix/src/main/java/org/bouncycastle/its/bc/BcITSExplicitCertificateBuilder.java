@@ -26,6 +26,12 @@ public class BcITSExplicitCertificateBuilder
 
     public ITSCertificate build(ECPublicKeyParameters verificationKey, PublicEncryptionKey publicEncryptionKey)
     {
+        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
+        return build(verificationKey);
+    }
+
+    public ITSCertificate build(ECPublicKeyParameters verificationKey)
+    {
         ECPoint q = verificationKey.getQ();
         return super.build(PublicVerificationKey.builder()
             .ecdsaNistP256(EccP256CurvePoint.builder()
@@ -33,6 +39,6 @@ public class BcITSExplicitCertificateBuilder
                     q.getAffineXCoord().toBigInteger(),
                     q.getAffineYCoord().toBigInteger())
                 .createEccP256CurvePoint())
-            .createPublicVerificationKey(), publicEncryptionKey);
+            .createPublicVerificationKey());
     }
 }
