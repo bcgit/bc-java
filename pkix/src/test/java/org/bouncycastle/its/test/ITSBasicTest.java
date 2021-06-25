@@ -21,10 +21,10 @@ import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.its.ITSCertificate;
-import org.bouncycastle.its.ITSImplicitCertificateBuilder;
 import org.bouncycastle.its.bc.BcITSContentSigner;
 import org.bouncycastle.its.bc.BcITSContentVerifierProvider;
 import org.bouncycastle.its.bc.BcITSExplicitCertificateBuilder;
+import org.bouncycastle.its.bc.BcITSImplicitCertificateBuilder;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.its.Certificate;
@@ -51,7 +51,6 @@ import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ValidityPeriod;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
-import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -155,7 +154,7 @@ public class ITSBasicTest
             .setDuration(new Duration(Duration.years, 1)).createValidityPeriod());
 
 
-        ITSImplicitCertificateBuilder certificateBuilder = new ITSImplicitCertificateBuilder(caCert, new BcDigestCalculatorProvider(), tbsBuilder);
+        BcITSImplicitCertificateBuilder certificateBuilder = new BcITSImplicitCertificateBuilder(caCert, tbsBuilder);
 
         ITSCertificate cert = certificateBuilder.build(BigInteger.ONE, BigIntegers.TWO);
 
