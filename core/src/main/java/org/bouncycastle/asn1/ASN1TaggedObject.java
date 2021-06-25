@@ -338,7 +338,7 @@ public abstract class ASN1TaggedObject
             ASN1TaggedObject declared = checkedCast(obj.toASN1Primitive());
             if (!declared.hasTag(baseTagClass, baseTagNo))
             {
-                String expected = ASN1Util.getTagText(tagClass, tagNo);
+                String expected = ASN1Util.getTagText(baseTagClass, baseTagNo);
                 String found = ASN1Util.getTagText(declared);
                 throw new IllegalStateException("Expected " + expected + " tag but found " + found);
             }
