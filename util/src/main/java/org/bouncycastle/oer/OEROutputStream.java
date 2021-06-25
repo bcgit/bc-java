@@ -211,7 +211,7 @@ public class OEROutputStream
                 //
                 tag = ((ASN1ApplicationSpecific)item).getApplicationTag();
                 bb.writeBit(0).writeBit(1);
-                item = ((ASN1ApplicationSpecific)item).getObject();
+                item = ((ASN1ApplicationSpecific)item).getEnclosedObject();
             }
             else if (item instanceof ASN1TaggedObject)
             {
