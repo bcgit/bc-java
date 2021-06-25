@@ -5,6 +5,7 @@ import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.ITSExplicitCertificateBuilder;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.PublicEncryptionKey;
 import org.bouncycastle.oer.its.PublicVerificationKey;
@@ -24,16 +25,19 @@ public class BcITSExplicitCertificateBuilder
         super(signer, tbsCertificate);
     }
 
-    public ITSCertificate build(ECPublicKeyParameters verificationKey, PublicEncryptionKey publicEncryptionKey)
+    public ITSCertificate build(CertificateId certificateId, ECPublicKeyParameters verificationKey, PublicEncryptionKey publicEncryptionKey)
     {
         tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
-        return build(verificationKey);
+        return build(certificateId, verificationKey);
     }
 
-    public ITSCertificate build(ECPublicKeyParameters verificationKey)
+    public ITSCertificate build(
+        CertificateId certificateId,
+        ECPublicKeyParameters verificationKey)
     {
+
         ECPoint q = verificationKey.getQ();
-        return super.build(PublicVerificationKey.builder()
+        return super.build(certificateId, PublicVerificationKey.builder()
             .ecdsaNistP256(EccP256CurvePoint.builder()
                 .uncompressedP256(
                     q.getAffineXCoord().toBigInteger(),

@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.CertificateBase;
+import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.CertificateType;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.HashedId;
@@ -72,17 +73,18 @@ public class ITSImplicitCertificateBuilder
         this.issuerIdentifier = issuerIdentifierBuilder.createIssuerIdentifier();
     }
 
-    public ITSCertificate build(BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
+    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
     {
         tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
-        return build(x, y);
+        return build(certificateId, x, y);
     }
 
-    public ITSCertificate build(BigInteger x, BigInteger y)
+    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y)
     {
         EccP256CurvePoint reconstructionValue = EccP256CurvePoint.builder()
             .uncompressedP256(x, y).createEccP256CurvePoint();
 
+        tbsCertificateBuilder.setCertificateId(certificateId);
         tbsCertificateBuilder.setVerificationKeyIndicator(VerificationKeyIndicator.builder()
             .reconstructionValue(reconstructionValue)
             .createVerificationKeyIndicator());
