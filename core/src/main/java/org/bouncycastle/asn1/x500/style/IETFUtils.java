@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
-import org.bouncycastle.asn1.DERUniversalString;
+import org.bouncycastle.asn1.ASN1UniversalString;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -354,7 +354,7 @@ public class IETFUtils
     {
         StringBuffer vBuf = new StringBuffer();
 
-        if (value instanceof ASN1String && !(value instanceof DERUniversalString))
+        if (value instanceof ASN1String && !(value instanceof ASN1UniversalString))
         {
             String v = ((ASN1String)value).getString();
             if (v.length() > 0 && v.charAt(0) == '#')

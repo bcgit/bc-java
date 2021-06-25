@@ -1,17 +1,17 @@
 package org.bouncycastle.asn1.x500;
 
+import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1String;
+import org.bouncycastle.asn1.ASN1T61String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTF8String;
-import org.bouncycastle.asn1.DERBMPString;
-import org.bouncycastle.asn1.DERPrintableString;
-import org.bouncycastle.asn1.DERT61String;
+import org.bouncycastle.asn1.ASN1UniversalString;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.DERUniversalString;
 
 /**
  * The DirectoryString CHOICE object.
@@ -29,19 +29,19 @@ public class DirectoryString
             return (DirectoryString)o;
         }
 
-        if (o instanceof DERT61String)
+        if (o instanceof ASN1T61String)
         {
-            return new DirectoryString((DERT61String)o);
+            return new DirectoryString((ASN1T61String)o);
         }
 
-        if (o instanceof DERPrintableString)
+        if (o instanceof ASN1PrintableString)
         {
-            return new DirectoryString((DERPrintableString)o);
+            return new DirectoryString((ASN1PrintableString)o);
         }
 
-        if (o instanceof DERUniversalString)
+        if (o instanceof ASN1UniversalString)
         {
-            return new DirectoryString((DERUniversalString)o);
+            return new DirectoryString((ASN1UniversalString)o);
         }
 
         if (o instanceof ASN1UTF8String)
@@ -49,9 +49,9 @@ public class DirectoryString
             return new DirectoryString((ASN1UTF8String)o);
         }
 
-        if (o instanceof DERBMPString)
+        if (o instanceof ASN1BMPString)
         {
-            return new DirectoryString((DERBMPString)o);
+            return new DirectoryString((ASN1BMPString)o);
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + o.getClass().getName());
@@ -68,19 +68,19 @@ public class DirectoryString
     }
 
     private DirectoryString(
-        DERT61String string)
+        ASN1T61String string)
     {
         this.string = string;
     }
 
     private DirectoryString(
-        DERPrintableString string)
+        ASN1PrintableString string)
     {
         this.string = string;
     }
 
     private DirectoryString(
-        DERUniversalString string)
+        ASN1UniversalString string)
     {
         this.string = string;
     }
@@ -92,7 +92,7 @@ public class DirectoryString
     }
 
     private DirectoryString(
-        DERBMPString string)
+        ASN1BMPString string)
     {
         this.string = string;
     }

@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERPrintableString;
@@ -103,7 +104,7 @@ public class PersonalData
                     placeOfBirth = DirectoryString.getInstance(o, true);
                     break;
                 case 3:
-                    gender = DERPrintableString.getInstance(o, false).getString();
+                    gender = ASN1PrintableString.getInstance(o, false).getString();
                     break;
                 case 4:
                     postalAddress = DirectoryString.getInstance(o, true);

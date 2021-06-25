@@ -20,6 +20,7 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -1461,7 +1462,7 @@ public class PKCS12StoreTest
 
         if (b1.getBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName) != null)
         {
-            DERBMPString name = (DERBMPString)b1.getBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName);
+            ASN1BMPString name = (ASN1BMPString)b1.getBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName);
 
             if (!name.equals(new DERBMPString("key")))
             {

@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERPrintableString;
@@ -107,7 +108,7 @@ public class ProcurationSyntax
             switch (o.getTagNo())
             {
                 case 1:
-                    country = DERPrintableString.getInstance(o, true).getString();
+                    country = ASN1PrintableString.getInstance(o, true).getString();
                     break;
                 case 2:
                     typeOfSubstitution = DirectoryString.getInstance(o, true);

@@ -1,11 +1,11 @@
 package org.bouncycastle.voms;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.x509.Attribute;
 import org.bouncycastle.asn1.x509.IetfAttrSyntax;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
@@ -57,7 +57,7 @@ public class VOMSAttribute
                 IetfAttrSyntax attr = IetfAttrSyntax.getInstance(l[i].getAttributeValues()[0]);
 
                 // policyAuthority is on the format <vo>/<host>:<port>
-                String url = ((DERIA5String)attr.getPolicyAuthority().getNames()[0].getName()).getString();
+                String url = ((ASN1IA5String)attr.getPolicyAuthority().getNames()[0].getName()).getString();
                 int idx = url.indexOf("://");
 
                 if ((idx < 0) || (idx == (url.length() - 1)))

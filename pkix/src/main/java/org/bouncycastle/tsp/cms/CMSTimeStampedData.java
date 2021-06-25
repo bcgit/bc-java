@@ -6,8 +6,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -108,7 +108,7 @@ public class CMSTimeStampedData
     public URI getDataUri()
         throws URISyntaxException
     {
-        DERIA5String dataURI = this.timeStampedData.getDataUri();
+        ASN1IA5String dataURI = this.timeStampedData.getDataUri();
 
         if (dataURI != null)
         {

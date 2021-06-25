@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1VisibleString;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -47,7 +48,7 @@ public class DERApplicationSpecificTest
         boolean explicit = false;
 
         // Type1 ::= VisibleString
-        DERVisibleString type1 = new DERVisibleString("Jones");
+        ASN1VisibleString type1 = new DERVisibleString("Jones");
         if (!Arrays.areEqual(Hex.decode("1A054A6F6E6573"), type1.getEncoded()))
         {
             fail("ERROR: expected value doesn't match!");

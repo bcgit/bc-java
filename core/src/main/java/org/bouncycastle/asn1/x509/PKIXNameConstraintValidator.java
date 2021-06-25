@@ -9,9 +9,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
@@ -1847,7 +1847,7 @@ public class PKIXNameConstraintValidator
 
     private String extractNameAsString(GeneralName name)
     {
-        return DERIA5String.getInstance(name.getName()).getString();
+        return ASN1IA5String.getInstance(name.getName()).getString();
     }
 
     /**

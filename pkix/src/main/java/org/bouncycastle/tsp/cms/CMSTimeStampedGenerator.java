@@ -3,6 +3,7 @@ package org.bouncycastle.tsp.cms;
 import java.net.URI;
 
 import org.bouncycastle.asn1.ASN1Boolean;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -55,7 +56,7 @@ public class CMSTimeStampedGenerator
             asn1FileName = new DERUTF8String(fileName);
         }
 
-        DERIA5String asn1MediaType = null;
+        ASN1IA5String asn1MediaType = null;
 
         if (mediaType != null)
         {
@@ -65,7 +66,7 @@ public class CMSTimeStampedGenerator
         setMetaData(hashProtected, asn1FileName, asn1MediaType, attributes);
     }
 
-    private void setMetaData(boolean hashProtected, ASN1UTF8String fileName, DERIA5String mediaType, Attributes attributes)
+    private void setMetaData(boolean hashProtected, ASN1UTF8String fileName, ASN1IA5String mediaType, Attributes attributes)
     {
         this.metaData = new MetaData(ASN1Boolean.getInstance(hashProtected), fileName, mediaType, attributes);
     }

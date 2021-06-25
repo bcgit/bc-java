@@ -4,6 +4,7 @@ import java.security.PublicKey;
 import java.security.Security;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.mozilla.PublicKeyAndChallenge;
@@ -60,7 +61,7 @@ public class SPKACTest
             fail("Error - " + testName + " SubjectPublicKeyInfo was null.");
         }
 
-        DERIA5String challenge = pkac.getChallenge();
+        ASN1IA5String challenge = pkac.getChallengeIA5();
         // Most cases this will be a string of length zero.
         if (challenge == null)
         {
@@ -115,7 +116,7 @@ public class SPKACTest
             fail("Error - " + testName + " SubjectPublicKeyInfo was null.");
         }
 
-        DERIA5String challenge = pkac.getChallenge();
+        ASN1IA5String challenge = pkac.getChallengeIA5();
         // Most cases this will be a string of length zero.
         if (challenge == null)
         {

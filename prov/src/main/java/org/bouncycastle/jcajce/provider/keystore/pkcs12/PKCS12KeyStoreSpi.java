@@ -47,6 +47,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
+import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -943,7 +944,7 @@ public class PKCS12KeyStoreSpi
 
                                     if (aOid.equals(pkcs_9_at_friendlyName))
                                     {
-                                        alias = ((DERBMPString)attr).getString();
+                                        alias = ((ASN1BMPString)attr).getString();
                                         keys.put(alias, privKey);
                                     }
                                     else if (aOid.equals(pkcs_9_at_localKeyId))
@@ -1040,7 +1041,7 @@ public class PKCS12KeyStoreSpi
 
                                 if (aOid.equals(pkcs_9_at_friendlyName))
                                 {
-                                    alias = ((DERBMPString)attr).getString();
+                                    alias = ((ASN1BMPString)attr).getString();
                                     keys.put(alias, privKey);
                                 }
                                 else if (aOid.equals(pkcs_9_at_localKeyId))
@@ -1101,7 +1102,7 @@ public class PKCS12KeyStoreSpi
 
                                     if (aOid.equals(pkcs_9_at_friendlyName))
                                     {
-                                        alias = ((DERBMPString)attr).getString();
+                                        alias = ((ASN1BMPString)attr).getString();
                                         keys.put(alias, privKey);
                                     }
                                     else if (aOid.equals(pkcs_9_at_localKeyId))
@@ -1206,7 +1207,7 @@ public class PKCS12KeyStoreSpi
 
                         if (oid.equals(pkcs_9_at_friendlyName))
                         {
-                            alias = ((DERBMPString)attr).getString();
+                            alias = ((ASN1BMPString)attr).getString();
                         }
                         else if (oid.equals(pkcs_9_at_localKeyId))
                         {
@@ -1404,7 +1405,7 @@ public class PKCS12KeyStoreSpi
                 //
                 // make sure we are using the local alias on store
                 //
-                DERBMPString nm = (DERBMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
+                ASN1BMPString nm = (ASN1BMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
                 if (nm == null || !nm.getString().equals(name))
                 {
                     bagAttrs.setBagAttribute(pkcs_9_at_friendlyName, new DERBMPString(name));
@@ -1495,7 +1496,7 @@ public class PKCS12KeyStoreSpi
                     //
                     // make sure we are using the local alias on store
                     //
-                    DERBMPString nm = (DERBMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
+                    ASN1BMPString nm = (ASN1BMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
                     if (nm == null || !nm.getString().equals(name))
                     {
                         bagAttrs.setBagAttribute(pkcs_9_at_friendlyName, new DERBMPString(name));
@@ -1701,7 +1702,7 @@ public class PKCS12KeyStoreSpi
             //
             // make sure we are using the local alias on store
             //
-            DERBMPString nm = (DERBMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
+            ASN1BMPString nm = (ASN1BMPString)bagAttrs.getBagAttribute(pkcs_9_at_friendlyName);
             if (nm == null || !nm.getString().equals(certId))
             {
                 if (certId != null)
