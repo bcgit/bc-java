@@ -3,7 +3,6 @@ package org.bouncycastle.its;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
@@ -27,33 +26,26 @@ import org.bouncycastle.util.Arrays;
 public class ITSExplicitCertificateBuilder
     extends ITSCertificateBuilder
 {
-
-
-    private ASN1Integer version = new ASN1Integer(3);
-
-    // TODO: temp constructor to get signing working.
-    public ITSExplicitCertificateBuilder(ToBeSignedCertificate.Builder tbsCertificate)
-    {
-        super(tbsCertificate);
-    }
-
-
-    public ITSExplicitCertificateBuilder setVersion(ASN1Integer version)
-    {
-        this.version = version;
-        return this;
-    }
+    private final ITSContentSigner signer;
 
     /**
-     * Generate an X509 certificate, based on the current issuer and subject
-     * using the passed in signer.
+     * Base constructor for an ITS certificate.
      *
      * @param signer the content signer to be used to generate the signature validating the certificate.
-     * @return a holder containing the resulting signed certificate.
+     * @param tbsCertificate
      */
-    public ITSCertificate build(
-        ITSContentSigner signer)
+    // TODO: temp constructor to get signing working.
+    public ITSExplicitCertificateBuilder(ITSContentSigner signer, ToBeSignedCertificate.Builder tbsCertificate)
     {
+        super(tbsCertificate);
+        this.signer = signer;
+    }
+
+    public ITSCertificate build(PublicVerificationKey verificationKey)
+    {
+        tbsCertificateBuilder.setVerificationKeyIndicator(
+            VerificationKeyIndicator.builder().publicVerificationKey(verificationKey)
+                .createVerificationKeyIndicator());
 
         ToBeSignedCertificate tbsCertificate = tbsCertificateBuilder.createToBeSignedCertificate();
 
@@ -99,12 +91,9 @@ public class ITSExplicitCertificateBuilder
         }
 
         CertificateBase.Builder baseBldr = new CertificateBase.Builder();
-
-
         IssuerIdentifier.Builder issuerIdentifierBuilder = IssuerIdentifier.builder();
 
         ASN1ObjectIdentifier digestAlg = signer.getDigestAlgorithm().getAlgorithm();
-
 
         if (signer.isForSelfSigning())
         {
@@ -121,7 +110,6 @@ public class ITSExplicitCertificateBuilder
             {
                 throw new IllegalStateException("unknown digest");
             }
-
         }
         else
         {
@@ -140,7 +128,6 @@ public class ITSExplicitCertificateBuilder
                 throw new IllegalStateException("unknown digest");
             }
         }
-
 
         baseBldr.setVersion(version);
         baseBldr.setType(CertificateType.Explicit);
