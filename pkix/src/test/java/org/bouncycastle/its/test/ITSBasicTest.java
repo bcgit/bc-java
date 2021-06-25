@@ -3,6 +3,7 @@ package org.bouncycastle.its.test;
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Date;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -261,12 +262,11 @@ public class ITSBasicTest
 
         tbsBuilder.setCracaId(new HashedId.HashedId3(new byte[]{0, 1, 2}));
         tbsBuilder.setCrlSeries(new CrlSeries(1));
-        tbsBuilder.setValidityPeriod(ValidityPeriod.builder()
-            .setTime32(new ASN1Integer(System.currentTimeMillis() / 1000))
-            .setDuration(new Duration(Duration.years, 1)).createValidityPeriod());
 
         ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
         BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
+
+        itsCertificateBuilder.setValidityPeriod(new Date(), new Duration(Duration.years, 1));
 
         ITSCertificate newCert = itsCertificateBuilder.build(
             CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId(),

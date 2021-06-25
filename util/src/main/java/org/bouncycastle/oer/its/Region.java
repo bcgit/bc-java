@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Integer;
 public class Region
     extends Uint16
 {
-
     public static Region getInstance(Object o)
     {
         if (o instanceof Region)
@@ -20,7 +19,7 @@ public class Region
         }
     }
 
-    public Region(long value)
+    public Region(int value)
     {
         super(value);
     }
@@ -29,11 +28,4 @@ public class Region
     {
         super(value);
     }
-
-    public Region(byte[] bytes)
-    {
-        super(bytes);
-    }
-
-
 }

@@ -8,7 +8,7 @@ public class CountryOnly
     extends Uint16
     implements RegionInterface
 {
-    public CountryOnly(long value)
+    public CountryOnly(int value)
     {
         super(value);
     }
@@ -16,11 +16,6 @@ public class CountryOnly
     public CountryOnly(BigInteger value)
     {
         super(value);
-    }
-
-    public CountryOnly(byte[] bytes)
-    {
-        super(bytes);
     }
 
     public static CountryOnly getInstance(Object o)
@@ -33,8 +28,5 @@ public class CountryOnly
         {
             return new CountryOnly(ASN1Integer.getInstance(o).getValue());
         }
-
     }
-
-
 }
