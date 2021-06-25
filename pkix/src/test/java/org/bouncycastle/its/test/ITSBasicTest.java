@@ -156,7 +156,7 @@ public class ITSBasicTest
 
         BcITSImplicitCertificateBuilder certificateBuilder = new BcITSImplicitCertificateBuilder(caCert, tbsBuilder);
 
-        ITSCertificate cert = certificateBuilder.build(BigInteger.ONE, BigIntegers.TWO);
+        ITSCertificate cert = certificateBuilder.build(BigInteger.ONE, BigIntegers.TWO, null);
 
         IssuerIdentifier caIssuerIdentifier = IssuerIdentifier
             .builder()
@@ -262,11 +262,11 @@ public class ITSBasicTest
         tbsBuilder.setValidityPeriod(ValidityPeriod.builder()
             .setTime32(new ASN1Integer(System.currentTimeMillis() / 1000))
             .setDuration(new Duration(Duration.years, 1)).createValidityPeriod());
-        
+
         ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
         BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
 
-        ITSCertificate newCert = itsCertificateBuilder.build(publicVerificationKey);
+        ITSCertificate newCert = itsCertificateBuilder.build(publicVerificationKey, null);
 
         BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(newCert);
         boolean valid = newCert.isSignatureValid(provider);
