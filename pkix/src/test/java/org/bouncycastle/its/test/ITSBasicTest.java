@@ -146,7 +146,6 @@ public class ITSBasicTest
                 .createSequenceOfPsidGroupPermissions());
 
 
-        tbsBuilder.setCertificateId(CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId());
         tbsBuilder.setCracaId(new HashedId.HashedId3(new byte[]{0, 1, 2}));
         tbsBuilder.setCrlSeries(new CrlSeries(1));
         tbsBuilder.setValidityPeriod(ValidityPeriod.builder()
@@ -156,7 +155,10 @@ public class ITSBasicTest
 
         BcITSImplicitCertificateBuilder certificateBuilder = new BcITSImplicitCertificateBuilder(caCert, tbsBuilder);
 
-        ITSCertificate cert = certificateBuilder.build(BigInteger.ONE, BigIntegers.TWO, null);
+        ITSCertificate cert = certificateBuilder.build(
+            CertificateId.builder()
+                .name(new Hostname("Legion of the BouncyCastle CA"))
+                .createCertificateId(), BigInteger.ONE, BigIntegers.TWO, null);
 
         IssuerIdentifier caIssuerIdentifier = IssuerIdentifier
             .builder()
@@ -256,7 +258,7 @@ public class ITSBasicTest
                     .createPsidGroupPermissions())
                 .createSequenceOfPsidGroupPermissions());
 
-        tbsBuilder.setCertificateId(CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId());
+
         tbsBuilder.setCracaId(new HashedId.HashedId3(new byte[]{0, 1, 2}));
         tbsBuilder.setCrlSeries(new CrlSeries(1));
         tbsBuilder.setValidityPeriod(ValidityPeriod.builder()
@@ -266,7 +268,9 @@ public class ITSBasicTest
         ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
         BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
 
-        ITSCertificate newCert = itsCertificateBuilder.build(publicVerificationKey);
+        ITSCertificate newCert = itsCertificateBuilder.build(
+            CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId(),
+            publicVerificationKey);
 
         BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(newCert);
         boolean valid = newCert.isSignatureValid(provider);
