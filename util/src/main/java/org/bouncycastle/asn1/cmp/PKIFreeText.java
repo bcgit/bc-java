@@ -101,7 +101,10 @@ public class PKIFreeText
      */
     public DERUTF8String getStringAt(int i)
     {
-        return DERUTF8String.getInstance(getStringAtUTF8(i));
+        ASN1UTF8String stringAt = getStringAtUTF8(i);
+        return null == stringAt || stringAt instanceof DERUTF8String
+            ?   (DERUTF8String)stringAt
+            :   new DERUTF8String(stringAt.getString());
     }
 
     /**

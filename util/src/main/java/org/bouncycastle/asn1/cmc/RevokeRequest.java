@@ -133,7 +133,9 @@ public class RevokeRequest
      */
     public DERUTF8String getComment()
     {
-        return DERUTF8String.getInstance(comment);
+        return null == comment || comment instanceof DERUTF8String
+            ?   (DERUTF8String)comment
+            :   new DERUTF8String(comment.getString());
     }
 
     public ASN1UTF8String getCommentUTF8()

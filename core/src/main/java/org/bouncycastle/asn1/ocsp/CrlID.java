@@ -4,6 +4,7 @@ import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -16,7 +17,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 public class CrlID
     extends ASN1Object
 {
-    private DERIA5String         crlUrl;
+    private ASN1IA5String        crlUrl;
     private ASN1Integer          crlNum;
     private ASN1GeneralizedTime  crlTime;
 
@@ -32,7 +33,7 @@ public class CrlID
             switch (o.getTagNo())
             {
             case 0:
-                crlUrl = DERIA5String.getInstance(o, true);
+                crlUrl = ASN1IA5String.getInstance(o, true);
                 break;
             case 1:
                 crlNum = ASN1Integer.getInstance(o, true);
@@ -62,7 +63,17 @@ public class CrlID
         return null;
     }
 
+    /**
+     * @deprecated Use {@link #getCrlUrlIA5()} instead.
+     */
     public DERIA5String getCrlUrl()
+    {
+        return null == crlUrl || crlUrl instanceof DERIA5String
+            ?   (DERIA5String)crlUrl
+            :   new DERIA5String(crlUrl.getString(), false);
+    }
+
+    public ASN1IA5String getCrlUrlIA5()
     {
         return crlUrl;
     }

@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -28,13 +29,13 @@ public class MetaData
 {
     private ASN1Boolean hashProtected;
     private ASN1UTF8String fileName;
-    private DERIA5String  mediaType;
+    private ASN1IA5String  mediaType;
     private Attributes otherMetaData;
 
     public MetaData(
         ASN1Boolean hashProtected,
         ASN1UTF8String fileName,
-        DERIA5String mediaType,
+        ASN1IA5String mediaType,
         Attributes otherMetaData)
     {
         this.hashProtected = hashProtected;
@@ -53,9 +54,9 @@ public class MetaData
         {
             this.fileName = ASN1UTF8String.getInstance(seq.getObjectAt(index++));
         }
-        if (index < seq.size() && seq.getObjectAt(index) instanceof DERIA5String)
+        if (index < seq.size() && seq.getObjectAt(index) instanceof ASN1IA5String)
         {
-            this.mediaType = DERIA5String.getInstance(seq.getObjectAt(index++));
+            this.mediaType = ASN1IA5String.getInstance(seq.getObjectAt(index++));
         }
         if (index < seq.size())
         {
@@ -124,7 +125,9 @@ public class MetaData
      */
     public DERUTF8String getFileName()
     {
-        return DERUTF8String.getInstance(getFileNameUTF8());
+        return null == fileName || fileName instanceof DERUTF8String
+            ?   (DERUTF8String)fileName
+            :   new DERUTF8String(fileName.getString());
     }
 
     public ASN1UTF8String getFileNameUTF8()
@@ -132,7 +135,17 @@ public class MetaData
         return this.fileName;
     }
 
+    /**
+     * @deprecated Use {@link #getMediaTypeIA5()} instead.
+     */
     public DERIA5String getMediaType()
+    {
+        return null == mediaType || mediaType instanceof DERIA5String
+            ?   (DERIA5String)mediaType
+            :   new DERIA5String(mediaType.getString(), false);
+    }
+
+    public ASN1IA5String getMediaTypeIA5()
     {
         return this.mediaType;
     }

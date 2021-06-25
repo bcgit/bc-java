@@ -479,7 +479,7 @@ public class ASN1InputStream
         case BIT_STRING:
             return ASN1BitString.createPrimitive(defIn.toByteArray());
         case BMP_STRING:
-            return new DERBMPString(getBMPCharBuffer(defIn));
+            return ASN1BMPString.createPrimitive(getBMPCharBuffer(defIn));
         case BOOLEAN:
             return ASN1Boolean.fromOctetString(getBuffer(defIn, tmpBuffers));
         case ENUMERATED:
@@ -488,9 +488,9 @@ public class ASN1InputStream
         case GENERALIZED_TIME:
             return ASN1GeneralizedTime.createPrimitive(defIn.toByteArray());
         case GENERAL_STRING:
-            return new DERGeneralString(defIn.toByteArray());
+            return ASN1GeneralString.createPrimitive(defIn.toByteArray());
         case IA5_STRING:
-            return new DERIA5String(defIn.toByteArray());
+            return ASN1IA5String.createPrimitive(defIn.toByteArray());
         case INTEGER:
             return new ASN1Integer(defIn.toByteArray(), false);
         case NULL:
@@ -508,17 +508,17 @@ public class ASN1InputStream
         case OCTET_STRING:
             return new DEROctetString(defIn.toByteArray());
         case PRINTABLE_STRING:
-            return new DERPrintableString(defIn.toByteArray());
+            return ASN1PrintableString.createPrimitive(defIn.toByteArray());
         case T61_STRING:
-            return new DERT61String(defIn.toByteArray());
+            return ASN1T61String.createPrimitive(defIn.toByteArray());
         case UNIVERSAL_STRING:
-            return new DERUniversalString(defIn.toByteArray());
+            return ASN1UniversalString.createPrimitive(defIn.toByteArray());
         case UTC_TIME:
             return ASN1UTCTime.createPrimitive(defIn.toByteArray());
         case UTF8_STRING:
             return ASN1UTF8String.createPrimitive(defIn.toByteArray());
         case VISIBLE_STRING:
-            return new DERVisibleString(defIn.toByteArray());
+            return ASN1VisibleString.createPrimitive(defIn.toByteArray());
         case GRAPHIC_STRING:
             return ASN1GraphicString.createPrimitive(defIn.toByteArray());
         case VIDEOTEX_STRING:

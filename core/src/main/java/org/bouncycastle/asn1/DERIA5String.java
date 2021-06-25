@@ -1,10 +1,5 @@
 package org.bouncycastle.asn1;
 
-import java.io.IOException;
-
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
-
 /**
  * DER IA5String object - this is a ISO 646 (ASCII) string encoding code points 0 to 127.
  * <p>
@@ -12,17 +7,16 @@ import org.bouncycastle.util.Strings;
  * </p>
  */
 public class DERIA5String
-    extends ASN1Primitive
-    implements ASN1String
+    extends ASN1IA5String
 {
-    private final byte[]  string;
-
     /**
      * Return an IA5 string from the passed in object
      *
      * @param obj a DERIA5String or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
      * @return a DERIA5String instance, or null.
+     * 
+     * @deprecated Use {@link ASN1IA5String#getInstance(Object)} instead.
      */
     public static DERIA5String getInstance(
         Object  obj)
@@ -31,7 +25,10 @@ public class DERIA5String
         {
             return (DERIA5String)obj;
         }
-
+        if (obj instanceof ASN1IA5String)
+        {
+            return new DERIA5String(((ASN1IA5String)obj).contents, false);
+        }
         if (obj instanceof byte[])
         {
             try
@@ -50,12 +47,14 @@ public class DERIA5String
     /**
      * Return an IA5 String from a tagged object.
      *
-     * @param obj the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
-     *              tagged false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
-     *               be converted.
+     * @param obj      the tagged object holding the object we want
+     * @param explicit true if the object is meant to be explicitly tagged false
+     *                 otherwise.
+     * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return a DERIA5String instance, or null.
+     * 
+     * @deprecated Use {@link ASN1IA5String#getInstance(ASN1TaggedObject, boolean)}
+     *             instead.
      */
     public static DERIA5String getInstance(
         ASN1TaggedObject obj,
@@ -69,26 +68,15 @@ public class DERIA5String
         }
         else
         {
-            return new DERIA5String(ASN1OctetString.getInstance(o).getOctets());
+            return new DERIA5String(ASN1OctetString.getInstance(o).getOctets(), true);
         }
-    }
-
-    /**
-     * Basic constructor - with bytes.
-     * @param string the byte encoding of the characters making up the string.
-     */
-    DERIA5String(
-        byte[]   string)
-    {
-        this.string = string;
     }
 
     /**
      * Basic constructor - without validation.
      * @param string the base string to use..
      */
-    public DERIA5String(
-        String   string)
+    public DERIA5String(String string)
     {
         this(string, false);
     }
@@ -101,90 +89,13 @@ public class DERIA5String
      * @throws IllegalArgumentException if validate is true and the string
      * contains characters that should not be in an IA5String.
      */
-    public DERIA5String(
-        String   string,
-        boolean  validate)
+    public DERIA5String(String string, boolean validate)
     {
-        if (string == null)
-        {
-            throw new NullPointerException("'string' cannot be null");
-        }
-        if (validate && !isIA5String(string))
-        {
-            throw new IllegalArgumentException("'string' contains illegal characters");
-        }
-
-        this.string = Strings.toByteArray(string);
+        super(string, validate);
     }
 
-    public String getString()
+    DERIA5String(byte[] contents, boolean clone)
     {
-        return Strings.fromByteArray(string);
-    }
-
-    public String toString()
-    {
-        return getString();
-    }
-
-    public byte[] getOctets()
-    {
-        return Arrays.clone(string);
-    }
-
-    boolean isConstructed()
-    {
-        return false;
-    }
-
-    int encodedLength(boolean withTag)
-    {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, string.length);
-    }
-
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        out.writeEncodingDL(withTag, BERTags.IA5_STRING, string);
-    }
-
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
-    }
-
-    boolean asn1Equals(
-        ASN1Primitive o)
-    {
-        if (!(o instanceof DERIA5String))
-        {
-            return false;
-        }
-
-        DERIA5String  s = (DERIA5String)o;
-
-        return Arrays.areEqual(string, s.string);
-    }
-
-    /**
-     * return true if the passed in String can be represented without
-     * loss as an IA5String, false otherwise.
-     *
-     * @param str the string to check.
-     * @return true if character set in IA5String set, false otherwise.
-     */
-    public static boolean isIA5String(
-        String  str)
-    {
-        for (int i = str.length() - 1; i >= 0; i--)
-        {
-            char    ch = str.charAt(i);
-
-            if (ch > 0x007f)
-            {
-                return false;
-            }
-        }
-
-        return true;
+        super(contents, clone);
     }
 }

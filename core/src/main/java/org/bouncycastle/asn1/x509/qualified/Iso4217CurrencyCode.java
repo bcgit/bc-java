@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.DERPrintableString;
 
 /**
@@ -43,9 +44,9 @@ public class Iso4217CurrencyCode
             return new Iso4217CurrencyCode(numeric);            
         }
         else
-        if (obj instanceof DERPrintableString)
+        if (obj instanceof ASN1PrintableString)
         {
-            DERPrintableString alphabetic = DERPrintableString.getInstance(obj);
+            ASN1PrintableString alphabetic = ASN1PrintableString.getInstance(obj);
             return new Iso4217CurrencyCode(alphabetic.getString());
         }
         throw new IllegalArgumentException("unknown object in getInstance");
@@ -73,12 +74,12 @@ public class Iso4217CurrencyCode
 
     public boolean isAlphabetic()
     {
-        return obj instanceof DERPrintableString;
+        return obj instanceof ASN1PrintableString;
     }
     
     public String getAlphabetic()
     {
-        return ((DERPrintableString)obj).getString();
+        return ((ASN1PrintableString)obj).getString();
     }
     
     public int getNumeric()

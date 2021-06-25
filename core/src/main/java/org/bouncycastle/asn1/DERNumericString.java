@@ -29,7 +29,10 @@ public class DERNumericString
         {
             return (DERNumericString)obj;
         }
-
+        if (obj instanceof ASN1NumericString)
+        {
+            return new DERNumericString(((ASN1NumericString)obj).contents, false);
+        }
         if (obj instanceof byte[])
         {
             try

@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.test;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -42,7 +43,7 @@ public class BiometricDataUnitTest
 
         checkConstruction(bd, dataType, hashAlgorithm, dataHash, null);
         
-        DERIA5String dataUri = new DERIA5String("http://test");
+        ASN1IA5String dataUri = new DERIA5String("http://test");
         
         bd = new BiometricData(dataType, hashAlgorithm, dataHash, dataUri);
         
@@ -72,7 +73,7 @@ public class BiometricDataUnitTest
         TypeOfBiometricData dataType, 
         AlgorithmIdentifier hashAlgorithm,
         ASN1OctetString dataHash, 
-        DERIA5String dataUri)
+        ASN1IA5String dataUri)
         throws Exception
     {
         checkValues(bd, dataType, hashAlgorithm, dataHash, dataUri);
@@ -95,7 +96,7 @@ public class BiometricDataUnitTest
         TypeOfBiometricData dataType,
         AlgorithmIdentifier algID,
         ASN1OctetString     dataHash,
-        DERIA5String        sourceDataURI)
+        ASN1IA5String       sourceDataURI)
     {
         if (!bd.getTypeOfBiometricData().equals(dataType))
         {

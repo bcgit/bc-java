@@ -19,7 +19,10 @@ public class DERVideotexString
         {
             return (DERVideotexString)obj;
         }
-
+        if (obj instanceof ASN1VideotexString)
+        {
+            return new DERVideotexString(((ASN1VideotexString)obj).contents, false);
+        }
         if (obj instanceof byte[])
         {
             try

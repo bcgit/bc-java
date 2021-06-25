@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
@@ -223,9 +224,9 @@ public class ProfessionInfo
             {
                 professionOIDs = ASN1Sequence.getInstance(o);
             }
-            else if (o instanceof DERPrintableString)
+            else if (o instanceof ASN1PrintableString)
             {
-                registrationNumber = DERPrintableString.getInstance(o).getString();
+                registrationNumber = ASN1PrintableString.getInstance(o).getString();
             }
             else if (o instanceof ASN1OctetString)
             {
@@ -240,9 +241,9 @@ public class ProfessionInfo
         if (e.hasMoreElements())
         {
             o = (ASN1Encodable)e.nextElement();
-            if (o instanceof DERPrintableString)
+            if (o instanceof ASN1PrintableString)
             {
-                registrationNumber = DERPrintableString.getInstance(o).getString();
+                registrationNumber = ASN1PrintableString.getInstance(o).getString();
             }
             else if (o instanceof DEROctetString)
             {
