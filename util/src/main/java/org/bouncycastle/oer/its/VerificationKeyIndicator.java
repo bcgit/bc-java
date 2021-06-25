@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 
 /**
  * <pre>
@@ -24,7 +23,7 @@ public class VerificationKeyIndicator
 {
     public static final int verificationKey = 0;
     public static final int reconstructionValue = 1;
-    public static final int extension  = 2;
+    public static final int extension = 2;
 
     private final int choice;
     private final ASN1Encodable object;
@@ -82,7 +81,8 @@ public class VerificationKeyIndicator
     }
 
 
-    public static Builder builder() {
+    public static Builder builder()
+    {
         return new Builder();
     }
 
@@ -104,24 +104,26 @@ public class VerificationKeyIndicator
             return this;
         }
 
-        public Builder publicVerificationKey(PublicVerificationKey publicVerificationKey) {
+        public Builder publicVerificationKey(PublicVerificationKey publicVerificationKey)
+        {
             this.object = publicVerificationKey;
             this.choice = verificationKey;
             return this;
         }
 
-        public Builder reconstructionValue(EccP256CurvePoint curvePoint) {
+        public Builder reconstructionValue(EccP256CurvePoint curvePoint)
+        {
             this.object = curvePoint;
             this.choice = reconstructionValue;
             return this;
         }
 
-        public Builder extension(byte[] value) {
+        public Builder extension(byte[] value)
+        {
             this.object = new DEROctetString(value);
             this.choice = extension;
             return this;
         }
-
 
 
         public VerificationKeyIndicator createVerificationKeyIndicator()

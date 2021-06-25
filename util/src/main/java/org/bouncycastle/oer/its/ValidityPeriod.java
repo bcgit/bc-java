@@ -57,7 +57,8 @@ public class ValidityPeriod
         return new DERSequence(new ASN1Encodable[]{time32, duration});
     }
 
-    public static Builder builder() {
+    public static Builder builder()
+    {
         return new Builder();
     }
 

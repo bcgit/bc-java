@@ -99,7 +99,8 @@ public class OEROptional
 
     public ASN1Primitive toASN1Primitive()
     {
-        if (!defined) {
+        if (!defined)
+        {
             throw new RuntimeException("bang");
         }
         return get().toASN1Primitive();
