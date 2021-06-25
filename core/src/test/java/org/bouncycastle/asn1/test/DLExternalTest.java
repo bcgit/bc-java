@@ -144,19 +144,19 @@ public class DLExternalTest
 
         DLApplicationSpecific objectName = (DLApplicationSpecific)msBindSet.getObjectAt(0);
         isEquals("check tag number", 0, objectName.getApplicationTag());
-        isEquals("check application object: " + objectName.getObject().getClass(), DLSequence.class.getName(), objectName.getObject().getClass().getName());
-        DLSequence objNameElems = (DLSequence)objectName.getObject();
+        isEquals("check application object: " + objectName.getEnclosedObject().getClass(), DLSequence.class.getName(), objectName.getEnclosedObject().getClass().getName());
+        DLSequence objNameElems = (DLSequence)objectName.getEnclosedObject();
         isEquals("check number of elements", 4, objNameElems.size());
         isEquals("check first element in set: " + objNameElems.getObjectAt(0).getClass(), DLApplicationSpecific.class.getName(), objNameElems.getObjectAt(0).getClass().getName());
         DLApplicationSpecific objNameAppl = (DLApplicationSpecific)objNameElems.getObjectAt(0);
         isEquals("check application number", 0, objNameAppl.getApplicationTag());
-        isEquals("check application object: " + objNameAppl.getObject().getClass(), DERPrintableString.class.getName(), objNameAppl.getObject().getClass().getName());
-        isEquals("check C", "de", ((DERPrintableString)objNameAppl.getObject()).getString());
+        isEquals("check application object: " + objNameAppl.getEnclosedObject().getClass(), DERPrintableString.class.getName(), objNameAppl.getEnclosedObject().getClass().getName());
+        isEquals("check C", "de", ((DERPrintableString)objNameAppl.getEnclosedObject()).getString());
         isEquals("check second element in set: " + objNameElems.getObjectAt(1).getClass(), DLApplicationSpecific.class.getName(), objNameElems.getObjectAt(1).getClass().getName());
         objNameAppl = (DLApplicationSpecific)objNameElems.getObjectAt(1);
         isEquals("check application number", 2, objNameAppl.getApplicationTag());
-        isEquals("check application object: " + objNameAppl.getObject().getClass(), DERPrintableString.class.getName(), objNameAppl.getObject().getClass().getName());
-        isEquals("check A", "viaT", ((DERPrintableString)objNameAppl.getObject()).getString());
+        isEquals("check application object: " + objNameAppl.getEnclosedObject().getClass(), DERPrintableString.class.getName(), objNameAppl.getEnclosedObject().getClass().getName());
+        isEquals("check A", "viaT", ((DERPrintableString)objNameAppl.getEnclosedObject()).getString());
         isEquals("check third element in set: " + objNameElems.getObjectAt(2).getClass(), DLTaggedObject.class.getName(), objNameElems.getObjectAt(2).getClass().getName());
         DLTaggedObject objNameTagged = (DLTaggedObject)objNameElems.getObjectAt(2);
         isTrue("check tag", objNameTagged.hasContextTag(3));
