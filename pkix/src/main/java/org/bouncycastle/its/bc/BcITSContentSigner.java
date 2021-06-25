@@ -19,6 +19,7 @@ import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class BcITSContentSigner
     implements ITSContentSigner
@@ -109,7 +110,7 @@ public class BcITSContentSigner
     {
         return digestAlgo;
     }
-    
+
     public OutputStream getOutputStream()
     {
         return new DigestOutputStream(digest);
@@ -124,9 +125,21 @@ public class BcITSContentSigner
     {
         byte[] clientCertDigest = new byte[digest.getDigestSize()];
 
+
         digest.doFinal(clientCertDigest, 0);
 
-        final DSADigestSigner signer = new DSADigestSigner(new ECDSASigner(), digest);
+        //System.out.println("Generate tbs hash: " + Hex.toHexString(clientCertDigest));
+
+        final DSADigestSigner signer;
+
+        try
+        {
+            signer = new DSADigestSigner(new ECDSASigner(), BcDefaultDigestProvider.INSTANCE.get(digestAlgo));
+        }
+        catch (OperatorCreationException e)
+        {
+            throw new RuntimeException(e.getMessage(), e);
+        }
 
         signer.init(true, privKey);
 
@@ -139,6 +152,9 @@ public class BcITSContentSigner
         {
             byte[] empty = new byte[digest.getDigestSize()];
             digest.doFinal(empty, 0);
+
+            //System.out.println("gen " + Hex.toHexString(empty));
+
             signer.update(empty, 0, empty.length);
         }
         else
