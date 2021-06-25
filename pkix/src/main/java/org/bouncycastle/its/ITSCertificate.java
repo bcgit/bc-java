@@ -2,6 +2,7 @@ package org.bouncycastle.its;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.MessageDigest;
 
 import org.bouncycastle.its.operator.ECDSAEncoder;
 import org.bouncycastle.its.operator.ITSContentVerifierProvider;
@@ -12,6 +13,7 @@ import org.bouncycastle.oer.its.Signature;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.encoders.Hex;
 
 public class ITSCertificate
     implements Encodable
@@ -35,12 +37,13 @@ public class ITSCertificate
 
         OutputStream verOut = contentVerifier.getOutputStream();
 
+
         verOut.write(
             OEREncoder.toByteArray(certificate.getCertificateBase().getToBeSignedCertificate(),
                 IEEE1609dot2.tbsCertificate));
 
         verOut.close();
-        
+
         Signature sig = certificate.getCertificateBase().getSignature();
 
         return contentVerifier.verify(ECDSAEncoder.toX962(sig));
