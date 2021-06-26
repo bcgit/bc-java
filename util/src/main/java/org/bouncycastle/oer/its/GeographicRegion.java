@@ -72,23 +72,13 @@ public class GeographicRegion
         return choice;
     }
 
-    public void setChoice(int choice)
-    {
-        this.choice = choice;
-    }
-
     public RegionInterface getRegion()
     {
         return region;
     }
 
-    public void setRegion(RegionInterface region)
-    {
-        this.region = region;
-    }
-
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, region);
+        return new DERTaggedObject(choice, (ASN1Object)region);
     }
 }

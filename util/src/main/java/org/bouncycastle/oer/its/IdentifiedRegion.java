@@ -64,6 +64,6 @@ public class IdentifiedRegion
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, region).toASN1Primitive();
+        return new DERTaggedObject(choice, (ASN1Object)region).toASN1Primitive();
     }
 }
