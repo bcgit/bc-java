@@ -98,6 +98,20 @@ public final class ASN1ObjectDescriptor
         baseGraphicString.encode(out, false);
     }
 
+    ASN1Primitive toDERObject()
+    {
+        ASN1GraphicString der = (ASN1GraphicString)baseGraphicString.toDERObject();
+
+        return der == baseGraphicString ? this : new ASN1ObjectDescriptor(der);
+    }
+
+    ASN1Primitive toDLObject()
+    {
+        ASN1GraphicString dl = (ASN1GraphicString)baseGraphicString.toDLObject();
+
+        return dl == baseGraphicString ? this : new ASN1ObjectDescriptor(dl);
+    }
+
     boolean asn1Equals(ASN1Primitive other)
     {
         if (!(other instanceof ASN1ObjectDescriptor))
