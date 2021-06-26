@@ -111,12 +111,15 @@ public class BitStringTest
         }
         try
         {
+            /*
+             * Allow this since getInstance should work for
+             * "an object that can be converted into [a DERBitString]".
+             */
             DERBitString.getInstance(dlData);
-            fail("no exception");
         }
         catch (IllegalArgumentException e)
         {
-            // ignore
+            fail("failed DL encoding conversion");
         }
         ASN1BitString der = DERBitString.getInstance(derData);
         isTrue("DER test failed", der instanceof DERBitString);
