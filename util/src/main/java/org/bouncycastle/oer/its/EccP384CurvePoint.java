@@ -2,7 +2,6 @@ package org.bouncycastle.oer.its;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
-import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -24,8 +23,7 @@ import org.bouncycastle.util.Arrays;
  * }
  */
 public class EccP384CurvePoint
-    extends ASN1Object
-    implements EccCurvePoint
+    extends EccCurvePoint
 {
 
     public static final int xOnly = 0;
