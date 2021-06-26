@@ -481,7 +481,7 @@ public class ASN1InputStream
         case BMP_STRING:
             return ASN1BMPString.createPrimitive(getBMPCharBuffer(defIn));
         case BOOLEAN:
-            return ASN1Boolean.fromOctetString(getBuffer(defIn, tmpBuffers));
+            return ASN1Boolean.createPrimitive(getBuffer(defIn, tmpBuffers));
         case ENUMERATED:
             // TODO Ideally only clone if we used a buffer
             return ASN1Enumerated.createPrimitive(getBuffer(defIn, tmpBuffers), true);
@@ -492,13 +492,9 @@ public class ASN1InputStream
         case IA5_STRING:
             return ASN1IA5String.createPrimitive(defIn.toByteArray());
         case INTEGER:
-            return new ASN1Integer(defIn.toByteArray(), false);
+            return ASN1Integer.createPrimitive(defIn.toByteArray());
         case NULL:
-            if (0 != defIn.getRemaining())
-            {
-                throw new IOException("malformed NULL encoding encountered");
-            }
-            return DERNull.INSTANCE;
+            return ASN1Null.createPrimitive(defIn.toByteArray());
         case NUMERIC_STRING:
             return ASN1NumericString.createPrimitive(defIn.toByteArray());
         case OBJECT_DESCRIPTOR:
@@ -506,7 +502,7 @@ public class ASN1InputStream
         case OBJECT_IDENTIFIER:
             return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers));
         case OCTET_STRING:
-            return new DEROctetString(defIn.toByteArray());
+            return ASN1OctetString.createPrimitive(defIn.toByteArray());
         case PRINTABLE_STRING:
             return ASN1PrintableString.createPrimitive(defIn.toByteArray());
         case T61_STRING:

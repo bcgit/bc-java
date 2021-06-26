@@ -16,7 +16,7 @@ public class ASN1Integer
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            return new ASN1Integer(octetString.getOctets(), false);
+            return createPrimitive(octetString.getOctets());
         }
     };
 
@@ -235,6 +235,11 @@ public class ASN1Integer
     public String toString()
     {
         return getValue().toString();
+    }
+
+    static ASN1Integer createPrimitive(byte[] contents)
+    {
+        return new ASN1Integer(contents, false);
     }
 
     static int intValue(byte[] bytes, int start, int signExt)
