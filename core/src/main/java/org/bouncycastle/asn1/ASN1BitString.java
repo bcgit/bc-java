@@ -1,6 +1,8 @@
 package org.bouncycastle.asn1;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.bouncycastle.util.Arrays;
 
@@ -9,13 +11,18 @@ import org.bouncycastle.util.Arrays;
  */
 public abstract class ASN1BitString
     extends ASN1Primitive
-    implements ASN1String
+    implements ASN1String, ASN1BitStringParser
 {
     static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1BitString.class, BERTags.BIT_STRING)
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
             return createPrimitive(octetString.getOctets());
+        }
+
+        ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
+        {
+            return sequence.toASN1BitString();
         }
     };
 
@@ -202,6 +209,27 @@ public abstract class ASN1BitString
         }
 
         this.contents = contents;
+    }
+
+    public InputStream getBitStream() throws IOException
+    {
+        return new ByteArrayInputStream(contents, 1, contents.length - 1);
+    }
+
+    public InputStream getOctetStream() throws IOException
+    {
+        int padBits = contents[0] & 0xFF;
+        if (0 != padBits)
+        {
+            throw new IOException("expected octet-aligned bitstring, but found padBits: " + padBits);
+        }
+
+        return getBitStream();
+    }
+
+    public ASN1BitStringParser parser()
+    {
+        return this;
     }
 
     /**
