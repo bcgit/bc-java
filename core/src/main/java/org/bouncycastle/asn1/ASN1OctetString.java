@@ -249,4 +249,9 @@ public abstract class ASN1OctetString
     {
       return "#" + Strings.fromByteArray(Hex.encode(string));
     }
+
+    static ASN1OctetString createPrimitive(byte[] contents)
+    {
+        return new DEROctetString(contents);
+    }
 }

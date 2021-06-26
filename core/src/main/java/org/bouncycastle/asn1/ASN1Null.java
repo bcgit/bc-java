@@ -12,11 +12,7 @@ public abstract class ASN1Null
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            if (0 != octetString.getOctets().length)
-            {
-                throw new IllegalStateException("malformed NULL encoding");
-            }
-            return DERNull.INSTANCE;
+            return createPrimitive(octetString.getOctets());
         }
     };
 
@@ -89,5 +85,14 @@ public abstract class ASN1Null
     public String toString()
     {
          return "NULL";
+    }
+
+    static ASN1Null createPrimitive(byte[] contents)
+    {
+        if (0 != contents.length)
+        {
+            throw new IllegalStateException("malformed NULL encoding encountered");
+        }
+        return DERNull.INSTANCE;
     }
 }
