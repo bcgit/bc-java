@@ -149,48 +149,14 @@ public class ASN1InputStream
         {
         case BIT_STRING:
         {
-            ASN1EncodableVector v = readVector(defIn);
-            ASN1BitString[] strings = new ASN1BitString[v.size()];
-    
-            for (int i = 0; i != strings.length; i++)
-            {
-                ASN1Encodable asn1Obj = v.get(i);
-                if (asn1Obj instanceof ASN1BitString)
-                {
-                    strings[i] = (ASN1BitString)asn1Obj;
-                }
-                else
-                {
-                    throw new ASN1Exception(
-                        "unknown object encountered in constructed BIT STRING: " + asn1Obj.getClass());
-                }
-            }
-
-            return new BERBitString(strings);
+            return buildConstructedBitString(readVector(defIn));
         }
         case OCTET_STRING:
         {
             //
             // yes, people actually do this...
             //
-            ASN1EncodableVector v = readVector(defIn);
-            ASN1OctetString[] strings = new ASN1OctetString[v.size()];
-    
-            for (int i = 0; i != strings.length; i++)
-            {
-                ASN1Encodable asn1Obj = v.get(i);
-                if (asn1Obj instanceof ASN1OctetString)
-                {
-                    strings[i] = (ASN1OctetString)asn1Obj;
-                }
-                else
-                {
-                    throw new ASN1Exception(
-                        "unknown object encountered in constructed OCTET STRING: " + asn1Obj.getClass());
-                }
-            }
-    
-            return new BEROctetString(strings);
+            return buildConstructedOctetString(readVector(defIn));
         }
         case SEQUENCE:
         {
@@ -277,6 +243,50 @@ public class ASN1InputStream
         default:
             throw new IOException("unknown BER object encountered");
         }
+    }
+
+    ASN1BitString buildConstructedBitString(ASN1EncodableVector contentsElements) throws IOException
+    {
+        ASN1BitString[] strings = new ASN1BitString[contentsElements.size()];
+
+        for (int i = 0; i != strings.length; i++)
+        {
+            ASN1Encodable asn1Obj = contentsElements.get(i);
+            if (asn1Obj instanceof ASN1BitString)
+            {
+                strings[i] = (ASN1BitString)asn1Obj;
+            }
+            else
+            {
+                throw new ASN1Exception(
+                    "unknown object encountered in constructed BIT STRING: " + asn1Obj.getClass());
+            }
+        }
+
+        // TODO Probably ought to be DLBitString
+        return new BERBitString(strings);
+    }
+
+    ASN1OctetString buildConstructedOctetString(ASN1EncodableVector contentsElements) throws IOException
+    {
+        ASN1OctetString[] strings = new ASN1OctetString[contentsElements.size()];
+
+        for (int i = 0; i != strings.length; i++)
+        {
+            ASN1Encodable asn1Obj = contentsElements.get(i);
+            if (asn1Obj instanceof ASN1OctetString)
+            {
+                strings[i] = (ASN1OctetString)asn1Obj;
+            }
+            else
+            {
+                throw new ASN1Exception(
+                    "unknown object encountered in constructed OCTET STRING: " + asn1Obj.getClass());
+            }
+        }
+
+        // TODO Probably ought to be DEROctetString (no DLOctetString available)
+        return new BEROctetString(strings);
     }
 
     ASN1Primitive readTaggedObject(int tagClass, int tagNo, boolean constructed, DefiniteLengthInputStream defIn)
