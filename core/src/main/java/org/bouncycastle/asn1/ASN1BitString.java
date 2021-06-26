@@ -135,11 +135,15 @@ public abstract class ASN1BitString
     {
         if (check)
         {
-            if (null == contents || contents.length < 1)
+            if (null == contents)
             {
-                throw new NullPointerException("'contents' cannot be null or empty");
+                throw new NullPointerException("'contents' cannot be null");
             }
-    
+            if (contents.length < 1)
+            {
+                throw new IllegalArgumentException("'contents' cannot be empty");
+            }
+
             int padBits = contents[0] & 0xFF;
             if (padBits > 0)
             {
