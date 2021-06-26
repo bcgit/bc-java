@@ -4,7 +4,6 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
-import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -29,8 +28,7 @@ import org.bouncycastle.util.BigIntegers;
  * }
  */
 public class EccP256CurvePoint
-    extends ASN1Object
-    implements EccCurvePoint
+    extends EccCurvePoint
 {
 
     public static final int xOnly = 0;
