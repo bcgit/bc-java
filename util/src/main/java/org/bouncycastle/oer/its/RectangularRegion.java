@@ -18,7 +18,6 @@ public class RectangularRegion
     extends ASN1Object
     implements RegionInterface
 {
-
     private TwoDLocation northWest;
     private TwoDLocation southEast;
 
@@ -48,19 +47,9 @@ public class RectangularRegion
         return northWest;
     }
 
-    public void setNorthWest(TwoDLocation northWest)
-    {
-        this.northWest = northWest;
-    }
-
     public TwoDLocation getSouthEast()
     {
         return southEast;
-    }
-
-    public void setSouthEast(TwoDLocation southEast)
-    {
-        this.southEast = southEast;
     }
 
     public ASN1Primitive toASN1Primitive()
