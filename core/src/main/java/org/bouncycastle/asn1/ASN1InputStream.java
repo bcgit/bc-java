@@ -145,9 +145,29 @@ public class ASN1InputStream
             return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
         }
 
-        // TODO There are other tags that may be constructed (e.g. BIT_STRING)
         switch (tagNo)
         {
+        case BIT_STRING:
+        {
+            ASN1EncodableVector v = readVector(defIn);
+            ASN1BitString[] strings = new ASN1BitString[v.size()];
+    
+            for (int i = 0; i != strings.length; i++)
+            {
+                ASN1Encodable asn1Obj = v.get(i);
+                if (asn1Obj instanceof ASN1BitString)
+                {
+                    strings[i] = (ASN1BitString)asn1Obj;
+                }
+                else
+                {
+                    throw new ASN1Exception(
+                        "unknown object encountered in constructed BIT STRING: " + asn1Obj.getClass());
+                }
+            }
+
+            return new BERBitString(strings);
+        }
         case OCTET_STRING:
         {
             //
@@ -242,9 +262,10 @@ public class ASN1InputStream
             return sp.readTaggedObject(tagClass, tagNo, true);
         }
 
-        // TODO There are other tags that may be constructed (e.g. BIT_STRING)
         switch (tagNo)
         {
+        case BIT_STRING:
+            return BERBitStringParser.parse(sp);
         case OCTET_STRING:
             return BEROctetStringParser.parse(sp);
         case EXTERNAL:

@@ -35,9 +35,11 @@ import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERApplicationSpecific;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DLApplicationSpecific;
+import org.bouncycastle.asn1.DLBitString;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -194,9 +196,24 @@ public class ASN1Dump
         }
         else if (obj instanceof ASN1BitString)
         {
-            ASN1BitString bt = (ASN1BitString)obj;
-            byte[] bytes = bt.getBytes();
-            buf.append(indent + "DER Bit String" + "[" + bytes.length + ", " + bt.getPadBits() + "] ");
+            ASN1BitString bitString = (ASN1BitString)obj;
+
+            byte[] bytes = bitString.getBytes();
+            int padBits = bitString.getPadBits();
+
+            if (bitString instanceof DERBitString)
+            {
+                buf.append(indent + "DER Bit String" + "[" + bytes.length + ", " + padBits + "] ");
+            }
+            else if (bitString instanceof DLBitString)
+            {
+                buf.append(indent + "DL Bit String" + "[" + bytes.length + ", " + padBits + "] ");
+            }
+            else
+            {
+                buf.append(indent + "BER Bit String" + "[" + bytes.length + ", " + padBits + "] ");
+            }
+
             if (verbose)
             {
                 buf.append(dumpBinaryDataAsString(indent, bytes));

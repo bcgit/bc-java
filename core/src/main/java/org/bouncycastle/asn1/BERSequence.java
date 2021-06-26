@@ -62,6 +62,11 @@ public class BERSequence
         out.writeEncodingIL(withTag, BERTags.CONSTRUCTED | BERTags.SEQUENCE, elements);
     }
 
+    ASN1BitString toASN1BitString()
+    {
+        return new BERBitString(getConstructedBitStrings());
+    }
+
     ASN1OctetString toASN1OctetString()
     {
         return new BEROctetString(getConstructedOctetStrings());
