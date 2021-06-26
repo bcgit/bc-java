@@ -9,7 +9,14 @@ public final class ASN1ObjectDescriptor
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            return createPrimitive(octetString.getOctets());
+            return new ASN1ObjectDescriptor(
+                (ASN1GraphicString)ASN1GraphicString.TYPE.fromImplicitPrimitive(octetString));
+        }
+
+        ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
+        {
+            return new ASN1ObjectDescriptor(
+                (ASN1GraphicString)ASN1GraphicString.TYPE.fromImplicitConstructed(sequence));
         }
     };
 
