@@ -58,6 +58,22 @@ public class DLBitString
         return this;
     }
 
+    static int encodedLength(boolean withTag, int contentsLength)
+    {
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contentsLength);
+    }
+
+    static void encode(ASN1OutputStream out, boolean withTag, byte[] buf, int off, int len) throws IOException
+    {
+        out.writeEncodingDL(withTag, BERTags.BIT_STRING, buf, off, len);
+    }
+
+    static void encode(ASN1OutputStream out, boolean withTag, byte pad, byte[] buf, int off, int len)
+        throws IOException
+    {
+        out.writeEncodingDL(withTag, BERTags.BIT_STRING, pad, buf, off, len);
+    }
+
     static DLBitString fromOctetString(ASN1OctetString octetString)
     {
         return new DLBitString(octetString.getOctets(), true);

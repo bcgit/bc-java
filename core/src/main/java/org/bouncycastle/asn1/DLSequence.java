@@ -122,6 +122,11 @@ public class DLSequence
         }
     }
 
+    ASN1BitString toASN1BitString()
+    {
+        return new DLBitString(BERBitString.flattenBitStrings(getConstructedBitStrings()), false);
+    }
+
     ASN1OctetString toASN1OctetString()
     {
         // NOTE: There is no DLOctetString

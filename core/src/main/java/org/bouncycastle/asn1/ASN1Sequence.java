@@ -341,6 +341,8 @@ public abstract class ASN1Sequence
         return new DLSequence(elements, false);
     }
 
+    abstract ASN1BitString toASN1BitString();
+
     abstract ASN1OctetString toASN1OctetString();
 
     abstract ASN1Set toASN1Set();
@@ -377,6 +379,17 @@ public abstract class ASN1Sequence
     public Iterator<ASN1Encodable> iterator()
     {
         return new Arrays.Iterator<ASN1Encodable>(elements);
+    }
+
+    ASN1BitString[] getConstructedBitStrings()
+    {
+        int count = elements.length;
+        ASN1BitString[] bitStrings = new ASN1BitString[count];
+        for (int i = 0; i < count; ++i)
+        {
+            bitStrings[i] = ASN1BitString.getInstance(elements[i]);
+        }
+        return bitStrings;
     }
 
     ASN1OctetString[] getConstructedOctetStrings()
