@@ -14,6 +14,8 @@ final class ASN1UniversalTypes
             return ASN1Boolean.TYPE;
         case BERTags.INTEGER:
             return ASN1Integer.TYPE;
+        case BERTags.BIT_STRING:
+            return ASN1BitString.TYPE;
         case BERTags.OCTET_STRING:
             return ASN1OctetString.TYPE;
         case BERTags.NULL:
@@ -56,7 +58,6 @@ final class ASN1UniversalTypes
             return ASN1BMPString.TYPE;
 
         // TODO Handle remaining valid tags 
-        case BERTags.BIT_STRING:
         case BERTags.EXTERNAL:
             return null;
 

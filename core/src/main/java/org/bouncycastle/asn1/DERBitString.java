@@ -8,12 +8,20 @@ import java.io.IOException;
 public class DERBitString
     extends ASN1BitString
 {
+    public static DERBitString convert(ASN1BitString bitString)
+    {
+        return (DERBitString)bitString.toDERObject();
+    }
+
     /**
      * return a Bit String from the passed in object
      *
      * @param obj a DERBitString or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
      * @return a DERBitString instance, or null.
+     * 
+     * @deprecated Use {@link ASN1BitString#getInstance(Object)} and
+     *             {@link #convert(ASN1BitString)} instead.
      */
     public static DERBitString getInstance(
         Object  obj)
@@ -22,15 +30,15 @@ public class DERBitString
         {
             return (DERBitString)obj;
         }
-        if (obj instanceof DLBitString)
+        if (obj instanceof ASN1BitString)
         {
-            return new DERBitString(((DLBitString)obj).contents, false);
+            return convert((ASN1BitString)obj);
         }
         if (obj instanceof byte[])
         {
             try
             {
-                return (DERBitString)fromByteArray((byte[])obj);
+                return convert((ASN1BitString)fromByteArray((byte[])obj));
             }
             catch (Exception e)
             {
@@ -44,12 +52,14 @@ public class DERBitString
     /**
      * return a Bit String from a tagged object.
      *
-     * @param obj the tagged object holding the object we want
-     * @param explicit true if the object is meant to be explicitly
-     *              tagged false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
-     *               be converted.
+     * @param obj      the tagged object holding the object we want
+     * @param explicit true if the object is meant to be explicitly tagged false
+     *                 otherwise.
+     * @exception IllegalArgumentException if the tagged object cannot be converted.
      * @return a DERBitString instance, or null.
+     * 
+     * @deprecated Use {@link ASN1BitString#getInstance(ASN1TaggedObject, boolean)}
+     *             and {@link #convert(ASN1BitString)} instead.
      */
     public static DERBitString getInstance(
         ASN1TaggedObject obj,
@@ -67,37 +77,27 @@ public class DERBitString
         }
     }
 
-    protected DERBitString(byte data, int padBits)
-    {
-        super(data, padBits);
-    }
-
-    /**
-     * @param data the octets making up the bit string.
-     * @param padBits the number of extra bits at the end of the string.
-     */
-    public DERBitString(
-        byte[]  data,
-        int     padBits)
-    {
-        super(data, padBits);
-    }
-
-    public DERBitString(
-        byte[]  data)
+    public DERBitString(byte[] data)
     {
         this(data, 0);
     }
 
-    public DERBitString(
-        int value)
+    public DERBitString(byte data, int padBits)
+    {
+        super(data, padBits);
+    }
+
+    public DERBitString(byte[] data, int padBits)
+    {
+        super(data, padBits);
+    }
+
+    public DERBitString(int value)
     {
         super(getBytes(value), getPadBits(value));
     }
 
-    public DERBitString(
-        ASN1Encodable obj)
-        throws IOException
+    public DERBitString(ASN1Encodable obj) throws IOException
     {
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER), 0);
     }
