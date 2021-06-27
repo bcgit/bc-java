@@ -22,6 +22,7 @@ import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.its.ITSCertificate;
+import org.bouncycastle.its.ITSValidityPeriod;
 import org.bouncycastle.its.bc.BcITSContentSigner;
 import org.bouncycastle.its.bc.BcITSContentVerifierProvider;
 import org.bouncycastle.its.bc.BcITSExplicitCertificateBuilder;
@@ -265,8 +266,8 @@ public class ITSBasicTest
 
         ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
         BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
-
-        itsCertificateBuilder.setValidityPeriod(new Date(), new Duration(Duration.years, 1));
+        
+        itsCertificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
 
         ITSCertificate newCert = itsCertificateBuilder.build(
             CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId(),
