@@ -20,7 +20,7 @@ public class ASN1Boolean
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            return ASN1Boolean.fromOctetString(octetString.getOctets());
+            return createPrimitive(octetString.getOctets());
         }
     };
 
@@ -150,14 +150,14 @@ public class ASN1Boolean
       return isTrue() ? "TRUE" : "FALSE";
     }
 
-    static ASN1Boolean fromOctetString(byte[] value)
+    static ASN1Boolean createPrimitive(byte[] contents)
     {
-        if (value.length != 1)
+        if (contents.length != 1)
         {
             throw new IllegalArgumentException("BOOLEAN value should have 1 byte in it");
         }
 
-        byte b = value[0];
+        byte b = contents[0];
         switch (b)
         {
         case FALSE_VALUE:   return FALSE;
