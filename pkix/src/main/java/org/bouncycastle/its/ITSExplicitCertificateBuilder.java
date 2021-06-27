@@ -43,20 +43,27 @@ public class ITSExplicitCertificateBuilder
         this.signer = signer;
     }
 
-    public ITSCertificate build(CertificateId certificateId, PublicVerificationKey verificationKey, PublicEncryptionKey publicEncryptionKey)
-    {
-        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
-        return build(certificateId, verificationKey);
-    }
-
     public ITSCertificate build(CertificateId certificateId, PublicVerificationKey verificationKey)
     {
-        tbsCertificateBuilder.setCertificateId(certificateId);
-        tbsCertificateBuilder.setVerificationKeyIndicator(
+        return build(certificateId, verificationKey, null);
+    }
+
+    public ITSCertificate build(CertificateId certificateId, PublicVerificationKey verificationKey, PublicEncryptionKey publicEncryptionKey)
+    {
+        ToBeSignedCertificate.Builder tbsBldr = new ToBeSignedCertificate.Builder(tbsCertificateBuilder);
+        
+        tbsBldr.setCertificateId(certificateId);
+
+        if (publicEncryptionKey != null)
+        {
+            tbsBldr.setEncryptionKey(publicEncryptionKey);
+        }
+
+        tbsBldr.setVerificationKeyIndicator(
             VerificationKeyIndicator.builder().publicVerificationKey(verificationKey)
                 .createVerificationKeyIndicator());
 
-        ToBeSignedCertificate tbsCertificate = tbsCertificateBuilder.createToBeSignedCertificate();
+        ToBeSignedCertificate tbsCertificate = tbsBldr.createToBeSignedCertificate();
 
         ToBeSignedCertificate signerCert = null;
         VerificationKeyIndicator verificationKeyIndicator;
