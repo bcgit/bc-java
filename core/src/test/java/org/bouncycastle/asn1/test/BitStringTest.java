@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.BERBitString;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DLBitString;
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -16,6 +17,13 @@ import org.bouncycastle.util.test.TestResult;
 public class BitStringTest
     extends SimpleTest
 {
+    private void testConstructed()
+        throws Exception
+    {
+        ASN1BitString s1 = new BERBitString(new byte[1500], 1);
+        ASN1BitString s2 = ASN1BitString.getInstance(s1.getEncoded());
+    }
+
     private void testZeroLengthStrings()
         throws Exception
     {
@@ -111,12 +119,15 @@ public class BitStringTest
         }
         try
         {
+            /*
+             * Allow this since getInstance should work for
+             * "an object that can be converted into [a DERBitString]".
+             */
             DERBitString.getInstance(dlData);
-            fail("no exception");
         }
         catch (IllegalArgumentException e)
         {
-            // ignore
+            fail("failed DL encoding conversion");
         }
         ASN1BitString der = DERBitString.getInstance(derData);
         isTrue("DER test failed", der instanceof DERBitString);
@@ -165,6 +176,7 @@ public class BitStringTest
             fail(e.toString());
         }
 
+        testConstructed();
         testRandomPadBits();
         testZeroLengthStrings();
     }

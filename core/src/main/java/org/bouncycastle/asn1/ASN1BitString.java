@@ -1,6 +1,8 @@
 package org.bouncycastle.asn1;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.bouncycastle.util.Arrays;
 
@@ -9,8 +11,56 @@ import org.bouncycastle.util.Arrays;
  */
 public abstract class ASN1BitString
     extends ASN1Primitive
-    implements ASN1String
+    implements ASN1String, ASN1BitStringParser
 {
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1BitString.class, BERTags.BIT_STRING)
+    {
+        ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
+        {
+            return createPrimitive(octetString.getOctets());
+        }
+
+        ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
+        {
+            return sequence.toASN1BitString();
+        }
+    };
+
+    public static ASN1BitString getInstance(Object obj)
+    {
+        if (obj == null || obj instanceof ASN1BitString)
+        {
+            return (ASN1BitString)obj;
+        }
+//      else if (obj instanceof ASN1BitStringParser)
+        else if (obj instanceof ASN1Encodable)
+        {
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+            if (primitive instanceof ASN1BitString)
+            {
+                return (ASN1BitString)primitive;
+            }
+        }
+        else if (obj instanceof byte[])
+        {
+            try
+            {
+                return (ASN1BitString)TYPE.fromByteArray((byte[])obj);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("failed to construct BIT STRING from byte[]: " + e.getMessage());
+            }
+        }
+
+        throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
+    }
+
+    public static ASN1BitString getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    {
+        return (ASN1BitString)TYPE.getContextInstance(taggedObject, explicit);
+    }
+
     private static final char[]  table = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
     /**
@@ -159,6 +209,27 @@ public abstract class ASN1BitString
         }
 
         this.contents = contents;
+    }
+
+    public InputStream getBitStream() throws IOException
+    {
+        return new ByteArrayInputStream(contents, 1, contents.length - 1);
+    }
+
+    public InputStream getOctetStream() throws IOException
+    {
+        int padBits = contents[0] & 0xFF;
+        if (0 != padBits)
+        {
+            throw new IOException("expected octet-aligned bitstring, but found padBits: " + padBits);
+        }
+
+        return getBitStream();
+    }
+
+    public ASN1BitStringParser parser()
+    {
+        return this;
     }
 
     /**

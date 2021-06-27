@@ -39,13 +39,14 @@ public class ASN1StreamParser
     {
         // Note: INDEF => CONSTRUCTED
 
-        // TODO There are other tags that may be constructed (e.g. BIT_STRING)
         switch (tagValue)
         {
-        case BERTags.EXTERNAL:
-            return new DERExternalParser(this);
+        case BERTags.BIT_STRING:
+            return new BERBitStringParser(this);
         case BERTags.OCTET_STRING:
             return new BEROctetStringParser(this);
+        case BERTags.EXTERNAL:
+            return new DERExternalParser(this);
         case BERTags.SEQUENCE:
             return new BERSequenceParser(this);
         case BERTags.SET:
@@ -71,24 +72,28 @@ public class ASN1StreamParser
         {
             switch (tag)
             {
+            case BERTags.BIT_STRING:
+                return new BERBitStringParser(this);
+            case BERTags.OCTET_STRING:
+                return new BEROctetStringParser(this);
             case BERTags.SET:
                 return new DLSetParser(this);
             case BERTags.SEQUENCE:
                 return new DLSequenceParser(this);
-            case BERTags.OCTET_STRING:
-                return new BEROctetStringParser(this);
             }
         }
         else
         {
             switch (tag)
             {
+            case BERTags.BIT_STRING:
+                return new DLBitStringParser((DefiniteLengthInputStream)_in);
+            case BERTags.OCTET_STRING:
+                return new DEROctetStringParser((DefiniteLengthInputStream)_in);
             case BERTags.SET:
                 throw new ASN1Exception("sequences must use constructed encoding (see X.690 8.9.1/8.10.1)");
             case BERTags.SEQUENCE:
                 throw new ASN1Exception("sets must use constructed encoding (see X.690 8.11.1/8.12.1)");
-            case BERTags.OCTET_STRING:
-                return new DEROctetStringParser((DefiniteLengthInputStream)_in);
             }
         }
 
@@ -133,7 +138,8 @@ public class ASN1StreamParser
         // calculate length
         //
         int length = ASN1InputStream.readLength(_in, _limit,
-            tagNo == BERTags.OCTET_STRING || tagNo == BERTags.SEQUENCE || tagNo == BERTags.SET || tagNo == BERTags.EXTERNAL);
+            tagNo == BERTags.BIT_STRING || tagNo == BERTags.OCTET_STRING || tagNo == BERTags.SEQUENCE
+                || tagNo == BERTags.SET || tagNo == BERTags.EXTERNAL);
 
         if (length < 0) // indefinite-length method
         {
@@ -182,6 +188,8 @@ public class ASN1StreamParser
                 // Some primitive encodings can be handled by parsers too...
                 switch (tagNo)
                 {
+                case BERTags.BIT_STRING:
+                    return new DLBitStringParser(defIn);
                 case BERTags.OCTET_STRING:
                     return new DEROctetStringParser(defIn);
                 }
@@ -198,9 +206,10 @@ public class ASN1StreamParser
 
             ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
 
-            // TODO There are other tags that may be constructed (e.g. BIT_STRING)
             switch (tagNo)
             {
+            case BERTags.BIT_STRING:
+                return new BERBitStringParser(sp);
             case BERTags.OCTET_STRING:
                 //
                 // yes, people actually do this...

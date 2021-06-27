@@ -145,32 +145,18 @@ public class ASN1InputStream
             return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
         }
 
-        // TODO There are other tags that may be constructed (e.g. BIT_STRING)
         switch (tagNo)
         {
+        case BIT_STRING:
+        {
+            return buildConstructedBitString(readVector(defIn));
+        }
         case OCTET_STRING:
         {
             //
             // yes, people actually do this...
             //
-            ASN1EncodableVector v = readVector(defIn);
-            ASN1OctetString[] strings = new ASN1OctetString[v.size()];
-    
-            for (int i = 0; i != strings.length; i++)
-            {
-                ASN1Encodable asn1Obj = v.get(i);
-                if (asn1Obj instanceof ASN1OctetString)
-                {
-                    strings[i] = (ASN1OctetString)asn1Obj;
-                }
-                else
-                {
-                    throw new ASN1Exception(
-                        "unknown object encountered in constructed OCTET STRING: " + asn1Obj.getClass());
-                }
-            }
-    
-            return new BEROctetString(strings);
+            return buildConstructedOctetString(readVector(defIn));
         }
         case SEQUENCE:
         {
@@ -242,9 +228,10 @@ public class ASN1InputStream
             return sp.readTaggedObject(tagClass, tagNo, true);
         }
 
-        // TODO There are other tags that may be constructed (e.g. BIT_STRING)
         switch (tagNo)
         {
+        case BIT_STRING:
+            return BERBitStringParser.parse(sp);
         case OCTET_STRING:
             return BEROctetStringParser.parse(sp);
         case EXTERNAL:
@@ -256,6 +243,50 @@ public class ASN1InputStream
         default:
             throw new IOException("unknown BER object encountered");
         }
+    }
+
+    ASN1BitString buildConstructedBitString(ASN1EncodableVector contentsElements) throws IOException
+    {
+        ASN1BitString[] strings = new ASN1BitString[contentsElements.size()];
+
+        for (int i = 0; i != strings.length; i++)
+        {
+            ASN1Encodable asn1Obj = contentsElements.get(i);
+            if (asn1Obj instanceof ASN1BitString)
+            {
+                strings[i] = (ASN1BitString)asn1Obj;
+            }
+            else
+            {
+                throw new ASN1Exception(
+                    "unknown object encountered in constructed BIT STRING: " + asn1Obj.getClass());
+            }
+        }
+
+        // TODO Probably ought to be DLBitString
+        return new BERBitString(strings);
+    }
+
+    ASN1OctetString buildConstructedOctetString(ASN1EncodableVector contentsElements) throws IOException
+    {
+        ASN1OctetString[] strings = new ASN1OctetString[contentsElements.size()];
+
+        for (int i = 0; i != strings.length; i++)
+        {
+            ASN1Encodable asn1Obj = contentsElements.get(i);
+            if (asn1Obj instanceof ASN1OctetString)
+            {
+                strings[i] = (ASN1OctetString)asn1Obj;
+            }
+            else
+            {
+                throw new ASN1Exception(
+                    "unknown object encountered in constructed OCTET STRING: " + asn1Obj.getClass());
+            }
+        }
+
+        // TODO Probably ought to be DEROctetString (no DLOctetString available)
+        return new BEROctetString(strings);
     }
 
     ASN1Primitive readTaggedObject(int tagClass, int tagNo, boolean constructed, DefiniteLengthInputStream defIn)
@@ -481,7 +512,7 @@ public class ASN1InputStream
         case BMP_STRING:
             return ASN1BMPString.createPrimitive(getBMPCharBuffer(defIn));
         case BOOLEAN:
-            return ASN1Boolean.fromOctetString(getBuffer(defIn, tmpBuffers));
+            return ASN1Boolean.createPrimitive(getBuffer(defIn, tmpBuffers));
         case ENUMERATED:
             // TODO Ideally only clone if we used a buffer
             return ASN1Enumerated.createPrimitive(getBuffer(defIn, tmpBuffers), true);
@@ -492,13 +523,9 @@ public class ASN1InputStream
         case IA5_STRING:
             return ASN1IA5String.createPrimitive(defIn.toByteArray());
         case INTEGER:
-            return new ASN1Integer(defIn.toByteArray(), false);
+            return ASN1Integer.createPrimitive(defIn.toByteArray());
         case NULL:
-            if (0 != defIn.getRemaining())
-            {
-                throw new IOException("malformed NULL encoding encountered");
-            }
-            return DERNull.INSTANCE;
+            return ASN1Null.createPrimitive(defIn.toByteArray());
         case NUMERIC_STRING:
             return ASN1NumericString.createPrimitive(defIn.toByteArray());
         case OBJECT_DESCRIPTOR:
@@ -506,7 +533,7 @@ public class ASN1InputStream
         case OBJECT_IDENTIFIER:
             return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers));
         case OCTET_STRING:
-            return new DEROctetString(defIn.toByteArray());
+            return ASN1OctetString.createPrimitive(defIn.toByteArray());
         case PRINTABLE_STRING:
             return ASN1PrintableString.createPrimitive(defIn.toByteArray());
         case T61_STRING:
