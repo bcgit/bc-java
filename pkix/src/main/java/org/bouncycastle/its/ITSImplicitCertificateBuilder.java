@@ -73,19 +73,26 @@ public class ITSImplicitCertificateBuilder
         this.issuerIdentifier = issuerIdentifierBuilder.createIssuerIdentifier();
     }
 
-    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
+    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y)
     {
-        tbsCertificateBuilder.setEncryptionKey(publicEncryptionKey);
-        return build(certificateId, x, y);
+        return build(certificateId, x, y, null);
     }
 
-    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y)
+    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
     {
         EccP256CurvePoint reconstructionValue = EccP256CurvePoint.builder()
             .uncompressedP256(x, y).createEccP256CurvePoint();
 
-        tbsCertificateBuilder.setCertificateId(certificateId);
-        tbsCertificateBuilder.setVerificationKeyIndicator(VerificationKeyIndicator.builder()
+        ToBeSignedCertificate.Builder tbsBldr = new ToBeSignedCertificate.Builder(tbsCertificateBuilder);
+
+        tbsBldr.setCertificateId(certificateId);
+
+        if (publicEncryptionKey != null)
+        {
+            tbsBldr.setEncryptionKey(publicEncryptionKey);
+        }
+
+        tbsBldr.setVerificationKeyIndicator(VerificationKeyIndicator.builder()
             .reconstructionValue(reconstructionValue)
             .createVerificationKeyIndicator());
 
@@ -97,7 +104,7 @@ public class ITSImplicitCertificateBuilder
 
         baseBldr.setIssuer(issuerIdentifier);
 
-        baseBldr.setToBeSignedCertificate(tbsCertificateBuilder.createToBeSignedCertificate());
+        baseBldr.setToBeSignedCertificate(tbsBldr.createToBeSignedCertificate());
 
         Certificate.Builder bldr = new Certificate.Builder();
 
