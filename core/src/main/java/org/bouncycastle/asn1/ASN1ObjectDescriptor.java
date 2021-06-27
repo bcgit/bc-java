@@ -9,7 +9,14 @@ public final class ASN1ObjectDescriptor
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            return createPrimitive(octetString.getOctets());
+            return new ASN1ObjectDescriptor(
+                (ASN1GraphicString)ASN1GraphicString.TYPE.fromImplicitPrimitive(octetString));
+        }
+
+        ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
+        {
+            return new ASN1ObjectDescriptor(
+                (ASN1GraphicString)ASN1GraphicString.TYPE.fromImplicitConstructed(sequence));
         }
     };
 
@@ -89,6 +96,20 @@ public final class ASN1ObjectDescriptor
     {
         out.writeIdentifier(withTag, BERTags.OBJECT_DESCRIPTOR);
         baseGraphicString.encode(out, false);
+    }
+
+    ASN1Primitive toDERObject()
+    {
+        ASN1GraphicString der = (ASN1GraphicString)baseGraphicString.toDERObject();
+
+        return der == baseGraphicString ? this : new ASN1ObjectDescriptor(der);
+    }
+
+    ASN1Primitive toDLObject()
+    {
+        ASN1GraphicString dl = (ASN1GraphicString)baseGraphicString.toDLObject();
+
+        return dl == baseGraphicString ? this : new ASN1ObjectDescriptor(dl);
     }
 
     boolean asn1Equals(ASN1Primitive other)

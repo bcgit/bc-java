@@ -445,6 +445,8 @@ public abstract class ASN1TaggedObject
 
         switch (baseTagNo)
         {
+        case BERTags.BIT_STRING:
+            return ((ASN1BitString)primitive).parser();
         case BERTags.OCTET_STRING:
             return ((ASN1OctetString)primitive).parser();
         case BERTags.SET:
