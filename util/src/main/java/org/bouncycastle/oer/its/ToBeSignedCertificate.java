@@ -216,9 +216,24 @@ public class ToBeSignedCertificate
         private PublicEncryptionKey encryptionKey;
         private VerificationKeyIndicator verificationKeyIndicator;
 
-
         public Builder()
         {
+        }
+
+        public Builder(Builder o)
+        {
+            this.certificateId = o.certificateId;
+            this.cracaId = o.cracaId;
+            this.crlSeries = o.crlSeries;
+            this.validityPeriod = o.validityPeriod;
+            this.geographicRegion = o.geographicRegion;
+            this.assuranceLevel = o.assuranceLevel;
+            this.appPermissions = o.appPermissions;
+            this.certIssuePermissions = o.certIssuePermissions;
+            this.certRequestPermissions = o.certRequestPermissions;
+            this.canRequestRollover = o.canRequestRollover;
+            this.encryptionKey = o.encryptionKey;
+            this.verificationKeyIndicator = o.verificationKeyIndicator;
         }
 
         public Builder(ToBeSignedCertificate o)
