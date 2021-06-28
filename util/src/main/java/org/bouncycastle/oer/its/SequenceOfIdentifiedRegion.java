@@ -23,7 +23,7 @@ public class SequenceOfIdentifiedRegion
         }
 
         ASN1Sequence seq = ASN1Sequence.getInstance(o);
-        List<IdentifiedRegion> regions = new ArrayList<>();
+        List<IdentifiedRegion> regions = new ArrayList<IdentifiedRegion>();
         for (Iterator<ASN1Encodable> it = seq.iterator(); it.hasNext(); )
         {
             regions.add(IdentifiedRegion.getInstance(it.next()));

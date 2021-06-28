@@ -34,7 +34,7 @@ public class SequenceOfRectangularRegion
             return (SequenceOfRectangularRegion)o;
         }
 
-        List<RectangularRegion> items = new ArrayList<>();
+        List<RectangularRegion> items = new ArrayList<RectangularRegion>();
         ASN1Sequence seq = ASN1Sequence.getInstance(o);
         for (Iterator<ASN1Encodable> it = seq.iterator(); it.hasNext(); )
         {
