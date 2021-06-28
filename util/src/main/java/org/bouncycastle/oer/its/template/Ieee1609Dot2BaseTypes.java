@@ -3,7 +3,6 @@ package org.bouncycastle.oer.its.template;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.oer.OERDefinition;
 
 import static org.bouncycastle.oer.OERDefinition.choice;
@@ -160,7 +159,7 @@ public class Ieee1609Dot2BaseTypes
      * unknown      (1800000001)
      * } (-1799999999..1800000001)
      */
-    public static OERDefinition.Builder OneEightyDegreeInt = integer(-1799999999, 1800000000, new ASN1Integer(1800000001)).label("OneEightyDegreeInt");
+    public static OERDefinition.Builder OneEightyDegreeInt = integer(-1799999999, 1800000001).label("OneEightyDegreeInt");
 
     public static OERDefinition.Builder KnownLongitude = OneEightyDegreeInt.copy().label("KnownLongitude(OneEightyDegreeInt)");
 
@@ -174,7 +173,7 @@ public class Ieee1609Dot2BaseTypes
      * unknown     (900000001)
      * } (-900000000..900000001)
      */
-    public static OERDefinition.Builder NinetyDegreeInt = integer(-900000000, 900000000, new ASN1Integer(900000001)).label("NinetyDegreeInt");
+    public static OERDefinition.Builder NinetyDegreeInt = integer(-900000000, 900000001).label("NinetyDegreeInt");
 
     public static OERDefinition.Builder KnownLatitude = NinetyDegreeInt.copy().label("KnownLatitude(NinetyDegreeInt)");
 
@@ -211,7 +210,7 @@ public class Ieee1609Dot2BaseTypes
     /**
      * SequenceOfRectangularRegion ::= SEQUENCE OF RectangularRegion
      */
-    public static OERDefinition.Builder SequenceOfRectangularRegion = seq(TwoDLocation, TwoDLocation).label("SequenceOfRectangularRegion");
+    public static OERDefinition.Builder SequenceOfRectangularRegion = seqof(RectangularRegion).label("SequenceOfRectangularRegion");
 
     /**
      * CircularRegion ::= SEQUENCE {
@@ -224,8 +223,9 @@ public class Ieee1609Dot2BaseTypes
 
     /**
      * PolygonalRegion ::= SEQUENCE SIZE (3..MAX) OF TwoDLocation
+     * -- treated as sequence of.
      */
-    public static OERDefinition.Builder PolygonalRegion = seq(TwoDLocation).rangeToMAX(3).label("PolygonalRegion");
+    public static OERDefinition.Builder PolygonalRegion = seqof(TwoDLocation).rangeToMAXFrom(3).label("PolygonalRegion");
 
 
     /**
@@ -431,7 +431,7 @@ public class Ieee1609Dot2BaseTypes
     /**
      * Psid ::= INTEGER (0..MAX)
      */
-    public static final OERDefinition.Builder Psid = integer().rangeToMAX(0).label("Psid");
+    public static final OERDefinition.Builder Psid = integer().rangeToMAXFrom(0).label("Psid");
 
 
     /**
@@ -473,7 +473,7 @@ public class Ieee1609Dot2BaseTypes
      * SequenceOfOctetString ::=
      * SEQUENCE (SIZE (0..MAX)) OF OCTET STRING (SIZE(0..MAX))
      */
-    public static final OERDefinition.Builder SequenceOfOctetString = seqof(octets().rangeToMAX(0)).label("SequenceOfOctetString");
+    public static final OERDefinition.Builder SequenceOfOctetString = seqof(octets().rangeToMAXFrom(0)).label("SequenceOfOctetString");
 
     /**
      * BitmapSspRange ::= SEQUENCE {

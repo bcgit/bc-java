@@ -18,8 +18,8 @@ public class RectangularRegion
     extends ASN1Object
     implements RegionInterface
 {
-    private TwoDLocation northWest;
-    private TwoDLocation southEast;
+    private final TwoDLocation northWest;
+    private final TwoDLocation southEast;
 
     public RectangularRegion(TwoDLocation northWest, TwoDLocation southEast)
     {

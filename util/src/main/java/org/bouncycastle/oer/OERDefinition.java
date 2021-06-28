@@ -308,7 +308,7 @@ public class OERDefinition
 
     public static Builder utf8String(int size)
     {
-        return new Builder(BaseType.UTF8_STRING).rangeToMAX(size);
+        return new Builder(BaseType.UTF8_STRING).rangeToMAXFrom(size);
     }
 
     public static Builder utf8String(int lowerBound, int upperBound)
@@ -522,7 +522,7 @@ public class OERDefinition
             return newBuilder;
         }
 
-        public Builder rangeToMAX(long from)
+        public Builder rangeToMAXFrom(long from)
         {
             Builder b = this.copy();
             b.lowerBound = BigInteger.valueOf(from);

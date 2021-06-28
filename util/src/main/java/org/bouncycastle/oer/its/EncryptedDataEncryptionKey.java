@@ -20,6 +20,7 @@ public class EncryptedDataEncryptionKey
 {
     public static final int eciesNistP256 = 0;
     public static final int eciesBrainpoolP256r1 = 1;
+    public static final int extension = 2;
 
     private final int choice;
     private final ASN1Encodable value;

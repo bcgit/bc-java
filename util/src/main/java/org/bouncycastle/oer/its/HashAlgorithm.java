@@ -17,6 +17,8 @@ public class HashAlgorithm
 
     public static final HashAlgorithm sha256 = new HashAlgorithm(0);
     public static final HashAlgorithm sha384 = new HashAlgorithm(1);
+    public static final HashAlgorithm extension = new HashAlgorithm(2);
+
     private final ASN1Enumerated enumerated;
 
     protected HashAlgorithm(int ordinal)
@@ -29,7 +31,7 @@ public class HashAlgorithm
         this.enumerated = enumerated;
     }
 
-    public HashAlgorithm getInstance(Object src)
+    public static HashAlgorithm getInstance(Object src)
     {
         if (src == null)
         {
