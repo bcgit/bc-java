@@ -39,15 +39,6 @@ public class Duration
     {
         this.tag = tag;
         this.value = value;
-
-        if (tag < 0 || tag > 6)
-        {
-            throw new IllegalArgumentException("tag must be 0 <= tag <= 6");
-        }
-        if (value < 0 || value > 0xFFFF)
-        {
-            throw new IllegalArgumentException("value must be 0 <= value <= 0xFFFF");
-        }
     }
 
     public static Duration getInstance(Object o)

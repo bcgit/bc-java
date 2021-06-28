@@ -9,8 +9,6 @@ import org.bouncycastle.util.BigIntegers;
 
 /**
  * <pre>
- *     Uint16 ::= INTEGER (0..65535)
- *
  *     IValue ::= Uint16
  * </pre>
  */

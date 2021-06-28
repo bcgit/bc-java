@@ -1,9 +1,11 @@
 package org.bouncycastle.oer.its;
 
 import org.bouncycastle.asn1.ASN1Choice;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 
@@ -23,11 +25,12 @@ public class IdentifiedRegion
     public static final int countryOnly = 0;
     public static final int countryAndRegions = 1;
     public static final int countAndSubregions = 2;
+    public static final int extension = 3;
 
     private int choice;
-    private RegionInterface region;
+    private ASN1Encodable region;
 
-    public IdentifiedRegion(int choice, RegionInterface region)
+    public IdentifiedRegion(int choice, ASN1Encodable region)
     {
         this.choice = choice;
         this.region = region;
@@ -54,6 +57,8 @@ public class IdentifiedRegion
                 return new IdentifiedRegion(choice, CountryAndRegions.getInstance(o));
             case countAndSubregions:
                 return new IdentifiedRegion(choice, RegionAndSubregions.getInstance(o));
+            case extension:
+                return new IdentifiedRegion(choice, DEROctetString.getInstance(o));
             default:
                 throw new IllegalArgumentException("unknown choice " + choice);
             }

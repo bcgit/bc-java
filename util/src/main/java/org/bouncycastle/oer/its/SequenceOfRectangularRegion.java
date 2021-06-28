@@ -1,9 +1,14 @@
 package org.bouncycastle.oer.its;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 
 /**
  * <pre>
@@ -13,20 +18,40 @@ import org.bouncycastle.asn1.DERSequence;
 public class SequenceOfRectangularRegion
     extends ASN1Object
 {
-    private final RectangularRegion[] sequence;
+    private final List<RectangularRegion> rectangularRegions;
 
-    private SequenceOfRectangularRegion(ASN1Sequence seq)
+
+    public SequenceOfRectangularRegion(List<RectangularRegion> items)
     {
-        this.sequence = new RectangularRegion[seq.size()];
+        rectangularRegions = Collections.unmodifiableList(items);
+    }
 
-        for (int i = 0; i != seq.size(); i++)
+
+    public static SequenceOfRectangularRegion getInstance(Object o)
+    {
+        if (o instanceof SequenceOfRectangularRegion)
         {
-            sequence[i] = RectangularRegion.getInstance(seq.getObjectAt(i));
+            return (SequenceOfRectangularRegion)o;
         }
+
+        List<RectangularRegion> items = new ArrayList<>();
+        ASN1Sequence seq = ASN1Sequence.getInstance(o);
+        for (Iterator<ASN1Encodable> it = seq.iterator(); it.hasNext(); )
+        {
+            items.add(RectangularRegion.getInstance(it.next()));
+        }
+
+        return new SequenceOfRectangularRegion(items);
+    }
+
+
+    public List<RectangularRegion> getRectangularRegions()
+    {
+        return rectangularRegions;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(sequence);
+        return Utils.toSequence(rectangularRegions);
     }
 }

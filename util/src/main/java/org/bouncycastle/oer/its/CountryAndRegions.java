@@ -44,7 +44,8 @@ public class CountryAndRegions
         {
             regionList.add(Region.getInstance(regions.getObjectAt(t)));
         }
-        return new CountryAndRegionsBuilder().setCountryOnly(countryOnly).setRegionList(regionList).build();
+
+        return new CountryAndRegions(countryOnly, regionList);
 
     }
 
@@ -54,10 +55,19 @@ public class CountryAndRegions
         return Utils.toSequence(countryOnly, Utils.toSequence(regions));
     }
 
-
     public static CountryAndRegionsBuilder builder()
     {
         return new CountryAndRegionsBuilder();
+    }
+
+    public CountryOnly getCountryOnly()
+    {
+        return countryOnly;
+    }
+
+    public List<Region> getRegions()
+    {
+        return regions;
     }
 
     public static class CountryAndRegionsBuilder

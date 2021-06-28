@@ -40,6 +40,7 @@ import org.bouncycastle.oer.its.Psid;
 import org.bouncycastle.oer.its.PsidGroupPermissions;
 import org.bouncycastle.oer.its.PsidSsp;
 import org.bouncycastle.oer.its.PsidSspRange;
+import org.bouncycastle.oer.its.PublicEncryptionKey;
 import org.bouncycastle.oer.its.SequenceOfPsidGroupPermissions;
 import org.bouncycastle.oer.its.SequenceOfPsidSsp;
 import org.bouncycastle.oer.its.SequenceOfPsidSspRange;
@@ -47,6 +48,7 @@ import org.bouncycastle.oer.its.ServiceSpecificPermissions;
 import org.bouncycastle.oer.its.SspRange;
 import org.bouncycastle.oer.its.SubjectAssurance;
 import org.bouncycastle.oer.its.SubjectPermissions;
+import org.bouncycastle.oer.its.SymmAlgorithm;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
@@ -58,6 +60,16 @@ public class ITSBasicTest
     extends TestCase
 {
 
+
+    public void testWithEncryptionKey()
+        throws Exception
+    {
+        byte[] certRaw = Hex.decode("80030080e5f6db2f26d073ae798300000000001a5617008466a88101011a0d203004268ab91a0645a1042d65488001018002026f810302013201012080010780012482080301fffc03ff0003800125820a0401ffffff04ff00000080018982060201e002ff1f80018a82060201c002ff3f80018b820e0601000000fff806ff000000000780018c820a0401ffffe004ff00001f00018dc0008082e35a13ea972ef64806c7bff581f4effd2b7118bc3e096e194b47d859e1334b93808082a2f65bbb216fdee3c18c9fd5b4197e884b938de55feed7ed96f11713215e6258808019b31711707d09aa00b79973190bbd84eefd1255ad3b4f1a4d224b4172dfadddce409989d93178a3ec054b814bce4bbb99a979e4624c9972b8b0c862ff9ae70b");
+        ITSCertificate cert = loadCertificate(certRaw);
+
+        PublicEncryptionKey pec = cert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getEncryptionKey();
+        assertSame(pec.getSupportedSymmAlg(), SymmAlgorithm.aes128Ccm);
+    }
 
     public void testImplicitBuilder()
         throws Exception
@@ -87,63 +99,63 @@ public class ITSBasicTest
 
         certificateBuilder.setAppPermissions(
             PsidSsp.builder()
-                    .setPsid(new Psid(622))
-                    .setSsp(ServiceSpecificPermissions.builder()
-                        .bitmapSsp(new DEROctetString(Hex.decode("0101")))
-                        .createServiceSpecificPermissions())
-                    .createPsidSsp(),
+                .setPsid(new Psid(622))
+                .setSsp(ServiceSpecificPermissions.builder()
+                    .bitmapSsp(new DEROctetString(Hex.decode("0101")))
+                    .createServiceSpecificPermissions())
+                .createPsidSsp(),
             PsidSsp.builder()
-                    .setPsid(new Psid(624))
-                    .setSsp(ServiceSpecificPermissions.builder()
-                        .bitmapSsp(new DEROctetString(Hex.decode("020138")))
-                        .createServiceSpecificPermissions())
-                    .createPsidSsp()); // App Permissions
+                .setPsid(new Psid(624))
+                .setSsp(ServiceSpecificPermissions.builder()
+                    .bitmapSsp(new DEROctetString(Hex.decode("020138")))
+                    .createServiceSpecificPermissions())
+                .createPsidSsp()); // App Permissions
 
         certificateBuilder.setCertIssuePermissions(
             PsidGroupPermissions.builder()
-                    .setSubjectPermissions(
-                        SubjectPermissions.builder().explicit(
-                            SequenceOfPsidSspRange.builder()
-                                .add(PsidSspRange.builder()
-                                    .setPsid(36).setSspRange(SspRange.builder().extension(Hex.decode("0301fffc03ff0003")).createSspRange()).createPsidSspRange())
-                                .add(PsidSspRange.builder()
-                                    .setPsid(37).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFFF04FF000000")).createSspRange()).createPsidSspRange())
-                                .add(PsidSspRange.builder()
-                                    .setPsid(137).setSspRange(SspRange.builder().extension(Hex.decode("0201E002FF1F")).createSspRange()).createPsidSspRange())
-                                .add(PsidSspRange.builder()
-                                    .setPsid(138).setSspRange(SspRange.builder().extension(Hex.decode("0201C002FF3F")).createSspRange()).createPsidSspRange())
-                                .add(PsidSspRange.builder()
-                                    .setPsid(139).setSspRange(SspRange.builder().extension(Hex.decode("0601000000FFF806FF0000000007")).createSspRange()).createPsidSspRange())
-                                .add(PsidSspRange.builder()
-                                    .setPsid(140).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFE004FF00001F")).createSspRange()).createPsidSspRange())
-                                .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
-                                .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
-                                .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
-                                .add(PsidSspRange.builder().setPsid(98).createPsidSspRange())
-                                .add(PsidSspRange.builder().setPsid(99).createPsidSspRange())
-                                .add(PsidSspRange.builder().setPsid(100).createPsidSspRange())
-                                .add(PsidSspRange.builder().setPsid(101).createPsidSspRange())
-                                .add(PsidSspRange.builder().setPsid(102).createPsidSspRange())
-                                .build()
-                        ).createSubjectPermissions())
-                    .setMinChainLength(2)
-                    .setChainLengthRange(0)
-                    .setEeType(new EndEntityType(0xC0))
-                    .createPsidGroupPermissions(),
-                PsidGroupPermissions.builder()
-                    .setSubjectPermissions(SubjectPermissions.builder()
-                        .explicit(SequenceOfPsidSspRange.builder()
+                .setSubjectPermissions(
+                    SubjectPermissions.builder().explicit(
+                        SequenceOfPsidSspRange.builder()
                             .add(PsidSspRange.builder()
-                                .setPsid(623)
-                                .setSspRange(
-                                    SspRange.builder()
-                                        .extension(Hex.decode("0201FE02FF01"))
-                                        .createSspRange()).createPsidSspRange())
-                            .build())
-                        .createSubjectPermissions())
-                    .setMinChainLength(1)
-                    .setChainLengthRange(0)
-                    .setEeType(new EndEntityType(0xC0)).createPsidGroupPermissions());
+                                .setPsid(36).setSspRange(SspRange.builder().extension(Hex.decode("0301fffc03ff0003")).createSspRange()).createPsidSspRange())
+                            .add(PsidSspRange.builder()
+                                .setPsid(37).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFFF04FF000000")).createSspRange()).createPsidSspRange())
+                            .add(PsidSspRange.builder()
+                                .setPsid(137).setSspRange(SspRange.builder().extension(Hex.decode("0201E002FF1F")).createSspRange()).createPsidSspRange())
+                            .add(PsidSspRange.builder()
+                                .setPsid(138).setSspRange(SspRange.builder().extension(Hex.decode("0201C002FF3F")).createSspRange()).createPsidSspRange())
+                            .add(PsidSspRange.builder()
+                                .setPsid(139).setSspRange(SspRange.builder().extension(Hex.decode("0601000000FFF806FF0000000007")).createSspRange()).createPsidSspRange())
+                            .add(PsidSspRange.builder()
+                                .setPsid(140).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFE004FF00001F")).createSspRange()).createPsidSspRange())
+                            .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
+                            .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
+                            .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
+                            .add(PsidSspRange.builder().setPsid(98).createPsidSspRange())
+                            .add(PsidSspRange.builder().setPsid(99).createPsidSspRange())
+                            .add(PsidSspRange.builder().setPsid(100).createPsidSspRange())
+                            .add(PsidSspRange.builder().setPsid(101).createPsidSspRange())
+                            .add(PsidSspRange.builder().setPsid(102).createPsidSspRange())
+                            .build()
+                    ).createSubjectPermissions())
+                .setMinChainLength(2)
+                .setChainLengthRange(0)
+                .setEeType(new EndEntityType(0xC0))
+                .createPsidGroupPermissions(),
+            PsidGroupPermissions.builder()
+                .setSubjectPermissions(SubjectPermissions.builder()
+                    .explicit(SequenceOfPsidSspRange.builder()
+                        .add(PsidSspRange.builder()
+                            .setPsid(623)
+                            .setSspRange(
+                                SspRange.builder()
+                                    .extension(Hex.decode("0201FE02FF01"))
+                                    .createSspRange()).createPsidSspRange())
+                        .build())
+                    .createSubjectPermissions())
+                .setMinChainLength(1)
+                .setChainLengthRange(0)
+                .setEeType(new EndEntityType(0xC0)).createPsidGroupPermissions());
 
         ITSCertificate cert = certificateBuilder.build(
             CertificateId.builder()
@@ -247,12 +259,12 @@ public class ITSBasicTest
                     .setEeType(new EndEntityType(0xC0))
                     .createPsidGroupPermissions())
                 .createSequenceOfPsidGroupPermissions());
-        
+
         tbsBuilder.setCrlSeries(new CrlSeries(1));
 
         ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
         BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
-        
+
         itsCertificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
 
         ITSCertificate newCert = itsCertificateBuilder.build(
@@ -354,55 +366,6 @@ public class ITSBasicTest
         return certificate;
     }
 
-
-//    static class HexIn
-//        extends FilterInputStream
-//    {
-//
-//        /**
-//         * Creates a {@code FilterInputStream}
-//         * by assigning the  argument {@code in}
-//         * to the field {@code this.in} so as
-//         * to remember it for later use.
-//         *
-//         * @param in the underlying input stream, or {@code null} if
-//         *           this instance is to be created without an underlying stream.
-//         */
-//        protected HexIn(InputStream in)
-//        {
-//            super(in);
-//        }
-//
-//        @Override
-//        public int read()
-//            throws IOException
-//        {
-//            int r = super.read();
-//            System.out.println(Hex.toHexString(new byte[]{(byte)(r & 0xFF)}));
-//            return r;
-//        }
-//
-//        @Override
-//        public int read(byte[] b)
-//            throws IOException
-//        {
-//
-//            int i = super.read(b);
-//            System.out.println(Hex.toHexString(b));
-//            return i;
-//        }
-//
-//        @Override
-//        public int read(byte[] b, int off, int len)
-//            throws IOException
-//        {
-//            int i = super.read(b, off, len);
-//
-//            System.out.println(Hex.toHexString(b, off, i));
-//            return i;
-//
-//        }
-//    }
 
 }
 

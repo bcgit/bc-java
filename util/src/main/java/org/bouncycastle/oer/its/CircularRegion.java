@@ -20,7 +20,7 @@ public class CircularRegion
     private final TwoDLocation center;
     private final Uint16 radius;
 
-    private CircularRegion(TwoDLocation center, Uint16 radius)
+    public CircularRegion(TwoDLocation center, Uint16 radius)
     {
         this.center = center;
         this.radius = radius;
@@ -33,10 +33,11 @@ public class CircularRegion
             return (CircularRegion)o;
         }
         ASN1Sequence seq = ASN1Sequence.getInstance(o);
-        return new Builder()
-            .setCenter(TwoDLocation.getInstance(seq.getObjectAt(0)))
-            .setRadius(Uint16.getInstance(seq.getObjectAt(1)))
-            .createCircularRegion();
+
+        return new CircularRegion(
+            TwoDLocation.getInstance(seq.getObjectAt(0)),
+            Uint16.getInstance(seq.getObjectAt(1))
+        );
 
     }
 

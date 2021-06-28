@@ -20,11 +20,11 @@ import org.bouncycastle.oer.OEROptional;
 public class CertificateBase
     extends ASN1Object
 {
-    private ASN1Integer version;
-    private CertificateType type;
-    private IssuerIdentifier issuer;
-    private ToBeSignedCertificate toBeSignedCertificate;
-    private Signature signature;
+    private final ASN1Integer version;
+    private final CertificateType type;
+    private final IssuerIdentifier issuer;
+    private final ToBeSignedCertificate toBeSignedCertificate;
+    private final Signature signature;
 
 
     public CertificateBase(ASN1Integer version,
