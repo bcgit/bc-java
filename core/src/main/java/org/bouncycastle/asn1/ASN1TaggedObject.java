@@ -365,6 +365,10 @@ public abstract class ASN1TaggedObject
     public ASN1Primitive getBaseUniversal(boolean declaredExplicit, int tagNo)
     {
         ASN1UniversalType universalType = ASN1UniversalTypes.get(tagNo);
+        if (null == universalType)
+        {
+            throw new IllegalArgumentException("unsupported UNIVERSAL tag number: " + tagNo);
+        }
 
         if (declaredExplicit)
         {
@@ -373,39 +377,12 @@ public abstract class ASN1TaggedObject
                 throw new IllegalArgumentException("object implicit - explicit expected.");
             }
 
-            // TODO Implement all universal types, then remove this block
-            if (null == universalType)
-            {
-                return obj.toASN1Primitive();
-            }
-
             return universalType.checkedCast(obj.toASN1Primitive());
         }
 
         if (DECLARED_EXPLICIT == explicitness)
         {
             throw new IllegalArgumentException("object explicit - implicit expected.");
-        }
-
-        // TODO Implement all universal types, then remove this block
-        if (null == universalType)
-        {
-            // Handle implicit objects generically by re-encoding with new tag
-            try
-            {
-                ByteArrayOutputStream buf = new ByteArrayOutputStream();
-                ASN1OutputStream output = ASN1OutputStream.create(buf, getASN1Encoding());
-                encode(output, true, BERTags.UNIVERSAL, tagNo);
-                output.flushInternal();
-        
-                byte[] encoding = buf.toByteArray();
-        
-                return ASN1Primitive.fromByteArray(encoding);
-            }
-            catch (IOException e)
-            {
-                throw new IllegalStateException("failed to re-tag implicit object", e);
-            }
         }
 
         ASN1Primitive primitive = obj.toASN1Primitive();

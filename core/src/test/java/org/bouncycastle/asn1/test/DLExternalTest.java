@@ -43,27 +43,27 @@ public class DLExternalTest
         String ecType;
         try
         {
-            new DLExternal(vec);
+            new DLExternal(new DLSequence(vec));
             fail("exception expected");
         }
         catch (IllegalArgumentException iae)
         {
-            isEquals("check message", "too few objects in input vector", iae.getMessage());
+            isEquals("check message", "too few objects in input sequence", iae.getMessage());
         }
 
         vec.add(new DERUTF8String("something completely different"));
         try
         {
-            new DLExternal(vec);
+            new DLExternal(new DLSequence(vec));
             fail("exception expected");
         }
         catch (IllegalArgumentException iae)
         {
-            isEquals("check message", "too few objects in input vector", iae.getMessage());
+            isEquals("check message", "too few objects in input sequence", iae.getMessage());
         }
         vec.add(new DLTaggedObject(true, 1, new ASN1Integer(1234567890L)));
 
-        DLExternal dle = new DLExternal(vec);
+        DLExternal dle = new DLExternal(new DLSequence(vec));
 
         isEquals("check direct reference", null, dle.getDirectReference());
         isEquals("check indirect reference", null, dle.getIndirectReference());
