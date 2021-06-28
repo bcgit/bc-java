@@ -27,7 +27,7 @@ public class CertificateId
     public static final int name = 1;
     public static final int binaryId = 2;
     public static final int none = 3;
-    public static final int extenstion = 4;
+    public static final int extension = 4;
 
     private final int choice;
     private final ASN1Encodable value;
@@ -54,7 +54,7 @@ public class CertificateId
                 return new CertificateId(item, LinkageData.getInstance(asn1TaggedObject.getObject()));
             case name:
                 return new CertificateId(item, Hostname.getInstance(asn1TaggedObject.getObject()));
-            case extenstion:
+            case extension:
             case binaryId:
                 return new CertificateId(item, DEROctetString.getInstance(asn1TaggedObject.getObject()));
             case none:
@@ -75,6 +75,11 @@ public class CertificateId
     public int getChoice()
     {
         return choice;
+    }
+
+    public ASN1Encodable getValue()
+    {
+        return value;
     }
 
     public static Builder builder()
@@ -130,7 +135,7 @@ public class CertificateId
 
         public Builder extension(byte[] data)
         {
-            this.choice = extenstion;
+            this.choice = extension;
             this.value = new DEROctetString(data);
             return this;
         }

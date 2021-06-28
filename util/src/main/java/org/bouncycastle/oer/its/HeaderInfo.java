@@ -3,7 +3,6 @@ package org.bouncycastle.oer.its;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
@@ -24,11 +23,9 @@ import org.bouncycastle.asn1.DERSequence;
 public class HeaderInfo
     extends ASN1Object
 {
-    private HeaderInfo(ASN1Sequence seq)
-    {
 
-    }
 
+    //TODO needs implementing.
     public static HeaderInfo getInstance(Object o)
     {
         if (o instanceof HeaderInfo)
@@ -37,7 +34,7 @@ public class HeaderInfo
         }
         else if (o != null)
         {
-            return new HeaderInfo(ASN1Sequence.getInstance(o));
+            //return new HeaderInfo(ASN1Sequence.getInstance(o));
         }
 
         return null;

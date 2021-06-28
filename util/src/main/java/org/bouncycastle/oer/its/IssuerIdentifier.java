@@ -51,12 +51,14 @@ public class IssuerIdentifier
 
             switch (item)
             {
-            case 0: // sha256AndDigest HashId8
-                return new IssuerIdentifier(sha256AndDigest, taggedObject.getObject());
-            case 1: // self HashAlgorithm
-                return new IssuerIdentifier(self, taggedObject.getObject());
-            case 2: // sha384AndDigest  HashedId8
-                return new IssuerIdentifier(sha384AndDigest, taggedObject.getObject());
+            case sha256AndDigest: // sha256AndDigest HashId8
+                return new IssuerIdentifier(sha256AndDigest, HashedId.HashedId8.getInstance(taggedObject.getObject()));
+            case self: // self HashAlgorithm
+                return new IssuerIdentifier(self, HashAlgorithm.getInstance(taggedObject.getObject()));
+            case extension: // sha384AndDigest  HashedId8
+                return new IssuerIdentifier(extension, DEROctetString.getInstance(taggedObject.getObject()));
+            case sha384AndDigest: // sha384AndDigest  HashedId8
+                return new IssuerIdentifier(sha384AndDigest, HashedId.HashedId8.getInstance(taggedObject.getObject()));
             default:
                 throw new IllegalArgumentException("unable to decode into known choice" + item);
             }

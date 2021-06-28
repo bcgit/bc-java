@@ -32,10 +32,11 @@ public class EncryptedData
         }
 
         ASN1Sequence sequence = ASN1Sequence.getInstance(o);
-        return new Builder()
-            .setRecipients(SequenceOfRecipientInfo.getInstance(sequence.getObjectAt(0)))
-            .setCiphertext(SymmetricCiphertext.getInstance(sequence.getObjectAt(1)))
-            .createEncryptedData();
+
+        return new EncryptedData(
+            SequenceOfRecipientInfo.getInstance(sequence.getObjectAt(0)),
+            SymmetricCiphertext.getInstance(sequence.getObjectAt(1))
+        );
     }
 
 

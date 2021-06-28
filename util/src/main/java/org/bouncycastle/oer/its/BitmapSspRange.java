@@ -19,17 +19,10 @@ public class BitmapSspRange
     private final ASN1OctetString sspValue;
     private final ASN1OctetString sspBitmask;
 
-    private BitmapSspRange(ASN1Sequence seq)
+    public BitmapSspRange(ASN1OctetString sspValue, ASN1OctetString sspBitmask)
     {
-        if (seq.size() != 2)
-        {
-            throw new IllegalArgumentException("expected sequence with sspValue and sspBitmask");
-        }
-
-        sspValue =
-            ASN1OctetString.getInstance(seq.getObjectAt(0));
-        sspBitmask =
-            ASN1OctetString.getInstance(seq.getObjectAt(1));
+        this.sspValue = sspValue;
+        this.sspBitmask = sspBitmask;
     }
 
     public static BitmapSspRange getInstance(Object o)
@@ -40,12 +33,24 @@ public class BitmapSspRange
         }
         else if (o != null)
         {
-            return new BitmapSspRange(ASN1Sequence.getInstance(o));
+            ASN1Sequence seq = ASN1Sequence.getInstance(o);
+            return new BitmapSspRange(
+                ASN1OctetString.getInstance(seq.getObjectAt(0)),
+                ASN1OctetString.getInstance(seq.getObjectAt(1)));
         }
 
         return null;
     }
 
+    public ASN1OctetString getSspValue()
+    {
+        return sspValue;
+    }
+
+    public ASN1OctetString getSspBitmask()
+    {
+        return sspBitmask;
+    }
 
     public ASN1Primitive toASN1Primitive()
     {

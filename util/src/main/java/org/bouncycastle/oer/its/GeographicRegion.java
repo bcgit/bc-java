@@ -1,9 +1,11 @@
 package org.bouncycastle.oer.its;
 
 import org.bouncycastle.asn1.ASN1Choice;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -26,9 +28,10 @@ public class GeographicRegion
     public static final int rectangularRegion = 1;
     public static final int polygonalRegion = 2;
     public static final int identifiedRegion = 3;
+    public static final int extension = 4;
 
     private int choice;
-    private RegionInterface region;
+    private ASN1Encodable region;
 
     public static GeographicRegion getInstance(Object o)
     {
@@ -42,17 +45,18 @@ public class GeographicRegion
 
             int choice = taggedObject.getTagNo();
 
-            o = taggedObject.getObject();
             switch (choice)
             {
             case circularRegion:
-                return new GeographicRegion(choice, CircularRegion.getInstance(o));
+                return new GeographicRegion(choice, CircularRegion.getInstance(taggedObject.getObject()));
             case rectangularRegion:
-                return new GeographicRegion(choice, RectangularRegion.getInstance(o));
+                return new GeographicRegion(choice, SequenceOfRectangularRegion.getInstance(taggedObject.getObject()));
             case polygonalRegion:
-                return new GeographicRegion(choice, PolygonalRegion.getInstance(o));
+                return new GeographicRegion(choice, PolygonalRegion.getInstance(taggedObject.getObject()));
             case identifiedRegion:
-                return new GeographicRegion(choice, IdentifiedRegion.getInstance(o));
+                return new GeographicRegion(choice, SequenceOfIdentifiedRegion.getInstance(taggedObject.getObject()));
+            case extension:
+                return new GeographicRegion(choice, DEROctetString.getInstance(taggedObject.getObject()));
             default:
                 throw new IllegalStateException("unknown region choice " + choice);
             }
@@ -61,18 +65,19 @@ public class GeographicRegion
 
     }
 
-    public GeographicRegion(int choice, RegionInterface region)
+    public GeographicRegion(int choice, ASN1Encodable region)
     {
         this.choice = choice;
         this.region = region;
     }
+
 
     public int getChoice()
     {
         return choice;
     }
 
-    public RegionInterface getRegion()
+    public ASN1Encodable getRegion()
     {
         return region;
     }
