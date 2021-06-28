@@ -24,6 +24,8 @@ final class ASN1UniversalTypes
             return ASN1ObjectIdentifier.TYPE;
         case BERTags.OBJECT_DESCRIPTOR:         // [UNIVERSAL 7] IMPLICIT GraphicString
             return ASN1ObjectDescriptor.TYPE;
+        case BERTags.EXTERNAL:
+            return ASN1External.TYPE;
         case BERTags.ENUMERATED:
             return ASN1Enumerated.TYPE;
         case BERTags.UTF8_STRING:               // [UNIVERSAL 12] IMPLICIT OCTET STRING (encode as if)
@@ -57,16 +59,12 @@ final class ASN1UniversalTypes
         case BERTags.BMP_STRING:                // [UNIVERSAL 30] IMPLICIT OCTET STRING (encode as if)
             return ASN1BMPString.TYPE;
 
-        // TODO Handle remaining valid tags 
-        case BERTags.EXTERNAL:
-            return null;
-
         case BERTags.REAL:
         case BERTags.EMBEDDED_PDV:
         case BERTags.RELATIVE_OID:
         case BERTags.UNRESTRICTED_STRING:
         default:
-            throw new IllegalArgumentException("unsupported tag number: " + tagNumber);
+            return null;
         }
     }
 }

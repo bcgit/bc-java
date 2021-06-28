@@ -67,6 +67,12 @@ public class BERSequence
         return new BERBitString(getConstructedBitStrings());
     }
 
+    ASN1External toASN1External()
+    {
+        // TODO There is currently no BERExternal class
+        return ((ASN1Sequence)toDLObject()).toASN1External();
+    }
+
     ASN1OctetString toASN1OctetString()
     {
         return new BEROctetString(getConstructedOctetStrings());

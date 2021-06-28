@@ -343,6 +343,8 @@ public abstract class ASN1Sequence
 
     abstract ASN1BitString toASN1BitString();
 
+    abstract ASN1External toASN1External();
+
     abstract ASN1OctetString toASN1OctetString();
 
     abstract ASN1Set toASN1Set();

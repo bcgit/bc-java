@@ -136,6 +136,11 @@ public class DERSequence
         return new DERBitString(BERBitString.flattenBitStrings(getConstructedBitStrings()), false);
     }
 
+    ASN1External toASN1External()
+    {
+        return new DERExternal(this);
+    }
+
     ASN1OctetString toASN1OctetString()
     {
         return new DEROctetString(BEROctetString.flattenOctetStrings(getConstructedOctetStrings()));
