@@ -55,7 +55,15 @@ public class ITSValidityPeriod
     private final int duration;
     private final Unit timeUnit;
 
-    private ITSValidityPeriod(long startDate, int duration, Unit timeUnit)
+    public ITSValidityPeriod(ValidityPeriod validityPeriod)
+    {
+        this.startDate = validityPeriod.getTime32().longValueExact();
+        Duration duration = validityPeriod.getDuration();
+        this.duration = duration.getValue();
+        this.timeUnit = Unit.values()[duration.getTag()];
+    }
+
+    ITSValidityPeriod(long startDate, int duration, Unit timeUnit)
     {
         this.startDate = startDate;
         this.duration = duration;

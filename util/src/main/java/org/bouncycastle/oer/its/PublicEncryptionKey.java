@@ -13,10 +13,8 @@ import org.bouncycastle.asn1.ASN1Sequence;
 public class PublicEncryptionKey
     extends ASN1Object
 {
-
     private final SymmAlgorithm supportedSymmAlg;
     private final BasePublicEncryptionKey basePublicEncryptionKey;
-
 
     public static PublicEncryptionKey getInstance(Object o)
     {

@@ -9,7 +9,6 @@ public class SymmAlgorithm
 {
     public static SymmAlgorithm aes128Ccm = new SymmAlgorithm(0);
 
-
     public SymmAlgorithm(int ordinal)
     {
         super(ordinal);

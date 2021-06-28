@@ -6,7 +6,6 @@ import java.security.SecureRandom;
 import java.util.Date;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
@@ -32,7 +31,6 @@ import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.CrlSeries;
-import org.bouncycastle.oer.its.Duration;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.EndEntityType;
 import org.bouncycastle.oer.its.HashedId;
@@ -50,7 +48,6 @@ import org.bouncycastle.oer.its.SspRange;
 import org.bouncycastle.oer.its.SubjectAssurance;
 import org.bouncycastle.oer.its.SubjectPermissions;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
-import org.bouncycastle.oer.its.ValidityPeriod;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.util.Arrays;
@@ -80,26 +77,30 @@ public class ITSBasicTest
 
 
         ToBeSignedCertificate.Builder tbsBuilder = new ToBeSignedCertificate.Builder();
-        tbsBuilder.setAppPermissions(
-            SequenceOfPsidSsp.builder()
-                .setItem(PsidSsp.builder()
+
+        tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
+        // builder.setCanRequestRollover(OEROptional.ABSENT);
+
+        BcITSImplicitCertificateBuilder certificateBuilder = new BcITSImplicitCertificateBuilder(caCert, tbsBuilder);
+
+        certificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
+
+        certificateBuilder.setAppPermissions(
+            PsidSsp.builder()
                     .setPsid(new Psid(622))
                     .setSsp(ServiceSpecificPermissions.builder()
                         .bitmapSsp(new DEROctetString(Hex.decode("0101")))
                         .createServiceSpecificPermissions())
-                    .createPsidSsp())
-                .setItem(PsidSsp.builder()
+                    .createPsidSsp(),
+            PsidSsp.builder()
                     .setPsid(new Psid(624))
                     .setSsp(ServiceSpecificPermissions.builder()
                         .bitmapSsp(new DEROctetString(Hex.decode("020138")))
                         .createServiceSpecificPermissions())
-                    .createPsidSsp())
-                .createSequenceOfPsidSsp()); // App Permissions
-        tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
-        // builder.setCanRequestRollover(OEROptional.ABSENT);
-        tbsBuilder.setCertIssuePermissions(
-            SequenceOfPsidGroupPermissions.builder()
-                .addGroupPermission(PsidGroupPermissions.builder()
+                    .createPsidSsp()); // App Permissions
+
+        certificateBuilder.setCertIssuePermissions(
+            PsidGroupPermissions.builder()
                     .setSubjectPermissions(
                         SubjectPermissions.builder().explicit(
                             SequenceOfPsidSspRange.builder()
@@ -128,9 +129,8 @@ public class ITSBasicTest
                     .setMinChainLength(2)
                     .setChainLengthRange(0)
                     .setEeType(new EndEntityType(0xC0))
-
-                    .createPsidGroupPermissions())
-                .addGroupPermission(PsidGroupPermissions.builder()
+                    .createPsidGroupPermissions(),
+                PsidGroupPermissions.builder()
                     .setSubjectPermissions(SubjectPermissions.builder()
                         .explicit(SequenceOfPsidSspRange.builder()
                             .add(PsidSspRange.builder()
@@ -143,19 +143,7 @@ public class ITSBasicTest
                         .createSubjectPermissions())
                     .setMinChainLength(1)
                     .setChainLengthRange(0)
-                    .setEeType(new EndEntityType(0xC0))
-                    .createPsidGroupPermissions())
-                .createSequenceOfPsidGroupPermissions());
-
-
-        tbsBuilder.setCracaId(new HashedId.HashedId3(new byte[]{0, 1, 2}));
-        tbsBuilder.setCrlSeries(new CrlSeries(1));
-        tbsBuilder.setValidityPeriod(ValidityPeriod.builder()
-            .setTime32(new ASN1Integer(System.currentTimeMillis() / 1000))
-            .setDuration(new Duration(Duration.years, 1)).createValidityPeriod());
-
-
-        BcITSImplicitCertificateBuilder certificateBuilder = new BcITSImplicitCertificateBuilder(caCert, tbsBuilder);
+                    .setEeType(new EndEntityType(0xC0)).createPsidGroupPermissions());
 
         ITSCertificate cert = certificateBuilder.build(
             CertificateId.builder()
@@ -166,12 +154,12 @@ public class ITSBasicTest
             .builder()
             .sha256AndDigest(new HashedId.HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length)))
             .createIssuerIdentifier();
+
         assertTrue(cert.getIssuer().equals(caIssuerIdentifier));
 
         VerificationKeyIndicator vki = cert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getVerificationKeyIndicator();
         assertEquals(vki.getChoice(), VerificationKeyIndicator.reconstructionValue);
         assertEquals(vki.getObject(), EccP256CurvePoint.builder().uncompressedP256(BigInteger.ONE, BigIntegers.TWO).createEccP256CurvePoint());
-
     }
 
 
@@ -259,9 +247,7 @@ public class ITSBasicTest
                     .setEeType(new EndEntityType(0xC0))
                     .createPsidGroupPermissions())
                 .createSequenceOfPsidGroupPermissions());
-
-
-        tbsBuilder.setCracaId(new HashedId.HashedId3(new byte[]{0, 1, 2}));
+        
         tbsBuilder.setCrlSeries(new CrlSeries(1));
 
         ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
@@ -277,7 +263,6 @@ public class ITSBasicTest
         boolean valid = newCert.isSignatureValid(provider);
 
         TestCase.assertTrue(valid);
-
     }
 
 

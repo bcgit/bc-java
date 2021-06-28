@@ -2,7 +2,6 @@ package org.bouncycastle.its;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.MessageDigest;
 
 import org.bouncycastle.its.operator.ECDSAEncoder;
 import org.bouncycastle.its.operator.ITSContentVerifierProvider;
@@ -13,7 +12,6 @@ import org.bouncycastle.oer.its.Signature;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.util.Encodable;
-import org.bouncycastle.util.encoders.Hex;
 
 public class ITSCertificate
     implements Encodable
@@ -28,6 +26,11 @@ public class ITSCertificate
     public IssuerIdentifier getIssuer()
     {
         return certificate.getCertificateBase().getIssuer();
+    }
+
+    public ITSValidityPeriod getValidityPeriod()
+    {
+        return new ITSValidityPeriod(certificate.getCertificateBase().getToBeSignedCertificate().getValidityPeriod());
     }
 
     public boolean isSignatureValid(ITSContentVerifierProvider verifierProvider)
