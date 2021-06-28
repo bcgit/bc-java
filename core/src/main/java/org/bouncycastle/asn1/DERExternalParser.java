@@ -6,7 +6,7 @@ import java.io.IOException;
  * Parser DER EXTERNAL tagged objects.
  */
 public class DERExternalParser
-    implements ASN1Encodable, InMemoryRepresentable
+    implements ASN1ExternalParser
 {
     private ASN1StreamParser _parser;
 
