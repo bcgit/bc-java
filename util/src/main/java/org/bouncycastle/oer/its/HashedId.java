@@ -37,20 +37,17 @@ public class HashedId
         default:
             throw new IllegalStateException("hash id of unsupported length, length was: " + octetString.length);
         }
-
     }
-
 
     public static class HashedId3
         extends HashedId
     {
-
         public HashedId3(byte[] string)
         {
             super(string);
             if (string.length != 3)
             {
-                throw new IllegalStateException("hash id not 32 bytes");
+                throw new IllegalArgumentException("hash id not 3 bytes");
             }
         }
     }
@@ -58,13 +55,12 @@ public class HashedId
     public static class HashedId8
         extends HashedId
     {
-
         public HashedId8(byte[] string)
         {
             super(string);
             if (string.length != 8)
             {
-                throw new IllegalStateException("hash id not 8 bytes");
+                throw new IllegalArgumentException("hash id not 8 bytes");
             }
         }
     }
@@ -72,13 +68,12 @@ public class HashedId
     public static class HashedId10
         extends HashedId
     {
-
         public HashedId10(byte[] string)
         {
             super(string);
             if (string.length != 10)
             {
-                throw new IllegalStateException("hash id not 10 bytes");
+                throw new IllegalArgumentException("hash id not 10 bytes");
             }
         }
     }
@@ -86,17 +81,15 @@ public class HashedId
     public static class HashedId32
         extends HashedId
     {
-
         public HashedId32(byte[] string)
         {
             super(string);
             if (string.length != 32)
             {
-                throw new IllegalStateException("hash id not 32 bytes");
+                throw new IllegalArgumentException("hash id not 32 bytes");
             }
         }
     }
-
 
     public ASN1Primitive toASN1Primitive()
     {
