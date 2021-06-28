@@ -127,6 +127,11 @@ public class DLSequence
         return new DLBitString(BERBitString.flattenBitStrings(getConstructedBitStrings()), false);
     }
 
+    ASN1External toASN1External()
+    {
+        return new DLExternal(this);
+    }
+
     ASN1OctetString toASN1OctetString()
     {
         // NOTE: There is no DLOctetString

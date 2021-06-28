@@ -1,56 +1,86 @@
 package org.bouncycastle.asn1;
 
-import java.io.IOException;
-
 /**
  * Class representing the DER-type External
  */
 public abstract class ASN1External
     extends ASN1Primitive
 {
-    protected ASN1ObjectIdentifier directReference;
-    protected ASN1Integer indirectReference;
-    protected ASN1Primitive dataValueDescriptor;
-    protected int encoding;
-    protected ASN1Primitive externalContent;
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1External.class, BERTags.EXTERNAL)
+    {
+        ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
+        {
+            // TODO Ideally ASN1External would have no subclasses and just hold the sequence
+            return sequence.toASN1External();
+        }
+    };
 
-    /**
-     * Construct an EXTERNAL object, the input encoding vector must have exactly two elements on it.
-     * <p>
-     * Acceptable input formats are:
-     * <ul>
-     * <li> {@link ASN1ObjectIdentifier} + data {@link DERTaggedObject} (direct reference form)</li>
-     * <li> {@link ASN1Integer} + data {@link DERTaggedObject} (indirect reference form)</li>
-     * <li> Anything but {@link DERTaggedObject} + data {@link DERTaggedObject} (data value form)</li>
-     * </ul>
-     *
-     * @throws IllegalArgumentException if input size is wrong, or
-     */
-    public ASN1External(ASN1EncodableVector vector)
+    public static ASN1External getInstance(Object obj)
+    {
+        if (obj == null || obj instanceof ASN1External)
+        {
+            return (ASN1External)obj;
+        }
+        if (obj instanceof ASN1Encodable)
+        {
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+            if (primitive instanceof ASN1External)
+            {
+                return (ASN1External)primitive;
+            }
+        }
+        if (obj instanceof byte[])
+        {
+            try
+            {
+                return (ASN1External)TYPE.fromByteArray((byte[])obj);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
+            }
+        }
+
+        throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
+    }
+
+    public static ASN1External getInstance(ASN1TaggedObject taggedObject, boolean explicit)
+    {
+        return (ASN1External)TYPE.getContextInstance(taggedObject, explicit);
+    }
+
+    ASN1ObjectIdentifier directReference;
+    ASN1Integer indirectReference;
+    // TODO Actually use ASN1ObjectDescriptor for this
+    ASN1Primitive dataValueDescriptor;
+    int encoding;
+    ASN1Primitive externalContent;
+
+    ASN1External(ASN1Sequence sequence)
     {
         int offset = 0;
 
-        ASN1Primitive enc = getObjFromVector(vector, offset);
+        ASN1Primitive enc = getObjFromSequence(sequence, offset);
         if (enc instanceof ASN1ObjectIdentifier)
         {
             directReference = (ASN1ObjectIdentifier)enc;
             offset++;
-            enc = getObjFromVector(vector, offset);
+            enc = getObjFromSequence(sequence, offset);
         }
         if (enc instanceof ASN1Integer)
         {
             indirectReference = (ASN1Integer) enc;
             offset++;
-            enc = getObjFromVector(vector, offset);
+            enc = getObjFromSequence(sequence, offset);
         }
         if (!(enc instanceof ASN1TaggedObject))
         {
             dataValueDescriptor = (ASN1Primitive) enc;
             offset++;
-            enc = getObjFromVector(vector, offset);
+            enc = getObjFromSequence(sequence, offset);
         }
 
-        if (vector.size() != offset + 1)
+        if (sequence.size() != offset + 1)
         {
             throw new IllegalArgumentException("input vector too large");
         }
@@ -64,39 +94,12 @@ public abstract class ASN1External
         externalContent = obj.getObject();
     }
 
-    private ASN1Primitive getObjFromVector(ASN1EncodableVector v, int index)
-    {
-        if (v.size() <= index)
-        {
-            throw new IllegalArgumentException("too few objects in input vector");
-        }
-
-        return v.get(index).toASN1Primitive();
-    }
-
-    /**
-     * Creates a new instance of External
-     * See X.690 for more informations about the meaning of these parameters
-     * @param directReference The direct reference or <code>null</code> if not set.
-     * @param indirectReference The indirect reference or <code>null</code> if not set.
-     * @param dataValueDescriptor The data value descriptor or <code>null</code> if not set.
-     * @param externalData The external data in its encoded form.
-     */
-    public ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)
+    ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)
     {
         this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(), externalData.toASN1Primitive());
     }
 
-    /**
-     * Creates a new instance of External.
-     * See X.690 for more informations about the meaning of these parameters
-     * @param directReference The direct reference or <code>null</code> if not set.
-     * @param indirectReference The indirect reference or <code>null</code> if not set.
-     * @param dataValueDescriptor The data value descriptor or <code>null</code> if not set.
-     * @param encoding The encoding to be used for the external data
-     * @param externalData The external data
-     */
-    public ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, int encoding, ASN1Primitive externalData)
+    ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, int encoding, ASN1Primitive externalData)
     {
         setDirectReference(directReference);
         setIndirectReference(indirectReference);
@@ -282,5 +285,15 @@ public abstract class ASN1External
     private void setIndirectReference(ASN1Integer indirectReference)
     {
         this.indirectReference = indirectReference;
+    }
+
+    private static ASN1Primitive getObjFromSequence(ASN1Sequence sequence, int index)
+    {
+        if (sequence.size() <= index)
+        {
+            throw new IllegalArgumentException("too few objects in input sequence");
+        }
+
+        return sequence.getObjectAt(index).toASN1Primitive();
     }
 }
