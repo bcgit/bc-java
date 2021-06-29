@@ -17,7 +17,6 @@ import org.bouncycastle.oer.its.CertificateType;
 import org.bouncycastle.oer.its.HashAlgorithm;
 import org.bouncycastle.oer.its.HashedId;
 import org.bouncycastle.oer.its.IssuerIdentifier;
-import org.bouncycastle.oer.its.PublicEncryptionKey;
 import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.Signature;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
@@ -43,12 +42,12 @@ public class ITSExplicitCertificateBuilder
         this.signer = signer;
     }
 
-    public ITSCertificate build(CertificateId certificateId, PublicVerificationKey verificationKey)
+    public ITSCertificate build(CertificateId certificateId, ITSPublicVerificationKey verificationKey)
     {
         return build(certificateId, verificationKey, null);
     }
 
-    public ITSCertificate build(CertificateId certificateId, PublicVerificationKey verificationKey, PublicEncryptionKey publicEncryptionKey)
+    public ITSCertificate build(CertificateId certificateId, ITSPublicVerificationKey verificationKey, ITSPublicEncryptionKey publicEncryptionKey)
     {
         ToBeSignedCertificate.Builder tbsBldr = new ToBeSignedCertificate.Builder(tbsCertificateBuilder);
         
@@ -56,11 +55,11 @@ public class ITSExplicitCertificateBuilder
 
         if (publicEncryptionKey != null)
         {
-            tbsBldr.setEncryptionKey(publicEncryptionKey);
+            tbsBldr.setEncryptionKey(publicEncryptionKey.toASN1Structure());
         }
 
         tbsBldr.setVerificationKeyIndicator(
-            VerificationKeyIndicator.builder().publicVerificationKey(verificationKey)
+            VerificationKeyIndicator.builder().publicVerificationKey(verificationKey.toASN1Structure())
                 .createVerificationKeyIndicator());
 
         ToBeSignedCertificate tbsCertificate = tbsBldr.createToBeSignedCertificate();
