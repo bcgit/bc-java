@@ -15,7 +15,6 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -171,7 +170,7 @@ public class ITSBasicTest
 
         VerificationKeyIndicator vki = cert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getVerificationKeyIndicator();
         assertEquals(vki.getChoice(), VerificationKeyIndicator.reconstructionValue);
-        assertEquals(vki.getObject(), EccP256CurvePoint.builder().uncompressedP256(BigInteger.ONE, BigIntegers.TWO).createEccP256CurvePoint());
+        assertEquals(vki.getObject(), EccP256CurvePoint.builder().createUncompressedP256(BigInteger.ONE, BigIntegers.TWO));
     }
 
 
@@ -185,7 +184,7 @@ public class ITSBasicTest
 
         ECKeyPairGenerator generator = new ECKeyPairGenerator();
         X9ECParameters parameters = NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1);
-        generator.init(new ECKeyGenerationParameters(new ECDomainParameters(parameters), rand));
+        generator.init(new ECKeyGenerationParameters(new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, parameters), rand));
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
 
         ECPublicKeyParameters publicVerificationKey = (ECPublicKeyParameters)kp.getPublic();
