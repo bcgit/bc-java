@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -220,9 +221,9 @@ public class OEROutputStream
                 //
                 // Tag prefix.
                 //
-                int tagClass = taggedObject.getTagClass(); 
+                int tagClass = taggedObject.getTagClass();
                 bb.writeBit(tagClass & BERTags.CONTEXT_SPECIFIC)
-                  .writeBit(tagClass & BERTags.APPLICATION);
+                    .writeBit(tagClass & BERTags.APPLICATION);
 
                 tag = taggedObject.getTagNo();
                 item = taggedObject.getObject();
@@ -341,19 +342,28 @@ public class OEROutputStream
                 //
                 // For twos compliment numbers of 1,2,4,8 bytes in encoded length.
                 //
-                intBytesForRange *= -1;
-                byte[] encoded = BigIntegers.asTwosCompliment(intBytesForRange, integer.getValue());
+
+                byte[] encoded;
+                BigInteger number = integer.getValue();
                 switch (intBytesForRange)
                 {
-                case 1:
-                case 2:
-                case 4:
-                case 8:
-                    out.write(encoded);
+                case -1:
+                    encoded = new byte[]{number.byteValueExact()};
+                    break;
+                case -2:
+                    encoded = Pack.shortToBigEndian(number.shortValueExact());
+                    break;
+                case -4:
+                    encoded = Pack.intToBigEndian(number.intValueExact());
+                    break;
+                case -8:
+                    encoded = Pack.longToBigEndian(number.longValueExact());
                     break;
                 default:
-                    throw new IllegalStateException("unknown uint length " + intBytesForRange);
+                    throw new IllegalStateException("unknown twos compliment length");
                 }
+
+                out.write(encoded);
             }
             else
             {

@@ -29,7 +29,7 @@ public class PolygonalRegion
         }
         else if (o != null)
         {
-            return new PolygonalRegion(Utils.toList(ASN1Sequence.getInstance(o), TwoDLocation.class));
+            return new PolygonalRegion(Utils.fillList(TwoDLocation.class, ASN1Sequence.getInstance(o)));
         }
         return null;
     }

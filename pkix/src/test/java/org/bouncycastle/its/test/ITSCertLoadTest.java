@@ -1,11 +1,19 @@
 package org.bouncycastle.its.test;
 
-import java.io.FilterInputStream;
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import junit.framework.TestCase;
-import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.its.ITSCertificate;
+import org.bouncycastle.oer.OEREncoder;
+import org.bouncycastle.oer.OERInputStream;
+import org.bouncycastle.oer.its.Certificate;
+import org.bouncycastle.oer.its.template.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.io.Streams;
 
 public class ITSCertLoadTest
     extends TestCase
@@ -74,10 +82,24 @@ public class ITSCertLoadTest
     private static final String certContentRoot = "/org/bouncycastle/its/certs";
 
 
+    public void testInt()
+        throws Exception
+    {
+        byte[] intData = Pack.intToBigEndian(Integer.MAX_VALUE);
+
+        OERInputStream oerin = new OERInputStream(new ByteArrayInputStream(intData));
+        ASN1Object o = oerin.parse(Ieee1609Dot2BaseTypes.NinetyDegreeInt.build());
+
+        System.out.println();
+
+    }
+
+
 //    public void test()
 //        throws Exception
 //    {
-//        String path = "/org/bouncycastle/its/certs/CERT_IUT_C3_AA.oer";
+//
+//        String path = "/org/bouncycastle/its/certs/CERT_IUT_B_AT.oer";
 //        byte[] data = Streams.readAll(this.getClass().getResourceAsStream(path));
 //        System.out.println(Hex.toHexString(data));
 //
@@ -92,11 +114,16 @@ public class ITSCertLoadTest
 //
 //        ITSCertificate certificate = new ITSCertificate(Certificate.getInstance(obj));
 //
+//        System.out.println("\noutput\n");
+//
+//        byte[] reEncoded = OEREncoder.toByteArrayLogging(certificate.toASN1Structure().getCertificateBase(), IEEE1609dot2.certificate);
+//
+//
 //        System.out.println();
 //
 //    }
 
-/*
+
     public void testLoadAllCerts()
         throws Exception
     {
@@ -112,12 +139,14 @@ public class ITSCertLoadTest
 
             try
             {
-                OERInputStream oerIn = new OERInputStream(src);
+                byte[] encodedCert = Streams.readAll(src);
+                OERInputStream oerIn = new OERInputStream(new ByteArrayInputStream(encodedCert));
                 ASN1Object obj = oerIn.parse(IEEE1609dot2.certificate);
                 ITSCertificate certificate = new ITSCertificate(Certificate.getInstance(obj));
 
+                byte[] reEncoded = OEREncoder.toByteArray(certificate.toASN1Structure().getCertificateBase(), IEEE1609dot2.certificate);
 
-                System.out.println("ok");
+                TestCase.assertTrue(path, Arrays.areEqual(encodedCert, reEncoded));
             }
             catch (Exception ex)
             {
@@ -128,55 +157,54 @@ public class ITSCertLoadTest
         }
     }
 
-    */
 
-    static class HexIn
-        extends FilterInputStream
-    {
-
-        /**
-         * Creates a {@code FilterInputStream}
-         * by assigning the  argument {@code in}
-         * to the field {@code this.in} so as
-         * to remember it for later use.
-         *
-         * @param in the underlying input stream, or {@code null} if
-         *           this instance is to be created without an underlying stream.
-         */
-        protected HexIn(InputStream in)
-        {
-            super(in);
-        }
-
-        @Override
-        public int read()
-            throws IOException
-        {
-            int r = super.read();
-            System.out.println(Hex.toHexString(new byte[]{(byte)(r & 0xFF)}));
-            return r;
-        }
-
-        @Override
-        public int read(byte[] b)
-            throws IOException
-        {
-
-            int i = super.read(b);
-            System.out.println(Hex.toHexString(b));
-            return i;
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len)
-            throws IOException
-        {
-            int i = super.read(b, off, len);
-
-            System.out.println(Hex.toHexString(b, off, i));
-            return i;
-
-        }
-    }
+//    static class HexIn
+//        extends FilterInputStream
+//    {
+//
+//        /**
+//         * Creates a {@code FilterInputStream}
+//         * by assigning the  argument {@code in}
+//         * to the field {@code this.in} so as
+//         * to remember it for later use.
+//         *
+//         * @param in the underlying input stream, or {@code null} if
+//         *           this instance is to be created without an underlying stream.
+//         */
+//        protected HexIn(InputStream in)
+//        {
+//            super(in);
+//        }
+//
+//        @Override
+//        public int read()
+//            throws IOException
+//        {
+//            int r = super.read();
+//            System.out.println(Hex.toHexString(new byte[]{(byte)(r & 0xFF)}));
+//            return r;
+//        }
+//
+//        @Override
+//        public int read(byte[] b)
+//            throws IOException
+//        {
+//
+//            int i = super.read(b);
+//            System.out.println(Hex.toHexString(b));
+//            return i;
+//        }
+//
+//        @Override
+//        public int read(byte[] b, int off, int len)
+//            throws IOException
+//        {
+//            int i = super.read(b, off, len);
+//
+//            System.out.println(Hex.toHexString(b, off, i));
+//            return i;
+//
+//        }
+//    }
 
 }

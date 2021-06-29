@@ -13,13 +13,14 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
@@ -209,7 +210,24 @@ public class OERInputStream
             {
                 data = allocateArray(Math.abs(bytesToRead));
                 Streams.readFully(this, data);
-                bi = new BigInteger(bytesToRead < 0 ? -1 : 1, data);
+                switch (data.length)
+                {
+                case 1:
+                    bi = BigInteger.valueOf(data[0]);
+                    break;
+                case 2:
+                    bi = BigInteger.valueOf(Pack.bigEndianToShort(data, 0));
+                    break;
+                case 4:
+                    bi = BigInteger.valueOf(Pack.bigEndianToInt(data, 0));
+                    break;
+                case 8:
+                    bi = BigInteger.valueOf(Pack.bigEndianToLong(data, 0));
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown size");
+                }
+
 
             }
             else if (element.isLowerRangeZero()) // INTEGER(0 ... MAX) or INTEGER (0 ... n)
