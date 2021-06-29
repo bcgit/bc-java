@@ -84,6 +84,6 @@ public class GeographicRegion
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, (ASN1Object)region);
+        return new DERTaggedObject(choice, region);
     }
 }

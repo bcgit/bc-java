@@ -34,11 +34,10 @@ public class TwoDLocation
         }
 
         ASN1Sequence seq = ASN1Sequence.getInstance(o);
-        return new Builder()
-            .setLatitude(Latitude.getInstance(seq.getObjectAt(0)))
-            .setLongitude(Longitude.getInstance(seq.getObjectAt(1)))
-            .createTwoDLocation();
 
+        return new TwoDLocation(
+            Latitude.getInstance(seq.getObjectAt(0)),
+            Longitude.getInstance(seq.getObjectAt(1)));
     }
 
     public ASN1Primitive toASN1Primitive()

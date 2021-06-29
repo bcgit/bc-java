@@ -1,11 +1,8 @@
 package org.bouncycastle.oer.its;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -34,14 +31,7 @@ public class SequenceOfRectangularRegion
             return (SequenceOfRectangularRegion)o;
         }
 
-        List<RectangularRegion> items = new ArrayList<RectangularRegion>();
-        ASN1Sequence seq = ASN1Sequence.getInstance(o);
-        for (Iterator<ASN1Encodable> it = seq.iterator(); it.hasNext(); )
-        {
-            items.add(RectangularRegion.getInstance(it.next()));
-        }
-
-        return new SequenceOfRectangularRegion(items);
+        return new SequenceOfRectangularRegion(Utils.fillList(RectangularRegion.class, ASN1Sequence.getInstance(o)));
     }
 
 
