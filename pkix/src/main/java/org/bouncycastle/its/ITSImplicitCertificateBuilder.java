@@ -81,7 +81,7 @@ public class ITSImplicitCertificateBuilder
     public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
     {
         EccP256CurvePoint reconstructionValue = EccP256CurvePoint.builder()
-            .uncompressedP256(x, y).createEccP256CurvePoint();
+            .createUncompressedP256(x, y);
 
         ToBeSignedCertificate.Builder tbsBldr = new ToBeSignedCertificate.Builder(tbsCertificateBuilder);
 
