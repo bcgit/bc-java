@@ -10,52 +10,53 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.its.ITSPublicEncryptionKey;
+import org.bouncycastle.its.ITSPublicVerificationKey;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.oer.its.BasePublicEncryptionKey;
 import org.bouncycastle.oer.its.EccCurvePoint;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.EccP384CurvePoint;
-import org.bouncycastle.oer.its.PublicEncryptionKey;
-import org.bouncycastle.oer.its.SymmAlgorithm;
+import org.bouncycastle.oer.its.PublicVerificationKey;
 
-public class BcITSPublicEncryptionKey
-    extends ITSPublicEncryptionKey
+public class BcITSPublicVerificationKey
+    extends ITSPublicVerificationKey
 {
-    public BcITSPublicEncryptionKey(PublicEncryptionKey encryptionKey)
+    public BcITSPublicVerificationKey(PublicVerificationKey verificationKey)
     {
-        super(encryptionKey);
+        super(verificationKey);
     }
 
-    static PublicEncryptionKey fromKeyParameters(ECPublicKeyParameters pubKey)
+    static PublicVerificationKey fromKeyParameters(ECPublicKeyParameters pubKey)
     {
         ASN1ObjectIdentifier curveID = ((ECNamedDomainParameters)pubKey.getParameters()).getName();
         ECPoint q  = pubKey.getQ();
-        
+
         if (curveID.equals(SECObjectIdentifiers.secp256r1))
         {
-            return new PublicEncryptionKey(
-                SymmAlgorithm.aes128Ccm,
-                new BasePublicEncryptionKey.Builder()
-                    .setChoice(BasePublicEncryptionKey.eciesNistP256)
-                    .setValue(EccP256CurvePoint.builder()
+            return new PublicVerificationKey(
+                PublicVerificationKey.ecdsaNistP256,
+                    EccP256CurvePoint.builder()
                         .createUncompressedP256(
                             q.getAffineXCoord().toBigInteger(),
-                            q.getAffineYCoord().toBigInteger()))
-                    .createBasePublicEncryptionKey());
+                            q.getAffineYCoord().toBigInteger()));
         }
         else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP256r1))
         {
-            return new PublicEncryptionKey(
-                SymmAlgorithm.aes128Ccm,
-                new BasePublicEncryptionKey.Builder()
-                    .setChoice(BasePublicEncryptionKey.eciesBrainpoolP256r1)
-                    .setValue(EccP256CurvePoint.builder()
+            return new PublicVerificationKey(
+                PublicVerificationKey.ecdsaBrainpoolP256r1,
+                    EccP256CurvePoint.builder()
                         .createUncompressedP256(
                             q.getAffineXCoord().toBigInteger(),
-                            q.getAffineYCoord().toBigInteger()))
-                    .createBasePublicEncryptionKey());
+                            q.getAffineYCoord().toBigInteger()));
+        }
+        else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP384r1))
+        {
+            return new PublicVerificationKey(
+                PublicVerificationKey.ecdsaBrainpoolP384r1,
+                    EccP384CurvePoint.builder()
+                        .createUncompressedP384(
+                            q.getAffineXCoord().toBigInteger(),
+                            q.getAffineYCoord().toBigInteger()));
         }
         else
         {
@@ -63,38 +64,40 @@ public class BcITSPublicEncryptionKey
         }
     }
 
-    public BcITSPublicEncryptionKey(AsymmetricKeyParameter encryptionKey)
+    public BcITSPublicVerificationKey(AsymmetricKeyParameter verificationKey)
     {
-        super(fromKeyParameters((ECPublicKeyParameters)encryptionKey));
+        super(fromKeyParameters((ECPublicKeyParameters)verificationKey));
     }
 
     public AsymmetricKeyParameter getKey()
     {
         X9ECParameters params;
-
-        BasePublicEncryptionKey baseKey = encryptionKey.getBasePublicEncryptionKey();
         ASN1ObjectIdentifier curveID;
 
-        switch (baseKey.getChoice())
+        switch (verificationKey.getChoice())
         {
-        case BasePublicEncryptionKey.eciesNistP256:
+        case PublicVerificationKey.ecdsaNistP256:
             curveID = SECObjectIdentifiers.secp256r1;
             params = NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1);
             break;
-        case BasePublicEncryptionKey.eciesBrainpoolP256r1:
+        case PublicVerificationKey.ecdsaBrainpoolP256r1:
             curveID = TeleTrusTObjectIdentifiers.brainpoolP256r1;
             params = TeleTrusTNamedCurves.getByOID(TeleTrusTObjectIdentifiers.brainpoolP256r1);
+            break;
+        case PublicVerificationKey.ecdsaBrainpoolP384r1:
+            curveID = TeleTrusTObjectIdentifiers.brainpoolP384r1;
+            params = TeleTrusTNamedCurves.getByOID(TeleTrusTObjectIdentifiers.brainpoolP384r1);
             break;
         default:
             throw new IllegalStateException("unknown key type");
         }
         ECCurve curve = params.getCurve();
 
-        ASN1Encodable pviCurvePoint = encryptionKey.getBasePublicEncryptionKey().getValue();
+        ASN1Encodable pviCurvePoint = verificationKey.getCurvePoint();
         final EccCurvePoint itsPoint;
         if (pviCurvePoint instanceof EccCurvePoint)
         {
-            itsPoint = (EccCurvePoint)baseKey.getValue();
+            itsPoint = (EccCurvePoint)verificationKey.getCurvePoint();
         }
         else
         {

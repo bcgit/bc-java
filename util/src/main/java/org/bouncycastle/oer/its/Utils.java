@@ -54,7 +54,7 @@ class Utils
         return new DERSequence(objs);
     }
 
-    static <T> List<T> fillList(Class<T> type, ASN1Sequence sequence)
+    static <T> List<T> fillList(final Class<T> type, final ASN1Sequence sequence)
     {
         return AccessController.doPrivileged(new PrivilegedAction<List<T>>()
         {

@@ -3,27 +3,15 @@ package org.bouncycastle.its.bc;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
-import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
-import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.operator.ITSContentVerifierProvider;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.oer.OEREncoder;
-import org.bouncycastle.oer.its.EccCurvePoint;
-import org.bouncycastle.oer.its.EccP256CurvePoint;
-import org.bouncycastle.oer.its.EccP384CurvePoint;
 import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
@@ -54,63 +42,24 @@ public class BcITSContentVerifierProvider
         if (vki.getObject() instanceof PublicVerificationKey)
         {
             PublicVerificationKey pvi = PublicVerificationKey.getInstance(vki.getObject());
-            X9ECParameters params;
-
             sigChoice = pvi.getChoice();
 
             switch (pvi.getChoice())
             {
             case PublicVerificationKey.ecdsaNistP256:
-                params = NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1);
                 digestAlgo = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
                 break;
             case PublicVerificationKey.ecdsaBrainpoolP256r1:
-                params = TeleTrusTNamedCurves.getByOID(TeleTrusTObjectIdentifiers.brainpoolP256r1);
                 digestAlgo = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
                 break;
             case PublicVerificationKey.ecdsaBrainpoolP384r1:
-                params = TeleTrusTNamedCurves.getByOID(TeleTrusTObjectIdentifiers.brainpoolP384r1);
                 digestAlgo = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384);
                 break;
             default:
                 throw new IllegalStateException("unknown key type");
             }
-            ECCurve curve = params.getCurve();
 
-            ASN1Encodable pviCurvePoint = pvi.getCurvePoint();
-            final EccCurvePoint itsPoint;
-            if (pviCurvePoint instanceof EccCurvePoint)
-            {
-                itsPoint = (EccCurvePoint)pvi.getCurvePoint();
-            }
-            else
-            {
-                throw new IllegalStateException("extension to public verification key not supported");
-            }
-
-            byte[] key;
-
-            if (itsPoint instanceof EccP256CurvePoint)
-            {
-                key = itsPoint.getEncodedPoint();
-            }
-            else if (itsPoint instanceof EccP384CurvePoint)
-            {
-                key = itsPoint.getEncodedPoint();
-            }
-            else
-            {
-                throw new IllegalStateException("unknown key type");
-            }
-
-            ECPoint point = curve.decodePoint(key).normalize();
-            pubParams = new ECPublicKeyParameters(point,
-                new ECDomainParameters(
-                    params.getCurve(),
-                    params.getG(),
-                    params.getN(),
-                    params.getH(),
-                    params.getSeed()));
+            pubParams = (ECPublicKeyParameters)new BcITSPublicVerificationKey(pvi).getKey();
         }
         else
         {
