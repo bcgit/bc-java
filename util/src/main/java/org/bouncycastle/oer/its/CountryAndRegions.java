@@ -1,6 +1,7 @@
 package org.bouncycastle.oer.its;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Object;
@@ -24,7 +25,7 @@ public class CountryAndRegions
     public CountryAndRegions(CountryOnly countryOnly, List<Region> regionList)
     {
         this.countryOnly = countryOnly;
-        this.regions = new ArrayList<Region>(regionList);
+        this.regions = Collections.unmodifiableList(regionList);
     }
 
 
@@ -39,13 +40,8 @@ public class CountryAndRegions
 
         CountryOnly countryOnly = CountryOnly.getInstance(sequence.getObjectAt(0));
         ASN1Sequence regions = ASN1Sequence.getInstance(sequence.getObjectAt(1));
-        List<Region> regionList = new ArrayList<Region>();
-        for (int t = 0; t < regions.size(); t++)
-        {
-            regionList.add(Region.getInstance(regions.getObjectAt(t)));
-        }
 
-        return new CountryAndRegions(countryOnly, regionList);
+        return new CountryAndRegions(countryOnly, Utils.fillList(Region.class, regions));
 
     }
 

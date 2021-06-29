@@ -1,8 +1,6 @@
 package org.bouncycastle.oer.its;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -22,14 +20,7 @@ public class SequenceOfIdentifiedRegion
             return (SequenceOfIdentifiedRegion)o;
         }
 
-        ASN1Sequence seq = ASN1Sequence.getInstance(o);
-        List<IdentifiedRegion> regions = new ArrayList<IdentifiedRegion>();
-        for (Iterator<ASN1Encodable> it = seq.iterator(); it.hasNext(); )
-        {
-            regions.add(IdentifiedRegion.getInstance(it.next()));
-        }
-
-        return new SequenceOfIdentifiedRegion(regions);
+        return new SequenceOfIdentifiedRegion(Utils.fillList(IdentifiedRegion.class, ASN1Sequence.getInstance(o)));
     }
 
 

@@ -103,36 +103,6 @@ public final class BigIntegers
     }
 
 
-    /**
-     * Encoded as twos compliment
-     *
-     * @param byteLength
-     * @param number
-     * @return
-     */
-    public static byte[] asTwosCompliment(int byteLength, BigInteger number)
-    {
-        byte[] encoded = number.toByteArray();
-        if (encoded.length < byteLength)
-        {
-            byte[] required = new byte[byteLength];
-            if (number.signum() < 0)
-            {
-                Arrays.fill(required, (byte)0xFF);
-            }
-
-            System.arraycopy(encoded, 0, required, required.length - encoded.length, encoded.length);
-            return required;
-        }
-
-        if (encoded.length > byteLength)
-        {
-            throw new IllegalStateException("value encoded as bytes exceeded required byte length");
-        }
-
-        return encoded;
-    }
-
 
     /**
      * Return a random BigInteger not less than 'min' and not greater than 'max'
