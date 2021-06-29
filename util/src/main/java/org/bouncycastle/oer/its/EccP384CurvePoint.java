@@ -1,14 +1,19 @@
 package org.bouncycastle.oer.its;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * EccP384CurvePoint ::= CHOICE  {
@@ -91,7 +96,6 @@ public class EccP384CurvePoint
     @Override
     public byte[] getEncodedPoint()
     {
-
         byte[] key;
         switch (choice)
         {
@@ -127,26 +131,65 @@ public class EccP384CurvePoint
 
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
-
-
         private int choice;
         private ASN1Encodable value;
 
-        public Builder setChoice(int choice)
+        Builder setChoice(int choice)
         {
             this.choice = choice;
             return this;
         }
 
-        public Builder setValue(ASN1Encodable value)
+        Builder setValue(ASN1Encodable value)
         {
             this.value = value;
             return this;
         }
 
-        public EccP384CurvePoint createEccP384CurvePoint()
+        public EccP384CurvePoint createXOnly(BigInteger x)
+        {
+            this.choice = xOnly;
+            this.value = new DEROctetString(BigIntegers.asUnsignedByteArray(x));
+            return this.createEccP384CurvePoint();
+        }
+
+        public EccP384CurvePoint createFill()
+        {
+            this.choice = fill;
+            this.value = DERNull.INSTANCE;
+            return this.createEccP384CurvePoint();
+        }
+
+        public EccP384CurvePoint createCompressedY0(BigInteger y)
+        {
+            this.choice = compressedY0;
+            throw new IllegalStateException("not fully implemented.");
+        }
+
+        public EccP384CurvePoint createCompressedY1(BigInteger y)
+        {
+            this.choice = compressedY1;
+            throw new IllegalStateException("not fully implemented.");
+        }
+
+        public EccP384CurvePoint createUncompressedP384(BigInteger x, BigInteger y)
+        {
+            choice = uncompressedP384;
+            value = new DERSequence(new ASN1Encodable[]{
+                new DEROctetString(BigIntegers.asUnsignedByteArray(48, x)),
+                new DEROctetString(BigIntegers.asUnsignedByteArray(48, y)),
+            });
+            return this.createEccP384CurvePoint();
+        }
+
+        private EccP384CurvePoint createEccP384CurvePoint()
         {
             return new EccP384CurvePoint(choice, value);
         }

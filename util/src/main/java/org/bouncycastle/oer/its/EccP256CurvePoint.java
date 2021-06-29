@@ -141,56 +141,55 @@ public class EccP256CurvePoint
         private int choice;
         private ASN1Encodable value;
 
-        public Builder setChoice(int choice)
+        Builder setChoice(int choice)
         {
             this.choice = choice;
             return this;
         }
 
-        public Builder setValue(ASN1Encodable value)
+        Builder setValue(ASN1Encodable value)
         {
             this.value = value;
             return this;
         }
 
-        public Builder xOnly(BigInteger x)
+        public EccP256CurvePoint createXOnly(BigInteger x)
         {
             this.choice = xOnly;
             this.value = new DEROctetString(BigIntegers.asUnsignedByteArray(x));
-            return this;
+            return this.createEccP256CurvePoint();
         }
 
-        public Builder fill()
+        public EccP256CurvePoint createFill()
         {
             this.choice = fill;
             this.value = DERNull.INSTANCE;
-            return this;
+            return this.createEccP256CurvePoint();
         }
 
-        public Builder compressedY0(BigInteger y)
+        public EccP256CurvePoint createCompressedY0(BigInteger y)
         {
             this.choice = compressedY0;
             throw new IllegalStateException("not fully implemented.");
         }
 
-        public Builder compressedY1(BigInteger y)
+        public EccP256CurvePoint createCompressedY1(BigInteger y)
         {
             this.choice = compressedY1;
             throw new IllegalStateException("not fully implemented.");
         }
 
-        public Builder uncompressedP256(BigInteger x, BigInteger y)
+        public EccP256CurvePoint createUncompressedP256(BigInteger x, BigInteger y)
         {
             choice = uncompressedP256;
             value = new DERSequence(new ASN1Encodable[]{
                 new DEROctetString(BigIntegers.asUnsignedByteArray(32, x)),
                 new DEROctetString(BigIntegers.asUnsignedByteArray(32, y)),
             });
-            return this;
+            return this.createEccP256CurvePoint();
         }
 
-
-        public EccP256CurvePoint createEccP256CurvePoint()
+        private EccP256CurvePoint createEccP256CurvePoint()
         {
             return new EccP256CurvePoint(choice, value);
         }

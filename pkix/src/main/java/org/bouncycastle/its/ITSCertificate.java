@@ -8,6 +8,7 @@ import org.bouncycastle.its.operator.ITSContentVerifierProvider;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.IssuerIdentifier;
+import org.bouncycastle.oer.its.PublicEncryptionKey;
 import org.bouncycastle.oer.its.Signature;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.operator.ContentVerifier;
@@ -31,6 +32,23 @@ public class ITSCertificate
     public ITSValidityPeriod getValidityPeriod()
     {
         return new ITSValidityPeriod(certificate.getCertificateBase().getToBeSignedCertificate().getValidityPeriod());
+    }
+
+    /**
+     * Return the certificate's public encryption key, if present.
+     *
+     * @return 
+     */
+    public ITSPublicEncryptionKey getPublicEncryptionKey()
+    {
+        PublicEncryptionKey encryptionKey = certificate.getCertificateBase().getToBeSignedCertificate().getEncryptionKey();
+
+        if (encryptionKey != null)
+        {
+            return new ITSPublicEncryptionKey(encryptionKey);
+        }
+
+        return null;
     }
 
     public boolean isSignatureValid(ITSContentVerifierProvider verifierProvider)
