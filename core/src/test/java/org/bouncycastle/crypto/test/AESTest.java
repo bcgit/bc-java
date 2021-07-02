@@ -404,8 +404,6 @@ public class AESTest
 
         engine.init(true, params);
 
-        byte[]      fragment = new byte[20];
-
         plain = new byte[256 * 16];
         engine.init(true, params);
 
@@ -419,6 +417,36 @@ public class AESTest
             if (!"Counter in CTR/SIC mode out of range.".equals(e.getMessage()))
             {
                 fail("wrong exception");
+            }
+        }
+    }
+
+    private void ctrFragmentedTest()
+        throws InvalidCipherTextException
+    {
+        SICBlockCipher engine = new SICBlockCipher(new AESEngine());
+        KeyParameter kp = new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917"));
+
+        byte[] out = new byte[tData.length];
+
+        for (int fragmentLength = 1; fragmentLength < 16; ++fragmentLength)
+        {
+            byte[] fragment = new byte[fragmentLength];
+            engine.init(true, new ParametersWithIV(kp, new byte[16]));
+
+            int inPos = 0, outPos = 0;
+            do
+            {
+                int num = Math.min(fragmentLength, tData.length - inPos);
+                System.arraycopy(tData, inPos, fragment, 0, num);
+                outPos += engine.processBytes(fragment, 0, num, out, outPos);
+                inPos += num;
+            }
+            while (inPos < tData.length);
+
+            if (!areEqual(outSIC1, out))
+            {
+                fail("no match for fragmented check: " + fragmentLength);
             }
         }
     }
@@ -468,6 +496,7 @@ public class AESTest
 
         skipTest();
         ctrCounterTest();
+        ctrFragmentedTest();
     }
 
     public static void main(
