@@ -119,11 +119,11 @@ public class SICBlockCipher
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
-        if (inOff + blockSize > in.length)
+        if (inOff + len > in.length)
         {
             throw new DataLengthException("input buffer too small");
         }
-        if (outOff + blockSize > out.length)
+        if (outOff + len > out.length)
         {
             throw new OutputLengthException("output buffer too short");
         }
