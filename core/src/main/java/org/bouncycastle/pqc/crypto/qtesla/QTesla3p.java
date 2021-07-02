@@ -1392,11 +1392,11 @@ class QTesla3p
                 pos = pos_list[i];
                 for (j = 0; j < pos; j++)
                 {
-                    prod[ppos + j] = prod[ppos + j] - sign_list[i] * s[spos + j + PARAM_N - pos];
+                    prod[ppos + j] = prod[ppos + j] - (long) sign_list[i] * s[spos + j + PARAM_N - pos];
                 }
                 for (j = pos; j < PARAM_N; j++)
                 {
-                    prod[ppos + j] = prod[ppos + j] + sign_list[i] * s[spos + j - pos];
+                    prod[ppos + j] = prod[ppos + j] + (long) sign_list[i] * s[spos + j - pos];
                 }
             }
         }
@@ -1417,11 +1417,11 @@ class QTesla3p
                 pos = pos_list[i];
                 for (j = 0; j < pos; j++)
                 {
-                    prod[j] = prod[j] - sign_list[i] * t[j + PARAM_N - pos];
+                    prod[j] = prod[j] - (long) sign_list[i] * t[j + PARAM_N - pos];
                 }
                 for (j = pos; j < PARAM_N; j++)
                 {
-                    prod[j] = prod[j] + sign_list[i] * t[j - pos];
+                    prod[j] = prod[j] + (long) sign_list[i] * t[j - pos];
                 }
             }
         }
@@ -1489,11 +1489,11 @@ class QTesla3p
                 pos = pos_list[i];
                 for (j = 0; j < pos; j++)
                 {
-                    prod[ppos + j] = prod[ppos + j] - sign_list[i] * pk[pkPos + j + PARAM_N - pos];
+                    prod[ppos + j] = prod[ppos + j] - (long) sign_list[i] * pk[pkPos + j + PARAM_N - pos];
                 }
                 for (j = pos; j < PARAM_N; j++)
                 {
-                    prod[ppos + j] = prod[ppos + j] + sign_list[i] * pk[pkPos + j - pos];
+                    prod[ppos + j] = prod[ppos + j] + (long) sign_list[i] * pk[pkPos + j - pos];
                 }
             }
         }

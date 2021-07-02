@@ -162,12 +162,12 @@ public class GOST3410ParametersGenerator
         //Verify and perform condition: 0<x<2^32; 0<c<2^32; c - odd.
         while(x0<0 || x0>4294967296L)
         {
-            x0 = init_random.nextInt()*2;
+            x0 = init_random.nextInt()*2L;
         }
 
         while((c<0 || c>4294967296L) || (c/2==0))
         {
-            c = init_random.nextInt()*2+1;
+            c = init_random.nextInt()*2L+1L;
         }
 
         BigInteger C = new BigInteger(Long.toString(c));
@@ -371,12 +371,12 @@ public class GOST3410ParametersGenerator
         //Verify and perform condition: 0<x<2^32; 0<c<2^32; c - odd.
         while(x0<0 || x0>4294967296L)
         {
-            x0 = init_random.nextInt()*2;
+            x0 = init_random.nextInt()*2L;
         }
 
         while((c<0 || c>4294967296L) || (c/2==0))
         {
-            c = init_random.nextInt()*2+1;
+            c = init_random.nextInt()*2L+1;
         }
 
         BigInteger [] qp = new BigInteger[2];

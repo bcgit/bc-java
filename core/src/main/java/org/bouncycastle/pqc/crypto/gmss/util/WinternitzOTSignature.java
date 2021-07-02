@@ -131,8 +131,8 @@ public class WinternitzOTSignature
         // byte [] message; // message m as input
         byte[] hash = new byte[mdsize]; // hash of message m
         int counter = 0;
-        int c = 0;
-        int test = 0;
+        long c = 0;
+        long test = 0;
         // create hash of message m
         messDigestOTS.update(message, 0, message.length);
         messDigestOTS.doFinal(hash, 0);
@@ -326,7 +326,7 @@ public class WinternitzOTSignature
         return log;
     }
 
-    private void hashPrivateKeyBlock(int index, int rounds, byte[] buf, int off)
+    private void hashPrivateKeyBlock(int index, long rounds, byte[] buf, int off)
     {
         if (rounds < 1)
         {

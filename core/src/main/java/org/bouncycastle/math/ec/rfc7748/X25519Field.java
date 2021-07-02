@@ -535,7 +535,7 @@ public abstract class X25519Field
         int t = z[9], z9 = t & M24;
         t = (t >> 24) + x;
 
-        long cc = t * 19;
+        long cc = t * 19L;
         cc += z[0]; z[0] = (int)cc & M26; cc >>= 26;
         cc += z[1]; z[1] = (int)cc & M26; cc >>= 26;
         cc += z[2]; z[2] = (int)cc & M25; cc >>= 25;
