@@ -1,5 +1,6 @@
 package org.bouncycastle.operator.bc;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Map;
@@ -51,7 +52,7 @@ public abstract class BcContentSignerBuilder
 
         return new ContentSigner()
         {
-            private BcSignerOutputStream stream = new BcSignerOutputStream(sig);
+            private final BcSignerOutputStream stream = new BcSignerOutputStream(sig);
 
             public AlgorithmIdentifier getAlgorithmIdentifier()
             {
@@ -73,6 +74,12 @@ public abstract class BcContentSignerBuilder
                 {
                     throw new RuntimeOperatorException("exception obtaining signature: " + e.getMessage(), e);
                 }
+            }
+
+            @Override
+            public void close() throws IOException
+            {
+                stream.close();
             }
         };
     }
