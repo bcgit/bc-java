@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Publish release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 0
+      - name: Install JDK ${{ matrix.java_version }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Build project
+        run: ./gradlew assemble
+        env:
+          VERSION: ${{ github.ref }}
+      - run: |
+          assetsAAR=$(find build -name '*.jar' | while read -r asset ; do echo "-a $asset" ; done)
+          VERSION=$(echo $VERSION | cut -d'/' -f3)
+          assetsJAR=$(find . -name *${VERSION}.jar | while read -r asset ; do echo "-a $asset" ; done)
+          tag_name="${GITHUB_REF##*/}"
+          hub release create ${assetsAAR} ${assetsJAR} -m "$tag_name" "$tag_name"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.ref }}
