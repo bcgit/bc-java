@@ -150,6 +150,20 @@ public class BcDefaultDigestProvider
                 return new RIPEMD256Digest();
             }
         });
+        table.put(NISTObjectIdentifiers.id_shake256_len, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHAKEDigest(256);
+            }
+        });
+        table.put(NISTObjectIdentifiers.id_shake128_len, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHAKEDigest(128);
+            }
+        });
 
         return Collections.unmodifiableMap(table);
     }
