@@ -118,6 +118,7 @@ class OperatorHelper
         oids.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD256");
 
         asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.rsaEncryption, "RSA/ECB/PKCS1Padding");
+        asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_RSAES_OAEP, "RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
 
         asymmetricWrapperAlgNames.put(CryptoProObjectIdentifiers.gostR3410_2001, "ECGOST3410");
 
