@@ -2,7 +2,7 @@ package org.bouncycastle.tls.crypto.impl;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -44,11 +44,11 @@ public abstract class AbstractTlsSecret
         }
     }
 
-    public synchronized byte[] encrypt(TlsCertificate certificate) throws IOException
+    public synchronized byte[] encrypt(TlsEncryptor encryptor) throws IOException
     {
         checkAlive();
 
-        return getCrypto().createEncryptor(certificate).encrypt(data, 0, data.length);
+        return encryptor.encrypt(data, 0, data.length);
     }
 
     public synchronized byte[] extract()

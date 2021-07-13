@@ -28,6 +28,7 @@ import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 import org.bouncycastle.util.Arrays;
@@ -81,6 +82,28 @@ public class BcTlsCertificate
     {
         this.crypto = crypto;
         this.certificate = certificate;
+    }
+
+    public TlsEncryptor createEncryptor(int tlsCertificateRole) throws IOException
+    {
+        validateKeyUsage(KeyUsage.keyEncipherment);
+
+        switch (tlsCertificateRole)
+        {
+        case TlsCertificateRole.RSA_ENCRYPTION:
+        {
+            this.pubKeyRSA = getPubKeyRSA();
+            return new BcTlsRSAEncryptor(crypto, pubKeyRSA);
+        }
+        // TODO[gmssl]
+//        case TlsCertificateRole.SM2_ENCRYPTION:
+//        {
+//            this.pubKeyEC = getPubKeyEC();
+//            return new BcTlsSM2Encryptor(crypto, pubKeyEC);
+//        }
+        }
+
+        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
