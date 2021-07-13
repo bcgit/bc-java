@@ -14,7 +14,6 @@ import java.util.Hashtable;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
@@ -57,7 +56,6 @@ import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
-import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Client;
@@ -722,54 +720,6 @@ public class JcaTlsCrypto
         default:
             return new JceTlsECDomain(this, ecConfig);
         }
-    }
-
-    public TlsEncryptor createEncryptor(TlsCertificate certificate)
-        throws IOException
-    {
-        JcaTlsCertificate jcaCert = JcaTlsCertificate.convert(this, certificate);
-        jcaCert.validateKeyUsageBit(JcaTlsCertificate.KU_KEY_ENCIPHERMENT);
-
-        final PublicKey pubKeyRSA = jcaCert.getPubKeyRSA();
-
-        return new TlsEncryptor()
-        {
-            public byte[] encrypt(byte[] input, int inOff, int length)
-                throws IOException
-            {
-                try
-                {
-                    Cipher c = createRSAEncryptionCipher();
-                    // try wrap mode first - strictly speaking this is the correct one to use.
-                    try
-                    {
-                        c.init(Cipher.WRAP_MODE, pubKeyRSA, getSecureRandom());
-                        return c.wrap(new SecretKeySpec(input, inOff, length, "TLS"));
-                    }
-                    catch (Exception e)
-                    {
-                        try
-                        {
-                            // okay, maybe the provider does not support wrap mode.
-                            c.init(Cipher.ENCRYPT_MODE, pubKeyRSA, getSecureRandom());
-                            return c.doFinal(input, inOff, length);
-                        }
-                        catch (Exception ex)
-                        {
-                            // okay, if we get here let's rethrow the original one.
-                            throw new TlsFatalAlert(AlertDescription.internal_error, e);
-                        }
-                    }
-                }
-                catch (GeneralSecurityException e)
-                {
-                    /*
-                     * This should never happen, only during decryption.
-                     */
-                    throw new TlsFatalAlert(AlertDescription.internal_error, e);
-                }
-            }
-        };
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
