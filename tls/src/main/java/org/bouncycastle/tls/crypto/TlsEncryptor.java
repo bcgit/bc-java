@@ -1,9 +1,9 @@
-package org.bouncycastle.tls.crypto.impl;
+package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
 /**
- * Base interface for an encryptor based on a public key.
+ * Base interface for an encryptor.
  */
 public interface TlsEncryptor
 {

@@ -27,10 +27,10 @@ public interface TlsSecret
     /**
      * Return an encrypted copy of the data this secret is based on.
      *
-     * @param certificate the certificate containing the public key to use for protecting the internal data.
+     * @param encryptor the encryptor to use for protecting the internal data.
      * @return an encrypted copy of this secret's internal data.
      */
-    byte[] encrypt(TlsCertificate certificate) throws IOException;
+    byte[] encrypt(TlsEncryptor encryptor) throws IOException;
 
     /**
      * Return the internal data from this secret. The {@link TlsSecret} does not keep a copy of the
