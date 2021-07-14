@@ -28,15 +28,14 @@ public class Certificate
         }
     }
 
-    public CertificateBase getCertificateBase()
-    {
-        return certificateBase;
-    }
-
-
     public static Builder builder()
     {
         return new Builder();
+    }
+
+    public CertificateBase getCertificateBase()
+    {
+        return certificateBase;
     }
 
     public static class Builder

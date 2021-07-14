@@ -45,14 +45,14 @@ public class SequenceOfPsidGroupPermissions
 
     }
 
-    public ASN1Primitive toASN1Primitive()
-    {
-        return new DERSequence(groupPermissions.toArray(new PsidGroupPermissions[0]));
-    }
-
     public static Builder builder()
     {
         return new Builder();
+    }
+
+    public ASN1Primitive toASN1Primitive()
+    {
+        return new DERSequence(groupPermissions.toArray(new PsidGroupPermissions[0]));
     }
 
     public static class Builder

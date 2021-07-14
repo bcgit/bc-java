@@ -28,6 +28,12 @@ public class ServiceSpecificPermissions
     private final int choice;
     private final ASN1Encodable object;
 
+    public ServiceSpecificPermissions(int choice, ASN1Encodable object)
+    {
+        this.choice = choice;
+        this.object = object;
+    }
+
     public static ServiceSpecificPermissions getInstance(Object o)
     {
         if (o instanceof ServiceSpecificPermissions)
@@ -47,11 +53,9 @@ public class ServiceSpecificPermissions
         }
     }
 
-
-    public ServiceSpecificPermissions(int choice, ASN1Encodable object)
+    public static Builder builder()
     {
-        this.choice = choice;
-        this.object = object;
+        return new ServiceSpecificPermissions.Builder();
     }
 
     public int getChoice()
@@ -67,11 +71,6 @@ public class ServiceSpecificPermissions
     public ASN1Primitive toASN1Primitive()
     {
         return new DERTaggedObject(choice, object);
-    }
-
-    public static Builder builder()
-    {
-        return new ServiceSpecificPermissions.Builder();
     }
 
     public static class Builder

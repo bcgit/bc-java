@@ -76,6 +76,11 @@ public class EccP256CurvePoint
         return new Builder().setChoice(ato.getTagNo()).setValue(value).createEccP256CurvePoint();
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public ASN1Encodable getValue()
     {
         return value;
@@ -128,12 +133,6 @@ public class EccP256CurvePoint
         return key;
 
     }
-
-    public static Builder builder()
-    {
-        return new Builder();
-    }
-
 
     public static class Builder
     {

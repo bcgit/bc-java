@@ -18,6 +18,22 @@ import org.bouncycastle.asn1.ASN1Integer;
 public class Longitude
     extends OneEightyDegreeInt
 {
+    public Longitude(long value)
+    {
+        super(value);
+    }
+
+
+    public Longitude(BigInteger value)
+    {
+        super(value);
+    }
+
+    public Longitude(byte[] bytes)
+    {
+        super(bytes);
+    }
+
     public static Longitude getInstance(Object o)
     {
         if (o instanceof Longitude)
@@ -32,22 +48,6 @@ public class Longitude
         {
             return new Longitude(ASN1Integer.getInstance(o).getValue());
         }
-    }
-
-
-    public Longitude(long value)
-    {
-        super(value);
-    }
-
-    public Longitude(BigInteger value)
-    {
-        super(value);
-    }
-
-    public Longitude(byte[] bytes)
-    {
-        super(bytes);
     }
 
 }

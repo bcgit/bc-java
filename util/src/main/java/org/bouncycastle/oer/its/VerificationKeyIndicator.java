@@ -65,6 +65,11 @@ public class VerificationKeyIndicator
 
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public int getChoice()
     {
         return choice;
@@ -78,12 +83,6 @@ public class VerificationKeyIndicator
     public ASN1Primitive toASN1Primitive()
     {
         return new DERTaggedObject(choice, object);
-    }
-
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

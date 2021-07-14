@@ -17,6 +17,12 @@ public class EcdsaP384Signature
     private final EccP384CurvePoint rSig;
     private final ASN1OctetString sSig;
 
+    public EcdsaP384Signature(EccP384CurvePoint rSig, ASN1OctetString sSig)
+    {
+        this.rSig = rSig;
+        this.sSig = sSig;
+    }
+
     public static EcdsaP384Signature getInstance(Object object)
     {
         ASN1Sequence it = ASN1Sequence.getInstance(object);
@@ -26,12 +32,6 @@ public class EcdsaP384Signature
             .setsSig(ASN1OctetString.getInstance(it.getObjectAt(1)))
             .createEcdsaP384Signature();
 
-    }
-
-    public EcdsaP384Signature(EccP384CurvePoint rSig, ASN1OctetString sSig)
-    {
-        this.rSig = rSig;
-        this.sSig = sSig;
     }
 
     public EccP384CurvePoint getrSig()

@@ -21,6 +21,11 @@ public class PolygonalRegion
 
     private final List<TwoDLocation> points;
 
+    public PolygonalRegion(List<TwoDLocation> locations)
+    {
+        points = Collections.unmodifiableList(locations);
+    }
+
     public static PolygonalRegion getInstance(Object o)
     {
         if (o instanceof PolygonalRegion)
@@ -33,12 +38,6 @@ public class PolygonalRegion
         }
         return null;
     }
-
-    public PolygonalRegion(List<TwoDLocation> locations)
-    {
-        points = Collections.unmodifiableList(locations);
-    }
-
 
     public List<TwoDLocation> getPoints()
     {

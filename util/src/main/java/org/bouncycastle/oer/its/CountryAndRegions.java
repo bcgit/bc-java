@@ -45,15 +45,14 @@ public class CountryAndRegions
 
     }
 
+    public static CountryAndRegionsBuilder builder()
+    {
+        return new CountryAndRegionsBuilder();
+    }
 
     public ASN1Primitive toASN1Primitive()
     {
         return Utils.toSequence(countryOnly, Utils.toSequence(regions));
-    }
-
-    public static CountryAndRegionsBuilder builder()
-    {
-        return new CountryAndRegionsBuilder();
     }
 
     public CountryOnly getCountryOnly()

@@ -36,6 +36,11 @@ public class PsidSsp
             OEROptional.getValue(ServiceSpecificPermissions.class, seq.getObjectAt(1)));
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public Psid getPsid()
     {
         return psid;
@@ -49,12 +54,6 @@ public class PsidSsp
     public ASN1Primitive toASN1Primitive()
     {
         return Utils.toSequence(psid, OEROptional.getInstance(ssp));
-    }
-
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

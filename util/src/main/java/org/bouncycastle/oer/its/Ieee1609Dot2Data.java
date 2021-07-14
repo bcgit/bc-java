@@ -1,13 +1,11 @@
 package org.bouncycastle.oer.its;
 
-import java.math.BigInteger;
+import java.util.Iterator;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 
 /**
  * <pre>
@@ -20,18 +18,13 @@ import org.bouncycastle.asn1.DERSequence;
 public class Ieee1609Dot2Data
     extends ASN1Object
 {
-    private final BigInteger protcolVersion;
+    private final Uint8 protocolVersion;
     private final Ieee1609Dot2Content content;
 
-    private Ieee1609Dot2Data(ASN1Sequence seq)
+    public Ieee1609Dot2Data(Uint8 protocolVersion, Ieee1609Dot2Content content)
     {
-        if (seq.size() != 2)
-        {
-            throw new IllegalArgumentException("sequence not length 2");
-        }
-
-        protcolVersion = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue();
-        content = Ieee1609Dot2Content.getInstance(seq.getObjectAt(1));
+        this.protocolVersion = protocolVersion;
+        this.content = content;
     }
 
     public static Ieee1609Dot2Data getInstance(Object src)
@@ -40,18 +33,53 @@ public class Ieee1609Dot2Data
         {
             return (Ieee1609Dot2Data)src;
         }
-        else if (src != null)
-        {
-            return new Ieee1609Dot2Data(ASN1Sequence.getInstance(src));
-        }
 
-        return null;
+        Iterator<ASN1Encodable> items = ASN1Sequence.getInstance(src).iterator();
+        return new Ieee1609Dot2Data(Uint8.getInstance(items.next()), Ieee1609Dot2Content.getInstance(items.next()));
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        return new DERSequence(v);
+        return Utils.toSequence(protocolVersion, content);
     }
+
+    public Uint8 getProtocolVersion()
+    {
+        return protocolVersion;
+    }
+
+    public Ieee1609Dot2Content getContent()
+    {
+        return content;
+    }
+
+    public static class Builder
+    {
+        private Uint8 protocolVersion;
+        private Ieee1609Dot2Content content;
+
+        public Builder setProtocolVersion(Uint8 protocolVersion)
+        {
+            this.protocolVersion = protocolVersion;
+            return this;
+        }
+
+        public Builder setContent(Ieee1609Dot2Content content)
+        {
+            this.content = content;
+            return this;
+        }
+
+        public Ieee1609Dot2Data build()
+        {
+            return new Ieee1609Dot2Data(protocolVersion, content);
+        }
+
+    }
+
 }

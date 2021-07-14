@@ -21,6 +21,12 @@ public class ToBeSignedData
     private final HeaderInfo headerInfo;
 
 
+    public ToBeSignedData(SignedDataPayload payload, HeaderInfo headerInfo)
+    {
+        this.payload = payload;
+        this.headerInfo = headerInfo;
+    }
+
     public static ToBeSignedData getInstance(Object o)
     {
         if (o instanceof ToBeSignedData)
@@ -33,13 +39,6 @@ public class ToBeSignedData
             .setPayload(SignedDataPayload.getInstance(seq.getObjectAt(0)))
             .setHeaderInfo(HeaderInfo.getInstance(seq.getObjectAt(1)))
             .createToBeSignedData();
-    }
-
-
-    public ToBeSignedData(SignedDataPayload payload, HeaderInfo headerInfo)
-    {
-        this.payload = payload;
-        this.headerInfo = headerInfo;
     }
 
     public SignedDataPayload getPayload()
