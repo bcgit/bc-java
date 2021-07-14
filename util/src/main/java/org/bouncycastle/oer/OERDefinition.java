@@ -328,21 +328,22 @@ public class OERDefinition
 
     public static Builder extension()
     {
-        return new Builder(BaseType.EXTENSION);
+        return new Builder(BaseType.EXTENSION).label("extension");
     }
 
 
     public static class Builder
     {
-        private final BaseType baseType;
-        private ArrayList<Builder> children = new ArrayList<Builder>();
-        private boolean explicit = false;
-        private String label;
-        private BigInteger upperBound;
-        private BigInteger lowerBound;
-        //private BigInteger defaultIntValue;
-        private BigInteger enumValue;
-        private ASN1Encodable defaultValue;
+        protected final BaseType baseType;
+        protected ArrayList<Builder> children = new ArrayList<Builder>();
+        protected boolean explicit = false;
+        protected String label;
+        protected BigInteger upperBound;
+        protected BigInteger lowerBound;
+        protected BigInteger enumValue;
+        protected ASN1Encodable defaultValue;
+        protected Builder placeholderValue;
+
 
         public Builder copy()
         {
@@ -443,13 +444,21 @@ public class OERDefinition
         public Builder label(String label)
         {
             Builder newBuilder = this.copy();
-            newBuilder.label = label;
+
+            if (label != null)
+            {
+                newBuilder.label = label;
+            }
+
+            newBuilder.explicit = explicit;
             return newBuilder;
         }
 
 
         public Element build()
         {
+
+
             List<Element> children = new ArrayList<Element>();
             boolean hasExtensions = false;
 
@@ -511,6 +520,7 @@ public class OERDefinition
                 upperBound,
                 hasExtensions,
                 enumValue, defaultValue);
+
         }
 
 
@@ -563,6 +573,37 @@ public class OERDefinition
             this.enumValue = value;
             return b;
         }
+    }
+
+
+    public static class MutableBuilder
+        extends Builder
+    {
+
+        private boolean frozen = false;
+
+        public MutableBuilder(BaseType baseType)
+        {
+            super(baseType);
+        }
+
+
+        public void addItemsAndFreeze(Builder... items)
+        {
+            if (frozen)
+            {
+                throw new IllegalStateException("build cannot be modified and must be copied only");
+            }
+
+            for (Builder b : items)
+            {
+                super.children.add(b);
+            }
+
+            frozen = true;
+        }
+
+
     }
 
 

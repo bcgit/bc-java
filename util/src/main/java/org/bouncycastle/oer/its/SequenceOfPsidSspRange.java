@@ -17,6 +17,11 @@ public class SequenceOfPsidSspRange
 {
     private final List<PsidSspRange> items;
 
+    public SequenceOfPsidSspRange(List<PsidSspRange> items)
+    {
+        this.items = Collections.unmodifiableList(items);
+    }
+
     public static SequenceOfPsidSspRange getInstance(Object o)
     {
         if (o instanceof SequenceOfPsidSspRange)
@@ -33,15 +38,20 @@ public class SequenceOfPsidSspRange
         return new SequenceOfPsidSspRange(accumulator);
     }
 
-    public SequenceOfPsidSspRange(List<PsidSspRange> items)
-    {
-        this.items = Collections.unmodifiableList(items);
-    }
-
-
     public static Builder builder()
     {
         return new Builder();
+    }
+
+    @Override
+    public ASN1Primitive toASN1Primitive()
+    {
+        ASN1EncodableVector avec = new ASN1EncodableVector();
+        for (PsidSspRange ssp : items)
+        {
+            avec.add(ssp);
+        }
+        return new DERSequence(avec);
     }
 
     public static class Builder
@@ -60,17 +70,5 @@ public class SequenceOfPsidSspRange
             return new SequenceOfPsidSspRange(psidSspRanges);
         }
 
-    }
-
-
-    @Override
-    public ASN1Primitive toASN1Primitive()
-    {
-        ASN1EncodableVector avec = new ASN1EncodableVector();
-        for (PsidSspRange ssp : items)
-        {
-            avec.add(ssp);
-        }
-        return new DERSequence(avec);
     }
 }

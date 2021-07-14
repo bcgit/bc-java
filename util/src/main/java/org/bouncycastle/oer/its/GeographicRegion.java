@@ -33,6 +33,12 @@ public class GeographicRegion
     private int choice;
     private ASN1Encodable region;
 
+    public GeographicRegion(int choice, ASN1Encodable region)
+    {
+        this.choice = choice;
+        this.region = region;
+    }
+
     public static GeographicRegion getInstance(Object o)
     {
         if (o instanceof GeographicRegion)
@@ -64,13 +70,6 @@ public class GeographicRegion
         }
 
     }
-
-    public GeographicRegion(int choice, ASN1Encodable region)
-    {
-        this.choice = choice;
-        this.region = region;
-    }
-
 
     public int getChoice()
     {

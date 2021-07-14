@@ -25,6 +25,12 @@ public class EncryptedDataEncryptionKey
     private final int choice;
     private final ASN1Encodable value;
 
+    public EncryptedDataEncryptionKey(int choice, ASN1Encodable value)
+    {
+        this.choice = choice;
+        this.value = value;
+    }
+
     public static EncryptedDataEncryptionKey getInstance(Object o)
     {
         if (o instanceof EncryptedDataEncryptionKey)
@@ -44,13 +50,6 @@ public class EncryptedDataEncryptionKey
             .setChoice(ato.getTagNo())
             .setValue(ato.getObject())
             .createEncryptedDataEncryptionKey();
-    }
-
-
-    public EncryptedDataEncryptionKey(int choice, ASN1Encodable value)
-    {
-        this.choice = choice;
-        this.value = value;
     }
 
     public int getChoice()

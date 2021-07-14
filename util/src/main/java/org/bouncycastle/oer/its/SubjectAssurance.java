@@ -9,6 +9,18 @@ public class SubjectAssurance
     extends DEROctetString
 {
 
+    public SubjectAssurance(byte[] string)
+    {
+        super(string);
+    }
+
+
+    public SubjectAssurance(ASN1Encodable obj)
+        throws IOException
+    {
+        super(obj);
+    }
+
     public static SubjectAssurance getInstance(Object o)
     {
         if (o instanceof SubjectAssurance)
@@ -19,17 +31,5 @@ public class SubjectAssurance
         {
             return new SubjectAssurance(DEROctetString.getInstance(o).getOctets());
         }
-    }
-
-
-    public SubjectAssurance(byte[] string)
-    {
-        super(string);
-    }
-
-    public SubjectAssurance(ASN1Encodable obj)
-        throws IOException
-    {
-        super(obj);
     }
 }

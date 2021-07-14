@@ -19,18 +19,6 @@ public class NinetyDegreeInt
     private static final BigInteger unknown = new BigInteger("900000001");
 
 
-    public static NinetyDegreeInt getInstance(Object o)
-    {
-        if (o instanceof NinetyDegreeInt)
-        {
-            return (NinetyDegreeInt)o;
-        }
-        else
-        {
-            return new NinetyDegreeInt(ASN1Integer.getInstance(o).getValue());
-        }
-    }
-
     public NinetyDegreeInt(long value)
     {
         super(value);
@@ -47,6 +35,18 @@ public class NinetyDegreeInt
     {
         super(bytes);
         assertValue();
+    }
+
+    public static NinetyDegreeInt getInstance(Object o)
+    {
+        if (o instanceof NinetyDegreeInt)
+        {
+            return (NinetyDegreeInt)o;
+        }
+        else
+        {
+            return new NinetyDegreeInt(ASN1Integer.getInstance(o).getValue());
+        }
     }
 
     public void assertValue()

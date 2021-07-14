@@ -11,6 +11,11 @@ public class Hostname
     private final String hostName;
 
 
+    public Hostname(String hostName)
+    {
+        this.hostName = hostName;
+    }
+
     public static Hostname getInstance(Object src)
     {
         if (src instanceof Hostname)
@@ -31,13 +36,6 @@ public class Hostname
         throw new IllegalArgumentException("hostname accepts Hostname, String and ASN1String");
 
     }
-
-
-    public Hostname(String hostName)
-    {
-        this.hostName = hostName;
-    }
-
 
     @Override
     public ASN1Primitive toASN1Primitive()

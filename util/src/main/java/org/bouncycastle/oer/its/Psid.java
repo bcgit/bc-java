@@ -8,21 +8,12 @@ public class Psid
     extends ASN1Integer
 {
 
-    public static Psid getInstance(Object o)
-    {
-        if (o instanceof Psid)
-        {
-            return (Psid)o;
-        }
-        return new Psid(ASN1Integer.getInstance(o).getValue());
-    }
-
-
     public Psid(long value)
     {
         super(value);
         validate();
     }
+
 
     public Psid(BigInteger value)
     {
@@ -34,6 +25,15 @@ public class Psid
     {
         super(bytes);
         validate();
+    }
+
+    public static Psid getInstance(Object o)
+    {
+        if (o instanceof Psid)
+        {
+            return (Psid)o;
+        }
+        return new Psid(ASN1Integer.getInstance(o).getValue());
     }
 
     private void validate()

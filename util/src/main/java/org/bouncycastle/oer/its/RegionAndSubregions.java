@@ -22,6 +22,12 @@ public class RegionAndSubregions
     private final List<Uint16> subRegions;
 
 
+    public RegionAndSubregions(Region region, List<Uint16> subRegions)
+    {
+        this.region = region;
+        this.subRegions = Collections.unmodifiableList(subRegions);
+    }
+
     public static RegionAndSubregions getInstance(Object o)
     {
         if (o instanceof RegionAndSubregions)
@@ -41,13 +47,6 @@ public class RegionAndSubregions
             return builder.createRegionAndSubregions();
         }
     }
-
-    public RegionAndSubregions(Region region, List<Uint16> subRegions)
-    {
-        this.region = region;
-        this.subRegions = Collections.unmodifiableList(subRegions);
-    }
-
 
     public ASN1Primitive toASN1Primitive()
     {

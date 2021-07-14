@@ -66,6 +66,11 @@ public class IssuerIdentifier
         }
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public boolean isSelf()
     {
         return choice == self;
@@ -84,11 +89,6 @@ public class IssuerIdentifier
     public ASN1Primitive toASN1Primitive()
     {
         return new DERTaggedObject(choice, value);
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

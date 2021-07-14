@@ -24,11 +24,16 @@ public class Signature
 {
     public static final int ecdsaNistP256Signature = 0;
     public static final int ecdsaBrainpoolP256r1Signature = 1;
-    private static final int extension = 2;
     public static final int ecdsaBrainpoolP384r1Signature = 3;
-
+    private static final int extension = 2;
     private final int choice;
     private final ASN1Encodable value;
+
+    public Signature(int choice, ASN1Encodable value)
+    {
+        this.choice = choice;
+        this.value = value;
+    }
 
     public static Signature getInstance(Object objectAt)
     {
@@ -59,10 +64,9 @@ public class Signature
 
     }
 
-    public Signature(int choice, ASN1Encodable value)
+    public static Builder builder()
     {
-        this.choice = choice;
-        this.value = value;
+        return new Builder();
     }
 
     public int getChoice()
@@ -78,12 +82,6 @@ public class Signature
     public ASN1Primitive toASN1Primitive()
     {
         return new DERTaggedObject(choice, value);
-    }
-
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

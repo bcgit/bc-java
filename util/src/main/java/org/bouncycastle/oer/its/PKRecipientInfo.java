@@ -19,6 +19,12 @@ public class PKRecipientInfo
     private final HashedId recipientId;
     private final EncryptedDataEncryptionKey encKey;
 
+    public PKRecipientInfo(HashedId recipientId, EncryptedDataEncryptionKey encKey)
+    {
+        this.recipientId = recipientId;
+        this.encKey = encKey;
+    }
+
     public static PKRecipientInfo getInstance(Object object)
     {
         if (object instanceof PKRecipientInfo)
@@ -31,12 +37,6 @@ public class PKRecipientInfo
         return new PKRecipientInfo(
             HashedId.getInstance(seq.getObjectAt(0)),
             EncryptedDataEncryptionKey.getInstance(seq.getObjectAt(0)));
-    }
-
-    public PKRecipientInfo(HashedId recipientId, EncryptedDataEncryptionKey encKey)
-    {
-        this.recipientId = recipientId;
-        this.encKey = encKey;
     }
 
     public HashedId getRecipientId()

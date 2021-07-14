@@ -44,6 +44,25 @@ public class PsidGroupPermissions
         this.eeType = eeType;
     }
 
+    public static PsidGroupPermissions getInstance(Object src)
+    {
+        if (src instanceof PsidGroupPermissions)
+        {
+            return (PsidGroupPermissions)src;
+        }
+        else if (src != null)
+        {
+            return new PsidGroupPermissions(ASN1Sequence.getInstance(src));
+        }
+
+        return null;
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public SubjectPermissions getSubjectPermissions()
     {
         return subjectPermissions;
@@ -59,21 +78,6 @@ public class PsidGroupPermissions
         return eeType;
     }
 
-
-    public static PsidGroupPermissions getInstance(Object src)
-    {
-        if (src instanceof PsidGroupPermissions)
-        {
-            return (PsidGroupPermissions)src;
-        }
-        else if (src != null)
-        {
-            return new PsidGroupPermissions(ASN1Sequence.getInstance(src));
-        }
-
-        return null;
-    }
-
     public ASN1Primitive toASN1Primitive()
     {
         return new DERSequence(new ASN1Encodable[]{
@@ -87,11 +91,6 @@ public class PsidGroupPermissions
     public ASN1Integer getChainLengthRange()
     {
         return chainLengthRange;
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder
