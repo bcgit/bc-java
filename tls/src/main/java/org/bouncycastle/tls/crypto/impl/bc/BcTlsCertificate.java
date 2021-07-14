@@ -21,7 +21,6 @@ import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
@@ -361,7 +360,7 @@ public class BcTlsCertificate
         return supportsSignatureAlgorithm(signatureAlgorithm, KeyUsage.keyCertSign);
     }
 
-    public TlsCertificate checkUsageInRole(int connectionEnd, int tlsCertificateRole) throws IOException
+    public TlsCertificate checkUsageInRole(int tlsCertificateRole) throws IOException
     {
         switch (tlsCertificateRole)
         {
@@ -378,25 +377,6 @@ public class BcTlsCertificate
             this.pubKeyEC = getPubKeyEC();
             return this;
         }
-        }
-
-        if (connectionEnd == ConnectionEnd.server)
-        {
-            switch (tlsCertificateRole)
-            {
-            case TlsCertificateRole.RSA_ENCRYPTION:
-            {
-                validateKeyUsage(KeyUsage.keyEncipherment);
-                this.pubKeyRSA = getPubKeyRSA();
-                return this;
-            }
-            case TlsCertificateRole.SM2_ENCRYPTION:
-            {
-                validateKeyUsage(KeyUsage.keyEncipherment);
-                this.pubKeyEC = getPubKeyEC();
-                return this;
-            }
-            }
         }
 
         throw new TlsFatalAlert(AlertDescription.certificate_unknown);
