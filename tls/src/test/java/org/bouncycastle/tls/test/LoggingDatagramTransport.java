@@ -56,6 +56,7 @@ public class LoggingDatagramTransport
     public void close()
         throws IOException
     {
+        transport.close();
     }
 
     private void dumpDatagram(String verb, byte[] buf, int off, int len)

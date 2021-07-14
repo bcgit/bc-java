@@ -305,12 +305,18 @@ public class ASN1InputStream
 
     ASN1EncodableVector readVector() throws IOException
     {
+        ASN1Primitive p = readObject();
+        if (null == p)
+        {
+            return new ASN1EncodableVector(0);
+        }
+
         ASN1EncodableVector v = new ASN1EncodableVector();
-        ASN1Primitive p;
-        while ((p = readObject()) != null)
+        do
         {
             v.add(p);
         }
+        while ((p = readObject()) != null);
         return v;
     }
 

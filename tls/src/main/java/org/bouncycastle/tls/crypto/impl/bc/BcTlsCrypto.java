@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
@@ -28,7 +27,6 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
@@ -63,7 +61,6 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
-import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
 import org.bouncycastle.util.Arrays;
@@ -190,17 +187,6 @@ public class BcTlsCrypto
         default:
             return new BcTlsECDomain(this, ecConfig);
         }
-    }
-
-    public TlsEncryptor createEncryptor(TlsCertificate certificate)
-        throws IOException
-    {
-        BcTlsCertificate bcCert = BcTlsCertificate.convert(this, certificate);
-        bcCert.validateKeyUsage(KeyUsage.keyEncipherment);
-
-        RSAKeyParameters pubKeyRSA = bcCert.getPubKeyRSA();
-
-        return new BcTlsRSAEncryptor(this, pubKeyRSA);
     }
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
