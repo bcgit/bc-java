@@ -16,6 +16,12 @@ public class PublicEncryptionKey
     private final SymmAlgorithm supportedSymmAlg;
     private final BasePublicEncryptionKey basePublicEncryptionKey;
 
+    public PublicEncryptionKey(SymmAlgorithm supportedSymmAlg, BasePublicEncryptionKey basePublicEncryptionKey)
+    {
+        this.supportedSymmAlg = supportedSymmAlg;
+        this.basePublicEncryptionKey = basePublicEncryptionKey;
+    }
+
     public static PublicEncryptionKey getInstance(Object o)
     {
         if (o instanceof PublicEncryptionKey)
@@ -27,12 +33,6 @@ public class PublicEncryptionKey
             SymmAlgorithm.getInstance(seq.getObjectAt(0)),
             BasePublicEncryptionKey.getInstance(seq.getObjectAt(1)));
 
-    }
-
-    public PublicEncryptionKey(SymmAlgorithm supportedSymmAlg, BasePublicEncryptionKey basePublicEncryptionKey)
-    {
-        this.supportedSymmAlg = supportedSymmAlg;
-        this.basePublicEncryptionKey = basePublicEncryptionKey;
     }
 
     public SymmAlgorithm getSupportedSymmAlg()

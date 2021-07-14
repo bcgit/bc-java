@@ -66,6 +66,10 @@ public class CertificateId
 
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
 
     public ASN1Primitive toASN1Primitive()
     {
@@ -80,11 +84,6 @@ public class CertificateId
     public ASN1Encodable getValue()
     {
         return value;
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

@@ -39,6 +39,11 @@ public class HashedId
         }
     }
 
+    public ASN1Primitive toASN1Primitive()
+    {
+        return new DEROctetString(string);
+    }
+
     public static class HashedId3
         extends HashedId
     {
@@ -89,10 +94,5 @@ public class HashedId
                 throw new IllegalArgumentException("hash id not 32 bytes");
             }
         }
-    }
-
-    public ASN1Primitive toASN1Primitive()
-    {
-        return new DEROctetString(string);
     }
 }

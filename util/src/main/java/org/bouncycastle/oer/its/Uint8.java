@@ -6,30 +6,30 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 
-public class Uint16
+public class Uint8
     extends ASN1Object
 {
     private final int value;
 
-    public Uint16(int value)
+    public Uint8(int value)
     {
         this.value = verify(value);
     }
 
-    public Uint16(BigInteger value)
+    public Uint8(BigInteger value)
     {
         this.value = value.intValue();
     }
 
-    public static Uint16 getInstance(Object o)
+    public static Uint8 getInstance(Object o)
     {
-        if (o instanceof Uint16)
+        if (o instanceof Uint8)
         {
-            return (Uint16)o;
+            return (Uint8)o;
         }
         else
         {
-            return new Uint16(ASN1Integer.getInstance(o).getValue());
+            return new Uint8(ASN1Integer.getInstance(o).getValue());
         }
     }
 
@@ -39,9 +39,9 @@ public class Uint16
         {
             throw new IllegalArgumentException("Uint16 must be >= 0");
         }
-        if (value > 0xFFFF)
+        if (value > 0xFF)
         {
-            throw new IllegalArgumentException("Uint16 must be <= 0xFFFF");
+            throw new IllegalArgumentException("Uint16 must be <= 0xFF");
         }
 
         return value;

@@ -19,6 +19,11 @@ public class SequenceOfPsidSsp
 {
     private final List<PsidSsp> items;
 
+    public SequenceOfPsidSsp(List<PsidSsp> items)
+    {
+        this.items = Collections.unmodifiableList(items);
+    }
+
     public static SequenceOfPsidSsp getInstance(Object o)
     {
         if (o instanceof SequenceOfPsidSsp)
@@ -35,11 +40,10 @@ public class SequenceOfPsidSsp
         return new Builder().setItems(accumulator).createSequenceOfPsidSsp();
     }
 
-    public SequenceOfPsidSsp(List<PsidSsp> items)
+    public static Builder builder()
     {
-        this.items = Collections.unmodifiableList(items);
+        return new Builder();
     }
-
 
     public List<PsidSsp> getItems()
     {
@@ -55,11 +59,6 @@ public class SequenceOfPsidSsp
         }
 
         return new DERSequence(avec);
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

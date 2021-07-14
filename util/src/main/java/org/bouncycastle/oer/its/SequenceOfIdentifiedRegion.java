@@ -13,6 +13,14 @@ public class SequenceOfIdentifiedRegion
     extends ASN1Object
 {
 
+    private final List<IdentifiedRegion> identifiedRegions;
+
+
+    public SequenceOfIdentifiedRegion(List<IdentifiedRegion> identifiedRegions)
+    {
+        this.identifiedRegions = Collections.unmodifiableList(identifiedRegions);
+    }
+
     public static SequenceOfIdentifiedRegion getInstance(Object o)
     {
         if (o instanceof SequenceOfIdentifiedRegion)
@@ -22,14 +30,6 @@ public class SequenceOfIdentifiedRegion
 
         return new SequenceOfIdentifiedRegion(Utils.fillList(IdentifiedRegion.class, ASN1Sequence.getInstance(o)));
     }
-
-
-    public SequenceOfIdentifiedRegion(List<IdentifiedRegion> identifiedRegions)
-    {
-        this.identifiedRegions = Collections.unmodifiableList(identifiedRegions);
-    }
-
-    private final List<IdentifiedRegion> identifiedRegions;
 
     public List<IdentifiedRegion> getIdentifiedRegions()
     {

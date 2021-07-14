@@ -34,6 +34,12 @@ public class SubjectPermissions
     private final ASN1Encodable value;
     private final int choice;
 
+    SubjectPermissions(int choice, ASN1Encodable value)
+    {
+        this.value = value;
+        this.choice = choice;
+    }
+
     public static SubjectPermissions getInstance(Object src)
     {
         if (src instanceof SubjectPermissions)
@@ -65,20 +71,14 @@ public class SubjectPermissions
         return null;
     }
 
-    SubjectPermissions(int choice, ASN1Encodable value)
+    public static Builder builder()
     {
-        this.value = value;
-        this.choice = choice;
+        return new Builder();
     }
 
     public ASN1Primitive toASN1Primitive()
     {
         return new DERTaggedObject(choice, value);
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

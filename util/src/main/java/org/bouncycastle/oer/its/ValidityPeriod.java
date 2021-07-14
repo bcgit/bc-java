@@ -42,6 +42,11 @@ public class ValidityPeriod
             .createValidityPeriod();
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public ASN1Integer getTime32()
     {
         return time32;
@@ -55,11 +60,6 @@ public class ValidityPeriod
     public ASN1Primitive toASN1Primitive()
     {
         return new DERSequence(new ASN1Encodable[]{time32, duration});
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

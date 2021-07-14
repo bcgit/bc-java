@@ -64,6 +64,10 @@ public class PublicVerificationKey
         return new PublicVerificationKey(taggedObject.getTagNo(), point);
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
 
     public int getChoice()
     {
@@ -78,12 +82,6 @@ public class PublicVerificationKey
     public ASN1Primitive toASN1Primitive()
     {
         return new DERTaggedObject(choice, curvePoint);
-    }
-
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

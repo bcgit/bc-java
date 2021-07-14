@@ -76,6 +76,10 @@ public class EccP384CurvePoint
         return new Builder().setChoice(ato.getTagNo()).setValue(value).createEccP384CurvePoint();
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
 
     public int getChoice()
     {
@@ -91,7 +95,6 @@ public class EccP384CurvePoint
     {
         return new DERTaggedObject(choice, value);
     }
-
 
     @Override
     public byte[] getEncodedPoint()
@@ -129,11 +132,6 @@ public class EccP384CurvePoint
 
         return key;
 
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

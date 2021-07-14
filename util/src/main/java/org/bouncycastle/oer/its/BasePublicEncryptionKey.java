@@ -28,6 +28,12 @@ public class BasePublicEncryptionKey
     private final ASN1Encodable value;
 
 
+    public BasePublicEncryptionKey(int choice, ASN1Encodable value)
+    {
+        this.choice = choice;
+        this.value = value;
+    }
+
     public static BasePublicEncryptionKey getInstance(Object objectAt)
     {
         if (objectAt instanceof BasePublicEncryptionKey)
@@ -53,13 +59,6 @@ public class BasePublicEncryptionKey
 
         return new BasePublicEncryptionKey(dto.getTagNo(), value);
     }
-
-    public BasePublicEncryptionKey(int choice, ASN1Encodable value)
-    {
-        this.choice = choice;
-        this.value = value;
-    }
-
 
     public int getChoice()
     {

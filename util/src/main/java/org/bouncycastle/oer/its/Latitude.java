@@ -13,6 +13,22 @@ public class Latitude
     extends NinetyDegreeInt
 {
 
+    public Latitude(long value)
+    {
+        super(value);
+    }
+
+
+    public Latitude(BigInteger value)
+    {
+        super(value);
+    }
+
+    public Latitude(byte[] bytes)
+    {
+        super(bytes);
+    }
+
     public static Latitude getInstance(Object o)
     {
         if (o instanceof Latitude)
@@ -27,22 +43,6 @@ public class Latitude
         {
             return new Latitude(ASN1Integer.getInstance(o).getValue());
         }
-    }
-
-
-    public Latitude(long value)
-    {
-        super(value);
-    }
-
-    public Latitude(BigInteger value)
-    {
-        super(value);
-    }
-
-    public Latitude(byte[] bytes)
-    {
-        super(bytes);
     }
 
 

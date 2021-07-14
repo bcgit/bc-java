@@ -51,6 +51,10 @@ public class PsidSspRange
         }
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
 
     public ASN1Integer getPsid()
     {
@@ -71,16 +75,6 @@ public class PsidSspRange
             avec.add(sspRange);
         }
         return new DERSequence(avec);
-    }
-
-
-
-
-
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

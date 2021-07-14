@@ -38,6 +38,17 @@ public class SequenceOfOctetString
         return null;
     }
 
+    static byte[][] toByteArrays(ASN1Sequence seq)
+    {
+        byte[][] octetStrings = new byte[seq.size()][];
+        for (int i = 0; i != seq.size(); i++)
+        {
+            octetStrings[i] = ASN1OctetString.getInstance(seq.getObjectAt(i)).getOctets();
+        }
+
+        return octetStrings;
+    }
+
     public int size()
     {
         return octetStrings.length;
@@ -53,16 +64,5 @@ public class SequenceOfOctetString
         }
 
         return new DERSequence(v);
-    }
-
-    static byte[][] toByteArrays(ASN1Sequence seq)
-    {
-        byte[][] octetStrings = new byte[seq.size()][];
-        for (int i = 0; i != seq.size(); i++)
-        {
-            octetStrings[i] = ASN1OctetString.getInstance(seq.getObjectAt(i)).getOctets();
-        }
-
-        return octetStrings;
     }
 }

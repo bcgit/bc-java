@@ -22,6 +22,12 @@ public class SymmetricCiphertext
     private final int choice;
     private final ASN1Encodable value;
 
+    public SymmetricCiphertext(int choice, ASN1Encodable value)
+    {
+        this.choice = choice;
+        this.value = value;
+    }
+
     public static SymmetricCiphertext getInstance(Object o)
     {
         if (o instanceof SymmetricCiphertext)
@@ -31,12 +37,6 @@ public class SymmetricCiphertext
 
         ASN1TaggedObject ato = ASN1TaggedObject.getInstance(o);
         return new Builder().setChoice(ato.getTagNo()).setValue(ato.getObject()).createSymmetricCiphertext();
-    }
-
-    public SymmetricCiphertext(int choice, ASN1Encodable value)
-    {
-        this.choice = choice;
-        this.value = value;
     }
 
     public int getChoice()

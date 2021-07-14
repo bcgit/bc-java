@@ -62,6 +62,11 @@ public class CertificateBase
             .createCertificateBase();
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public ASN1Integer getVersion()
     {
         return version;
@@ -102,11 +107,6 @@ public class CertificateBase
             issuer,
             toBeSignedCertificate,
             OEROptional.getInstance(signature));
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

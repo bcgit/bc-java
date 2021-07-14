@@ -109,15 +109,14 @@ public class SspRange
 
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
 
     public ASN1Primitive toASN1Primitive()
     {
         return new DERTaggedObject(choice, value);
-    }
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

@@ -19,18 +19,6 @@ public class OneEightyDegreeInt
     private static final BigInteger unknown = new BigInteger("1800000001");
 
 
-    public static OneEightyDegreeInt getInstance(Object o)
-    {
-        if (o instanceof OneEightyDegreeInt)
-        {
-            return (OneEightyDegreeInt)o;
-        }
-        else
-        {
-            return new OneEightyDegreeInt(ASN1Integer.getInstance(o).getValue());
-        }
-    }
-
     public OneEightyDegreeInt(long value)
     {
         super(value);
@@ -47,6 +35,18 @@ public class OneEightyDegreeInt
     {
         super(bytes);
         assertValue();
+    }
+
+    public static OneEightyDegreeInt getInstance(Object o)
+    {
+        if (o instanceof OneEightyDegreeInt)
+        {
+            return (OneEightyDegreeInt)o;
+        }
+        else
+        {
+            return new OneEightyDegreeInt(ASN1Integer.getInstance(o).getValue());
+        }
     }
 
     public void assertValue()

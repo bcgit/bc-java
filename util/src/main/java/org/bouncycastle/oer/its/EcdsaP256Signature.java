@@ -17,6 +17,12 @@ public class EcdsaP256Signature
     private final EccP256CurvePoint rSig;
     private final ASN1OctetString sSig;
 
+    public EcdsaP256Signature(EccP256CurvePoint rSig, ASN1OctetString sSig)
+    {
+        this.rSig = rSig;
+        this.sSig = sSig;
+    }
+
     public static EcdsaP256Signature getInstance(Object object)
     {
         ASN1Sequence it = ASN1Sequence.getInstance(object);
@@ -27,10 +33,9 @@ public class EcdsaP256Signature
             .createEcdsaP256Signature();
     }
 
-    public EcdsaP256Signature(EccP256CurvePoint rSig, ASN1OctetString sSig)
+    public static Builder builder()
     {
-        this.rSig = rSig;
-        this.sSig = sSig;
+        return new Builder();
     }
 
     public EccP256CurvePoint getrSig()
@@ -46,12 +51,6 @@ public class EcdsaP256Signature
     public ASN1Primitive toASN1Primitive()
     {
         return Utils.toSequence(rSig, sSig);
-    }
-
-
-    public static Builder builder()
-    {
-        return new Builder();
     }
 
     public static class Builder

@@ -32,6 +32,12 @@ public class HashedData
     private final int choice;
     private final ASN1Encodable value;
 
+    public HashedData(int choice, ASN1Encodable sha256HashedData)
+    {
+        this.choice = choice;
+        this.value = sha256HashedData;
+    }
+
     public static HashedData getInstance(Object o)
     {
         if (o instanceof HashedData)
@@ -52,14 +58,6 @@ public class HashedData
             throw new IllegalStateException("unknown choice value " + dto.getTagNo());
         }
     }
-
-
-    public HashedData(int choice, ASN1Encodable sha256HashedData)
-    {
-        this.choice = choice;
-        this.value = sha256HashedData;
-    }
-
 
     public int getChoice()
     {
