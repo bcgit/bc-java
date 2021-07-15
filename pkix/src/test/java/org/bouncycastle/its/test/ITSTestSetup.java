@@ -1,4 +1,3 @@
-
 package org.bouncycastle.its.test;
 
 import java.security.Security;

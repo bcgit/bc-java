@@ -8,6 +8,7 @@ import java.security.Provider;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.DigestCalculator;
@@ -20,6 +21,14 @@ public class JcaDigestCalculatorProviderBuilder
 
     public JcaDigestCalculatorProviderBuilder()
     {
+    }
+
+
+    public JcaDigestCalculatorProviderBuilder setHelper(JcaJceHelper helper)
+    {
+        this.helper = new OperatorHelper(helper);
+
+        return this;
     }
 
     public JcaDigestCalculatorProviderBuilder setProvider(Provider provider)
@@ -63,7 +72,7 @@ public class JcaDigestCalculatorProviderBuilder
                     {
                         return algorithm;
                     }
-                    
+
                     public OutputStream getOutputStream()
                     {
                         return stream;
@@ -97,13 +106,13 @@ public class JcaDigestCalculatorProviderBuilder
         public void write(byte[] bytes)
             throws IOException
         {
-           dig.update(bytes);
+            dig.update(bytes);
         }
 
         public void write(int b)
             throws IOException
         {
-           dig.update((byte)b);
+            dig.update((byte)b);
         }
 
         byte[] getDigest()

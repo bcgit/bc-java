@@ -12,14 +12,6 @@ public class AllTests
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
 
-    public void setUp()
-    {
-        if (Security.getProvider(BC) != null)
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-    }
-
     public static void main(String[] args)
         throws Exception
     {
@@ -34,7 +26,17 @@ public class AllTests
         TestSuite suite = new TestSuite("ITS tests");
 
         suite.addTestSuite(ITSBasicTest.class);
+        suite.addTestSuite(ITSCertLoadTest.class);
+        suite.addTestSuite(ITSBasicTestJcaJce.class);
 
         return new ITSTestSetup(suite);
+    }
+
+    public void setUp()
+    {
+        if (Security.getProvider(BC) != null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
     }
 }
