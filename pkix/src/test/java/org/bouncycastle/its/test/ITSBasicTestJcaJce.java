@@ -2,30 +2,31 @@ package org.bouncycastle.its.test;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
-import java.security.SecureRandom;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Security;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
-import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ECNamedDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.its.ITSCertificate;
+import org.bouncycastle.its.ITSExplicitCertificateBuilder;
 import org.bouncycastle.its.ITSValidityPeriod;
-import org.bouncycastle.its.bc.BcITSContentSigner;
-import org.bouncycastle.its.bc.BcITSContentVerifierProvider;
-import org.bouncycastle.its.bc.BcITSExplicitCertificateBuilder;
-import org.bouncycastle.its.bc.BcITSImplicitCertificateBuilder;
+import org.bouncycastle.its.jcajce.JcaJceITSContentSigner;
+import org.bouncycastle.its.jcajce.JcaJceITSContentVerifierProvider;
+import org.bouncycastle.its.jcajce.JcaJceITSExplicitCertificateBuilder;
+import org.bouncycastle.its.jcajce.JcaJceITSImplicitCertificateBuilder;
+import org.bouncycastle.its.jcajce.JcaJceITSPublicVerificationKey;
 import org.bouncycastle.its.operator.ITSContentSigner;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.CertificateId;
@@ -39,7 +40,6 @@ import org.bouncycastle.oer.its.Psid;
 import org.bouncycastle.oer.its.PsidGroupPermissions;
 import org.bouncycastle.oer.its.PsidSsp;
 import org.bouncycastle.oer.its.PsidSspRange;
-import org.bouncycastle.oer.its.PublicEncryptionKey;
 import org.bouncycastle.oer.its.SequenceOfPsidGroupPermissions;
 import org.bouncycastle.oer.its.SequenceOfPsidSsp;
 import org.bouncycastle.oer.its.SequenceOfPsidSspRange;
@@ -47,18 +47,25 @@ import org.bouncycastle.oer.its.ServiceSpecificPermissions;
 import org.bouncycastle.oer.its.SspRange;
 import org.bouncycastle.oer.its.SubjectAssurance;
 import org.bouncycastle.oer.its.SubjectPermissions;
-import org.bouncycastle.oer.its.SymmAlgorithm;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
-public class ITSBasicTest
+public class ITSBasicTestJcaJce
     extends TestCase
 {
-
+    public static void ensureProvider()
+        throws Exception
+    {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
 
     private static ITSCertificate loadCertificate(byte[] data)
         throws Exception
@@ -79,19 +86,10 @@ public class ITSBasicTest
         return certificate;
     }
 
-    public void testWithEncryptionKey()
-        throws Exception
-    {
-        byte[] certRaw = Hex.decode("80030080e5f6db2f26d073ae798300000000001a5617008466a88101011a0d203004268ab91a0645a1042d65488001018002026f810302013201012080010780012482080301fffc03ff0003800125820a0401ffffff04ff00000080018982060201e002ff1f80018a82060201c002ff3f80018b820e0601000000fff806ff000000000780018c820a0401ffffe004ff00001f00018dc0008082e35a13ea972ef64806c7bff581f4effd2b7118bc3e096e194b47d859e1334b93808082a2f65bbb216fdee3c18c9fd5b4197e884b938de55feed7ed96f11713215e6258808019b31711707d09aa00b79973190bbd84eefd1255ad3b4f1a4d224b4172dfadddce409989d93178a3ec054b814bce4bbb99a979e4624c9972b8b0c862ff9ae70b");
-        ITSCertificate cert = loadCertificate(certRaw);
-
-        PublicEncryptionKey pec = cert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getEncryptionKey();
-        assertSame(pec.getSupportedSymmAlg(), SymmAlgorithm.aes128Ccm);
-    }
-
     public void testImplicitBuilder()
         throws Exception
     {
+        ensureProvider();
 
         byte[] ca = Hex.decode("800300810038811B45545349205465737420524341204320636572746966696361746500000000001A5617008466A8C001028002026E810201018002027081030201380102A080010E80012482080301FFFC03FF0003800125820A0401FFFFFF04FF00000080018982060201E002FF1F80018A82060201C002FF3F80018B820E0601000000FFF806FF000000000780018C820A0401FFFFE004FF00001F00018D0001600001610001620001630001640001650001660102C0208001018002026F82060201FE02FF01C0808082A4C29A1DDE0E1AEA8D36858B59016A45DB4A4968A2D5A1073B8EABC842C1D5948080B58B1A7CE9848D3EC315C70183D08E6E8B21C0FDA15A7839445AEEA636C794BA4ED59903EADC60372A542D21D77BFFB3E65B5B8BA3FB14BCE7CDA91268B177BC");
         ITSCertificate caCert = loadCertificate(ca);
@@ -111,7 +109,11 @@ public class ITSBasicTest
         tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
         // builder.setCanRequestRollover(OEROptional.ABSENT);
 
-        BcITSImplicitCertificateBuilder certificateBuilder = new BcITSImplicitCertificateBuilder(caCert, tbsBuilder);
+        JcaJceHelper helper = new ProviderJcaJceHelper(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME));
+
+        JcaDigestCalculatorProviderBuilder builder = new JcaDigestCalculatorProviderBuilder().setHelper(helper);
+
+        JcaJceITSImplicitCertificateBuilder certificateBuilder = new JcaJceITSImplicitCertificateBuilder(caCert, builder.build(), tbsBuilder);
 
         certificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
 
@@ -195,18 +197,21 @@ public class ITSBasicTest
     public void testBuildSelfSigned()
         throws Exception
     {
-        SecureRandom rand = new SecureRandom();
+
+        ensureProvider();
+
+        JcaJceHelper helper = new ProviderJcaJceHelper(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME));
+
 
         byte[] ca = Hex.decode("800300810038811B45545349205465737420524341204320636572746966696361746500000000001A5617008466A8C001028002026E810201018002027081030201380102A080010E80012482080301FFFC03FF0003800125820A0401FFFFFF04FF00000080018982060201E002FF1F80018A82060201C002FF3F80018B820E0601000000FFF806FF000000000780018C820A0401FFFFE004FF00001F00018D0001600001610001620001630001640001650001660102C0208001018002026F82060201FE02FF01C0808082A4C29A1DDE0E1AEA8D36858B59016A45DB4A4968A2D5A1073B8EABC842C1D5948080B58B1A7CE9848D3EC315C70183D08E6E8B21C0FDA15A7839445AEEA636C794BA4ED59903EADC60372A542D21D77BFFB3E65B5B8BA3FB14BCE7CDA91268B177BC");
         ITSCertificate caCert = loadCertificate(ca);
 
-        ECKeyPairGenerator generator = new ECKeyPairGenerator();
-        X9ECParameters parameters = NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1);
-        generator.init(new ECKeyGenerationParameters(new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, parameters), rand));
-        AsymmetricCipherKeyPair kp = generator.generateKeyPair();
+        KeyPairGenerator kpg = helper.createKeyPairGenerator("ECDSA");
+        kpg.initialize(new ECGenParameterSpec("secp256r1"));
+        KeyPair kp = kpg.generateKeyPair();
 
-        ECPublicKeyParameters publicVerificationKey = (ECPublicKeyParameters)kp.getPublic();
-        ECPrivateKeyParameters privateKeyParameters = (ECPrivateKeyParameters)kp.getPrivate();
+        ECPublicKey publicVerificationKey = (ECPublicKey)kp.getPublic();
+        ECPrivateKey privateKeyParameters = (ECPrivateKey)kp.getPrivate();
 
 
         ToBeSignedCertificate.Builder tbsBuilder = new ToBeSignedCertificate.Builder();
@@ -279,16 +284,16 @@ public class ITSBasicTest
 
         tbsBuilder.setCrlSeries(new CrlSeries(1));
 
-        ITSContentSigner itsContentSigner = new BcITSContentSigner(new ECPrivateKeyParameters(privateKeyParameters.getD(), new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, privateKeyParameters.getParameters())));
-        BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
+        ITSContentSigner itsContentSigner = new JcaJceITSContentSigner((ECPrivateKey)privateKeyParameters, null, helper);
+        ITSExplicitCertificateBuilder itsCertificateBuilder = new JcaJceITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
 
         itsCertificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
 
         ITSCertificate newCert = itsCertificateBuilder.build(
             CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId(),
-            publicVerificationKey);
+            new JcaJceITSPublicVerificationKey(publicVerificationKey, helper));
 
-        BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(newCert);
+        JcaJceITSContentVerifierProvider provider = new JcaJceITSContentVerifierProvider(newCert, helper);
         boolean valid = newCert.isSignatureValid(provider);
 
         TestCase.assertTrue(valid);
@@ -297,45 +302,19 @@ public class ITSBasicTest
     public void testSelfSignedCA()
         throws Exception
     {
+        ensureProvider();
         byte[] ca = Hex.decode("800300810038811B45545349205465737420524341204320636572746966696361746500000000001A5617008466A8C001028002026E810201018002027081030201380102A080010E80012482080301FFFC03FF0003800125820A0401FFFFFF04FF00000080018982060201E002FF1F80018A82060201C002FF3F80018B820E0601000000FFF806FF000000000780018C820A0401FFFFE004FF00001F00018D0001600001610001620001630001640001650001660102C0208001018002026F82060201FE02FF01C0808082A4C29A1DDE0E1AEA8D36858B59016A45DB4A4968A2D5A1073B8EABC842C1D5948080B58B1A7CE9848D3EC315C70183D08E6E8B21C0FDA15A7839445AEEA636C794BA4ED59903EADC60372A542D21D77BFFB3E65B5B8BA3FB14BCE7CDA91268B177BC");
         ITSCertificate caCert = loadCertificate(ca);
-        BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(caCert);
+        JcaJceITSContentVerifierProvider provider = new JcaJceITSContentVerifierProvider(caCert, new ProviderJcaJceHelper(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME)));
         boolean valid = caCert.isSignatureValid(provider);
         TestCase.assertTrue(valid);
     }
 
-//    public void testBasicGeneration()
-//        throws Exception
-//    {
-//
-//        byte[] issuerRaw = Hex.decode("80030080c6f1125e19b175ee398300000000001a5617008466a88001018002026f810302013201012080010780012482080301fffc03ff0003800125820a0401ffffff04ff00000080018982060201e002ff1f80018a82060201c002ff3f80018b820e0601000000fff806ff000000000780018c820a0401ffffe004ff00001f00018dc0008082ce2a2219c94c6644d9f056ecc91ba39dfac64c5dd62f26b49e5fa51a28dd880e80808253b8a1bdc3e281fc950d4620e2bae0289df4c3cd34c9e716dc2f0ce022ff223a808072c44e228a92e9c8b7d74686ebb1481eac212d788c8f0a4d67b305210d95d6d22a518deab39110189e0463a677ce47328fdb902ae124bdd85ceaecccce148cac");
-//        byte[] subjectRaw = Hex.decode("8003008034556d34931e5e5c318300000000001a56170084223860010380012481040301fffc80012581050401ffffff80018d810201000080826804fcef8c89168b7e4ffc0615ef7d64a02cb92456cb6d00baabb71d0adcc690808082b3d838f7d8851b97177a2d314ee6f1c7aadd7273619a4868ad8b0e34443a0e4180806c8e98b60ee6ccbc1d69e0e910c9230cdbbaf013061ca9bf97844bceda4dd0357900bddda50788111db4e833e8850924a2150a5afb5186c1e78908ee5c30af6d");
-//
-//        ITSCertificate issuer = loadCertificate(issuerRaw);
-//        ITSCertificate subject = loadCertificate(subjectRaw);
-//
-//        ECKeyPairGenerator kpGen = new ECKeyPairGenerator();
-//
-//        kpGen.init(new ECKeyGenerationParameters(
-//            new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, ECNamedCurveTable.getByName("P-256")), new SecureRandom()));
-//
-//        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-//
-//        ITSExplicitCertificateBuilder bldr = new ITSExplicitCertificateBuilder(subject.toASN1Structure().getCertificateBase().getToBeSignedCertificate());
-//        BcITSContentSigner signer = new BcITSContentSigner((ECPrivateKeyParameters)kp.getPrivate(), issuer);
-//
-//        ITSCertificate genCert = bldr.buildExplicit(signer);
-//
-//        assertEquals(subject.getIssuer(), genCert.getIssuer());
-////   TODO: signature creation is confirmed, but need a way of generating root certificate
-////        BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(issuer);
-////        boolean valid = genCert.isSignatureValid(provider);
-////        TestCase.assertTrue(valid);
-//    }
-
     public void testBasicVerification()
         throws Exception
     {
+        ensureProvider();
+
 
         byte[] rootCertRaw = Hex.decode("800300810038811B45545349205465737420524341204320636572746966696361746500000000001A5617008466A8C001028002026E810201018002027081030201380102A080010E80012482080301FFFC03FF0003800125820A0401FFFFFF04FF00000080018982060201E002FF1F80018A82060201C002FF3F80018B820E0601000000FFF806FF000000000780018C820A0401FFFFE004FF00001F00018D0001600001610001620001630001640001650001660102C0208001018002026F82060201FE02FF01C0808082A4C29A1DDE0E1AEA8D36858B59016A45DB4A4968A2D5A1073B8EABC842C1D5948080B58B1A7CE9848D3EC315C70183D08E6E8B21C0FDA15A7839445AEEA636C794BA4ED59903EADC60372A542D21D77BFFB3E65B5B8BA3FB14BCE7CDA91268B177BC");
         byte[] issuerRaw = Hex.decode("80030080c6f1125e19b175ee398300000000001a5617008466a88001018002026f810302013201012080010780012482080301fffc03ff0003800125820a0401ffffff04ff00000080018982060201e002ff1f80018a82060201c002ff3f80018b820e0601000000fff806ff000000000780018c820a0401ffffe004ff00001f00018dc0008082ce2a2219c94c6644d9f056ecc91ba39dfac64c5dd62f26b49e5fa51a28dd880e80808253b8a1bdc3e281fc950d4620e2bae0289df4c3cd34c9e716dc2f0ce022ff223a808072c44e228a92e9c8b7d74686ebb1481eac212d788c8f0a4d67b305210d95d6d22a518deab39110189e0463a677ce47328fdb902ae124bdd85ceaecccce148cac");
@@ -345,10 +324,12 @@ public class ITSBasicTest
         ITSCertificate rootCert = loadCertificate(rootCertRaw);
         ITSCertificate issuer = loadCertificate(issuerRaw);
 
+        JcaJceHelper helper = new ProviderJcaJceHelper(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME));
+
         //
         // Verify issuer against root
         //
-        BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(rootCert);
+        JcaJceITSContentVerifierProvider provider = new JcaJceITSContentVerifierProvider(rootCert, helper);
         boolean issuerValidAgainstRoot = issuer.isSignatureValid(provider);
         TestCase.assertTrue(issuerValidAgainstRoot);
 
@@ -357,12 +338,9 @@ public class ITSBasicTest
         //
         // Verify subject against issuer
         //
-        provider = new BcITSContentVerifierProvider(issuer);
+        provider = new JcaJceITSContentVerifierProvider(issuer, helper);
         boolean valid = subject.isSignatureValid(provider);
         TestCase.assertTrue(valid);
     }
 
-
 }
-
-
