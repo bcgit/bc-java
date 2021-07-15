@@ -8,6 +8,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.PSKTlsServer;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsPSKIdentityManager;
@@ -58,6 +59,12 @@ class MockPSKDTLSServer
     {
         super.notifyHandshakeComplete();
 
+        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        if (protocolName != null)
+        {
+            System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
+        }
+
         byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
         System.out.println("Server 'tls-server-end-point': " + hex(tlsServerEndPoint));
 
@@ -68,7 +75,7 @@ class MockPSKDTLSServer
         if (pskIdentity != null)
         {
             String name = Strings.fromUTF8ByteArray(pskIdentity);
-            System.out.println("TLS-PSK server completed handshake for PSK identity: " + name);
+            System.out.println("DTLS-PSK server completed handshake for PSK identity: " + name);
         }
     }
 

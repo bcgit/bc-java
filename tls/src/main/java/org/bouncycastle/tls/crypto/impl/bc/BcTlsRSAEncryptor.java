@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 
 final class BcTlsRSAEncryptor
     implements TlsEncryptor

@@ -23,7 +23,6 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
@@ -32,6 +31,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 
@@ -107,6 +107,28 @@ public class JcaTlsCertificate
     {
         this.crypto = crypto;
         this.certificate = certificate;
+    }
+
+    public TlsEncryptor createEncryptor(int tlsCertificateRole) throws IOException
+    {
+        validateKeyUsageBit(JcaTlsCertificate.KU_KEY_ENCIPHERMENT);
+
+        switch (tlsCertificateRole)
+        {
+        case TlsCertificateRole.RSA_ENCRYPTION:
+        {
+            this.pubKeyRSA = getPubKeyRSA();
+            return new JcaTlsRSAEncryptor(crypto, pubKeyRSA);
+        }
+        // TODO[gmssl]
+//        case TlsCertificateRole.SM2_ENCRYPTION:
+//        {
+//            this.pubKeyEC = getPubKeyEC();
+//            return new JcaTlsSM2Encryptor(crypto, pubKeyEC);
+//        }
+        }
+
+        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
@@ -355,7 +377,7 @@ public class JcaTlsCertificate
         return implSupportsSignatureAlgorithm(signatureAlgorithm);
     }
 
-    public TlsCertificate checkUsageInRole(int connectionEnd, int tlsCertificateRole) throws IOException
+    public TlsCertificate checkUsageInRole(int tlsCertificateRole) throws IOException
     {
         switch (tlsCertificateRole)
         {
@@ -372,25 +394,6 @@ public class JcaTlsCertificate
             this.pubKeyEC = getPubKeyEC();
             return this;
         }
-        }
-
-        if (connectionEnd == ConnectionEnd.server)
-        {
-            switch (tlsCertificateRole)
-            {
-            case TlsCertificateRole.RSA_ENCRYPTION:
-            {
-                validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
-                this.pubKeyRSA = getPubKeyRSA();
-                return this;
-            }
-            case TlsCertificateRole.SM2_ENCRYPTION:
-            {
-                validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
-                this.pubKeyEC = getPubKeyEC();
-                return this;
-            }
-            }
         }
 
         throw new TlsFatalAlert(AlertDescription.certificate_unknown);
