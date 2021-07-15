@@ -27,7 +27,7 @@ public class AllTests
 
         suite.addTestSuite(ITSBasicTest.class);
         suite.addTestSuite(ITSCertLoadTest.class);
-        suite.addTestSuite(ITSBasicTestJcaJce.class);
+        suite.addTestSuite(ITSJcaJceBasicTest.class);
 
         return new ITSTestSetup(suite);
     }

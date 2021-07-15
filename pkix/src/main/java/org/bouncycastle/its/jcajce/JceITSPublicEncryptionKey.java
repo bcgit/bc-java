@@ -1,6 +1,7 @@
 package org.bouncycastle.its.jcajce;
 
 import java.security.KeyFactory;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
@@ -16,7 +17,10 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.its.ITSPublicEncryptionKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.oer.its.BasePublicEncryptionKey;
@@ -31,19 +35,46 @@ public class JceITSPublicEncryptionKey
 {
     private final JcaJceHelper helper;
 
+    public static class Builder
+    {
+        private JcaJceHelper helper = new DefaultJcaJceHelper();
 
-    public JceITSPublicEncryptionKey(PublicEncryptionKey encryptionKey, JcaJceHelper helper)
+        public Builder setProvider(Provider provider)
+        {
+            this.helper = new ProviderJcaJceHelper(provider);
+
+            return this;
+        }
+
+        public Builder setProvider(String providerName)
+        {
+            this.helper = new NamedJcaJceHelper(providerName);
+
+            return this;
+        }
+
+        public JceITSPublicEncryptionKey build(PublicEncryptionKey encryptionKey)
+        {
+            return new JceITSPublicEncryptionKey(encryptionKey, helper);
+        }
+
+        public JceITSPublicEncryptionKey build(PublicKey encryptionKey)
+        {
+            return new JceITSPublicEncryptionKey(encryptionKey, helper);
+        }
+    }
+
+    JceITSPublicEncryptionKey(PublicEncryptionKey encryptionKey, JcaJceHelper helper)
     {
         super(encryptionKey);
         this.helper = helper;
     }
 
-    public JceITSPublicEncryptionKey(PublicKey encryptionKey, JcaJceHelper helper)
+    JceITSPublicEncryptionKey(PublicKey encryptionKey, JcaJceHelper helper)
     {
         super(fromPublicKey(encryptionKey));
         this.helper = helper;
     }
-
 
     static PublicEncryptionKey fromPublicKey(PublicKey key)
     {
@@ -53,7 +84,6 @@ public class JceITSPublicEncryptionKey
         }
 
         ECPublicKey pKey = (ECPublicKey)key;
-
 
         ASN1ObjectIdentifier curveID = ASN1ObjectIdentifier.getInstance(
             SubjectPublicKeyInfo.getInstance(key.getEncoded()).getAlgorithm().getParameters());
@@ -137,7 +167,6 @@ public class JceITSPublicEncryptionKey
 
         try
         {
-
             KeyFactory keyFactory = helper.createKeyFactory("EC");
             ECParameterSpec spec = EC5Util.convertToSpec(params);
             java.security.spec.ECPoint jPoint = EC5Util.convertPoint(point);
@@ -148,6 +177,4 @@ public class JceITSPublicEncryptionKey
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
-
-
 }
