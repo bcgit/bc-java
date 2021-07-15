@@ -17,11 +17,12 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.ITSExplicitCertificateBuilder;
+import org.bouncycastle.its.ITSImplicitCertificateBuilder;
 import org.bouncycastle.its.ITSValidityPeriod;
 import org.bouncycastle.its.jcajce.JcaITSContentSigner;
 import org.bouncycastle.its.jcajce.JcaITSContentVerifierProvider;
 import org.bouncycastle.its.jcajce.JcaITSExplicitCertificateBuilder;
-import org.bouncycastle.its.jcajce.JcaITSImplicitCertificateBuilder;
+import org.bouncycastle.its.jcajce.JcaITSImplicitCertificateBuilderBuilder;
 import org.bouncycastle.its.jcajce.JcaITSPublicVerificationKey;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -50,12 +51,11 @@ import org.bouncycastle.oer.its.SubjectPermissions;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
-import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
-public class ITSBasicTestJcaJce
+public class ITSJcaJceBasicTest
     extends TestCase
 {
     public static void ensureProvider()
@@ -108,12 +108,8 @@ public class ITSBasicTestJcaJce
 
         tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
         // builder.setCanRequestRollover(OEROptional.ABSENT);
-
-        JcaJceHelper helper = new ProviderJcaJceHelper(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME));
-
-        JcaDigestCalculatorProviderBuilder builder = new JcaDigestCalculatorProviderBuilder().setHelper(helper);
-
-        JcaITSImplicitCertificateBuilder certificateBuilder = new JcaITSImplicitCertificateBuilder(caCert, builder.build(), tbsBuilder);
+        
+        ITSImplicitCertificateBuilder certificateBuilder = new JcaITSImplicitCertificateBuilderBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME).build(caCert, tbsBuilder);
 
         certificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
 
@@ -284,16 +280,16 @@ public class ITSBasicTestJcaJce
 
         tbsBuilder.setCrlSeries(new CrlSeries(1));
 
-        ITSContentSigner itsContentSigner = new JcaITSContentSigner((ECPrivateKey)privateKeyParameters, null, helper);
+        ITSContentSigner itsContentSigner = new JcaITSContentSigner.Builder().build(privateKeyParameters);
         ITSExplicitCertificateBuilder itsCertificateBuilder = new JcaITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
 
         itsCertificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
 
         ITSCertificate newCert = itsCertificateBuilder.build(
             CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId(),
-            new JcaITSPublicVerificationKey(publicVerificationKey, helper));
+            new JcaITSPublicVerificationKey.Builder().build(publicVerificationKey));
 
-        JcaITSContentVerifierProvider provider = new JcaITSContentVerifierProvider(newCert, helper);
+        JcaITSContentVerifierProvider provider = new JcaITSContentVerifierProvider.Builder().build(newCert);
         boolean valid = newCert.isSignatureValid(provider);
 
         TestCase.assertTrue(valid);
@@ -305,7 +301,7 @@ public class ITSBasicTestJcaJce
         ensureProvider();
         byte[] ca = Hex.decode("800300810038811B45545349205465737420524341204320636572746966696361746500000000001A5617008466A8C001028002026E810201018002027081030201380102A080010E80012482080301FFFC03FF0003800125820A0401FFFFFF04FF00000080018982060201E002FF1F80018A82060201C002FF3F80018B820E0601000000FFF806FF000000000780018C820A0401FFFFE004FF00001F00018D0001600001610001620001630001640001650001660102C0208001018002026F82060201FE02FF01C0808082A4C29A1DDE0E1AEA8D36858B59016A45DB4A4968A2D5A1073B8EABC842C1D5948080B58B1A7CE9848D3EC315C70183D08E6E8B21C0FDA15A7839445AEEA636C794BA4ED59903EADC60372A542D21D77BFFB3E65B5B8BA3FB14BCE7CDA91268B177BC");
         ITSCertificate caCert = loadCertificate(ca);
-        JcaITSContentVerifierProvider provider = new JcaITSContentVerifierProvider(caCert, new ProviderJcaJceHelper(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME)));
+        JcaITSContentVerifierProvider provider = new JcaITSContentVerifierProvider.Builder().setProvider("BC").build(caCert);
         boolean valid = caCert.isSignatureValid(provider);
         TestCase.assertTrue(valid);
     }
@@ -324,12 +320,10 @@ public class ITSBasicTestJcaJce
         ITSCertificate rootCert = loadCertificate(rootCertRaw);
         ITSCertificate issuer = loadCertificate(issuerRaw);
 
-        JcaJceHelper helper = new ProviderJcaJceHelper(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME));
-
         //
         // Verify issuer against root
         //
-        JcaITSContentVerifierProvider provider = new JcaITSContentVerifierProvider(rootCert, helper);
+        JcaITSContentVerifierProvider provider = new JcaITSContentVerifierProvider.Builder().setProvider("BC").build(rootCert);
         boolean issuerValidAgainstRoot = issuer.isSignatureValid(provider);
         TestCase.assertTrue(issuerValidAgainstRoot);
 
@@ -338,7 +332,7 @@ public class ITSBasicTestJcaJce
         //
         // Verify subject against issuer
         //
-        provider = new JcaITSContentVerifierProvider(issuer, helper);
+        provider = new JcaITSContentVerifierProvider.Builder().setProvider("BC").build(issuer);
         boolean valid = subject.isSignatureValid(provider);
         TestCase.assertTrue(valid);
     }

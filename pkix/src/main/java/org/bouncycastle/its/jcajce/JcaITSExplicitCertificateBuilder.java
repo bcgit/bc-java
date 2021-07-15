@@ -1,5 +1,6 @@
 package org.bouncycastle.its.jcajce;
 
+import java.security.Provider;
 import java.security.interfaces.ECPublicKey;
 
 import org.bouncycastle.its.ITSCertificate;
@@ -8,27 +9,15 @@ import org.bouncycastle.its.ITSPublicEncryptionKey;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 
 public class JcaITSExplicitCertificateBuilder
     extends ITSExplicitCertificateBuilder
 {
-    private final JcaJceHelper helper;
-
-
-    /**
-     * Base constructor for an ITS certificate.
-     *
-     * @param signer         the content signer to be used to generate the signature validating the certificate.
-     * @param helper         JcaJceHelper
-     * @param tbsCertificate
-     */
-    public JcaITSExplicitCertificateBuilder(ITSContentSigner signer, ToBeSignedCertificate.Builder tbsCertificate, JcaJceHelper helper)
-    {
-        super(signer, tbsCertificate);
-        this.helper = helper;
-    }
+    private JcaJceHelper helper;
 
     /**
      * Base constructor for an ITS certificate.
@@ -41,12 +30,28 @@ public class JcaITSExplicitCertificateBuilder
         this(signer, tbsCertificate, new DefaultJcaJceHelper());
     }
 
+    private JcaITSExplicitCertificateBuilder(ITSContentSigner signer, ToBeSignedCertificate.Builder tbsCertificate, JcaJceHelper helper)
+    {
+        super(signer, tbsCertificate);
+        this.helper = helper;
+    }
+
+    public JcaITSExplicitCertificateBuilder setProvider(Provider provider)
+    {
+        this.helper = new ProviderJcaJceHelper(provider);
+        return this;
+    }
+
+    public JcaITSExplicitCertificateBuilder setProvider(String providerName)
+    {
+        this.helper = new NamedJcaJceHelper(providerName);
+        return this;
+    }
 
     public ITSCertificate build(
         CertificateId certificateId,
         ECPublicKey verificationKey)
     {
-
         return build(certificateId, verificationKey, null);
     }
 
@@ -63,6 +68,4 @@ public class JcaITSExplicitCertificateBuilder
 
         return super.build(certificateId, new JcaITSPublicVerificationKey(verificationKey, helper), publicEncryptionKey);
     }
-
-
 }
