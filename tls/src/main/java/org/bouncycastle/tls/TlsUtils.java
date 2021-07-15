@@ -35,6 +35,7 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -5688,5 +5689,18 @@ public class TlsUtils
                 throw new TlsFatalAlert(alertDescription, "Invalid extension: " + ExtensionType.getText(extensionType.intValue()));
             }
         }
+    }
+
+    /**
+     * Generate a pre_master_secret and send it encrypted to the server.
+     */
+    public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsEncryptor encryptor,
+        OutputStream output) throws IOException
+    {
+        ProtocolVersion version = context.getRSAPreMasterSecretVersion();
+        TlsSecret preMasterSecret = context.getCrypto().generateRSAPreMasterSecret(version);
+        byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(encryptor);
+        writeEncryptedPMS(context, encryptedPreMasterSecret, output);
+        return preMasterSecret;
     }
 }
