@@ -463,7 +463,10 @@ public class CBZip2OutputStream
             writeRun();
         }
         currentChar = -1;
-        endBlock();
+        if (last >= 0)
+        {
+            endBlock();
+        }
         endCompression();
         finished = true;
         flush();
