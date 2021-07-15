@@ -11,7 +11,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 
-public class JcaJceITSExplicitCertificateBuilder
+public class JcaITSExplicitCertificateBuilder
     extends ITSExplicitCertificateBuilder
 {
     private final JcaJceHelper helper;
@@ -24,7 +24,7 @@ public class JcaJceITSExplicitCertificateBuilder
      * @param helper         JcaJceHelper
      * @param tbsCertificate
      */
-    public JcaJceITSExplicitCertificateBuilder(ITSContentSigner signer, ToBeSignedCertificate.Builder tbsCertificate, JcaJceHelper helper)
+    public JcaITSExplicitCertificateBuilder(ITSContentSigner signer, ToBeSignedCertificate.Builder tbsCertificate, JcaJceHelper helper)
     {
         super(signer, tbsCertificate);
         this.helper = helper;
@@ -36,7 +36,7 @@ public class JcaJceITSExplicitCertificateBuilder
      * @param signer         the content signer to be used to generate the signature validating the certificate.
      * @param tbsCertificate
      */
-    public JcaJceITSExplicitCertificateBuilder(ITSContentSigner signer, ToBeSignedCertificate.Builder tbsCertificate)
+    public JcaITSExplicitCertificateBuilder(ITSContentSigner signer, ToBeSignedCertificate.Builder tbsCertificate)
     {
         this(signer, tbsCertificate, new DefaultJcaJceHelper());
     }
@@ -58,10 +58,10 @@ public class JcaJceITSExplicitCertificateBuilder
         ITSPublicEncryptionKey publicEncryptionKey = null;
         if (encryptionKey != null)
         {
-            publicEncryptionKey = new JcaJceITSPublicEncryptionKey(encryptionKey, helper);
+            publicEncryptionKey = new JceITSPublicEncryptionKey(encryptionKey, helper);
         }
 
-        return super.build(certificateId, new JcaJceITSPublicVerificationKey(verificationKey, helper), publicEncryptionKey);
+        return super.build(certificateId, new JcaITSPublicVerificationKey(verificationKey, helper), publicEncryptionKey);
     }
 
 

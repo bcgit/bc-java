@@ -22,7 +22,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
 
-public class JcaJceITSContentVerifierProvider
+public class JcaITSContentVerifierProvider
     implements ITSContentVerifierProvider
 {
     private final ITSCertificate issuer;
@@ -32,7 +32,7 @@ public class JcaJceITSContentVerifierProvider
     private final int sigChoice;
     private JcaJceHelper helper;
 
-    public JcaJceITSContentVerifierProvider(ITSCertificate issuer, JcaJceHelper helper)
+    public JcaITSContentVerifierProvider(ITSCertificate issuer, JcaJceHelper helper)
         throws IOException
     {
         this.issuer = issuer;
@@ -61,7 +61,7 @@ public class JcaJceITSContentVerifierProvider
                 throw new IllegalStateException("unknown key type");
             }
 
-            pubParams = (ECPublicKey)new JcaJceITSPublicVerificationKey(pvi, helper).getKey();
+            pubParams = (ECPublicKey)new JcaITSPublicVerificationKey(pvi, helper).getKey();
         }
         else
         {

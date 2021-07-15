@@ -21,7 +21,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
 
-public class JcaJceITSContentSigner
+public class JcaITSContentSigner
     implements ITSContentSigner
 {
 
@@ -35,12 +35,12 @@ public class JcaJceITSContentSigner
     private final String signer;
     private final JcaJceHelper provider;
 
-    public JcaJceITSContentSigner(ECPrivateKey privateKey)
+    public JcaITSContentSigner(ECPrivateKey privateKey)
     {
         this(privateKey, null, new DefaultJcaJceHelper());
     }
 
-    public JcaJceITSContentSigner(ECPrivateKey privateKey, ITSCertificate signerCert, JcaJceHelper provider)
+    public JcaITSContentSigner(ECPrivateKey privateKey, ITSCertificate signerCert, JcaJceHelper provider)
     {
         this.privateKey = privateKey;
         this.signerCert = signerCert;
