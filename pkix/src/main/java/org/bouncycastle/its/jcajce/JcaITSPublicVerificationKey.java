@@ -1,6 +1,7 @@
 package org.bouncycastle.its.jcajce;
 
 import java.security.KeyFactory;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
@@ -16,7 +17,10 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.its.ITSPublicVerificationKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.oer.its.EccCurvePoint;
@@ -27,15 +31,44 @@ import org.bouncycastle.oer.its.PublicVerificationKey;
 public class JcaITSPublicVerificationKey
     extends ITSPublicVerificationKey
 {
+    public static class Builder
+    {
+        private JcaJceHelper helper = new DefaultJcaJceHelper();
+
+        public Builder setProvider(Provider provider)
+        {
+            this.helper = new ProviderJcaJceHelper(provider);
+
+            return this;
+        }
+
+        public Builder setProvider(String providerName)
+        {
+            this.helper = new NamedJcaJceHelper(providerName);
+
+            return this;
+        }
+
+        public JcaITSPublicVerificationKey build(PublicVerificationKey verificationKey)
+        {
+            return new JcaITSPublicVerificationKey(verificationKey, helper);
+        }
+
+        public JcaITSPublicVerificationKey build(PublicKey verificationKey)
+        {
+            return new JcaITSPublicVerificationKey(verificationKey, helper);
+        }
+    }
+
     private final JcaJceHelper helper;
 
-    public JcaITSPublicVerificationKey(PublicVerificationKey encryptionKey, JcaJceHelper helper)
+    JcaITSPublicVerificationKey(PublicVerificationKey encryptionKey, JcaJceHelper helper)
     {
         super(encryptionKey);
         this.helper = helper;
     }
 
-    public JcaITSPublicVerificationKey(PublicKey verificationKey, JcaJceHelper helper)
+    JcaITSPublicVerificationKey(PublicKey verificationKey, JcaJceHelper helper)
     {
         super(fromKeyParameters((ECPublicKey)verificationKey));
         this.helper = helper;
@@ -45,7 +78,6 @@ public class JcaITSPublicVerificationKey
     {
         ASN1ObjectIdentifier curveID = ASN1ObjectIdentifier.getInstance(
             SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getAlgorithm().getParameters());
-
 
         if (curveID.equals(SECObjectIdentifiers.secp256r1))
         {
@@ -80,11 +112,9 @@ public class JcaITSPublicVerificationKey
         }
     }
 
-
     public PublicKey getKey()
     {
         X9ECParameters params;
-
 
         switch (verificationKey.getChoice())
         {
@@ -131,7 +161,6 @@ public class JcaITSPublicVerificationKey
         ECPoint point = curve.decodePoint(key).normalize();
         try
         {
-
             KeyFactory keyFactory = helper.createKeyFactory("EC");
             ECParameterSpec spec = EC5Util.convertToSpec(params);
             java.security.spec.ECPoint jPoint = EC5Util.convertPoint(point);
@@ -142,6 +171,4 @@ public class JcaITSPublicVerificationKey
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
-
-
 }

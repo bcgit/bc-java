@@ -2,6 +2,8 @@ package org.bouncycastle.its.jcajce;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.Signature;
 import java.security.interfaces.ECPrivateKey;
 
@@ -15,6 +17,8 @@ import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -24,6 +28,34 @@ import org.bouncycastle.util.Arrays;
 public class JcaITSContentSigner
     implements ITSContentSigner
 {
+    public static class Builder
+    {
+        private JcaJceHelper helper = new DefaultJcaJceHelper();
+
+        public Builder setProvider(Provider provider)
+        {
+            this.helper = new ProviderJcaJceHelper(provider);
+
+            return this;
+        }
+
+        public Builder setProvider(String providerName)
+        {
+            this.helper = new NamedJcaJceHelper(providerName);
+
+            return this;
+        }
+
+        public JcaITSContentSigner build(PrivateKey privateKey)
+        {
+            return new JcaITSContentSigner((ECPrivateKey)privateKey, null, helper);
+        }
+
+        public JcaITSContentSigner build(PrivateKey privateKey, ITSCertificate signerCert)
+        {
+            return new JcaITSContentSigner((ECPrivateKey)privateKey, signerCert, helper);
+        }
+    }
 
     private final ECPrivateKey privateKey;
     private final ITSCertificate signerCert;
@@ -33,18 +65,13 @@ public class JcaITSContentSigner
     private final ASN1ObjectIdentifier curveID;
     private final byte[] parentDigest;
     private final String signer;
-    private final JcaJceHelper provider;
+    private final JcaJceHelper helper;
 
-    public JcaITSContentSigner(ECPrivateKey privateKey)
-    {
-        this(privateKey, null, new DefaultJcaJceHelper());
-    }
-
-    public JcaITSContentSigner(ECPrivateKey privateKey, ITSCertificate signerCert, JcaJceHelper provider)
+    private JcaITSContentSigner(ECPrivateKey privateKey, ITSCertificate signerCert, JcaJceHelper helper)
     {
         this.privateKey = privateKey;
         this.signerCert = signerCert;
-        this.provider = provider;
+        this.helper = helper;
 
         //
         // Probably the most generic way at the moment.
@@ -78,7 +105,7 @@ public class JcaITSContentSigner
         try
         {
 
-            JcaDigestCalculatorProviderBuilder bld = new JcaDigestCalculatorProviderBuilder().setHelper(provider);
+            JcaDigestCalculatorProviderBuilder bld = new JcaDigestCalculatorProviderBuilder().setHelper(helper);
             digestCalculatorProvider = bld.build();
         }
         catch (Exception ex)
@@ -130,7 +157,7 @@ public class JcaITSContentSigner
         Signature signature;
         try
         {
-            signature = provider.createSignature(signer);
+            signature = helper.createSignature(signer);
             signature.initSign(privateKey);
             signature.update(clientCertDigest, 0, clientCertDigest.length);
             signature.update(digest.getDigest());

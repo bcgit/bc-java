@@ -2,6 +2,7 @@ package org.bouncycastle.its.jcajce;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.Provider;
 import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
 
@@ -9,7 +10,10 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.operator.ITSContentVerifierProvider;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
@@ -25,6 +29,30 @@ import org.bouncycastle.util.Arrays;
 public class JcaITSContentVerifierProvider
     implements ITSContentVerifierProvider
 {
+    public static class Builder
+    {
+        private JcaJceHelper helper = new DefaultJcaJceHelper();
+
+        public Builder setProvider(Provider provider)
+        {
+            this.helper = new ProviderJcaJceHelper(provider);
+
+            return this;
+        }
+
+        public Builder setProvider(String providerName)
+        {
+            this.helper = new NamedJcaJceHelper(providerName);
+
+            return this;
+        }
+
+        public JcaITSContentVerifierProvider build(ITSCertificate issuer)
+        {
+            return new JcaITSContentVerifierProvider(issuer, helper);
+        }
+    }
+
     private final ITSCertificate issuer;
     private final byte[] parentData;
     private final AlgorithmIdentifier digestAlgo;
@@ -32,12 +60,18 @@ public class JcaITSContentVerifierProvider
     private final int sigChoice;
     private JcaJceHelper helper;
 
-    public JcaITSContentVerifierProvider(ITSCertificate issuer, JcaJceHelper helper)
-        throws IOException
+    private JcaITSContentVerifierProvider(ITSCertificate issuer, JcaJceHelper helper)
     {
         this.issuer = issuer;
         this.helper = helper;
-        this.parentData = issuer.getEncoded();
+        try
+        {
+            this.parentData = issuer.getEncoded();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("unable to extract parent data: " + e.getMessage());
+        }
         ToBeSignedCertificate toBeSignedCertificate =
             issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate();
         VerificationKeyIndicator vki = toBeSignedCertificate.getVerificationKeyIndicator();
@@ -58,18 +92,16 @@ public class JcaITSContentVerifierProvider
                 digestAlgo = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384);
                 break;
             default:
-                throw new IllegalStateException("unknown key type");
+                throw new IllegalArgumentException("unknown key type");
             }
 
             pubParams = (ECPublicKey)new JcaITSPublicVerificationKey(pvi, helper).getKey();
         }
         else
         {
-            throw new IllegalStateException("not public verification key");
+            throw new IllegalArgumentException("not public verification key");
         }
-
     }
-
 
     @Override
     public boolean hasAssociatedCertificate()
@@ -138,11 +170,8 @@ public class JcaITSContentVerifierProvider
                 throw new IllegalArgumentException("choice " + this.sigChoice + " not supported");
             }
 
-
             return new ContentVerifier()
             {
-
-
                 @Override
                 public AlgorithmIdentifier getAlgorithmIdentifier()
                 {
@@ -183,14 +212,10 @@ public class JcaITSContentVerifierProvider
 
                 }
             };
-
-
         }
         catch (Exception ex)
         {
             throw new IllegalStateException(ex.getMessage(), ex);
         }
-
-
     }
 }
