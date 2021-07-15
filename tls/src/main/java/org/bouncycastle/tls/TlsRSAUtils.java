@@ -15,18 +15,16 @@ public abstract class TlsRSAUtils
 {
     /**
      * Generate a pre_master_secret and send it encrypted to the server.
+     * 
+     * @deprecated Use
+     *             {@link TlsUtils#generateEncryptedPreMasterSecret(TlsContext, TlsEncryptor, OutputStream)}
+     *             instead.
      */
     public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsCertificate certificate,
         OutputStream output) throws IOException
     {
-        TlsSecret preMasterSecret = context.getCrypto()
-            .generateRSAPreMasterSecret(context.getRSAPreMasterSecretVersion());
-
         TlsEncryptor encryptor = certificate.createEncryptor(TlsCertificateRole.RSA_ENCRYPTION);
 
-        byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(encryptor);
-        TlsUtils.writeEncryptedPMS(context, encryptedPreMasterSecret, output);
-
-        return preMasterSecret;
+        return TlsUtils.generateEncryptedPreMasterSecret(context, encryptor, output);
     }
 }
