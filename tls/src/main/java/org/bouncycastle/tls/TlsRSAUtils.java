@@ -4,25 +4,27 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCertificateRole;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
- * RSA Utility methods.
+ * RSA utility methods.
  */
 public abstract class TlsRSAUtils
 {
     /**
      * Generate a pre_master_secret and send it encrypted to the server.
+     * 
+     * @deprecated Use
+     *             {@link TlsUtils#generateEncryptedPreMasterSecret(TlsContext, TlsEncryptor, OutputStream)}
+     *             instead.
      */
     public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsCertificate certificate,
         OutputStream output) throws IOException
     {
-        TlsSecret preMasterSecret = context.getCrypto()
-            .generateRSAPreMasterSecret(context.getRSAPreMasterSecretVersion());
+        TlsEncryptor encryptor = certificate.createEncryptor(TlsCertificateRole.RSA_ENCRYPTION);
 
-        byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(certificate);
-        TlsUtils.writeEncryptedPMS(context, encryptedPreMasterSecret, output);
-
-        return preMasterSecret;
+        return TlsUtils.generateEncryptedPreMasterSecret(context, encryptor, output);
     }
 }

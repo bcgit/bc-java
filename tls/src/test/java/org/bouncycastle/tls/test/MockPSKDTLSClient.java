@@ -10,6 +10,7 @@ import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.BasicTlsPSKIdentity;
 import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.PSKTlsClient;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
@@ -100,10 +101,7 @@ class MockPSKDTLSClient
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
 
-                String[] trustedCertResources = new String[]{ "x509-server-dsa.pem", "x509-server-ecdh.pem",
-                    "x509-server-ecdsa.pem", "x509-server-ed25519.pem", "x509-server-ed448.pem",
-                    "x509-server-rsa_pss_256.pem", "x509-server-rsa_pss_384.pem", "x509-server-rsa_pss_512.pem",
-                    "x509-server-rsa-enc.pem", "x509-server-rsa-sign.pem" };
+                String[] trustedCertResources = new String[] { "x509-server-rsa-enc.pem" };
 
                 TlsCertificate[] certPath = TlsTestUtils.getTrustedCertPath(context.getCrypto(), chain[0],
                     trustedCertResources);
@@ -121,6 +119,12 @@ class MockPSKDTLSClient
     public void notifyHandshakeComplete() throws IOException
     {
         super.notifyHandshakeComplete();
+
+        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        if (protocolName != null)
+        {
+            System.out.println("Client ALPN: " + protocolName.getUtf8Decoding());
+        }
 
         TlsSession newSession = context.getSession();
         if (newSession != null)

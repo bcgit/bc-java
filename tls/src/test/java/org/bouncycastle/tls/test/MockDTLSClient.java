@@ -11,6 +11,7 @@ import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
@@ -128,6 +129,12 @@ class MockDTLSClient
     public void notifyHandshakeComplete() throws IOException
     {
         super.notifyHandshakeComplete();
+
+        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
+        if (protocolName != null)
+        {
+            System.out.println("Client ALPN: " + protocolName.getUtf8Decoding());
+        }
 
         TlsSession newSession = context.getSession();
         if (newSession != null)
