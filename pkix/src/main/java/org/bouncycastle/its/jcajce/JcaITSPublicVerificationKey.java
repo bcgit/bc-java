@@ -14,112 +14,107 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.its.ITSPublicEncryptionKey;
+import org.bouncycastle.its.ITSPublicVerificationKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.oer.its.BasePublicEncryptionKey;
 import org.bouncycastle.oer.its.EccCurvePoint;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.EccP384CurvePoint;
-import org.bouncycastle.oer.its.PublicEncryptionKey;
-import org.bouncycastle.oer.its.SymmAlgorithm;
+import org.bouncycastle.oer.its.PublicVerificationKey;
 
-public class JcaJceITSPublicEncryptionKey
-    extends ITSPublicEncryptionKey
+public class JcaITSPublicVerificationKey
+    extends ITSPublicVerificationKey
 {
     private final JcaJceHelper helper;
 
-
-    public JcaJceITSPublicEncryptionKey(PublicEncryptionKey encryptionKey, JcaJceHelper helper)
+    public JcaITSPublicVerificationKey(PublicVerificationKey encryptionKey, JcaJceHelper helper)
     {
         super(encryptionKey);
         this.helper = helper;
     }
 
-    public JcaJceITSPublicEncryptionKey(PublicKey encryptionKey, JcaJceHelper helper)
+    public JcaITSPublicVerificationKey(PublicKey verificationKey, JcaJceHelper helper)
     {
-        super(fromPublicKey(encryptionKey));
+        super(fromKeyParameters((ECPublicKey)verificationKey));
         this.helper = helper;
     }
 
-
-    static PublicEncryptionKey fromPublicKey(PublicKey key)
+    static PublicVerificationKey fromKeyParameters(ECPublicKey pubKey)
     {
-        if (!(key instanceof ECPublicKey))
-        {
-            throw new IllegalArgumentException("must be ECPublicKey instance");
-        }
-
-        ECPublicKey pKey = (ECPublicKey)key;
-
-
         ASN1ObjectIdentifier curveID = ASN1ObjectIdentifier.getInstance(
-            SubjectPublicKeyInfo.getInstance(key.getEncoded()).getAlgorithm().getParameters());
+            SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getAlgorithm().getParameters());
+
 
         if (curveID.equals(SECObjectIdentifiers.secp256r1))
         {
-            return new PublicEncryptionKey(
-                SymmAlgorithm.aes128Ccm,
-                new BasePublicEncryptionKey.Builder()
-                    .setChoice(BasePublicEncryptionKey.eciesNistP256)
-                    .setValue(EccP256CurvePoint.builder()
-                        .createUncompressedP256(
-                            pKey.getW().getAffineX(),
-                            pKey.getW().getAffineY()))
-                    .createBasePublicEncryptionKey());
+            return new PublicVerificationKey(
+                PublicVerificationKey.ecdsaNistP256,
+                EccP256CurvePoint.builder()
+                    .createUncompressedP256(
+                        pubKey.getW().getAffineX(),
+                        pubKey.getW().getAffineY()));
         }
         else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP256r1))
         {
-            return new PublicEncryptionKey(
-                SymmAlgorithm.aes128Ccm,
-                new BasePublicEncryptionKey.Builder()
-                    .setChoice(BasePublicEncryptionKey.eciesBrainpoolP256r1)
-                    .setValue(EccP256CurvePoint.builder()
-                        .createUncompressedP256(
-                            pKey.getW().getAffineX(),
-                            pKey.getW().getAffineY()))
-                    .createBasePublicEncryptionKey());
+            return new PublicVerificationKey(
+                PublicVerificationKey.ecdsaBrainpoolP256r1,
+                EccP256CurvePoint.builder()
+                    .createUncompressedP256(
+                        pubKey.getW().getAffineX(),
+                        pubKey.getW().getAffineY()));
+        }
+        else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP384r1))
+        {
+            return new PublicVerificationKey(
+                PublicVerificationKey.ecdsaBrainpoolP384r1,
+                EccP384CurvePoint.builder()
+                    .createUncompressedP384(
+                        pubKey.getW().getAffineX(),
+                        pubKey.getW().getAffineY()));
         }
         else
         {
             throw new IllegalArgumentException("unknown curve in public encryption key");
         }
-
     }
+
 
     public PublicKey getKey()
     {
-        BasePublicEncryptionKey baseKey = encryptionKey.getBasePublicEncryptionKey();
         X9ECParameters params;
 
-        switch (baseKey.getChoice())
-        {
-        case BasePublicEncryptionKey.eciesNistP256:
 
+        switch (verificationKey.getChoice())
+        {
+        case PublicVerificationKey.ecdsaNistP256:
             params = NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1);
             break;
-        case BasePublicEncryptionKey.eciesBrainpoolP256r1:
+        case PublicVerificationKey.ecdsaBrainpoolP256r1:
             params = TeleTrusTNamedCurves.getByOID(TeleTrusTObjectIdentifiers.brainpoolP256r1);
+            break;
+        case PublicVerificationKey.ecdsaBrainpoolP384r1:
+            params = TeleTrusTNamedCurves.getByOID(TeleTrusTObjectIdentifiers.brainpoolP384r1);
             break;
         default:
             throw new IllegalStateException("unknown key type");
         }
+        ECCurve curve = params.getCurve();
 
-        ASN1Encodable pviCurvePoint = encryptionKey.getBasePublicEncryptionKey().getValue();
+        ASN1Encodable pviCurvePoint = verificationKey.getCurvePoint();
         final EccCurvePoint itsPoint;
         if (pviCurvePoint instanceof EccCurvePoint)
         {
-            itsPoint = (EccCurvePoint)baseKey.getValue();
+            itsPoint = (EccCurvePoint)verificationKey.getCurvePoint();
         }
         else
         {
             throw new IllegalStateException("extension to public verification key not supported");
         }
-        ECCurve curve = params.getCurve();
 
         byte[] key;
+
         if (itsPoint instanceof EccP256CurvePoint)
         {
             key = itsPoint.getEncodedPoint();
@@ -134,7 +129,6 @@ public class JcaJceITSPublicEncryptionKey
         }
 
         ECPoint point = curve.decodePoint(key).normalize();
-
         try
         {
 

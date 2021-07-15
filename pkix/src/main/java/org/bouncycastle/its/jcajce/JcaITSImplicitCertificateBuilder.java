@@ -5,11 +5,11 @@ import org.bouncycastle.its.ITSImplicitCertificateBuilder;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 
-public class JcaJceITSImplicitCertificateBuilder
+public class JcaITSImplicitCertificateBuilder
     extends ITSImplicitCertificateBuilder
 {
 
-    public JcaJceITSImplicitCertificateBuilder(ITSCertificate issuer, DigestCalculatorProvider digestCalculatorProvider, ToBeSignedCertificate.Builder tbsCertificate)
+    public JcaITSImplicitCertificateBuilder(ITSCertificate issuer, DigestCalculatorProvider digestCalculatorProvider, ToBeSignedCertificate.Builder tbsCertificate)
     {
         super(issuer, digestCalculatorProvider, tbsCertificate);
     }
