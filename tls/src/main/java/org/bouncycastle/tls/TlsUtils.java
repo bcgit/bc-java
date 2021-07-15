@@ -35,6 +35,7 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -688,7 +689,21 @@ public class TlsUtils
     public static byte[] encodeOpaque16(byte[] buf)
         throws IOException
     {
-        return Arrays.concatenate(encodeUint16(buf.length), buf);
+        checkUint16(buf.length);
+        byte[] r = new byte[2 + buf.length];
+        writeUint16(buf.length, r, 0);
+        System.arraycopy(buf, 0, r, 2, buf.length);
+        return r;
+    }
+
+    public static byte[] encodeOpaque24(byte[] buf)
+        throws IOException
+    {
+        checkUint24(buf.length);
+        byte[] r = new byte[3 + buf.length];
+        writeUint24(buf.length, r, 0);
+        System.arraycopy(buf, 0, r, 3, buf.length);
+        return r;
     }
 
     public static byte[] encodeUint8(short uint) throws IOException
@@ -722,6 +737,15 @@ public class TlsUtils
         byte[] result = new byte[2 + length];
         writeUint16ArrayWithUint16Length(uints, result, 0);
         return result;
+    }
+
+    public static byte[] encodeUint24(int uint) throws IOException
+    {
+        checkUint24(uint);
+
+        byte[] encoding = new byte[3];
+        writeUint24(uint, encoding, 0);
+        return encoding;
     }
 
     public static byte[] encodeUint32(long uint) throws IOException
@@ -2136,7 +2160,8 @@ public class TlsUtils
         }
     }
 
-    static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm, DigestInputBuffer buf)
+    static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm,
+        byte[] extraSignatureInput, DigestInputBuffer buf)
     {
         TlsCrypto crypto = context.getCrypto();
 
@@ -2145,21 +2170,35 @@ public class TlsUtils
             : createHash(crypto, algorithm.getHash());
 
         SecurityParameters sp = context.getSecurityParametersHandshake();
-        byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();
-        h.update(cr, 0, cr.length);
-        h.update(sr, 0, sr.length);
+        // NOTE: The implicit copy here is intended (and important)
+        byte[] randoms = Arrays.concatenate(sp.getClientRandom(), sp.getServerRandom());
+        h.update(randoms, 0, randoms.length);
+
+        if (null != extraSignatureInput)
+        {
+            h.update(extraSignatureInput, 0, extraSignatureInput.length);
+        }
+
         buf.updateDigest(h);
 
         return h.calculateHash();
     }
 
-    static void sendSignatureInput(TlsContext context, DigestInputBuffer buf, OutputStream output)
-        throws IOException
+    static void sendSignatureInput(TlsContext context, byte[] extraSignatureInput, DigestInputBuffer buf,
+        OutputStream output) throws IOException
     {
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        SecurityParameters sp = context.getSecurityParametersHandshake();
         // NOTE: The implicit copy here is intended (and important)
-        output.write(Arrays.concatenate(securityParameters.getClientRandom(), securityParameters.getServerRandom()));
+        byte[] randoms = Arrays.concatenate(sp.getClientRandom(), sp.getServerRandom());
+        output.write(randoms);
+
+        if (null != extraSignatureInput)
+        {
+            output.write(extraSignatureInput);
+        }
+
         buf.copyTo(output);
+
         output.close();
     }
 
@@ -2448,7 +2487,7 @@ public class TlsUtils
     }
 
     static void generateServerKeyExchangeSignature(TlsContext context, TlsCredentialedSigner credentials,
-        DigestInputBuffer digestBuffer) throws IOException
+        byte[] extraSignatureInput, DigestInputBuffer digestBuffer) throws IOException
     {
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
@@ -2459,12 +2498,12 @@ public class TlsUtils
         byte[] signature;
         if (streamSigner != null)
         {
-            sendSignatureInput(context, digestBuffer, streamSigner.getOutputStream());
+            sendSignatureInput(context, extraSignatureInput, digestBuffer, streamSigner.getOutputStream());
             signature = streamSigner.getSignature();
         }
         else
         {
-            byte[] hash = calculateSignatureHash(context, algorithm, digestBuffer);
+            byte[] hash = calculateSignatureHash(context, algorithm, extraSignatureInput, digestBuffer);
             signature = credentials.generateRawSignature(hash);
         }
 
@@ -2474,7 +2513,8 @@ public class TlsUtils
     }
 
     static void verifyServerKeyExchangeSignature(TlsContext context, InputStream signatureInput,
-        TlsCertificate serverCertificate, DigestInputBuffer digestBuffer) throws IOException
+        TlsCertificate serverCertificate, byte[] extraSignatureInput, DigestInputBuffer digestBuffer)
+        throws IOException
     {
         DigitallySigned digitallySigned = DigitallySigned.parse(context, signatureInput);
 
@@ -2506,12 +2546,12 @@ public class TlsUtils
         boolean verified;
         if (streamVerifier != null)
         {
-            sendSignatureInput(context, digestBuffer, streamVerifier.getOutputStream());
+            sendSignatureInput(context, extraSignatureInput, digestBuffer, streamVerifier.getOutputStream());
             verified = streamVerifier.isVerified();
         }
         else
         {
-            byte[] hash = calculateSignatureHash(context, sigAndHashAlg, digestBuffer);
+            byte[] hash = calculateSignatureHash(context, sigAndHashAlg, extraSignatureInput, digestBuffer);
             verified = verifier.verifyRawSignature(digitallySigned, hash);
         }
 
@@ -5649,5 +5689,18 @@ public class TlsUtils
                 throw new TlsFatalAlert(alertDescription, "Invalid extension: " + ExtensionType.getText(extensionType.intValue()));
             }
         }
+    }
+
+    /**
+     * Generate a pre_master_secret and send it encrypted to the server.
+     */
+    public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsEncryptor encryptor,
+        OutputStream output) throws IOException
+    {
+        ProtocolVersion version = context.getRSAPreMasterSecretVersion();
+        TlsSecret preMasterSecret = context.getCrypto().generateRSAPreMasterSecret(version);
+        byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(encryptor);
+        writeEncryptedPMS(context, encryptedPreMasterSecret, output);
+        return preMasterSecret;
     }
 }

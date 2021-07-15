@@ -1,8 +1,5 @@
 package org.bouncycastle.tls.crypto.impl;
 
-import java.io.IOException;
-
-import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -24,13 +21,4 @@ public abstract class AbstractTlsCrypto
 
         throw new IllegalArgumentException("unrecognized TlsSecret - cannot copy data: " + secret.getClass().getName());
     }
-
-    /**
-     * Return an encryptor based on the public key in certificate.
-     *
-     * @param certificate the certificate carrying the public key.
-     * @return a TlsEncryptor based on the certificate's public key.
-     */
-    public abstract TlsEncryptor createEncryptor(TlsCertificate certificate)
-        throws IOException;
 }
