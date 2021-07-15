@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.SecureRandom;
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -22,6 +23,12 @@ public class PGPCompressionTest
     {
         testCompression(new byte[0]);
         testCompression("hello world!".getBytes());
+
+        SecureRandom random = new SecureRandom();
+        byte[] randomData = new byte[1000000];
+        random.nextBytes(randomData);
+
+        testCompression(randomData);
 
         //
         // new style - using stream close
