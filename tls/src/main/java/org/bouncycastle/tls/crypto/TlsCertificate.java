@@ -5,7 +5,6 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 
@@ -62,10 +61,8 @@ public interface TlsCertificate
     boolean supportsSignatureAlgorithmCA(short signatureAlgorithm) throws IOException;
 
     /**
-     * @param connectionEnd
-     *            {@link ConnectionEnd}
      * @param tlsCertificateRole
      *            {@link TlsCertificateRole}
      */
-    TlsCertificate checkUsageInRole(int connectionEnd, int tlsCertificateRole) throws IOException;
+    TlsCertificate checkUsageInRole(int tlsCertificateRole) throws IOException;
 }

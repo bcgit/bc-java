@@ -209,10 +209,22 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
                     cipher.init(Cipher.ENCRYPT_MODE, simplifyPbeKey(key), random);
 
-                    PBES2Parameters algParams = new PBES2Parameters(
-                        new KeyDerivationFunc(MiscObjectIdentifiers.id_scrypt, params),
-                        new EncryptionScheme(keyEncAlgorithm, ASN1Primitive.fromByteArray(cipher.getParameters().getEncoded())));
+                    AlgorithmParameters algP = cipher.getParameters();
 
+                    PBES2Parameters algParams;
+
+                    if (algP != null)
+                    {
+                        algParams = new PBES2Parameters(
+                            new KeyDerivationFunc(MiscObjectIdentifiers.id_scrypt, params),
+                            new EncryptionScheme(keyEncAlgorithm, ASN1Primitive.fromByteArray(cipher.getParameters().getEncoded())));
+                    }
+                    else
+                    {
+                        algParams = new PBES2Parameters(
+                                new KeyDerivationFunc(MiscObjectIdentifiers.id_scrypt, params),
+                                new EncryptionScheme(keyEncAlgorithm));
+                    }
                     encryptionAlg = new AlgorithmIdentifier(algorithm, algParams);
                 }
                 else

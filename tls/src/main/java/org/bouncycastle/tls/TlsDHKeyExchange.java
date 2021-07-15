@@ -46,8 +46,7 @@ public class TlsDHKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        this.dhPeerCertificate = serverCertificate.getCertificateAt(0).checkUsageInRole(ConnectionEnd.server,
-            TlsCertificateRole.DH);
+        this.dhPeerCertificate = serverCertificate.getCertificateAt(0).checkUsageInRole(TlsCertificateRole.DH);
     }
 
     public short[] getClientCertificateTypes()
@@ -76,8 +75,7 @@ public class TlsDHKeyExchange
 
     public void processClientCertificate(Certificate clientCertificate) throws IOException
     {
-        this.dhPeerCertificate = clientCertificate.getCertificateAt(0).checkUsageInRole(ConnectionEnd.client,
-            TlsCertificateRole.DH);
+        this.dhPeerCertificate = clientCertificate.getCertificateAt(0).checkUsageInRole(TlsCertificateRole.DH);
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException
