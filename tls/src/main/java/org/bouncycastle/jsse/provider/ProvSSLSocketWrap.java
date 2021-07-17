@@ -747,6 +747,15 @@ class ProvSSLSocketWrap
 //            return;
 //        }
 
+        if (useClientMode && provAssumeOriginalHostName)
+        {
+            String originalHostName = peerAddress.getHostName();
+
+            this.peerHost = originalHostName;
+            this.peerHostSNI = originalHostName;
+            return;
+        }
+
         if (useClientMode && provJdkTlsTrustNameService)
         {
             this.peerHost = peerAddress.getHostName();
