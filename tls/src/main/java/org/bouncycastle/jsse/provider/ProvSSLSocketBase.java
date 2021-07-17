@@ -26,6 +26,8 @@ abstract class ProvSSLSocketBase
     extends SSLSocket
     implements BCSSLSocket
 {
+    protected static final boolean provAssumeOriginalHostName = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.client.assumeOriginalHostName", false);
     protected static final boolean provJdkTlsTrustNameService = PropertyUtils
         .getBooleanSystemProperty("jdk.tls.trustNameService", false);
 
