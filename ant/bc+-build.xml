@@ -181,6 +181,7 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.csr" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.crl" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cer" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.oer" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.kbx" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.key" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
@@ -211,6 +212,7 @@
                             <include name="**/*.sig" />
                             <include name="**/*.data" />
                             <include name="**/*.cer" />
+                            <include name="**/*.oer" />
                             <include name="**/*.kbx" />
                             <include name="**/*.der" />
                             <include name="**/*.message" />
@@ -914,6 +916,7 @@
              <fileset dir="${src.dir}" includes="**/*.crt" />
              <fileset dir="${src.dir}" includes="**/*.key" />
              <fileset dir="${src.dir}" includes="**/*.cer" />
+             <fileset dir="${src.dir}" includes="**/*.oer" />
              <fileset dir="${src.dir}" includes="**/*.kbx" />
              <fileset dir="${src.dir}" includes="**/*.crl" />
              <fileset dir="${src.dir}" includes="**/*.csr" />
