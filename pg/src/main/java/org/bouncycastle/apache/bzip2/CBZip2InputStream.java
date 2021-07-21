@@ -162,34 +162,32 @@ public class CBZip2InputStream
         {
             return -1;
         }
-        else
+
+        int retChar = currentChar;
+        switch (currentState)
         {
-            int retChar = currentChar;
-            switch (currentState)
-            {
-            case START_BLOCK_STATE:
-                break;
-            case RAND_PART_A_STATE:
-                break;
-            case RAND_PART_B_STATE:
-                setupRandPartB();
-                break;
-            case RAND_PART_C_STATE:
-                setupRandPartC();
-                break;
-            case NO_RAND_PART_A_STATE:
-                break;
-            case NO_RAND_PART_B_STATE:
-                setupNoRandPartB();
-                break;
-            case NO_RAND_PART_C_STATE:
-                setupNoRandPartC();
-                break;
-            default:
-                break;
-            }
-            return retChar;
+        case START_BLOCK_STATE:
+            break;
+        case RAND_PART_A_STATE:
+            break;
+        case RAND_PART_B_STATE:
+            setupRandPartB();
+            break;
+        case RAND_PART_C_STATE:
+            setupRandPartC();
+            break;
+        case NO_RAND_PART_A_STATE:
+            break;
+        case NO_RAND_PART_B_STATE:
+            setupNoRandPartB();
+            break;
+        case NO_RAND_PART_C_STATE:
+            setupNoRandPartC();
+            break;
+        default:
+            break;
         }
+        return retChar;
     }
 
     private void initialize()
@@ -242,16 +240,8 @@ public class CBZip2InputStream
 
         storedBlockCRC = bsGetInt32();
 
-        if (bsR(1) == 1)
-        {
-            blockRandomised = true;
-        }
-        else
-        {
-            blockRandomised = false;
-        }
+        blockRandomised = bsR(1) == 1;
 
-        //        currBlockNo++;
         getAndMoveToFrontDecode();
 
         mCrc.initialiseCRC();
@@ -361,12 +351,14 @@ public class CBZip2InputStream
 
     private int bsGetint()
     {
-        int u = 0;
-        u = (u << 8) | bsR(8);
-        u = (u << 8) | bsR(8);
-        u = (u << 8) | bsR(8);
-        u = (u << 8) | bsR(8);
-        return u;
+//        int u = 0;
+//        u = (u << 8) | bsR(8);
+//        u = (u << 8) | bsR(8);
+//        u = (u << 8) | bsR(8);
+//        u = (u << 8) | bsR(8);
+//        return u;
+        int u = bsR(16) << 16;
+        return u | bsR(16); 
     }
 
     private int bsGetIntVS(int numBits)
@@ -379,18 +371,17 @@ public class CBZip2InputStream
         return (int)bsGetint();
     }
 
-    private void hbCreateDecodeTables(int[] limit, int[] base,
-                                      int[] perm, char[] length,
-                                      int minLen, int maxLen, int alphaSize)
+    private void hbCreateDecodeTables(int[] limit, int[] base, int[] perm, byte[] length, int minLen, int maxLen,
+        int alphaSize)
     {
-        int pp, i, j, vec;
+        int i, j, vec;
 
-        pp = 0;
+        int pp = 0;
         for (i = minLen; i <= maxLen; i++)
         {
             for (j = 0; j < alphaSize; j++)
             {
-                if (length[j] == i)
+                if ((length[j] & 0xFF) == i)
                 {
                     perm[pp] = j;
                     pp++;
@@ -404,7 +395,7 @@ public class CBZip2InputStream
         }
         for (i = 0; i < alphaSize; i++)
         {
-            base[length[i] + 1]++;
+            base[(length[i] & 0xFF) + 1]++;
         }
 
         for (i = 1; i < MAX_CODE_LEN; i++)
@@ -432,7 +423,7 @@ public class CBZip2InputStream
 
     private void recvDecodingTables()
     {
-        char len[][] = new char[N_GROUPS][MAX_ALPHA_SIZE];
+        byte len[][] = new byte[N_GROUPS][MAX_ALPHA_SIZE];
         int i, j, t, nGroups, nSelectors, alphaSize;
         int minLen, maxLen;
         boolean[] inUse16 = new boolean[16];
@@ -440,31 +431,24 @@ public class CBZip2InputStream
         /* Receive the mapping table */
         for (i = 0; i < 16; i++)
         {
-            if (bsR(1) == 1)
-            {
-                inUse16[i] = true;
-            }
-            else
-            {
-                inUse16[i] = false;
-            }
-        }
-
-        for (i = 0; i < 256; i++)
-        {
-            inUse[i] = false;
+            inUse16[i] = bsR(1) == 1;
         }
 
         for (i = 0; i < 16; i++)
         {
+            int i16 = i * 16;
             if (inUse16[i])
             {
                 for (j = 0; j < 16; j++)
                 {
-                    if (bsR(1) == 1)
-                    {
-                        inUse[i * 16 + j] = true;
-                    }
+                    inUse[i16 + j] = bsR(1) == 1;
+                }
+            }
+            else
+            {
+                for (j = 0; j < 16; j++)
+                {
+                    inUse[i16 + j] = false;
                 }
             }
         }
@@ -511,6 +495,7 @@ public class CBZip2InputStream
         /* Now the coding tables */
         for (t = 0; t < nGroups; t++)
         {
+            byte[] len_t = len[t];
             int curr = bsR(5);
             for (i = 0; i < alphaSize; i++)
             {
@@ -525,7 +510,7 @@ public class CBZip2InputStream
                         curr--;
                     }
                 }
-                len[t][i] = (char)curr;
+                len_t[i] = (byte)curr;
             }
         }
 
@@ -534,19 +519,20 @@ public class CBZip2InputStream
         {
             minLen = 32;
             maxLen = 0;
+            byte[] len_t = len[t];
             for (i = 0; i < alphaSize; i++)
             {
-                if (len[t][i] > maxLen)
+                int lti = len_t[i] & 0xFF;
+                if (lti > maxLen)
                 {
-                    maxLen = len[t][i];
+                    maxLen = lti;
                 }
-                if (len[t][i] < minLen)
+                if (lti < minLen)
                 {
-                    minLen = len[t][i];
+                    minLen = lti;
                 }
             }
-            hbCreateDecodeTables(limit[t], base[t], perm[t], len[t], minLen,
-                maxLen, alphaSize);
+            hbCreateDecodeTables(limit[t], base[t], perm[t], len_t, minLen, maxLen, alphaSize);
             minLens[t] = minLen;
         }
     }
@@ -628,14 +614,8 @@ public class CBZip2InputStream
             nextSym = perm[zt][zvec - base[zt][zn]];
         }
 
-        while (true)
+        while (nextSym != EOB)
         {
-
-            if (nextSym == EOB)
-            {
-                break;
-            }
-
             if (nextSym == RUNA || nextSym == RUNB)
             {
                 char ch;
@@ -645,11 +625,11 @@ public class CBZip2InputStream
                 {
                     if (nextSym == RUNA)
                     {
-                        s = s + (0 + 1) * N;
+                        s += (0 + 1) * N;
                     }
                     else if (nextSym == RUNB)
                     {
-                        s = s + (1 + 1) * N;
+                        s += (1 + 1) * N;
                     }
                     N = N * 2;
                     {
@@ -718,38 +698,33 @@ public class CBZip2InputStream
             }
             else
             {
-                char tmp;
-                last++;
-                if (last >= limitLast)
+                if (++last >= limitLast)
                 {
                     blockOverrun();
                 }
 
-                tmp = yy[nextSym - 1];
+                char tmp = yy[nextSym - 1];
                 unzftab[seqToUnseq[tmp]]++;
                 ll8[last] = seqToUnseq[tmp];
 
                 /*
-                  This loop is hammered during decompression,
-                  hence the unrolling.
-
-                  for (j = nextSym-1; j > 0; j--) yy[j] = yy[j-1];
-                */
-
-                j = nextSym - 1;
-                for (; j > 3; j -= 4)
+                 * This loop is hammered during decompression, hence avoid native method call
+                 * overhead of System.arraycopy for very small ranges to copy.
+                 */
+                if (nextSym <= 16)
                 {
-                    yy[j] = yy[j - 1];
-                    yy[j - 1] = yy[j - 2];
-                    yy[j - 2] = yy[j - 3];
-                    yy[j - 3] = yy[j - 4];
+                    for (j = nextSym - 1; j > 0; --j)
+                    {
+                        yy[j] = yy[j - 1];
+                    }
                 }
-                for (; j > 0; j--)
+                else
                 {
-                    yy[j] = yy[j - 1];
+                    System.arraycopy(yy, 0, yy, 1, nextSym - 1);
                 }
 
                 yy[0] = tmp;
+
                 {
                     int zt, zn, zvec, zj;
                     if (groupPos == 0)
