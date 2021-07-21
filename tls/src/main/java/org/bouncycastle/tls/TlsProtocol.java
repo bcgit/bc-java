@@ -285,17 +285,17 @@ public abstract class TlsProtocol
         {
             this.closed = true;
 
-            if (user_canceled && !appDataReady)
-            {
-                raiseAlertWarning(AlertDescription.user_canceled, "User canceled handshake");
-            }
-
-            raiseAlertWarning(AlertDescription.close_notify, "Connection closed");
-
             if (!appDataReady)
             {
                 cleanupHandshake();
+
+                if (user_canceled)
+                {
+                    raiseAlertWarning(AlertDescription.user_canceled, "User canceled handshake");
+                }
             }
+
+            raiseAlertWarning(AlertDescription.close_notify, "Connection closed");
 
             closeConnection();
         }
