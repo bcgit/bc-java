@@ -32,7 +32,7 @@ public class AuthEnvelopedDataParser
     private ASN1Integer version;
     private ASN1Encodable nextObject;
     private boolean originatorInfoCalled;
-    private EncryptedContentInfoParser authEncryptedContentInfoParser;
+    private boolean isData;
 
     public AuthEnvelopedDataParser(ASN1SequenceParser seq) throws IOException
     {
@@ -105,8 +105,9 @@ public class AuthEnvelopedDataParser
         {
             ASN1SequenceParser o = (ASN1SequenceParser) nextObject;
             nextObject = null;
-            authEncryptedContentInfoParser = new EncryptedContentInfoParser(o);
-            return authEncryptedContentInfoParser;
+            EncryptedContentInfoParser encryptedContentInfoParser = new EncryptedContentInfoParser(o);
+            isData = CMSObjectIdentifiers.data.equals(encryptedContentInfoParser.getContentType());
+            return encryptedContentInfoParser;
         }
 
         return null;
@@ -129,7 +130,7 @@ public class AuthEnvelopedDataParser
 
         // "The authAttrs MUST be present if the content type carried in
         // EncryptedContentInfo is not id-data."
-        if (!authEncryptedContentInfoParser.getContentType().equals(CMSObjectIdentifiers.data))
+        if (!isData)
         {
             throw new ASN1ParsingException("authAttrs must be present with non-data content");
         }
