@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * Optimal Asymmetric Encryption Padding (OAEP) - see PKCS 1 V 2.
@@ -303,19 +304,6 @@ public class OAEPEncoding
     }
 
     /**
-     * int to octet string.
-     */
-    private void ItoOSP(
-        int     i,
-        byte[]  sp)
-    {
-        sp[0] = (byte)(i >>> 24);
-        sp[1] = (byte)(i >>> 16);
-        sp[2] = (byte)(i >>> 8);
-        sp[3] = (byte)(i >>> 0);
-    }
-
-    /**
      * mask generator function, as described in PKCS1v2.
      */
     private byte[] maskGeneratorFunction1(
@@ -333,7 +321,7 @@ public class OAEPEncoding
 
         while (counter < (length / hashBuf.length))
         {
-            ItoOSP(counter, C);
+            Pack.intToBigEndian(counter, C, 0);
 
             mgf1Hash.update(Z, zOff, zLen);
             mgf1Hash.update(C, 0, C.length);
@@ -346,7 +334,7 @@ public class OAEPEncoding
 
         if ((counter * hashBuf.length) < length)
         {
-            ItoOSP(counter, C);
+            Pack.intToBigEndian(counter, C, 0);
 
             mgf1Hash.update(Z, zOff, zLen);
             mgf1Hash.update(C, 0, C.length);
