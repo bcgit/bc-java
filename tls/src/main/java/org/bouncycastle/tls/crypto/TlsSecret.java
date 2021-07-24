@@ -77,7 +77,7 @@ public interface TlsSecret
      *            input keying material.
      * @return a pseudo-random key (of HashLen octets).
      */
-    TlsSecret hkdfExtract(int cryptoHashAlgorithm, byte[] ikm);
+    TlsSecret hkdfExtract(int cryptoHashAlgorithm, TlsSecret ikm);
 
     boolean isAlive();
 }

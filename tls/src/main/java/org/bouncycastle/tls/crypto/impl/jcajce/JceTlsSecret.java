@@ -22,6 +22,23 @@ import org.bouncycastle.util.Strings;
 public class JceTlsSecret
     extends AbstractTlsSecret
 {
+    public static JceTlsSecret convert(JcaTlsCrypto crypto, TlsSecret secret)
+    {
+        if (secret instanceof JceTlsSecret)
+        {
+            return (JceTlsSecret)secret;
+        }
+
+        if (secret instanceof AbstractTlsSecret)
+        {
+            AbstractTlsSecret abstractTlsSecret = (AbstractTlsSecret)secret;
+
+            return crypto.adoptLocalSecret(copyData(abstractTlsSecret));
+        }
+
+        throw new IllegalArgumentException("unrecognized TlsSecret - cannot copy data: " + secret.getClass().getName());
+    }
+
     // SSL3 magic mix constants ("A", "BB", "CCC", ...)
     private static final byte[] SSL3_CONST = generateSSL3Constants();
 
@@ -129,7 +146,7 @@ public class JceTlsSecret
         }
     }
 
-    public synchronized TlsSecret hkdfExtract(int cryptoHashAlgorithm, byte[] ikm)
+    public synchronized TlsSecret hkdfExtract(int cryptoHashAlgorithm, TlsSecret ikm)
     {
         checkAlive();
 
@@ -142,7 +159,7 @@ public class JceTlsSecret
             Mac hmac = crypto.getHelper().createMac(algorithm);
             hmac.init(new SecretKeySpec(salt, 0, salt.length, algorithm));
 
-            hmac.update(ikm, 0, ikm.length);
+            convert(crypto, ikm).updateMac(hmac);
 
             byte[] prk = hmac.doFinal();
 
@@ -272,5 +289,12 @@ public class JceTlsSecret
         byte[] result = new byte[length];
         hmacHash(digestName, data, 0, data.length, labelSeed, result);
         return result;
+    }
+
+    protected synchronized void updateMac(Mac mac)
+    {
+        checkAlive();
+
+        mac.update(data, 0, data.length);
     }
 }
