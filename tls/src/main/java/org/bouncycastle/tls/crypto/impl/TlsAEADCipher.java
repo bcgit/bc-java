@@ -352,7 +352,7 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        setup13Cipher(cipher, nonce, secret, TlsCryptoUtils.getHash(securityParameters.getPRFHashAlgorithm()));
+        setup13Cipher(cipher, nonce, secret, securityParameters.getPRFCryptoHashAlgorithm());
     }
 
     protected void setup13Cipher(TlsAEADCipherImpl cipher, byte[] nonce, TlsSecret secret, int cryptoHashAlgorithm)

@@ -133,14 +133,6 @@ public abstract class TlsCryptoUtils
         }
     }
 
-    public static TlsSecret hkdfExpandLabel(TlsSecret secret, short hashAlgorithm, String label, byte[] context,
-        int length) throws IOException
-    {
-        int cryptoHashAlgorithm = getHash(hashAlgorithm);
-
-        return hkdfExpandLabel(secret, cryptoHashAlgorithm, label, context, length);
-    }
-
     public static TlsSecret hkdfExpandLabel(TlsSecret secret, int cryptoHashAlgorithm, String label, byte[] context,
         int length) throws IOException
     {
