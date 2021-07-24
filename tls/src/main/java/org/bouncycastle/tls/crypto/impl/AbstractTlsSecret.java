@@ -13,6 +13,11 @@ import org.bouncycastle.util.Arrays;
 public abstract class AbstractTlsSecret
     implements TlsSecret
 {
+    protected static byte[] copyData(AbstractTlsSecret other)
+    {
+        return other.copyData();
+    }
+
     protected byte[] data;
 
     /**

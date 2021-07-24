@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.PRFAlgorithm;
@@ -19,6 +20,23 @@ import org.bouncycastle.util.Strings;
 public class BcTlsSecret
     extends AbstractTlsSecret
 {
+    public static BcTlsSecret convert(BcTlsCrypto crypto, TlsSecret secret)
+    {
+        if (secret instanceof BcTlsSecret)
+        {
+            return (BcTlsSecret)secret;
+        }
+
+        if (secret instanceof AbstractTlsSecret)
+        {
+            AbstractTlsSecret abstractTlsSecret = (AbstractTlsSecret)secret;
+
+            return crypto.adoptLocalSecret(copyData(abstractTlsSecret));
+        }
+
+        throw new IllegalArgumentException("unrecognized TlsSecret - cannot copy data: " + secret.getClass().getName());
+    }
+
     // SSL3 magic mix constants ("A", "BB", "CCC", ...)
     private static final byte[] SSL3_CONST = generateSSL3Constants();
 
@@ -118,7 +136,7 @@ public class BcTlsSecret
         return crypto.adoptLocalSecret(okm);
     }
 
-    public synchronized TlsSecret hkdfExtract(int cryptoHashAlgorithm, byte[] ikm)
+    public synchronized TlsSecret hkdfExtract(int cryptoHashAlgorithm, TlsSecret ikm)
     {
         checkAlive();
 
@@ -128,7 +146,7 @@ public class BcTlsSecret
         HMac hmac = new HMac(crypto.createDigest(cryptoHashAlgorithm));
         hmac.init(new KeyParameter(salt));
 
-        hmac.update(ikm, 0, ikm.length);
+        convert(crypto, ikm).updateMac(hmac);
 
         byte[] prk = new byte[hmac.getMacSize()];
         hmac.doFinal(prk, 0);
@@ -248,5 +266,12 @@ public class BcTlsSecret
         byte[] result = new byte[length];
         hmacHash(digest, data, 0, data.length, labelSeed, result);
         return result;
+    }
+
+    protected synchronized void updateMac(Mac mac)
+    {
+        checkAlive();
+
+        mac.update(data, 0, data.length);
     }
 }
