@@ -3,7 +3,6 @@ package org.bouncycastle.tls.crypto.test;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import junit.framework.TestCase;
 import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.DefaultTlsDHGroupVerifier;
 import org.bouncycastle.tls.DigitallySigned;
@@ -27,7 +26,6 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
-import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -36,6 +34,8 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.test.TlsTestUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.TestCase;
 
 public abstract class TlsCryptoTest
     extends TestCase
@@ -343,7 +343,7 @@ public abstract class TlsCryptoTest
             byte[] transcriptHash = getCurrentHash(prfHash);
             expect(transcriptHash, "ed b7 72 5f a7 a3 47 3b 03 1e c8 ef 65 a2 48 54 93 90 01 38 a2 b9 12 91 40 7d 79 51 a0 61 10 ed");
 
-            byte[] finished = calculateHMAC(hash, expanded, transcriptHash);
+            byte[] finished = expanded.calculateHMAC(hash, transcriptHash, 0, transcriptHash.length);
             expect(finished, hex("9b 9b 14 1d 90 63 37 fb d2 cb dc e7 1d f4 de da 4a b4 2c 30 95 72 cb 7f ff ee 54 54 b7 8f 07 18"));
         }
 
@@ -397,7 +397,7 @@ public abstract class TlsCryptoTest
             expect(expanded, "b8 0a d0 10 15 fb 2f 0b d6 5f f7 d4 da 5d 6b f8 3f 84 82 1d 1f 87 fd c7 d3 c7 5b 5a 7b 42 d9 c4");
 
             // TODO Mention this transcript hash in RFC 8448 data?
-            byte[] finished = calculateHMAC(hash, expanded, serverFinishedTranscriptHash);
+            byte[] finished = expanded.calculateHMAC(hash, serverFinishedTranscriptHash, 0, serverFinishedTranscriptHash.length);
             expect(finished, hex("a8 ec 43 6d 67 76 34 ae 52 5a c1 fc eb e1 1a 03 9e c1 76 94 fa c6 e9 85 27 b6 42 f2 ed d5 ce 61"));
         }
 
@@ -579,16 +579,6 @@ public abstract class TlsCryptoTest
                 implTestSignature13(credentialedSigner, signatureScheme);
             }
         }
-    }
-
-    private byte[] calculateHMAC(int cryptoHashAlgorithm, TlsSecret hmacKey, byte[] hmacInput)
-    {
-        byte[] keyBytes = extract(hmacKey);
-
-        TlsHMAC hmac = crypto.createHMACForHash(cryptoHashAlgorithm);
-        hmac.setKey(keyBytes, 0, keyBytes.length);
-        hmac.update(hmacInput, 0, hmacInput.length);
-        return hmac.calculateMAC();
     }
 
     private void expect(TlsSecret secret, String expectedHex)
