@@ -16,6 +16,7 @@ public class SecurityParameters
     final short compressionAlgorithm = CompressionMethod._null;
     short maxFragmentLength = -1;
     int prfAlgorithm = -1;
+    int prfCryptoHashAlgorithm = -1;
     short prfHashAlgorithm = -1;
     int prfHashLength = -1;
     int verifyDataLength = -1;
@@ -183,6 +184,11 @@ public class SecurityParameters
     public int getPRFAlgorithm()
     {
         return prfAlgorithm;
+    }
+
+    public int getPRFCryptoHashAlgorithm()
+    {
+        return prfCryptoHashAlgorithm;
     }
 
     /**
