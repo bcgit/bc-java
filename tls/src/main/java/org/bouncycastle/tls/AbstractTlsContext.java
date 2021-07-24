@@ -225,7 +225,7 @@ abstract class AbstractTlsContext
         }
 
         return exportKeyingMaterial13(checkEarlyExportSecret(sp.getEarlyExporterMasterSecret()),
-            sp.getPRFHashAlgorithm(), asciiLabel, context, length);
+            sp.getPRFCryptoHashAlgorithm(), asciiLabel, context, length);
     }
 
     public byte[] exportKeyingMaterial(String asciiLabel, byte[] context, int length)
@@ -252,8 +252,8 @@ abstract class AbstractTlsContext
 
         if (TlsUtils.isTLSv13(sp.getNegotiatedVersion()))
         {
-            return exportKeyingMaterial13(checkExportSecret(sp.getExporterMasterSecret()), sp.getPRFHashAlgorithm(),
-                asciiLabel, context, length);
+            return exportKeyingMaterial13(checkExportSecret(sp.getExporterMasterSecret()),
+                sp.getPRFCryptoHashAlgorithm(), asciiLabel, context, length);
         }
 
         byte[] seed = TlsUtils.calculateExporterSeed(sp, context);
@@ -261,8 +261,8 @@ abstract class AbstractTlsContext
         return TlsUtils.PRF(sp, checkExportSecret(sp.getMasterSecret()), asciiLabel, seed, length).extract();
     }
 
-    protected byte[] exportKeyingMaterial13(TlsSecret secret, short hashAlgorithm, String asciiLabel, byte[] context,
-        int length)
+    protected byte[] exportKeyingMaterial13(TlsSecret secret, int cryptoHashAlgorithm, String asciiLabel,
+        byte[] context, int length)
     {
         if (null == context)
         {
@@ -275,7 +275,7 @@ abstract class AbstractTlsContext
 
         try
         {
-            return TlsCryptoUtils.hkdfExpandLabel(secret, hashAlgorithm, asciiLabel, context, length).extract();
+            return TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, asciiLabel, context, length).extract();
         }
         catch (IOException e)
         {
