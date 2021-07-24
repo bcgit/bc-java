@@ -36,7 +36,6 @@ import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
-import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -1666,14 +1665,10 @@ public class TlsUtils
                 :   securityParameters.getBaseKeyClient();
 
             TlsSecret finishedKey = deriveSecret(securityParameters, baseKey, "finished", EMPTY_BYTES);
+            int cryptoHashAlgorithm = TlsCryptoUtils.getHash(securityParameters.getPRFHashAlgorithm());
             byte[] transcriptHash = getCurrentPRFHash(handshakeHash);
 
-            TlsCrypto crypto = context.getCrypto();
-            byte[] hmacKey = crypto.adoptSecret(finishedKey).extract();
-            TlsHMAC hmac = crypto.createHMACForHash(TlsCryptoUtils.getHash(securityParameters.getPRFHashAlgorithm()));
-            hmac.setKey(hmacKey, 0, hmacKey.length);
-            hmac.update(transcriptHash, 0, transcriptHash.length);
-            return hmac.calculateMAC();
+            return finishedKey.calculateHMAC(cryptoHashAlgorithm, transcriptHash, 0, transcriptHash.length);
         }
 
         if (negotiatedVersion.isSSL())
