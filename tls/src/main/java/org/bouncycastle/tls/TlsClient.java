@@ -22,6 +22,16 @@ public interface TlsClient
      */
     TlsSession getSessionToResume();
 
+    /**
+     * Return the {@link TlsPSKExternal external PSKs} to offer in the ClientHello.
+     * Note that this will only be called when TLS 1.3 or higher is amongst the
+     * offered protocol versions.
+     * 
+     * @return a {@link Vector} of {@link TlsPSKExternal} instances, or null if none
+     *         should be offered.
+     */
+    Vector getExternalPSKs();
+
     boolean isFallback();
 
     // Hashtable is (Integer -> byte[])

@@ -211,6 +211,11 @@ public abstract class AbstractTlsClient
         return null;
     }
 
+    public Vector getExternalPSKs()
+    {
+        return null;
+    }
+
     public boolean isFallback()
     {
         /*
