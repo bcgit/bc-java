@@ -78,6 +78,11 @@ public abstract class AbstractTlsPeer
         return 32768;
     }
 
+    public short[] getPskKeyExchangeModes()
+    {
+        return new short[]{ PskKeyExchangeMode.psk_dhe_ke, PskKeyExchangeMode.psk_ke };
+    }
+
     public boolean requiresCloseNotify()
     {
         return true;
