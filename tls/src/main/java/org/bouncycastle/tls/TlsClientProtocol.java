@@ -101,9 +101,6 @@ public class TlsClientProtocol
     {
         super.beginHandshake(renegotiation);
 
-        establishSession(tlsClient.getSessionToResume());
-        tlsClient.notifySessionToResume(tlsSession);
-
         sendClientHello();
         this.connection_state = CS_CLIENT_HELLO;
     }
@@ -1649,16 +1646,22 @@ public class TlsClientProtocol
     {
         SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
 
-        ProtocolVersion client_version;
+        ProtocolVersion[] supportedVersions;
+        ProtocolVersion earliestVersion, latestVersion;
+
         if (securityParameters.isRenegotiating())
         {
-            client_version = tlsClientContext.getClientVersion();
+            ProtocolVersion clientVersion = tlsClientContext.getClientVersion();
+
+            supportedVersions = clientVersion.only();
+            earliestVersion = clientVersion;
+            latestVersion = clientVersion;
         }
         else
         {
-            tlsClientContext.setClientSupportedVersions(tlsClient.getProtocolVersions());
+            supportedVersions = tlsClient.getProtocolVersions();
 
-            if (ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), ProtocolVersion.SSLv3))
+            if (ProtocolVersion.contains(supportedVersions, ProtocolVersion.SSLv3))
             {
                 // TODO[tls13] Prevent offering SSLv3 AND TLSv13?
                 recordStream.setWriteVersion(ProtocolVersion.SSLv3);
@@ -1668,17 +1671,24 @@ public class TlsClientProtocol
                 recordStream.setWriteVersion(ProtocolVersion.TLSv10);
             }
 
-            client_version = ProtocolVersion.getLatestTLS(tlsClientContext.getClientSupportedVersions());
+            earliestVersion = ProtocolVersion.getEarliestTLS(supportedVersions);
+            latestVersion = ProtocolVersion.getLatestTLS(supportedVersions);
 
-            if (!ProtocolVersion.isSupportedTLSVersionClient(client_version))
+            if (!ProtocolVersion.isSupportedTLSVersionClient(latestVersion))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            tlsClientContext.setClientVersion(client_version);
+            tlsClientContext.setClientVersion(latestVersion);
         }
 
-        final boolean offeringTLSv13Plus = ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(client_version);
+        tlsClientContext.setClientSupportedVersions(supportedVersions);
+
+        final boolean offeringTLSv12Minus = ProtocolVersion.TLSv12.isEqualOrLaterVersionOf(earliestVersion);
+        final boolean offeringTLSv13Plus = ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(latestVersion);
+
+        establishSession(offeringTLSv12Minus ? tlsClient.getSessionToResume() : null);
+        tlsClient.notifySessionToResume(tlsSession);
 
         /*
          * TODO RFC 5077 3.4. When presenting a ticket, the client MAY generate and include a
@@ -1701,13 +1711,12 @@ public class TlsClientProtocol
 
         this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsClient.getClientExtensions());
 
-        ProtocolVersion legacy_version = client_version;
+        ProtocolVersion legacy_version = latestVersion;
         if (offeringTLSv13Plus)
         {
             legacy_version = ProtocolVersion.TLSv12;
 
-            TlsExtensionsUtils.addSupportedVersionsExtensionClient(clientExtensions,
-                tlsClientContext.getClientSupportedVersions());
+            TlsExtensionsUtils.addSupportedVersionsExtensionClient(clientExtensions, supportedVersions);
 
             /*
              * RFC 8446 4.2.1. In compatibility mode [..], this field MUST be non-empty, so a client
@@ -1723,7 +1732,7 @@ public class TlsClientProtocol
 
         securityParameters.clientServerNames = TlsExtensionsUtils.getServerNameExtensionClient(clientExtensions);
 
-        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(latestVersion))
         {
             TlsUtils.establishClientSigAlgs(securityParameters, clientExtensions);
         }
@@ -1732,7 +1741,7 @@ public class TlsClientProtocol
 
         this.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
-        if (TlsUtils.isExtendedMasterSecretOptionalTLS(tlsClientContext.getClientSupportedVersions())
+        if (TlsUtils.isExtendedMasterSecretOptionalTLS(supportedVersions)
             && (tlsClient.shouldUseExtendedMasterSecret() ||
                 (null != sessionParameters && sessionParameters.isExtendedMasterSecret())))
         {
