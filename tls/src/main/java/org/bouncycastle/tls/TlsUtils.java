@@ -4898,7 +4898,7 @@ public class TlsUtils
 
     static short[] truncate(short[] a, int n)
     {
-        if (n < a.length)
+        if (n >= a.length)
         {
             return a;
         }
