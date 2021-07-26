@@ -42,4 +42,27 @@ class HandshakeMessageOutput
         protocol.writeHandshakeMessage(buf, 0, count);
         buf = null;
     }
+
+    void prepareClientHello(TlsHandshakeHash handshakeHash, int totalBindersLength) throws IOException
+    {
+        TlsUtils.checkUint16(totalBindersLength);
+
+        // Patch actual length back in
+        int bodyLength = count - 4 + totalBindersLength;
+        TlsUtils.checkUint24(bodyLength);
+        TlsUtils.writeUint24(bodyLength, buf, 1);
+        handshakeHash.update(buf, 0, count);
+    }
+
+    void sendClientHello(TlsClientProtocol clientProtocol, TlsHandshakeHash handshakeHash, int totalBindersLength)
+        throws IOException
+    {
+        if (totalBindersLength > 0)
+        {
+            handshakeHash.update(buf, count - totalBindersLength, totalBindersLength);
+        }
+
+        clientProtocol.writeHandshakeMessage(buf, 0, count);
+        buf = null;
+    }
 }
