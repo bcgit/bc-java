@@ -6,20 +6,31 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
+import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsHashOutputStream;
+import org.bouncycastle.tls.crypto.TlsSecret;
+
 public class OfferedPsks
 {
-    protected Vector identities;
-    protected Vector binders;
+    protected final Vector identities;
+    protected final Vector binders;
 
-    public OfferedPsks(Vector identities, Vector binders)
+    public OfferedPsks(Vector identities)
+    {
+        this(identities, null);
+    }
+
+    private OfferedPsks(Vector identities, Vector binders)
     {
         if (null == identities || identities.isEmpty())
         {
             throw new IllegalArgumentException("'identities' cannot be null or empty");
         }
-        if (null == binders || identities.size() != binders.size())
+        if (null != binders && identities.size() != binders.size())
         {
-            throw new IllegalArgumentException("'binders' must be non-null and the same length as 'identities'");
+            throw new IllegalArgumentException("'binders' must be the same length as 'identities' (or null)");
         }
 
         this.identities = identities;
@@ -36,20 +47,20 @@ public class OfferedPsks
         return identities;
     }
 
-    public void encode(OutputStream output) throws IOException
+    void encode(OutputStream output) throws IOException
     {
         // identities
         {
-            int totalLengthIdentities = 0;
+            int lengthOfIdentitiesList = 0;
             for (int i = 0; i < identities.size(); ++i)
             {
                 PskIdentity identity = (PskIdentity)identities.elementAt(i);
-                totalLengthIdentities += 2 + identity.getIdentity().length + 4;
+                lengthOfIdentitiesList += identity.getEncodedLength();
             }
-
-            TlsUtils.checkUint16(totalLengthIdentities);
-            TlsUtils.writeUint16(totalLengthIdentities, output);
-
+    
+            TlsUtils.checkUint16(lengthOfIdentitiesList);
+            TlsUtils.writeUint16(lengthOfIdentitiesList, output);
+    
             for (int i = 0; i < identities.size(); ++i)
             {
                 PskIdentity identity = (PskIdentity)identities.elementAt(i);
@@ -58,16 +69,17 @@ public class OfferedPsks
         }
 
         // binders
+        if (null != binders)
         {
-            int totalLengthBinders = 0;
+            int lengthOfBindersList = 0;
             for (int i = 0; i < binders.size(); ++i)
             {
                 byte[] binder = (byte[])binders.elementAt(i);
-                totalLengthBinders += 1 + binder.length;
+                lengthOfBindersList += 1 + binder.length;
             }
 
-            TlsUtils.checkUint16(totalLengthBinders);
-            TlsUtils.writeUint16(totalLengthBinders, output);
+            TlsUtils.checkUint16(lengthOfBindersList);
+            TlsUtils.writeUint16(lengthOfBindersList, output);
 
             for (int i = 0; i < binders.size(); ++i)
             {
@@ -75,6 +87,56 @@ public class OfferedPsks
                 TlsUtils.writeOpaque8(binder, output);
             }
         }
+    }
+
+    static void encodeBinders(OutputStream output, TlsCrypto crypto, TlsHandshakeHash handshakeHash,
+        TlsPSK[] psks, TlsSecret[] earlySecrets, int expectedLengthOfBindersList) throws IOException
+    {
+        TlsUtils.checkUint16(expectedLengthOfBindersList);
+        TlsUtils.writeUint16(expectedLengthOfBindersList, output);
+
+        int lengthOfBindersList = 0;
+        for (int i = 0; i < psks.length; ++i)
+        {
+            TlsPSK psk = psks[i];
+            TlsSecret earlySecret = earlySecrets[i];
+
+            // TODO[tls13-psk] Handle resumption PSKs
+            boolean isExternalPSK = true;
+            int pskCryptoHashAlgorithm = TlsCryptoUtils.getHashForPRF(psk.getPRFAlgorithm());
+
+            // TODO[tls13-psk] Cache the transcript hashes per algorithm to avoid duplicates for multiple PSKs
+            TlsHash hash = crypto.createHash(pskCryptoHashAlgorithm);
+            handshakeHash.copyBufferTo(new TlsHashOutputStream(hash));
+            byte[] transcriptHash = hash.calculateHash();
+
+            byte[] binder = TlsUtils.calculatePSKBinder(crypto, isExternalPSK, pskCryptoHashAlgorithm, earlySecret,
+                transcriptHash);
+
+            lengthOfBindersList += 1 + binder.length;
+            TlsUtils.writeOpaque8(binder, output);
+        }
+
+        if (expectedLengthOfBindersList != lengthOfBindersList)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    static int getLengthOfBindersList(TlsPSK[] psks) throws IOException
+    {
+        int lengthOfBindersList = 0;
+        for (int i = 0; i < psks.length; ++i)
+        {
+            TlsPSK psk = psks[i];
+
+            int prfAlgorithm = psk.getPRFAlgorithm();
+            int prfCryptoHashAlgorithm = TlsCryptoUtils.getHashForPRF(prfAlgorithm);
+
+            lengthOfBindersList += 1 + TlsCryptoUtils.getHashOutputSize(prfCryptoHashAlgorithm);
+        }
+        TlsUtils.checkUint16(lengthOfBindersList);
+        return lengthOfBindersList;
     }
 
     public static OfferedPsks parse(InputStream input) throws IOException

@@ -43,23 +43,21 @@ class HandshakeMessageOutput
         buf = null;
     }
 
-    void prepareClientHello(TlsHandshakeHash handshakeHash, int totalBindersLength) throws IOException
+    void prepareClientHello(TlsHandshakeHash handshakeHash, int bindersSize) throws IOException
     {
-        TlsUtils.checkUint16(totalBindersLength);
-
         // Patch actual length back in
-        int bodyLength = count - 4 + totalBindersLength;
+        int bodyLength = count - 4 + bindersSize;
         TlsUtils.checkUint24(bodyLength);
         TlsUtils.writeUint24(bodyLength, buf, 1);
         handshakeHash.update(buf, 0, count);
     }
 
-    void sendClientHello(TlsClientProtocol clientProtocol, TlsHandshakeHash handshakeHash, int totalBindersLength)
+    void sendClientHello(TlsClientProtocol clientProtocol, TlsHandshakeHash handshakeHash, int bindersSize)
         throws IOException
     {
-        if (totalBindersLength > 0)
+        if (bindersSize > 0)
         {
-            handshakeHash.update(buf, count - totalBindersLength, totalBindersLength);
+            handshakeHash.update(buf, count - bindersSize, bindersSize);
         }
 
         clientProtocol.writeHandshakeMessage(buf, 0, count);

@@ -28,6 +28,11 @@ public class PskIdentity
         this.obfuscatedTicketAge = obfuscatedTicketAge;
     }
 
+    public int getEncodedLength()
+    {
+        return 6 + identity.length;
+    }
+
     public byte[] getIdentity()
     {
         return identity;
