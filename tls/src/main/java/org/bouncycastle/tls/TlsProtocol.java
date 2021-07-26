@@ -473,7 +473,7 @@ public abstract class TlsProtocol
             AbstractTlsContext context = getContextAdmin();
             SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-            if (appDataReady ||
+            if (!context.isHandshaking() ||
                 null == securityParameters.getLocalVerifyData() ||
                 null == securityParameters.getPeerVerifyData())
             {
@@ -1753,6 +1753,18 @@ public abstract class TlsProtocol
         return closed;
     }
 
+    public boolean isConnected()
+    {
+        if (closed)
+        {
+            return false;
+        }
+
+        AbstractTlsContext context = getContextAdmin();
+
+        return null != context && context.isConnected();
+    }
+
     public boolean isHandshaking()
     {
         if (closed)
@@ -1762,7 +1774,7 @@ public abstract class TlsProtocol
 
         AbstractTlsContext context = getContextAdmin();
 
-        return null != context && !context.isConnected();
+        return null != context && context.isHandshaking();
     }
 
     protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
