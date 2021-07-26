@@ -514,7 +514,7 @@ public class DTLSClientProtocol
 
 
         ClientHello clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(), session_id,
-            TlsUtils.EMPTY_BYTES, state.offeredCipherSuites, state.clientExtensions);
+            TlsUtils.EMPTY_BYTES, state.offeredCipherSuites, state.clientExtensions, 0);
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         clientHello.encode(state.clientContext, buf);

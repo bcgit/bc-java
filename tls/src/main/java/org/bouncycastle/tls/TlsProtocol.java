@@ -2029,24 +2029,38 @@ public abstract class TlsProtocol
 
     protected static void writeExtensions(OutputStream output, Hashtable extensions) throws IOException
     {
+        writeExtensions(output, extensions, 0);
+    }
+
+    protected static void writeExtensions(OutputStream output, Hashtable extensions, int bindersSize) throws IOException
+    {
         if (null == extensions || extensions.isEmpty())
         {
             return;
         }
 
-        byte[] extBytes = writeExtensionsData(extensions);
+        byte[] extBytes = writeExtensionsData(extensions, bindersSize);
 
-        TlsUtils.writeOpaque16(extBytes, output);
+        int lengthWithBinders = extBytes.length + bindersSize;
+        TlsUtils.checkUint16(lengthWithBinders);
+        TlsUtils.writeUint16(lengthWithBinders, output);
+        output.write(extBytes);
     }
 
     protected static byte[] writeExtensionsData(Hashtable extensions) throws IOException
     {
+        return writeExtensionsData(extensions, 0);
+    }
+
+    protected static byte[] writeExtensionsData(Hashtable extensions, int bindersSize) throws IOException
+    {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        writeExtensionsData(extensions, buf);
+        writeExtensionsData(extensions, bindersSize, buf);
         return buf.toByteArray();
     }
 
-    protected static void writeExtensionsData(Hashtable extensions, ByteArrayOutputStream buf) throws IOException
+    protected static void writeExtensionsData(Hashtable extensions, int bindersSize, ByteArrayOutputStream buf)
+        throws IOException
     {
         /*
          * NOTE: There are reports of servers that don't accept a zero-length extension as the last
@@ -2054,6 +2068,23 @@ public abstract class TlsProtocol
          */
         writeSelectedExtensions(buf, extensions, true);
         writeSelectedExtensions(buf, extensions, false);
+        writePreSharedKeyExtension(buf, extensions, bindersSize);
+    }
+
+    protected static void writePreSharedKeyExtension(OutputStream output, Hashtable extensions, int bindersSize)
+        throws IOException
+    {
+        byte[] extension_data = (byte[])extensions.get(TlsExtensionsUtils.EXT_pre_shared_key);
+        if (null != extension_data)
+        {
+            TlsUtils.checkUint16(ExtensionType.pre_shared_key);
+            TlsUtils.writeUint16(ExtensionType.pre_shared_key, output);
+
+            int lengthWithBinders = extension_data.length + bindersSize;
+            TlsUtils.checkUint16(lengthWithBinders);
+            TlsUtils.writeUint16(lengthWithBinders, output);
+            output.write(extension_data);
+        }
     }
 
     protected static void writeSelectedExtensions(OutputStream output, Hashtable extensions, boolean selectEmpty)
@@ -2064,6 +2095,13 @@ public abstract class TlsProtocol
         {
             Integer key = (Integer)keys.nextElement();
             int extension_type = key.intValue();
+
+            // NOTE: Must be last; handled by 'writePreSharedKeyExtension'
+            if (ExtensionType.pre_shared_key == extension_type)
+            {
+                continue;
+            }
+
             byte[] extension_data = (byte[])extensions.get(key);
 
             if (selectEmpty == (extension_data.length == 0))

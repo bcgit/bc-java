@@ -1677,21 +1677,20 @@ public class TlsUtils
         return PRF(sp, preMasterSecret, asciiLabel, seed, 48);
     }
 
-    static byte[] calculatePSKBinder(TlsCrypto crypto, boolean isExternalPSK, int pskPRFAlgorithm,
+    static byte[] calculatePSKBinder(TlsCrypto crypto, boolean isExternalPSK, int pskCryptoHashAlgorithm,
         TlsSecret earlySecret, byte[] transcriptHash) throws IOException
     {
-        int prfCryptoHashAlgorithm = TlsCryptoUtils.getHashForPRF(pskPRFAlgorithm);
-        int prfHashLength = TlsCryptoUtils.getHashOutputSize(prfCryptoHashAlgorithm);
+        int prfHashLength = TlsCryptoUtils.getHashOutputSize(pskCryptoHashAlgorithm);
 
         String label = isExternalPSK ? "ext binder" : "res binder";
-        byte[] emptyTranscriptHash = crypto.createHash(prfCryptoHashAlgorithm).calculateHash();
+        byte[] emptyTranscriptHash = crypto.createHash(pskCryptoHashAlgorithm).calculateHash();
 
-        TlsSecret binderKey = deriveSecret(prfCryptoHashAlgorithm, prfHashLength, earlySecret, label,
+        TlsSecret binderKey = deriveSecret(pskCryptoHashAlgorithm, prfHashLength, earlySecret, label,
             emptyTranscriptHash);
 
         try
         {
-            return calculateFinishedHMAC(prfCryptoHashAlgorithm, prfHashLength, binderKey, transcriptHash);
+            return calculateFinishedHMAC(pskCryptoHashAlgorithm, prfHashLength, binderKey, transcriptHash);
         }
         finally
         {
