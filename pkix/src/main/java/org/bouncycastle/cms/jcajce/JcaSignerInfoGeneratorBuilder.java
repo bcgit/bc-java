@@ -3,6 +3,7 @@ package org.bouncycastle.cms.jcajce;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
@@ -48,6 +49,13 @@ public class JcaSignerInfoGeneratorBuilder
     public JcaSignerInfoGeneratorBuilder setDirectSignature(boolean hasNoSignedAttributes)
     {
         builder.setDirectSignature(hasNoSignedAttributes);
+
+        return this;
+    }
+
+    public JcaSignerInfoGeneratorBuilder setContentDigest(AlgorithmIdentifier contentDigest)
+    {
+        builder.setContentDigest(contentDigest);
 
         return this;
     }
