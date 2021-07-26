@@ -16,6 +16,7 @@ public class SecurityParameters
     final short compressionAlgorithm = CompressionMethod._null;
     short maxFragmentLength = -1;
     int prfAlgorithm = -1;
+    int prfCryptoHashAlgorithm = -1;
     short prfHashAlgorithm = -1;
     int prfHashLength = -1;
     int verifyDataLength = -1;
@@ -26,6 +27,7 @@ public class SecurityParameters
     TlsSecret exporterMasterSecret = null;
     TlsSecret handshakeSecret = null;
     TlsSecret masterSecret = null;
+    TlsSecret preSharedKey = null;
     TlsSecret sharedSecret = null;
     TlsSecret trafficSecretClient = null;
     TlsSecret trafficSecretServer = null;
@@ -33,7 +35,6 @@ public class SecurityParameters
     byte[] serverRandom = null;
     byte[] sessionHash = null;
     byte[] sessionID = null;
-    byte[] psk = null;
     byte[] pskIdentity = null;
     byte[] srpIdentity = null;
     byte[] tlsServerEndPoint = null;
@@ -83,6 +84,7 @@ public class SecurityParameters
         this.exporterMasterSecret = clearSecret(exporterMasterSecret);
         this.handshakeSecret = clearSecret(handshakeSecret);
         this.masterSecret = clearSecret(masterSecret);
+        this.preSharedKey = null;
         this.sharedSecret = clearSecret(sharedSecret);
     }
 
@@ -184,6 +186,11 @@ public class SecurityParameters
         return prfAlgorithm;
     }
 
+    public int getPRFCryptoHashAlgorithm()
+    {
+        return prfCryptoHashAlgorithm;
+    }
+
     /**
      * @return {@link HashAlgorithm} for the current {@link PRFAlgorithm}
      */
@@ -237,6 +244,11 @@ public class SecurityParameters
         return masterSecret;
     }
 
+    public TlsSecret getPreSharedKey()
+    {
+        return preSharedKey;
+    }
+
     public TlsSecret getSharedSecret()
     {
         return sharedSecret;
@@ -270,11 +282,6 @@ public class SecurityParameters
     public byte[] getSessionID()
     {
         return sessionID;
-    }
-
-    public byte[] getPSK()
-    {
-        return psk;
     }
 
     public byte[] getPSKIdentity()

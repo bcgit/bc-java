@@ -79,7 +79,7 @@ class DeferredHash
         }
         default:
         {
-            checkTrackingHash(securityParameters.getPRFHashAlgorithm());
+            checkTrackingHash(securityParameters.getPRFCryptoHashAlgorithm());
             if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
             {
                 sealHashAlgorithms();
@@ -126,7 +126,7 @@ class DeferredHash
         }
         default:
         {
-            cloneHash(newHashes, securityParameters.getPRFHashAlgorithm());
+            cloneHash(newHashes, securityParameters.getPRFCryptoHashAlgorithm());
             break;
         }
         }
@@ -150,7 +150,7 @@ class DeferredHash
         }
         default:
         {
-            prfHash = cloneHash(securityParameters.getPRFHashAlgorithm());
+            prfHash = cloneHash(securityParameters.getPRFCryptoHashAlgorithm());
             break;
         }
         }

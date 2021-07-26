@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsEncryptor;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -12,6 +13,11 @@ import org.bouncycastle.util.Arrays;
 public abstract class AbstractTlsSecret
     implements TlsSecret
 {
+    protected static byte[] copyData(AbstractTlsSecret other)
+    {
+        return other.copyData();
+    }
+
     protected byte[] data;
 
     /**
@@ -33,6 +39,16 @@ public abstract class AbstractTlsSecret
     }
 
     protected abstract AbstractTlsCrypto getCrypto();
+
+    public synchronized byte[] calculateHMAC(int cryptoHashAlgorithm, byte[] buf, int off, int len)
+    {
+        checkAlive();
+
+        TlsHMAC hmac = getCrypto().createHMACForHash(cryptoHashAlgorithm);
+        hmac.setKey(data, 0, data.length);
+        hmac.update(buf, off, len);
+        return hmac.calculateMAC();
+    }
 
     public synchronized void destroy()
     {
