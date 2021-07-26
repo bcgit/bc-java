@@ -95,6 +95,11 @@ abstract class AbstractTlsContext
         return null != securityParametersConnection;
     }
 
+    synchronized boolean isHandshaking()
+    {
+        return null != securityParametersHandshake;
+    }
+
     public TlsCrypto getCrypto()
     {
         return crypto;
