@@ -215,6 +215,10 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         {
             return "Ed448";
         }
+        if (PKCSObjectIdentifiers.id_alg_hss_lms_hashsig.equals(encryptionAlg.getAlgorithm()))
+        {
+            return "LMS";
+        }
 
         String digestName = getDigestAlgName(encryptionAlg.getAlgorithm());
 

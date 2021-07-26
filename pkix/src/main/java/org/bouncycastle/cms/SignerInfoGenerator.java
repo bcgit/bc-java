@@ -19,11 +19,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
-import org.bouncycastle.operator.DigestCalculatorProvider;
-import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeOutputStream;
 
@@ -34,7 +30,7 @@ public class SignerInfoGenerator
     private final CMSAttributeTableGenerator unsAttrGen;
     private final ContentSigner signer;
     private final DigestCalculator digester;
-    private final DigestAlgorithmIdentifierFinder digAlgFinder = new DefaultDigestAlgorithmIdentifierFinder();
+    private final AlgorithmIdentifier digestAlgorithm;
     private final CMSSignatureEncryptionAlgorithmFinder sigEncAlgFinder;
 
     private byte[] calculatedDigest = null;
@@ -43,44 +39,32 @@ public class SignerInfoGenerator
     SignerInfoGenerator(
         SignerIdentifier signerIdentifier,
         ContentSigner signer,
-        DigestCalculatorProvider digesterProvider,
+        AlgorithmIdentifier digesterAlgorithm,
         CMSSignatureEncryptionAlgorithmFinder sigEncAlgFinder)
-        throws OperatorCreationException
     {
-        this(signerIdentifier, signer, digesterProvider, sigEncAlgFinder, false);
+        this.signerIdentifier = signerIdentifier;
+        this.signer = signer;
+        this.digestAlgorithm = digesterAlgorithm;
+        this.digester = null;
+        this.sAttrGen = null;
+        this.unsAttrGen = null;
+        this.sigEncAlgFinder = sigEncAlgFinder;
     }
 
     SignerInfoGenerator(
         SignerIdentifier signerIdentifier,
         ContentSigner signer,
-        DigestCalculatorProvider digesterProvider,
+        DigestCalculator digester,
         CMSSignatureEncryptionAlgorithmFinder sigEncAlgFinder,
-        boolean isDirectSignature)
-        throws OperatorCreationException
+        CMSAttributeTableGenerator sAttrGen,
+        CMSAttributeTableGenerator unsAttrGen)
     {
         this.signerIdentifier = signerIdentifier;
         this.signer = signer;
-
-        if (digesterProvider != null)
-        {
-            this.digester = digesterProvider.get(digAlgFinder.find(signer.getAlgorithmIdentifier()));
-        }
-        else
-        {
-            this.digester = null;
-        }
-
-        if (isDirectSignature)
-        {
-            this.sAttrGen = null;
-            this.unsAttrGen = null;
-        }
-        else
-        {
-            this.sAttrGen = new DefaultSignedAttributeTableGenerator();
-            this.unsAttrGen = null;
-        }
-
+        this.digestAlgorithm = digester.getAlgorithmIdentifier();
+        this.digester = digester;
+        this.sAttrGen = sAttrGen;
+        this.unsAttrGen = unsAttrGen;
         this.sigEncAlgFinder = sigEncAlgFinder;
     }
 
@@ -91,36 +75,11 @@ public class SignerInfoGenerator
     {
         this.signerIdentifier = original.signerIdentifier;
         this.signer = original.signer;
+        this.digestAlgorithm = original.digestAlgorithm;
         this.digester = original.digester;
         this.sigEncAlgFinder = original.sigEncAlgFinder;
         this.sAttrGen = sAttrGen;
         this.unsAttrGen = unsAttrGen;
-    }
-
-    SignerInfoGenerator(
-        SignerIdentifier signerIdentifier,
-        ContentSigner signer,
-        DigestCalculatorProvider digesterProvider,
-        CMSSignatureEncryptionAlgorithmFinder sigEncAlgFinder,
-        CMSAttributeTableGenerator sAttrGen,
-        CMSAttributeTableGenerator unsAttrGen)
-        throws OperatorCreationException
-    {
-        this.signerIdentifier = signerIdentifier;
-        this.signer = signer;
-
-        if (digesterProvider != null)
-        {
-            this.digester = digesterProvider.get(digAlgFinder.find(signer.getAlgorithmIdentifier()));
-        }
-        else
-        {
-            this.digester = null;
-        }
-
-        this.sAttrGen = sAttrGen;
-        this.unsAttrGen = unsAttrGen;
-        this.sigEncAlgFinder = sigEncAlgFinder;
     }
 
     public SignerIdentifier getSID()
@@ -145,12 +104,7 @@ public class SignerInfoGenerator
     
     public AlgorithmIdentifier getDigestAlgorithm()
     {
-        if (digester != null)
-        {
-            return digester.getAlgorithmIdentifier();
-        }
-
-        return digAlgFinder.find(signer.getAlgorithmIdentifier());
+        return digestAlgorithm;
     }
     
     public OutputStream getCalculatingOutputStream()
@@ -207,14 +161,13 @@ public class SignerInfoGenerator
             }
             else
             {
+                digestAlg = digestAlgorithm;
                 if (digester != null)
                 {
-                    digestAlg = digester.getAlgorithmIdentifier();
                     calculatedDigest = digester.getDigest();
                 }
                 else
                 {
-                    digestAlg = digAlgFinder.find(signer.getAlgorithmIdentifier());
                     calculatedDigest = null;
                 }
             }
