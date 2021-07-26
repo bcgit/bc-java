@@ -9,6 +9,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -998,7 +999,10 @@ public class TlsClientProtocol
             agreement.receivePeerValue(keyShareEntry.getKeyExchange());
             securityParameters.sharedSecret = agreement.calculateSecret();
 
-            TlsUtils.establish13PhaseSecrets(tlsClientContext);
+            // TODO[tls13-psk] Use PSK early secret if negotiated
+            TlsSecret pskEarlySecret = null;
+
+            TlsUtils.establish13PhaseSecrets(tlsClientContext, pskEarlySecret);
         }
 
         {

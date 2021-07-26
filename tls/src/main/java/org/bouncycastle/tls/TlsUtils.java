@@ -1733,7 +1733,7 @@ public class TlsUtils
         return PRF(securityParameters, master_secret, asciiLabel, prfHash, verify_data_length).extract();
     }
 
-    static void establish13PhaseSecrets(TlsContext context) throws IOException
+    static void establish13PhaseSecrets(TlsContext context, TlsSecret pskEarlySecret) throws IOException
     {
         TlsCrypto crypto = context.getCrypto();
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
@@ -1741,14 +1741,13 @@ public class TlsUtils
         TlsSecret zeros = crypto.hkdfInit(cryptoHashAlgorithm);
         byte[] emptyTranscriptHash = crypto.createHash(cryptoHashAlgorithm).calculateHash();
 
-        TlsSecret preSharedKey = securityParameters.getPreSharedKey();
-        if (null == preSharedKey)
+        TlsSecret earlySecret = pskEarlySecret;
+        if (null == earlySecret)
         {
-            preSharedKey = zeros;
+            earlySecret = crypto
+                .hkdfInit(cryptoHashAlgorithm)
+                .hkdfExtract(cryptoHashAlgorithm, zeros);
         }
-
-        TlsSecret earlySecret = crypto.hkdfInit(cryptoHashAlgorithm)
-            .hkdfExtract(cryptoHashAlgorithm, preSharedKey);
 
         TlsSecret sharedSecret = securityParameters.getSharedSecret();
         if (null == sharedSecret)
@@ -1770,7 +1769,6 @@ public class TlsUtils
         securityParameters.earlySecret = earlySecret;
         securityParameters.handshakeSecret = handshakeSecret;
         securityParameters.masterSecret = masterSecret;
-        securityParameters.preSharedKey = null;
         securityParameters.sharedSecret = null;
     }
 
