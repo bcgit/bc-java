@@ -3,7 +3,6 @@ package org.bouncycastle.tls.crypto.test;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import junit.framework.TestCase;
 import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.DefaultTlsDHGroupVerifier;
 import org.bouncycastle.tls.DigitallySigned;
@@ -27,7 +26,6 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
-import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -36,6 +34,8 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.test.TlsTestUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.TestCase;
 
 public abstract class TlsCryptoTest
     extends TestCase
@@ -268,7 +268,7 @@ public abstract class TlsCryptoTest
 
         // {server}  extract secret "early":
         {
-            byte[] ikm = new byte[32];
+            TlsSecret ikm = crypto.hkdfInit(hash);
             early = init.hkdfExtract(hash, ikm);
             expect(early, "33 ad 0a 1c 60 7e c0 3b 09 e6 cd 98 93 68 0c e2 10 ad f3 00 aa 1f 26 60 e1 b2 2e 10 f1 70 f9 2a");
         }
@@ -282,7 +282,8 @@ public abstract class TlsCryptoTest
 
         // {server}  extract secret "handshake":
         {
-            byte[] ikm = hex("8b d4 05 4f b5 5b 9d 63 fd fb ac f9 f0 4b 9f 0d 35 e6 d6 3f 53 75 63 ef d4 62 72 90 0f 89 49 2d");
+            TlsSecret ikm = crypto.createSecret(
+                hex("8b d4 05 4f b5 5b 9d 63 fd fb ac f9 f0 4b 9f 0d 35 e6 d6 3f 53 75 63 ef d4 62 72 90 0f 89 49 2d"));
             handshake = handshake.hkdfExtract(hash, ikm);
             expect(handshake, "1d c8 26 e9 36 06 aa 6f dc 0a ad c1 2f 74 1b 01 04 6a a6 b9 9f 69 1e d2 21 a9 f0 ca 04 3f be ac");
         }
@@ -316,7 +317,7 @@ public abstract class TlsCryptoTest
 
         // {server}  extract secret "master":
         {
-            byte[] ikm = new byte[32];
+            TlsSecret ikm = crypto.hkdfInit(hash);
             master = master.hkdfExtract(hash, ikm);
             expect(master, "18 df 06 84 3d 13 a0 8b f2 a4 49 84 4c 5f 8a 47 80 01 bc 4d 4c 62 79 84 d5 a4 1d a8 d0 40 29 19");
         }
@@ -343,7 +344,7 @@ public abstract class TlsCryptoTest
             byte[] transcriptHash = getCurrentHash(prfHash);
             expect(transcriptHash, "ed b7 72 5f a7 a3 47 3b 03 1e c8 ef 65 a2 48 54 93 90 01 38 a2 b9 12 91 40 7d 79 51 a0 61 10 ed");
 
-            byte[] finished = calculateHMAC(hash, expanded, transcriptHash);
+            byte[] finished = expanded.calculateHMAC(hash, transcriptHash, 0, transcriptHash.length);
             expect(finished, hex("9b 9b 14 1d 90 63 37 fb d2 cb dc e7 1d f4 de da 4a b4 2c 30 95 72 cb 7f ff ee 54 54 b7 8f 07 18"));
         }
 
@@ -397,7 +398,7 @@ public abstract class TlsCryptoTest
             expect(expanded, "b8 0a d0 10 15 fb 2f 0b d6 5f f7 d4 da 5d 6b f8 3f 84 82 1d 1f 87 fd c7 d3 c7 5b 5a 7b 42 d9 c4");
 
             // TODO Mention this transcript hash in RFC 8448 data?
-            byte[] finished = calculateHMAC(hash, expanded, serverFinishedTranscriptHash);
+            byte[] finished = expanded.calculateHMAC(hash, serverFinishedTranscriptHash, 0, serverFinishedTranscriptHash.length);
             expect(finished, hex("a8 ec 43 6d 67 76 34 ae 52 5a c1 fc eb e1 1a 03 9e c1 76 94 fa c6 e9 85 27 b6 42 f2 ed d5 ce 61"));
         }
 
@@ -439,11 +440,11 @@ public abstract class TlsCryptoTest
         {
             int hash = hashes[i];
             int hashLen = TlsCryptoUtils.getHashOutputSize(hash);
-            byte[] zeroes = new byte[hashLen];
+            TlsSecret zeros = crypto.hkdfInit(hash);
 
             int limit = 255 * hashLen;
 
-            TlsSecret secret = crypto.hkdfInit(hash).hkdfExtract(hash, zeroes);
+            TlsSecret secret = crypto.hkdfInit(hash).hkdfExtract(hash, zeros);
 
             try
             {
@@ -579,16 +580,6 @@ public abstract class TlsCryptoTest
                 implTestSignature13(credentialedSigner, signatureScheme);
             }
         }
-    }
-
-    private byte[] calculateHMAC(int cryptoHashAlgorithm, TlsSecret hmacKey, byte[] hmacInput)
-    {
-        byte[] keyBytes = extract(hmacKey);
-
-        TlsHMAC hmac = crypto.createHMACForHash(cryptoHashAlgorithm);
-        hmac.setKey(keyBytes, 0, keyBytes.length);
-        hmac.update(hmacInput, 0, hmacInput.length);
-        return hmac.calculateMAC();
     }
 
     private void expect(TlsSecret secret, String expectedHex)

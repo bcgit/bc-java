@@ -36,7 +36,6 @@ import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
-import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -1633,6 +1632,24 @@ public class TlsUtils
         return Arrays.concatenate(cr, sr, contextLength, context);
     }
 
+    private static byte[] calculateFinishedHMAC(SecurityParameters securityParameters, TlsSecret baseKey,
+        byte[] transcriptHash) throws IOException
+    {
+        int cryptoHashAlgorithm = securityParameters.getPRFCryptoHashAlgorithm();
+
+        TlsSecret finishedKey = TlsCryptoUtils.hkdfExpandLabel(baseKey, cryptoHashAlgorithm, "finished", EMPTY_BYTES,
+            securityParameters.getPRFHashLength());
+
+        try
+        {
+            return finishedKey.calculateHMAC(cryptoHashAlgorithm, transcriptHash, 0, transcriptHash.length);
+        }
+        finally
+        {
+            finishedKey.destroy();
+        }
+    }
+
     static TlsSecret calculateMasterSecret(TlsContext context, TlsSecret preMasterSecret)
     {
         SecurityParameters sp = context.getSecurityParametersHandshake();
@@ -1653,6 +1670,28 @@ public class TlsUtils
         return PRF(sp, preMasterSecret, asciiLabel, seed, 48);
     }
 
+    static byte[] calculatePSKBinder(TlsContext context, boolean isExternalPSK, TlsSecret earlySecret,
+        byte[] transcriptHash) throws IOException
+    {
+        TlsCrypto crypto = context.getCrypto();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        int cryptoHashAlgorithm = securityParameters.getPRFCryptoHashAlgorithm();
+
+        String label = isExternalPSK ? "ext binder" : "res binder";
+        byte[] emptyTranscriptHash = crypto.createHash(cryptoHashAlgorithm).calculateHash();
+
+        TlsSecret binderKey = deriveSecret(securityParameters, earlySecret, label, emptyTranscriptHash);
+
+        try
+        {
+            return calculateFinishedHMAC(securityParameters, binderKey, transcriptHash);
+        }
+        finally
+        {
+            binderKey.destroy();
+        }
+    }
+
     static byte[] calculateVerifyData(TlsContext context, TlsHandshakeHash handshakeHash, boolean isServer)
         throws IOException
     {
@@ -1664,16 +1703,9 @@ public class TlsUtils
             TlsSecret baseKey = isServer
                 ?   securityParameters.getBaseKeyServer()
                 :   securityParameters.getBaseKeyClient();
-
-            TlsSecret finishedKey = deriveSecret(securityParameters, baseKey, "finished", EMPTY_BYTES);
             byte[] transcriptHash = getCurrentPRFHash(handshakeHash);
 
-            TlsCrypto crypto = context.getCrypto();
-            byte[] hmacKey = crypto.adoptSecret(finishedKey).extract();
-            TlsHMAC hmac = crypto.createHMACForHash(TlsCryptoUtils.getHash(securityParameters.getPRFHashAlgorithm()));
-            hmac.setKey(hmacKey, 0, hmacKey.length);
-            hmac.update(transcriptHash, 0, transcriptHash.length);
-            return hmac.calculateMAC();
+            return calculateFinishedHMAC(securityParameters, baseKey, transcriptHash);
         }
 
         if (negotiatedVersion.isSSL())
@@ -1692,43 +1724,43 @@ public class TlsUtils
 
     static void establish13PhaseSecrets(TlsContext context) throws IOException
     {
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-        int cryptoHashAlgorithm = TlsCryptoUtils.getHash(securityParameters.getPRFHashAlgorithm());
-        int hashLen = securityParameters.getPRFHashLength();
-        byte[] zeroes = new byte[hashLen];
-
-        byte[] psk = securityParameters.getPSK();
-        if (null == psk)
-        {
-            psk = zeroes;
-        }
-        else
-        {
-            securityParameters.psk = null;
-        }
-
-        byte[] ecdhe = zeroes;
-        TlsSecret sharedSecret = securityParameters.getSharedSecret();
-        if (null != sharedSecret)
-        {
-            securityParameters.sharedSecret = null;
-            ecdhe = sharedSecret.extract();
-        }
-
         TlsCrypto crypto = context.getCrypto();
-
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        int cryptoHashAlgorithm = securityParameters.getPRFCryptoHashAlgorithm();
+        TlsSecret zeros = crypto.hkdfInit(cryptoHashAlgorithm);
         byte[] emptyTranscriptHash = crypto.createHash(cryptoHashAlgorithm).calculateHash();
 
+        TlsSecret preSharedKey = securityParameters.getPreSharedKey();
+        if (null == preSharedKey)
+        {
+            preSharedKey = zeros;
+        }
+
         TlsSecret earlySecret = crypto.hkdfInit(cryptoHashAlgorithm)
-            .hkdfExtract(cryptoHashAlgorithm, psk);
+            .hkdfExtract(cryptoHashAlgorithm, preSharedKey);
+
+        TlsSecret sharedSecret = securityParameters.getSharedSecret();
+        if (null == sharedSecret)
+        {
+            sharedSecret = zeros;
+        }
+
         TlsSecret handshakeSecret = deriveSecret(securityParameters, earlySecret, "derived", emptyTranscriptHash)
-            .hkdfExtract(cryptoHashAlgorithm, ecdhe);
+            .hkdfExtract(cryptoHashAlgorithm, sharedSecret);
+
+        if (sharedSecret != zeros)
+        {
+            sharedSecret.destroy();
+        }
+
         TlsSecret masterSecret = deriveSecret(securityParameters, handshakeSecret, "derived", emptyTranscriptHash)
-            .hkdfExtract(cryptoHashAlgorithm, zeroes);
+            .hkdfExtract(cryptoHashAlgorithm, zeros);
 
         securityParameters.earlySecret = earlySecret;
         securityParameters.handshakeSecret = handshakeSecret;
         securityParameters.masterSecret = masterSecret;
+        securityParameters.preSharedKey = null;
+        securityParameters.sharedSecret = null;
     }
 
     private static void establish13TrafficSecrets(TlsContext context, byte[] transcriptHash, TlsSecret phaseSecret,
@@ -1829,7 +1861,7 @@ public class TlsUtils
 
     private static TlsSecret update13TrafficSecret(SecurityParameters securityParameters, TlsSecret secret) throws IOException
     {
-        return TlsCryptoUtils.hkdfExpandLabel(secret, securityParameters.getPRFHashAlgorithm(), "traffic upd",
+        return TlsCryptoUtils.hkdfExpandLabel(secret, securityParameters.getPRFCryptoHashAlgorithm(), "traffic upd",
             EMPTY_BYTES, securityParameters.getPRFHashLength());
     }
 
@@ -4866,7 +4898,7 @@ public class TlsUtils
 
     static short[] truncate(short[] a, int n)
     {
-        if (n < a.length)
+        if (n >= a.length)
         {
             return a;
         }
@@ -5426,6 +5458,7 @@ public class TlsUtils
         case PRFAlgorithm.ssl_prf_legacy:
         case PRFAlgorithm.tls_prf_legacy:
         {
+            securityParameters.prfCryptoHashAlgorithm = -1;
             securityParameters.prfHashAlgorithm = -1;
             securityParameters.prfHashLength = -1;
             break;
@@ -5433,7 +5466,9 @@ public class TlsUtils
         default:
         {
             short prfHashAlgorithm = getHashAlgorithmForPRFAlgorithm(prfAlgorithm);
+            int prfCryptoHashAlgorithm = TlsCryptoUtils.getHash(prfHashAlgorithm);
 
+            securityParameters.prfCryptoHashAlgorithm = prfCryptoHashAlgorithm;
             securityParameters.prfHashAlgorithm = prfHashAlgorithm;
             securityParameters.prfHashLength = HashAlgorithm.getOutputSize(prfHashAlgorithm);
             break;
@@ -5534,8 +5569,15 @@ public class TlsUtils
     static TlsSecret deriveSecret(SecurityParameters securityParameters, TlsSecret secret, String label,
         byte[] transcriptHash) throws IOException
     {
-        return TlsCryptoUtils.hkdfExpandLabel(secret, securityParameters.getPRFHashAlgorithm(), label, transcriptHash,
-            securityParameters.getPRFHashLength());
+        int prfCryptoHashAlgorithm = securityParameters.getPRFCryptoHashAlgorithm();
+        int prfHashLength = securityParameters.getPRFHashLength();
+
+        if (transcriptHash.length != prfHashLength)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return TlsCryptoUtils.hkdfExpandLabel(secret, prfCryptoHashAlgorithm, label, transcriptHash, prfHashLength);
     }
 
     static TlsSecret getSessionMasterSecret(TlsCrypto crypto, TlsSecret masterSecret)

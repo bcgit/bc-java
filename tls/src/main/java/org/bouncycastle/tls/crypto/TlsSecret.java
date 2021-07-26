@@ -8,6 +8,18 @@ import java.io.IOException;
 public interface TlsSecret
 {
     /**
+     * Calculate an HMAC with this secret's data as the key.
+     * 
+     * @param cryptoHashAlgorithm
+     *            the hash algorithm to instantiate HMAC with. See {@link CryptoHashAlgorithm} for values.
+     * @param buf array containing the input data.
+     * @param off offset into the input array the input starts at.
+     * @param len the length of the input data.
+     * @return
+     */
+    byte[] calculateHMAC(int cryptoHashAlgorithm, byte[] buf, int off, int len);
+
+    /**
      * Return a new secret based on applying a PRF to this one.
      *
      * @param prfAlgorithm PRF algorithm to use.
@@ -65,7 +77,7 @@ public interface TlsSecret
      *            input keying material.
      * @return a pseudo-random key (of HashLen octets).
      */
-    TlsSecret hkdfExtract(int cryptoHashAlgorithm, byte[] ikm);
+    TlsSecret hkdfExtract(int cryptoHashAlgorithm, TlsSecret ikm);
 
     boolean isAlive();
 }
