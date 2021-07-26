@@ -1059,11 +1059,23 @@ public abstract class TlsProtocol
         short type = TlsUtils.readUint8(buf, off);
         switch (type)
         {
+        /*
+         * These message types aren't included in the transcript.
+         */
         case HandshakeType.hello_request:
         case HandshakeType.key_update:
         case HandshakeType.new_session_ticket:
             break;
 
+        /*
+         * These message types are deferred to the writer to explicitly update the transcript.
+         */
+        case HandshakeType.client_hello:
+            break;
+
+        /*
+         * For all others we automatically update the transcript. 
+         */
         default:
         {
             handshakeHash.update(buf, off, len);

@@ -1824,7 +1824,15 @@ public class TlsClientProtocol
     {
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.client_hello);
         clientHello.encode(tlsClientContext, message);
-        message.send(this);
+
+        // TODO[tls13-psk] Calculate the total length of the binders that will be added.
+        int totalBindersLength = 0;
+
+        message.prepareClientHello(handshakeHash, totalBindersLength);
+
+        // TODO[tls13-psk] Calculate any PSK binders and write them to 'message' here. 
+
+        message.sendClientHello(this, handshakeHash, totalBindersLength);
     }
 
     protected void sendClientKeyExchange()
