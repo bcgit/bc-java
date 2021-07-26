@@ -12,6 +12,7 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 public class TlsServerProtocol
@@ -369,7 +370,11 @@ public class TlsServerProtocol
 
             agreement.receivePeerValue(clientShare.getKeyExchange());
             securityParameters.sharedSecret = agreement.calculateSecret();
-            TlsUtils.establish13PhaseSecrets(tlsServerContext);
+
+            // TODO[tls13-psk] Use PSK early secret if negotiated
+            TlsSecret pskEarlySecret = null;
+
+            TlsUtils.establish13PhaseSecrets(tlsServerContext, pskEarlySecret);
         }
 
         this.serverExtensions = serverEncryptedExtensions;
