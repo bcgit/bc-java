@@ -17,9 +17,10 @@ public class ClientHello
     private final byte[] cookie;
     private final int[] cipherSuites;
     private final Hashtable extensions;
+    private final int bindersSize;
 
     public ClientHello(ProtocolVersion version, byte[] random, byte[] sessionID, byte[] cookie,
-        int[] cipherSuites, Hashtable extensions)
+        int[] cipherSuites, Hashtable extensions, int bindersSize)
     {
         this.version = version;
         this.random = random;
@@ -27,6 +28,12 @@ public class ClientHello
         this.cookie = cookie;
         this.cipherSuites = cipherSuites;
         this.extensions = extensions;
+        this.bindersSize = bindersSize;
+    }
+
+    public int getBindersSize()
+    {
+        return bindersSize;
     }
 
     public int[] getCipherSuites()
@@ -91,7 +98,7 @@ public class ClientHello
 
         TlsUtils.writeUint8ArrayWithUint8Length(new short[]{ CompressionMethod._null }, output);
 
-        TlsProtocol.writeExtensions(output, extensions);
+        TlsProtocol.writeExtensions(output, extensions, bindersSize);
     }
 
     /**
@@ -182,6 +189,6 @@ public class ClientHello
             extensions = TlsProtocol.readExtensionsDataClientHello(extBytes);
         }
 
-        return new ClientHello(clientVersion, random, sessionID, cookie, cipherSuites, extensions);
+        return new ClientHello(clientVersion, random, sessionID, cookie, cipherSuites, extensions, 0);
     }
 }

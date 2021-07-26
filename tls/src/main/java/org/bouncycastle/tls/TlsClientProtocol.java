@@ -1581,6 +1581,8 @@ public class TlsClientProtocol
 
     protected void send13ClientHelloRetry() throws IOException
     {
+        // TODO[tls13-psk] Create a new ClientHello object and handle any changes to the bindersSize
+
         Hashtable clientHelloExtensions = clientHello.getExtensions();
 
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_cookie);
@@ -1814,8 +1816,12 @@ public class TlsClientProtocol
 
 
 
+        // TODO[tls13-psk] Calculate the total length of the binders that will be added.
+        int bindersSize = 0;
+//        int bindersSize = 2 + lengthOfBindersList;
+
         this.clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(), legacy_session_id,
-            null, offeredCipherSuites, clientExtensions);
+            null, offeredCipherSuites, clientExtensions, bindersSize);
 
         sendClientHelloMessage();
     }
@@ -1825,14 +1831,11 @@ public class TlsClientProtocol
         HandshakeMessageOutput message = new HandshakeMessageOutput(HandshakeType.client_hello);
         clientHello.encode(tlsClientContext, message);
 
-        // TODO[tls13-psk] Calculate the total length of the binders that will be added.
-        int totalBindersLength = 0;
-
-        message.prepareClientHello(handshakeHash, totalBindersLength);
+        message.prepareClientHello(handshakeHash, clientHello.getBindersSize());
 
         // TODO[tls13-psk] Calculate any PSK binders and write them to 'message' here. 
 
-        message.sendClientHello(this, handshakeHash, totalBindersLength);
+        message.sendClientHello(this, handshakeHash, clientHello.getBindersSize());
     }
 
     protected void sendClientKeyExchange()
