@@ -14,6 +14,20 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 
 public class OfferedPsks
 {
+    static class Config
+    {
+        final TlsPSK[] psks;
+        final TlsSecret[] earlySecrets;
+        final int bindersSize;
+
+        Config(TlsPSK[] psks, TlsSecret[] earlySecrets, int bindersSize)
+        {
+            this.psks = psks;
+            this.earlySecrets = earlySecrets;
+            this.bindersSize = bindersSize;
+        }
+    }
+
     protected final Vector identities;
     protected final Vector binders;
 
@@ -47,7 +61,7 @@ public class OfferedPsks
         return identities;
     }
 
-    void encode(OutputStream output) throws IOException
+    public void encode(OutputStream output) throws IOException
     {
         // identities
         {
@@ -89,9 +103,13 @@ public class OfferedPsks
         }
     }
 
-    static void encodeBinders(OutputStream output, TlsCrypto crypto, TlsHandshakeHash handshakeHash,
-        TlsPSK[] psks, TlsSecret[] earlySecrets, int expectedLengthOfBindersList) throws IOException
+    static void encodeBinders(OutputStream output, TlsCrypto crypto, TlsHandshakeHash handshakeHash, Config config)
+        throws IOException
     {
+        TlsPSK[] psks = config.psks;
+        TlsSecret[] earlySecrets = config.earlySecrets;
+        int expectedLengthOfBindersList = config.bindersSize - 2;
+
         TlsUtils.checkUint16(expectedLengthOfBindersList);
         TlsUtils.writeUint16(expectedLengthOfBindersList, output);
 
@@ -123,7 +141,7 @@ public class OfferedPsks
         }
     }
 
-    static int getLengthOfBindersList(TlsPSK[] psks) throws IOException
+    static int getBindersSize(TlsPSK[] psks) throws IOException
     {
         int lengthOfBindersList = 0;
         for (int i = 0; i < psks.length; ++i)
@@ -136,7 +154,7 @@ public class OfferedPsks
             lengthOfBindersList += 1 + TlsCryptoUtils.getHashOutputSize(prfCryptoHashAlgorithm);
         }
         TlsUtils.checkUint16(lengthOfBindersList);
-        return lengthOfBindersList;
+        return 2 + lengthOfBindersList;
     }
 
     public static OfferedPsks parse(InputStream input) throws IOException

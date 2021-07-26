@@ -1279,6 +1279,11 @@ public class TlsUtils
         return null == s || s.length() < 1;
     }
 
+    public static boolean isNullOrEmpty(Vector v)
+    {
+        return null == v || v.isEmpty();
+    }
+
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion version)
     {
         return null != version
@@ -2199,6 +2204,46 @@ public class TlsUtils
             return PRFAlgorithm.tls_prf_legacy;
         }
         }
+    }
+
+    static int getPRFAlgorithm13(int cipherSuite)
+    {
+        // NOTE: getPRFAlgorithms13 relies on the number of distinct return values
+        switch (cipherSuite)
+        {
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+            return PRFAlgorithm.tls13_hkdf_sha256;
+
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
+            return PRFAlgorithm.tls13_hkdf_sha384;
+
+        case CipherSuite.TLS_SM4_CCM_SM3:
+        case CipherSuite.TLS_SM4_GCM_SM3:
+            return PRFAlgorithm.tls13_hkdf_sm3;
+
+        default:
+            return -1;
+        }
+    }
+
+    static int[] getPRFAlgorithms13(int[] cipherSuites)
+    {
+        int[] result = new int[Math.min(3, cipherSuites.length)];
+
+        int count = 0;
+        for (int i = 0; i < cipherSuites.length; ++i)
+        {
+            int prfAlgorithm = getPRFAlgorithm13(cipherSuites[i]);
+            if (prfAlgorithm >= 0 && !Arrays.contains(result, prfAlgorithm))
+            {
+                result[count++] = prfAlgorithm;
+            }
+        }
+
+        return truncate(result, count);
     }
 
     static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm,
@@ -4917,6 +4962,18 @@ public class TlsUtils
         return t;
     }
 
+    static int[] truncate(int[] a, int n)
+    {
+        if (n >= a.length)
+        {
+            return a;
+        }
+
+        int[] t = new int[n];
+        System.arraycopy(a, 0,  t, 0, n);
+        return t;
+    }
+
     static TlsCredentialedAgreement requireAgreementCredentials(TlsCredentials credentials)
         throws IOException
     {
@@ -5759,5 +5816,67 @@ public class TlsUtils
         byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(encryptor);
         writeEncryptedPMS(context, encryptedPreMasterSecret, output);
         return preMasterSecret;
+    }
+
+    static OfferedPsks.Config getOfferedPsksConfig(TlsClientContext clientContext, TlsClient client) throws IOException
+    {
+        TlsPSKExternal[] pskExternals = getPSKExternalsClient(client);
+        if (null == pskExternals)
+        {
+            return null;
+        }
+
+        TlsSecret[] pskEarlySecrets = getPSKEarlySecrets(clientContext.getCrypto(), pskExternals);
+
+        int bindersSize = OfferedPsks.getBindersSize(pskExternals);
+
+        return new OfferedPsks.Config(pskExternals, pskEarlySecrets, bindersSize);
+    }
+
+    static TlsSecret getPSKEarlySecret(TlsCrypto crypto, TlsPSK psk)
+    {
+        int cryptoHashAlgorithm = TlsCryptoUtils.getHashForPRF(psk.getPRFAlgorithm());
+
+        return crypto
+            .hkdfInit(cryptoHashAlgorithm)
+            .hkdfExtract(cryptoHashAlgorithm, psk.getKey());
+    }
+
+    static TlsSecret[] getPSKEarlySecrets(TlsCrypto crypto, TlsPSK[] psks)
+    {
+        int count = psks.length;
+        TlsSecret[] earlySecrets = new TlsSecret[count];
+        for (int i = 0; i < count; ++i)
+        {
+            earlySecrets[i] = getPSKEarlySecret(crypto, psks[i]);
+        }
+        return earlySecrets;
+    }
+
+    static TlsPSKExternal[] getPSKExternalsClient(TlsClient client) throws IOException
+    {
+        // TODO[tl13-psk] Ensure PSK hash algorithms are supported by cipher suites
+
+        Vector externalPSKs = client.getExternalPSKs();
+        if (isNullOrEmpty(externalPSKs))
+        {
+            return null;
+        }
+
+        int count = externalPSKs.size();
+        TlsPSKExternal[] result = new TlsPSKExternal[count];
+
+        for (int i = 0; i < count; ++i)
+        {
+            Object element = externalPSKs.elementAt(i);
+            if (!(element instanceof TlsPSKExternal))
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            result[i] = (TlsPSKExternal)element;
+        }
+
+        return result;
     }
 }
