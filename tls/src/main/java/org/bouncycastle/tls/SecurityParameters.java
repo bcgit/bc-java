@@ -2,6 +2,7 @@ package org.bouncycastle.tls;
 
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -186,6 +187,9 @@ public class SecurityParameters
         return prfAlgorithm;
     }
 
+    /**
+     * @return {@link CryptoHashAlgorithm} for the current {@link PRFAlgorithm}
+     */
     public int getPRFCryptoHashAlgorithm()
     {
         return prfCryptoHashAlgorithm;
@@ -193,6 +197,8 @@ public class SecurityParameters
 
     /**
      * @return {@link HashAlgorithm} for the current {@link PRFAlgorithm}
+     * 
+     * @deprecated Use {@link #getPRFCryptoHashAlgorithm()} instead.
      */
     public short getPRFHashAlgorithm()
     {
