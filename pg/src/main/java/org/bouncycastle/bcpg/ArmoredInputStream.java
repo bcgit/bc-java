@@ -488,7 +488,63 @@ public class ArmoredInputStream
 
         return c;
     }
-    
+
+    /**
+     * Reads up to <code>len</code> bytes of data from the input stream into
+     * an array of bytes.  An attempt is made to read as many as
+     * <code>len</code> bytes, but a smaller number may be read.
+     * The number of bytes actually read is returned as an integer.
+     *
+     * The first byte read is stored into element <code>b[off]</code>, the
+     * next one into <code>b[off+1]</code>, and so on. The number of bytes read
+     * is, at most, equal to <code>len</code>.
+     *
+     * NOTE: We need to override the custom behavior of Java's {@link InputStream#read(byte[], int, int)},
+     * as the upstream method silently swallows {@link IOException IOExceptions}.
+     * This would cause CRC checksum errors to go unnoticed.
+     *
+     * @see <a href="https://github.com/bcgit/bc-java/issues/998">Related BC bug report</a>
+     * @param b byte array
+     * @param off offset at which we start writing data to the array
+     * @param len number of bytes we write into the array
+     * @return total number of bytes read into the buffer
+     *
+     * @throws IOException if an exception happens AT ANY POINT
+     */
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        checkIndexSize(b.length, off, len);
+
+        if (len == 0) {
+            return 0;
+        }
+
+        int c = read();
+        if (c == -1) {
+            return -1;
+        }
+        b[off] = (byte)c;
+
+        int i = 1;
+        for (; i < len ; i++) {
+            c = read();
+            if (c == -1) {
+                break;
+            }
+            b[off + i] = (byte)c;
+        }
+        return i;
+    }
+
+    private void checkIndexSize(int size, int off, int len) {
+        if (off < 0 || len < 0) {
+            throw new IndexOutOfBoundsException("Offset and length cannot be negative.");
+        }
+        if (size < off + len) {
+            throw new IndexOutOfBoundsException("Invalid offset and length.");
+        }
+    }
+
     public void close()
         throws IOException
     {
