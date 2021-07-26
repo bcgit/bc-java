@@ -6,6 +6,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
@@ -49,6 +50,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
     private boolean hasNoSignedAttributes;
     private CMSAttributeTableGenerator signedGen;
     private CMSAttributeTableGenerator unsignedGen;
+    private AlgorithmIdentifier contentDigest;
 
     public JcaSimpleSignerInfoGeneratorBuilder()
         throws OperatorCreationException
@@ -81,6 +83,13 @@ public class JcaSimpleSignerInfoGeneratorBuilder
     public JcaSimpleSignerInfoGeneratorBuilder setDirectSignature(boolean hasNoSignedAttributes)
     {
         this.hasNoSignedAttributes = hasNoSignedAttributes;
+
+        return this;
+    }
+
+    public JcaSimpleSignerInfoGeneratorBuilder setContentDigest(AlgorithmIdentifier contentDigest)
+    {
+        this.contentDigest = contentDigest;
 
         return this;
     }
@@ -145,6 +154,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
         SignerInfoGeneratorBuilder infoGeneratorBuilder = new SignerInfoGeneratorBuilder(helper.createDigestCalculatorProvider());
 
         infoGeneratorBuilder.setDirectSignature(hasNoSignedAttributes);
+        infoGeneratorBuilder.setContentDigest(contentDigest);
         infoGeneratorBuilder.setSignedAttributeGenerator(signedGen);
         infoGeneratorBuilder.setUnsignedAttributeGenerator(unsignedGen);
 
