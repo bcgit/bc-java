@@ -14,15 +14,17 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 
 public class OfferedPsks
 {
-    static class Config
+    static class BindersConfig
     {
         final TlsPSK[] psks;
+        final short[] pskKeyExchangeModes;
         final TlsSecret[] earlySecrets;
         final int bindersSize;
 
-        Config(TlsPSK[] psks, TlsSecret[] earlySecrets, int bindersSize)
+        BindersConfig(TlsPSK[] psks, short[] pskKeyExchangeModes, TlsSecret[] earlySecrets, int bindersSize)
         {
             this.psks = psks;
+            this.pskKeyExchangeModes = pskKeyExchangeModes;
             this.earlySecrets = earlySecrets;
             this.bindersSize = bindersSize;
         }
@@ -103,12 +105,12 @@ public class OfferedPsks
         }
     }
 
-    static void encodeBinders(OutputStream output, TlsCrypto crypto, TlsHandshakeHash handshakeHash, Config config)
-        throws IOException
+    static void encodeBinders(OutputStream output, TlsCrypto crypto, TlsHandshakeHash handshakeHash,
+        BindersConfig bindersConfig) throws IOException
     {
-        TlsPSK[] psks = config.psks;
-        TlsSecret[] earlySecrets = config.earlySecrets;
-        int expectedLengthOfBindersList = config.bindersSize - 2;
+        TlsPSK[] psks = bindersConfig.psks;
+        TlsSecret[] earlySecrets = bindersConfig.earlySecrets;
+        int expectedLengthOfBindersList = bindersConfig.bindersSize - 2;
 
         TlsUtils.checkUint16(expectedLengthOfBindersList);
         TlsUtils.writeUint16(expectedLengthOfBindersList, output);

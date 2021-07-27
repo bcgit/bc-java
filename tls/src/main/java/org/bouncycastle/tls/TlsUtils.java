@@ -1733,7 +1733,8 @@ public class TlsUtils
         return PRF(securityParameters, master_secret, asciiLabel, prfHash, verify_data_length).extract();
     }
 
-    static void establish13PhaseSecrets(TlsContext context, TlsSecret pskEarlySecret) throws IOException
+    static void establish13PhaseSecrets(TlsContext context, TlsSecret pskEarlySecret, TlsSecret sharedSecret)
+        throws IOException
     {
         TlsCrypto crypto = context.getCrypto();
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
@@ -1749,7 +1750,6 @@ public class TlsUtils
                 .hkdfExtract(cryptoHashAlgorithm, zeros);
         }
 
-        TlsSecret sharedSecret = securityParameters.getSharedSecret();
         if (null == sharedSecret)
         {
             sharedSecret = zeros;
@@ -1769,7 +1769,6 @@ public class TlsUtils
         securityParameters.earlySecret = earlySecret;
         securityParameters.handshakeSecret = handshakeSecret;
         securityParameters.masterSecret = masterSecret;
-        securityParameters.sharedSecret = null;
     }
 
     private static void establish13TrafficSecrets(TlsContext context, byte[] transcriptHash, TlsSecret phaseSecret,
@@ -5198,7 +5197,7 @@ public class TlsUtils
         return false;
     }
 
-    static Hashtable addEarlyKeySharesToClientHello(TlsClientContext clientContext, TlsClient client,
+    static Hashtable addKeyShareToClientHello(TlsClientContext clientContext, TlsClient client,
         Hashtable clientExtensions) throws IOException
     {
         /*
@@ -5816,19 +5815,46 @@ public class TlsUtils
         return preMasterSecret;
     }
 
-    static OfferedPsks.Config getOfferedPsksConfig(TlsClientContext clientContext, TlsClient client) throws IOException
+    static OfferedPsks.BindersConfig addPreSharedKeyToClientHello(TlsClientContext clientContext, TlsClient client,
+        Hashtable clientExtensions, int[] offeredCipherSuites) throws IOException
     {
-        TlsPSKExternal[] pskExternals = getPSKExternalsClient(client);
+        if (!isTLSv13(clientContext.getClientVersion()))
+        {
+            return null;
+        }
+
+        TlsPSKExternal[] pskExternals = getPSKExternalsClient(client, offeredCipherSuites);
         if (null == pskExternals)
         {
             return null;
+        }
+
+        short[] pskKeyExchangeModes = client.getPskKeyExchangeModes();
+        if (isNullOrEmpty(pskKeyExchangeModes))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error,
+                "External PSKs configured but no PskKeyExchangeMode available");
+        }
+
+        // Add the pre_shared_key extension
+        {
+            Vector identities = new Vector(pskExternals.length);
+            for (int i = 0; i < pskExternals.length; ++i)
+            {
+                TlsPSKExternal pskExternal = pskExternals[i];
+
+                // TODO[tls13-psk] Handle obfuscated_ticket_age for resumption PSKs
+                identities.add(new PskIdentity(pskExternal.getIdentity(), 0L));
+            }
+
+            TlsExtensionsUtils.addPreSharedKeyClientHello(clientExtensions, new OfferedPsks(identities));
         }
 
         TlsSecret[] pskEarlySecrets = getPSKEarlySecrets(clientContext.getCrypto(), pskExternals);
 
         int bindersSize = OfferedPsks.getBindersSize(pskExternals);
 
-        return new OfferedPsks.Config(pskExternals, pskEarlySecrets, bindersSize);
+        return new OfferedPsks.BindersConfig(pskExternals, pskKeyExchangeModes, pskEarlySecrets, bindersSize);
     }
 
     static TlsSecret getPSKEarlySecret(TlsCrypto crypto, TlsPSK psk)
@@ -5851,15 +5877,15 @@ public class TlsUtils
         return earlySecrets;
     }
 
-    static TlsPSKExternal[] getPSKExternalsClient(TlsClient client) throws IOException
+    static TlsPSKExternal[] getPSKExternalsClient(TlsClient client, int[] offeredCipherSuites) throws IOException
     {
-        // TODO[tl13-psk] Ensure PSK hash algorithms are supported by cipher suites
-
         Vector externalPSKs = client.getExternalPSKs();
         if (isNullOrEmpty(externalPSKs))
         {
             return null;
         }
+
+        int[] prfAlgorithms = getPRFAlgorithms13(offeredCipherSuites);
 
         int count = externalPSKs.size();
         TlsPSKExternal[] result = new TlsPSKExternal[count];
@@ -5869,10 +5895,18 @@ public class TlsUtils
             Object element = externalPSKs.elementAt(i);
             if (!(element instanceof TlsPSKExternal))
             {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
+                throw new TlsFatalAlert(AlertDescription.internal_error,
+                    "External PSKs element is not a TlsPSKExternal");
             }
 
-            result[i] = (TlsPSKExternal)element;
+            TlsPSKExternal pskExternal = (TlsPSKExternal)element;
+            if (!Arrays.contains(prfAlgorithms, pskExternal.getPRFAlgorithm()))
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error,
+                    "External PSK incompatible with offered cipher suites");
+            }
+
+            result[i] = pskExternal;
         }
 
         return result;

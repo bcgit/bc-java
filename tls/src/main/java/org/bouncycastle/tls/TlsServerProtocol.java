@@ -347,6 +347,11 @@ public class TlsServerProtocol
 
         this.expectSessionTicket = false;
 
+        // TODO[tls13-psk] Use PSK early secret if negotiated
+        TlsSecret pskEarlySecret = null;
+
+        TlsSecret sharedSecret = null;
+
         {
             int namedGroup = clientShare.getNamedGroup();
     
@@ -369,13 +374,10 @@ public class TlsServerProtocol
             TlsExtensionsUtils.addKeyShareServerHello(serverHelloExtensions, serverShare);
 
             agreement.receivePeerValue(clientShare.getKeyExchange());
-            securityParameters.sharedSecret = agreement.calculateSecret();
-
-            // TODO[tls13-psk] Use PSK early secret if negotiated
-            TlsSecret pskEarlySecret = null;
-
-            TlsUtils.establish13PhaseSecrets(tlsServerContext, pskEarlySecret);
+            sharedSecret = agreement.calculateSecret();
         }
+
+        TlsUtils.establish13PhaseSecrets(tlsServerContext, pskEarlySecret, sharedSecret);
 
         this.serverExtensions = serverEncryptedExtensions;
 
