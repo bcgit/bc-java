@@ -74,6 +74,8 @@ public interface TlsClient
 
     void notifySelectedCipherSuite(int selectedCipherSuite);
 
+    void notifySelectedPSK(TlsPSK selectedPSK);
+
     /**
      * The TlsClientProtocol implementation validates that any server extensions received correspond
      * to client extensions sent. If further processing of the server extensions is needed, it can

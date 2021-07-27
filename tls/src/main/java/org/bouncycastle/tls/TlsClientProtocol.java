@@ -880,8 +880,9 @@ public class TlsClientProtocol
         {
             if (!Arrays.contains(clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
             {
-                // TODO[tls13-psk] Notify client that no PSK was selected.
                 this.clientBinders = null;
+
+                tlsClient.notifySelectedPSK(null);
             }
         }
 
@@ -1617,8 +1618,7 @@ public class TlsClientProtocol
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_cookie);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_early_data);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_key_share);
-        // TODO[tls13-psk]
-//        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_pre_shared_key);
+        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_pre_shared_key);
 
         /*
          * RFC 4.2.2. When sending the new ClientHello, the client MUST copy the contents of the
@@ -1632,6 +1632,21 @@ public class TlsClientProtocol
              */
             TlsExtensionsUtils.addCookieExtension(clientHelloExtensions, retryCookie);
             this.retryCookie = null;
+        }
+
+        /*
+         * - Updating the "pre_shared_key" extension if present by recomputing the "obfuscated_ticket_age"
+         * and binder values and (optionally) removing any PSKs which are incompatible with the server's
+         * indicated cipher suite.
+         */
+        if (null != clientBinders)
+        {
+            this.clientBinders = TlsUtils.addPreSharedKeyToClientHelloRetry(tlsClientContext, clientBinders,
+                clientHelloExtensions);
+            if (null == clientBinders)
+            {
+                tlsClient.notifySelectedPSK(null);
+            }
         }
 
         /*
@@ -1650,18 +1665,6 @@ public class TlsClientProtocol
          */
         this.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(tlsClientContext, clientHelloExtensions,
             retryGroup);
-
-        /*
-         * - Updating the "pre_shared_key" extension if present by recomputing the "obfuscated_ticket_age"
-         * and binder values and (optionally) removing any PSKs which are incompatible with the server's
-         * indicated cipher suite.
-         */
-        if (null != clientBinders)
-        {
-            // TODO[tls13-psk]
-//            this.clientBinders = TlsUtils.addPreSharedKeyToClientHelloRetry(tlsClientContext, clientBinders,
-//                clientHelloExtensions);
-        }
 
         /*
          * TODO[tls13] Optionally adding, removing, or changing the length of the "padding"
@@ -1881,7 +1884,7 @@ public class TlsClientProtocol
 
         if (null != clientBinders)
         {
-            OfferedPsks.encodeBinders(message, getContext().getCrypto(), handshakeHash, clientBinders);
+            OfferedPsks.encodeBinders(message, tlsClientContext.getCrypto(), handshakeHash, clientBinders);
         }
 
         message.sendClientHello(this, handshakeHash, clientHello.getBindersSize());
