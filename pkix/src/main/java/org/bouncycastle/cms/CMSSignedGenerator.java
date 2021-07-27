@@ -88,13 +88,19 @@ public class CMSSignedGenerator
     protected List signerGens = new ArrayList();
     protected Map digests = new HashMap();
 
-    protected DigestAlgorithmIdentifierFinder digestAlgIdFinder = new DefaultDigestAlgorithmIdentifierFinder();
+    protected DigestAlgorithmIdentifierFinder digestAlgIdFinder;
 
     /**
      * base constructor
      */
     protected CMSSignedGenerator()
     {
+        this(new DefaultDigestAlgorithmIdentifierFinder());
+    }
+
+    protected CMSSignedGenerator(DigestAlgorithmIdentifierFinder digestAlgIdFinder)
+    {
+        this.digestAlgIdFinder = digestAlgIdFinder;
     }
 
     protected Map getBaseParameters(ASN1ObjectIdentifier contentType, AlgorithmIdentifier digAlgId, byte[] hash)
