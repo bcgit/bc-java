@@ -381,6 +381,10 @@ public abstract class AbstractTlsClient
     {
     }
 
+    public void notifySelectedPSK(TlsPSK selectedPSK)
+    {
+    }
+
     public void processServerExtensions(Hashtable serverExtensions)
         throws IOException
     {
