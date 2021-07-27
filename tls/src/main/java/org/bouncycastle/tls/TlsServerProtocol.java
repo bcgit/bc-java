@@ -993,6 +993,8 @@ public class TlsServerProtocol
 
                 if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                 {
+                    handshakeHash.sealHashAlgorithms();
+
                     if (serverHello.isHelloRetryRequest())
                     {
                         TlsUtils.adjustTranscriptForRetry(handshakeHash);

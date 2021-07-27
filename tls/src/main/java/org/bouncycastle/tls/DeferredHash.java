@@ -80,10 +80,6 @@ class DeferredHash
         default:
         {
             checkTrackingHash(securityParameters.getPRFCryptoHashAlgorithm());
-            if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
-            {
-                sealHashAlgorithms();
-            }
             break;
         }
         }
