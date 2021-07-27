@@ -491,6 +491,7 @@ public class TlsClientProtocol
                     this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
 
                     send13ClientHelloRetry();
+                    handshakeHash.sealHashAlgorithms();
                     this.connection_state = CS_CLIENT_HELLO_RETRY;
                 }
                 else
@@ -502,6 +503,7 @@ public class TlsClientProtocol
 
                     if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                     {
+                        handshakeHash.sealHashAlgorithms();
                         process13ServerHelloCoda(serverHello, false);
                     }
                 }
@@ -1615,7 +1617,8 @@ public class TlsClientProtocol
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_cookie);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_early_data);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_key_share);
-        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_pre_shared_key);
+        // TODO[tls13-psk]
+//        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_pre_shared_key);
 
         /*
          * RFC 4.2.2. When sending the new ClientHello, the client MUST copy the contents of the
