@@ -452,7 +452,8 @@ public class DTLSClientProtocol
 
         securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(state.clientExtensions);
 
-        state.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(state.clientContext, state.client, state.clientExtensions);
+        state.clientAgreements = TlsUtils.addKeyShareToClientHello(state.clientContext, state.client,
+            state.clientExtensions);
 
         if (TlsUtils.isExtendedMasterSecretOptionalDTLS(context.getClientSupportedVersions())
             && state.client.shouldUseExtendedMasterSecret())

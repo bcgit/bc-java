@@ -21,6 +21,7 @@ public class TlsClientProtocol
     TlsClientContextImpl tlsClientContext = null;
 
     protected Hashtable clientAgreements = null;
+    OfferedPsks.BindersConfig clientBinders = null;
     protected ClientHello clientHello = null;
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
@@ -111,6 +112,7 @@ public class TlsClientProtocol
         super.cleanupHandshake();
 
         this.clientAgreements = null;
+        this.clientBinders = null;
         this.clientHello = null;
         this.keyExchange = null;
         this.authentication = null;
@@ -872,6 +874,15 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
+        if (null != clientBinders)
+        {
+            if (!Arrays.contains(clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
+            {
+                // TODO[tls13-psk] Notify client that no PSK was selected.
+                this.clientBinders = null;
+            }
+        }
+
         /*
          * RFC 8446 4.2.8. Upon receipt of this [Key Share] extension in a HelloRetryRequest, the
          * client MUST verify that (1) the selected_group field corresponds to a group which was
@@ -981,10 +992,27 @@ public class TlsClientProtocol
          */
         securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request) ? 1 : 0;
 
+        // TODO[tls13-psk] Use PSK early secret if negotiated
+        TlsSecret pskEarlySecret = null;
+
+        if (null != clientBinders)
+        {
+            // TODO[tls13-psk] Process the server's pre_shared_key response, if any
+//          int selected_identity = TlsExtensionsUtils.getPreSharedKeyServerHello(extensions);
+
+            // TODO[tls13-psk] Notify client of selected PSK
+            // pskEarlySecret = ...;
+
+            this.clientBinders = null;
+        }
+
+        TlsSecret sharedSecret = null;
+
         {
             KeyShareEntry keyShareEntry = TlsExtensionsUtils.getKeyShareServerHello(extensions);
             if (null == keyShareEntry)
             {
+                // TODO[tls13-psk] This would be OK for PskKeyExchangeMode.psk_ke (and not after HRR)
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
@@ -997,13 +1025,10 @@ public class TlsClientProtocol
             this.clientAgreements = null;
 
             agreement.receivePeerValue(keyShareEntry.getKeyExchange());
-            securityParameters.sharedSecret = agreement.calculateSecret();
-
-            // TODO[tls13-psk] Use PSK early secret if negotiated
-            TlsSecret pskEarlySecret = null;
-
-            TlsUtils.establish13PhaseSecrets(tlsClientContext, pskEarlySecret);
+            sharedSecret = agreement.calculateSecret();
         }
+
+        TlsUtils.establish13PhaseSecrets(tlsClientContext, pskEarlySecret, sharedSecret);
 
         {
             invalidateSession();
@@ -1585,13 +1610,12 @@ public class TlsClientProtocol
 
     protected void send13ClientHelloRetry() throws IOException
     {
-        // TODO[tls13-psk] Create a new ClientHello object and handle any changes to the bindersSize
-
         Hashtable clientHelloExtensions = clientHello.getExtensions();
 
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_cookie);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_early_data);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_key_share);
+        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_pre_shared_key);
 
         /*
          * RFC 4.2.2. When sending the new ClientHello, the client MUST copy the contents of the
@@ -1600,6 +1624,9 @@ public class TlsClientProtocol
          */
         if (null != retryCookie)
         {
+            /*
+             * - Including a "cookie" extension if one was provided in the HelloRetryRequest.
+             */
             TlsExtensionsUtils.addCookieExtension(clientHelloExtensions, retryCookie);
             this.retryCookie = null;
         }
@@ -1614,14 +1641,24 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        /*
+         * - If a "key_share" extension was supplied in the HelloRetryRequest, replacing the list of shares
+         * with a list containing a single KeyShareEntry from the indicated group
+         */
         this.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(tlsClientContext, clientHelloExtensions,
             retryGroup);
 
         /*
-         * TODO[tls13] Updating the "pre_shared_key" extension if present by recomputing the
-         * "obfuscated_ticket_age" and binder values and (optionally) removing any PSKs which are
-         * incompatible with the server's indicated cipher suite.
+         * - Updating the "pre_shared_key" extension if present by recomputing the "obfuscated_ticket_age"
+         * and binder values and (optionally) removing any PSKs which are incompatible with the server's
+         * indicated cipher suite.
          */
+        if (null != clientBinders)
+        {
+            // TODO[tls13-psk]
+//            this.clientBinders = TlsUtils.addPreSharedKeyToClientHelloRetry(tlsClientContext, clientBinders,
+//                clientHelloExtensions);
+        }
 
         /*
          * TODO[tls13] Optionally adding, removing, or changing the length of the "padding"
@@ -1745,7 +1782,11 @@ public class TlsClientProtocol
 
         securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
 
-        this.clientAgreements = TlsUtils.addEarlyKeySharesToClientHello(tlsClientContext, tlsClient, clientExtensions);
+        this.clientBinders = TlsUtils.addPreSharedKeyToClientHello(tlsClientContext, tlsClient, clientExtensions,
+            offeredCipherSuites);
+
+        // TODO[tls13-psk] Perhaps don't add key_share if external PSK(s) offered and 'psk_dhe_ke' not offered  
+        this.clientAgreements = TlsUtils.addKeyShareToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
         if (TlsUtils.isExtendedMasterSecretOptionalTLS(supportedVersions)
             && (tlsClient.shouldUseExtendedMasterSecret() ||
@@ -1820,9 +1861,7 @@ public class TlsClientProtocol
 
 
 
-        // TODO[tls13-psk] Calculate the total length of the binders that will be added.
-        int bindersSize = 0;
-//        int bindersSize = 2 + lengthOfBindersList;
+        int bindersSize = null == clientBinders ? 0 : clientBinders.bindersSize;
 
         this.clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(), legacy_session_id,
             null, offeredCipherSuites, clientExtensions, bindersSize);
@@ -1837,7 +1876,10 @@ public class TlsClientProtocol
 
         message.prepareClientHello(handshakeHash, clientHello.getBindersSize());
 
-        // TODO[tls13-psk] Calculate any PSK binders and write them to 'message' here. 
+        if (null != clientBinders)
+        {
+            OfferedPsks.encodeBinders(message, getContext().getCrypto(), handshakeHash, clientBinders);
+        }
 
         message.sendClientHello(this, handshakeHash, clientHello.getBindersSize());
     }

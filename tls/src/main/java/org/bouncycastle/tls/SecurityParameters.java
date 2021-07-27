@@ -28,7 +28,6 @@ public class SecurityParameters
     TlsSecret exporterMasterSecret = null;
     TlsSecret handshakeSecret = null;
     TlsSecret masterSecret = null;
-    TlsSecret sharedSecret = null;
     TlsSecret trafficSecretClient = null;
     TlsSecret trafficSecretServer = null;
     byte[] clientRandom = null;
@@ -84,7 +83,6 @@ public class SecurityParameters
         this.exporterMasterSecret = clearSecret(exporterMasterSecret);
         this.handshakeSecret = clearSecret(handshakeSecret);
         this.masterSecret = clearSecret(masterSecret);
-        this.sharedSecret = clearSecret(sharedSecret);
     }
 
     /**
@@ -246,11 +244,6 @@ public class SecurityParameters
     public TlsSecret getMasterSecret()
     {
         return masterSecret;
-    }
-
-    public TlsSecret getSharedSecret()
-    {
-        return sharedSecret;
     }
 
     public TlsSecret getTrafficSecretClient()
