@@ -995,41 +995,64 @@ public class TlsClientProtocol
          */
         securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request) ? 1 : 0;
 
-        // TODO[tls13-psk] Use PSK early secret if negotiated
         TlsSecret pskEarlySecret = null;
-
-        if (null != clientBinders)
         {
-            // TODO[tls13-psk] Process the server's pre_shared_key response, if any
-//          int selected_identity = TlsExtensionsUtils.getPreSharedKeyServerHello(extensions);
+            int selected_identity = TlsExtensionsUtils.getPreSharedKeyServerHello(extensions);
+            TlsPSK selectedPSK = null;
 
-            // TODO[tls13-psk] Notify client of selected PSK
-            // pskEarlySecret = ...;
+            if (selected_identity >= 0)
+            {
+                if (null == clientBinders || selected_identity >= clientBinders.psks.length)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
 
-            this.clientBinders = null;
+                selectedPSK = clientBinders.psks[selected_identity];
+                if (selectedPSK.getPRFAlgorithm() != securityParameters.getPRFAlgorithm())
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                pskEarlySecret = clientBinders.earlySecrets[selected_identity];
+            }
+
+            tlsClient.notifySelectedPSK(selectedPSK);
         }
 
         TlsSecret sharedSecret = null;
-
         {
             KeyShareEntry keyShareEntry = TlsExtensionsUtils.getKeyShareServerHello(extensions);
             if (null == keyShareEntry)
             {
-                // TODO[tls13-psk] This would be OK for PskKeyExchangeMode.psk_ke (and not after HRR)
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                if (afterHelloRetryRequest
+                    || null == pskEarlySecret
+                    || !Arrays.contains(clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_ke))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
             }
-
-            TlsAgreement agreement = (TlsAgreement)clientAgreements.get(Integers.valueOf(keyShareEntry.getNamedGroup()));
-            if (null == agreement)
+            else
             {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                if (null != pskEarlySecret
+                    && !Arrays.contains(clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                int namedGroup = keyShareEntry.getNamedGroup();
+                TlsAgreement agreement = (TlsAgreement)clientAgreements.get(Integers.valueOf(namedGroup));
+                if (null == agreement)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+    
+                agreement.receivePeerValue(keyShareEntry.getKeyExchange());
+                sharedSecret = agreement.calculateSecret();
             }
-
-            this.clientAgreements = null;
-
-            agreement.receivePeerValue(keyShareEntry.getKeyExchange());
-            sharedSecret = agreement.calculateSecret();
         }
+
+        this.clientAgreements = null;
+        this.clientBinders = null;
 
         TlsUtils.establish13PhaseSecrets(tlsClientContext, pskEarlySecret, sharedSecret);
 
