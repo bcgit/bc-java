@@ -11,8 +11,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
-public class ArmoredInputStreamCRCErrorGetsThrownTest
-extends SimpleTest {
+public class ArmoredInputStreamCRCErrorGetsThrownTest extends SimpleTest
+{
 
     public static final String ASCII_ARMOR_CRC_MISMATCH = "" +
             "-----BEGIN PGP MESSAGE-----\n" +
@@ -67,26 +67,32 @@ extends SimpleTest {
             "-----END PGP MESSAGE-----";
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return "ArmoredInputStreamCRCErrorGetsThrowsTest";
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         Security.addProvider(new BouncyCastleProvider());
 
-        runTest(new ArmoredInputStreamTest());
+        runTest(new ArmoredInputStreamCRCErrorGetsThrownTest());
     }
 
     @Override
-    public void performTest() throws IOException {
+    public void performTest() throws IOException
+    {
         ByteArrayInputStream bytesIn = new ByteArrayInputStream(ASCII_ARMOR_CRC_MISMATCH.getBytes(StandardCharsets.UTF_8));
         ArmoredInputStream armorIn = new ArmoredInputStream(bytesIn);
         ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
 
-        try {
+        try
+        {
             Streams.pipeAll(armorIn, bytesOut);
             fail("Expected IOException to be throws due to CRC mismatch.");
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             isEquals("crc check failed in armored message.", e.getMessage());
         }
     }

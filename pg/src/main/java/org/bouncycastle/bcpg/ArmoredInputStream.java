@@ -521,23 +521,28 @@ public class ArmoredInputStream
      * @throws IOException if an exception happens AT ANY POINT
      */
     @Override
-    public int read(byte[] b, int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException
+    {
         checkIndexSize(b.length, off, len);
 
-        if (len == 0) {
+        if (len == 0)
+        {
             return 0;
         }
 
         int c = read();
-        if (c == -1) {
+        if (c == -1)
+        {
             return -1;
         }
         b[off] = (byte)c;
 
         int i = 1;
-        for (; i < len ; i++) {
+        for (; i < len ; i++)
+        {
             c = read();
-            if (c == -1) {
+            if (c == -1)
+            {
                 break;
             }
             b[off + i] = (byte)c;
@@ -545,11 +550,14 @@ public class ArmoredInputStream
         return i;
     }
 
-    private void checkIndexSize(int size, int off, int len) {
-        if (off < 0 || len < 0) {
+    private void checkIndexSize(int size, int off, int len)
+    {
+        if (off < 0 || len < 0)
+        {
             throw new IndexOutOfBoundsException("Offset and length cannot be negative.");
         }
-        if (size < off + len) {
+        if (size < off + len)
+        {
             throw new IndexOutOfBoundsException("Invalid offset and length.");
         }
     }
@@ -569,7 +577,8 @@ public class ArmoredInputStream
      *
      * @param ignoreMissing ignore missing CRC sums
      */
-    public void setIgnoreMissingCRCSum(boolean ignoreMissing) {
+    public void setIgnoreMissingCRCSum(boolean ignoreMissing)
+    {
         this.ignoreMissingCRCSum = ignoreMissing;
     }
 }
