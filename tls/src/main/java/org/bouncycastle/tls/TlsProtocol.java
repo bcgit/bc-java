@@ -162,6 +162,7 @@ public abstract class TlsProtocol
 
     protected short connection_state = CS_START;
     protected boolean resumedSession = false;
+    protected boolean selectedPSK13 = false;
     protected boolean receivedChangeCipherSpec = false;
     protected boolean expectSessionTicket = false;
 
@@ -427,6 +428,8 @@ public abstract class TlsProtocol
 
         this.handshakeHash = new DeferredHash(context);
         this.connection_state = CS_START;
+        this.resumedSession = false;
+        this.selectedPSK13 = false;
 
         context.handshakeBeginning(peer);
 
@@ -461,6 +464,7 @@ public abstract class TlsProtocol
         this.serverExtensions = null;
 
         this.resumedSession = false;
+        this.selectedPSK13 = false;
         this.receivedChangeCipherSpec = false;
         this.expectSessionTicket = false;
     }
