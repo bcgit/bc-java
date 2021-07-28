@@ -5171,6 +5171,20 @@ public class TlsUtils
         return authentication;
     }
 
+    static TlsAuthentication skip13ServerCertificate(TlsClientContext clientContext) throws IOException
+    {
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+        if (null != securityParameters.getPeerCertificate())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        securityParameters.peerCertificate = null;
+        securityParameters.tlsServerEndPoint = null;
+
+        return null;
+    }
+
     public static boolean containsNonAscii(byte[] bs)
     {
         for (int i = 0; i < bs.length; ++i)
