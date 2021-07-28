@@ -381,7 +381,7 @@ public abstract class AbstractTlsClient
     {
     }
 
-    public void notifySelectedPSK(TlsPSK selectedPSK)
+    public void notifySelectedPSK(TlsPSK selectedPSK) throws IOException
     {
     }
 

@@ -74,7 +74,7 @@ public interface TlsClient
 
     void notifySelectedCipherSuite(int selectedCipherSuite);
 
-    void notifySelectedPSK(TlsPSK selectedPSK);
+    void notifySelectedPSK(TlsPSK selectedPSK) throws IOException;
 
     /**
      * The TlsClientProtocol implementation validates that any server extensions received correspond
