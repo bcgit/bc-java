@@ -139,19 +139,8 @@ public class TlsClientProtocol
     protected void handle13HandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException
     {
-        if (!isTLSv13ConnectionState())
+        if (!isTLSv13ConnectionState() || resumedSession)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        if (this.resumedSession)
-        {
-            /*
-             * TODO[tls13] Resumption/PSK
-             * 
-             * NOTE: No CertificateRequest, Certificate, CertificateVerify messages, but client
-             * might now send EndOfEarlyData after receiving server Finished message.
-             */
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
@@ -168,9 +157,6 @@ public class TlsClientProtocol
             }
             case CS_SERVER_CERTIFICATE_REQUEST:
             {
-                /*
-                 * TODO[tls13] For PSK-only key exchange, there's no Certificate message.
-                 */
                 receive13ServerCertificate(buf);
                 this.connection_state = CS_SERVER_CERTIFICATE;
                 break;
@@ -255,6 +241,12 @@ public class TlsClientProtocol
 
                 // See RFC 8446 D.4.
                 recordStream.setIgnoreChangeCipherSpec(false);
+
+                /*
+                 * TODO[tls13] After receiving the server's Finished message, if the server has accepted early
+                 * data, an EndOfEarlyData message will be sent to indicate the key change. This message will
+                 * be encrypted with the 0-RTT traffic keys.
+                 */
 
                 if (null != certificateRequest)
                 {
@@ -1014,6 +1006,8 @@ public class TlsClientProtocol
                 }
 
                 pskEarlySecret = clientBinders.earlySecrets[selected_identity];
+
+                this.selectedPSK13 = true;
             }
 
             tlsClient.notifySelectedPSK(selectedPSK);
@@ -1045,7 +1039,7 @@ public class TlsClientProtocol
                 {
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
-    
+
                 agreement.receivePeerValue(keyShareEntry.getKeyExchange());
                 sharedSecret = agreement.calculateSecret();
             }
@@ -1076,7 +1070,10 @@ public class TlsClientProtocol
         {
             recordStream.setIgnoreChangeCipherSpec(true);
 
-            // TODO[tls13] If offering early data, the record is placed immediately after the first ClientHello.
+            /*
+             * TODO[tls13] If offering early_data, the record is placed immediately after the first
+             * ClientHello.
+             */
             /*
              * TODO[tls13] Ideally wait until just after Server Finished received, but then we'd need to defer
              * the enabling of the pending write cipher
@@ -1439,24 +1436,25 @@ public class TlsClientProtocol
     protected void receive13CertificateRequest(ByteArrayInputStream buf, boolean postHandshakeAuth)
         throws IOException
     {
+        // TODO[tls13] Support for post_handshake_auth
+        if (postHandshakeAuth)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         /* 
          * RFC 8446 4.3.2. A server which is authenticating with a certificate MAY optionally
          * request a certificate from the client.
          */
 
-        /*
-         * TODO[tls13] Currently all handshakes are certificate-authenticated. When PSK-only becomes an option,
-         * then check here that a certificate message is expected (else fatal unexpected_message alert).
-         */
+        if (selectedPSK13)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
 
         CertificateRequest certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
 
         assertEmpty(buf);
-
-        if (postHandshakeAuth)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
 
         if (!certificateRequest.hasCertificateRequestContext(TlsUtils.EMPTY_BYTES))
         {
@@ -1571,6 +1569,11 @@ public class TlsClientProtocol
     protected void receive13ServerCertificate(ByteArrayInputStream buf)
         throws IOException
     {
+        if (selectedPSK13)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
         this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf);
 
         // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message.
@@ -1698,7 +1701,10 @@ public class TlsClientProtocol
         {
             recordStream.setIgnoreChangeCipherSpec(true);
 
-            // TODO[tls13] If offering early data, the record is placed immediately after the first ClientHello.
+            /*
+             * TODO[tls13] If offering early_data, the record is placed immediately after the first
+             * ClientHello.
+             */
             sendChangeCipherSpecMessage();
         }
 
@@ -1930,9 +1936,11 @@ public class TlsClientProtocol
     protected void skip13ServerCertificate()
         throws IOException
     {
-        this.authentication = null;
+        if (!selectedPSK13)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
 
-        // TODO[tls13] May be skipped for PSK handshakes?
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        this.authentication = TlsUtils.skip13ServerCertificate(tlsClientContext);
     }
 }
