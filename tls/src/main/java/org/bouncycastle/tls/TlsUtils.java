@@ -5869,6 +5869,7 @@ public class TlsUtils
         int bindersSize = OfferedPsks.getBindersSize(pskExternals);
 
         addPreSharedKeyToClientExtensions(pskExternals, clientExtensions);
+        TlsExtensionsUtils.addPSKKeyExchangeModesExtension(clientExtensions, pskKeyExchangeModes);
 
         return new OfferedPsks.BindersConfig(pskExternals, pskKeyExchangeModes, pskEarlySecrets, bindersSize);
     }
@@ -5908,6 +5909,7 @@ public class TlsUtils
         }
 
         addPreSharedKeyToClientExtensions(result.psks, clientExtensions);
+        // NOTE: psk_key_exchange_modes should already be in 'clientExtensions' from the ClientHello
 
         return result;
     }
