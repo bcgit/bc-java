@@ -20,6 +20,12 @@ public class ArmoredInputStream
      */
     private static final byte[] decodingTable;
 
+    /*
+     * Ignore missing CRC checksums.
+     * https://tests.sequoia-pgp.org/#ASCII_Armor suggests that missing CRC sums do not invalidate the message.
+     */
+    private boolean ignoreMissingCRCSum = true;
+
     static
     {
         decodingTable = new byte[128];
@@ -434,7 +440,10 @@ public class ArmoredInputStream
                     }
                     else
                     {
-                        throw new IOException("no crc found in armored message.");
+                        if (!ignoreMissingCRCSum)
+                        {
+                            throw new IOException("no crc found in armored message.");
+                        }
                     }
                 }
                 else if (c == '-')        // end of record reached
@@ -447,7 +456,7 @@ public class ArmoredInputStream
                         }
                     }
 
-                    if (!crcFound)
+                    if (!crcFound && !ignoreMissingCRCSum)
                     {
                         throw new IOException("crc check not found.");
                     }
@@ -549,5 +558,18 @@ public class ArmoredInputStream
         throws IOException
     {
         in.close();
+    }
+
+    /**
+     * Change how the stream should react if it encounters missing CRC checksum.
+     * The default value is true (ignore missing CRC checksums).
+     *
+     * If the behavior is set to false, an {@link IOException} will
+     * be thrown if a missing CRC checksum is encountered.
+     *
+     * @param ignoreMissing ignore missing CRC sums
+     */
+    public void setIgnoreMissingCRCSum(boolean ignoreMissing) {
+        this.ignoreMissingCRCSum = ignoreMissing;
     }
 }
