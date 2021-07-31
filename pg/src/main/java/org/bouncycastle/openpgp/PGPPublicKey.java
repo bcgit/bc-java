@@ -533,15 +533,19 @@ public class PGPPublicKey
     private Iterator<PGPSignature> getSignaturesForID(
         UserIDPacket   id)
     {
+        List<PGPSignature> signatures = new ArrayList<>();
+        boolean userIdFound = false;
+
         for (int i = 0; i != ids.size(); i++)
         {
             if (id.equals(ids.get(i)))
             {
-                return ((List<PGPSignature>)idSigs.get(i)).iterator();
+                userIdFound = true;
+                signatures.addAll(idSigs.get(i));
             }
         }
 
-        return null;
+        return userIdFound ? signatures.iterator() : null;
     }
 
     /**
@@ -553,15 +557,19 @@ public class PGPPublicKey
     public Iterator<PGPSignature> getSignaturesForUserAttribute(
         PGPUserAttributeSubpacketVector    userAttributes)
     {
+        List<PGPSignature> signatures = new ArrayList<>();
+        boolean attributeFound = false;
+
         for (int i = 0; i != ids.size(); i++)
         {
             if (userAttributes.equals(ids.get(i)))
             {
-                return ((ArrayList<PGPSignature>)idSigs.get(i)).iterator();
+                attributeFound = true;
+                signatures.addAll(idSigs.get(i));
             }
         }
-        
-        return null;
+
+        return attributeFound ? signatures.iterator() : null;
     }
     
     /**
