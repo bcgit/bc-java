@@ -60,6 +60,10 @@ public class PGPPublicKeyRingCollection
 
         while ((obj = pgpFact.nextObject()) != null)
         {
+            // Marker packets must be ignored
+            if (obj instanceof PGPMarker) {
+                continue;
+            }
             if (!(obj instanceof PGPPublicKeyRing))
             {
                 throw new PGPException(obj.getClass().getName() + " found where PGPPublicKeyRing expected");
