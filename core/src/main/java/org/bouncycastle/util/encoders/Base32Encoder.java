@@ -160,16 +160,22 @@ public class Base32Encoder
     public int encode(byte[] buf, int off, int len, OutputStream out) 
         throws IOException
     {
-        byte[] tmp = new byte[72];
-        while (len > 0)
+        if (len < 0)
         {
-            int inLen = Math.min(45, len);
+            return 0;
+        }
+
+        byte[] tmp = new byte[72];
+        int remaining = len;
+        while (remaining > 0)
+        {
+            int inLen = Math.min(45, remaining);
             int outLen = encode(buf, off, inLen, tmp, 0);
             out.write(tmp, 0, outLen);
             off += inLen;
-            len -= inLen;
+            remaining -= inLen;
         }
-        return ((len + 2) / 3) * 4;
+        return (len + 2) / 3 * 4;
     }
 
     private boolean ignore(
