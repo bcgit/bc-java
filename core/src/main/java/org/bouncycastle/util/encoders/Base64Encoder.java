@@ -114,18 +114,22 @@ public class Base64Encoder
     public int encode(byte[] buf, int off, int len, OutputStream out)
         throws IOException
     {
-        byte[] tmp = new byte[72];
-        int total = 0;
-        while (len > 0)
+        if (len < 0)
         {
-            int inLen = Math.min(54, len);
+            return 0;
+        }
+
+        byte[] tmp = new byte[72];
+        int remaining = len;
+        while (remaining > 0)
+        {
+            int inLen = Math.min(54, remaining);
             int outLen = encode(buf, off, inLen, tmp, 0);
             out.write(tmp, 0, outLen);
             off += inLen;
-            len -= inLen;
-            total += outLen;
+            remaining -= inLen;
         }
-        return total;
+        return (len + 2) / 3 * 4;
     }
 
     private boolean ignore(
