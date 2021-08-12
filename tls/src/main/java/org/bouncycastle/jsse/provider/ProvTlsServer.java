@@ -866,11 +866,17 @@ class ProvTlsServer
         {
             SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
+            ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+            if (TlsUtils.isTLSv13(negotiatedVersion))
+            {
+                return false;
+            }
+
             // TODO[resumption] Avoid the copy somehow?
             SessionParameters sessionParameters = tlsSession.exportSessionParameters();
 
             if (null == sessionParameters ||
-                !securityParameters.getNegotiatedVersion().equals(sessionParameters.getNegotiatedVersion()) ||
+                !negotiatedVersion.equals(sessionParameters.getNegotiatedVersion()) ||
                 !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()) ||
                 !Arrays.contains(offeredCipherSuites, sessionParameters.getCipherSuite()))
             {
@@ -879,12 +885,6 @@ class ProvTlsServer
 
             // TODO[resumption] Consider support for related system properties
             if (!sessionParameters.isExtendedMasterSecret())
-            {
-                return false;
-            }
-
-            // TODO[tls13] Resumption/PSK 
-            if (TlsUtils.isTLSv13(sessionParameters.getNegotiatedVersion()))
             {
                 return false;
             }
