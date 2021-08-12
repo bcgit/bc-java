@@ -1049,8 +1049,7 @@ public class JcaTlsCrypto
             }
             else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
             {
-                // TODO[tls] Actually check for DH support for the individual groups
-                return Boolean.TRUE;
+                return Boolean.valueOf(DHUtil.isGroupSupported(this, TlsDHUtils.getNamedDHGroup(namedGroup)));
             }
         }
         catch (GeneralSecurityException e)
