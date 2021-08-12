@@ -43,6 +43,9 @@ class DHUtil
                 return dhAlgParams;
             }
         }
+        catch (AssertionError e)
+        {
+        }
         catch (Exception e)
         {
         }
@@ -68,6 +71,9 @@ class DHUtil
                 return dhSpec;
             }
         }
+        catch (AssertionError e)
+        {
+        }
         catch (Exception e)
         {
         }
@@ -78,5 +84,10 @@ class DHUtil
     static BigInteger getQ(DHParameterSpec dhSpec)
     {
         return dhSpec instanceof DHDomainParameterSpec ? ((DHDomainParameterSpec)dhSpec).getQ() : null;
+    }
+
+    static boolean isGroupSupported(JcaTlsCrypto crypto, DHGroup dhGroup)
+    {
+        return null != dhGroup && null != getDHParameterSpec(crypto, dhGroup);
     }
 }
