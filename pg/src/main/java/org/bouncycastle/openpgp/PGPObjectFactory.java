@@ -10,6 +10,7 @@ import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Iterable;
 
@@ -95,16 +96,11 @@ public class PGPObjectFactory
                 {
                     l.add(new PGPSignature(in));
                 }
-                catch (RuntimeException e)
+                catch (UnsupportedPacketVersionException e)
                 {
-                    String msg = e.getMessage();
-                    if (msg != null && msg.startsWith("unsupported version:"))
-                    {
-                        // Signatures of unsupported version MUST BE ignored
-                        continue;
-                    }
-                    // Throw other exceptions up
-                    throw e;
+                    // Signatures of unsupported version MUST BE ignored
+                    // see: https://tests.sequoia-pgp.org/#Detached_signatures_with_unknown_packets
+                    continue;
                 }
                 catch (PGPException e)
                 {
