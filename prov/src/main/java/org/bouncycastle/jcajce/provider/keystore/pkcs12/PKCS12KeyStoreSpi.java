@@ -1192,6 +1192,16 @@ public class PKCS12KeyStoreSpi
                             ASN1Encodable existing = bagAttr.getBagAttribute(oid);
                             if (existing != null)
                             {
+                                // we've found more than one - one might be incorrect
+                                if (oid.equals(pkcs_9_at_localKeyId))
+                                {
+                                    String id = Hex.toHexString(((ASN1OctetString)attr).getOctets());
+                                    if (!(keys.keys.containsKey(id) || localIds.keys.containsKey(id)))
+                                    {
+                                        continue; // ignore this one - it's not valid
+                                    }
+                                }
+
                                 // OK, but the value has to be the same
                                 if (!existing.toASN1Primitive().equals(attr))
                                 {
