@@ -136,6 +136,7 @@ public class ArmoredInputStreamIngoreMissingCRCSum
         }
         catch (IOException e)
         {
+            isEquals("crc check not found", e.getMessage());
             // expected
         }
     }
