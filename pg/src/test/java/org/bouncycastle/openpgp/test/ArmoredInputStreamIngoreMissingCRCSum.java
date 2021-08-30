@@ -2,13 +2,11 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.Security;
-import java.util.stream.Stream;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
-import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -114,7 +112,7 @@ public class ArmoredInputStreamIngoreMissingCRCSum
     @Override
     public void performTest() throws Exception
     {
-        ByteArrayInputStream data = new ByteArrayInputStream(KEY_WITH_MISSING_CRC.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream data = new ByteArrayInputStream(Strings.toByteArray(KEY_WITH_MISSING_CRC));
         ArmoredInputStream armorIn = new ArmoredInputStream(data);
         armorIn.setIgnoreMissingCRCSum(true);
 
@@ -127,7 +125,7 @@ public class ArmoredInputStreamIngoreMissingCRCSum
             fail("Missing CRC sum must be ignored.", e);
         }
 
-        data = new ByteArrayInputStream(KEY_WITH_MISSING_CRC.getBytes(StandardCharsets.UTF_8));
+        data = new ByteArrayInputStream(Strings.toByteArray(KEY_WITH_MISSING_CRC));
         armorIn = new ArmoredInputStream(data);
         armorIn.setIgnoreMissingCRCSum(false);
 
