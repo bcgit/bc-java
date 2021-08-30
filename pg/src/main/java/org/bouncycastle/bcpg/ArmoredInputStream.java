@@ -10,7 +10,15 @@ import org.bouncycastle.util.Strings;
 /**
  * reader for Base64 armored objects - read the headers and then start returning
  * bytes when the data is reached. An IOException is thrown if the CRC check
- * fails.
+ * is detected and fails.
+ * <p>
+ * By default a missing CRC will not cause an exception. To force CRC detection use:
+ * <pre>
+ *     ArmoredInputStream aIn = ...
+ *
+ *     aIn.setDetectMissingCRC(true);
+ * </pre>
+ * </p>
  */
 public class ArmoredInputStream
     extends InputStream
@@ -570,10 +578,8 @@ public class ArmoredInputStream
 
     /**
      * Change how the stream should react if it encounters missing CRC checksum.
-     * The default value is true (ignore missing CRC checksums).
-     *
-     * If the behavior is set to false, an {@link IOException} will
-     * be thrown if a missing CRC checksum is encountered.
+     * The default value is false (ignore missing CRC checksums). If the behavior is set to true,
+     * an {@link IOException} will be thrown if a missing CRC checksum is encountered.
      *
      * @param detectMissing ignore missing CRC sums
      */
