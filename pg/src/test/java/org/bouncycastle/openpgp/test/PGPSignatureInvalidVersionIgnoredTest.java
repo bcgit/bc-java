@@ -83,14 +83,12 @@ public class PGPSignatureInvalidVersionIgnoredTest
 
         runTest(new PGPSignatureInvalidVersionIgnoredTest());
     }
-
-    @Override
+    
     public String getName()
     {
-        return PGPSignatureInvalidVersionIgnoredTest.class.getName();
+        return "PGPSignatureInvalidVersionIgnoredTest";
     }
 
-    @Override
     public void performTest() throws Exception
     {
         assertInvalidSignatureVersionIsIgnored(SIG4SIG23);
