@@ -37,7 +37,8 @@ public class PGPSignatureSubpacketVector
 
     public PGPSignatureSubpacketVector fromSubpackets(SignatureSubpacket[] packets)
     {
-        if (packets == null) {
+        if (packets == null)
+        {
             packets = new SignatureSubpacket[0];
         }
         return new PGPSignatureSubpacketVector(packets);
