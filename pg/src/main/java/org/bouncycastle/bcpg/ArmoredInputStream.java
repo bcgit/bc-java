@@ -458,7 +458,7 @@ public class ArmoredInputStream
 
                     if (!crcFound && !ignoreMissingCRCSum)
                     {
-                        throw new IOException("crc check not found.");
+                        throw new IOException("crc check not found");
                     }
 
                     crcFound = false;
