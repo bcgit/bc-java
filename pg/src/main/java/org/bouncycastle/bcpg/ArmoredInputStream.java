@@ -326,7 +326,7 @@ public class ArmoredInputStream
     {
         int    c = in.read();
         
-        while (c == ' ' || c == '\t')
+        while (c == ' ' || c == '\t' || c == '\f' || c == '\u000B') // \u000B ~ \v
         {
             c = in.read();
         }
