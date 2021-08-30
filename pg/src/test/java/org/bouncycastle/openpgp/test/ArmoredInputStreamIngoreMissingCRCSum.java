@@ -114,7 +114,19 @@ public class ArmoredInputStreamIngoreMissingCRCSum
     {
         ByteArrayInputStream data = new ByteArrayInputStream(Strings.toByteArray(KEY_WITH_MISSING_CRC));
         ArmoredInputStream armorIn = new ArmoredInputStream(data);
-        armorIn.setIgnoreMissingCRCSum(true);
+
+        try
+        {
+            Streams.drain(armorIn);
+        }
+        catch (IOException e)
+        {
+            fail("Missing CRC sum must be ignored.", e);
+        }
+
+        data.reset();
+        armorIn = new ArmoredInputStream(data);
+        armorIn.setDetectMissingCRC(false);
 
         try
         {
@@ -127,7 +139,7 @@ public class ArmoredInputStreamIngoreMissingCRCSum
 
         data = new ByteArrayInputStream(Strings.toByteArray(KEY_WITH_MISSING_CRC));
         armorIn = new ArmoredInputStream(data);
-        armorIn.setIgnoreMissingCRCSum(false);
+        armorIn.setDetectMissingCRC(true);
 
         try
         {
