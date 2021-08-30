@@ -34,6 +34,14 @@ public class PGPSignatureSubpacketVector
     {
         this.packets = packets;
     }
+
+    public PGPSignatureSubpacketVector fromSubpackets(SignatureSubpacket[] packets)
+    {
+        if (packets == null) {
+            packets = new SignatureSubpacket[0];
+        }
+        return new PGPSignatureSubpacketVector(packets);
+    }
     
     public SignatureSubpacket getSubpacket(
         int    type)
