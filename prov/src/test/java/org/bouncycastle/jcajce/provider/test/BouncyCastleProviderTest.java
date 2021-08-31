@@ -78,8 +78,8 @@ public class BouncyCastleProviderTest
 
     /*
         public void testAliases() {
-            Set<Object> keys = new TreeSet<>(provider.keySet());
-            List<String> errors = new ArrayList<>();
+            Set<Object> keys = new TreeSet<Object>(provider.keySet());
+            List<String> errors = new ArrayList<String>();
     
             for (Object rawKey : keys) {
                 try {
