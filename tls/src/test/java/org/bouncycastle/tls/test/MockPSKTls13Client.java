@@ -5,11 +5,11 @@ import java.io.PrintStream;
 import java.security.SecureRandom;
 import java.util.Vector;
 
+import org.bouncycastle.tls.AbstractTlsClient;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.BasicTlsPSKExternal;
 import org.bouncycastle.tls.CipherSuite;
-import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -22,7 +22,7 @@ import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Strings;
 
 class MockPSKTls13Client
-    extends DefaultTlsClient
+    extends AbstractTlsClient
 {
     MockPSKTls13Client()
     {
@@ -69,7 +69,7 @@ class MockPSKTls13Client
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS client raised alert: " + AlertLevel.getText(alertLevel)
+        out.println("TLS 1.3 PSK client raised alert: " + AlertLevel.getText(alertLevel)
             + ", " + AlertDescription.getText(alertDescription));
         if (message != null)
         {
@@ -84,7 +84,7 @@ class MockPSKTls13Client
     public void notifyAlertReceived(short alertLevel, short alertDescription)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS client received alert: " + AlertLevel.getText(alertLevel)
+        out.println("TLS 1.3 PSK client received alert: " + AlertLevel.getText(alertLevel)
             + ", " + AlertDescription.getText(alertDescription));
     }
 
@@ -100,7 +100,7 @@ class MockPSKTls13Client
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS client negotiated " + serverVersion);
+        System.out.println("TLS 1.3 PSK client negotiated " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException
