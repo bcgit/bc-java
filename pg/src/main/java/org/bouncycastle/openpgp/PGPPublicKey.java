@@ -533,7 +533,7 @@ public class PGPPublicKey
     private Iterator<PGPSignature> getSignaturesForID(
         UserIDPacket   id)
     {
-        List<PGPSignature> signatures = new ArrayList<>();
+        List<PGPSignature> signatures = new ArrayList<PGPSignature>();
         boolean userIdFound = false;
 
         for (int i = 0; i != ids.size(); i++)
@@ -557,7 +557,7 @@ public class PGPPublicKey
     public Iterator<PGPSignature> getSignaturesForUserAttribute(
         PGPUserAttributeSubpacketVector    userAttributes)
     {
-        List<PGPSignature> signatures = new ArrayList<>();
+        List<PGPSignature> signatures = new ArrayList<PGPSignature>();
         boolean attributeFound = false;
 
         for (int i = 0; i != ids.size(); i++)
