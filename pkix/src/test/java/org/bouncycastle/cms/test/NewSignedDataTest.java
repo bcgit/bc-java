@@ -1989,6 +1989,62 @@ public class NewSignedDataTest
         assertTrue(s.verifySignatures(vProv, false));
     }
 
+    public void testAddDigestAlgorithm()
+        throws Exception
+    {
+        List                certList = new ArrayList();
+        List                crlList = new ArrayList();
+        CMSTypedData        msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_signCert);
+        certList.add(_origCert);
+
+        crlList.add(_signCrl);
+
+        Store           certStore = new JcaCertStore(certList);
+        Store           crlStore = new JcaCRLStore(crlList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_signKP.getPrivate());
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha1Signer, _signCert));
+
+        gen.addCertificates(certStore);
+        gen.addCRLs(crlStore);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        SignerInformationVerifierProvider vProv = new SignerInformationVerifierProvider()
+        {
+            public SignerInformationVerifier get(SignerId signerId)
+                throws OperatorCreationException
+            {
+                return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert);
+            }
+        };
+
+        Set digAlgs = s.getDigestAlgorithmIDs();
+
+        assertTrue(digAlgs.size() == 1);
+        assertTrue(digAlgs.contains(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE)));
+
+        assertTrue(s.verifySignatures(vProv));
+
+        CMSSignedData oldS = s;
+        s = CMSSignedData.addDigestAlgorithm(s, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE));
+
+        assertTrue(oldS == s);
+
+        s = CMSSignedData.addDigestAlgorithm(s, new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.ripemd160, DERNull.INSTANCE));
+
+        assertTrue(oldS != s);
+
+        digAlgs = s.getDigestAlgorithmIDs();
+        assertTrue(digAlgs.size() == 2);
+        assertTrue(digAlgs.contains(new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.ripemd160, DERNull.INSTANCE)));
+    }
+
     private void rsaPSSTest(String signatureAlgorithmName)
         throws Exception
     {
