@@ -482,6 +482,72 @@ public class CMSSignedData
     }
 
     /**
+     * Return a new CMSSignedData which guarantees to have the passed in digestAlgorithm
+     * in it.
+     *
+     * @param signedData the signed data object to be used as a base.
+     * @param digestAlgorithm the digest algorithm to be added to the signed data.
+     * @return a new signed data object.
+     */
+    public static CMSSignedData addDigestAlgorithm(
+        CMSSignedData           signedData,
+        AlgorithmIdentifier     digestAlgorithm)
+    {
+        Set<AlgorithmIdentifier>   digestAlgorithms = signedData.getDigestAlgorithmIDs();
+        AlgorithmIdentifier        digestAlg = CMSSignedHelper.INSTANCE.fixDigestAlgID(digestAlgorithm, dgstAlgFinder);
+
+        //
+        // if the algorithm is already present there is no need to add it.
+        //
+        if (digestAlgorithms.contains(digestAlg))
+        {
+            return signedData;
+        }
+
+        //
+        // copy
+        //
+        CMSSignedData   cms = new CMSSignedData(signedData);
+
+        //
+        // build up the new set
+        //
+        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+
+        Iterator    it = digestAlgorithms.iterator();
+        while (it.hasNext())
+        {
+            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID((AlgorithmIdentifier)it.next(), dgstAlgFinder));
+        }
+        digestAlgs.add(digestAlg);
+
+        ASN1Set             digests = CMSUtils.convertToBERSet(digestAlgs);
+        ASN1Sequence        sD = (ASN1Sequence)signedData.signedData.toASN1Primitive();
+
+        ASN1EncodableVector vec = new ASN1EncodableVector();
+
+        //
+        // signers are the last item in the sequence.
+        //
+        vec.add(sD.getObjectAt(0)); // version
+        vec.add(digests);
+
+        for (int i = 2; i != sD.size(); i++)
+        {
+            vec.add(sD.getObjectAt(i));
+        }
+
+        cms.signedData = SignedData.getInstance(new BERSequence(vec));
+
+        //
+        // replace the contentInfo with the new one
+        //
+        cms.contentInfo = new ContentInfo(cms.contentInfo.getContentType(), cms.signedData);
+
+        return cms;
+    }
+
+    /**
      * Replace the SignerInformation store associated with this
      * CMSSignedData object with the new one passed in. You would
      * probably only want to do this if you wanted to change the unsigned 
