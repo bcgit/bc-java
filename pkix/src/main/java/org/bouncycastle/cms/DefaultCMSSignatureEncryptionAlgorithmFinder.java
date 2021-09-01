@@ -16,8 +16,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 public class DefaultCMSSignatureEncryptionAlgorithmFinder
     implements CMSSignatureEncryptionAlgorithmFinder
 {
-    private static final Set RSA_PKCS1d5 = new HashSet();
-    private static final Map GOST_ENC = new HashMap();
+    protected static final Set RSA_PKCS1d5 = new HashSet();
+    protected static final Map GOST_ENC = new HashMap();
 
     static
     {
