@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.interfaces.RSAKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 
@@ -97,10 +98,32 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         return this;
     }
 
+    private int getExpectedPayloadSize(PrivateKey key)
+    {
+        if (key instanceof DHKey)
+        {
+            DHKey k = (DHKey)key;
+
+            return (k.getParams().getP().bitLength() + 7) / 8;
+        }
+        else if (key instanceof RSAKey)
+        {
+            RSAKey k = (RSAKey)key;
+
+            return (k.getModulus().bitLength() + 7) / 8;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
     public PublicKeyDataDecryptorFactory build(final PrivateKey privKey)
     {
          return new PublicKeyDataDecryptorFactory()
          {
+             final int expectedPayLoadSize = getExpectedPayloadSize(privKey);
+
              public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
                  throws PGPException
              {
@@ -108,7 +131,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                  {
                      throw new PGPException("ECDH requires use of PGPPrivateKey for decryption");
                  }
-                 return decryptSessionData(keyAlgorithm, privKey, secKeyData);
+                 return decryptSessionData(keyAlgorithm, privKey, expectedPayLoadSize, secKeyData);
              }
 
              public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
@@ -130,8 +153,10 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                  {
                      return decryptSessionData(keyConverter, privKey, secKeyData);
                  }
+                 PrivateKey jcePrivKey = keyConverter.getPrivateKey(privKey);
+                 int expectedPayLoadSize = getExpectedPayloadSize(jcePrivKey);
 
-                 return decryptSessionData(keyAlgorithm, keyConverter.getPrivateKey(privKey), secKeyData);
+                 return decryptSessionData(keyAlgorithm, jcePrivKey, expectedPayLoadSize, secKeyData);
              }
 
              public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
@@ -242,7 +267,30 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         }
     }
 
-    private byte[] decryptSessionData(int keyAlgorithm, PrivateKey privKey, byte[][] secKeyData)
+    private void updateWithMPI(Cipher c, int expectedPayloadSize, byte[] encMPI)
+    {
+        if (expectedPayloadSize > 0)
+        {
+            if (encMPI.length - 2 > expectedPayloadSize)  // leading Zero? Shouldn't happen but...
+            {
+                c.update(encMPI, 3, encMPI.length - 3);
+            }
+            else
+            {
+                if (expectedPayloadSize > (encMPI.length - 2))
+                {
+                    c.update(new byte[expectedPayloadSize - (encMPI.length - 2)]);
+                }
+                c.update(encMPI, 2, encMPI.length - 2);
+            }
+        }
+        else
+        {
+            c.update(encMPI, 2, encMPI.length - 2);
+        }
+    }
+
+    private byte[] decryptSessionData(int keyAlgorithm, PrivateKey privKey, int expectedPayloadSize, byte[][] secKeyData)
         throws PGPException
     {
         Cipher c1 = helper.createPublicKeyCipher(keyAlgorithm);
@@ -259,42 +307,13 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         if (keyAlgorithm == PGPPublicKey.RSA_ENCRYPT
             || keyAlgorithm == PGPPublicKey.RSA_GENERAL)
         {
-            byte[] bi = secKeyData[0];  // encoded MPI
-
-            c1.update(bi, 2, bi.length - 2);
+            updateWithMPI(c1, expectedPayloadSize, secKeyData[0]);
         }
         else
         {
-            DHKey k = (DHKey)privKey;
-            int size = (k.getParams().getP().bitLength() + 7) / 8;
-            byte[] tmp = new byte[size];
-
-            byte[] bi = secKeyData[0]; // encoded MPI
-            if (bi.length - 2 > size)  // leading Zero? Shouldn't happen but...
-            {
-                c1.update(bi, 3, bi.length - 3);
-            }
-            else
-            {
-                System.arraycopy(bi, 2, tmp, tmp.length - (bi.length - 2), bi.length - 2);
-                c1.update(tmp);
-            }
-
-            bi = secKeyData[1];  // encoded MPI
-            for (int i = 0; i != tmp.length; i++)
-            {
-                tmp[i] = 0;
-            }
-
-            if (bi.length - 2 > size) // leading Zero? Shouldn't happen but...
-            {
-                c1.update(bi, 3, bi.length - 3);
-            }
-            else
-            {
-                System.arraycopy(bi, 2, tmp, tmp.length - (bi.length - 2), bi.length - 2);
-                c1.update(tmp);
-            }
+            // Elgamal Encryption
+            updateWithMPI(c1, expectedPayloadSize, secKeyData[0]);
+            updateWithMPI(c1, expectedPayloadSize, secKeyData[1]);
         }
 
         try
