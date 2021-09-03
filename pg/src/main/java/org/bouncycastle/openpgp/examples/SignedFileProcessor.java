@@ -125,7 +125,7 @@ public class SignedFileProcessor
         OutputStream    out,
         char[]          pass,
         boolean         armor)
-        throws IOException, NoSuchAlgorithmException, NoSuchProviderException, PGPException, SignatureException
+        throws IOException, PGPException
     {
         if (armor)
         {
@@ -143,7 +143,7 @@ public class SignedFileProcessor
         {
             PGPSignatureSubpacketGenerator  spGen = new PGPSignatureSubpacketGenerator();
             
-            spGen.setSignerUserID(false, (String)it.next());
+            spGen.addSignerUserID(false, (String)it.next());
             sGen.setHashedSubpackets(spGen.generate());
         }
         
