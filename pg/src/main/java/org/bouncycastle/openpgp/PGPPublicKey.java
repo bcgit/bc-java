@@ -9,6 +9,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.BCPGKey;
@@ -87,15 +90,24 @@ public class PGPPublicKey
             }
             else if (key instanceof ECPublicBCPGKey)
             {
-                X9ECParameters ecParameters = ECNamedCurveTable.getByOID(((ECPublicBCPGKey)key).getCurveOID());
-
-                if (ecParameters != null)
+                ASN1ObjectIdentifier curveOID = ((ECPublicBCPGKey)key).getCurveOID();
+                if (curveOID.equals(GNUObjectIdentifiers.Ed25519)
+                    || curveOID.equals(CryptlibObjectIdentifiers.curvey25519))
                 {
-                    this.keyStrength = ecParameters.getCurve().getFieldSize();
+                    this.keyStrength = 256;
                 }
                 else
                 {
-                    this.keyStrength = -1; // unknown
+                    X9ECParameters ecParameters = ECNamedCurveTable.getByOID(curveOID);
+
+                    if (ecParameters != null)
+                    {
+                        this.keyStrength = ecParameters.getCurve().getFieldSize();
+                    }
+                    else
+                    {
+                        this.keyStrength = -1; // unknown
+                    }
                 }
             }
         }
