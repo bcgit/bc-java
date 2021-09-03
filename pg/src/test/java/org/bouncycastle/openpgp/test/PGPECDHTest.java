@@ -206,6 +206,7 @@ public class PGPECDHTest
 
         PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
+        isTrue("Ed25519 key size not correct", 256 == ring.getSecretKey(encP.getKeyID()).getPublicKey().getBitStrength());
         InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(ring.getSecretKey(encP.getKeyID())
             .extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(curve25519Pwd))));
 
