@@ -313,7 +313,16 @@ public class BCPGOutputStream
     {
         p.encode(this);
     }
-    
+
+    void writePacket(
+        int        tag,
+        byte[]     body)
+        throws IOException
+    {
+        this.writeHeader(tag, true, false, body.length);
+        this.write(body);
+    }
+
     void writePacket(
         int        tag,
         byte[]     body,

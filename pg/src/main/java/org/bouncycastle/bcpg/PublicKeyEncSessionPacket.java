@@ -122,6 +122,6 @@ public class PublicKeyEncSessionPacket
 
         pOut.close();
 
-        out.writePacket(PUBLIC_KEY_ENC_SESSION , bOut.toByteArray(), true);
+        out.writePacket(PUBLIC_KEY_ENC_SESSION , bOut.toByteArray());
     }
 }

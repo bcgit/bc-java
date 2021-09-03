@@ -527,7 +527,7 @@ public class SignaturePacket
 
         pOut.close();
 
-        out.writePacket(SIGNATURE, bOut.toByteArray(), true);
+        out.writePacket(SIGNATURE, bOut.toByteArray());
     }
 
     private void setCreationTime()

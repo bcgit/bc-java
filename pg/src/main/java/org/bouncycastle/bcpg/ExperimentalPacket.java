@@ -41,6 +41,6 @@ public class ExperimentalPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(tag, contents, true);
+        out.writePacket(tag, contents);
     }
 }
