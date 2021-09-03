@@ -13,19 +13,41 @@ public class BCPGOutputStream
     implements PacketTags, CompressionAlgorithmTags
 {
     OutputStream    out;
+    private boolean useOldFormat;
     private byte[]  partialBuffer;
     private int     partialBufferLength;
     private int     partialPower;
     private int     partialOffset;
     
     private static final int    BUF_SIZE_POWER = 16; // 2^16 size buffer on long files
-    
+
+    /**
+     * Base constructor - generate a PGP protocol encoding with old-style packets whenever
+     * there is an alternative for backwards compatibility.
+     *
+     * @param out output stream to write encoded data to.
+     */
     public BCPGOutputStream(
         OutputStream    out)
     {
-        this.out = out;
+        this(out, false);
     }
-    
+
+    /**
+     * Base constructor specifying whether or not to use packets in the new format
+     * wherever possible.
+     *
+     * @param out output stream to write encoded data to.
+     * @param newFormatOnly true if use new format packets, false if backwards compatible preferred.
+     */
+    public BCPGOutputStream(
+        OutputStream    out,
+        boolean         newFormatOnly)
+    {
+        this.out = out;
+        this.useOldFormat = !newFormatOnly;
+    }
+
     /**
      * Create a stream representing an old style partial object.
      * 
@@ -319,7 +341,7 @@ public class BCPGOutputStream
         byte[]     body)
         throws IOException
     {
-        this.writeHeader(tag, true, false, body.length);
+        this.writeHeader(tag, useOldFormat, false, body.length);
         this.write(body);
     }
 
