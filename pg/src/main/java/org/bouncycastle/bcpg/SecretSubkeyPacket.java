@@ -1,6 +1,6 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  * basic packet for a PGP secret key
@@ -53,6 +53,6 @@ public class SecretSubkeyPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(SECRET_SUBKEY, getEncodedContents(), true);
+        out.writePacket(SECRET_SUBKEY, getEncodedContents());
     }
 }

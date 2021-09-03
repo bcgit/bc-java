@@ -1,6 +1,6 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.Date;
 
 /**
@@ -35,6 +35,6 @@ public class PublicSubkeyPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(PUBLIC_SUBKEY, getEncodedContents(), true);
+        out.writePacket(PUBLIC_SUBKEY, getEncodedContents());
     }
 }

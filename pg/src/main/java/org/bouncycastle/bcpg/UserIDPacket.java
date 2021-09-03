@@ -60,6 +60,6 @@ public class UserIDPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(USER_ID, idData, true);
+        out.writePacket(USER_ID, idData);
     }
 }

@@ -2,7 +2,6 @@ package org.bouncycastle.bcpg;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * Basic type for a symmetric encrypted session key packet
@@ -88,6 +87,6 @@ public class SymmetricKeyEncSessionPacket
 
         pOut.close();
 
-        out.writePacket(SYMMETRIC_KEY_ENC_SESSION, bOut.toByteArray(), true);
+        out.writePacket(SYMMETRIC_KEY_ENC_SESSION, bOut.toByteArray());
     }
 }

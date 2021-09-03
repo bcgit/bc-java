@@ -1,6 +1,7 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
  * generic signature object
@@ -112,6 +113,6 @@ public class OnePassSignaturePacket
 
         pOut.close();
 
-        out.writePacket(ONE_PASS_SIGNATURE, bOut.toByteArray(), true);
+        out.writePacket(ONE_PASS_SIGNATURE, bOut.toByteArray());
     }
 }
