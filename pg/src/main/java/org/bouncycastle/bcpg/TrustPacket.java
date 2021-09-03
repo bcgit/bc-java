@@ -43,6 +43,6 @@ public class TrustPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(TRUST, levelAndTrustAmount, true);
+        out.writePacket(TRUST, levelAndTrustAmount);
     }
 }

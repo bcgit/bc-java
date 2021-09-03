@@ -182,6 +182,6 @@ public class SecretKeyPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(SECRET_KEY, getEncodedContents(), true);
+        out.writePacket(SECRET_KEY, getEncodedContents());
     }
 }

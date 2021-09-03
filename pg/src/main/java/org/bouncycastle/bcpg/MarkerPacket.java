@@ -23,6 +23,6 @@ public class MarkerPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(MARKER, marker, true);
+        out.writePacket(MARKER, marker);
     }
 }
