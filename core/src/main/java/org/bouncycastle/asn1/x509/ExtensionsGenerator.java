@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.x509;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -74,24 +75,24 @@ public class ExtensionsGenerator
         boolean critical,
         byte[] value)
     {
-
         if (extensions.containsKey(oid))
         {
             if (dupsAllowed.contains(oid))
             {
-
                 Extension existingExtension = (Extension)extensions.get(oid);
                 ASN1Sequence seq1 = ASN1Sequence.getInstance(DEROctetString.getInstance(existingExtension.getExtnValue()).getOctets());
-                ASN1EncodableVector items = new ASN1EncodableVector();
-                for (ASN1Encodable enc : seq1)
-                {
-                    items.add(enc);
-                }
                 ASN1Sequence seq2 = ASN1Sequence.getInstance(value);
-                for (ASN1Encodable enc : seq2)
+
+                ASN1EncodableVector items = new ASN1EncodableVector(seq1.size() + seq2.size());
+                for (Enumeration en = seq1.getObjects(); en.hasMoreElements();)
                 {
-                    items.add(enc);
+                    items.add((ASN1Encodable)en.nextElement());
                 }
+                for (Enumeration en = seq2.getObjects(); en.hasMoreElements();)
+                {
+                    items.add((ASN1Encodable)en.nextElement());
+                }
+                
                 try
                 {
                     extensions.put(oid, new Extension(oid, critical, new DERSequence(items).getEncoded()));
