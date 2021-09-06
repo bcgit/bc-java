@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import java.text.ParseException;
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -42,7 +41,6 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Test;
 
 public class GenerationTest
     extends SimpleTest
@@ -385,8 +383,8 @@ public class GenerationTest
 
 
         ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
-        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
-        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(name1));
+        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(name2));
 
         //
         // Generate and deserialise.
@@ -434,12 +432,9 @@ public class GenerationTest
         }
     }
 
-
-    @Test
     public void testAllowedDuplicateExtensions()
         throws Exception
     {
-
         // Testing for handling of duplicates
 
         GeneralName name1 = new GeneralName(GeneralName.dNSName, "bc1.local");
@@ -447,24 +442,24 @@ public class GenerationTest
 
 
         ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
-        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
-        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(name1));
+        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(name2));
 
-        extensionsGenerator.addExtension(Extension.issuerAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
-        extensionsGenerator.addExtension(Extension.issuerAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
-
-
-        extensionsGenerator.addExtension(Extension.subjectDirectoryAttributes, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
-        extensionsGenerator.addExtension(Extension.subjectDirectoryAttributes, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
-
-        extensionsGenerator.addExtension(Extension.certificateIssuer, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
-        extensionsGenerator.addExtension(Extension.certificateIssuer, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+        extensionsGenerator.addExtension(Extension.issuerAlternativeName, false, new DERSequence(name1));
+        extensionsGenerator.addExtension(Extension.issuerAlternativeName, false, new DERSequence(name2));
 
 
-        extensionsGenerator.addExtension(Extension.auditIdentity, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
+        extensionsGenerator.addExtension(Extension.subjectDirectoryAttributes, false, new DERSequence(name1));
+        extensionsGenerator.addExtension(Extension.subjectDirectoryAttributes, false, new DERSequence(name2));
+
+        extensionsGenerator.addExtension(Extension.certificateIssuer, false, new DERSequence(name1));
+        extensionsGenerator.addExtension(Extension.certificateIssuer, false, new DERSequence(name2));
+
+
+        extensionsGenerator.addExtension(Extension.auditIdentity, false, new DERSequence(name1));
         try
         {
-            extensionsGenerator.addExtension(Extension.auditIdentity, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+            extensionsGenerator.addExtension(Extension.auditIdentity, false, new DERSequence(name2));
             fail("Expected exception, not a white listed duplicate.");
         }
         catch (Exception ex)
