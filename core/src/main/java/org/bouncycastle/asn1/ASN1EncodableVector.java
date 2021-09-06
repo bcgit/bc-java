@@ -30,6 +30,15 @@ public class ASN1EncodableVector
         this.copyOnWrite = false;
     }
 
+    public ASN1EncodableVector(ASN1Encodable[] items)
+    {
+        this();
+        for (ASN1Encodable enc : items)
+        {
+            add(enc);
+        }
+    }
+
     public void add(ASN1Encodable element)
     {
         if (null == element)
