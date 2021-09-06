@@ -5,10 +5,12 @@ import java.math.BigInteger;
 import java.text.ParseException;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -40,47 +42,48 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
+import org.junit.Test;
 
 public class GenerationTest
     extends SimpleTest
 {
     private byte[] v1Cert = Base64.decode(
-          "MIGtAgEBMA0GCSqGSIb3DQEBBAUAMCUxCzAJBgNVBAMMAkFVMRYwFAYDVQQKDA1Cb"
-        + "3VuY3kgQ2FzdGxlMB4XDTcwMDEwMTAwMDAwMVoXDTcwMDEwMTAwMDAxMlowNjELMA"
-        + "kGA1UEAwwCQVUxFjAUBgNVBAoMDUJvdW5jeSBDYXN0bGUxDzANBgNVBAsMBlRlc3Q"
-        + "gMTAaMA0GCSqGSIb3DQEBAQUAAwkAMAYCAQECAQI=");
+        "MIGtAgEBMA0GCSqGSIb3DQEBBAUAMCUxCzAJBgNVBAMMAkFVMRYwFAYDVQQKDA1Cb"
+            + "3VuY3kgQ2FzdGxlMB4XDTcwMDEwMTAwMDAwMVoXDTcwMDEwMTAwMDAxMlowNjELMA"
+            + "kGA1UEAwwCQVUxFjAUBgNVBAoMDUJvdW5jeSBDYXN0bGUxDzANBgNVBAsMBlRlc3Q"
+            + "gMTAaMA0GCSqGSIb3DQEBAQUAAwkAMAYCAQECAQI=");
 
     private byte[] v3Cert = Base64.decode(
-          "MIIBSKADAgECAgECMA0GCSqGSIb3DQEBBAUAMCUxCzAJBgNVBAMMAkFVMRYwFAYD"
-        + "VQQKDA1Cb3VuY3kgQ2FzdGxlMB4XDTcwMDEwMTAwMDAwMVoXDTcwMDEwMTAwMDAw"
-        + "MlowNjELMAkGA1UEAwwCQVUxFjAUBgNVBAoMDUJvdW5jeSBDYXN0bGUxDzANBgNV"
-        + "BAsMBlRlc3QgMjAYMBAGBisOBwIBATAGAgEBAgECAwQAAgEDo4GVMIGSMGEGA1Ud"
-        + "IwEB/wRXMFWAFDZPdpHPzKi7o8EJokkQU2uqCHRRoTqkODA2MQswCQYDVQQDDAJB"
-        + "VTEWMBQGA1UECgwNQm91bmN5IENhc3RsZTEPMA0GA1UECwwGVGVzdCAyggECMCAG"
-        + "A1UdDgEB/wQWBBQ2T3aRz8you6PBCaJJEFNrqgh0UTALBgNVHQ8EBAMCBBA=");
+        "MIIBSKADAgECAgECMA0GCSqGSIb3DQEBBAUAMCUxCzAJBgNVBAMMAkFVMRYwFAYD"
+            + "VQQKDA1Cb3VuY3kgQ2FzdGxlMB4XDTcwMDEwMTAwMDAwMVoXDTcwMDEwMTAwMDAw"
+            + "MlowNjELMAkGA1UEAwwCQVUxFjAUBgNVBAoMDUJvdW5jeSBDYXN0bGUxDzANBgNV"
+            + "BAsMBlRlc3QgMjAYMBAGBisOBwIBATAGAgEBAgECAwQAAgEDo4GVMIGSMGEGA1Ud"
+            + "IwEB/wRXMFWAFDZPdpHPzKi7o8EJokkQU2uqCHRRoTqkODA2MQswCQYDVQQDDAJB"
+            + "VTEWMBQGA1UECgwNQm91bmN5IENhc3RsZTEPMA0GA1UECwwGVGVzdCAyggECMCAG"
+            + "A1UdDgEB/wQWBBQ2T3aRz8you6PBCaJJEFNrqgh0UTALBgNVHQ8EBAMCBBA=");
 
     private byte[] v3CertNullSubject = Base64.decode(
-          "MIHGoAMCAQICAQIwDQYJKoZIhvcNAQEEBQAwJTELMAkGA1UEAwwCQVUxFjAUBgNVB"
-        + "AoMDUJvdW5jeSBDYXN0bGUwHhcNNzAwMTAxMDAwMDAxWhcNNzAwMTAxMDAwMDAyWj"
-        + "AAMBgwEAYGKw4HAgEBMAYCAQECAQIDBAACAQOjSjBIMEYGA1UdEQEB/wQ8MDqkODA"
-        + "2MQswCQYDVQQDDAJBVTEWMBQGA1UECgwNQm91bmN5IENhc3RsZTEPMA0GA1UECwwG"
-        + "VGVzdCAy");
+        "MIHGoAMCAQICAQIwDQYJKoZIhvcNAQEEBQAwJTELMAkGA1UEAwwCQVUxFjAUBgNVB"
+            + "AoMDUJvdW5jeSBDYXN0bGUwHhcNNzAwMTAxMDAwMDAxWhcNNzAwMTAxMDAwMDAyWj"
+            + "AAMBgwEAYGKw4HAgEBMAYCAQECAQIDBAACAQOjSjBIMEYGA1UdEQEB/wQ8MDqkODA"
+            + "2MQswCQYDVQQDDAJBVTEWMBQGA1UECgwNQm91bmN5IENhc3RsZTEPMA0GA1UECwwG"
+            + "VGVzdCAy");
 
     private byte[] v2CertList = Base64.decode(
-          "MIIBQwIBATANBgkqhkiG9w0BAQUFADAlMQswCQYDVQQDDAJBVTEWMBQGA1UECgwN" +
-          "Qm91bmN5IENhc3RsZRcNNzAwMTAxMDAwMDAwWhcNNzAwMTAxMDAwMDAyWjAiMCAC" +
-          "AQEXDTcwMDEwMTAwMDAwMVowDDAKBgNVHRUEAwoBCqCBxTCBwjBhBgNVHSMBAf8E" +
-          "VzBVgBQ2T3aRz8you6PBCaJJEFNrqgh0UaE6pDgwNjELMAkGA1UEAwwCQVUxFjAU" +
-          "BgNVBAoMDUJvdW5jeSBDYXN0bGUxDzANBgNVBAsMBlRlc3QgMoIBAjBDBgNVHRIE" +
-          "PDA6pDgwNjELMAkGA1UEAwwCQVUxFjAUBgNVBAoMDUJvdW5jeSBDYXN0bGUxDzAN" +
-          "BgNVBAsMBlRlc3QgMzAKBgNVHRQEAwIBATAMBgNVHRwBAf8EAjAA");
-    
+        "MIIBQwIBATANBgkqhkiG9w0BAQUFADAlMQswCQYDVQQDDAJBVTEWMBQGA1UECgwN" +
+            "Qm91bmN5IENhc3RsZRcNNzAwMTAxMDAwMDAwWhcNNzAwMTAxMDAwMDAyWjAiMCAC" +
+            "AQEXDTcwMDEwMTAwMDAwMVowDDAKBgNVHRUEAwoBCqCBxTCBwjBhBgNVHSMBAf8E" +
+            "VzBVgBQ2T3aRz8you6PBCaJJEFNrqgh0UaE6pDgwNjELMAkGA1UEAwwCQVUxFjAU" +
+            "BgNVBAoMDUJvdW5jeSBDYXN0bGUxDzANBgNVBAsMBlRlc3QgMoIBAjBDBgNVHRIE" +
+            "PDA6pDgwNjELMAkGA1UEAwwCQVUxFjAUBgNVBAoMDUJvdW5jeSBDYXN0bGUxDzAN" +
+            "BgNVBAsMBlRlc3QgMzAKBgNVHRQEAwIBATAMBgNVHRwBAf8EAjAA");
+
     private void tbsV1CertGen()
         throws IOException
     {
-        V1TBSCertificateGenerator   gen = new V1TBSCertificateGenerator();
-        Date                        startDate = new Date(1000);
-        Date                        endDate = new Date(12000);
+        V1TBSCertificateGenerator gen = new V1TBSCertificateGenerator();
+        Date startDate = new Date(1000);
+        Date endDate = new Date(12000);
 
         gen.setSerialNumber(new ASN1Integer(1));
 
@@ -92,8 +95,8 @@ public class GenerationTest
 
         gen.setSignature(new AlgorithmIdentifier(PKCSObjectIdentifiers.md5WithRSAEncryption, DERNull.INSTANCE));
 
-        SubjectPublicKeyInfo    info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE),
-                                                     new RSAPublicKey(BigInteger.valueOf(1), BigInteger.valueOf(2)));
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE),
+            new RSAPublicKey(BigInteger.valueOf(1), BigInteger.valueOf(2)));
 
         gen.setSubjectPublicKeyInfo(info);
 
@@ -116,27 +119,27 @@ public class GenerationTest
             fail("failed v1 cert read back test");
         }
     }
-    
+
     private AuthorityKeyIdentifier createAuthorityKeyId(
-        SubjectPublicKeyInfo    info,
-        X500Name                name,
-        int                     sNumber)
+        SubjectPublicKeyInfo info,
+        X500Name name,
+        int sNumber)
     {
-        GeneralName             genName = new GeneralName(name);
-        ASN1EncodableVector     v = new ASN1EncodableVector();
+        GeneralName genName = new GeneralName(name);
+        ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(genName);
 
         return new AuthorityKeyIdentifier(
             info, GeneralNames.getInstance(new DERSequence(v)), BigInteger.valueOf(sNumber));
     }
-    
+
     private void tbsV3CertGen()
         throws IOException
     {
-        V3TBSCertificateGenerator   gen = new V3TBSCertificateGenerator();
-        Date                        startDate = new Date(1000);
-        Date                        endDate = new Date(2000);
+        V3TBSCertificateGenerator gen = new V3TBSCertificateGenerator();
+        Date startDate = new Date(1000);
+        Date endDate = new Date(2000);
 
         gen.setSerialNumber(new ASN1Integer(2));
 
@@ -148,14 +151,14 @@ public class GenerationTest
 
         gen.setSignature(new AlgorithmIdentifier(PKCSObjectIdentifiers.md5WithRSAEncryption, DERNull.INSTANCE));
 
-        SubjectPublicKeyInfo    info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
 
         gen.setSubjectPublicKeyInfo(info);
 
         //
         // add extensions
         //
-        Extensions ex = new Extensions(new Extension[] {
+        Extensions ex = new Extensions(new Extension[]{
             new Extension(Extension.authorityKeyIdentifier, true, new DEROctetString(createAuthorityKeyId(info, new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"), 2))),
             new Extension(Extension.subjectKeyIdentifier, true, new DEROctetString(new SubjectKeyIdentifier(getDigest(info)))),
             new Extension(Extension.keyUsage, false, new DEROctetString(new KeyUsage(KeyUsage.dataEncipherment)))
@@ -186,9 +189,9 @@ public class GenerationTest
     private void tbsV3CertGenWithNullSubject()
         throws IOException
     {
-        V3TBSCertificateGenerator   gen = new V3TBSCertificateGenerator();
-        Date                        startDate = new Date(1000);
-        Date                        endDate = new Date(2000);
+        V3TBSCertificateGenerator gen = new V3TBSCertificateGenerator();
+        Date startDate = new Date(1000);
+        Date endDate = new Date(2000);
 
         gen.setSerialNumber(new ASN1Integer(2));
 
@@ -199,7 +202,7 @@ public class GenerationTest
 
         gen.setSignature(new AlgorithmIdentifier(PKCSObjectIdentifiers.md5WithRSAEncryption, DERNull.INSTANCE));
 
-        SubjectPublicKeyInfo    info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
 
         gen.setSubjectPublicKeyInfo(info);
 
@@ -248,7 +251,7 @@ public class GenerationTest
     private void tbsV2CertListGen()
         throws IOException
     {
-        V2TBSCertListGenerator  gen = new V2TBSCertListGenerator();
+        V2TBSCertListGenerator gen = new V2TBSCertListGenerator();
 
         gen.setIssuer(new X500Name("CN=AU,O=Bouncy Castle"));
 
@@ -263,9 +266,9 @@ public class GenerationTest
         //
         // extensions
         //
-        SubjectPublicKeyInfo    info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, new ElGamalParameter(BigInteger.valueOf(1), BigInteger.valueOf(2))), new ASN1Integer(3));
 
-        ExtensionsGenerator     extGen = new ExtensionsGenerator();
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
 
         extGen.addExtension(Extension.authorityKeyIdentifier, true, createAuthorityKeyId(info, new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"), 2));
         extGen.addExtension(Extension.issuerAlternativeName, false, new GeneralNames(new GeneralName(new X500Name("CN=AU,O=Bouncy Castle,OU=Test 3"))));
@@ -277,7 +280,7 @@ public class GenerationTest
 
         isEquals(new Extension(Extension.cRLNumber, false, new ASN1Integer(1).getEncoded()), extGen.getExtension(Extension.cRLNumber));
 
-        Extensions          ex = extGen.generate();
+        Extensions ex = extGen.generate();
 
         gen.setExtensions(ex);
 
@@ -302,7 +305,7 @@ public class GenerationTest
 
         // check we can still generate
         ex = extGen.generate();
-        
+
         //
         // read back test
         //
@@ -372,10 +375,111 @@ public class GenerationTest
             }
         }
     }
-    
+
+
+    public void testDuplicateExtensions()
+        throws IOException
+    {
+        GeneralName name1 = new GeneralName(GeneralName.dNSName, "bc1.local");
+        GeneralName name2 = new GeneralName(GeneralName.dNSName, "bc2.local");
+
+
+        ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
+        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
+        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+
+        //
+        // Generate and deserialise.
+        //
+        Extensions ext = Extensions.getInstance(ASN1Sequence.getInstance(extensionsGenerator.generate().getEncoded()));
+        Extension returnedExtension = ext.getExtension(Extension.subjectAlternativeName);
+        ASN1Sequence seq = ASN1Sequence.getInstance(returnedExtension.getParsedValue());
+
+
+        //
+        // Check expected order and value.
+        //
+        if (!GeneralName.getInstance(seq.getObjectAt(0)).equals(name1))
+        {
+            fail("expected name 1");
+        }
+
+        if (!GeneralName.getInstance(seq.getObjectAt(1)).equals(name2))
+        {
+            fail("expected name 2");
+        }
+
+        //
+        // Test we can load dup extensions into a new generator
+        //
+
+        ExtensionsGenerator genX = new ExtensionsGenerator();
+        genX.addExtension(ext);
+
+        ext = Extensions.getInstance(ASN1Sequence.getInstance(genX.generate().getEncoded()));
+        returnedExtension = ext.getExtension(Extension.subjectAlternativeName);
+        seq = ASN1Sequence.getInstance(returnedExtension.getParsedValue());
+
+        //
+        // Check expected order and value.
+        //
+        if (!GeneralName.getInstance(seq.getObjectAt(0)).equals(name1))
+        {
+            fail("expected name 1");
+        }
+
+        if (!GeneralName.getInstance(seq.getObjectAt(1)).equals(name2))
+        {
+            fail("expected name 2");
+        }
+    }
+
+
+    @Test
+    public void testAllowedDuplicateExtensions()
+        throws Exception
+    {
+
+        // Testing for handling of duplicates
+
+        GeneralName name1 = new GeneralName(GeneralName.dNSName, "bc1.local");
+        GeneralName name2 = new GeneralName(GeneralName.dNSName, "bc2.local");
+
+
+        ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
+        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
+        extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+
+        extensionsGenerator.addExtension(Extension.issuerAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
+        extensionsGenerator.addExtension(Extension.issuerAlternativeName, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+
+
+        extensionsGenerator.addExtension(Extension.subjectDirectoryAttributes, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
+        extensionsGenerator.addExtension(Extension.subjectDirectoryAttributes, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+
+        extensionsGenerator.addExtension(Extension.certificateIssuer, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
+        extensionsGenerator.addExtension(Extension.certificateIssuer, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+
+
+        extensionsGenerator.addExtension(Extension.auditIdentity, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name1})));
+        try
+        {
+            extensionsGenerator.addExtension(Extension.auditIdentity, false, new DERSequence(new ASN1EncodableVector(new ASN1Encodable[]{name2})));
+            fail("Expected exception, not a white listed duplicate.");
+        }
+        catch (Exception ex)
+        {
+            // ok
+        }
+
+    }
+
+
     public void performTest()
         throws Exception
     {
+        testAllowedDuplicateExtensions();
+        testDuplicateExtensions();
         tbsV1CertGen();
         tbsV3CertGen();
         tbsV3CertGenWithNullSubject();
@@ -390,7 +494,7 @@ public class GenerationTest
     private static byte[] getDigest(SubjectPublicKeyInfo spki)
     {
         Digest digest = new SHA1Digest();
-        byte[]  resBuf = new byte[digest.getDigestSize()];
+        byte[] resBuf = new byte[digest.getDigestSize()];
 
         byte[] bytes = spki.getPublicKeyData().getBytes();
         digest.update(bytes, 0, bytes.length);
