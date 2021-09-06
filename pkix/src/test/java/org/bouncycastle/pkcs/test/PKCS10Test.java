@@ -139,7 +139,7 @@ public class PKCS10Test
             fail("expected name 1");
         }
 
-        if (!names[0].equals(name1))
+        if (!names[1].equals(name2))
         {
             fail("expected name 2");
         }
