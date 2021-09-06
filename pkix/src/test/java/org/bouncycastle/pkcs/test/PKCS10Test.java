@@ -11,12 +11,12 @@ import java.security.spec.RSAPublicKeySpec;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -128,24 +128,23 @@ public class PKCS10Test
         // Disassemble the attributes with the duplicate extensions.
         //
         Extensions extensions = req.getRequestedExtensions();
-        Extension returnedExtension = extensions.getExtension(Extension.subjectAlternativeName);
-        ASN1Sequence seq = ASN1Sequence.getInstance(returnedExtension.getParsedValue());
+        GeneralNames subjectAltNames = GeneralNames.fromExtensions(extensions, Extension.subjectAlternativeName);
 
         //
         // Check expected order and value.
         //
-        if (!GeneralName.getInstance(seq.getObjectAt(0)).equals(name1))
+        GeneralName[] names = subjectAltNames.getNames();
+        if (!names[0].equals(name1))
         {
             fail("expected name 1");
         }
 
-        if (!GeneralName.getInstance(seq.getObjectAt(1)).equals(name2))
+        if (!names[0].equals(name1))
         {
             fail("expected name 2");
         }
     }
-
-
+    
     public static void main(String args[])
     {
         junit.textui.TestRunner.run(suite());
