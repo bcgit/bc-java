@@ -2091,7 +2091,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             Date nextUpdate = crl.getNextUpdate();
             Object[] arguments = new Object[]{ new TrustedInput(thisUpdate), new TrustedInput(nextUpdate) };
 
-            if (nextUpdate == null || validDate.before(crl.getNextUpdate()))
+            if (nextUpdate == null || validDate.before(nextUpdate))
             {
                 validCrlFound = true;
                 ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.localValidCRL", arguments);
