@@ -2,6 +2,7 @@ package org.bouncycastle.tls.crypto.test;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
 
 import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.DefaultTlsDHGroupVerifier;
@@ -220,7 +221,15 @@ public abstract class TlsCryptoTest
             for (int i = 0; i < groups.size(); ++i)
             {
                 DHGroup dhGroup = (DHGroup)groups.elementAt(i);
-                int namedGroup = TlsDHUtils.getNamedGroupForDHParameters(dhGroup.getP(), dhGroup.getG());
+                BigInteger p = dhGroup.getP(), g = dhGroup.getG();
+
+                /*
+                 * DefaultTlsDHGroupVerifier default groups are configured from DHStandardGroups, so
+                 * we expect to recover the exact instance here.
+                 */
+                assertSame(dhGroup, TlsDHUtils.getStandardGroupForDHParameters(p, g));
+
+                int namedGroup = TlsDHUtils.getNamedGroupForDHParameters(p, g);
                 if (NamedGroup.refersToASpecificFiniteField(namedGroup))
                 {
                     // Already tested the named groups
