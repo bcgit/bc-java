@@ -220,6 +220,11 @@ public class Blake3Digest
     private boolean outputting;
 
     /**
+     * How many more bytes can we output?
+     */
+    private long outputAvailable;
+
+    /**
      * The current mode.
      */
     private int theMode;
@@ -457,6 +462,13 @@ public class Blake3Digest
             compressFinalBlock(thePos);
         }
 
+        /* Reject if there is insufficient Xof remaining */
+        if (pOutLen < 0
+            || (outputAvailable >= 0 && pOutLen > outputAvailable))
+        {
+            throw new IllegalArgumentException("Insufficient bytes remaining");
+        }
+
         /* If we have some remaining data in the current buffer */
         int dataLeft = pOutLen;
         int outPos = pOutOffset;
@@ -488,6 +500,9 @@ public class Blake3Digest
             dataLeft -= dataToCopy;
         }
 
+        /* Adjust outputAvailable */
+        outputAvailable -= pOutLen;
+
         /* Return the number of bytes transferred */
         return pOutLen;
     }
@@ -512,6 +527,7 @@ public class Blake3Digest
 
         /* Reset output state */
         outputting = mySource.outputting;
+        outputAvailable = mySource.outputAvailable;
         theOutputMode = mySource.theOutputMode;
         theOutputDataLen = mySource.theOutputDataLen;
 
@@ -891,6 +907,7 @@ public class Blake3Digest
         theOutputDataLen = theV[DATALEN];
         theCounter = 0;
         outputting = true;
+        outputAvailable = -1;
         System.arraycopy(theV, 0, theChaining, 0, NUMWORDS);
     }
 }
