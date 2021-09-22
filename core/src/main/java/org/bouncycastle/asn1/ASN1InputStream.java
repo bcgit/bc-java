@@ -537,7 +537,8 @@ public class ASN1InputStream
         case OBJECT_DESCRIPTOR:
             return ASN1ObjectDescriptor.createPrimitive(defIn.toByteArray());
         case OBJECT_IDENTIFIER:
-            return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers));
+            // TODO Ideally only clone if we used a buffer
+            return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers), true);
         case OCTET_STRING:
             return ASN1OctetString.createPrimitive(defIn.toByteArray());
         case PRINTABLE_STRING:

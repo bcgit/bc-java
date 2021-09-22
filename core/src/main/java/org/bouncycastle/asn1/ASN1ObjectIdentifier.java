@@ -18,9 +18,14 @@ public class ASN1ObjectIdentifier
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            return createPrimitive(octetString.getOctets());
+            return createPrimitive(octetString.getOctets(), false);
         }
     };
+
+    public static ASN1ObjectIdentifier fromContents(byte[] contents)
+    {
+        return createPrimitive(contents, true);
+    }
 
     /**
      * Return an OID from the passed in object
@@ -81,20 +86,18 @@ public class ASN1ObjectIdentifier
     private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7f;
 
     private final String identifier;
+    private byte[] contents;
 
-    private byte[] body;
-
-    ASN1ObjectIdentifier(
-        byte[] bytes)
+    ASN1ObjectIdentifier(byte[] contents, boolean clone)
     {
         StringBuffer objId = new StringBuffer();
         long value = 0;
         BigInteger bigValue = null;
         boolean first = true;
 
-        for (int i = 0; i != bytes.length; i++)
+        for (int i = 0; i != contents.length; i++)
         {
-            int b = bytes[i] & 0xff;
+            int b = contents[i] & 0xff;
 
             if (value <= LONG_LIMIT)
             {
@@ -158,7 +161,7 @@ public class ASN1ObjectIdentifier
         }
 
         this.identifier = objId.toString();
-        this.body = Arrays.clone(bytes);
+        this.contents = clone ? Arrays.clone(contents) : contents;
     }
 
     /**
@@ -297,18 +300,18 @@ public class ASN1ObjectIdentifier
         }
     }
 
-    private synchronized byte[] getBody()
+    private synchronized byte[] getContents()
     {
-        if (body == null)
+        if (contents == null)
         {
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
             doOutput(bOut);
 
-            body = bOut.toByteArray();
+            contents = bOut.toByteArray();
         }
 
-        return body;
+        return contents;
     }
 
     boolean isConstructed()
@@ -318,12 +321,12 @@ public class ASN1ObjectIdentifier
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, getBody().length);
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, getContents().length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodingDL(withTag, BERTags.OBJECT_IDENTIFIER, getBody());
+        out.writeEncodingDL(withTag, BERTags.OBJECT_IDENTIFIER, getContents());
     }
 
     public int hashCode()
@@ -420,7 +423,7 @@ public class ASN1ObjectIdentifier
      */
     public ASN1ObjectIdentifier intern()
     {
-        final OidHandle hdl = new OidHandle(getBody());
+        final OidHandle hdl = new OidHandle(getContents());
         ASN1ObjectIdentifier oid = pool.get(hdl);
         if (oid == null)
         {
@@ -438,12 +441,12 @@ public class ASN1ObjectIdentifier
     private static class OidHandle
     {
         private final int key;
-        private final byte[] enc;
+        private final byte[] contents;
 
-        OidHandle(byte[] enc)
+        OidHandle(byte[] contents)
         {
-            this.key = Arrays.hashCode(enc);
-            this.enc = enc;
+            this.key = Arrays.hashCode(contents);
+            this.contents = contents;
         }
 
         public int hashCode()
@@ -455,20 +458,20 @@ public class ASN1ObjectIdentifier
         {
             if (o instanceof OidHandle)
             {
-                return Arrays.areEqual(enc, ((OidHandle)o).enc);
+                return Arrays.areEqual(contents, ((OidHandle)o).contents);
             }
 
             return false;
         }
     }
 
-    static ASN1ObjectIdentifier createPrimitive(byte[] contents)
+    static ASN1ObjectIdentifier createPrimitive(byte[] contents, boolean clone)
     {
         final OidHandle hdl = new OidHandle(contents);
         ASN1ObjectIdentifier oid = pool.get(hdl);
         if (oid == null)
         {
-            return new ASN1ObjectIdentifier(contents);
+            return new ASN1ObjectIdentifier(contents, clone);
         }
         return oid;
     }
