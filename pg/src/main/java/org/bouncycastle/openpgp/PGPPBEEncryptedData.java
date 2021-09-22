@@ -41,6 +41,19 @@ public class PGPPBEEncryptedData
     }
 
     /**
+     * Return the symmetric session key required to decrypt the data protected by this object.
+     *
+     * @param dataDecryptorFactory decryptor factory used to recover the session data.
+     * @return session key
+     * @throws PGPException if the session data cannot be recovered
+     */
+    public PGPSessionKey getSessionKey(PBEDataDecryptorFactory dataDecryptorFactory) throws PGPException {
+        byte[]       key = dataDecryptorFactory.makeKeyFromPassPhrase(keyData.getEncAlgorithm(), keyData.getS2K());
+        byte[]       sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
+        return PGPSessionKey.fromPBESessionData(sessionData);
+    }
+
+    /**
      * Return the symmetric key algorithm required to decrypt the data protected by this object.
      *
      * @param dataDecryptorFactory decryptor factory to use to recover the session data.
@@ -52,25 +65,7 @@ public class PGPPBEEncryptedData
         PBEDataDecryptorFactory dataDecryptorFactory)
         throws PGPException
     {
-        byte[]       key = dataDecryptorFactory.makeKeyFromPassPhrase(keyData.getEncAlgorithm(), keyData.getS2K());
-        byte[]       sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
-
-        return sessionData[0];
-    }
-
-    /**
-     * Return the symmetric session key required to decrypt the data protected by this object.
-     *
-     * @param dataDecryptorFactory decryptor factory used to recover the session data.
-     * @return session key
-     * @throws PGPException if the session data cannot be recovered
-     */
-    public byte[] getSessionKey(PBEDataDecryptorFactory dataDecryptorFactory) throws PGPException {
-        byte[]       key = dataDecryptorFactory.makeKeyFromPassPhrase(keyData.getEncAlgorithm(), keyData.getS2K());
-        byte[]       sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
-        byte[]       sessionKey = new byte[sessionData.length - 1];
-        System.arraycopy(sessionData, 1, sessionKey, 0, sessionKey.length);
-        return sessionKey;
+        return getSessionKey(dataDecryptorFactory).getAlgorithm();
     }
 
     /**
@@ -88,16 +83,11 @@ public class PGPPBEEncryptedData
     {
         try
         {
-            int          keyAlgorithm = keyData.getEncAlgorithm();
-            byte[]       key = dataDecryptorFactory.makeKeyFromPassPhrase(keyAlgorithm, keyData.getS2K());
             boolean      withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
 
-            byte[]       sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
-            byte[]       sessionKey = new byte[sessionData.length - 1];
+            PGPSessionKey sessionKey = getSessionKey(dataDecryptorFactory);
 
-            System.arraycopy(sessionData, 1, sessionKey, 0, sessionKey.length);
-
-            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionData[0] & 0xff, sessionKey);
+            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
             BCPGInputStream encIn = encData.getInputStream();
             encIn.mark(dataDecryptor.getBlockSize() + 2); // iv + 2 octets checksum

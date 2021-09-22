@@ -65,9 +65,7 @@ public class PGPPublicKeyEncryptedData
         PublicKeyDataDecryptorFactory dataDecryptorFactory)
         throws PGPException
     {
-        byte[] plain = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
-
-        return plain[0];
+        return getSessionKey(dataDecryptorFactory).getAlgorithm();
     }
 
     /**
@@ -77,7 +75,7 @@ public class PGPPublicKeyEncryptedData
      * @return session key used to decrypt the data protected by this object
      * @throws PGPException if the session data cannot be recovered.
      */
-    public byte[] getSessionKey(
+    public PGPSessionKey getSessionKey(
             PublicKeyDataDecryptorFactory dataDecryptorFactory)
             throws PGPException
     {
@@ -87,9 +85,7 @@ public class PGPPublicKeyEncryptedData
             throw new PGPKeyValidationException("key checksum failed");
         }
 
-        byte[] sessionKey = new byte[sessionData.length - 3];
-        System.arraycopy(sessionData, 1, sessionKey, 0, sessionKey.length);
-        return sessionKey;
+        return PGPSessionKey.fromPublicKeySessionData(sessionData);
     }
 
     /**
@@ -103,23 +99,15 @@ public class PGPPublicKeyEncryptedData
         PublicKeyDataDecryptorFactory dataDecryptorFactory)
         throws PGPException
     {
-        byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
+        PGPSessionKey sessionKey = getSessionKey(dataDecryptorFactory);
 
-        if (!confirmCheckSum(sessionData))
-        {
-            throw new PGPKeyValidationException("key checksum failed");
-        }
-
-        if (sessionData[0] != SymmetricKeyAlgorithmTags.NULL)
+        if (sessionKey.getAlgorithm() != SymmetricKeyAlgorithmTags.NULL)
         {
             try
             {
                 boolean      withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
-                byte[]       sessionKey = new byte[sessionData.length - 3];
 
-                System.arraycopy(sessionData, 1, sessionKey, 0, sessionKey.length);
-
-                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionData[0] & 0xff, sessionKey);
+                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
                 BCPGInputStream encIn = encData.getInputStream();
                 

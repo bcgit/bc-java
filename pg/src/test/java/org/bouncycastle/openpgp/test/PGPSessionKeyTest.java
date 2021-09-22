@@ -21,6 +21,7 @@ import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
@@ -123,11 +124,10 @@ public class PGPSessionKeyTest extends SimpleTest {
         PublicKeyDataDecryptorFactory decryptorFactory = new BcPublicKeyDataDecryptorFactory(
                 key.extractPrivateKey(keyDecryptor));
 
-        isEquals(PK_ENC_SESSIONKEY_ALG, encryptedData.getSymmetricAlgorithm(decryptorFactory));
-        isTrue(Arrays.equals(
-                Hex.decode(PK_ENC_SESSIONKEY),
-                encryptedData.getSessionKey(decryptorFactory)
-        ));
+        PGPSessionKey sessionKey = encryptedData.getSessionKey(decryptorFactory);
+
+        isEquals(PK_ENC_SESSIONKEY_ALG, sessionKey.getAlgorithm());
+        isTrue(Arrays.equals(Hex.decode(PK_ENC_SESSIONKEY), sessionKey.getKey()));
     }
 
     private void verifyBcPublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
@@ -184,8 +184,9 @@ public class PGPSessionKeyTest extends SimpleTest {
         BcPGPDigestCalculatorProvider digestCalculatorProvider = new BcPGPDigestCalculatorProvider();
         PBEDataDecryptorFactory decryptorFactory = new BcPBEDataDecryptorFactory(PBE_PASSPHRASE.toCharArray(), digestCalculatorProvider);
 
-        isEquals(PBE_ENC_SESSIONKEY_ALG, encryptedData.getSymmetricAlgorithm(decryptorFactory));
-        isTrue(Arrays.equals(Hex.decode(PBE_ENC_SESSIONKEY), encryptedData.getSessionKey(decryptorFactory)));
+        PGPSessionKey sessionKey = encryptedData.getSessionKey(decryptorFactory);
+        isEquals(PBE_ENC_SESSIONKEY_ALG, sessionKey.getAlgorithm());
+        isTrue(Arrays.equals(Hex.decode(PBE_ENC_SESSIONKEY), sessionKey.getKey()));
     }
 
     private void verifyJcePBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
