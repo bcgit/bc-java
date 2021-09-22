@@ -193,6 +193,15 @@ public class BcPublicKeyDataDecryptorFactory
         return BcUtil.createDataDecryptor(withIntegrityPacket, engine, key);
     }
 
+    /**
+     * Create an instance of the {@link BcPublicKeyDataDecryptorFactory} which is based on the provided session key.
+     * This factory will not source the session key from decrypting a public key encrypted session key packet (PKESK)
+     * with a private key, but instead use the provided session key directly to decrypt the data.
+     *
+     * @param sessionKeyAlgorithm session key algorithm
+     * @param sessionKey session key
+     * @return decryptor factory
+     */
     public static BcPublicKeyDataDecryptorFactory createFactoryFromSessionKey(int sessionKeyAlgorithm, byte[] sessionKey)
     {
         return new BcPublicKeyDataDecryptorFactory()

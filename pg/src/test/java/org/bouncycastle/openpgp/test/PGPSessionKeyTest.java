@@ -30,6 +30,8 @@ import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
@@ -92,9 +94,13 @@ public class PGPSessionKeyTest extends SimpleTest {
     @Override
     public void performTest() throws Exception {
         verifyPublicKeyDecryptionYieldsCorrectSessionData();
-        verifyPublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
         verifyPasswordBasedDecryptionYieldsCorrectSessionData();
-        verifyPBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
+
+        verifyBcPublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
+        verifyJcePublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
+
+        verifyBcPBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
+        verifyJcePBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
     }
 
     private void verifyPublicKeyDecryptionYieldsCorrectSessionData() throws IOException, PGPException {
@@ -124,7 +130,7 @@ public class PGPSessionKeyTest extends SimpleTest {
         ));
     }
 
-    private void verifyPublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
+    private void verifyBcPublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
         ByteArrayInputStream msgIn = new ByteArrayInputStream(PK_ENC_MESSAGE.getBytes(StandardCharsets.UTF_8));
         ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
@@ -133,6 +139,28 @@ public class PGPSessionKeyTest extends SimpleTest {
 
         PublicKeyDataDecryptorFactory decryptorFactory = BcPublicKeyDataDecryptorFactory
                 .createFactoryFromSessionKey(PK_ENC_SESSIONKEY_ALG, Hex.decode(PK_ENC_SESSIONKEY));
+        InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
+
+        objectFactory = new BcPGPObjectFactory(decrypted);
+        PGPLiteralData literalData = (PGPLiteralData) objectFactory.nextObject();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Streams.pipeAll(literalData.getDataStream(), out);
+
+        literalData.getDataStream().close();
+        isTrue(Arrays.equals("Hello World :)".getBytes(StandardCharsets.UTF_8), out.toByteArray()));
+    }
+
+    private void verifyJcePublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(PK_ENC_MESSAGE.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) objectFactory.nextObject();
+        PGPPublicKeyEncryptedData encryptedData = (PGPPublicKeyEncryptedData) encryptedDataList.iterator().next();
+
+        PublicKeyDataDecryptorFactory decryptorFactory =
+                new JcePublicKeyDataDecryptorFactoryBuilder()
+                        .createFactoryFromSessionKey(PK_ENC_SESSIONKEY_ALG, Hex.decode(PK_ENC_SESSIONKEY));
         InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
 
         objectFactory = new BcPGPObjectFactory(decrypted);
@@ -160,7 +188,7 @@ public class PGPSessionKeyTest extends SimpleTest {
         isTrue(Arrays.equals(Hex.decode(PBE_ENC_SESSIONKEY), encryptedData.getSessionKey(decryptorFactory)));
     }
 
-    private void verifyPBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
+    private void verifyJcePBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
         ByteArrayInputStream msgIn = new ByteArrayInputStream(PBE_MESSAGE.getBytes(StandardCharsets.UTF_8));
         ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
 
@@ -168,7 +196,33 @@ public class PGPSessionKeyTest extends SimpleTest {
         PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) objectFactory.nextObject();
         PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData) encryptedDataList.iterator().next();
 
-        PBEDataDecryptorFactory decryptorFactory = BcPBEDataDecryptorFactory.createFactoryFromSessionKey(PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY));
+        PBEDataDecryptorFactory decryptorFactory = new JcePBEDataDecryptorFactoryBuilder().createFactoryFromSessionKey(
+                        PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY));
+        InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
+
+        objectFactory = new BcPGPObjectFactory(decrypted);
+        PGPCompressedData compressedData = (PGPCompressedData) objectFactory.nextObject();
+        InputStream decompressed = compressedData.getDataStream();
+        objectFactory = new BcPGPObjectFactory(decompressed);
+        PGPLiteralData literalData = (PGPLiteralData) objectFactory.nextObject();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Streams.pipeAll(literalData.getDataStream(), out);
+
+        literalData.getDataStream().close();
+        isTrue(Arrays.equals("Hello, World!\n".getBytes(StandardCharsets.UTF_8), out.toByteArray()));
+    }
+
+    private void verifyBcPBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(PBE_MESSAGE.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
+
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) objectFactory.nextObject();
+        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData) encryptedDataList.iterator().next();
+
+        PBEDataDecryptorFactory decryptorFactory = BcPBEDataDecryptorFactory.createFactoryFromSessionKey(
+                PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY));
         InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
 
         objectFactory = new BcPGPObjectFactory(decrypted);

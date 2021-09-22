@@ -144,27 +144,78 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
     public PublicKeyDataDecryptorFactory build(final PGPPrivateKey privKey)
     {
-         return new PublicKeyDataDecryptorFactory()
-         {
-             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
-                 throws PGPException
-             {
-                 if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
-                 {
-                     return decryptSessionData(keyConverter, privKey, secKeyData);
-                 }
-                 PrivateKey jcePrivKey = keyConverter.getPrivateKey(privKey);
-                 int expectedPayLoadSize = getExpectedPayloadSize(jcePrivKey);
+         return new JcePublicKeyDataDecryptorFactory(keyConverter, privKey);
+    }
 
-                 return decryptSessionData(keyAlgorithm, jcePrivKey, expectedPayLoadSize, secKeyData);
-             }
 
-             public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
-                 throws PGPException
-             {
-                 return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
-             }
-         };
+    /**
+     * Create an instance of the {@link JcePublicKeyDataDecryptorFactory} which is based on the provided session key.
+     * This factory will not source the session key from decrypting a public key encrypted session key packet (PKESK)
+     * with a private key, but instead use the provided session key directly to decrypt the data.
+     *
+     * @param sessionKeyAlgorithm session key algorithm
+     * @param sessionKey session key
+     * @return decryptor factory
+     */
+    public PublicKeyDataDecryptorFactory createFactoryFromSessionKey(int sessionKeyAlgorithm, byte[] sessionKey)
+    {
+        return new JcePublicKeyDataDecryptorFactory(keyConverter, null)
+        {
+            @Override
+            public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
+            {
+                byte[] sessionData = new byte[sessionKey.length + 3];
+                sessionData[0] = (byte) sessionKeyAlgorithm;
+                System.arraycopy(sessionKey, 0, sessionData, 1, sessionKey.length);
+                writeChecksum(sessionData);
+                return sessionData;
+            }
+
+            private void writeChecksum(byte[] sessionData)
+            {
+                int    check = 0;
+                for (int i = 1; i != sessionData.length - 2; i++)
+                {
+                    check += sessionData[i] & 0xff;
+                }
+
+                sessionData[sessionData.length - 2] = (byte) (check >> 8);
+                sessionData[sessionData.length - 1] = (byte) (check);
+            }
+        };
+    }
+
+    private class JcePublicKeyDataDecryptorFactory implements PublicKeyDataDecryptorFactory
+    {
+
+        private final JcaPGPKeyConverter keyConverter;
+        private final PGPPrivateKey privKey;
+
+        public JcePublicKeyDataDecryptorFactory(JcaPGPKeyConverter keyConverter, PGPPrivateKey privKey)
+        {
+            this.keyConverter = keyConverter;
+            this.privKey = privKey;
+        }
+
+        public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
+                throws PGPException
+        {
+            if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
+            {
+                return decryptSessionData(keyConverter, privKey, secKeyData);
+            }
+            PrivateKey jcePrivKey = keyConverter.getPrivateKey(privKey);
+            int expectedPayLoadSize = getExpectedPayloadSize(jcePrivKey);
+
+            return decryptSessionData(keyAlgorithm, jcePrivKey, expectedPayLoadSize, secKeyData);
+        }
+
+        public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
+                throws PGPException
+        {
+            return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
+        }
+
     }
 
     private byte[] decryptSessionData(JcaPGPKeyConverter converter, PGPPrivateKey privKey, byte[][] secKeyData)
