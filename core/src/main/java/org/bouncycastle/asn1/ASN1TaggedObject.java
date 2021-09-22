@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
@@ -212,6 +211,18 @@ public abstract class ASN1TaggedObject
         {
         case DECLARED_EXPLICIT:
         case PARSED_EXPLICIT:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    boolean isParsed()
+    {
+        switch (explicitness)
+        {
+        case PARSED_EXPLICIT:
+        case PARSED_IMPLICIT:
             return true;
         default:
             return false;

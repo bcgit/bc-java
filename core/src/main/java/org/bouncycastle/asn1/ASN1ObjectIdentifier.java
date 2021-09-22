@@ -80,6 +80,20 @@ public class ASN1ObjectIdentifier
      */
     public static ASN1ObjectIdentifier getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
+        /*
+         * TODO[asn1] This block here is for backward compatibility, but should eventually be removed.
+         * 
+         * - see https://github.com/bcgit/bc-java/issues/1015
+         */
+        if (!explicit && !taggedObject.isParsed())
+        {
+            ASN1Primitive base = taggedObject.getObject();
+            if (!(base instanceof ASN1ObjectIdentifier))
+            {
+                return fromContents(ASN1OctetString.getInstance(base).getOctets());
+            }
+        }
+
         return (ASN1ObjectIdentifier)TYPE.getContextInstance(taggedObject, explicit);
     }
 
