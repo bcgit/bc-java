@@ -71,6 +71,28 @@ public class PGPPublicKeyEncryptedData
     }
 
     /**
+     * Return the symmetric session key required to decrypt the data protected by this object.
+     *
+     * @param dataDecryptorFactory decryptor factory to use to recover the session data.
+     * @return session key used to decrypt the data protected by this object
+     * @throws PGPException if the session data cannot be recovered.
+     */
+    public byte[] getSessionKey(
+            PublicKeyDataDecryptorFactory dataDecryptorFactory)
+            throws PGPException
+    {
+        byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
+        if (!confirmCheckSum(sessionData))
+        {
+            throw new PGPKeyValidationException("key checksum failed");
+        }
+
+        byte[] sessionKey = new byte[sessionData.length - 3];
+        System.arraycopy(sessionData, 1, sessionKey, 0, sessionKey.length);
+        return sessionKey;
+    }
+
+    /**
      * Open an input stream which will provide the decrypted data protected by this object.
      *
      * @param dataDecryptorFactory  decryptor factory to use to recover the session data and provide the stream.

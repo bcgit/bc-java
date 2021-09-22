@@ -59,6 +59,21 @@ public class PGPPBEEncryptedData
     }
 
     /**
+     * Return the symmetric session key required to decrypt the data protected by this object.
+     *
+     * @param dataDecryptorFactory decryptor factory used to recover the session data.
+     * @return session key
+     * @throws PGPException if the session data cannot be recovered
+     */
+    public byte[] getSessionKey(PBEDataDecryptorFactory dataDecryptorFactory) throws PGPException {
+        byte[]       key = dataDecryptorFactory.makeKeyFromPassPhrase(keyData.getEncAlgorithm(), keyData.getS2K());
+        byte[]       sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
+        byte[]       sessionKey = new byte[sessionData.length - 1];
+        System.arraycopy(sessionData, 1, sessionKey, 0, sessionKey.length);
+        return sessionKey;
+    }
+
+    /**
      * Open an input stream which will provide the decrypted data protected by this object.
      * 
      * @param dataDecryptorFactory decryptor factory to use to recover the session data and provide
