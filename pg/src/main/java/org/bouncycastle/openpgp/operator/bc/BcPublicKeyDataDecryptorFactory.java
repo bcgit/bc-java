@@ -38,6 +38,12 @@ public class BcPublicKeyDataDecryptorFactory
 
     private final PGPPrivateKey pgpPrivKey;
 
+    // protected constructor for createFactoryFromSessionKey method
+    protected BcPublicKeyDataDecryptorFactory()
+    {
+        pgpPrivKey = null;
+    }
+
     public BcPublicKeyDataDecryptorFactory(PGPPrivateKey pgpPrivKey)
     {
         this.pgpPrivKey = pgpPrivKey;
@@ -185,5 +191,33 @@ public class BcPublicKeyDataDecryptorFactory
         BlockCipher engine = BcImplProvider.createBlockCipher(encAlgorithm);
 
         return BcUtil.createDataDecryptor(withIntegrityPacket, engine, key);
+    }
+
+    public static BcPublicKeyDataDecryptorFactory createFactoryFromSessionKey(int sessionKeyAlgorithm, byte[] sessionKey)
+    {
+        return new BcPublicKeyDataDecryptorFactory()
+        {
+            @Override
+            public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
+            {
+                byte[] sessionData = new byte[sessionKey.length + 3];
+                sessionData[0] = (byte) sessionKeyAlgorithm;
+                System.arraycopy(sessionKey, 0, sessionData, 1, sessionKey.length);
+                writeChecksum(sessionData);
+                return sessionData;
+            }
+
+            private void writeChecksum(byte[] sessionData)
+            {
+                int    check = 0;
+                for (int i = 1; i != sessionData.length - 2; i++)
+                {
+                    check += sessionData[i] & 0xff;
+                }
+
+                sessionData[sessionData.length - 2] = (byte) (check >> 8);
+                sessionData[sessionData.length - 1] = (byte) (check);
+            }
+        };
     }
 }

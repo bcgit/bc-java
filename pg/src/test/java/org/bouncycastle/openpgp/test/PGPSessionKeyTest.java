@@ -1,7 +1,9 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.util.Arrays;
@@ -10,8 +12,10 @@ import java.util.Iterator;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
@@ -27,6 +31,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class PGPSessionKeyTest extends SimpleTest {
@@ -87,7 +92,9 @@ public class PGPSessionKeyTest extends SimpleTest {
     @Override
     public void performTest() throws Exception {
         verifyPublicKeyDecryptionYieldsCorrectSessionData();
+        verifyPublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
         verifyPasswordBasedDecryptionYieldsCorrectSessionData();
+        verifyPBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
     }
 
     private void verifyPublicKeyDecryptionYieldsCorrectSessionData() throws IOException, PGPException {
@@ -117,6 +124,27 @@ public class PGPSessionKeyTest extends SimpleTest {
         ));
     }
 
+    private void verifyPublicKeyDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(PK_ENC_MESSAGE.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) objectFactory.nextObject();
+        PGPPublicKeyEncryptedData encryptedData = (PGPPublicKeyEncryptedData) encryptedDataList.iterator().next();
+
+        PublicKeyDataDecryptorFactory decryptorFactory = BcPublicKeyDataDecryptorFactory
+                .createFactoryFromSessionKey(PK_ENC_SESSIONKEY_ALG, Hex.decode(PK_ENC_SESSIONKEY));
+        InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
+
+        objectFactory = new BcPGPObjectFactory(decrypted);
+        PGPLiteralData literalData = (PGPLiteralData) objectFactory.nextObject();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Streams.pipeAll(literalData.getDataStream(), out);
+
+        literalData.getDataStream().close();
+        isTrue(Arrays.equals("Hello World :)".getBytes(StandardCharsets.UTF_8), out.toByteArray()));
+    }
+
     private void verifyPasswordBasedDecryptionYieldsCorrectSessionData() throws IOException, PGPException {
         ByteArrayInputStream msgIn = new ByteArrayInputStream(PBE_MESSAGE.getBytes(StandardCharsets.UTF_8));
         ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
@@ -130,5 +158,29 @@ public class PGPSessionKeyTest extends SimpleTest {
 
         isEquals(PBE_ENC_SESSIONKEY_ALG, encryptedData.getSymmetricAlgorithm(decryptorFactory));
         isTrue(Arrays.equals(Hex.decode(PBE_ENC_SESSIONKEY), encryptedData.getSessionKey(decryptorFactory)));
+    }
+
+    private void verifyPBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully() throws IOException, PGPException {
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(PBE_MESSAGE.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
+
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) objectFactory.nextObject();
+        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData) encryptedDataList.iterator().next();
+
+        PBEDataDecryptorFactory decryptorFactory = BcPBEDataDecryptorFactory.createFactoryFromSessionKey(PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY));
+        InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
+
+        objectFactory = new BcPGPObjectFactory(decrypted);
+        PGPCompressedData compressedData = (PGPCompressedData) objectFactory.nextObject();
+        InputStream decompressed = compressedData.getDataStream();
+        objectFactory = new BcPGPObjectFactory(decompressed);
+        PGPLiteralData literalData = (PGPLiteralData) objectFactory.nextObject();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Streams.pipeAll(literalData.getDataStream(), out);
+
+        literalData.getDataStream().close();
+        isTrue(Arrays.equals("Hello, World!\n".getBytes(StandardCharsets.UTF_8), out.toByteArray()));
     }
 }

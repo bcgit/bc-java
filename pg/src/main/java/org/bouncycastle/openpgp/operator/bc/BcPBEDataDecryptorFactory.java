@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.bc;
 
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.openpgp.PGPException;
@@ -22,6 +23,11 @@ public class BcPBEDataDecryptorFactory
     public BcPBEDataDecryptorFactory(char[] pass, BcPGPDigestCalculatorProvider calculatorProvider)
     {
         super(pass, calculatorProvider);
+    }
+
+    protected BcPBEDataDecryptorFactory()
+    {
+        super();
     }
 
     public byte[] recoverSessionData(int keyAlgorithm, byte[] key, byte[] secKeyData)
@@ -64,5 +70,21 @@ public class BcPBEDataDecryptorFactory
         BlockCipher engine = BcImplProvider.createBlockCipher(encAlgorithm);
 
         return BcUtil.createDataDecryptor(withIntegrityPacket, engine, key);
+    }
+
+    public static BcPBEDataDecryptorFactory createFactoryFromSessionKey(int sessionKeyAlgorithm, byte[] sessionKey)
+    {
+        return new BcPBEDataDecryptorFactory()
+        {
+            @Override
+            public byte[] makeKeyFromPassPhrase(int keyAlgorithm, S2K s2k) throws PGPException
+            {
+                if (keyAlgorithm != sessionKeyAlgorithm)
+                {
+                    throw new PGPException("Unexpected symmetric key algorithm encountered. Expected " + sessionKeyAlgorithm + ", got " + keyAlgorithm);
+                }
+                return sessionKey;
+            }
+        };
     }
 }

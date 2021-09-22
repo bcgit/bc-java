@@ -13,6 +13,11 @@ public abstract class PBEDataDecryptorFactory
     private char[] passPhrase;
     private PGPDigestCalculatorProvider calculatorProvider;
 
+    protected PBEDataDecryptorFactory()
+    {
+
+    }
+
     /**
      * Construct a PBE data decryptor factory.
      *
