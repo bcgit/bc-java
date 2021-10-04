@@ -24,19 +24,19 @@ import org.bouncycastle.util.Strings;
 public class PGPPublicKeyRingCollection
     implements Iterable<PGPPublicKeyRing>
 {
-    private Map   pubRings = new HashMap();
-    private List  order = new ArrayList();
-    
+    private Map pubRings = new HashMap();
+    private List order = new ArrayList();
+
     private PGPPublicKeyRingCollection(
-        Map     pubRings,
-        List    order)
+        Map pubRings,
+        List order)
     {
         this.pubRings = pubRings;
         this.order = order;
     }
 
     public PGPPublicKeyRingCollection(
-        byte[]    encoding,
+        byte[] encoding,
         KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException, PGPException
     {
@@ -46,64 +46,65 @@ public class PGPPublicKeyRingCollection
     /**
      * Build a PGPPublicKeyRingCollection from the passed in input stream.
      *
-     * @param in  input stream containing data
+     * @param in input stream containing data
      * @throws IOException if a problem parsing the base stream occurs
      * @throws PGPException if an object is encountered which isn't a PGPPublicKeyRing
      */
     public PGPPublicKeyRingCollection(
-        InputStream    in,
+        InputStream in,
         KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException, PGPException
     {
-        PGPObjectFactory    pgpFact = new PGPObjectFactory(in, fingerPrintCalculator);
-        Object              obj;
+        PGPObjectFactory pgpFact = new PGPObjectFactory(in, fingerPrintCalculator);
+        Object obj;
 
         while ((obj = pgpFact.nextObject()) != null)
         {
             // Marker packets must be ignored
-            if (obj instanceof PGPMarker) {
+            if (obj instanceof PGPMarker)
+            {
                 continue;
             }
             if (!(obj instanceof PGPPublicKeyRing))
             {
                 throw new PGPException(obj.getClass().getName() + " found where PGPPublicKeyRing expected");
             }
-            
-            PGPPublicKeyRing    pgpPub = (PGPPublicKeyRing)obj;
-            Long    key = new Long(pgpPub.getPublicKey().getKeyID());
-            
+
+            PGPPublicKeyRing pgpPub = (PGPPublicKeyRing)obj;
+            Long key = new Long(pgpPub.getPublicKey().getKeyID());
+
             pubRings.put(key, pgpPub);
             order.add(key);
         }
     }
-    
+
     public PGPPublicKeyRingCollection(
-        Collection<PGPPublicKeyRing>    collection)
+        Collection<PGPPublicKeyRing> collection)
         throws IOException, PGPException
     {
-        Iterator                    it = collection.iterator();
-        
+        Iterator it = collection.iterator();
+
         while (it.hasNext())
         {
-            PGPPublicKeyRing  pgpPub = (PGPPublicKeyRing)it.next();
-            
-            Long              key = new Long(pgpPub.getPublicKey().getKeyID());
-            
+            PGPPublicKeyRing pgpPub = (PGPPublicKeyRing)it.next();
+
+            Long key = new Long(pgpPub.getPublicKey().getKeyID());
+
             pubRings.put(key, pgpPub);
             order.add(key);
         }
     }
-    
+
     /**
      * Return the number of rings in this collection.
-     * 
+     *
      * @return size of the collection
      */
     public int size()
     {
         return order.size();
     }
-    
+
     /**
      * return the public key rings making up this collection.
      */
@@ -114,30 +115,30 @@ public class PGPPublicKeyRingCollection
 
     /**
      * Return an iterator of the key rings associated with the passed in userID.
-     * 
+     *
      * @param userID the user ID to be matched.
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
     public Iterator<PGPPublicKeyRing> getKeyRings(
-        String    userID) 
+        String userID)
         throws PGPException
-    {   
+    {
         return getKeyRings(userID, false, false);
     }
 
     /**
      * Return an iterator of the key rings associated with the passed in userID.
      * <p>
-     * 
-     * @param userID the user ID to be matched.
+     *
+     * @param userID       the user ID to be matched.
      * @param matchPartial if true userID need only be a substring of an actual ID string to match.
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
     public Iterator<PGPPublicKeyRing> getKeyRings(
-        String    userID,
-        boolean   matchPartial) 
+        String userID,
+        boolean matchPartial)
         throws PGPException
     {
         return getKeyRings(userID, matchPartial, false);
@@ -146,21 +147,21 @@ public class PGPPublicKeyRingCollection
     /**
      * Return an iterator of the key rings associated with the passed in userID.
      * <p>
-     * 
-     * @param userID the user ID to be matched.
+     *
+     * @param userID       the user ID to be matched.
      * @param matchPartial if true userID need only be a substring of an actual ID string to match.
-     * @param ignoreCase if true case is ignored in user ID comparisons.
+     * @param ignoreCase   if true case is ignored in user ID comparisons.
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
     public Iterator<PGPPublicKeyRing> getKeyRings(
-        String    userID,
-        boolean   matchPartial,
-        boolean   ignoreCase) 
+        String userID,
+        boolean matchPartial,
+        boolean ignoreCase)
         throws PGPException
     {
-        Iterator    it = this.getKeyRings();
-        List        rings = new ArrayList();
+        Iterator it = this.getKeyRings();
+        List rings = new ArrayList();
 
         if (ignoreCase)
         {
@@ -170,7 +171,7 @@ public class PGPPublicKeyRingCollection
         while (it.hasNext())
         {
             PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
-            Iterator         uIt = pubRing.getPublicKey().getUserIDs();
+            Iterator uIt = pubRing.getPublicKey().getUserIDs();
 
             while (uIt.hasNext())
             {
@@ -196,68 +197,68 @@ public class PGPPublicKeyRingCollection
                 }
             }
         }
-    
+
         return rings.iterator();
     }
 
     /**
      * Return the PGP public key associated with the given key id.
-     * 
+     *
      * @param keyID
      * @return the PGP public key
      * @throws PGPException
      */
     public PGPPublicKey getPublicKey(
-        long        keyID) 
+        long keyID)
         throws PGPException
-    {    
-        Iterator    it = this.getKeyRings();
-        
+    {
+        Iterator it = this.getKeyRings();
+
         while (it.hasNext())
         {
-            PGPPublicKeyRing    pubRing = (PGPPublicKeyRing)it.next();
-            PGPPublicKey        pub = pubRing.getPublicKey(keyID);
-            
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
+            PGPPublicKey pub = pubRing.getPublicKey(keyID);
+
             if (pub != null)
             {
                 return pub;
             }
         }
-    
+
         return null;
     }
-    
+
     /**
      * Return the public key ring which contains the key referred to by keyID.
-     * 
+     *
      * @param keyID key ID to match against
      * @return the public key ring
      * @throws PGPException
      */
     public PGPPublicKeyRing getPublicKeyRing(
-        long    keyID) 
+        long keyID)
         throws PGPException
     {
-        Long    id = new Long(keyID);
-        
+        Long id = new Long(keyID);
+
         if (pubRings.containsKey(id))
         {
             return (PGPPublicKeyRing)pubRings.get(id);
         }
-        
-        Iterator    it = this.getKeyRings();
-        
+
+        Iterator it = this.getKeyRings();
+
         while (it.hasNext())
         {
-            PGPPublicKeyRing    pubRing = (PGPPublicKeyRing)it.next();
-            PGPPublicKey        pub = pubRing.getPublicKey(keyID);
-            
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
+            PGPPublicKey pub = pubRing.getPublicKey(keyID);
+
             if (pub != null)
             {
                 return pubRing;
             }
         }
-    
+
         return null;
     }
 
@@ -272,12 +273,12 @@ public class PGPPublicKeyRingCollection
         byte[] fingerprint)
         throws PGPException
     {
-        Iterator    it = this.getKeyRings();
+        Iterator it = this.getKeyRings();
 
         while (it.hasNext())
         {
-            PGPPublicKeyRing    pubRing = (PGPPublicKeyRing)it.next();
-            PGPPublicKey        pub = pubRing.getPublicKey(fingerprint);
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
+            PGPPublicKey pub = pubRing.getPublicKey(fingerprint);
 
             if (pub != null)
             {
@@ -299,12 +300,12 @@ public class PGPPublicKeyRingCollection
         byte[] fingerprint)
         throws PGPException
     {
-        Iterator    it = this.getKeyRings();
+        Iterator it = this.getKeyRings();
 
         while (it.hasNext())
         {
-            PGPPublicKeyRing    pubRing = (PGPPublicKeyRing)it.next();
-            PGPPublicKey        pub = pubRing.getPublicKey(fingerprint);
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
+            PGPPublicKey pub = pubRing.getPublicKey(fingerprint);
 
             if (pub != null)
             {
@@ -325,11 +326,11 @@ public class PGPPublicKeyRingCollection
     {
         List keysWithSigs = new ArrayList();
 
-        for (Iterator it = this.iterator(); it.hasNext();)
+        for (Iterator it = this.iterator(); it.hasNext(); )
         {
-            PGPPublicKeyRing    k = (PGPPublicKeyRing)it.next();
+            PGPPublicKeyRing k = (PGPPublicKeyRing)it.next();
 
-            for (Iterator keyIt = k.getKeysWithSignaturesBy(keyID); keyIt.hasNext();)
+            for (Iterator keyIt = k.getKeysWithSignaturesBy(keyID); keyIt.hasNext(); )
             {
                 keysWithSigs.add(keyIt.next());
             }
@@ -362,22 +363,22 @@ public class PGPPublicKeyRingCollection
         return getPublicKey(fingerprint) != null;
     }
 
-    public byte[] getEncoded() 
+    public byte[] getEncoded()
         throws IOException
     {
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
         this.encode(bOut);
-        
+
         return bOut.toByteArray();
     }
-    
+
     public void encode(
-        OutputStream    outStream) 
+        OutputStream outStream)
         throws IOException
     {
-        BCPGOutputStream    out;
-        
+        BCPGOutputStream out;
+
         if (outStream instanceof BCPGOutputStream)
         {
             out = (BCPGOutputStream)outStream;
@@ -387,81 +388,81 @@ public class PGPPublicKeyRingCollection
             out = new BCPGOutputStream(outStream);
         }
 
-        Iterator    it = order.iterator();
+        Iterator it = order.iterator();
         while (it.hasNext())
         {
-            PGPPublicKeyRing    sr = (PGPPublicKeyRing)pubRings.get(it.next());
-            
+            PGPPublicKeyRing sr = (PGPPublicKeyRing)pubRings.get(it.next());
+
             sr.encode(out);
         }
     }
-    
-    
+
+
     /**
      * Return a new collection object containing the contents of the passed in collection and
      * the passed in public key ring.
-     * 
+     *
      * @param ringCollection the collection the ring to be added to.
-     * @param publicKeyRing the key ring to be added.
+     * @param publicKeyRing  the key ring to be added.
      * @return a new collection merging the current one with the passed in ring.
-     * @exception IllegalArgumentException if the keyID for the passed in ring is already present.
+     * @throws IllegalArgumentException if the keyID for the passed in ring is already present.
      */
     public static PGPPublicKeyRingCollection addPublicKeyRing(
         PGPPublicKeyRingCollection ringCollection,
-        PGPPublicKeyRing           publicKeyRing)
+        PGPPublicKeyRing publicKeyRing)
     {
-        Long        key = new Long(publicKeyRing.getPublicKey().getKeyID());
-        
+        Long key = new Long(publicKeyRing.getPublicKey().getKeyID());
+
         if (ringCollection.pubRings.containsKey(key))
         {
             throw new IllegalArgumentException("Collection already contains a key with a keyID for the passed in ring.");
         }
-        
-        Map     newPubRings = new HashMap(ringCollection.pubRings);
-        List    newOrder = new ArrayList(ringCollection.order); 
-        
+
+        Map newPubRings = new HashMap(ringCollection.pubRings);
+        List newOrder = new ArrayList(ringCollection.order);
+
         newPubRings.put(key, publicKeyRing);
         newOrder.add(key);
-        
+
         return new PGPPublicKeyRingCollection(newPubRings, newOrder);
     }
-    
+
     /**
      * Return a new collection object containing the contents of this collection with
      * the passed in public key ring removed.
-     * 
+     *
      * @param ringCollection the collection the ring to be removed from.
-     * @param publicKeyRing the key ring to be removed.
+     * @param publicKeyRing  the key ring to be removed.
      * @return a new collection not containing the passed in ring.
-     * @exception IllegalArgumentException if the keyID for the passed in ring not present.
+     * @throws IllegalArgumentException if the keyID for the passed in ring not present.
      */
     public static PGPPublicKeyRingCollection removePublicKeyRing(
         PGPPublicKeyRingCollection ringCollection,
-        PGPPublicKeyRing           publicKeyRing)
+        PGPPublicKeyRing publicKeyRing)
     {
-        Long        key = new Long(publicKeyRing.getPublicKey().getKeyID());
-        
+        Long key = new Long(publicKeyRing.getPublicKey().getKeyID());
+
         if (!ringCollection.pubRings.containsKey(key))
         {
             throw new IllegalArgumentException("Collection does not contain a key with a keyID for the passed in ring.");
         }
-        
-        Map     newPubRings = new HashMap(ringCollection.pubRings);
-        List    newOrder = new ArrayList(ringCollection.order); 
-        
+
+        Map newPubRings = new HashMap(ringCollection.pubRings);
+        List newOrder = new ArrayList(ringCollection.order);
+
         newPubRings.remove(key);
-        
+
         for (int i = 0; i < newOrder.size(); i++)
         {
-            Long    r = (Long)newOrder.get(i);
-            
+            Long r = (Long)newOrder.get(i);
+
             if (r.longValue() == key.longValue())
             {
                 newOrder.remove(i);
                 break;
             }
         }
-        
+
         return new PGPPublicKeyRingCollection(newPubRings, newOrder);
     }
 
