@@ -524,7 +524,7 @@ public abstract class TlsProtocol
                     .setServerExtensions(this.serverExtensions)
                     .build();
 
-                this.tlsSession = TlsUtils.importSession(this.tlsSession.getSessionID(), this.sessionParameters);
+                this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), this.sessionParameters);
             }
             else
             {
@@ -668,8 +668,21 @@ public abstract class TlsProtocol
              */
             case HandshakeType.hello_request:
             case HandshakeType.key_update:
-            case HandshakeType.new_session_ticket:
                 break;
+
+            /*
+             * Not included in the transcript for (D)TLS 1.3+
+             */
+            case HandshakeType.new_session_ticket:
+            {
+                ProtocolVersion negotiatedVersion = getContext().getServerVersion();
+                if (null != negotiatedVersion && !TlsUtils.isTLSv13(negotiatedVersion))
+                {
+                    buf.updateHash(handshakeHash);
+                }
+
+                break;
+            }
 
             /*
              * These message types are deferred to the handler to explicitly update the transcript.
@@ -1068,8 +1081,21 @@ public abstract class TlsProtocol
          */
         case HandshakeType.hello_request:
         case HandshakeType.key_update:
-        case HandshakeType.new_session_ticket:
             break;
+
+        /*
+         * Not included in the transcript for (D)TLS 1.3+
+         */
+        case HandshakeType.new_session_ticket:
+        {
+            ProtocolVersion negotiatedVersion = getContext().getServerVersion();
+            if (null != negotiatedVersion && !TlsUtils.isTLSv13(negotiatedVersion))
+            {
+                handshakeHash.update(buf, off, len);
+            }
+
+            break;
+        }
 
         /*
          * These message types are deferred to the writer to explicitly update the transcript.
