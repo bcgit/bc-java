@@ -735,7 +735,9 @@ public class TlsClientProtocol
                  * RFC 5077 3.4. If the client receives a session ticket from the server, then it
                  * discards any Session ID that was sent in the ServerHello.
                  */
+                securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
                 invalidateSession();
+                this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
 
                 receiveNewSessionTicket(buf);
                 break;
@@ -1050,13 +1052,8 @@ public class TlsClientProtocol
 
         TlsUtils.establish13PhaseSecrets(tlsClientContext, pskEarlySecret, sharedSecret);
 
-        {
-            invalidateSession();
-
-            this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
-            this.sessionParameters = null;
-            this.sessionMasterSecret = null;
-        }
+        invalidateSession();
+        this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
     }
 
     protected void process13ServerHelloCoda(ServerHello serverHello, boolean afterHelloRetryRequest) throws IOException
@@ -1426,10 +1423,7 @@ public class TlsClientProtocol
         else
         {
             invalidateSession();
-
             this.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
-            this.sessionParameters = null;
-            this.sessionMasterSecret = null;
         }
     }
 

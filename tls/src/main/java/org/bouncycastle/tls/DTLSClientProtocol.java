@@ -181,10 +181,7 @@ public class DTLSClientProtocol
         }
 
         invalidateSession(state);
-
         state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
-        state.sessionParameters = null;
-        state.sessionMasterSecret = null;
 
         serverMessage = handshake.receiveMessage();
 
@@ -349,6 +346,14 @@ public class DTLSClientProtocol
             serverMessage = handshake.receiveMessage();
             if (serverMessage.getType() == HandshakeType.new_session_ticket)
             {
+                /*
+                 * RFC 5077 3.4. If the client receives a session ticket from the server, then it
+                 * discards any Session ID that was sent in the ServerHello.
+                 */
+                securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
+                invalidateSession(state);
+                state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
+
                 processNewSessionTicket(state, serverMessage.getBody());
             }
             else
@@ -380,7 +385,7 @@ public class DTLSClientProtocol
             .setServerExtensions(state.serverExtensions)
             .build();
 
-        state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
+        state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), state.sessionParameters);
 
         securityParameters.tlsUnique = securityParameters.getLocalVerifyData();
 
