@@ -39,19 +39,20 @@ public abstract class PGPKeyRing
         BCPGInputStream pIn)
         throws IOException
     {
-        if (pIn.nextPacketTag() == PacketTags.TRUST)
+        int tag = pIn.nextPacketTag();
+        while (tag == PacketTags.MARKER)
+        {
+            pIn.readPacket();
+            tag = pIn.nextPacketTag();
+        }
+
+        if (tag == PacketTags.TRUST)
         {
             return (TrustPacket)pIn.readPacket();
         }
-        else if (pIn.nextPacketTag() == PacketTags.MARKER)
-        {
-            pIn.readPacket();
-            return readOptionalTrustPacket(pIn);
-        }
-        else
-        {
-            return null;
-        }
+
+        return null;
+
     }
 
     static List readSignaturesAndTrust(
@@ -66,10 +67,12 @@ public abstract class PGPKeyRing
                 || pIn.nextPacketTag() == PacketTags.MARKER)
             {
                 Packet packet = pIn.readPacket();
-                if (packet instanceof MarkerPacket) {
+                if (packet instanceof MarkerPacket)
+                {
                     continue;
                 }
-                if (packet instanceof SignaturePacket) {
+                if (packet instanceof SignaturePacket)
+                {
                     SignaturePacket signaturePacket = (SignaturePacket)packet;
                     TrustPacket trustPacket = readOptionalTrustPacket(pIn);
 
@@ -98,7 +101,8 @@ public abstract class PGPKeyRing
             || pIn.nextPacketTag() == PacketTags.MARKER)
         {
             Packet obj = pIn.readPacket();
-            if (obj instanceof MarkerPacket) {
+            if (obj instanceof MarkerPacket)
+            {
                 continue;
             }
 
