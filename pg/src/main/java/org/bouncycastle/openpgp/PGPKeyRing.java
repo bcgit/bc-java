@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.MarkerPacket;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.SignaturePacket;
@@ -38,9 +39,19 @@ public abstract class PGPKeyRing
         BCPGInputStream pIn)
         throws IOException
     {
-        return (pIn.nextPacketTag() == PacketTags.TRUST)
-            ?   (TrustPacket)pIn.readPacket()
-            :   null;
+        if (pIn.nextPacketTag() == PacketTags.TRUST)
+        {
+            return (TrustPacket)pIn.readPacket();
+        }
+        else if (pIn.nextPacketTag() == PacketTags.MARKER)
+        {
+            pIn.readPacket();
+            return readOptionalTrustPacket(pIn);
+        }
+        else
+        {
+            return null;
+        }
     }
 
     static List readSignaturesAndTrust(
@@ -51,12 +62,19 @@ public abstract class PGPKeyRing
         {
             List sigList = new ArrayList();
 
-            while (pIn.nextPacketTag() == PacketTags.SIGNATURE)
+            while (pIn.nextPacketTag() == PacketTags.SIGNATURE
+                || pIn.nextPacketTag() == PacketTags.MARKER)
             {
-                SignaturePacket signaturePacket = (SignaturePacket)pIn.readPacket();
-                TrustPacket trustPacket = readOptionalTrustPacket(pIn);
+                Packet packet = pIn.readPacket();
+                if (packet instanceof MarkerPacket) {
+                    continue;
+                }
+                if (packet instanceof SignaturePacket) {
+                    SignaturePacket signaturePacket = (SignaturePacket)packet;
+                    TrustPacket trustPacket = readOptionalTrustPacket(pIn);
 
-                sigList.add(new PGPSignature(signaturePacket, trustPacket));
+                    sigList.add(new PGPSignature(signaturePacket, trustPacket));
+                }
             }
 
             return sigList;
@@ -76,9 +94,14 @@ public abstract class PGPKeyRing
         throws IOException
     {
         while (pIn.nextPacketTag() == PacketTags.USER_ID
-            || pIn.nextPacketTag() == PacketTags.USER_ATTRIBUTE)
+            || pIn.nextPacketTag() == PacketTags.USER_ATTRIBUTE
+            || pIn.nextPacketTag() == PacketTags.MARKER)
         {
             Packet obj = pIn.readPacket();
+            if (obj instanceof MarkerPacket) {
+                continue;
+            }
+
             if (obj instanceof UserIDPacket)
             {
                 UserIDPacket id = (UserIDPacket)obj;
