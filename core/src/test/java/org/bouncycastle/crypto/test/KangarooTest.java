@@ -95,17 +95,17 @@ public class KangarooTest
         final KangarooTwelve myDigest = new KangarooTwelve();
         final KangarooParameters myParams = new KangarooParameters.Builder()
                 .setPersonalisation(myPers)
-                .setMaxOutputLen(myXofLen)
                 .build();
         myDigest.init(myParams);
         myDigest.update(myMsg, 0, pMsgLen);
-        myDigest.doFinal(myOutput, 0);
+        myDigest.doFinal(myOutput, 0, myOutput.length);
 
         /* If we are only looking at the last bit of the output */
         if (pOutLen != 0)
         {
             myOutput = Arrays.copyOfRange(myOutput, pOutLen - myExpected.length, pOutLen);
         }
+
 
         /* Check the result */
         isTrue("Result mismatch", Arrays.areEqual(myExpected, myOutput));
