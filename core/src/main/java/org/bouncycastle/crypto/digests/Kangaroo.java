@@ -89,11 +89,6 @@ public final class Kangaroo
         private byte[] thePersonal;
 
         /**
-         * The maximum xofLen.
-         */
-        private long theMaxXofLen;
-
-        /**
          * Obtain the personalisation.
          *
          * @return the personalisation
@@ -101,16 +96,6 @@ public final class Kangaroo
         public byte[] getPersonalisation()
         {
             return Arrays.clone(thePersonal);
-        }
-
-        /**
-         * Obtain the maximum output length.
-         *
-         * @return the output length
-         */
-        public long getMaxOutputLength()
-        {
-            return theMaxXofLen;
         }
 
         /**
@@ -122,11 +107,6 @@ public final class Kangaroo
              * The personalisation.
              */
             private byte[] thePersonal;
-
-            /**
-             * The maximum xofLen.
-             */
-            private long theMaxXofLen;
 
             /**
              * Set the personalisation.
@@ -141,18 +121,6 @@ public final class Kangaroo
             }
 
             /**
-             * Set the maximum output length. (-1=unlimited)
-             *
-             * @param pMaxOutLen the maximum output length
-             * @return the Builder
-             */
-            public Builder setMaxOutputLen(final long pMaxOutLen)
-            {
-                theMaxXofLen = pMaxOutLen;
-                return this;
-            }
-
-            /**
              * Build the parameters.
              *
              * @return the parameters
@@ -162,12 +130,11 @@ public final class Kangaroo
                 /* Create params */
                 final KangarooParameters myParams = new KangarooParameters();
 
-                /* Record personalisation and xof length */
+                /* Record personalisation */
                 if (thePersonal != null)
                 {
                     myParams.thePersonal = thePersonal;
                 }
-                myParams.theMaxXofLen = theMaxXofLen;
 
                 /* Return the parameters */
                 return myParams;
@@ -232,16 +199,6 @@ public final class Kangaroo
         private byte[] thePersonal;
 
         /**
-         * The XofLen.
-         */
-        private long theXofLen;
-
-        /**
-         * The XofRemaining.
-         */
-        private long theXofRemaining;
-
-        /**
          * Are we squeezing?.
          */
         private boolean squeezing;
@@ -271,8 +228,6 @@ public final class Kangaroo
             theTree = new KangarooSponge(pStrength, pRounds);
             theLeaf = new KangarooSponge(pStrength, pRounds);
             theChainLen = pStrength >> 2;
-            theXofLen = pLength;
-            theXofRemaining = -1L;
 
             /* Build personalisation */
             buildPersonal(null);
@@ -301,7 +256,7 @@ public final class Kangaroo
 
         public int getDigestSize()
         {
-            return theXofLen == 0 ? theChainLen >> 1 : (int)theXofLen;
+            return theChainLen >> 1;
         }
 
         /**
@@ -313,14 +268,6 @@ public final class Kangaroo
         {
             /* Build the new personalisation */
             buildPersonal(pParams.getPersonalisation());
-
-            /* Reject a negative Xof length */
-            final long myXofLen = pParams.getMaxOutputLength();
-            if (myXofLen < -1)
-            {
-                throw new IllegalArgumentException("Invalid output length");
-            }
-            theXofLen = myXofLen;
 
             /* Reset everything */
             reset();
@@ -342,12 +289,6 @@ public final class Kangaroo
         public int doFinal(final byte[] pOut,
                            final int pOutOffset)
         {
-            /* Check for defined output length */
-            if (getDigestSize() == -1)
-            {
-                throw new IllegalStateException("No defined output length");
-            }
-
             /* finalise the digest */
             return doFinal(pOut, pOutOffset, getDigestSize());
         }
@@ -380,11 +321,10 @@ public final class Kangaroo
                 switchToSqueezing();
             }
 
-            /* Reject if there is insufficient Xof remaining */
-            if (pOutLen < 0
-                || (theXofRemaining > 0 && pOutLen > theXofRemaining))
+            /* Reject if length is invalid */
+            if (pOutLen < 0)
             {
-                throw new IllegalArgumentException("Insufficient bytes remaining");
+                throw new IllegalArgumentException("Invalid output length");
             }
 
             /* Squeeze out the data and return the length */
@@ -455,7 +395,6 @@ public final class Kangaroo
             theLeaf.initSponge();
             theCurrNode = 0;
             theProcessed = 0;
-            theXofRemaining = -1L;
             squeezing = false;
         }
 
@@ -512,22 +451,6 @@ public final class Kangaroo
             else
             {
                 switchFinal();
-            }
-
-            /* If we have a null Xof */
-            if (theXofLen == 0)
-            {
-                /* Calculate the number of bytes available */
-                theXofRemaining = getDigestSize();
-
-                /* Else we are handling a normal Xof */
-            }
-            else
-            {
-                /* Calculate the number of bytes available */
-                theXofRemaining = theXofLen == -1
-                    ? -2
-                    : theXofLen;
             }
         }
 
