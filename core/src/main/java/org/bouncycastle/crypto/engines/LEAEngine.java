@@ -11,7 +11,7 @@ import org.bouncycastle.util.Pack;
  * LEA Cipher engine.
  */
 public class LEAEngine
-        implements BlockCipher
+    implements BlockCipher
 {
     /**
      * Base number of rounds.
@@ -127,9 +127,9 @@ public class LEAEngine
      * Delta values.
      */
     private static final int[] DELTA =
-    {
+        {
             0xc3efe9db, 0x44626b02, 0x79e27c8a, 0x78df30ec, 0x715ea49e, 0xc785da0a, 0xe04ef22a, 0xe5c40957
-    };
+        };
 
     /**
      * The work buffer.
@@ -166,11 +166,11 @@ public class LEAEngine
         if (!(pParams instanceof KeyParameter))
         {
             throw new IllegalArgumentException("Invalid parameter passed to LEA init - "
-                    + pParams.getClass().getName());
+                + pParams.getClass().getName());
         }
 
         /* Validate keyLength */
-        final byte[] myKey = ((KeyParameter) pParams).getKey();
+        final byte[] myKey = ((KeyParameter)pParams).getKey();
         final int myKeyLen = myKey.length;
         if ((((myKeyLen << 1) % BLOCKSIZE) != 0)
             || myKeyLen < BLOCKSIZE
@@ -210,12 +210,13 @@ public class LEAEngine
 
         /* Perform the encryption/decryption */
         return forEncryption
-                ? encryptBlock(pInput, pInOff, pOutput, pOutOff)
-                : decryptBlock(pInput, pInOff, pOutput, pOutOff);
+            ? encryptBlock(pInput, pInOff, pOutput, pOutOff)
+            : decryptBlock(pInput, pInOff, pOutput, pOutOff);
     }
 
     /**
      * Obtain buffer length (allowing for null).
+     *
      * @param pBuffer the buffer
      * @return the length
      */
@@ -226,6 +227,7 @@ public class LEAEngine
 
     /**
      * Check buffer.
+     *
      * @param pBuffer the buffer
      * @param pOffset the offset
      * @param pOutput is this an output buffer?
@@ -243,15 +245,16 @@ public class LEAEngine
         if (badLen || myLast > myBufLen)
         {
             throw pOutput
-                    ? new OutputLengthException("Output buffer too short.")
-                    : new DataLengthException("Input buffer too short.");
+                ? new OutputLengthException("Output buffer too short.")
+                : new DataLengthException("Input buffer too short.");
         }
     }
 
     /**
      * Encrypt a block.
-     * @param pInput the input buffer
-     * @param pInOff the input offset
+     *
+     * @param pInput  the input buffer
+     * @param pInOff  the input offset
      * @param pOutput the output offset
      * @param pOutOff the output offset
      * @return the bytes processed
@@ -279,6 +282,7 @@ public class LEAEngine
 
     /**
      * Encrypt a round.
+     *
      * @param pRound the round#
      */
     private void encryptRound(final int pRound)
@@ -297,6 +301,7 @@ public class LEAEngine
 
     /**
      * Return the left of an index.
+     *
      * @param pIndex the index
      * @return the left of an index
      */
@@ -307,8 +312,9 @@ public class LEAEngine
 
     /**
      * Decrypt a block.
-     * @param pInput the input buffer
-     * @param pInOff the input offset
+     *
+     * @param pInput  the input buffer
+     * @param pInOff  the input offset
      * @param pOutput the output offset
      * @param pOutOff the output offset
      * @return the bytes processed
@@ -336,6 +342,7 @@ public class LEAEngine
 
     /**
      * Decrypt a round.
+     *
      * @param pRound the round#
      */
     private void decryptRound(final int pRound)
@@ -354,6 +361,7 @@ public class LEAEngine
 
     /**
      * Return the left of an index.
+     *
      * @param pIndex the index
      * @return the left of an index
      */
@@ -364,6 +372,7 @@ public class LEAEngine
 
     /**
      * Generate the round keys.
+     *
      * @param pKey the key
      */
     private void generateRoundKeys(final byte[] pKey)
@@ -380,21 +389,22 @@ public class LEAEngine
         /* Switch on number of words in the key */
         switch (numWords)
         {
-            case NUMWORDS128:
-                generate128RoundKeys(myT);
-                break;
-            case NUMWORDS192:
-                generate192RoundKeys(myT);
-                break;
-            case NUMWORDS256:
-            default:
-                generate256RoundKeys(myT);
-                break;
+        case NUMWORDS128:
+            generate128RoundKeys(myT);
+            break;
+        case NUMWORDS192:
+            generate192RoundKeys(myT);
+            break;
+        case NUMWORDS256:
+        default:
+            generate256RoundKeys(myT);
+            break;
         }
     }
 
     /**
      * Generate the round keys from 128-bit key.
+     *
      * @param pWork the working keys
      */
     private void generate128RoundKeys(final int[] pWork)
@@ -421,6 +431,7 @@ public class LEAEngine
 
     /**
      * Generate the round keys from 192-bit key.
+     *
      * @param pWork the working keys
      */
     private void generate192RoundKeys(final int[] pWork)
@@ -442,6 +453,7 @@ public class LEAEngine
 
     /**
      * Generate the round keys from 256-bit key.
+     *
      * @param pWork the working keys
      */
     private void generate256RoundKeys(final int[] pWork)
@@ -470,8 +482,9 @@ public class LEAEngine
 
     /**
      * rotate left.
+     *
      * @param pValue the value to rotate
-     * @param pBits the # of bits to rotate
+     * @param pBits  the # of bits to rotate
      * @return the rotated value
      */
     private static int rol32(final int pValue,
@@ -482,8 +495,9 @@ public class LEAEngine
 
     /**
      * rotate right.
+     *
      * @param pValue the value to rotate
-     * @param pBits the # of bits to rotate
+     * @param pBits  the # of bits to rotate
      * @return the rotated value
      */
     private static int ror32(final int pValue,
