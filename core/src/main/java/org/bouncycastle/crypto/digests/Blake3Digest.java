@@ -15,7 +15,7 @@ import org.bouncycastle.util.Pack;
  * Blake3 implementation.
  */
 public class Blake3Digest
-        implements ExtendedDigest, Memoable, Xof
+    implements ExtendedDigest, Memoable, Xof
 {
     /**
      * Already outputting error.
@@ -45,27 +45,27 @@ public class Blake3Digest
     /**
      * ChunkStart Flag.
      */
-    private static final int CHUNKSTART    = 1;
+    private static final int CHUNKSTART = 1;
 
     /**
      * ChunkEnd Flag.
      */
-    private static final int CHUNKEND      = 2;
+    private static final int CHUNKEND = 2;
 
     /**
      * Parent Flag.
      */
-    private static final int PARENT        = 4;
+    private static final int PARENT = 4;
 
     /**
      * Root Flag.
      */
-    private static final int ROOT          = 8;
+    private static final int ROOT = 8;
 
     /**
      * KeyedHash Flag.
      */
-    private static final int KEYEDHASH     = 16;
+    private static final int KEYEDHASH = 16;
 
     /**
      * DeriveContext Flag.
@@ -75,7 +75,7 @@ public class Blake3Digest
     /**
      * DeriveKey Flag.
      */
-    private static final int DERIVEKEY     = 64;
+    private static final int DERIVEKEY = 64;
 
     /**
      * Chaining0 State Locations.
@@ -120,58 +120,58 @@ public class Blake3Digest
     /**
      * IV0 State Locations.
      */
-    private static final int IV0       = 8;
+    private static final int IV0 = 8;
 
     /**
      * IV1 State Location.
      */
-    private static final int IV1       = 9;
+    private static final int IV1 = 9;
 
     /**
      * IV2 State Location.
      */
-    private static final int IV2       = 10;
+    private static final int IV2 = 10;
 
     /**
      * IV3 State Location.
      */
-    private static final int IV3       = 11;
+    private static final int IV3 = 11;
 
     /**
      * Count0 State Location.
      */
-    private static final int COUNT0    = 12;
+    private static final int COUNT0 = 12;
 
     /**
      * Count1 State Location.
      */
-    private static final int COUNT1    = 13;
+    private static final int COUNT1 = 13;
 
     /**
      * DataLen State Location.
      */
-    private static final int DATALEN   = 14;
+    private static final int DATALEN = 14;
 
     /**
      * Flags State Location.
      */
-    private static final int FLAGS     = 15;
+    private static final int FLAGS = 15;
 
     /**
      * Message word permutations.
      */
-    private static final byte[] SIGMA = { 2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8 };
+    private static final byte[] SIGMA = {2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8};
 
     /**
      * Rotation constants.
      */
-    private static final byte[] ROTATE = { 16, 12, 8, 7 };
+    private static final byte[] ROTATE = {16, 12, 8, 7};
 
     /**
      * Blake3 Initialization Vector.
      */
     private static final int[] IV = {
-            0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     };
 
     /**
@@ -220,6 +220,11 @@ public class Blake3Digest
     private boolean outputting;
 
     /**
+     * How many more bytes can we output?
+     */
+    private long outputAvailable;
+
+    /**
      * The current mode.
      */
     private int theMode;
@@ -259,6 +264,7 @@ public class Blake3Digest
 
     /**
      * Constructor.
+     *
      * @param pDigestLen the default digestLength
      */
     public Blake3Digest(final int pDigestLen)
@@ -269,6 +275,7 @@ public class Blake3Digest
 
     /**
      * Constructor.
+     *
      * @param pSource the source digest.
      */
     private Blake3Digest(final Blake3Digest pSource)
@@ -277,7 +284,7 @@ public class Blake3Digest
         theDigestLen = pSource.theDigestLen;
 
         /* Initialise from source */
-        reset((Memoable) pSource);
+        reset((Memoable)pSource);
     }
 
     public int getByteLength()
@@ -297,6 +304,7 @@ public class Blake3Digest
 
     /**
      * Initialise.
+     *
      * @param pParams the parameters.
      */
     public void init(final Blake3Parameters pParams)
@@ -313,7 +321,7 @@ public class Blake3Digest
         {
             /* Initialise with the key */
             initKey(myKey);
-            Arrays.fill(myKey, (byte) 0);
+            Arrays.fill(myKey, (byte)0);
 
             /* else if we have a context */
         }
@@ -355,7 +363,7 @@ public class Blake3Digest
             compressBlock(theBuffer, 0);
 
             /* Reset the buffer */
-            Arrays.fill(theBuffer, (byte) 0);
+            Arrays.fill(theBuffer, (byte)0);
             thePos = 0;
         }
 
@@ -404,7 +412,7 @@ public class Blake3Digest
 
             /* Reset the buffer */
             thePos = 0;
-            Arrays.fill(theBuffer, (byte) 0);
+            Arrays.fill(theBuffer, (byte)0);
         }
 
         /* process all blocks except the last one */
@@ -457,6 +465,13 @@ public class Blake3Digest
             compressFinalBlock(thePos);
         }
 
+        /* Reject if there is insufficient Xof remaining */
+        if (pOutLen < 0
+            || (outputAvailable >= 0 && pOutLen > outputAvailable))
+        {
+            throw new IllegalArgumentException("Insufficient bytes remaining");
+        }
+
         /* If we have some remaining data in the current buffer */
         int dataLeft = pOutLen;
         int outPos = pOutOffset;
@@ -488,6 +503,9 @@ public class Blake3Digest
             dataLeft -= dataToCopy;
         }
 
+        /* Adjust outputAvailable */
+        outputAvailable -= pOutLen;
+
         /* Return the number of bytes transferred */
         return pOutLen;
     }
@@ -497,13 +515,13 @@ public class Blake3Digest
         resetBlockCount();
         thePos = 0;
         outputting = false;
-        Arrays.fill(theBuffer, (byte) 0);
+        Arrays.fill(theBuffer, (byte)0);
     }
 
     public void reset(final Memoable pSource)
     {
         /* Access source */
-        final Blake3Digest mySource = (Blake3Digest) pSource;
+        final Blake3Digest mySource = (Blake3Digest)pSource;
 
         /*  Reset counter */
         theCounter = mySource.theCounter;
@@ -512,6 +530,7 @@ public class Blake3Digest
 
         /* Reset output state */
         outputting = mySource.outputting;
+        outputAvailable = mySource.outputAvailable;
         theOutputMode = mySource.theOutputMode;
         theOutputDataLen = mySource.theOutputDataLen;
 
@@ -522,7 +541,7 @@ public class Blake3Digest
 
         /* Copy stack */
         theStack.clear();
-        for (Iterator it = mySource.theStack.iterator(); it.hasNext();)
+        for (Iterator it = mySource.theStack.iterator(); it.hasNext(); )
         {
             theStack.push(Arrays.clone((int[])it.next()));
         }
@@ -539,8 +558,9 @@ public class Blake3Digest
 
     /**
      * Compress next block of the message.
+     *
      * @param pMessage the message buffer
-     * @param pMsgPos the position within the message buffer
+     * @param pMsgPos  the position within the message buffer
      */
     private void compressBlock(final byte[] pMessage,
                                final int pMsgPos)
@@ -591,6 +611,7 @@ public class Blake3Digest
 
     /**
      * Compress final block.
+     *
      * @param pDataLen the data length
      */
     private void compressFinalBlock(final int pDataLen)
@@ -624,12 +645,12 @@ public class Blake3Digest
                 setRoot();
             }
             compress();
-         }
+        }
     }
 
     /**
      * Perform compression.
-      */
+     */
     private void compress()
     {
         /* Initialise the buffers */
@@ -667,8 +688,9 @@ public class Blake3Digest
 
     /**
      * Initialise M from message.
+     *
      * @param pMessage the source message
-     * @param pMsgPos the message position
+     * @param pMsgPos  the message position
      */
     private void initM(final byte[] pMessage,
                        final int pMsgPos)
@@ -716,11 +738,12 @@ public class Blake3Digest
 
     /**
      * Mix function G.
+     *
      * @param msgIdx the message index
-     * @param posA position A in V
-     * @param posB position B in V
-     * @param posC position C in V
-     * @param posD poistion D in V
+     * @param posA   position A in V
+     * @param posB   position B in V
+     * @param posC   position C in V
+     * @param posD   poistion D in V
      */
     private void mixG(final int msgIdx,
                       final int posA,
@@ -775,6 +798,7 @@ public class Blake3Digest
 
     /**
      * Initialise key.
+     *
      * @param pKey the keyBytes
      */
     private void initKey(final byte[] pKey)
@@ -798,8 +822,9 @@ public class Blake3Digest
 
     /**
      * Initialise chunk block.
+     *
      * @param pDataLen the dataLength
-     * @param pFinal is this the final chunk?
+     * @param pFinal   is this the final chunk?
      */
     private void initChunkBlock(final int pDataLen,
                                 final boolean pFinal)
@@ -807,12 +832,12 @@ public class Blake3Digest
         /* Initialise the block */
         System.arraycopy(theCurrBytes == 0 ? theK : theChaining, 0, theV, 0, NUMWORDS);
         System.arraycopy(IV, 0, theV, NUMWORDS, NUMWORDS >> 1);
-        theV[COUNT0] = (int) theCounter;
-        theV[COUNT1] = (int) (theCounter >> Integers.SIZE);
+        theV[COUNT0] = (int)theCounter;
+        theV[COUNT1] = (int)(theCounter >> Integers.SIZE);
         theV[DATALEN] = pDataLen;
         theV[FLAGS] = theMode
-                    + (theCurrBytes == 0 ? CHUNKSTART : 0)
-                    + (pFinal ? CHUNKEND : 0);
+            + (theCurrBytes == 0 ? CHUNKSTART : 0)
+            + (pFinal ? CHUNKEND : 0);
 
         /* * Adjust block count */
         theCurrBytes += pDataLen;
@@ -854,8 +879,8 @@ public class Blake3Digest
         /* Initialise the block */
         System.arraycopy(theChaining, 0, theV, 0, NUMWORDS);
         System.arraycopy(IV, 0, theV, NUMWORDS, NUMWORDS >> 1);
-        theV[COUNT0] = (int) theCounter;
-        theV[COUNT1] = (int) (theCounter >> Integers.SIZE);
+        theV[COUNT0] = (int)theCounter;
+        theV[COUNT1] = (int)(theCounter >> Integers.SIZE);
         theV[DATALEN] = theOutputDataLen;
         theV[FLAGS] = theOutputMode;
 
@@ -891,6 +916,8 @@ public class Blake3Digest
         theOutputDataLen = theV[DATALEN];
         theCounter = 0;
         outputting = true;
+        outputAvailable = -1;
         System.arraycopy(theV, 0, theChaining, 0, NUMWORDS);
     }
+
 }
