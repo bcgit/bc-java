@@ -437,18 +437,18 @@ public class SignerInformation
         }
 
         // RFC 3852 11.1 Check the content-type attribute is correct
-        doVerify_checkContentTypeAttributeValue();
+        verifyContentTypeAttributeValue();
 
         AttributeTable signedAttrTable = this.getSignedAttributes();
 
         // RFC 6211 Validate Algorithm Identifier protection attribute if present
-        doVerify_validateAlgorithmIdentifierProtectionAttribute(signedAttrTable);
+        verifyAlgorithmIdentifierProtectionAttribute(signedAttrTable);
 
         // RFC 3852 11.2 Check the message-digest attribute is correct
-        doVerify_checkMessageDigestAttribute();
+        verifyMessageDigestAttribute();
 
         // RFC 3852 11.4 Validate countersignature attribute(s)
-        doVerify_validateCounterSignatureAttribute(signedAttrTable);
+        verifyCounterSignatureAttribute(signedAttrTable);
 
         try
         {
@@ -482,7 +482,7 @@ public class SignerInformation
      *
      * @throws CMSException when content-type was invalid.
      */
-    private void doVerify_checkContentTypeAttributeValue()
+    private void verifyContentTypeAttributeValue()
         throws CMSException
     {
         ASN1Primitive validContentType = getSingleValuedSignedAttribute(
@@ -520,7 +520,7 @@ public class SignerInformation
      *
      * @throws CMSException when message-digest attribute was rejected
      */
-    private void doVerify_checkMessageDigestAttribute()
+    private void verifyMessageDigestAttribute()
         throws CMSException
     {
         ASN1Primitive validMessageDigest = getSingleValuedSignedAttribute(
@@ -554,7 +554,7 @@ public class SignerInformation
      * @param signedAttrTable signed attributes
      * @throws CMSException when cmsAlgorihmProtect attribute was rejected
      */
-    private void doVerify_validateAlgorithmIdentifierProtectionAttribute(AttributeTable signedAttrTable)
+    private void verifyAlgorithmIdentifierProtectionAttribute(AttributeTable signedAttrTable)
         throws CMSException
     {
         AttributeTable unsignedAttrTable = this.getUnsignedAttributes();
@@ -599,7 +599,7 @@ public class SignerInformation
      * @param signedAttrTable signed attributes
      * @throws CMSException when countersignature attribute was rejected
      */
-    private void doVerify_validateCounterSignatureAttribute(AttributeTable signedAttrTable)
+    private void verifyCounterSignatureAttribute(AttributeTable signedAttrTable)
         throws CMSException
     {
         if (signedAttrTable != null
