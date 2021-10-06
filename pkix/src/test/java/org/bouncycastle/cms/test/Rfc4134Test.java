@@ -1,6 +1,7 @@
 package org.bouncycastle.cms.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyFactory;
@@ -60,9 +61,9 @@ import org.bouncycastle.util.io.Streams;
 public class Rfc4134Test
     extends TestCase
 {
-    private static final String BC = BouncyCastleProvider.PROVIDER_NAME;    
+    private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
     private static final String TEST_DATA_HOME = "bc.test.data.home";
-    
+
     private static byte[] exContent = getRfc4134Data("ExContent.bin");
     private static byte[] sha1 = Hex.decode("406aec085279ba6e16022d9e0629c0229687dd48");
 
@@ -73,7 +74,7 @@ public class Rfc4134Test
     {
         try
         {
-            digCalcProv =  new JcaDigestCalculatorProviderBuilder().build();
+            digCalcProv = new JcaDigestCalculatorProviderBuilder().build();
         }
         catch (OperatorCreationException e)
         {
@@ -93,7 +94,7 @@ public class Rfc4134Test
         junit.textui.TestRunner.run(Rfc4134Test.class);
     }
 
-    public static Test suite() 
+    public static Test suite()
         throws Exception
     {
         return new CMSTestSetup(new TestSuite(Rfc4134Test.class));
@@ -134,8 +135,8 @@ public class Rfc4134Test
         verifySignatures(signedData, sha1);
 
         CMSSignedDataParser parser = new CMSSignedDataParser(digCalcProv,
-                new CMSTypedStream(new ByteArrayInputStream(exContent)),
-                data);
+            new CMSTypedStream(new ByteArrayInputStream(exContent)),
+            data);
 
         verifySignatures(parser);
     }
@@ -226,7 +227,7 @@ public class Rfc4134Test
     private void verifyEnvelopedData(CMSEnvelopedData envelopedData, String symAlgorithmOID)
         throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException, CMSException
     {
-        byte[]              privKeyData = getRfc4134Data("BobPrivRSAEncrypt.pri");
+        byte[] privKeyData = getRfc4134Data("BobPrivRSAEncrypt.pri");
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privKeyData);
         KeyFactory keyFact = KeyFactory.getInstance("RSA", BC);
         PrivateKey privKey = keyFact.generatePrivate(keySpec);
@@ -252,7 +253,7 @@ public class Rfc4134Test
     private void verifyEnvelopedData(CMSEnvelopedDataParser envelopedParser, String symAlgorithmOID)
         throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException, CMSException
     {
-        byte[]              privKeyData = getRfc4134Data("BobPrivRSAEncrypt.pri");
+        byte[] privKeyData = getRfc4134Data("BobPrivRSAEncrypt.pri");
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privKeyData);
         KeyFactory keyFact = KeyFactory.getInstance("RSA", BC);
         PrivateKey privKey = keyFact.generatePrivate(keySpec);
@@ -304,7 +305,7 @@ public class Rfc4134Test
         SignerInformation csi = (SignerInformation)signInfo.getCounterSignatures().getSigners().iterator().next();
 
         CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
-        X509Certificate    cert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(certificate));
+        X509Certificate cert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(certificate));
 
         assertTrue(csi.verify(new JcaSignerInfoVerifierBuilder(digCalcProv).setProvider(BC).build(cert)));
     }
@@ -321,25 +322,25 @@ public class Rfc4134Test
 
         v.add(new DERUTF8String("Content Hints Description Buffer"));
         v.add(CMSObjectIdentifiers.data);
-        
+
         assertTrue(attr.getAttrValues().getObjectAt(0).equals(new DERSequence(v)));
     }
 
     private void verifySignatures(CMSSignedData s, byte[] contentDigest)
         throws Exception
     {
-        Store               certStore = s.getCertificates();
-        SignerInformationStore  signers = s.getSignerInfos();
+        Store certStore = s.getCertificates();
+        SignerInformationStore signers = s.getSignerInfos();
 
-        Collection              c = signers.getSigners();
-        Iterator                it = c.iterator();
+        Collection c = signers.getSigners();
+        Iterator it = c.iterator();
 
         while (it.hasNext())
         {
-            SignerInformation   signer = (SignerInformation)it.next();
-            Collection          certCollection = certStore.getMatches(signer.getSID());
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certStore.getMatches(signer.getSID());
 
-            Iterator        certIt = certCollection.iterator();
+            Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
 
             verifySigner(signer, cert);
@@ -365,19 +366,19 @@ public class Rfc4134Test
         {
             sc.drain();
         }
-        
-        Store certs = sp.getCertificates();
-        SignerInformationStore  signers = sp.getSignerInfos();
 
-        Collection              c = signers.getSigners();
-        Iterator                it = c.iterator();
+        Store certs = sp.getCertificates();
+        SignerInformationStore signers = sp.getSignerInfos();
+
+        Collection c = signers.getSigners();
+        Iterator it = c.iterator();
 
         while (it.hasNext())
         {
-            SignerInformation   signer = (SignerInformation)it.next();
-            Collection          certCollection = certs.getMatches(signer.getSID());
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certs.getMatches(signer.getSID());
 
-            Iterator        certIt = certCollection.iterator();
+            Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
 
             verifySigner(signer, cert);
@@ -417,7 +418,7 @@ public class Rfc4134Test
         DSAParams dsaParams = ((DSAPublicKey)cert.getPublicKey()).getParams();
 
         DSAPublicKeySpec dsaPubKeySpec = new DSAPublicKeySpec(
-                        key.getY(), dsaParams.getP(), dsaParams.getQ(), dsaParams.getG());
+            key.getY(), dsaParams.getP(), dsaParams.getQ(), dsaParams.getG());
 
         KeyFactory keyFactory = KeyFactory.getInstance("DSA", BC);
 
@@ -427,6 +428,19 @@ public class Rfc4134Test
     private static byte[] getRfc4134Data(String name)
     {
         String dataHome = System.getProperty(TEST_DATA_HOME);
+
+        //
+        // Try to find it
+        //
+        if (dataHome == null)
+        {
+            File tdCandidate = new File(new File("."), "core/src/test/data");
+            if (tdCandidate.exists() && tdCandidate.isDirectory())
+            {
+                dataHome = tdCandidate.getAbsolutePath();
+            }
+        }
+
 
         if (dataHome == null)
         {
