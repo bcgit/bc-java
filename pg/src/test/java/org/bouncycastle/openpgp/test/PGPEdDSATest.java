@@ -159,7 +159,7 @@ public class PGPEdDSATest
 
         PGPLiteralData ld = (PGPLiteralData)pgpF.nextObject();
 
-        clear = ld.getInputStream();
+        clear = ld.getDataStream("\n");
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         int ch;
@@ -170,7 +170,7 @@ public class PGPEdDSATest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, canonicalized))
+        if (!areEqual(out, text))
         {
             fail("wrong plain text in generated packet");
         }
@@ -216,7 +216,7 @@ public class PGPEdDSATest
 
         PGPLiteralData ld = (PGPLiteralData)pgpF.nextObject();
 
-        clear = ld.getInputStream();
+        clear = ld.getDataStream("\n");
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         int ch;
@@ -227,7 +227,7 @@ public class PGPEdDSATest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, canonicalized))
+        if (!areEqual(out, text))
         {
             fail("wrong plain text in generated packet");
         }
@@ -509,7 +509,7 @@ public class PGPEdDSATest
 
         PGPLiteralData ld = (PGPLiteralData)pgpF.nextObject();
 
-        clear = ld.getInputStream();
+        clear = ld.getDataStream("\n");
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         int ch;
@@ -520,7 +520,7 @@ public class PGPEdDSATest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, canonicalized))
+        if (!areEqual(out, text))
         {
             fail("wrong plain text in generated packet");
         }

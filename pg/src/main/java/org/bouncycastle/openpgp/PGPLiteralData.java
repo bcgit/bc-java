@@ -130,4 +130,17 @@ public class PGPLiteralData
         }
         return this.getInputStream();
     }
+
+
+    /**
+     * Return the input stream representing the data stream.
+     * Equivalent to {@link #getInputStream()}.
+     */
+    public InputStream getDataStream(String lineSeparator)
+    {
+        if (getFormat() == TEXT || getFormat() == UTF8) {
+            return new CRLFDecoderStream(this.getInputStream(), lineSeparator);
+        }
+        return this.getInputStream();
+    }
 }

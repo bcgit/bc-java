@@ -348,7 +348,7 @@ public class PGPECDHTest
 
         PGPLiteralData ld = (PGPLiteralData)pgpF.nextObject();
 
-        clear = ld.getInputStream();
+        clear = ld.getDataStream("\n");
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         int ch;
@@ -359,7 +359,7 @@ public class PGPECDHTest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, canonicalized))
+        if (!areEqual(out, text))
         {
             fail("wrong plain text in generated packet");
         }
@@ -415,7 +415,7 @@ public class PGPECDHTest
 
         PGPLiteralData ld = (PGPLiteralData)pgpF.nextObject();
 
-        clear = ld.getInputStream();
+        clear = ld.getDataStream("\n");
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         int ch;
@@ -426,7 +426,7 @@ public class PGPECDHTest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, canonicalized))
+        if (!areEqual(out, text))
         {
             fail("wrong plain text in generated packet");
         }
