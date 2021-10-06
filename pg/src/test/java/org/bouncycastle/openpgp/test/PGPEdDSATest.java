@@ -123,10 +123,11 @@ public class PGPEdDSATest
         throws Exception
     {
         byte[] text = {(byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n'};
+        byte[] canonicalized = {(byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\r', (byte)'\n'};
 
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
         ByteArrayOutputStream ldOut = new ByteArrayOutputStream();
-        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, text.length, new Date());
+        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, canonicalized.length, new Date());
 
         pOut.write(text);
 
@@ -169,7 +170,7 @@ public class PGPEdDSATest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, text))
+        if (!areEqual(out, canonicalized))
         {
             fail("wrong plain text in generated packet");
         }
@@ -179,10 +180,11 @@ public class PGPEdDSATest
         throws Exception
     {
         byte[] text = {(byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n'};
+        byte[] canonicalized = {(byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\r', (byte)'\n'};
 
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
         ByteArrayOutputStream ldOut = new ByteArrayOutputStream();
-        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, text.length, new Date());
+        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, canonicalized.length, new Date());
 
         pOut.write(text);
 
@@ -225,7 +227,7 @@ public class PGPEdDSATest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, text))
+        if (!areEqual(out, canonicalized))
         {
             fail("wrong plain text in generated packet");
         }
@@ -456,6 +458,8 @@ public class PGPEdDSATest
         throws Exception
     {
         byte[] text = {(byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n'};
+        byte[] canonicalized = {(byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\r', (byte)'\n'};
+
         ArmoredInputStream aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDSASampleKey)));
 
         PGPPublicKeyRing rng = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
@@ -469,7 +473,7 @@ public class PGPEdDSATest
         
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
         ByteArrayOutputStream ldOut = new ByteArrayOutputStream();
-        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, text.length, new Date());
+        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, canonicalized.length, new Date());
 
         pOut.write(text);
 
@@ -516,7 +520,7 @@ public class PGPEdDSATest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, text))
+        if (!areEqual(out, canonicalized))
         {
             fail("wrong plain text in generated packet");
         }

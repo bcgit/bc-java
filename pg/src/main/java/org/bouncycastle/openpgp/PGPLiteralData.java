@@ -125,6 +125,9 @@ public class PGPLiteralData
      */
     public InputStream getDataStream()
     {
+        if (getFormat() == TEXT || getFormat() == UTF8) {
+            return new CRLFDecoderStream(this.getInputStream());
+        }
         return this.getInputStream();
     }
 }

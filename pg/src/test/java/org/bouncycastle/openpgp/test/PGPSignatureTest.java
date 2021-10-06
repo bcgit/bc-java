@@ -1095,7 +1095,7 @@ public class PGPSignatureTest
         PGPPublicKey  pubKey,
         PGPPrivateKey privKey)
         throws Exception
-    {            
+    {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ByteArrayInputStream  testIn = new ByteArrayInputStream(TEST_DATA);
         PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(encAlgorithm, hashAlgorithm).setProvider("BC"));
@@ -1136,7 +1136,7 @@ public class PGPSignatureTest
         byte[]         data,
         byte[]         canonicalData)
         throws Exception
-    {            
+    {
         PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(encAlgorithm, HashAlgorithmTags.SHA1).setProvider("BC"));
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ByteArrayInputStream  testIn = new ByteArrayInputStream(data);
@@ -1150,7 +1150,7 @@ public class PGPSignatureTest
             new UncloseableOutputStream(bOut),
             PGPLiteralData.TEXT,
             "_CONSOLE",
-            data.length * 2,
+            canonicalData.length * 2,
             creationTime);
 
         int ch;
@@ -1183,7 +1183,7 @@ public class PGPSignatureTest
         PGPPublicKey  pubKey,
         PGPPrivateKey privKey)
         throws Exception
-    {            
+    {
         byte[] bytes = generateV3BinarySig(privKey, encAlgorithm, hashAlgorithm);
     
         verifySignature(bytes, hashAlgorithm, pubKey, TEST_DATA);
@@ -1232,7 +1232,7 @@ public class PGPSignatureTest
         byte[]         data,
         byte[]         canonicalData)
         throws Exception
-    {            
+    {
         PGPV3SignatureGenerator sGen = new PGPV3SignatureGenerator(new JcaPGPContentSignerBuilder(encAlgorithm, HashAlgorithmTags.SHA1).setProvider("BC"));
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
         ByteArrayInputStream    testIn = new ByteArrayInputStream(data);
@@ -1245,7 +1245,7 @@ public class PGPSignatureTest
             new UncloseableOutputStream(bOut),
             PGPLiteralData.TEXT,
             "_CONSOLE",
-            data.length * 2,
+            canonicalData.length * 2,
             new Date());
 
         int ch;

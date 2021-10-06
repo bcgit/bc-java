@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.openpgp.CRLFDecoderStream;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.util.Arrays;
@@ -15,7 +16,7 @@ import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class PGPUtilTest
-    extends SimpleTest
+        extends SimpleTest
 {
     public String getName()
     {
@@ -23,7 +24,7 @@ public class PGPUtilTest
     }
 
     public void performTest()
-        throws Exception
+            throws Exception
     {
         byte[] contentMessage = Strings.toByteArray("Hello, world!\r\nhello, World!\r\n");
 
@@ -51,7 +52,7 @@ public class PGPUtilTest
     }
 
     private void testLiteralData(String id, byte[] data, String fileName, char type, byte[] content)
-        throws IOException
+            throws IOException
     {
         PGPLiteralData ld = new PGPLiteralData(new BCPGInputStream(new ByteArrayInputStream(data)));
 
@@ -59,12 +60,21 @@ public class PGPUtilTest
         isTrue(type == ld.getFormat());
 
         byte[] bytes = Streams.readAll(ld.getDataStream());
-        
-        isTrue(id + " contents mismatch", Arrays.areEqual(bytes, content));
+
+        if (System.lineSeparator().equals("\n") && (type == 't' || type == 'u')) {
+            // Unix systems have line separator '\n', so we have to decode (<CR><LF> -> <LF>) the content data before comparing
+            ByteArrayInputStream contentIn = new ByteArrayInputStream(content);
+            CRLFDecoderStream decoderStream = new CRLFDecoderStream(contentIn);
+            ByteArrayOutputStream decoded = new ByteArrayOutputStream();
+            Streams.pipeAll(decoderStream, decoded);
+            isTrue(id + " contents mismatch", Arrays.areEqual(bytes, decoded.toByteArray()));
+        } else {
+            isTrue(id + " contents mismatch", Arrays.areEqual(bytes, content));
+        }
     }
 
     public static void main(
-        String[]    args)
+            String[]    args)
     {
         runTest(new PGPUtilTest());
     }

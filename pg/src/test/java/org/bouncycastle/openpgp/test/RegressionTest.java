@@ -38,7 +38,9 @@ public class RegressionTest
         new PGPFeaturesTest(),
         new ArmoredInputStreamBackslashTRVFTest(),
         new ArmoredInputStreamCRCErrorGetsThrownTest(),
-        new ArmoredInputStreamIngoreMissingCRCSum()
+        new ArmoredInputStreamIngoreMissingCRCSum(),
+        new CRLFDecoderStreamTest(),
+        new CRLFEncoderStreamTest()
     };
 
     public static void main(String[] args)

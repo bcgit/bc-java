@@ -304,7 +304,7 @@ public class PGPECDHTest
         throws Exception
     {
         byte[]    text = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n' };
-
+        byte[]    canonicalized = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\r', (byte)'\n' };
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDH", "BC");
 
@@ -316,7 +316,7 @@ public class PGPECDHTest
 
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
         ByteArrayOutputStream   ldOut = new ByteArrayOutputStream();
-        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, text.length, new Date());
+        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, canonicalized.length, new Date());
 
         pOut.write(text);
 
@@ -359,7 +359,7 @@ public class PGPECDHTest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, text))
+        if (!areEqual(out, canonicalized))
         {
             fail("wrong plain text in generated packet");
         }
@@ -369,6 +369,7 @@ public class PGPECDHTest
         throws Exception
     {
         byte[]    text = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n' };
+        byte[]    canonicalized = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\r', (byte)'\n'};
 
 
         ECKeyPairGenerator keyGen = new ECKeyPairGenerator();
@@ -382,7 +383,7 @@ public class PGPECDHTest
 
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
         ByteArrayOutputStream   ldOut = new ByteArrayOutputStream();
-        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, text.length, new Date());
+        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, canonicalized.length, new Date());
 
         pOut.write(text);
 
@@ -425,7 +426,7 @@ public class PGPECDHTest
 
         byte[] out = bOut.toByteArray();
 
-        if (!areEqual(out, text))
+        if (!areEqual(out, canonicalized))
         {
             fail("wrong plain text in generated packet");
         }

@@ -133,7 +133,11 @@ public class PGPLiteralDataGenerator implements StreamGenerator
 
         writeHeader(pkOut, format, encName, modificationTime.getTime());
 
-        return new WrappedGeneratorStream(pkOut, this);
+        WrappedGeneratorStream wrappedGenerator = new WrappedGeneratorStream(pkOut, this);
+        if (format == PGPLiteralData.TEXT || format == PGPLiteralData.UTF8) {
+            return new CRLFEncoderStream(wrappedGenerator);
+        }
+        return wrappedGenerator;
     }
 
     /**
@@ -181,7 +185,11 @@ public class PGPLiteralDataGenerator implements StreamGenerator
 
         writeHeader(pkOut, format, encName, modificationTime.getTime());
 
-        return new WrappedGeneratorStream(pkOut, this);
+        WrappedGeneratorStream wrappedGenerator = new WrappedGeneratorStream(pkOut, this);
+        if (format == PGPLiteralData.TEXT || format == PGPLiteralData.UTF8) {
+            return new CRLFEncoderStream(wrappedGenerator);
+        }
+        return wrappedGenerator;
     }
 
     /**
