@@ -124,8 +124,8 @@ public class SignerInformation
         this.signature = info.getEncryptedDigest().getOctets();
         this.content = baseInfo.content;
         this.resultDigest = baseInfo.resultDigest;
-        this.signedAttributeValues = null;
-        this.unsignedAttributeValues = null;
+        this.signedAttributeValues = getSignedAttributes();
+        this.unsignedAttributeValues = getUnsignedAttributes();
     }
 
     public boolean isCounterSignature()
