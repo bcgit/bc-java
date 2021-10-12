@@ -9,7 +9,10 @@ import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
+import org.bouncycastle.openpgp.operator.PGPDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -71,6 +74,26 @@ public class PGPPublicKeyEncryptedData
     }
 
     /**
+     * Return the symmetric session key required to decrypt the data protected by this object.
+     *
+     * @param dataDecryptorFactory decryptor factory to use to recover the session data.
+     * @return session key used to decrypt the data protected by this object
+     * @throws PGPException if the session data cannot be recovered.
+     */
+    public PGPSessionKey getSessionKey(
+        PublicKeyDataDecryptorFactory dataDecryptorFactory)
+        throws PGPException
+    {
+        byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
+        if (!confirmCheckSum(sessionData))
+        {
+            throw new PGPKeyValidationException("key checksum failed");
+        }
+
+        return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length - 2));
+    }
+
+    /**
      * Open an input stream which will provide the decrypted data protected by this object.
      *
      * @param dataDecryptorFactory  decryptor factory to use to recover the session data and provide the stream.
@@ -81,26 +104,39 @@ public class PGPPublicKeyEncryptedData
         PublicKeyDataDecryptorFactory dataDecryptorFactory)
         throws PGPException
     {
-        byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
+        return getDataStream(dataDecryptorFactory, getSessionKey(dataDecryptorFactory));
+    }
 
-        if (!confirmCheckSum(sessionData))
-        {
-            throw new PGPKeyValidationException("key checksum failed");
-        }
+    public InputStream getDataStream(
+        SessionKeyDataDecryptorFactory dataDecryptorFactory)
+        throws PGPException
+    {
+        return getDataStream(dataDecryptorFactory, dataDecryptorFactory.getSessionKey());
+    }
 
-        if (sessionData[0] != SymmetricKeyAlgorithmTags.NULL)
+    /**
+     * Open an input stream which will provide the decrypted data protected by this object.
+     *
+     * @param dataDecryptorFactory  decryptor factory to use to recover the session data and provide the stream.
+     * @param sessionKey the session key for the stream.
+     * @return  the resulting input stream
+     * @throws PGPException  if the session data cannot be recovered or the stream cannot be created.
+     */
+    private InputStream getDataStream(
+        PGPDataDecryptorFactory dataDecryptorFactory,
+        PGPSessionKey sessionKey)
+        throws PGPException
+    {
+        if (sessionKey.getAlgorithm() != SymmetricKeyAlgorithmTags.NULL)
         {
             try
             {
                 boolean      withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
-                byte[]       sessionKey = new byte[sessionData.length - 3];
 
-                System.arraycopy(sessionData, 1, sessionKey, 0, sessionKey.length);
-
-                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionData[0] & 0xff, sessionKey);
+                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
                 BCPGInputStream encIn = encData.getInputStream();
-                
+
                 encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
 
                 if (withIntegrityPacket)
@@ -139,17 +175,17 @@ public class PGPPublicKeyEncryptedData
                 // bytes rather than repeating the two previous bytes
                 //
                 /*
-                             * Commented out in the light of the oracle attack.
-                            if (iv[iv.length - 2] != (byte)v1 && v1 != 0)
-                            {
-                                throw new PGPDataValidationException("data check failed.");
-                            }
+                 * Commented out in the light of the oracle attack.
+                if (iv[iv.length - 2] != (byte)v1 && v1 != 0)
+                {
+                    throw new PGPDataValidationException("data check failed.");
+                }
 
-                            if (iv[iv.length - 1] != (byte)v2 && v2 != 0)
-                            {
-                                throw new PGPDataValidationException("data check failed.");
-                            }
-                            */
+                if (iv[iv.length - 1] != (byte)v2 && v2 != 0)
+                {
+                    throw new PGPDataValidationException("data check failed.");
+                }
+                */
 
                 return encStream;
             }
