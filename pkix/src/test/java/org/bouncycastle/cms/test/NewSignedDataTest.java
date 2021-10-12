@@ -1316,6 +1316,8 @@ public class NewSignedDataTest
 
             SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert);
 
+            assertEquals(true, signer.verify(verifier));
+
             assertEquals(false, new MyWrongSignerInformation(signer).verify(verifier));
 
             MyRightSignerInformation rSigner = new MyRightSignerInformation(signer);
