@@ -39,20 +39,9 @@ public abstract class PGPKeyRing
         BCPGInputStream pIn)
         throws IOException
     {
-        int tag = pIn.nextPacketTag();
-        while (tag == PacketTags.MARKER)
-        {
-            pIn.readPacket();
-            tag = pIn.nextPacketTag();
-        }
+        int tag = pIn.skipMarkerPackets();
 
-        if (tag == PacketTags.TRUST)
-        {
-            return (TrustPacket)pIn.readPacket();
-        }
-
-        return null;
-
+        return tag == PacketTags.TRUST ? (TrustPacket)pIn.readPacket() : null;
     }
 
     static List readSignaturesAndTrust(
@@ -63,21 +52,12 @@ public abstract class PGPKeyRing
         {
             List sigList = new ArrayList();
 
-            while (pIn.nextPacketTag() == PacketTags.SIGNATURE
-                || pIn.nextPacketTag() == PacketTags.MARKER)
+            while (pIn.skipMarkerPackets() == PacketTags.SIGNATURE)
             {
-                Packet packet = pIn.readPacket();
-                if (packet instanceof MarkerPacket)
-                {
-                    continue;
-                }
-                if (packet instanceof SignaturePacket)
-                {
-                    SignaturePacket signaturePacket = (SignaturePacket)packet;
-                    TrustPacket trustPacket = readOptionalTrustPacket(pIn);
+                SignaturePacket signaturePacket = (SignaturePacket)pIn.readPacket();
+                TrustPacket trustPacket = readOptionalTrustPacket(pIn);
 
-                    sigList.add(new PGPSignature(signaturePacket, trustPacket));
-                }
+                sigList.add(new PGPSignature(signaturePacket, trustPacket));
             }
 
             return sigList;
@@ -96,16 +76,9 @@ public abstract class PGPKeyRing
         List idSigs)
         throws IOException
     {
-        while (pIn.nextPacketTag() == PacketTags.USER_ID
-            || pIn.nextPacketTag() == PacketTags.USER_ATTRIBUTE
-            || pIn.nextPacketTag() == PacketTags.MARKER)
+        while (isUserTag(pIn.skipMarkerPackets()))
         {
             Packet obj = pIn.readPacket();
-            if (obj instanceof MarkerPacket)
-            {
-                continue;
-            }
-
             if (obj instanceof UserIDPacket)
             {
                 UserIDPacket id = (UserIDPacket)obj;
@@ -168,4 +141,15 @@ public abstract class PGPKeyRing
     public abstract byte[] getEncoded()
         throws IOException;
 
+    private static boolean isUserTag(int tag)
+    {
+        switch (tag)
+        {
+            case PacketTags.USER_ATTRIBUTE:
+            case PacketTags.USER_ID:
+                return true;
+            default:
+                return false;
+        }
+    }
 }
