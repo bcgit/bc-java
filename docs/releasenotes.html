@@ -27,6 +27,7 @@ Release: 1.70<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>Blake 3 output limit is enforced.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -34,6 +35,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>PGP ASCII armored data now skips "\t", "\v", and "\f".</li>
 <li>PKCS12 files with duplicate localKeyId attributes on certificates will now have the incorrect attributes filtered out, rather than the duplicate causing an exception.</li>
 <li>PGPObjectFactory will now ignore packets representing unrecognised signature versions in the input stream.</li>
+<li>X509Extension will accumulate repeat extensions if the outer type of extension is a sequence.</li>
+<li>Removed support for maxXofLen in Kangaroo digest.</li>
+<li>Ignore marker packets in PGP Public and Secret key ring collection.</li>
+<li>Added LEA Engine.</li>
+<li>Refactor of SignerInformation.doVerify, breaking up large code block.</li>
 </ul>
 
 <a name="r1rv69"><h3>2.2.1 Version</h3></a>
