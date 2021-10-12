@@ -98,7 +98,7 @@ public class PGPSecretKeyRing
 
         BCPGInputStream pIn = wrap(in);
 
-        int initialTag = pIn.nextPacketTag();
+        int initialTag = pIn.skipMarkerPackets();
         if (initialTag != PacketTags.SECRET_KEY && initialTag != PacketTags.SECRET_SUBKEY)
         {
             throw new IOException(

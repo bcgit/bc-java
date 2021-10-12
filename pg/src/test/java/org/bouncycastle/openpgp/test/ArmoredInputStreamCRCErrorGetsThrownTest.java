@@ -90,7 +90,7 @@ public class ArmoredInputStreamCRCErrorGetsThrownTest
         try
         {
             Streams.pipeAll(armorIn, bytesOut);
-            fail("Expected IOException to be throws due to CRC mismatch.");
+            fail("Expected IOException to be thrown due to CRC mismatch.");
         }
         catch (IOException e)
         {

@@ -28,12 +28,6 @@ public class ArmoredInputStream
      */
     private static final byte[] decodingTable;
 
-    /*
-     * Ignore missing CRC checksums.
-     * https://tests.sequoia-pgp.org/#ASCII_Armor suggests that missing CRC sums do not invalidate the message.
-     */
-    private boolean detectMissingChecksum = false;
-
     static
     {
         decodingTable = new byte[128];
@@ -67,7 +61,7 @@ public class ArmoredInputStream
      *
      * @return the offset the data starts in out.
      */
-    private int decode(
+    private static int decode(
         int      in0,
         int      in1,
         int      in2,
@@ -131,6 +125,12 @@ public class ArmoredInputStream
             return 0;
         }
     }
+
+    /*
+     * Ignore missing CRC checksums.
+     * https://tests.sequoia-pgp.org/#ASCII_Armor suggests that missing CRC sums do not invalidate the message.
+     */
+    private boolean detectMissingChecksum = false;
 
     InputStream    in;
     boolean        start = true;
@@ -564,7 +564,7 @@ public class ArmoredInputStream
         {
             throw new IndexOutOfBoundsException("Offset and length cannot be negative.");
         }
-        if (size < off + len)
+        if (off > size - len)
         {
             throw new IndexOutOfBoundsException("Invalid offset and length.");
         }
