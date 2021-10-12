@@ -73,7 +73,7 @@ public class IgnoreMarkerPacketInCertificatesTest
     @Override
     public String getName()
     {
-        return IgnoreMarkerPacketInCertificatesTest.class.getName();
+        return IgnoreMarkerPacketInCertificatesTest.class.getSimpleName();
     }
 
     @Override

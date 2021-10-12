@@ -293,6 +293,18 @@ public class BCPGInputStream
         }
     }
 
+    public int skipMarkerPackets()
+        throws IOException
+    {
+        int tag;
+        while ((tag = nextPacketTag()) == PacketTags.MARKER)
+        {
+            readPacket();
+        }
+
+        return tag;
+    }
+
     public void close()
         throws IOException
     {
