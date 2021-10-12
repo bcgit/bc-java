@@ -10,6 +10,8 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
+import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -59,6 +61,22 @@ public class PGPPBEEncryptedData
     }
 
     /**
+     * Return the symmetric session key required to decrypt the data protected by this object.
+     *
+     * @param dataDecryptorFactory decryptor factory used to recover the session data.
+     * @return session key
+     * @throws PGPException if the session data cannot be recovered
+     */
+    public PGPSessionKey getSessionKey(PBEDataDecryptorFactory dataDecryptorFactory)
+        throws PGPException
+    {
+        byte[] key = dataDecryptorFactory.makeKeyFromPassPhrase(keyData.getEncAlgorithm(), keyData.getS2K());
+        byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
+
+        return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length));
+    }
+
+    /**
      * Open an input stream which will provide the decrypted data protected by this object.
      * 
      * @param dataDecryptorFactory decryptor factory to use to recover the session data and provide
@@ -73,17 +91,51 @@ public class PGPPBEEncryptedData
     {
         try
         {
-            int          keyAlgorithm = keyData.getEncAlgorithm();
-            byte[]       key = dataDecryptorFactory.makeKeyFromPassPhrase(keyAlgorithm, keyData.getS2K());
+            PGPSessionKey sessionKey = getSessionKey(dataDecryptorFactory);
             boolean      withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
+            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
-            byte[]       sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
-            byte[]       sessionKey = new byte[sessionData.length - 1];
+            return getDataStream(withIntegrityPacket, dataDecryptor);
+        }
+        catch (PGPException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("Exception creating cipher", e);
+        }
+    }
 
-            System.arraycopy(sessionData, 1, sessionKey, 0, sessionKey.length);
+    public InputStream getDataStream(
+        SessionKeyDataDecryptorFactory dataDecryptorFactory)
+        throws PGPException
+    {
+        try
+        {
+            PGPSessionKey sessionKey = dataDecryptorFactory.getSessionKey();
+            boolean      withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
+            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
-            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionData[0] & 0xff, sessionKey);
+            return getDataStream(withIntegrityPacket, dataDecryptor);
+        }
+        catch (PGPException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("Exception creating cipher", e);
+        }
+    }
 
+    private InputStream getDataStream(
+        boolean withIntegrityPacket,
+        PGPDataDecryptor dataDecryptor)
+        throws PGPException
+    {
+        try
+        {
             BCPGInputStream encIn = encData.getInputStream();
             encIn.mark(dataDecryptor.getBlockSize() + 2); // iv + 2 octets checksum
 
