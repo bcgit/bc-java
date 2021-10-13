@@ -344,7 +344,7 @@ public class PGPUtil
         pipeFileContents(file, pOut, buffer.length);
     }
 
-    private static void pipeFileContents(File file, OutputStream pOut, int bufferSize)
+    static void pipeFileContents(File file, OutputStream pOut, int bufferSize)
         throws IOException
     {
         byte[] buf = new byte[bufferSize];
