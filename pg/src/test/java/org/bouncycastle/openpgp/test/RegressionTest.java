@@ -21,6 +21,7 @@ public class RegressionTest
         new PGPMarkerTest(),
         new PGPPacketTest(),
         new PGPArmoredTest(),
+        new PGPSignatureInvalidVersionIgnoredTest(),
         new PGPSignatureTest(),
         new PGPClearSignedSignatureTest(),
         new PGPCompressionTest(),
