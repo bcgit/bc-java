@@ -39,7 +39,8 @@ public class RegressionTest
         new ArmoredInputStreamBackslashTRVFTest(),
         new ArmoredInputStreamCRCErrorGetsThrownTest(),
         new ArmoredInputStreamIngoreMissingCRCSum(),
-        new PGPSessionKeyTest()
+        new PGPSessionKeyTest(),
+        new PGPCanonicalizedDataGeneratorTest()
     };
 
     public static void main(String[] args)
