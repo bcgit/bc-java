@@ -174,15 +174,6 @@ public class ASN1OutputStream
         write(contents, 0, contents.length);
     }
 
-    final void writeEncodingIL(boolean withID, int flags, int tag, byte[] contents) throws IOException
-    {
-        writeIdentifier(withID, flags, tag);
-        write(0x80);
-        write(contents, 0, contents.length);
-        write(0x00);
-        write(0x00);
-    }
-
     final void writeEncodingIL(boolean withID, int identifier, ASN1Encodable[] elements) throws IOException
     {
         writeIdentifier(withID, identifier);
