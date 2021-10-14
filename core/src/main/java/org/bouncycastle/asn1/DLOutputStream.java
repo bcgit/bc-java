@@ -22,8 +22,7 @@ class DLOutputStream
     void writeElements(ASN1Encodable[] elements)
         throws IOException
     {
-        int count = elements.length;
-        for (int i = 0; i < count; ++i)
+        for (int i = 0, count = elements.length; i < count; ++i)
         {
             elements[i].toASN1Primitive().toDLObject().encode(this, true);
         }
