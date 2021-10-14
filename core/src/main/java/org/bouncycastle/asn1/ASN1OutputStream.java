@@ -123,9 +123,7 @@ public class ASN1OutputStream
     {
         for (int i = 0, count = elements.length; i < count; ++i)
         {
-            ASN1Primitive primitive = elements[i].toASN1Primitive();
-
-            primitive.encode(this, true);
+            elements[i].toASN1Primitive().encode(this, true);
         }
     }
 
