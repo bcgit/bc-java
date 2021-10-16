@@ -77,7 +77,7 @@ public class WriterTest
 
     public String getName()
     {
-        return "PEMWriterTest";
+        return "WriterTest";
     }
 
     public void performTest()
