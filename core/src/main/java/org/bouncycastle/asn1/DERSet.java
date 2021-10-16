@@ -95,10 +95,7 @@ public class DERSet
      */
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        if (withTag)
-        {
-            out.write(BERTags.CONSTRUCTED | BERTags.SET);
-        }
+        out.writeIdentifier(withTag, BERTags.CONSTRUCTED | BERTags.SET);
 
         DEROutputStream derOut = out.getDERSubStream();
 
