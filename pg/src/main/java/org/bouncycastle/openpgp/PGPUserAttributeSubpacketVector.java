@@ -9,14 +9,23 @@ import org.bouncycastle.bcpg.attr.ImageAttribute;
  */
 public class PGPUserAttributeSubpacketVector
 {
-    UserAttributeSubpacket[]        packets;
-    
+    public static PGPUserAttributeSubpacketVector fromSubpackets(UserAttributeSubpacket[] packets)
+    {
+        if (packets == null)
+        {
+            packets = new UserAttributeSubpacket[0];
+        }
+        return new PGPUserAttributeSubpacketVector(packets);
+    }
+
+    UserAttributeSubpacket[] packets;
+
     PGPUserAttributeSubpacketVector(
         UserAttributeSubpacket[]    packets)
     {
         this.packets = packets;
     }
-    
+
     public UserAttributeSubpacket getSubpacket(
         int    type)
     {
