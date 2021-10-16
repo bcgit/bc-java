@@ -273,6 +273,11 @@ public abstract class AbstractTlsServer
         return null;
     }
 
+    public TlsPSKExternal getExternalPSK(Vector identities)
+    {
+        return null;
+    }
+
     public void notifySession(TlsSession session)
     {
     }
