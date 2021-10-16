@@ -45,7 +45,8 @@ public class BERBitString
             byte[] contents = new byte[totalLength];
             contents[0] = padBits;
 
-            for (int i = 0, pos = 1; i < count; ++i)
+            int pos = 1;
+            for (int i = 0; i < count; ++i)
             {
                 byte[] elementContents = bitStrings[i].contents;
                 int length = elementContents.length - 1;
