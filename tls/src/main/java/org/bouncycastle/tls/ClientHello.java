@@ -83,6 +83,11 @@ public class ClientHello
      */
     public void encode(TlsContext context, OutputStream output) throws IOException
     {
+        if (bindersSize < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         TlsUtils.writeVersion(version, output);
 
         output.write(random);
@@ -189,6 +194,6 @@ public class ClientHello
             extensions = TlsProtocol.readExtensionsDataClientHello(extBytes);
         }
 
-        return new ClientHello(clientVersion, random, sessionID, cookie, cipherSuites, extensions, 0);
+        return new ClientHello(clientVersion, random, sessionID, cookie, cipherSuites, extensions, -1);
     }
 }

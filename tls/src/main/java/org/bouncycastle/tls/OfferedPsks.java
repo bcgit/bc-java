@@ -32,13 +32,14 @@ public class OfferedPsks
 
     protected final Vector identities;
     protected final Vector binders;
+    protected final int bindersSize;
 
     public OfferedPsks(Vector identities)
     {
-        this(identities, null);
+        this(identities, null, -1);
     }
 
-    private OfferedPsks(Vector identities, Vector binders)
+    private OfferedPsks(Vector identities, Vector binders, int bindersSize)
     {
         if (null == identities || identities.isEmpty())
         {
@@ -48,14 +49,36 @@ public class OfferedPsks
         {
             throw new IllegalArgumentException("'binders' must be the same length as 'identities' (or null)");
         }
+        if ((null != binders) != (bindersSize >= 0))
+        {
+            throw new IllegalArgumentException("'bindersSize' must be >= 0 iff 'binders' are present");
+        }
 
         this.identities = identities;
         this.binders = binders;
+        this.bindersSize = bindersSize;
+    }
+
+    byte[] getBinderForIdentity(PskIdentity matchIdentity)
+    {
+        for (int i = 0, count = identities.size(); i < count; ++i)
+        {
+            if (matchIdentity.equals(identities.elementAt(i)))
+            {
+                return (byte[])binders.elementAt(i);
+            }
+        }
+        return null;
     }
 
     public Vector getBinders()
     {
         return binders;
+    }
+
+    public int getBindersSize()
+    {
+        return bindersSize;
     }
 
     public Vector getIdentities()
@@ -73,10 +96,10 @@ public class OfferedPsks
                 PskIdentity identity = (PskIdentity)identities.elementAt(i);
                 lengthOfIdentitiesList += identity.getEncodedLength();
             }
-    
+
             TlsUtils.checkUint16(lengthOfIdentitiesList);
             TlsUtils.writeUint16(lengthOfIdentitiesList, output);
-    
+
             for (int i = 0; i < identities.size(); ++i)
             {
                 PskIdentity identity = (PskIdentity)identities.elementAt(i);
@@ -180,8 +203,8 @@ public class OfferedPsks
         }
 
         Vector binders = new Vector();
+        int totalLengthBinders = TlsUtils.readUint16(input);
         {
-            int totalLengthBinders = TlsUtils.readUint16(input);
             if (totalLengthBinders < 33)
             {
                 throw new TlsFatalAlert(AlertDescription.decode_error);
@@ -191,12 +214,12 @@ public class OfferedPsks
             ByteArrayInputStream buf = new ByteArrayInputStream(bindersData);
             do
             {
-                byte[] binder = TlsUtils.readOpaque8(input, 32);
+                byte[] binder = TlsUtils.readOpaque8(buf, 32);
                 binders.add(binder);
             }
             while (buf.available() > 0);
         }
 
-        return new OfferedPsks(identities, binders);
+        return new OfferedPsks(identities, binders, 2 + totalLengthBinders);
     }
 }

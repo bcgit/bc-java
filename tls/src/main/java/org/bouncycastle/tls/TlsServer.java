@@ -27,6 +27,18 @@ public interface TlsServer
 
     byte[] getNewSessionID();
 
+    /**
+     * WARNING: EXPERIMENTAL FEATURE, UNSTABLE API
+     * 
+     * Return the {@link TlsPSKExternal external PSK} to select from the ClientHello. Note that this will only
+     * be called when TLS 1.3 or higher is amongst the offered protocol versions, and one or more PSKs are
+     * actually offered.
+     * 
+     * @param identities a {@link Vector} of {@link PskIdentity} instances.
+     * @return the {@link TlsPSKExternal} corresponding to the selected identity, or null to not select any.
+     */
+    TlsPSKExternal getExternalPSK(Vector identities);
+
     void notifySession(TlsSession session);
 
     void notifyClientVersion(ProtocolVersion clientVersion) throws IOException;
