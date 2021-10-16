@@ -83,10 +83,7 @@ public class DLSequence
      */
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        if (withTag)
-        {
-            out.write(BERTags.CONSTRUCTED | BERTags.SEQUENCE);
-        }
+        out.writeIdentifier(withTag, BERTags.CONSTRUCTED | BERTags.SEQUENCE);
 
         ASN1OutputStream dlOut = out.getDLSubStream();
 
