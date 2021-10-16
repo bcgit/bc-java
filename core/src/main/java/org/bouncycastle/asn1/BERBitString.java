@@ -153,10 +153,7 @@ public class BERBitString
             return;
         }
 
-        if (withTag)
-        {
-            out.write(BERTags.CONSTRUCTED | BERTags.BIT_STRING);
-        }
+        out.writeIdentifier(withTag, BERTags.CONSTRUCTED | BERTags.BIT_STRING);
         out.write(0x80);
 
         if (null != elements)
