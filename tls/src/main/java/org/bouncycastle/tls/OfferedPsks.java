@@ -30,6 +30,22 @@ public class OfferedPsks
         }
     }
 
+    static class SelectedConfig
+    {
+        final int index;
+        final TlsPSK psk;
+        final short[] pskKeyExchangeModes;
+        final TlsSecret earlySecret;
+
+        SelectedConfig(int index, TlsPSK psk, short[] pskKeyExchangeModes, TlsSecret earlySecret)
+        {
+            this.index = index;
+            this.psk = psk;
+            this.pskKeyExchangeModes = pskKeyExchangeModes;
+            this.earlySecret = earlySecret;
+        }
+    }
+
     protected final Vector identities;
     protected final Vector binders;
     protected final int bindersSize;
@@ -59,18 +75,6 @@ public class OfferedPsks
         this.bindersSize = bindersSize;
     }
 
-    byte[] getBinderForIdentity(PskIdentity matchIdentity)
-    {
-        for (int i = 0, count = identities.size(); i < count; ++i)
-        {
-            if (matchIdentity.equals(identities.elementAt(i)))
-            {
-                return (byte[])binders.elementAt(i);
-            }
-        }
-        return null;
-    }
-
     public Vector getBinders()
     {
         return binders;
@@ -84,6 +88,18 @@ public class OfferedPsks
     public Vector getIdentities()
     {
         return identities;
+    }
+
+    public int getIndexOfIdentity(PskIdentity pskIdentity)
+    {
+        for (int i = 0, count = identities.size(); i < count; ++i)
+        {
+            if (pskIdentity.equals(identities.elementAt(i)))
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void encode(OutputStream output) throws IOException
