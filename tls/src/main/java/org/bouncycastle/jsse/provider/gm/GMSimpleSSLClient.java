@@ -16,7 +16,8 @@ import java.util.Hashtable;
  *
  * @since 2021-03-09 14:01:50
  */
-public class GMSimpleSSLClient extends AbstractTlsClient {
+public class GMSimpleSSLClient extends AbstractTlsClient
+{
     private static final int[] DEFAULT_CIPHER_SUITES = new int[]
             {
                     /*
@@ -25,31 +26,39 @@ public class GMSimpleSSLClient extends AbstractTlsClient {
                     CipherSuite.GMSSL_ECC_SM4_SM3,
             };
 
-    public GMSimpleSSLClient() {
+    public GMSimpleSSLClient()
+    {
         this(new BcTlsCrypto(new SecureRandom()));
     }
 
-    public GMSimpleSSLClient(TlsCrypto crypto) {
+    public GMSimpleSSLClient(TlsCrypto crypto)
+    {
         super(crypto);
     }
 
     @Override
-    protected ProtocolVersion[] getSupportedVersions() {
+    protected ProtocolVersion[] getSupportedVersions()
+    {
         return new ProtocolVersion[]{ProtocolVersion.GMSSLv11};
     }
 
-    protected int[] getSupportedCipherSuites() {
+    protected int[] getSupportedCipherSuites()
+    {
         return TlsUtils.getSupportedCipherSuites(getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
-    public TlsAuthentication getAuthentication() throws IOException {
-        return new TlsAuthentication() {
+    public TlsAuthentication getAuthentication() throws IOException
+    {
+        return new TlsAuthentication()
+        {
 
-            public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException {
+            public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
+            {
 //                System.out.println(">> TlsAuthentication on notifyServerCertificate");
             }
 
-            public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException {
+            public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
+            {
 //                System.out.println(">> TlsAuthentication on getClientCredentials");
                 return null;
             }
@@ -63,7 +72,8 @@ public class GMSimpleSSLClient extends AbstractTlsClient {
      * @throws IOException not happen
      */
     @Override
-    public Hashtable getClientExtensions() throws IOException {
+    public Hashtable getClientExtensions() throws IOException
+    {
         return new Hashtable(0);
     }
 
@@ -78,11 +88,13 @@ public class GMSimpleSSLClient extends AbstractTlsClient {
      * @return true - use GMTUnixTime
      */
     @Override
-    public boolean shouldUseGMTUnixTime() {
+    public boolean shouldUseGMTUnixTime()
+    {
         return true;
     }
 
     @Override
-    public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException {
+    public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException
+    {
     }
 }
