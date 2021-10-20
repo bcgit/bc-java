@@ -1,6 +1,5 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
-import org.bouncycastle.asn1.gm.SM2Cipher;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.engines.SM2Engine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -88,7 +87,8 @@ public class BcGMSSLCredentials implements TlsCredentialedSigner, TlsCredentiale
             sm2Signer.init(true, prvKey);
             sm2Signer.update(hash, 0, hash.length);
             return sm2Signer.generateSignature();
-        } catch (CryptoException e)
+        }
+        catch (CryptoException e)
         {
             e.printStackTrace();
             throw new TlsFatalAlertReceived(AlertDescription.illegal_parameter);
