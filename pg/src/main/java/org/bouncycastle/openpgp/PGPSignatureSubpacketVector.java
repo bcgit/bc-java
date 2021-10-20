@@ -360,6 +360,17 @@ public class PGPSignatureSubpacketVector
         return new IntendedRecipientFingerprint(p.isCritical(), p.isLongLength(), p.getData());
     }
 
+    public IntendedRecipientFingerprint[] getIntendedRecipientFingerprints()
+    {
+        SignatureSubpacket[] subpackets = this.getSubpackets(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT);
+        IntendedRecipientFingerprint[] recipients = new IntendedRecipientFingerprint[subpackets.length];
+        for (int i = 0; i < recipients.length; i++)
+        {
+            recipients[i] = new IntendedRecipientFingerprint(subpackets[i].isCritical(), subpackets[i].isLongLength(), subpackets[i].getData());
+        }
+        return recipients;
+    }
+
     public Exportable getExportable()
     {
         SignatureSubpacket p = getSubpacket(SignatureSubpacketTags.EXPORTABLE);
@@ -371,6 +382,12 @@ public class PGPSignatureSubpacketVector
         return new Exportable(p.isCritical(), p.isLongLength(), p.getData());
     }
 
+    public boolean isExportable()
+    {
+        Exportable exportable = getExportable();
+        return exportable == null || exportable.isExportable();
+    }
+
     public Revocable getRevocable()
     {
         SignatureSubpacket p = getSubpacket(SignatureSubpacketTags.REVOCABLE);
@@ -380,6 +397,12 @@ public class PGPSignatureSubpacketVector
         }
 
         return new Revocable(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public boolean isRevocable()
+    {
+        Revocable revocable = getRevocable();
+        return revocable == null || revocable.isRevocable();
     }
 
     public RevocationKey[] getRevocationKeys()
