@@ -137,6 +137,22 @@ public class PGPSignatureSubpacketVector
         return getNotationDataOccurrences();
     }
 
+    /**
+     * Return all {@link NotationData} occurrences which match the given notation name.
+     * @param notationName notation name
+     * @return notations with matching name
+     */
+    public NotationData[] getNotationDataOccurrences(String notationName) {
+        NotationData[] notations = getNotationDataOccurrences();
+        List<NotationData> notationsWithName = new ArrayList<>();
+        for (NotationData notation : notations) {
+            if (notation.getNotationName().equals(notationName)) {
+                notationsWithName.add(notation);
+            }
+        }
+        return notationsWithName.toArray(new NotationData[0]);
+    }
+
     public long getIssuerKeyID()
     {
         SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID);
