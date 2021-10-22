@@ -40,6 +40,10 @@ public class Features
         super(SignatureSubpacketTags.FEATURES, critical, false, featureToByteArray((byte)features));
     }
 
+    public byte getFeatures() {
+        return data[0];
+    }
+
     /**
      * Returns if modification detection is supported.
      */
