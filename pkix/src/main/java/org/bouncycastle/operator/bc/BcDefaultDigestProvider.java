@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -57,6 +60,20 @@ public class BcDefaultDigestProvider
             public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
             {
                 return new SHA512Digest();
+            }
+        });
+        table.put(NISTObjectIdentifiers.id_sha512_224, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHA512tDigest(224);
+            }
+        });
+        table.put(NISTObjectIdentifiers.id_sha512_256, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHA512tDigest(256);
             }
         });
         table.put(NISTObjectIdentifiers.id_sha3_224, new BcDigestProvider()
@@ -150,6 +167,27 @@ public class BcDefaultDigestProvider
                 return new RIPEMD256Digest();
             }
         });
+        table.put(NISTObjectIdentifiers.id_shake128, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHAKEDigest(128);
+            }
+        });
+        table.put(NISTObjectIdentifiers.id_shake256, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHAKEDigest(256);
+            }
+        });
+        table.put(GMObjectIdentifiers.sm3, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SM3Digest();
+            }
+        });        
 
         return Collections.unmodifiableMap(table);
     }
@@ -164,7 +202,18 @@ public class BcDefaultDigestProvider
     public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
         throws OperatorCreationException
     {
-        BcDigestProvider extProv = (BcDigestProvider)lookup.get(digestAlgorithmIdentifier.getAlgorithm());
+        ASN1ObjectIdentifier algorithm = digestAlgorithmIdentifier.getAlgorithm();
+
+        if (NISTObjectIdentifiers.id_shake128_len.equals(algorithm)
+            || NISTObjectIdentifiers.id_shake256_len.equals(algorithm))
+        {
+            int bitLength = NISTObjectIdentifiers.id_shake128_len.equals(algorithm) ? 128 : 256;
+            int digestBitLength = ASN1Integer.getInstance(digestAlgorithmIdentifier.getParameters())
+                                  .getValue().intValueExact();
+            return new SHAKELenDigest(bitLength, digestBitLength);
+        }
+
+        BcDigestProvider extProv = (BcDigestProvider)lookup.get(algorithm);
 
         if (extProv == null)
         {
@@ -173,4 +222,5 @@ public class BcDefaultDigestProvider
 
         return extProv.get(digestAlgorithmIdentifier);
     }
+    
 }
