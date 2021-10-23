@@ -56,8 +56,8 @@ public class GMSimpleSSLClient extends AbstractTlsClient
 
             public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
             {
-                System.out.println(">> TlsAuthentication on notifyServerCertificate");
-                System.out.println(serverCertificate.getCertificate());
+//                System.out.println(">> TlsAuthentication on notifyServerCertificate");
+//                System.out.println(serverCertificate.getCertificate());
             }
 
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException

@@ -1,7 +1,5 @@
 package org.bouncycastle.jsse.provider.gm;
 
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 
@@ -10,10 +8,12 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 import javax.security.cert.CertificateException;
 import javax.security.cert.X509Certificate;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.SocketException;
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -36,11 +36,22 @@ public class GMSession implements SSLSession
 
     private SecurityParameterProvider secParamProvider;
 
+    private  CertificateFactory cf;
+
     public GMSession(GMSimpleSSLSocket scoket)
     {
         gmScoket = scoket;
         contextValue = new HashMap<String, Object>();
         renew(null);
+
+        try
+        {
+           cf = CertificateFactory.getInstance("X.509", new BouncyCastleProvider());
+        }
+        catch (java.security.cert.CertificateException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void renew(SecurityParameterProvider secParamProvider)
@@ -125,15 +136,13 @@ public class GMSession implements SSLSession
         final org.bouncycastle.tls.Certificate peerCertificate =
                 secParamProvider.getSecurityParameters().getPeerCertificate();
         final TlsCertificate[] list = peerCertificate.getCertificateList();
-        final JcaX509CertificateConverter converter = new JcaX509CertificateConverter()
-                .setProvider(new BouncyCastleProvider());
         Certificate[] res = new Certificate[list.length];
         for (int i = 0; i < list.length; i++)
         {
             try
             {
                 final byte[] encoded = list[i].getEncoded();
-                res[i] = converter.getCertificate(new X509CertificateHolder(encoded));
+                res[i] = cf.generateCertificate(new ByteArrayInputStream(encoded));
             }
             catch (java.security.cert.CertificateException e)
             {
@@ -153,18 +162,18 @@ public class GMSession implements SSLSession
         {
             return new Certificate[0];
         }
+
         final org.bouncycastle.tls.Certificate localCertificate =
                 secParamProvider.getSecurityParameters().getLocalCertificate();
         final TlsCertificate[] list = localCertificate.getCertificateList();
-        final JcaX509CertificateConverter converter = new JcaX509CertificateConverter()
-                .setProvider(new BouncyCastleProvider());
         Certificate[] res = new Certificate[list.length];
         for (int i = 0; i < list.length; i++)
         {
             try
             {
+
                 final byte[] encoded = list[i].getEncoded();
-                res[i] = converter.getCertificate(new X509CertificateHolder(encoded));
+                res[i] = cf.generateCertificate(new ByteArrayInputStream(encoded));
             }
             catch (java.security.cert.CertificateException e)
             {
