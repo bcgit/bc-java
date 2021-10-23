@@ -1,10 +1,7 @@
 package org.bouncycastle.jsse.provider.gm;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.TlsClientProtocol;
-import org.bouncycastle.tls.TlsProtocol;
-import org.bouncycastle.tls.TlsServerProtocol;
+import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 import javax.net.ssl.HandshakeCompletedListener;
@@ -33,11 +30,13 @@ public class GMSimpleSSLSocket extends SSLSocket
     };
 
     protected boolean useClientMode = true;
-    protected TlsProtocol protocol;
+    private TlsProtocol protocol;
 
     protected TlsCrypto crypto;
     protected Certificate certList;
     protected AsymmetricKeyParameter signKey, encKey;
+
+    private GMSession session;
 
 
     protected GMSimpleSSLSocket()
@@ -147,7 +146,7 @@ public class GMSimpleSSLSocket extends SSLSocket
     public SSLSession getSession()
     {
         // prevent apache HttpClient get session null throw error
-        return new GMEmptySession();
+        return session;
     }
 
     @Override
@@ -173,20 +172,28 @@ public class GMSimpleSSLSocket extends SSLSocket
 
     protected void makeHandshake(InputStream input, OutputStream output) throws IOException
     {
+        if(session == null)
+        {
+            session = new GMSession(this);
+        }
         if(this.useClientMode)
         {
-            TlsClientProtocol clientProtocol = new TlsClientProtocol(input, output);
+            GmSimpleTlsClientProtocol clientProtocol = new GmSimpleTlsClientProtocol(input, output);
             this.protocol = clientProtocol;
+            session.renew(clientProtocol);
             GMSimpleSSLClient client = new GMSimpleSSLClient(crypto);
+
             clientProtocol.connect(client);
         }
         else
         {
             GMSimpleSSLServer server = new GMSimpleSSLServer(crypto, certList, signKey, encKey);
-            TlsServerProtocol serverProtocol = new TlsServerProtocol(input, output);
+            GmSimpleTlsServerProtocol serverProtocol = new GmSimpleTlsServerProtocol(input, output);
+            session.renew(serverProtocol);
             this.protocol = serverProtocol;
             serverProtocol.accept(server);
         }
+
     }
 
     synchronized void handshakeIfNecessary() throws IOException
@@ -268,6 +275,8 @@ public class GMSimpleSSLSocket extends SSLSocket
             protocol.close();
         }
     }
+
+
 
     @Override
     protected void finalize() throws Throwable

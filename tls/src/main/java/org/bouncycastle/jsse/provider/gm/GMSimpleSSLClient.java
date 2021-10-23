@@ -18,6 +18,8 @@ import java.util.Hashtable;
  */
 public class GMSimpleSSLClient extends AbstractTlsClient
 {
+
+
     private static final int[] DEFAULT_CIPHER_SUITES = new int[]
             {
                     /*
@@ -54,7 +56,8 @@ public class GMSimpleSSLClient extends AbstractTlsClient
 
             public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
             {
-//                System.out.println(">> TlsAuthentication on notifyServerCertificate");
+                System.out.println(">> TlsAuthentication on notifyServerCertificate");
+                System.out.println(serverCertificate.getCertificate());
             }
 
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException

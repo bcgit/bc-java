@@ -3,6 +3,7 @@ package org.bouncycastle.tls.test;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.jsse.provider.gm.GMSimpleSSLClient;
+import org.bouncycastle.jsse.provider.gm.GMSimpleSSLSocketFactory;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.util.io.Streams;
 
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.URL;
 import java.security.*;
 
 /**
@@ -31,10 +33,18 @@ public class GMSSLClientTest
 
 //        String host = "localhost";
 //        int port = 5557;
-        String host = "sm2test.ovssl.cn";
-        int port = 443;
+//        String host = "sm2test.ovssl.cn";
+//        int port = 443;
 //        bc(host, port);
-        jsse(host, port);
+//        jsse(host, port);
+        HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier()
+        {
+            public boolean verify(String s, SSLSession sslSession)
+            {
+                return true;
+            }
+        });
+        httpGet("https://sm2test.ovssl.cn/");
     }
 
     private static void bc(String host, int port) throws IOException
@@ -77,5 +87,40 @@ public class GMSSLClientTest
 
         out.close();
         in.close();
+    }
+
+
+    private static void httpGet(String urlStr)
+    {
+
+        HttpsURLConnection connection = null;
+
+        try
+        {
+            URL url = new URL(urlStr);
+            connection = (HttpsURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setSSLSocketFactory(new GMSimpleSSLSocketFactory());
+            final InputStream input = connection.getInputStream();
+            byte[] buff = new byte[4096];
+
+            int n;
+            while((n=input.read(buff)) != -1)
+            {
+                System.out.write(buff, 0, n);
+            }
+            input.close();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            if (connection != null)
+            {
+                connection.disconnect();
+            }
+        }
     }
 }
