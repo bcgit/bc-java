@@ -160,10 +160,8 @@ public abstract class ASN1BMPString
     final void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         int count = string.length;
-        if (withTag)
-        {
-            out.write(BERTags.BMP_STRING);
-        }
+
+        out.writeIdentifier(withTag, BERTags.BMP_STRING);
         out.writeDL(count * 2);
 
         byte[] buf = new byte[8];

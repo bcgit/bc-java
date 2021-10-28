@@ -176,9 +176,7 @@ public abstract class ASN1BitString
             throw new IllegalArgumentException("pad bits cannot be greater than 7 or less than 0");
         }
 
-        this.contents = new byte[1 + data.length];
-        contents[0] = (byte)padBits;
-        System.arraycopy(data, 0, contents, 1, data.length);
+        this.contents = Arrays.prepend(data, (byte)padBits);
     }
 
     ASN1BitString(byte[] contents, boolean check)
@@ -406,7 +404,7 @@ public abstract class ASN1BitString
                 throw new IllegalArgumentException("invalid pad bits detected");
             }
 
-            byte finalOctet = contents[contents.length - 1];
+            byte finalOctet = contents[length - 1];
             if (finalOctet != (byte)(finalOctet & (0xFF << padBits)))
             {
                 return new DLBitString(contents, false);

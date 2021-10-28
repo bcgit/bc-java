@@ -25,6 +25,7 @@ public class AllTests
         suite.addTestSuite(DTLSPSKProtocolTest.class);
         suite.addTestSuite(OCSPTest.class);
         suite.addTestSuite(PRFTest.class);
+        suite.addTestSuite(Tls13PSKProtocolTest.class);
         suite.addTestSuite(TlsProtocolNonBlockingTest.class);
         suite.addTestSuite(TlsProtocolTest.class);
         suite.addTestSuite(TlsPSKProtocolTest.class);

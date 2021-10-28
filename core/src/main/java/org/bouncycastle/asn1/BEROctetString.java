@@ -209,10 +209,7 @@ public class BEROctetString
             return;
         }
 
-        if (withTag)
-        {
-            out.write(BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
-        }
+        out.writeIdentifier(withTag, BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
         out.write(0x80);
 
         if (null != elements)

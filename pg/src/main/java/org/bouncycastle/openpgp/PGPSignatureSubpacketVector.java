@@ -27,15 +27,7 @@ import org.bouncycastle.bcpg.sig.SignerUserID;
  */
 public class PGPSignatureSubpacketVector
 {
-    SignatureSubpacket[]    packets;
-    
-    PGPSignatureSubpacketVector(
-        SignatureSubpacket[]    packets)
-    {
-        this.packets = packets;
-    }
-
-    public PGPSignatureSubpacketVector fromSubpackets(SignatureSubpacket[] packets)
+    public static PGPSignatureSubpacketVector fromSubpackets(SignatureSubpacket[] packets)
     {
         if (packets == null)
         {
@@ -43,7 +35,15 @@ public class PGPSignatureSubpacketVector
         }
         return new PGPSignatureSubpacketVector(packets);
     }
-    
+
+    SignatureSubpacket[] packets;
+
+    PGPSignatureSubpacketVector(
+        SignatureSubpacket[]    packets)
+    {
+        this.packets = packets;
+    }
+
     public SignatureSubpacket getSubpacket(
         int    type)
     {

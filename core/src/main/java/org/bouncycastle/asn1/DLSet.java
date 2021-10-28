@@ -125,10 +125,7 @@ public class DLSet
      */
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        if (withTag)
-        {
-            out.write(BERTags.CONSTRUCTED | BERTags.SET);
-        }
+        out.writeIdentifier(withTag, BERTags.CONSTRUCTED | BERTags.SET);
 
         ASN1OutputStream dlOut = out.getDLSubStream();
 
