@@ -26,4 +26,14 @@ public class HandshakeMessageInput
     {
         hash.update(buf, mark, count - mark);
     }
+
+    void updateHashPrefix(TlsHash hash, int bindersSize)
+    {
+        hash.update(buf, mark, count - mark - bindersSize);
+    }
+
+    void updateHashSuffix(TlsHash hash, int bindersSize)
+    {
+        hash.update(buf, count - bindersSize, bindersSize);
+    }
 }

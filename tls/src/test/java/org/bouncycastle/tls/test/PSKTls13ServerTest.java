@@ -10,14 +10,7 @@ import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeOutputStream;
 
-/**
- * A simple test designed to conduct a TLS handshake with an external TLS client.
- * <p>
- * Please refer to GnuTLSSetup.html or OpenSSLSetup.html (under 'docs'), and x509-*.pem files in
- * this package (under 'src/test/resources') for help configuring an external TLS client.
- * </p>
- */
-public class PSKTlsServerTest
+public class PSKTls13ServerTest
 {
     public static void main(String[] args)
         throws Exception
@@ -57,7 +50,7 @@ public class PSKTlsServerTest
         {
             try
             {
-                MockPSKTlsServer server = new MockPSKTlsServer();
+                MockPSKTls13Server server = new MockPSKTls13Server();
                 TlsServerProtocol serverProtocol = new TlsServerProtocol(s.getInputStream(), s.getOutputStream());
                 serverProtocol.accept(server);
                 OutputStream log = new TeeOutputStream(serverProtocol.getOutputStream(), System.out);

@@ -37,6 +37,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsHashOutputStream;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
@@ -5912,6 +5913,80 @@ public class TlsUtils
         // NOTE: psk_key_exchange_modes should already be in 'clientExtensions' from the ClientHello
 
         return result;
+    }
+
+    static OfferedPsks.SelectedConfig selectPreSharedKey(TlsServerContext serverContext, TlsServer server,
+        Hashtable clientHelloExtensions, HandshakeMessageInput clientHelloMessage, TlsHandshakeHash handshakeHash,
+        boolean afterHelloRetryRequest) throws IOException
+    {
+        boolean handshakeHashUpdated = false;
+
+        OfferedPsks offeredPsks = TlsExtensionsUtils.getPreSharedKeyClientHello(clientHelloExtensions);
+        if (null != offeredPsks)
+        {
+            short[] pskKeyExchangeModes = TlsExtensionsUtils.getPSKKeyExchangeModesExtension(clientHelloExtensions);
+            if (isNullOrEmpty(pskKeyExchangeModes))
+            {
+                throw new TlsFatalAlert(AlertDescription.missing_extension);
+            }
+
+            // TODO[tls13] Add support for psk_ke?
+            if (Arrays.contains(pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
+            {
+                // TODO[tls13] Prefer to get the exact index from the server?
+                TlsPSKExternal psk = server.getExternalPSK(offeredPsks.getIdentities());
+                if (null != psk)
+                {
+                    int index = offeredPsks.getIndexOfIdentity(new PskIdentity(psk.getIdentity(), 0L));
+                    if (index >= 0)
+                    {
+                        byte[] binder = (byte[])offeredPsks.getBinders().elementAt(index);
+
+                        TlsCrypto crypto = serverContext.getCrypto();
+                        TlsSecret earlySecret = getPSKEarlySecret(crypto, psk);
+
+                        // TODO[tls13-psk] Handle resumption PSKs
+                        boolean isExternalPSK = true;
+                        int pskCryptoHashAlgorithm = TlsCryptoUtils.getHashForPRF(psk.getPRFAlgorithm());
+
+                        byte[] transcriptHash;
+                        {
+                            handshakeHashUpdated = true;
+                            int bindersSize = offeredPsks.getBindersSize();
+                            clientHelloMessage.updateHashPrefix(handshakeHash, bindersSize);
+
+                            if (afterHelloRetryRequest)
+                            {
+                                transcriptHash = handshakeHash.getFinalHash(pskCryptoHashAlgorithm);
+                            }
+                            else
+                            {
+                                TlsHash hash = crypto.createHash(pskCryptoHashAlgorithm);
+                                handshakeHash.copyBufferTo(new TlsHashOutputStream(hash));
+                                transcriptHash = hash.calculateHash();
+                            }
+
+                            clientHelloMessage.updateHashSuffix(handshakeHash, bindersSize);
+                        }
+
+                        byte[] calculatedBinder = calculatePSKBinder(crypto, isExternalPSK, pskCryptoHashAlgorithm,
+                            earlySecret, transcriptHash);
+
+                        if (Arrays.constantTimeAreEqual(calculatedBinder, binder))
+                        {
+                            return new OfferedPsks.SelectedConfig(index, psk, pskKeyExchangeModes, earlySecret);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!handshakeHashUpdated)
+        {
+            clientHelloMessage.updateHash(handshakeHash);
+        }
+
+        return null;
     }
 
     static TlsSecret getPSKEarlySecret(TlsCrypto crypto, TlsPSK psk)

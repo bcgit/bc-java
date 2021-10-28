@@ -8,6 +8,7 @@ import java.util.Vector;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * generic signature packet
@@ -120,6 +121,8 @@ public class SignaturePacket
         }
         else
         {
+            Streams.drain(in);
+
             throw new UnsupportedPacketVersionException("unsupported version: " + version);
         }
         

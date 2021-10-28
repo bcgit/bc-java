@@ -17,6 +17,11 @@ class LazyEncodedSequence
         // NOTE: Initially, the actual 'elements' will be empty
         super();
 
+        if (null == encoded)
+        {
+            throw new NullPointerException("'encoded' cannot be null");
+        }
+
         this.encoded = encoded;
     }
 
