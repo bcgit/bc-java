@@ -1,5 +1,7 @@
 package org.bouncycastle.bcpg;
 
+import org.bouncycastle.util.Strings;
+
 /**
  * basic tags for hash algorithms
  */
@@ -17,4 +19,13 @@ public interface HashAlgorithmTags
     public static final int SHA384 = 9;       // SHA-384
     public static final int SHA512 = 10;      // SHA-512
     public static final int SHA224 = 11;      // SHA-224
+
+    public static final int MD4 = 301;
+    public static final int SHA3_224 = 312; // SHA3-224
+    public static final int SHA3_256 = 313; //SHA3-256
+    public static final int SHA3_384 = 314; // SHA3-384
+    public static final int SHA3_512 = 315; // SHA3-512
+
+    public static final int SM3 = 326; // SHA3-512
+
 }

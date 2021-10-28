@@ -17,14 +17,14 @@ class PGPUtil
 {
     static byte[] makeKeyFromPassPhrase(
         PGPDigestCalculator digestCalculator,
-        int     algorithm,
-        S2K     s2k,
-        char[]  passPhrase)
+        int algorithm,
+        S2K s2k,
+        char[] passPhrase)
         throws PGPException
     {
         // TODO: Never used
-        String    algName = null;
-        int        keySize = 0;
+        String algName = null;
+        int keySize = 0;
 
         switch (algorithm)
         {
@@ -84,11 +84,11 @@ class PGPUtil
             throw new PGPException("unknown symmetric algorithm: " + algorithm);
         }
 
-        byte[]    pBytes = Strings.toUTF8ByteArray(passPhrase);
-        byte[]    keyBytes = new byte[(keySize + 7) / 8];
+        byte[] pBytes = Strings.toUTF8ByteArray(passPhrase);
+        byte[] keyBytes = new byte[(keySize + 7) / 8];
 
-        int    generatedBytes = 0;
-        int    loopCount = 0;
+        int generatedBytes = 0;
+        int loopCount = 0;
 
         if (s2k != null)
         {
@@ -118,7 +118,7 @@ class PGPUtil
                         dOut.write(0);
                     }
 
-                    byte[]    iv = s2k.getIV();
+                    byte[] iv = s2k.getIV();
 
                     switch (s2k.getType())
                     {
@@ -130,7 +130,7 @@ class PGPUtil
                         dOut.write(pBytes);
                         break;
                     case S2K.SALTED_AND_ITERATED:
-                        long    count = s2k.getIterationCount();
+                        long count = s2k.getIterationCount();
                         dOut.write(iv);
                         dOut.write(pBytes);
 
@@ -177,7 +177,7 @@ class PGPUtil
 
                 dOut.close();
 
-                byte[]    dig = digestCalculator.getDigest();
+                byte[] dig = digestCalculator.getDigest();
 
                 if (dig.length > (keyBytes.length - generatedBytes))
                 {
@@ -208,9 +208,9 @@ class PGPUtil
 
     public static byte[] makeKeyFromPassPhrase(
         PGPDigestCalculatorProvider digCalcProvider,
-        int     algorithm,
-        S2K     s2k,
-        char[]  passPhrase)
+        int algorithm,
+        S2K s2k,
+        char[] passPhrase)
         throws PGPException
     {
         PGPDigestCalculator digestCalculator;
