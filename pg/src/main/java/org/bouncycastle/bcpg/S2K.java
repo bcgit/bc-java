@@ -20,11 +20,17 @@ public class S2K
 {
     private static final int EXPBIAS = 6;
 
-    /** Simple key generation. A single non-salted iteration of a hash function */
+    /**
+     * Simple key generation. A single non-salted iteration of a hash function
+     */
     public static final int SIMPLE = 0;
-    /** Salted key generation. A single iteration of a hash function with a (unique) salt */
+    /**
+     * Salted key generation. A single iteration of a hash function with a (unique) salt
+     */
     public static final int SALTED = 1;
-    /** Salted and iterated key generation. Multiple iterations of a hash function, with a salt */
+    /**
+     * Salted and iterated key generation. Multiple iterations of a hash function, with a salt
+     */
     public static final int SALTED_AND_ITERATED = 3;
 
     public static final int GNU_DUMMY_S2K = 101;
@@ -32,17 +38,17 @@ public class S2K
     public static final int GNU_PROTECTION_MODE_NO_PRIVATE_KEY = 1;
     public static final int GNU_PROTECTION_MODE_DIVERT_TO_CARD = 2;
 
-    int       type;
-    int       algorithm;
-    byte[]    iv;
-    int       itCount = -1;
-    int       protectionMode = -1;
+    int type;
+    int algorithm;
+    byte[] iv;
+    int itCount = -1;
+    int protectionMode = -1;
 
     S2K(
-        InputStream    in)
+        InputStream in)
         throws IOException
     {
-        DataInputStream    dIn = new DataInputStream(in);
+        DataInputStream dIn = new DataInputStream(in);
 
         type = dIn.read();
         algorithm = dIn.read();
@@ -78,7 +84,7 @@ public class S2K
      * @param algorithm the {@link HashAlgorithmTags digest algorithm} to use.
      */
     public S2K(
-        int        algorithm)
+        int algorithm)
     {
         this.type = 0;
         this.algorithm = algorithm;
@@ -88,11 +94,11 @@ public class S2K
      * Constructs a specifier for a {@link #SALTED salted} S2K generation.
      *
      * @param algorithm the {@link HashAlgorithmTags digest algorithm} to use.
-     * @param iv the salt to apply to input to the key generation.
+     * @param iv        the salt to apply to input to the key generation.
      */
     public S2K(
-        int        algorithm,
-        byte[]    iv)
+        int algorithm,
+        byte[] iv)
     {
         this.type = 1;
         this.algorithm = algorithm;
@@ -103,17 +109,22 @@ public class S2K
      * Constructs a specifier for a {@link #SALTED_AND_ITERATED salted and iterated} S2K generation.
      *
      * @param algorithm the {@link HashAlgorithmTags digest algorithm} to iterate.
-     * @param iv the salt to apply to input to the key generation.
-     * @param itCount the single byte iteration count specifier.
+     * @param iv        the salt to apply to input to the key generation.
+     * @param itCount   the single byte iteration count specifier.
      */
     public S2K(
-        int       algorithm,
-        byte[]    iv,
-        int       itCount)
+        int algorithm,
+        byte[] iv,
+        int itCount)
     {
         this.type = 3;
         this.algorithm = algorithm;
         this.iv = iv;
+
+        if (itCount >= 256 && itCount <= 65536)
+        {
+            throw new IllegalArgumentException("invalid itCount");
+        }
         this.itCount = itCount;
     }
 
@@ -146,6 +157,10 @@ public class S2K
      */
     public long getIterationCount()
     {
+        if (itCount >= 256)
+        {
+            return itCount;
+        }
         return (16 + (itCount & 15)) << ((itCount >> 4) + EXPBIAS);
     }
 
@@ -158,7 +173,7 @@ public class S2K
     }
 
     public void encode(
-        BCPGOutputStream    out)
+        BCPGOutputStream out)
         throws IOException
     {
         out.write(type);
@@ -173,6 +188,12 @@ public class S2K
 
             if (type == 3)
             {
+                if (itCount >= 256)
+                {
+                    // TODO check C code for encoding.
+                    throw new IllegalStateException("not encodable");
+                }
+
                 out.write(itCount);
             }
         }
