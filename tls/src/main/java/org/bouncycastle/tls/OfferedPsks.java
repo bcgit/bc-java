@@ -30,15 +30,32 @@ public class OfferedPsks
         }
     }
 
+    static class SelectedConfig
+    {
+        final int index;
+        final TlsPSK psk;
+        final short[] pskKeyExchangeModes;
+        final TlsSecret earlySecret;
+
+        SelectedConfig(int index, TlsPSK psk, short[] pskKeyExchangeModes, TlsSecret earlySecret)
+        {
+            this.index = index;
+            this.psk = psk;
+            this.pskKeyExchangeModes = pskKeyExchangeModes;
+            this.earlySecret = earlySecret;
+        }
+    }
+
     protected final Vector identities;
     protected final Vector binders;
+    protected final int bindersSize;
 
     public OfferedPsks(Vector identities)
     {
-        this(identities, null);
+        this(identities, null, -1);
     }
 
-    private OfferedPsks(Vector identities, Vector binders)
+    private OfferedPsks(Vector identities, Vector binders, int bindersSize)
     {
         if (null == identities || identities.isEmpty())
         {
@@ -48,9 +65,14 @@ public class OfferedPsks
         {
             throw new IllegalArgumentException("'binders' must be the same length as 'identities' (or null)");
         }
+        if ((null != binders) != (bindersSize >= 0))
+        {
+            throw new IllegalArgumentException("'bindersSize' must be >= 0 iff 'binders' are present");
+        }
 
         this.identities = identities;
         this.binders = binders;
+        this.bindersSize = bindersSize;
     }
 
     public Vector getBinders()
@@ -58,9 +80,26 @@ public class OfferedPsks
         return binders;
     }
 
+    public int getBindersSize()
+    {
+        return bindersSize;
+    }
+
     public Vector getIdentities()
     {
         return identities;
+    }
+
+    public int getIndexOfIdentity(PskIdentity pskIdentity)
+    {
+        for (int i = 0, count = identities.size(); i < count; ++i)
+        {
+            if (pskIdentity.equals(identities.elementAt(i)))
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void encode(OutputStream output) throws IOException
@@ -73,10 +112,10 @@ public class OfferedPsks
                 PskIdentity identity = (PskIdentity)identities.elementAt(i);
                 lengthOfIdentitiesList += identity.getEncodedLength();
             }
-    
+
             TlsUtils.checkUint16(lengthOfIdentitiesList);
             TlsUtils.writeUint16(lengthOfIdentitiesList, output);
-    
+
             for (int i = 0; i < identities.size(); ++i)
             {
                 PskIdentity identity = (PskIdentity)identities.elementAt(i);
@@ -180,8 +219,8 @@ public class OfferedPsks
         }
 
         Vector binders = new Vector();
+        int totalLengthBinders = TlsUtils.readUint16(input);
         {
-            int totalLengthBinders = TlsUtils.readUint16(input);
             if (totalLengthBinders < 33)
             {
                 throw new TlsFatalAlert(AlertDescription.decode_error);
@@ -191,12 +230,12 @@ public class OfferedPsks
             ByteArrayInputStream buf = new ByteArrayInputStream(bindersData);
             do
             {
-                byte[] binder = TlsUtils.readOpaque8(input, 32);
+                byte[] binder = TlsUtils.readOpaque8(buf, 32);
                 binders.add(binder);
             }
             while (buf.available() > 0);
         }
 
-        return new OfferedPsks(identities, binders);
+        return new OfferedPsks(identities, binders, 2 + totalLengthBinders);
     }
 }

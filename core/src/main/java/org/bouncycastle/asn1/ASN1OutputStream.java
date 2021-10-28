@@ -123,9 +123,7 @@ public class ASN1OutputStream
     {
         for (int i = 0, count = elements.length; i < count; ++i)
         {
-            ASN1Primitive primitive = elements[i].toASN1Primitive();
-
-            primitive.encode(this, true);
+            elements[i].toASN1Primitive().encode(this, true);
         }
     }
 
@@ -174,15 +172,6 @@ public class ASN1OutputStream
         writeIdentifier(withID, flags, tag);
         writeDL(contents.length);
         write(contents, 0, contents.length);
-    }
-
-    final void writeEncodingIL(boolean withID, int flags, int tag, byte[] contents) throws IOException
-    {
-        writeIdentifier(withID, flags, tag);
-        write(0x80);
-        write(contents, 0, contents.length);
-        write(0x00);
-        write(0x00);
     }
 
     final void writeEncodingIL(boolean withID, int identifier, ASN1Encodable[] elements) throws IOException
@@ -261,11 +250,6 @@ public class ASN1OutputStream
     static int getLengthOfEncodingDL(boolean withID, int contentsLength)
     {
         return (withID ? 1 : 0) + getLengthOfDL(contentsLength) + contentsLength;
-    }
-
-    static int getLengthOfEncodingDL(boolean withID, int tag, int contentsLength)
-    {
-        return (withID ? getLengthOfIdentifier(tag) : 0) + getLengthOfDL(contentsLength) + contentsLength;
     }
 
     static int getLengthOfIdentifier(int tag)

@@ -62,7 +62,7 @@ public class ParserTest
 {
     public String getName()
     {
-        return "PEMParserTest";
+        return "ParserTest";
     }
 
 
