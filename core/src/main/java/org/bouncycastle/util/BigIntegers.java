@@ -103,7 +103,6 @@ public final class BigIntegers
     }
 
 
-
     /**
      * Return a random BigInteger not less than 'min' and not greater than 'max'
      *
@@ -145,6 +144,7 @@ public final class BigIntegers
         // fall back to a faster (restricted) method
         return createRandomBigInteger(max.subtract(min).bitLength() - 1, random).add(min);
     }
+
 
     public static BigInteger fromUnsignedByteArray(byte[] buf)
     {
