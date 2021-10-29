@@ -6,15 +6,18 @@ import java.security.Security;
 
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
-import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
-import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
+import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.crypto.signers.Ed25519Signer;
+import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.gpg.PGPSecretKeyParser;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.ExtendedPGPSecretKey;
@@ -79,11 +82,40 @@ public class ExSExprTest
         "  \"43860992\")#DECB213C12E0BCA62E4B15D0#)#1FA1B1C1A03F1EDE9EC6F387B78170\n" +
         " 459C0D171AC99DA9B79F71680FEEA9E27D2E2F5F134D94B0993BB281C20761F6C6F398\n" +
         " C9DEEDF79BFDC5509E2B#)(protected-at \"20211020T054845\")))\n").getBytes();
+
+    byte[] ecEdwardsEd448Open = ("Created: 20211029T004049\n" +
+        "Key: (private-key (ecc (curve Ed448)(q #6985146F9BC0D9674F5724D94AF629D\n" +
+        " C80AB27EDE4C058A1A4A52256998ED38FFA8D58E2FFD13A32A2C42C9F5853C7F106A3C\n" +
+        " 7AAB30A1A1600#)(d #DC9200016F520FD5F610969D60ADE368B1C618E3522EF481799\n" +
+        " 76558AC1D81BD10F036ED25F8D65BBCCD51B6157988F04A2D2AE74BADF04BEC#)))\n").getBytes();
+
+    byte[] ecEdwardsX448Open2 = ("Created: 20211029T004049\n" +
+        "Key: (private-key (ecc (curve X448)(q #54EB068159D84174ED7D34905B2AFDB9\n" +
+        " FFA33A3195EC6824DA0DDBB5EFD40180C6FEA18DBDE6C63D98D332DC484CE7B6C33B79\n" +
+        " 7AB1531E94#)(d #EB3F7BBFFFFD099D5EC4718232B578AF0199E5A2548C5CF2B2D248\n" +
+        " 6F47D16E624346FC8181B34427AC8567FADE46C150C3D39DC36953D4B6#)))\n").getBytes();
+
+
     byte[] ecEdwardsOpen = ("Created: 20211021T022038\n" +
         "Key: (private-key (ecc (curve Curve25519)(flags djb-tweak)(q\n" +
         "  #406511B647E8EA9BDB94042D8BD2BD80A6A0FAB628AAE95F6BE2F5D7D7467D6B43#)\n" +
         " (d #6619ED1696419F57F61E978C2A80220E82E1E41D84D51690497DFD5A54142168#)\n" +
         " ))\n").getBytes();
+
+
+    byte[] ecEd25591Open = ("Created: 20211029T004805\n" +
+        "Key: (private-key (ecc (curve Curve25519)(flags djb-tweak)(q\n" +
+        "  #40244B2EB3EB676165F0495AF7A9217FB2D1308ABA72246C12756BBF9AA54AF429#)\n" +
+        " (d #6546DC28F5B830EBEA4FF29BCC1F7FF8A62903F71D901BA800B6352C88485F90#)\n" +
+        " ))\n").getBytes();
+
+    byte[] ecEd25591Open2 = ("Created: 20211029T004805\n" +
+        "Key: (private-key (ecc (curve Ed25519)(flags eddsa)(q\n" +
+        "  #4019C37A2D6179A29B7D48D0DC16498615BF5906FB610312FDE72CCB9C05DDE892#)\n" +
+        " (d #56399E28956FAA43AEDDE4C7778EA6EEDEC0EA0A166C4C108162472043483A8F#)\n" +
+        " ))\n").getBytes();
+
+
     byte[] p384Protected = ("Created: 20211021T023233\n" +
         "Key: (protected-private-key (ecc (curve \"NIST P-384\")(q\n" +
         "  #04CE6089B366EFB0E4238CC43CBC6631708F122AEFF3408B9C14C14E9A2918D0BD18\n" +
@@ -404,7 +436,7 @@ public class ExSExprTest
     public void testECEdwardsOpen()
         throws Exception
     {
-        ByteArrayInputStream bin = new ByteArrayInputStream(ecEdwardsOpen);
+        ByteArrayInputStream bin = new ByteArrayInputStream(ecEdwardsEd448Open);
         Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
         JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
@@ -417,7 +449,7 @@ public class ExSExprTest
             new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
             new JcaKeyFingerprintCalculator(), 10);
 
-        JcePBESecretKeyDecryptorBuilder f = new JcePBESecretKeyDecryptorBuilder();
+
         PGPKeyPair pair = secretKey.extractKeyPair(null);
         validateEdKey(pair);
     }
@@ -438,7 +470,6 @@ public class ExSExprTest
             new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
             new JcaKeyFingerprintCalculator(), 10);
 
-        JcePBESecretKeyDecryptorBuilder f = new JcePBESecretKeyDecryptorBuilder();
         PGPKeyPair pair = secretKey.extractKeyPair(null);
         validateEdKey(pair);
     }
@@ -573,15 +604,15 @@ public class ExSExprTest
         throws Exception
     {
 
-        testDSAElgamalOpen();
-        testBrainPoolCurves();
-        testECNistCurves();
+//        testDSAElgamalOpen();
+//        testBrainPoolCurves();
+//        testECNistCurves();
         testECEdwardsOpen();
-        testECEdwardsProtected();
-        testDSAProtected();
-        testRSAOpen();
-        testProtectedRSA();
-        testShadowedRSA();
+       // testECEdwardsProtected();
+//        testDSAProtected();
+//        testRSAOpen();
+//        testProtectedRSA();
+//        testShadowedRSA();
 
         System.out.println();
 
@@ -614,14 +645,34 @@ public class ExSExprTest
     }
 
     public void validateEdKey(PGPKeyPair keyPair)
+        throws Exception
     {
 
-        EdSecretBCPGKey priv = (EdSecretBCPGKey)keyPair.getPrivateKey().getPrivateKeyDataPacket();
-        EdDSAPublicBCPGKey pub = (EdDSAPublicBCPGKey)keyPair.getPublicKey().getPublicKeyPacket().getKey();
+        BcPGPKeyConverter keyConverter = new BcPGPKeyConverter();
 
+        AsymmetricKeyParameter privKey = keyConverter.getPrivateKey(keyPair.getPrivateKey());
+        AsymmetricKeyParameter pubKey = keyConverter.getPublicKey(keyPair.getPublicKey());
 
-        //TODO test point on curve
+        Signer signer;
 
+        if (privKey instanceof Ed25519PrivateKeyParameters)
+        {
+            signer = new Ed25519Signer();
+        }
+        else
+        {
+            signer = new Ed448Signer(new byte[0]);
+        }
+
+        byte[] signThis = new byte[32];
+
+        signer.init(true, privKey);
+        signer.update(signThis, 0, signThis.length);
+        byte[] sig = signer.generateSignature();
+
+        signer.init(false, pubKey);
+        signer.update(signThis, 0, signThis.length);
+        Assert.assertTrue(signer.verifySignature(sig));
 
     }
 
