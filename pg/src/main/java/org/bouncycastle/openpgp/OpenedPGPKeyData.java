@@ -11,6 +11,7 @@ import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.BCPGKey;
@@ -31,6 +32,7 @@ import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.gpg.SExpression;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
@@ -147,7 +149,7 @@ public class OpenedPGPKeyData
                     unwrapResult = new UnwrapResult(keyExpression, null, null, curve);
                 }
 
-                BigInteger d = BigIntegers.fromUnsignedByteArray(unwrapResult.expression.getExpressionWithLabelOrFail("d").getBytes(1));
+                BigInteger d = new BigInteger(1, unwrapResult.expression.getExpressionWithLabelOrFail("d").getBytes(1));
 
 
                 if (unwrapResult.metaData == null)
@@ -358,7 +360,7 @@ public class OpenedPGPKeyData
 
                     if (protectionType.contains("aes"))
                     {
-                        unwrapResult = unwrapRSASecretKey(protectionType, publicKey, maxDepth, keyExpression, protectedKey,keyProtectionRemoverFactory);
+                        unwrapResult = unwrapRSASecretKey(protectionType, publicKey, maxDepth, keyExpression, protectedKey, keyProtectionRemoverFactory);
                     }
                     else
                     {
@@ -893,16 +895,23 @@ public class OpenedPGPKeyData
         }
 
 
-        ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(curve);
         PublicKeyPacket publicKeyPacket;
-        if (oid.equals(CryptlibObjectIdentifiers.curvey25519))
+        if (Strings.toLowerCase(curve).equals("ed25519"))
         { // TODO is this correct?
-            EdDSAPublicBCPGKey basePubKey = new EdDSAPublicBCPGKey(oid, BigIntegers.fromUnsignedByteArray(qoint));
+
+            EdDSAPublicBCPGKey basePubKey = new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed25519, new BigInteger(1, qoint));
+            publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.EDDSA, new Date(), basePubKey);
+        }
+        else if (Strings.toLowerCase(curve).equals("ed448"))
+        { // TODO is this correct?
+
+            EdDSAPublicBCPGKey basePubKey = new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, qoint));
             publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.EDDSA, new Date(), basePubKey);
         }
         else
         {
-            X9ECParameters params = ECNamedCurveTable.getByName(curve);
+            ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(curve);
+            X9ECParameters params = CustomNamedCurves.getByName(curve);
             ECPoint pnt = params.getCurve().decodePoint(qoint);
             ECPublicBCPGKey basePubKey = new ECDSAPublicBCPGKey(oid, pnt);
             publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.ECDSA, new Date(), basePubKey);
