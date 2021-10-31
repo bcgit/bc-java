@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp.operator.bc;
 import java.io.OutputStream;
 
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
@@ -39,9 +40,10 @@ public class BcPGPContentVerifierBuilderProvider
         public PGPContentVerifier build(final PGPPublicKey publicKey)
             throws PGPException
         {
-            final Signer signer = BcImplProvider.createSigner(keyAlgorithm, hashAlgorithm);
+            AsymmetricKeyParameter pubParam = keyConverter.getPublicKey(publicKey);
+            final Signer signer = BcImplProvider.createSigner(keyAlgorithm, hashAlgorithm, pubParam);
 
-            signer.init(false, keyConverter.getPublicKey(publicKey));
+            signer.init(false, pubParam);
 
             return new PGPContentVerifier()
             {
