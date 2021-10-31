@@ -228,21 +228,25 @@ public class BcPGPKeyConverter
 
                 byte[] pEnc = BigIntegers.asUnsignedByteArray(eddsaK.getEncodedPoint());
 
-                if (pEnc.length <1) {
+                if (pEnc.length < 1)
+                {
                     throw new IllegalArgumentException("Invalid Edwards public key");
                 }
 
-                if (pEnc[0] == 0x40) {
+                if (pEnc[0] == 0x40)
+                {
                     return implGetPublicKeyX509(new SubjectPublicKeyInfo(
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519),
                         Arrays.copyOfRange(pEnc, 1, pEnc.length)));
-                } else if (pEnc.length == Ed448.SECRET_KEY_SIZE) {
+                }
+                else if (pEnc.length == Ed448.SECRET_KEY_SIZE)
+                {
                     return implGetPublicKeyX509(new SubjectPublicKeyInfo(
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448),
                         pEnc));
                 }
-                    throw new IllegalArgumentException("Invalid Ed25519 public key");
 
+                throw new IllegalArgumentException("Invalid Ed25519 public key");
 
 
                 // skip the 0x40 header byte.
