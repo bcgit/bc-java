@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -38,16 +39,17 @@ public class BcPGPContentSignerBuilder
     public PGPContentSigner build(final int signatureType, final PGPPrivateKey privateKey)
         throws PGPException
     {
+        AsymmetricKeyParameter privKeyParam = keyConverter.getPrivateKey(privateKey);
         final PGPDigestCalculator digestCalculator = digestCalculatorProvider.get(hashAlgorithm);
-        final Signer signer = BcImplProvider.createSigner(keyAlgorithm, hashAlgorithm);
+        final Signer signer = BcImplProvider.createSigner(keyAlgorithm, hashAlgorithm, privKeyParam);
 
         if (random != null)
         {
-            signer.init(true, new ParametersWithRandom(keyConverter.getPrivateKey(privateKey), random));
+            signer.init(true, new ParametersWithRandom(privKeyParam, random));
         }
         else
         {
-            signer.init(true, keyConverter.getPrivateKey(privateKey));
+            signer.init(true, privKeyParam);
         }
 
         return new PGPContentSigner()

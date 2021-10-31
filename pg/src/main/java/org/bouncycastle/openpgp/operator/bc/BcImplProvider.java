@@ -32,10 +32,13 @@ import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
+import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -71,7 +74,7 @@ class BcImplProvider
         }
     }
 
-    static Signer createSigner(int keyAlgorithm, int hashAlgorithm)
+    static Signer createSigner(int keyAlgorithm, int hashAlgorithm, CipherParameters keyParam)
         throws PGPException
     {
         switch(keyAlgorithm)
@@ -84,7 +87,11 @@ class BcImplProvider
         case PublicKeyAlgorithmTags.ECDSA:
             return new DSADigestSigner(new ECDSASigner(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.EDDSA:
-            return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
+            if (keyParam instanceof Ed25519PrivateKeyParameters || keyParam instanceof Ed25519PublicKeyParameters)
+            {
+                return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
+            }
+            return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
         default:
             throw new PGPException("cannot recognise keyAlgorithm: " + keyAlgorithm);
         }
