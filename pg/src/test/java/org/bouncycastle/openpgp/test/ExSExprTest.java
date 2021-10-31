@@ -31,7 +31,6 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Assert;
 
 public class ExSExprTest
     extends SimpleTest
@@ -413,7 +412,7 @@ public class ExSExprTest
         for (byte[] data : new byte[][]{brainPool256Open, brainPool256Protected, brainPool384Open, brainPool384Protected, brainPool512Open, brainPool512Protected})
         {
             ByteArrayInputStream bin = new ByteArrayInputStream(data);
-            Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
+            isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
             JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
 
@@ -437,7 +436,7 @@ public class ExSExprTest
         throws Exception
     {
         ByteArrayInputStream bin = new ByteArrayInputStream(ecEdwardsEd448Open);
-        Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
+        isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
         JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
 
@@ -458,7 +457,7 @@ public class ExSExprTest
         throws Exception
     {
         ByteArrayInputStream bin = new ByteArrayInputStream(ecEdwardsProtected);
-        Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
+        isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
         JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
 
@@ -482,7 +481,7 @@ public class ExSExprTest
         {
 
             ByteArrayInputStream bin = new ByteArrayInputStream(key);
-            Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
+            isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
             JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
 
@@ -505,7 +504,7 @@ public class ExSExprTest
         for (byte[] key : new byte[][]{dsaProtected, dsaElgamalProtected})
         {
             ByteArrayInputStream bin = new ByteArrayInputStream(key);
-            Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
+            isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
             JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
 
@@ -526,7 +525,7 @@ public class ExSExprTest
         throws Exception
     {
         ByteArrayInputStream bin = new ByteArrayInputStream(openRsa);
-        Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
+        isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
         JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
 
@@ -550,7 +549,7 @@ public class ExSExprTest
         throws Exception
     {
         ByteArrayInputStream bin = new ByteArrayInputStream(protectedRSA);
-        Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
+        isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
         JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
         digBuild.setProvider("BC");
@@ -573,7 +572,7 @@ public class ExSExprTest
         throws Exception
     {
         ByteArrayInputStream bin = new ByteArrayInputStream(showedRSA);
-        Assert.assertTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
+        isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
         JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
         digBuild.setProvider("BC");
@@ -588,15 +587,15 @@ public class ExSExprTest
 
         RSAPublicBCPGKey pub = (RSAPublicBCPGKey)secretKey.getPublicKey().getPublicKeyPacket().getKey();
 
-        Assert.assertArrayEquals(Hex.decode("00AA1AD2A55FD8C8FDE9E1941772D9CC903FA43B268CB1B5A1BAFDC900" +
+        isTrue(areEqual(Hex.decode("00AA1AD2A55FD8C8FDE9E1941772D9CC903FA43B268CB1B5A1BAFDC900" +
             "2961D8AEA153424DC851EF13B83AC64FBE365C59DC1BD3E83017C90D4365B483E02859FC13DB5842A00E9694" +
             "80DB96CE6F7D1C03600392B8E08EF0C01FC719F9F9086B25AD39B4F1C2A2DF3E2BE317110CFFF21D4A1145550" +
             "8FE407997601260816C8422297C0637BB291C3A079B9CB38A92CE9E551F80AA0EBF4F0E72C3F250461E4D31F" +
             "23A7087857FC8438324A013634563D34EFDDCBF2EA80DF9662C9CCD4BEF2522D8BDFED24CEF78DC6B30931740" +
             "7EAC576D889F88ADA08C4FFB480981FB68C5C6CA27503381D41018E6CDC52AAAE46B166BDC10637A E186A02B" +
-            "A2497FDC5D1221"), pub.getModulus().toByteArray());
+            "A2497FDC5D1221"), pub.getModulus().toByteArray()));
 
-        Assert.assertArrayEquals(Hex.decode("010001"), pub.getPublicExponent().toByteArray());
+        isTrue(areEqual(Hex.decode("010001"), pub.getPublicExponent().toByteArray()));
     }
 
     @Override
@@ -672,7 +671,7 @@ public class ExSExprTest
 
         signer.init(false, pubKey);
         signer.update(signThis, 0, signThis.length);
-        Assert.assertTrue(signer.verifySignature(sig));
+        isTrue(signer.verifySignature(sig));
 
     }
 

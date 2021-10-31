@@ -135,7 +135,7 @@ public class BcPGPKeyConverter
             case PublicKeyAlgorithmTags.EDDSA:
             {
                 EdSecretBCPGKey eddsaK = (EdSecretBCPGKey)privPk;
-                if (eddsaK.getX().toByteArray().length + 1 > Ed25519.SECRET_KEY_SIZE)
+                if (eddsaK.getX().toByteArray().length - 1 > Ed25519.SECRET_KEY_SIZE)
                 {
                     return implGetPrivateKeyPKCS8(new PrivateKeyInfo(
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448),
