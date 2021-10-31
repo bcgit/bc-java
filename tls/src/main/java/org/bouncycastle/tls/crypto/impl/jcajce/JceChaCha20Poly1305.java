@@ -19,7 +19,6 @@ import org.bouncycastle.util.Pack;
 
 public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
 {
-    private static final int BUF_SIZE = 32 * 1024;
     private static final byte[] ZEROES = new byte[15];
 
     protected final Cipher cipher;
@@ -150,18 +149,7 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
 
     protected void runCipher(byte[] buf) throws GeneralSecurityException
     {
-        // to avoid performance issue in FIPS jar 1.0.0-1.0.2, process in chunks
-        int readOff = 0, writeOff = 0;
-        while (readOff < buf.length)
-        {
-            int updateSize = Math.min(BUF_SIZE, buf.length - readOff);
-            writeOff += cipher.update(buf, readOff, updateSize, buf, writeOff);
-            readOff += updateSize;
-        }
-
-        writeOff += cipher.doFinal(buf, writeOff);
-
-        if (buf.length != writeOff)
+        if (buf.length != cipher.doFinal(buf, 0, buf.length, buf, 0))
         {
             throw new IllegalStateException();
         }
