@@ -461,7 +461,7 @@ class ProvSSLEngine
                     byte[] record = new byte[preview.getRecordSize()];
                     src.get(record);
 
-                    protocol.offerInput(record);
+                    protocol.offerInput(record, 0, record.length);
                     bytesConsumed += record.length;
 
                     int appDataAvailable = protocol.getAvailableInputBytes();
