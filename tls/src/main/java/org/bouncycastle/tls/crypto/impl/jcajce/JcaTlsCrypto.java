@@ -909,103 +909,59 @@ public class JcaTlsCrypto
 
     protected Boolean isSupportedEncryptionAlgorithm(int encryptionAlgorithm)
     {
-        try
+        switch (encryptionAlgorithm)
         {
-            switch (encryptionAlgorithm)
-            {
-            case EncryptionAlgorithm.CHACHA20_POLY1305:
-            {
-                helper.createCipher("ChaCha7539");
-                helper.createMac("Poly1305");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm._3DES_EDE_CBC:
-            {
-                helper.createCipher("DESede/CBC/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.AES_128_CBC:
-            case EncryptionAlgorithm.AES_256_CBC:
-            {
-                helper.createCipher("AES/CBC/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.AES_128_CCM:
-            case EncryptionAlgorithm.AES_128_CCM_8:
-            case EncryptionAlgorithm.AES_256_CCM:
-            case EncryptionAlgorithm.AES_256_CCM_8:
-            {
-                helper.createCipher("AES/CCM/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.AES_128_GCM:
-            case EncryptionAlgorithm.AES_256_GCM:
-            {
-                helper.createCipher("AES/GCM/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.ARIA_128_CBC:
-            case EncryptionAlgorithm.ARIA_256_CBC:
-            {
-                helper.createCipher("ARIA/CBC/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.ARIA_128_GCM:
-            case EncryptionAlgorithm.ARIA_256_GCM:
-            {
-                helper.createCipher("ARIA/GCM/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.CAMELLIA_128_CBC:
-            case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            {
-                helper.createCipher("Camellia/CBC/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.CAMELLIA_128_GCM:
-            case EncryptionAlgorithm.CAMELLIA_256_GCM:
-            {
-                helper.createCipher("Camellia/GCM/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.NULL:
-            {
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.SEED_CBC:
-            {
-                helper.createCipher("SEED/CBC/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.SM4_CBC:
-            {
-                helper.createCipher("SM4/CBC/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.SM4_CCM:
-            {
-                helper.createCipher("SM4/CCM/NoPadding");
-                return Boolean.TRUE;
-            }
-            case EncryptionAlgorithm.SM4_GCM:
-            {
-                helper.createCipher("SM4/GCM/NoPadding");
-                return Boolean.TRUE;
-            }
+        case EncryptionAlgorithm.CHACHA20_POLY1305:
+            return isUsableCipher("ChaCha7539", 256) && isUsableMAC("Poly1305");
+        case EncryptionAlgorithm._3DES_EDE_CBC:
+            return isUsableCipher("DESede/CBC/NoPadding", 192);
+        case EncryptionAlgorithm.AES_128_CBC:
+            return isUsableCipher("AES/CBC/NoPadding", 128);
+        case EncryptionAlgorithm.AES_256_CBC:
+            return isUsableCipher("AES/CBC/NoPadding", 256);
+        case EncryptionAlgorithm.AES_128_CCM:
+        case EncryptionAlgorithm.AES_128_CCM_8:
+            return isUsableCipher("AES/CCM/NoPadding", 128);
+        case EncryptionAlgorithm.AES_256_CCM:
+        case EncryptionAlgorithm.AES_256_CCM_8:
+            return isUsableCipher("AES/CCM/NoPadding", 256);
+        case EncryptionAlgorithm.AES_128_GCM:
+            return isUsableCipher("AES/GCM/NoPadding", 128);
+        case EncryptionAlgorithm.AES_256_GCM:
+            return isUsableCipher("AES/GCM/NoPadding", 256);
+        case EncryptionAlgorithm.ARIA_128_CBC:
+            return isUsableCipher("ARIA/CBC/NoPadding", 128);
+        case EncryptionAlgorithm.ARIA_256_CBC:
+            return isUsableCipher("ARIA/CBC/NoPadding", 256);
+        case EncryptionAlgorithm.ARIA_128_GCM:
+            return isUsableCipher("ARIA/GCM/NoPadding", 128);
+        case EncryptionAlgorithm.ARIA_256_GCM:
+            return isUsableCipher("ARIA/GCM/NoPadding", 256);
+        case EncryptionAlgorithm.CAMELLIA_128_CBC:
+            return isUsableCipher("Camellia/CBC/NoPadding", 128);
+        case EncryptionAlgorithm.CAMELLIA_256_CBC:
+            return isUsableCipher("Camellia/CBC/NoPadding", 256);
+        case EncryptionAlgorithm.CAMELLIA_128_GCM:
+            return isUsableCipher("Camellia/GCM/NoPadding", 128);
+        case EncryptionAlgorithm.CAMELLIA_256_GCM:
+            return isUsableCipher("Camellia/GCM/NoPadding", 256);
+        case EncryptionAlgorithm.NULL:
+            return Boolean.TRUE;
+        case EncryptionAlgorithm.SEED_CBC:
+            return isUsableCipher("SEED/CBC/NoPadding", 128);
+        case EncryptionAlgorithm.SM4_CBC:
+            return isUsableCipher("SM4/CBC/NoPadding", 128);
+        case EncryptionAlgorithm.SM4_CCM:
+            return isUsableCipher("SM4/CCM/NoPadding", 128);
+        case EncryptionAlgorithm.SM4_GCM:
+            return isUsableCipher("SM4/GCM/NoPadding", 128);
 
-            case EncryptionAlgorithm.DES40_CBC:
-            case EncryptionAlgorithm.DES_CBC:
-            case EncryptionAlgorithm.IDEA_CBC:
-            case EncryptionAlgorithm.RC2_CBC_40:
-            case EncryptionAlgorithm.RC4_128:
-            case EncryptionAlgorithm.RC4_40:
-            {
-                return Boolean.FALSE;
-            }
-            }
-        }
-        catch (GeneralSecurityException e)
-        {
+        case EncryptionAlgorithm.DES40_CBC:
+        case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.RC2_CBC_40:
+        case EncryptionAlgorithm.RC4_128:
+        case EncryptionAlgorithm.RC4_40:
             return Boolean.FALSE;
         }
 
@@ -1059,6 +1015,32 @@ public class JcaTlsCrypto
 
         // 'null' means we don't even recognize the NamedGroup
         return null;
+    }
+
+    protected boolean isUsableCipher(String cipherAlgorithm, int keySize)
+    {
+        try
+        {
+            helper.createCipher(cipherAlgorithm);
+            return Cipher.getMaxAllowedKeyLength(cipherAlgorithm) >= keySize;
+        }
+        catch (GeneralSecurityException e)
+        {
+            return false;
+        }
+    }
+
+    protected boolean isUsableMAC(String macAlgorithm)
+    {
+        try
+        {
+            helper.createMac(macAlgorithm);
+            return true;
+        }
+        catch (GeneralSecurityException e)
+        {
+            return false;
+        }
     }
 
     public JcaJceHelper getHelper()
