@@ -7,7 +7,6 @@ import java.util.List;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
-import org.bouncycastle.bcpg.sig.EmbeddedSignature;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
@@ -61,6 +60,66 @@ public class PGPKeyRingGenerator
 
         keys.add(new PGPSecretKey(certificationLevel, masterKey, id, checksumCalculator, hashedPcks, unhashedPcks, keySignerBuilder, keyEncryptor));
     }
+
+    /**
+     * Create a new key ring generator without a user-id, but instead with a primary key carrying a direct-key signature.
+     * @param masterKey primary key
+     * @param checksumCalculator checksum calculator
+     * @param hashedPcks hashed signature subpackets
+     * @param unhashedPcks unhashed signature subpackets
+     * @param keySignerBuilder signer builder
+     * @param keyEncryptor key encryptor
+     * @throws PGPException
+     */
+    public PGPKeyRingGenerator(
+            PGPKeyPair masterKey,
+            PGPDigestCalculator checksumCalculator,
+            PGPSignatureSubpacketVector hashedPcks,
+            PGPSignatureSubpacketVector unhashedPcks,
+            PGPContentSignerBuilder keySignerBuilder,
+            PBESecretKeyEncryptor keyEncryptor)
+            throws PGPException
+    {
+        this.masterKey = masterKey;
+        this.keyEncryptor = keyEncryptor;
+        this.checksumCalculator = checksumCalculator;
+        this.keySignerBuilder = keySignerBuilder;
+        this.hashedPcks = hashedPcks;
+        this.unhashedPcks = unhashedPcks;
+
+        PGPSignatureGenerator sigGen;
+
+        try
+        {
+            sigGen = new PGPSignatureGenerator(keySignerBuilder);
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("creating signature generator: " + e, e);
+        }
+
+        // Keyring without user-id needs direct key sig
+        sigGen.init(PGPSignature.DIRECT_KEY, masterKey.getPrivateKey());
+        sigGen.setHashedSubpackets(hashedPcks);
+        sigGen.setUnhashedSubpackets(unhashedPcks);
+
+        PGPSecretKey secretKey = new PGPSecretKey(masterKey.getPrivateKey(), masterKey.getPublicKey(), checksumCalculator, true, keyEncryptor);
+        PGPPublicKey publicKey = secretKey.getPublicKey();
+        try
+        {
+            PGPSignature certification = sigGen.generateCertification(masterKey.getPublicKey());
+
+            publicKey = PGPPublicKey.addCertification(publicKey, certification);
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("exception doing direct-key signature: " + e, e);
+        }
+        secretKey = PGPSecretKey.replacePublicKey(secretKey, publicKey);
+
+        keys.add(secretKey);
+    }
+
 
     /**
      * Create a new key ring generator based on an original secret key ring. The default hashed/unhashed sub-packets
