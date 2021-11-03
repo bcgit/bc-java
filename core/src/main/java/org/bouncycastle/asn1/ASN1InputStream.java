@@ -109,7 +109,7 @@ public class ASN1InputStream
         byte[]  bytes)
         throws IOException
     {
-        if (Streams.readFully(this, bytes) != bytes.length)
+        if (Streams.readFully(this, bytes, 0, bytes.length) != bytes.length)
         {
             throw new EOFException("EOF encountered in middle of object");
         }
