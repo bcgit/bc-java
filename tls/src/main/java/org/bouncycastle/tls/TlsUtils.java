@@ -1046,7 +1046,7 @@ public class TlsUtils
         return result;
     }
 
-    /** @deprecated Will be removed. Use readASNObject in combination with hasDEREncoding instead */
+    /** @deprecated Will be removed. Use readASN1Object in combination with requireDEREncoding instead */
     public static ASN1Primitive readDERObject(byte[] encoding) throws IOException
     {
         /*
