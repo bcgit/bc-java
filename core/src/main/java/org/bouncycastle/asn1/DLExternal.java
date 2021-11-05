@@ -95,7 +95,7 @@ public class DLExternal
             contentsLength += dataValueDescriptor.toDLObject().encodedLength(true);
         }
 
-        contentsLength += new DLTaggedObject(true, encoding, externalContent).encodedLength(true);
+        contentsLength += new DLTaggedObject(0 == encoding, encoding, externalContent).encodedLength(true);
 
         return ASN1OutputStream.getLengthOfEncodingDL(withTag, contentsLength);
     }
@@ -118,7 +118,7 @@ public class DLExternal
             aOut.writePrimitive(dataValueDescriptor, true);
         }
 
-        aOut.writePrimitive(new DLTaggedObject(true, encoding, externalContent), true);
+        aOut.writePrimitive(new DLTaggedObject(0 == encoding, encoding, externalContent), true);
 
         aOut.flushInternal();
 
