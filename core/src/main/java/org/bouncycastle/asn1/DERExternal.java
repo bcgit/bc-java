@@ -100,7 +100,7 @@ public class DERExternal
             contentsLength += dataValueDescriptor.toDERObject().encodedLength(true);
         }
 
-        contentsLength += new DERTaggedObject(true, encoding, externalContent).encodedLength(true);
+        contentsLength += new DERTaggedObject(0 == encoding, encoding, externalContent).encodedLength(true);
 
         return ASN1OutputStream.getLengthOfEncodingDL(withTag, contentsLength);
     }
@@ -123,7 +123,7 @@ public class DERExternal
             aOut.writePrimitive(dataValueDescriptor, true);
         }
 
-        aOut.writePrimitive(new DERTaggedObject(true, encoding, externalContent), true);
+        aOut.writePrimitive(new DERTaggedObject(0 == encoding, encoding, externalContent), true);
 
         aOut.flushInternal();
 
