@@ -277,7 +277,7 @@ public class ASN1ObjectIdentifier
             byte[] tmp = new byte[byteCount];
             for (int i = byteCount - 1; i >= 0; i--)
             {
-                tmp[i] = (byte)((tmpValue.intValue() & 0x7f) | 0x80);
+                tmp[i] = (byte)(tmpValue.intValue() | 0x80);
                 tmpValue = tmpValue.shiftRight(7);
             }
             tmp[byteCount - 1] &= 0x7f;
