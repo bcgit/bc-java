@@ -59,7 +59,7 @@ public abstract class ASN1TaggedObject
         {
             try
             {
-                return ASN1TaggedObject.getInstance(fromByteArray((byte[])obj));
+                return getInstance(fromByteArray((byte[])obj));
             }
             catch (IOException e)
             {
