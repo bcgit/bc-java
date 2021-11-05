@@ -56,8 +56,7 @@ public class DLExternal
     public DLExternal(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference,
         ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)
     {
-        this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(),
-            externalData.toASN1Primitive());
+        super(directReference, indirectReference, dataValueDescriptor, externalData);
     }
 
     /**

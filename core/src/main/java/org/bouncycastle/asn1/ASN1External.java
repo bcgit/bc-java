@@ -94,9 +94,11 @@ public abstract class ASN1External
         externalContent = obj.getObject();
     }
 
-    ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)
+    ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor,
+        DERTaggedObject externalData)
     {
-        this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(), externalData.toASN1Primitive());
+        this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(),
+            externalData.getObject());
     }
 
     ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, int encoding, ASN1Primitive externalData)
@@ -105,7 +107,7 @@ public abstract class ASN1External
         setIndirectReference(indirectReference);
         setDataValueDescriptor(dataValueDescriptor);
         setEncoding(encoding);
-        setExternalContent(externalData.toASN1Primitive());
+        setExternalContent(externalData);
     }
 
     ASN1Primitive toDERObject()
