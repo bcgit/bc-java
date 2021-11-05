@@ -150,8 +150,7 @@ public class CertificateStatus
             requireStatusRequestVersion(1, statusRequestVersion);
 
             byte[] derEncoding = TlsUtils.readOpaque24(input, 1);
-            ASN1Primitive derObject = TlsUtils.readDERObject(derEncoding);
-            response = OCSPResponse.getInstance(derObject);
+            response = parseOCSPResponse(derEncoding);
             break;
         }
         case CertificateStatusType.ocsp_multi:
@@ -177,9 +176,7 @@ public class CertificateStatus
                 else
                 {
                     byte[] derEncoding = TlsUtils.readFully(length, buf);
-                    ASN1Primitive derObject = TlsUtils.readDERObject(derEncoding);
-                    OCSPResponse ocspResponse = OCSPResponse.getInstance(derObject);
-                    ocspResponseList.addElement(ocspResponse);
+                    ocspResponseList.addElement(parseOCSPResponse(derEncoding));
                 }
             }
 
@@ -228,6 +225,14 @@ public class CertificateStatus
             }
         }
         return true;
+    }
+
+    protected static OCSPResponse parseOCSPResponse(byte[] derEncoding) throws IOException
+    {
+        ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+        OCSPResponse ocspResponse = OCSPResponse.getInstance(asn1);
+        TlsUtils.requireDEREncoding(ocspResponse, derEncoding);
+        return ocspResponse;
     }
 
     protected static void requireStatusRequestVersion(int minVersion, int statusRequestVersion)

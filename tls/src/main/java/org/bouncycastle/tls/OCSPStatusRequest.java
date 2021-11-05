@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ocsp.ResponderID;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.util.io.Streams;
@@ -109,7 +110,9 @@ public class OCSPStatusRequest
                 do
                 {
                     byte[] derEncoding = TlsUtils.readOpaque16(buf, 1);
-                    ResponderID responderID = ResponderID.getInstance(TlsUtils.readDERObject(derEncoding));
+                    ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+                    ResponderID responderID = ResponderID.getInstance(asn1);
+                    TlsUtils.requireDEREncoding(responderID, derEncoding);
                     responderIDList.addElement(responderID);
                 }
                 while (buf.available() > 0);
@@ -121,7 +124,10 @@ public class OCSPStatusRequest
             byte[] derEncoding = TlsUtils.readOpaque16(input);
             if (derEncoding.length > 0)
             {
-                requestExtensions = Extensions.getInstance(TlsUtils.readDERObject(derEncoding));
+                ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+                Extensions extensions = Extensions.getInstance(asn1);
+                TlsUtils.requireDEREncoding(extensions, derEncoding);
+                requestExtensions = extensions;
             }
         }
 

@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
@@ -25,6 +26,7 @@ import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
@@ -54,7 +56,8 @@ public class BcTlsCertificate
     {
         try
         {
-            return Certificate.getInstance(encoding);
+            ASN1Primitive asn1 = TlsUtils.readASN1Object(encoding);
+            return Certificate.getInstance(asn1);
         }
         catch (IllegalArgumentException e)
         {
