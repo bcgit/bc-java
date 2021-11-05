@@ -8,7 +8,7 @@ public abstract class ASN1Util
      * Tag text methods
      */
 
-    public static String getTagText(ASN1Tag tag)
+    static String getTagText(ASN1Tag tag)
     {
         return getTagText(tag.getTagClass(), tag.getTagNumber());
     }
