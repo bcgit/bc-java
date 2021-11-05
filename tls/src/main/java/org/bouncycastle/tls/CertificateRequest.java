@@ -288,8 +288,10 @@ public class CertificateRequest
                 do
                 {
                     byte[] derEncoding = TlsUtils.readOpaque16(bis, 1);
-                    ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
-                    certificateAuthorities.addElement(X500Name.getInstance(asn1));
+                    ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+                    X500Name ca = X500Name.getInstance(asn1);
+                    TlsUtils.requireDEREncoding(ca, derEncoding);
+                    certificateAuthorities.addElement(ca);
                 }
                 while (bis.available() > 0);
             }

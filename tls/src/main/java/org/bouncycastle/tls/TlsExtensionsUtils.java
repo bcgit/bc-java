@@ -1016,8 +1016,10 @@ public class TlsExtensionsUtils
         while (buf.available() > 0)
         {
             byte[] derEncoding = TlsUtils.readOpaque16(buf, 1);
-            ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
-            authorities.addElement(X500Name.getInstance(asn1));
+            ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+            X500Name ca = X500Name.getInstance(asn1);
+            TlsUtils.requireDEREncoding(ca, derEncoding);
+            authorities.addElement(ca);
         }
         return authorities;
     }
@@ -1169,8 +1171,9 @@ public class TlsExtensionsUtils
         while (buf.available() > 0)
         {
             byte[] derEncoding = TlsUtils.readOpaque8(buf, 1);
-            ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
+            ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
             ASN1ObjectIdentifier certificateExtensionOID = ASN1ObjectIdentifier.getInstance(asn1);
+            TlsUtils.requireDEREncoding(certificateExtensionOID, derEncoding);
 
             if (filters.containsKey(certificateExtensionOID))
             {
