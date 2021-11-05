@@ -2,11 +2,14 @@ package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTF8String;
@@ -16,6 +19,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLApplicationSpecific;
+import org.bouncycastle.asn1.DLBitString;
 import org.bouncycastle.asn1.DLExternal;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DLSet;
@@ -61,7 +65,7 @@ public class DLExternalTest
         {
             isEquals("check message", "too few objects in input sequence", iae.getMessage());
         }
-        vec.add(new DLTaggedObject(true, 1, new ASN1Integer(1234567890L)));
+        vec.add(new DLTaggedObject(true, 0, new ASN1Integer(1234567890L)));
 
         DLExternal dle = new DLExternal(new DLSequence(vec));
 
@@ -71,7 +75,7 @@ public class DLExternalTest
         dvdType = dle.getDataValueDescriptor().getClass().getName();
         isEquals("check type of value descriptor: " + dvdType, DERUTF8String.class.getName(), dvdType);
         isEquals("check value", "something completely different", ((ASN1UTF8String)dle.getDataValueDescriptor()).getString());
-        isEquals("check encoding", 1, dle.getEncoding());
+        isEquals("check encoding", 0, dle.getEncoding());
         isTrue("check existence of external content", dle.getExternalContent() != null);
         ecType = dle.getExternalContent().getClass().getName();
         isEquals("check type of external content: " + ecType, ASN1Integer.class.getName(), ecType);
@@ -80,7 +84,7 @@ public class DLExternalTest
         vec = new ASN1EncodableVector();
         vec.add(new ASN1Integer(9L));
         vec.add(new DERUTF8String("something completely different"));
-        vec.add(new DLTaggedObject(true, 1, new ASN1Integer(1234567890L)));
+        vec.add(new DLTaggedObject(true, 0, new ASN1Integer(1234567890L)));
         dle = new DLExternal(vec);
 
         isEquals("check direct reference", null, dle.getDirectReference());
@@ -90,14 +94,20 @@ public class DLExternalTest
         dvdType = dle.getDataValueDescriptor().getClass().getName();
         isEquals("check type of value descriptor: " + dvdType, DERUTF8String.class.getName(), dvdType);
         isEquals("check value", "something completely different", ((ASN1UTF8String)dle.getDataValueDescriptor()).getString());
-        isEquals("check encoding", 1, dle.getEncoding());
+        isEquals("check encoding", 0, dle.getEncoding());
         isTrue("check existence of external content", dle.getExternalContent() != null);
         ecType = dle.getExternalContent().getClass().getName();
         isEquals("check type of external content: " + ecType, ASN1Integer.class.getName(), ecType);
         isEquals("check value of external content", "1234567890", ((ASN1Integer)dle.getExternalContent()).getValue().toString());
 
-        dle = new DLExternal(createRealDataExample());
-        checkRealDataExample(dle);
+        dle = new DLExternal(createRealDataExample(0));
+        checkRealDataExample(0, dle);
+
+        dle = new DLExternal(createRealDataExample(1));
+        checkRealDataExample(1, dle);
+
+        dle = new DLExternal(createRealDataExample(2));
+        checkRealDataExample(2, dle);
     }
 
     /**
@@ -110,30 +120,42 @@ public class DLExternalTest
     public void testReadEncoded()
         throws Exception
     {
-        DLExternal dle = new DLExternal(createRealDataExample());
-
-        ASN1InputStream ais = new ASN1InputStream(dle.getEncoded());
-        ASN1Primitive ap = ais.readObject();
-        isTrue("check ais returned an object", ap != null);
-        isEquals("check returned type: " + ap.getClass(), DLExternal.class.getName(), ap.getClass().getName());
-        checkRealDataExample((DLExternal)ap);
-        ais.close();
+        implTestReadEncoded(0);
+        implTestReadEncoded(1);
+        implTestReadEncoded(2);
     }
 
-    private void checkRealDataExample(DLExternal dle)
+    private void checkRealDataExample(int encoding, DLExternal dle)
         throws IOException
     {
         //System.out.println(ASN1Dump.dumpAsString(dle, true));
         isEquals("check direct reference", "2.1.1", String.valueOf(dle.getDirectReference()));
         isEquals("check indirect reference", "9", String.valueOf(dle.getIndirectReference()));
         isEquals("check data value decriptor", "example data representing the User Data of an OSI.6 ConnectP containing an MSBind with username and password", String.valueOf(dle.getDataValueDescriptor()));
-        isEquals("check encoding", 2, dle.getEncoding());
+        isEquals("check encoding", encoding, dle.getEncoding());
 
         ASN1Primitive content = dle.getExternalContent();
         isTrue("check existence of content", content != null);
-        isTrue("check type is a tagged object: " + content.getClass(), content instanceof ASN1TaggedObject);
 
-        ASN1TaggedObject msBind = (ASN1TaggedObject)content;
+        ASN1TaggedObject msBind;
+        switch (encoding)
+        {
+        case 1:
+            isTrue("check type is an OCTET STRING: " + content.getClass(), content instanceof ASN1OctetString);
+            ASN1OctetString octetString = (ASN1OctetString)content;
+            msBind = ASN1TaggedObject.getInstance(octetString.getOctets());
+            break;
+        case 2:
+            isTrue("check type is a BIT STRING: " + content.getClass(), content instanceof ASN1BitString);
+            ASN1BitString bitString = (ASN1BitString)content;
+            msBind = ASN1TaggedObject.getInstance(bitString.getBytes());
+            break;
+        default:
+            isTrue("check type is a tagged object: " + content.getClass(), content instanceof ASN1TaggedObject);
+            msBind = (ASN1TaggedObject)content;
+            break;
+        }
+
         isTrue("check tag", msBind.hasContextTag(16));
         isEquals("check explicit", true, msBind.isExplicit());
         isEquals("check tagged object is a DLSet: " + msBind.getBaseUniversal(true, BERTags.SET).getClass(),
@@ -183,7 +205,7 @@ public class DLExternalTest
         isEquals("check password", "SomePassword", ((ASN1IA5String)password.getBaseUniversal(true, BERTags.IA5_STRING)).getString());
     }
 
-    private ASN1EncodableVector createRealDataExample()
+    private ASN1EncodableVector createRealDataExample(int encoding)
         throws IOException
     {
         ASN1EncodableVector vec = new ASN1EncodableVector();
@@ -206,8 +228,35 @@ public class DLExternalTest
         DLSet msBindSet = new DLSet(msBindVec);
         DLTaggedObject msBind = new DLTaggedObject(true, 16, msBindSet);
 
-        vec.add(new DLTaggedObject(true, 2, msBind)); // the encoding is actually 0 but that's also the default
+        ASN1Primitive obj = msBind;
+        switch (encoding)
+        {
+        case 1:
+        {
+            obj = new DEROctetString(obj.getEncoded(ASN1Encoding.DL));
+            break;
+        }
+        case 2:
+        {
+            obj = new DLBitString(obj.getEncoded(ASN1Encoding.DL));
+            break;
+        }
+        }
+
+        vec.add(new DLTaggedObject(0 == encoding, encoding, obj));
         return vec;
+    }
+
+    private void implTestReadEncoded(int encoding) throws Exception
+    {
+        DLExternal dle = new DLExternal(createRealDataExample(encoding));
+
+        ASN1InputStream ais = new ASN1InputStream(dle.getEncoded());
+        ASN1Primitive ap = ais.readObject();
+        isTrue("check ais returned an object", ap != null);
+        isEquals("check returned type: " + ap.getClass(), DLExternal.class.getName(), ap.getClass().getName());
+        checkRealDataExample(encoding, (DLExternal)ap);
+        ais.close();
     }
 
     public String getName()
