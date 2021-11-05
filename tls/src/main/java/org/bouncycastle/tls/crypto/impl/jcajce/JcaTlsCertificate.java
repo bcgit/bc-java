@@ -73,7 +73,8 @@ public class JcaTlsCertificate
              * 
              * Re-encoding validates as BER and produces DER.
              */
-            byte[] derEncoding = Certificate.getInstance(encoding).getEncoded(ASN1Encoding.DER);
+            ASN1Primitive asn1 = TlsUtils.readASN1Object(encoding);
+            byte[] derEncoding = Certificate.getInstance(asn1).getEncoded(ASN1Encoding.DER);
 
             ByteArrayInputStream input = new ByteArrayInputStream(derEncoding);
             X509Certificate certificate = (X509Certificate)helper.createCertificateFactory("X.509")
@@ -251,8 +252,15 @@ public class JcaTlsCertificate
     public ASN1Encodable getSigAlgParams() throws IOException
     {
         byte[] derEncoding = certificate.getSigAlgParams();
+        if (null == derEncoding)
+        {
+            return null;
+        }
 
-        return null == derEncoding ? null : TlsUtils.readDERObject(derEncoding);
+        ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+        // TODO[tls] Without a known ASN.1 type, this is not-quite-right
+        TlsUtils.requireDEREncoding(asn1, derEncoding);
+        return asn1;
     }
 
     DHPublicKey getPubKeyDH() throws IOException

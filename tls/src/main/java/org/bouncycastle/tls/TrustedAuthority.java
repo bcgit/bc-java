@@ -116,8 +116,10 @@ public class TrustedAuthority
         case IdentifierType.x509_name:
         {
             byte[] derEncoding = TlsUtils.readOpaque16(input, 1);
-            ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
-            identifier = X500Name.getInstance(asn1);
+            ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+            X500Name x500Name = X500Name.getInstance(asn1);
+            TlsUtils.requireDEREncoding(x500Name, derEncoding);
+            identifier = x500Name;
             break;
         }
         default:

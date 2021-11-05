@@ -14,6 +14,7 @@ import java.util.Vector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -1045,6 +1046,7 @@ public class TlsUtils
         return result;
     }
 
+    /** @deprecated Will be removed. Use readASNObject in combination with hasDEREncoding instead */
     public static ASN1Primitive readDERObject(byte[] encoding) throws IOException
     {
         /*
@@ -1052,12 +1054,21 @@ public class TlsUtils
          * canonical, we can check it by re-encoding the result and comparing to the original.
          */
         ASN1Primitive result = readASN1Object(encoding);
-        byte[] check = result.getEncoded(ASN1Encoding.DER);
+        requireDEREncoding(result, encoding);
+        return result;
+    }
+
+    public static void requireDEREncoding(ASN1Object asn1, byte[] encoding) throws IOException
+    {
+        /*
+         * NOTE: The current ASN.1 parsing code can't enforce DER-only parsing, but since DER is
+         * canonical, we can check it by re-encoding the result and comparing to the original.
+         */
+        byte[] check = asn1.getEncoded(ASN1Encoding.DER);
         if (!Arrays.areEqual(check, encoding))
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
-        return result;
     }
 
     public static void writeGMTUnixTime(byte[] buf, int offset)
@@ -4724,10 +4735,21 @@ public class TlsUtils
         byte[] tlsFeatures = serverCertificate.getCertificateAt(0).getExtension(TlsObjectIdentifiers.id_pe_tlsfeature);
         if (tlsFeatures != null)
         {
-            Enumeration tlsExtensions = ((ASN1Sequence)readDERObject(tlsFeatures)).getObjects();
-            while (tlsExtensions.hasMoreElements())
+            // TODO[tls] Proper ASN.1 type class for this extension?
+            ASN1Sequence tlsFeaturesSeq = (ASN1Sequence)readASN1Object(tlsFeatures);
+            for (int i = 0; i < tlsFeaturesSeq.size(); ++i)
             {
-                BigInteger tlsExtension = ((ASN1Integer)tlsExtensions.nextElement()).getPositiveValue();
+                if (!(tlsFeaturesSeq.getObjectAt(i) instanceof ASN1Integer))
+                {
+                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
+                }
+            }
+
+            requireDEREncoding(tlsFeaturesSeq, tlsFeatures);
+
+            for (int i = 0; i < tlsFeaturesSeq.size(); ++i)
+            {
+                BigInteger tlsExtension = ((ASN1Integer)tlsFeaturesSeq.getObjectAt(i)).getPositiveValue();
                 if (tlsExtension.bitLength() <= 16)
                 {
                     Integer extensionType = Integers.valueOf(tlsExtension.intValue());
