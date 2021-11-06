@@ -1,8 +1,5 @@
 package org.bouncycastle.asn1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
 /**
  * Class representing the DER-type External
  */
@@ -74,6 +71,27 @@ public class DERExternal
         super(directReference, indirectReference, dataValueDescriptor, encoding, externalData);
     }
 
+    DERSequence buildSequence()
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector(4);
+        if (directReference != null)
+        {
+            v.add(directReference);
+        }
+        if (indirectReference != null)
+        {
+            v.add(indirectReference);
+        }
+        if (dataValueDescriptor != null)
+        {
+            v.add(dataValueDescriptor.toDERObject());
+        }
+
+        v.add(new DERTaggedObject(0 == encoding, encoding, externalContent));
+
+        return new DERSequence(v);
+    }
+
     ASN1Primitive toDERObject()
     {
         return this;
@@ -82,51 +100,5 @@ public class DERExternal
     ASN1Primitive toDLObject()
     {
         return this;
-    }
-
-    int encodedLength(boolean withTag) throws IOException
-    {
-        int contentsLength = 0;
-        if (directReference != null)
-        {
-            contentsLength += directReference.encodedLength(true);
-        }
-        if (indirectReference != null)
-        {
-            contentsLength += indirectReference.encodedLength(true);
-        }
-        if (dataValueDescriptor != null)
-        {
-            contentsLength += dataValueDescriptor.toDERObject().encodedLength(true);
-        }
-
-        contentsLength += new DERTaggedObject(0 == encoding, encoding, externalContent).encodedLength(true);
-
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contentsLength);
-    }
-
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ASN1OutputStream aOut = ASN1OutputStream.create(bOut, ASN1Encoding.DER);
-
-        if (directReference != null)
-        {
-            aOut.writePrimitive(directReference, true);
-        }
-        if (indirectReference != null)
-        {
-            aOut.writePrimitive(indirectReference, true);
-        }
-        if (dataValueDescriptor != null)
-        {
-            aOut.writePrimitive(dataValueDescriptor, true);
-        }
-
-        aOut.writePrimitive(new DERTaggedObject(0 == encoding, encoding, externalContent), true);
-
-        aOut.flushInternal();
-
-        out.writeEncodingDL(withTag, BERTags.CONSTRUCTED | BERTags.EXTERNAL, bOut.toByteArray());
     }
 }
