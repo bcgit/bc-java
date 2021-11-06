@@ -237,8 +237,6 @@ public abstract class ASN1BitString
      */
     public String getString()
     {
-        StringBuffer buf = new StringBuffer("#");
-
         byte[] string;
         try
         {
@@ -249,10 +247,14 @@ public abstract class ASN1BitString
             throw new ASN1ParsingException("Internal error encoding BitString: " + e.getMessage(), e);
         }
 
+        StringBuffer buf = new StringBuffer(1 + string.length * 2);
+        buf.append('#');
+
         for (int i = 0; i != string.length; i++)
         {
-            buf.append(table[(string[i] >>> 4) & 0xf]);
-            buf.append(table[string[i] & 0xf]);
+            byte b = string[i];
+            buf.append(table[(b >>> 4) & 0xf]);
+            buf.append(table[b & 0xf]);
         }
 
         return buf.toString();
