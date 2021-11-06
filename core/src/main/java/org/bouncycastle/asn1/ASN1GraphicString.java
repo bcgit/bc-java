@@ -71,6 +71,11 @@ public abstract class ASN1GraphicString
 
     ASN1GraphicString(byte[] contents, boolean clone)
     {
+        if (null == contents)
+        {
+            throw new NullPointerException("'contents' cannot be null");
+        }
+
         this.contents = clone ? Arrays.clone(contents) : contents;
     }
 
