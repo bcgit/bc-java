@@ -74,6 +74,11 @@ public final class ASN1ObjectDescriptor
 
     public ASN1ObjectDescriptor(ASN1GraphicString baseGraphicString)
     {
+        if (null == baseGraphicString)
+        {
+            throw new NullPointerException("'baseGraphicString' cannot be null");
+        }
+
         this.baseGraphicString = baseGraphicString;
     }
 
