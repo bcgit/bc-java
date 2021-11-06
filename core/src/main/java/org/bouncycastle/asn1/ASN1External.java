@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1;
 
+import java.io.IOException;
+
 import org.bouncycastle.util.Objects;
 
 /**
@@ -113,6 +115,19 @@ public abstract class ASN1External
         this.dataValueDescriptor = dataValueDescriptor;
         this.encoding = checkEncoding(encoding);
         this.externalContent = checkExternalContent(encoding, externalData);
+    }
+
+    abstract ASN1Sequence buildSequence();
+
+    int encodedLength(boolean withTag) throws IOException
+    {
+        return buildSequence().encodedLength(withTag);
+    }
+
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    {
+        out.writeIdentifier(withTag, BERTags.CONSTRUCTED | BERTags.EXTERNAL);
+        buildSequence().encode(out, false);
     }
 
     ASN1Primitive toDERObject()
