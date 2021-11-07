@@ -32,6 +32,9 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
@@ -2962,9 +2965,11 @@ public class NewSignedDataTest
     public void testMixed()
         throws Exception
     {
-        ASN1ApplicationSpecific derApplicationSpecific = (ASN1ApplicationSpecific)ASN1Primitive.fromByteArray(mixedSignedData);
+        ASN1TaggedObject appTag = ASN1ApplicationSpecific.getInstance(mixedSignedData).getTaggedObject();
+        assertTrue(appTag.hasTag(BERTags.APPLICATION, 23));
 
-        CMSSignedData s = new CMSSignedData(new ByteArrayInputStream(derApplicationSpecific.getContents()));
+        ASN1Sequence seq = (ASN1Sequence)appTag.getBaseUniversal(true, BERTags.SEQUENCE);
+        CMSSignedData s = new CMSSignedData(ContentInfo.getInstance(seq));
 
         Store certs = s.getCertificates();
 
