@@ -303,6 +303,7 @@ public abstract class ASN1Sequence
 
         ASN1Sequence that = (ASN1Sequence)other;
 
+        // NOTE: Call size() here (on both) to 'force' a LazyEncodedSequence
         int count = this.size();
         if (that.size() != count)
         {
@@ -385,7 +386,8 @@ public abstract class ASN1Sequence
 
     ASN1BitString[] getConstructedBitStrings()
     {
-        int count = elements.length;
+        // NOTE: Call size() here to 'force' a LazyEncodedSequence
+        int count = size();
         ASN1BitString[] bitStrings = new ASN1BitString[count];
         for (int i = 0; i < count; ++i)
         {
@@ -396,7 +398,8 @@ public abstract class ASN1Sequence
 
     ASN1OctetString[] getConstructedOctetStrings()
     {
-        int count = elements.length;
+        // NOTE: Call size() here to 'force' a LazyEncodedSequence
+        int count = size();
         ASN1OctetString[] octetStrings = new ASN1OctetString[count];
         for (int i = 0; i < count; ++i)
         {
