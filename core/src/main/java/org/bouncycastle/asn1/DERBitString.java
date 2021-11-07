@@ -94,11 +94,13 @@ public class DERBitString
 
     public DERBitString(int value)
     {
+        // TODO[asn1] Unify in single allocation of 'contents'
         super(getBytes(value), getPadBits(value));
     }
 
     public DERBitString(ASN1Encodable obj) throws IOException
     {
+        // TODO[asn1] Unify in single allocation of 'contents'
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER), 0);
     }
 
