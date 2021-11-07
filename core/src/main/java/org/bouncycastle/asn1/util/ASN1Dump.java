@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.util;
 
-import java.io.IOException;
-
 import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1BitString;
@@ -34,12 +32,10 @@ import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.BERTaggedObject;
-import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DLApplicationSpecific;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLBitString;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -122,27 +118,18 @@ public class ASN1Dump
         }
         else if (obj instanceof ASN1ApplicationSpecific)
         {
-            if (obj instanceof DERApplicationSpecific)
-            {
-                buf.append(outputApplicationSpecific("DER", indent, verbose, obj, nl));
-            }
-            else if (obj instanceof DLApplicationSpecific)
-            {
-                buf.append(outputApplicationSpecific("", indent, verbose, obj, nl));
-            }
-            else
-            {
-                buf.append(outputApplicationSpecific("BER", indent, verbose, obj, nl));
-            }
+            _dumpAsString(indent, verbose, ((ASN1ApplicationSpecific)obj).getTaggedObject(), buf);
         }
         else if (obj instanceof ASN1TaggedObject)
         {
-            String          tab = indent + TAB;
-
             buf.append(indent);
             if (obj instanceof BERTaggedObject)
             {
                 buf.append("BER Tagged ");
+            }
+            else if (obj instanceof DERTaggedObject)
+            {
+                buf.append("DER Tagged ");
             }
             else
             {
@@ -160,7 +147,9 @@ public class ASN1Dump
 
             buf.append(nl);
 
-            _dumpAsString(tab, verbose, o.getObject(), buf);
+            String baseIndent = indent + TAB;
+
+            _dumpAsString(baseIndent, verbose, o.getBaseObject().toASN1Primitive(), buf);
         }
         else if (obj instanceof ASN1OctetString)
         {
@@ -306,34 +295,6 @@ public class ASN1Dump
         {
             buf.append(indent + obj.toString() + nl);
         }
-    }
-    
-    private static String outputApplicationSpecific(String type, String indent, boolean verbose, ASN1Primitive obj, String nl)
-    {
-        ASN1ApplicationSpecific app = ASN1ApplicationSpecific.getInstance(obj);
-        StringBuffer buf = new StringBuffer();
-
-        String tagText = ASN1Util.getTagText(BERTags.APPLICATION, app.getApplicationTag());
-
-        if (app.isConstructed())
-        {
-            try
-            {
-                ASN1Sequence s = ASN1Sequence.getInstance(app.getObject(BERTags.SEQUENCE));
-                buf.append(indent + type + tagText + nl);
-                for (int i = 0, count = s.size(); i < count; ++i)
-                {
-                    _dumpAsString(indent + TAB, verbose, s.getObjectAt(i).toASN1Primitive(), buf);
-                }
-            }
-            catch (IOException e)
-            {
-                buf.append(e);
-            }
-            return buf.toString();
-        }
-
-        return indent + type + tagText + " (" + Strings.fromByteArray(Hex.encode(app.getContents())) + ")" + nl;
     }
 
     /**
