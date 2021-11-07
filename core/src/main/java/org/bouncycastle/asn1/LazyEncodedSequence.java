@@ -70,7 +70,7 @@ class LazyEncodedSequence
         return super.toArray();
     }
 
-    ASN1Encodable[] toArrayInternal()
+    synchronized ASN1Encodable[] toArrayInternal()
     {
         force();
 
