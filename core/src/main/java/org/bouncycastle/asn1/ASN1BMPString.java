@@ -147,7 +147,7 @@ public abstract class ASN1BMPString
         return Arrays.hashCode(string);
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

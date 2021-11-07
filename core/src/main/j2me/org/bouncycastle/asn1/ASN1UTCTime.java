@@ -208,7 +208,7 @@ public class ASN1UTCTime
         return Strings.fromByteArray(time);
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

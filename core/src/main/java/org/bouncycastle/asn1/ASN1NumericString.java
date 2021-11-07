@@ -117,7 +117,7 @@ public abstract class ASN1NumericString
         return Arrays.clone(contents);
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

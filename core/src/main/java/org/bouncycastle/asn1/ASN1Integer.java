@@ -200,7 +200,7 @@ public class ASN1Integer
         return longValue(bytes, start, SIGN_EXT_SIGNED);
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

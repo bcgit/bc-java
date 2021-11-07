@@ -31,7 +31,7 @@ public class DEROctetString
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER));
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

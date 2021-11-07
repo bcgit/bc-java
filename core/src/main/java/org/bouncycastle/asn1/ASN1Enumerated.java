@@ -154,7 +154,7 @@ public class ASN1Enumerated
         return ASN1Integer.intValue(contents, start, ASN1Integer.SIGN_EXT_SIGNED); 
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

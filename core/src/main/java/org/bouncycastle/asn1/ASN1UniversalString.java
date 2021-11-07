@@ -113,7 +113,7 @@ public abstract class ASN1UniversalString
         return Arrays.clone(contents);
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

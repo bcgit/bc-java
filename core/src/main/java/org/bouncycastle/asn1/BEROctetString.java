@@ -164,7 +164,7 @@ public class BEROctetString
         };
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return null != elements || string.length > segmentLimit;
     }
@@ -172,7 +172,7 @@ public class BEROctetString
     int encodedLength(boolean withTag)
         throws IOException
     {
-        if (!isConstructed())
+        if (!encodeConstructed())
         {
             return DEROctetString.encodedLength(withTag, string.length);
         }
@@ -203,7 +203,7 @@ public class BEROctetString
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        if (!isConstructed())
+        if (!encodeConstructed())
         {
             DEROctetString.encode(out, withTag, string, 0, string.length);
             return;

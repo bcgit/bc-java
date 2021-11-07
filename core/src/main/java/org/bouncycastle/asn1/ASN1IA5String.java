@@ -110,7 +110,7 @@ public abstract class ASN1IA5String
         return Arrays.clone(contents);
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

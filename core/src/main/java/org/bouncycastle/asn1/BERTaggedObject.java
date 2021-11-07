@@ -55,9 +55,9 @@ public class BERTaggedObject
         super(explicitness, tagClass, tagNo, obj);
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
-        return isExplicit() || obj.toASN1Primitive().isConstructed();
+        return isExplicit() || obj.toASN1Primitive().encodeConstructed();
     }
 
     int encodedLength(boolean withTag) throws IOException
@@ -87,7 +87,7 @@ public class BERTaggedObject
         if (withTag)
         {
             int flags = tagClass;
-            if (explicit || primitive.isConstructed())
+            if (explicit || primitive.encodeConstructed())
             {
                 flags |= BERTags.CONSTRUCTED;
             }

@@ -18,7 +18,7 @@ public class DERNull
     {
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

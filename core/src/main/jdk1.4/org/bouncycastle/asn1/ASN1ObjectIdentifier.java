@@ -308,7 +308,7 @@ public class ASN1ObjectIdentifier
         return body;
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

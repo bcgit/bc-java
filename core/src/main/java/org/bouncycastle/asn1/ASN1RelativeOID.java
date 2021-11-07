@@ -198,7 +198,7 @@ public class ASN1RelativeOID
         out.writeEncodingDL(withTag, BERTags.RELATIVE_OID, getContents());
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }
