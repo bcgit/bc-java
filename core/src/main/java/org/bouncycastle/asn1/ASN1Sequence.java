@@ -349,7 +349,7 @@ public abstract class ASN1Sequence
 
     abstract ASN1Set toASN1Set();
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return true;
     }

@@ -40,9 +40,9 @@ public class DERTaggedObject
         super(explicitness, tagClass, tagNo, obj);
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
-        return isExplicit() || obj.toASN1Primitive().toDERObject().isConstructed();
+        return isExplicit() || obj.toASN1Primitive().toDERObject().encodeConstructed();
     }
 
     int encodedLength(boolean withTag) throws IOException
@@ -72,7 +72,7 @@ public class DERTaggedObject
         if (withTag)
         {
             int flags = tagClass;
-            if (explicit || primitive.isConstructed())
+            if (explicit || primitive.encodeConstructed())
             {
                 flags |= BERTags.CONSTRUCTED;
             }

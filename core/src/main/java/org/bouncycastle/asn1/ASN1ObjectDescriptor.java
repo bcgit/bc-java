@@ -87,7 +87,7 @@ public final class ASN1ObjectDescriptor
         return baseGraphicString;
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

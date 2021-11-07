@@ -234,6 +234,11 @@ public abstract class ASN1ApplicationSpecific
         return taggedObject.obj.toASN1Primitive();
     }
 
+    boolean encodeConstructed()
+    {
+        return taggedObject.encodeConstructed();
+    }
+
     int encodedLength(boolean withTag) throws IOException
     {
         return taggedObject.encodedLength(withTag);

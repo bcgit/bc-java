@@ -40,7 +40,7 @@ public class DLBitString
         super(contents, check);
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

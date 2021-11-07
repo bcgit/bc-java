@@ -107,7 +107,7 @@ public abstract class ASN1UTF8String
         return Arrays.areEqual(this.contents, that.contents);
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

@@ -149,7 +149,7 @@ public abstract class ASN1External
             ^  this.externalContent.hashCode();
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return true;
     }

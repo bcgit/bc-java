@@ -102,7 +102,7 @@ public abstract class ASN1VisibleString
         return Arrays.clone(contents);
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

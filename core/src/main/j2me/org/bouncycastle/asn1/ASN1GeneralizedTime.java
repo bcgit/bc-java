@@ -223,7 +223,7 @@ public class ASN1GeneralizedTime
         return false;
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

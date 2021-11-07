@@ -408,7 +408,7 @@ public abstract class ASN1Set
         return true;
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return true;
     }
