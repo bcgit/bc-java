@@ -278,7 +278,7 @@ public class ASN1UTCTime
         return contents.length > pos && contents[pos] >= '0' && contents[pos] <= '9';
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

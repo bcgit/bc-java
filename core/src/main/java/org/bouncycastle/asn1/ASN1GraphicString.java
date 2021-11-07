@@ -84,7 +84,7 @@ public abstract class ASN1GraphicString
         return Arrays.clone(contents);
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

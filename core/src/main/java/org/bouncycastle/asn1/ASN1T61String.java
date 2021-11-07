@@ -97,7 +97,7 @@ public abstract class ASN1T61String
         return getString();
     }
 
-    final boolean isConstructed()
+    final boolean encodeConstructed()
     {
         return false;
     }

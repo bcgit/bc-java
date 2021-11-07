@@ -269,6 +269,17 @@ public abstract class ASN1TaggedObject
     }
 
     /**
+     * Return true if the object is marked as constructed, false otherwise.
+     *
+     * @return true if constructed, otherwise false.
+     */
+    // TODO Need this public if/when ASN1ApplicationSpecific extends ASN1TaggedObject
+    boolean isConstructed()
+    {
+        return encodeConstructed();
+    }
+
+    /**
      * Return whatever was following the tag.
      * <p>
      * Note: tagged objects are generally context dependent. If you're trying to

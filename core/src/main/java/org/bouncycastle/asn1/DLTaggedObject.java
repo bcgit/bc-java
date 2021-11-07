@@ -40,9 +40,9 @@ public class DLTaggedObject
         super(explicitness, tagClass, tagNo, obj);
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
-        return isExplicit() || obj.toASN1Primitive().toDLObject().isConstructed();
+        return isExplicit() || obj.toASN1Primitive().toDLObject().encodeConstructed();
     }
 
     int encodedLength(boolean withTag) throws IOException
@@ -72,7 +72,7 @@ public class DLTaggedObject
         if (withTag)
         {
             int flags = tagClass;
-            if (explicit || primitive.isConstructed())
+            if (explicit || primitive.encodeConstructed())
             {
                 flags |= BERTags.CONSTRUCTED;
             }

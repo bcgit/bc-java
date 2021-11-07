@@ -108,7 +108,7 @@ public class ASN1Boolean
         return value != FALSE_VALUE;
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }

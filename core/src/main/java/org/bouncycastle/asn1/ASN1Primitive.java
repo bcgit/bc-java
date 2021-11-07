@@ -103,7 +103,7 @@ public abstract class ASN1Primitive
      * Return true if this objected is a CONSTRUCTED one, false otherwise.
      * @return true if CONSTRUCTED bit set on object's tag, false otherwise.
      */
-    abstract boolean isConstructed();
+    abstract boolean encodeConstructed();
 
     abstract int encodedLength(boolean withTag) throws IOException;
 

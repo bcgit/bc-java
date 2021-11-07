@@ -109,7 +109,7 @@ public class DERBitString
         super(contents, check);
     }
 
-    boolean isConstructed()
+    boolean encodeConstructed()
     {
         return false;
     }
