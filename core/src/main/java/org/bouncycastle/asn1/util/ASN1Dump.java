@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1PrintableString;
+import org.bouncycastle.asn1.ASN1RelativeOID;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1T61String;
@@ -185,6 +186,10 @@ public class ASN1Dump
         else if (obj instanceof ASN1ObjectIdentifier)
         {
             buf.append(indent + "ObjectIdentifier(" + ((ASN1ObjectIdentifier)obj).getId() + ")" + nl);
+        }
+        else if (obj instanceof ASN1RelativeOID)
+        {
+            buf.append(indent + "RelativeOID(" + ((ASN1RelativeOID)obj).getId() + ")" + nl);
         }
         else if (obj instanceof ASN1Boolean)
         {

@@ -206,7 +206,7 @@ public class ASN1ObjectIdentifier
      */
     ASN1ObjectIdentifier(ASN1ObjectIdentifier oid, String branchID)
     {
-        if (!isValidBranchID(branchID, 0))
+        if (!ASN1RelativeOID.isValidIdentifier(branchID, 0))
         {
             throw new IllegalArgumentException("string " + branchID + " not a valid OID branch");
         }
@@ -247,44 +247,6 @@ public class ASN1ObjectIdentifier
         return id.length() > stemId.length() && id.charAt(stemId.length()) == '.' && id.startsWith(stemId);
     }
 
-    private void writeField(
-        ByteArrayOutputStream out,
-        long fieldValue)
-    {
-        byte[] result = new byte[9];
-        int pos = 8;
-        result[pos] = (byte)((int)fieldValue & 0x7f);
-        while (fieldValue >= (1L << 7))
-        {
-            fieldValue >>= 7;
-            result[--pos] = (byte)((int)fieldValue & 0x7f | 0x80);
-        }
-        out.write(result, pos, 9 - pos);
-    }
-
-    private void writeField(
-        ByteArrayOutputStream out,
-        BigInteger fieldValue)
-    {
-        int byteCount = (fieldValue.bitLength() + 6) / 7;
-        if (byteCount == 0)
-        {
-            out.write(0);
-        }
-        else
-        {
-            BigInteger tmpValue = fieldValue;
-            byte[] tmp = new byte[byteCount];
-            for (int i = byteCount - 1; i >= 0; i--)
-            {
-                tmp[i] = (byte)(tmpValue.intValue() | 0x80);
-                tmpValue = tmpValue.shiftRight(7);
-            }
-            tmp[byteCount - 1] &= 0x7f;
-            out.write(tmp, 0, tmp.length);
-        }
-    }
-
     private void doOutput(ByteArrayOutputStream aOut)
     {
         OIDTokenizer tok = new OIDTokenizer(identifier);
@@ -293,11 +255,11 @@ public class ASN1ObjectIdentifier
         String secondToken = tok.nextToken();
         if (secondToken.length() <= 18)
         {
-            writeField(aOut, first + Long.parseLong(secondToken));
+            ASN1RelativeOID.writeField(aOut, first + Long.parseLong(secondToken));
         }
         else
         {
-            writeField(aOut, new BigInteger(secondToken).add(BigInteger.valueOf(first)));
+            ASN1RelativeOID.writeField(aOut, new BigInteger(secondToken).add(BigInteger.valueOf(first)));
         }
 
         while (tok.hasMoreTokens())
@@ -305,11 +267,11 @@ public class ASN1ObjectIdentifier
             String token = tok.nextToken();
             if (token.length() <= 18)
             {
-                writeField(aOut, Long.parseLong(token));
+                ASN1RelativeOID.writeField(aOut, Long.parseLong(token));
             }
             else
             {
-                writeField(aOut, new BigInteger(token));
+                ASN1RelativeOID.writeField(aOut, new BigInteger(token));
             }
         }
     }
@@ -369,45 +331,6 @@ public class ASN1ObjectIdentifier
         return getId();
     }
 
-    private static boolean isValidBranchID(
-        String branchID, int start)
-    {
-        int digitCount = 0;
-
-        int pos = branchID.length();
-        while (--pos >= start)
-        {
-            char ch = branchID.charAt(pos);
-
-            if (ch == '.')
-            {
-                if (0 == digitCount
-                    || (digitCount > 1 && branchID.charAt(pos + 1) == '0'))
-                {
-                    return false;
-                }
-
-                digitCount = 0;
-            }
-            else if ('0' <= ch && ch <= '9')
-            {
-                ++digitCount;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        if (0 == digitCount
-            || (digitCount > 1 && branchID.charAt(pos + 1) == '0'))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
     private static boolean isValidIdentifier(
         String identifier)
     {
@@ -422,7 +345,7 @@ public class ASN1ObjectIdentifier
             return false;
         }
 
-        return isValidBranchID(identifier, 2);
+        return ASN1RelativeOID.isValidIdentifier(identifier, 2);
     }
 
     /**

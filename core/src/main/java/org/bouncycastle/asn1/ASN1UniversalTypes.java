@@ -30,6 +30,8 @@ final class ASN1UniversalTypes
             return ASN1Enumerated.TYPE;
         case BERTags.UTF8_STRING:               // [UNIVERSAL 12] IMPLICIT OCTET STRING (encode as if)
             return ASN1UTF8String.TYPE;
+        case BERTags.RELATIVE_OID:
+            return ASN1RelativeOID.TYPE;
         case BERTags.SEQUENCE:
             return ASN1Sequence.TYPE;
         case BERTags.SET:
@@ -61,7 +63,6 @@ final class ASN1UniversalTypes
 
         case BERTags.REAL:
         case BERTags.EMBEDDED_PDV:
-        case BERTags.RELATIVE_OID:
         case BERTags.UNRESTRICTED_STRING:
         default:
             return null;

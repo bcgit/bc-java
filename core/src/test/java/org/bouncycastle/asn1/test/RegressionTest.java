@@ -16,6 +16,7 @@ public class RegressionTest
         new GenerationTest(),
         new OCSPTest(),
         new OIDTest(),
+        new RelativeOIDTest(),
         new PKCS10Test(),
         new PKCS12Test(),
         new X509NameTest(),
