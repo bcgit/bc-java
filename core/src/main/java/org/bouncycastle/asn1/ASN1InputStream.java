@@ -511,6 +511,10 @@ public class ASN1InputStream
         byte[][] tmpBuffers)
         throws IOException
     {
+        /*
+         * TODO[asn1] Lookup the universal type object and get it to parse the stream directly (possibly with
+         * access to a single temporary buffer replacing tmpBuffers).
+         */
         switch (tagNo)
         {
         case BIT_STRING:
