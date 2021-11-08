@@ -57,7 +57,7 @@ public class ASN1RelativeOID
         return (ASN1RelativeOID)TYPE.getContextInstance(taggedObject, explicit);
     }
 
-    private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7f;
+    private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7F;
 
     private final String identifier;
     private byte[] contents;
@@ -99,8 +99,8 @@ public class ASN1RelativeOID
 
             if (value <= LONG_LIMIT)
             {
-                value += (b & 0x7f);
-                if ((b & 0x80) == 0)             // end of number reached
+                value += b & 0x7F;
+                if ((b & 0x80) == 0)
                 {
                     if (first)
                     {
@@ -125,7 +125,7 @@ public class ASN1RelativeOID
                 {
                     bigValue = BigInteger.valueOf(value);
                 }
-                bigValue = bigValue.or(BigInteger.valueOf(b & 0x7f));
+                bigValue = bigValue.or(BigInteger.valueOf(b & 0x7F));
                 if ((b & 0x80) == 0)
                 {
                     if (first)
@@ -281,11 +281,11 @@ public class ASN1RelativeOID
     {
         byte[] result = new byte[9];
         int pos = 8;
-        result[pos] = (byte)((int)fieldValue & 0x7f);
+        result[pos] = (byte)((int)fieldValue & 0x7F);
         while (fieldValue >= (1L << 7))
         {
             fieldValue >>= 7;
-            result[--pos] = (byte)((int)fieldValue & 0x7f | 0x80);
+            result[--pos] = (byte)((int)fieldValue | 0x80);
         }
         out.write(result, pos, 9 - pos);
     }
@@ -306,7 +306,7 @@ public class ASN1RelativeOID
                 tmp[i] = (byte)(tmpValue.intValue() | 0x80);
                 tmpValue = tmpValue.shiftRight(7);
             }
-            tmp[byteCount - 1] &= 0x7f;
+            tmp[byteCount - 1] &= 0x7F;
             out.write(tmp, 0, tmp.length);
         }
     }
