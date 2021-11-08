@@ -248,6 +248,18 @@ public class PGPSignatureSubpacketVector
                     
         return ((PreferredAlgorithms)p).getPreferences();
     }
+
+    public int[] getPreferredAEADAlgorithms()
+    {
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
+
+        if (p == null)
+        {
+            return null;
+        }
+
+        return ((PreferredAlgorithms)p).getPreferences();
+    }
     
     public int getKeyFlags()
     {
