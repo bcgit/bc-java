@@ -6,6 +6,7 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -207,26 +208,43 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
 
     public String getSignatureName(AlgorithmIdentifier digestAlg, AlgorithmIdentifier encryptionAlg)
     {
-        if (EdECObjectIdentifiers.id_Ed25519.equals(encryptionAlg.getAlgorithm()))
+        ASN1ObjectIdentifier encryptionAlgOid = encryptionAlg.getAlgorithm();
+        if (EdECObjectIdentifiers.id_Ed25519.equals(encryptionAlgOid))
         {
             return "Ed25519";
         }
-        if (EdECObjectIdentifiers.id_Ed448.equals(encryptionAlg.getAlgorithm()))
+        if (EdECObjectIdentifiers.id_Ed448.equals(encryptionAlgOid))
         {
             return "Ed448";
         }
-        if (PKCSObjectIdentifiers.id_alg_hss_lms_hashsig.equals(encryptionAlg.getAlgorithm()))
+        if (PKCSObjectIdentifiers.id_alg_hss_lms_hashsig.equals(encryptionAlgOid))
         {
             return "LMS";
         }
-
-        String digestName = getDigestAlgName(encryptionAlg.getAlgorithm());
-
-        if (!digestName.equals(encryptionAlg.getAlgorithm().getId()))
+        if (CMSObjectIdentifiers.id_ecdsa_with_shake128.equals(encryptionAlgOid))
         {
-            return digestName + "with" + getEncryptionAlgName(encryptionAlg.getAlgorithm());
+            return "SHAKE128WITHECDSA";
+        }
+        if (CMSObjectIdentifiers.id_ecdsa_with_shake256.equals(encryptionAlgOid))
+        {
+            return "SHAKE256WITHECDSA";
+        }
+        if (CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128.equals(encryptionAlgOid))
+        {
+            return "SHAKE128WITHRSAPSS";
+        }
+        if (CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256.equals(encryptionAlgOid))
+        {
+            return "SHAKE256WITHRSAPSS";
         }
 
-        return getDigestAlgName(digestAlg.getAlgorithm()) + "with" + getEncryptionAlgName(encryptionAlg.getAlgorithm());
+        String digestName = getDigestAlgName(encryptionAlgOid);
+
+        if (!digestName.equals(encryptionAlgOid.getId()))
+        {
+            return digestName + "with" + getEncryptionAlgName(encryptionAlgOid);
+        }
+
+        return getDigestAlgName(digestAlg.getAlgorithm()) + "with" + getEncryptionAlgName(encryptionAlgOid);
     }
 }
