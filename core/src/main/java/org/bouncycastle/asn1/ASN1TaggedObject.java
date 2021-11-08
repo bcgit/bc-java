@@ -20,27 +20,7 @@ public abstract class ASN1TaggedObject
     private static final int PARSED_EXPLICIT = 3;
     private static final int PARSED_IMPLICIT = 4;
 
-    final int           explicitness;
-    final int           tagClass;
-    final int           tagNo;
-    final ASN1Encodable obj;
-
-    public static ASN1TaggedObject getInstance(ASN1TaggedObject obj, boolean explicit)
-    {
-        if (BERTags.CONTEXT_SPECIFIC != obj.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        if (explicit)
-        {
-            return obj.getExplicitBaseTagged();
-        }
-
-        throw new IllegalArgumentException("this method not valid for implicitly tagged tagged objects");
-    }
-
-    static public ASN1TaggedObject getInstance(Object obj)
+    public static ASN1TaggedObject getInstance(Object obj)
     {
         if (obj == null || obj instanceof ASN1TaggedObject) 
         {
@@ -59,7 +39,7 @@ public abstract class ASN1TaggedObject
         {
             try
             {
-                return getInstance(fromByteArray((byte[])obj));
+                return checkedCast(fromByteArray((byte[])obj));
             }
             catch (IOException e)
             {
@@ -69,6 +49,26 @@ public abstract class ASN1TaggedObject
 
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
     }
+
+    public static ASN1TaggedObject getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
+        {
+            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
+        }
+
+        if (declaredExplicit)
+        {
+            return taggedObject.getExplicitBaseTagged();
+        }
+
+        throw new IllegalArgumentException("this method not valid for implicitly tagged tagged objects");
+    }
+
+    final int           explicitness;
+    final int           tagClass;
+    final int           tagNo;
+    final ASN1Encodable obj;
 
     /**
      * Create a tagged object with the style given by the value of explicit.
@@ -255,7 +255,7 @@ public abstract class ASN1TaggedObject
             int contentsLength = length < 0 ? remaining - 2 : remaining;
             if (contentsLength < 0)
             {
-                throw new IllegalStateException();
+                throw new IllegalStateException("failed to get contents");
             }
 
             byte[] contents = new byte[contentsLength];
@@ -264,7 +264,7 @@ public abstract class ASN1TaggedObject
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("failed to get contents", e);
         }
     }
 
@@ -321,21 +321,6 @@ public abstract class ASN1TaggedObject
      */
     public ASN1Object getExplicitBaseObject()
     {
-        if (!isExplicit())
-        {
-            throw new IllegalStateException("object implicit - explicit expected.");
-        }
-
-        return obj instanceof ASN1Object ? (ASN1Object)obj : obj.toASN1Primitive();
-    }
-
-    public ASN1Object getExplicitContextBaseObject()
-    {
-        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
         if (!isExplicit())
         {
             throw new IllegalStateException("object implicit - explicit expected.");
@@ -459,10 +444,10 @@ public abstract class ASN1TaggedObject
             return ((ASN1BitString)primitive).parser();
         case BERTags.OCTET_STRING:
             return ((ASN1OctetString)primitive).parser();
-        case BERTags.SET:
-            return ((ASN1Set)primitive).parser();
         case BERTags.SEQUENCE:
             return ((ASN1Sequence)primitive).parser();
+        case BERTags.SET:
+            return ((ASN1Set)primitive).parser();
         }
 
         return primitive;
@@ -539,7 +524,8 @@ public abstract class ASN1TaggedObject
     static ASN1Primitive createPrimitive(int tagClass, int tagNo, byte[] contentsOctets)
     {
         // Note: !CONSTRUCTED => IMPLICIT
-        ASN1TaggedObject taggedObject = new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, new DEROctetString(contentsOctets));
+        ASN1TaggedObject taggedObject = new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo,
+            new DEROctetString(contentsOctets));
 
         switch (tagClass)
         {
