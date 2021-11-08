@@ -92,7 +92,10 @@ public class ASN1ObjectIdentifier
         return (ASN1ObjectIdentifier)TYPE.getContextInstance(taggedObject, explicit);
     }
 
-    private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7f;
+    private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7F;
+
+    private static final ConcurrentMap<OidHandle, ASN1ObjectIdentifier> pool =
+        new ConcurrentHashMap<OidHandle, ASN1ObjectIdentifier>();
 
     private final String identifier;
     private byte[] contents;
@@ -110,8 +113,8 @@ public class ASN1ObjectIdentifier
 
             if (value <= LONG_LIMIT)
             {
-                value += (b & 0x7f);
-                if ((b & 0x80) == 0)             // end of number reached
+                value += b & 0x7F;
+                if ((b & 0x80) == 0)
                 {
                     if (first)
                     {
@@ -147,7 +150,7 @@ public class ASN1ObjectIdentifier
                 {
                     bigValue = BigInteger.valueOf(value);
                 }
-                bigValue = bigValue.or(BigInteger.valueOf(b & 0x7f));
+                bigValue = bigValue.or(BigInteger.valueOf(b & 0x7F));
                 if ((b & 0x80) == 0)
                 {
                     if (first)
@@ -367,8 +370,6 @@ public class ASN1ObjectIdentifier
         }
         return oid;
     }
-
-    private static final ConcurrentMap<OidHandle, ASN1ObjectIdentifier> pool = new ConcurrentHashMap<OidHandle, ASN1ObjectIdentifier>();
 
     private static class OidHandle
     {
