@@ -34,30 +34,25 @@ public class ASN1ObjectIdentifier
      * @return an ASN1ObjectIdentifier instance, or null.
      * @throws IllegalArgumentException if the object cannot be converted.
      */
-    public static ASN1ObjectIdentifier getInstance(
-        Object obj)
+    public static ASN1ObjectIdentifier getInstance(Object obj)
     {
         if (obj == null || obj instanceof ASN1ObjectIdentifier)
         {
             return (ASN1ObjectIdentifier)obj;
         }
-
-        if (obj instanceof ASN1Encodable)
+        else if (obj instanceof ASN1Encodable)
         {
             ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
-
             if (primitive instanceof ASN1ObjectIdentifier)
             {
                 return (ASN1ObjectIdentifier)primitive;
             }
         }
-
-        if (obj instanceof byte[])
+        else if (obj instanceof byte[])
         {
-            byte[] enc = (byte[])obj;
             try
             {
-                return (ASN1ObjectIdentifier)TYPE.fromByteArray(enc);
+                return (ASN1ObjectIdentifier)TYPE.fromByteArray((byte[])obj);
             }
             catch (IOException e)
             {

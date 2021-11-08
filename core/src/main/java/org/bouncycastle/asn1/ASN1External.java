@@ -25,7 +25,7 @@ public abstract class ASN1External
         {
             return (ASN1External)obj;
         }
-        if (obj instanceof ASN1Encodable)
+        else if (obj instanceof ASN1Encodable)
         {
             ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
             if (primitive instanceof ASN1External)
@@ -33,15 +33,15 @@ public abstract class ASN1External
                 return (ASN1External)primitive;
             }
         }
-        if (obj instanceof byte[])
+        else if (obj instanceof byte[])
         {
             try
             {
                 return (ASN1External)TYPE.fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (IOException e)
             {
-                throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
+                throw new IllegalArgumentException("failed to construct external from byte[]: " + e.getMessage());
             }
         }
 
