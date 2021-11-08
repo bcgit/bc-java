@@ -25,15 +25,16 @@ class LazyEncodedSequence
         this.encoded = encoded;
     }
 
-    public synchronized ASN1Encodable getObjectAt(int index)
+    public ASN1Encodable getObjectAt(int index)
     {
         force();
 
         return super.getObjectAt(index);
     }
 
-    public synchronized Enumeration getObjects()
+    public Enumeration getObjects()
     {
+        byte[] encoded = getContents();
         if (null != encoded)
         {
             return new LazyConstructionEnumeration(encoded);
@@ -42,44 +43,45 @@ class LazyEncodedSequence
         return super.getObjects();
     }
 
-    public synchronized int hashCode()
+    public int hashCode()
     {
         force();
 
         return super.hashCode();
     }
 
-    public synchronized Iterator<ASN1Encodable> iterator()
+    public Iterator<ASN1Encodable> iterator()
     {
         force();
 
         return super.iterator();
     }
 
-    public synchronized int size()
+    public int size()
     {
         force();
 
         return super.size();
     }
 
-    public synchronized ASN1Encodable[] toArray()
+    public ASN1Encodable[] toArray()
     {
         force();
 
         return super.toArray();
     }
 
-    synchronized ASN1Encodable[] toArrayInternal()
+    ASN1Encodable[] toArrayInternal()
     {
         force();
 
         return super.toArrayInternal();
     }
 
-    synchronized int encodedLength(boolean withTag)
+    int encodedLength(boolean withTag)
         throws IOException
     {
+        byte[] encoded = getContents();
         if (null != encoded)
         {
             return ASN1OutputStream.getLengthOfEncodingDL(withTag, encoded.length);
@@ -88,16 +90,16 @@ class LazyEncodedSequence
         return super.toDLObject().encodedLength(withTag);
     }
 
-    synchronized void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
+        byte[] encoded = getContents();
         if (null != encoded)
         {
             out.writeEncodingDL(withTag, BERTags.CONSTRUCTED | BERTags.SEQUENCE, encoded);
+            return;
         }
-        else
-        {
-            super.toDLObject().encode(out, withTag);
-        }
+
+        super.toDLObject().encode(out, withTag);
     }
 
     ASN1BitString toASN1BitString()
@@ -120,21 +122,21 @@ class LazyEncodedSequence
         return ((ASN1Sequence)toDLObject()).toASN1Set();
     }
 
-    synchronized ASN1Primitive toDERObject()
+    ASN1Primitive toDERObject()
     {
         force();
 
         return super.toDERObject();
     }
 
-    synchronized ASN1Primitive toDLObject()
+    ASN1Primitive toDLObject()
     {
         force();
 
         return super.toDLObject();
     }
 
-    private void force()
+    private synchronized void force()
     {
         if (null != encoded)
         {
@@ -152,5 +154,10 @@ class LazyEncodedSequence
                 throw new ASN1ParsingException("malformed ASN.1: " + e, e);
             }
         }
+    }
+
+    private synchronized byte[] getContents()
+    {
+        return encoded;
     }
 }
