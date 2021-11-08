@@ -315,7 +315,7 @@ public class BcPGPKeyConverter
 
         case PublicKeyAlgorithmTags.EDDSA:
         {
-            if (privKey instanceof EdECObjectIdentifiers)
+            if (privKey instanceof Ed25519PrivateKeyParameters)
             {
                 Ed25519PrivateKeyParameters edK = (Ed25519PrivateKeyParameters)privKey;
                 return new EdSecretBCPGKey(new BigInteger(1, edK.getEncoded()));
