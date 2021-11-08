@@ -40,7 +40,7 @@ class LazyConstructionEnumeration
         }
         catch (IOException e)
         {
-            throw new ASN1ParsingException("malformed DER construction: " + e, e);
+            throw new ASN1ParsingException("malformed ASN.1: " + e, e);
         }
     }
 }
