@@ -41,15 +41,15 @@ public final class ASN1ObjectDescriptor
                 return (ASN1ObjectDescriptor)primitive;
             }
         }
-        if (obj instanceof byte[])
+        else if (obj instanceof byte[])
         {
             try
             {
                 return (ASN1ObjectDescriptor)TYPE.fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (IOException e)
             {
-                throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
+                throw new IllegalArgumentException("failed to construct object descriptor from byte[]: " + e.getMessage());
             }
         }
 
