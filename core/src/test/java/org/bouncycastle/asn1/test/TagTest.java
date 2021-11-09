@@ -5,9 +5,11 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERApplicationSpecific;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -29,6 +31,8 @@ public class TagTest
                 + "lAg=");
 
     byte[] longAppSpecificTag = Hex.decode("5F610101");
+
+    byte[] taggedInteger = Hex.decode("BF2203020101");
 
     public String getName()
     {
@@ -103,6 +107,13 @@ public class TagTest
             {
                 fail("incorrect tag number read on recode (random test value: " + testTag + ")");
             }
+        }
+
+        tagged = new DERTaggedObject(false, 34, new DERTaggedObject(true, 1000, new ASN1Integer(1)));
+
+        if (!areEqual(taggedInteger, tagged.getEncoded()))
+        {
+            fail("incorrect encoding for implicit explicit tagged integer");
         }
     }
 
