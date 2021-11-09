@@ -123,7 +123,7 @@ public class ASN1StreamParser
         }
 
         //
-        // turn of looking for "00" while we resolve the tag
+        // turn off looking for "00" while we resolve the tag
         //
         set00Check(false);
 
