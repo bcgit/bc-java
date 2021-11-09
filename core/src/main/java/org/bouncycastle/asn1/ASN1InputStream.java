@@ -176,7 +176,7 @@ public class ASN1InputStream
         case SET:
             return DLFactory.createSet(readVector(defIn));
         case EXTERNAL:
-            return new DLExternal(readVector(defIn));
+            return DLFactory.createSequence(readVector(defIn)).toASN1External();
         default:
             throw new IOException("unknown tag " + tagNo + " encountered");
         }
