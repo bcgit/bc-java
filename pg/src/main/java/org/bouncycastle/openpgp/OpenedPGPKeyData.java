@@ -912,12 +912,14 @@ public class OpenedPGPKeyData
 
             ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(curve);
             X9ECParameters params = CustomNamedCurves.getByName(curve);
-            if (params == null) {
+            if (params == null)
+            {
                 params = TeleTrusTNamedCurves.getByOID(oid);
             }
 
-            if (params == null) {
-                throw new IllegalStateException("unable to resolve parameters for "+curve);
+            if (params == null)
+            {
+                throw new IllegalStateException("unable to resolve parameters for " + curve);
             }
 
             ECPoint pnt = params.getCurve().decodePoint(qoint);
