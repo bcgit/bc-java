@@ -74,13 +74,13 @@ public class ExSExprTest
         " 56FFBF0E8DA3B25C9D697E7F0F609E10F1F35A62002BF5DFC930675C1339272267EBDE\n" +
         " 6588E985D0F1AC44F8C59AC50213D3D618F25C8FDF6EB6DFAC7FBA598EEB7CEA#)(x\n" +
         "  #02222A119771B79D3FA0BF2276769DB90D21F88A836064AFA890212504E12CEA#)))\n").getBytes();
-    byte[] ecEdwardsProtected = ("Created: 20211020T054836\n" +
-        "Key: (protected-private-key (ecc (curve Curve25519)(flags djb-tweak)(q\n" +
-        "  #40FF4BE66B05C5606A0B33EF0656441846C8B12A871F624EC22985BFC4A063096B#)\n" +
-        " (protected openpgp-s2k3-ocb-aes ((sha1 #CEC21B7A72ECEEB1#\n" +
-        "  \"43860992\")#DECB213C12E0BCA62E4B15D0#)#1FA1B1C1A03F1EDE9EC6F387B78170\n" +
-        " 459C0D171AC99DA9B79F71680FEEA9E27D2E2F5F134D94B0993BB281C20761F6C6F398\n" +
-        " C9DEEDF79BFDC5509E2B#)(protected-at \"20211020T054845\")))\n").getBytes();
+    byte[] ecEdwardsProtected = ("Created: 20211109T024829\n" +
+        "Key: (protected-private-key (ecc (curve Ed25519)(flags eddsa)(q\n" +
+        "  #40A1C6881D7F04E6189EDBA8D4905A826BF55CF356F6B9F9E7FCBCCF0268F57F75#)\n" +
+        " (protected openpgp-s2k3-ocb-aes ((sha1 #496A268F9960EFC7#\n" +
+        "  \"42743808\")#92F383D5A8B61D9BD4B0E4E8#)#FCBCDDA53BFA078B9EF1A327A2A24B\n" +
+        " A85DD4717B0F1079EC913956960E5E7ADBE1B614F19D2638011F03981BE7CA83C8F764\n" +
+        " CDB00543AD3D3DB31009#)(protected-at \"20211109T024837\")))\n").getBytes();
 
     byte[] ecEdwardsEd448Open = ("Created: 20211029T004049\n" +
         "Key: (private-key (ecc (curve Ed448)(q #6985146F9BC0D9674F5724D94AF629D\n" +
@@ -603,18 +603,15 @@ public class ExSExprTest
         throws Exception
     {
 
-//        testDSAElgamalOpen();
-//        testBrainPoolCurves();
-//        testECNistCurves();
+        testDSAElgamalOpen();
+        testBrainPoolCurves();
+        testECNistCurves();
         testECEdwardsOpen();
-       // testECEdwardsProtected();
-//        testDSAProtected();
-//        testRSAOpen();
-//        testProtectedRSA();
-//        testShadowedRSA();
-
-        System.out.println();
-
+        testECEdwardsProtected();
+        testDSAProtected();
+        testRSAOpen();
+        testProtectedRSA();
+        testShadowedRSA();
 
     }
 
