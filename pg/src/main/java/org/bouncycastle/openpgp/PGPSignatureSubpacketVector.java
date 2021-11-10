@@ -44,13 +44,13 @@ public class PGPSignatureSubpacketVector
     SignatureSubpacket[] packets;
 
     PGPSignatureSubpacketVector(
-        SignatureSubpacket[]    packets)
+        SignatureSubpacket[] packets)
     {
         this.packets = packets;
     }
 
     public SignatureSubpacket getSubpacket(
-        int    type)
+        int type)
     {
         for (int i = 0; i != packets.length; i++)
         {
@@ -59,7 +59,7 @@ public class PGPSignatureSubpacketVector
                 return packets[i];
             }
         }
-        
+
         return null;
     }
 
@@ -77,11 +77,12 @@ public class PGPSignatureSubpacketVector
 
     /**
      * Return all signature subpackets of the passed in type.
+     *
      * @param type subpacket type code
      * @return an array of zero or more matching subpackets.
      */
     public SignatureSubpacket[] getSubpackets(
-        int    type)
+        int type)
     {
         List list = new ArrayList();
 
@@ -139,14 +140,18 @@ public class PGPSignatureSubpacketVector
 
     /**
      * Return all {@link NotationData} occurrences which match the given notation name.
+     *
      * @param notationName notation name
      * @return notations with matching name
      */
-    public NotationData[] getNotationDataOccurrences(String notationName) {
+    public NotationData[] getNotationDataOccurrences(String notationName)
+    {
         NotationData[] notations = getNotationDataOccurrences();
-        List<NotationData> notationsWithName = new ArrayList<>();
-        for (NotationData notation : notations) {
-            if (notation.getNotationName().equals(notationName)) {
+        List<NotationData> notationsWithName = new ArrayList<NotationData>();
+        for (NotationData notation : notations)
+        {
+            if (notation.getNotationName().equals(notationName))
+            {
                 notationsWithName.add(notation);
             }
         }
@@ -155,97 +160,97 @@ public class PGPSignatureSubpacketVector
 
     public long getIssuerKeyID()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID);
+
         if (p == null)
         {
             return 0;
         }
-        
+
         return ((IssuerKeyID)p).getKeyID();
     }
-    
+
     public Date getSignatureCreationTime()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.CREATION_TIME);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.CREATION_TIME);
+
         if (p == null)
         {
             return null;
         }
-        
+
         return ((SignatureCreationTime)p).getTime();
     }
-    
+
     /**
      * Return the number of seconds a signature is valid for after its creation date. A value of zero means
      * the signature never expires.
-     * 
+     *
      * @return seconds a signature is valid for.
      */
     public long getSignatureExpirationTime()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.EXPIRE_TIME);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.EXPIRE_TIME);
+
         if (p == null)
         {
             return 0;
         }
-        
+
         return ((SignatureExpirationTime)p).getTime();
     }
-    
+
     /**
      * Return the number of seconds a key is valid for after its creation date. A value of zero means
      * the key never expires.
-     * 
+     *
      * @return seconds a key is valid for.
      */
     public long getKeyExpirationTime()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.KEY_EXPIRE_TIME);
+
         if (p == null)
         {
             return 0;
         }
-        
+
         return ((KeyExpirationTime)p).getTime();
     }
-    
+
     public int[] getPreferredHashAlgorithms()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_HASH_ALGS);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_HASH_ALGS);
+
         if (p == null)
         {
             return null;
         }
-                    
+
         return ((PreferredAlgorithms)p).getPreferences();
     }
-    
+
     public int[] getPreferredSymmetricAlgorithms()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_SYM_ALGS);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_SYM_ALGS);
+
         if (p == null)
         {
             return null;
         }
-                    
+
         return ((PreferredAlgorithms)p).getPreferences();
     }
-    
+
     public int[] getPreferredCompressionAlgorithms()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_COMP_ALGS);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_COMP_ALGS);
+
         if (p == null)
         {
             return null;
         }
-                    
+
         return ((PreferredAlgorithms)p).getPreferences();
     }
 
@@ -260,28 +265,28 @@ public class PGPSignatureSubpacketVector
 
         return ((PreferredAlgorithms)p).getPreferences();
     }
-    
+
     public int getKeyFlags()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.KEY_FLAGS);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.KEY_FLAGS);
+
         if (p == null)
         {
             return 0;
         }
-                    
+
         return ((KeyFlags)p).getFlags();
     }
-    
+
     public String getSignerUserID()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.SIGNER_USER_ID);
-        
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.SIGNER_USER_ID);
+
         if (p == null)
         {
             return null;
         }
-                    
+
         return ((SignerUserID)p).getID();
     }
 
@@ -299,8 +304,8 @@ public class PGPSignatureSubpacketVector
 
     public int[] getCriticalTags()
     {
-        int    count = 0;
-        
+        int count = 0;
+
         for (int i = 0; i != packets.length; i++)
         {
             if (packets[i].isCritical())
@@ -308,11 +313,11 @@ public class PGPSignatureSubpacketVector
                 count++;
             }
         }
-        
-        int[]    list = new int[count];
-        
+
+        int[] list = new int[count];
+
         count = 0;
-        
+
         for (int i = 0; i != packets.length; i++)
         {
             if (packets[i].isCritical())
@@ -320,13 +325,13 @@ public class PGPSignatureSubpacketVector
                 list[count++] = packets[i].getType();
             }
         }
-        
+
         return list;
     }
 
     public SignatureTarget getSignatureTarget()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.SIGNATURE_TARGET);
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.SIGNATURE_TARGET);
 
         if (p == null)
         {
@@ -338,7 +343,7 @@ public class PGPSignatureSubpacketVector
 
     public Features getFeatures()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.FEATURES);
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.FEATURES);
 
         if (p == null)
         {
@@ -350,7 +355,7 @@ public class PGPSignatureSubpacketVector
 
     public IssuerFingerprint getIssuerFingerprint()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.ISSUER_FINGERPRINT);
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.ISSUER_FINGERPRINT);
 
         if (p == null)
         {
@@ -362,7 +367,7 @@ public class PGPSignatureSubpacketVector
 
     public IntendedRecipientFingerprint getIntendedRecipientFingerprint()
     {
-        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT);
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT);
 
         if (p == null)
         {
@@ -450,14 +455,14 @@ public class PGPSignatureSubpacketVector
 
     /**
      * Return the number of packets this vector contains.
-     * 
+     *
      * @return size of the packet vector.
      */
     public int size()
     {
         return packets.length;
     }
-    
+
     SignatureSubpacket[] toSubpacketArray()
     {
         return packets;
