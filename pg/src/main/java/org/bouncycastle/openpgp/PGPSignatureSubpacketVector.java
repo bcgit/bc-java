@@ -8,6 +8,7 @@ import java.util.List;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.bcpg.sig.Exportable;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
@@ -17,10 +18,14 @@ import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
+import org.bouncycastle.bcpg.sig.Revocable;
+import org.bouncycastle.bcpg.sig.RevocationKey;
+import org.bouncycastle.bcpg.sig.RevocationReason;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
 import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.bcpg.sig.SignerUserID;
+import org.bouncycastle.bcpg.sig.TrustSignature;
 
 /**
  * Container for a list of signature subpackets.
@@ -132,6 +137,22 @@ public class PGPSignatureSubpacketVector
         return getNotationDataOccurrences();
     }
 
+    /**
+     * Return all {@link NotationData} occurrences which match the given notation name.
+     * @param notationName notation name
+     * @return notations with matching name
+     */
+    public NotationData[] getNotationDataOccurrences(String notationName) {
+        NotationData[] notations = getNotationDataOccurrences();
+        List<NotationData> notationsWithName = new ArrayList<>();
+        for (NotationData notation : notations) {
+            if (notation.getNotationName().equals(notationName)) {
+                notationsWithName.add(notation);
+            }
+        }
+        return notationsWithName.toArray(new NotationData[0]);
+    }
+
     public long getIssuerKeyID()
     {
         SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID);
@@ -225,6 +246,18 @@ public class PGPSignatureSubpacketVector
             return null;
         }
                     
+        return ((PreferredAlgorithms)p).getPreferences();
+    }
+
+    public int[] getPreferredAEADAlgorithms()
+    {
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
+
+        if (p == null)
+        {
+            return null;
+        }
+
         return ((PreferredAlgorithms)p).getPreferences();
     }
     
@@ -337,6 +370,82 @@ public class PGPSignatureSubpacketVector
         }
 
         return new IntendedRecipientFingerprint(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public IntendedRecipientFingerprint[] getIntendedRecipientFingerprints()
+    {
+        SignatureSubpacket[] subpackets = this.getSubpackets(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT);
+        IntendedRecipientFingerprint[] recipients = new IntendedRecipientFingerprint[subpackets.length];
+        for (int i = 0; i < recipients.length; i++)
+        {
+            recipients[i] = new IntendedRecipientFingerprint(subpackets[i].isCritical(), subpackets[i].isLongLength(), subpackets[i].getData());
+        }
+        return recipients;
+    }
+
+    public Exportable getExportable()
+    {
+        SignatureSubpacket p = getSubpacket(SignatureSubpacketTags.EXPORTABLE);
+        if (p == null)
+        {
+            return null;
+        }
+
+        return new Exportable(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public boolean isExportable()
+    {
+        Exportable exportable = getExportable();
+        return exportable == null || exportable.isExportable();
+    }
+
+    public Revocable getRevocable()
+    {
+        SignatureSubpacket p = getSubpacket(SignatureSubpacketTags.REVOCABLE);
+        if (p == null)
+        {
+            return null;
+        }
+
+        return new Revocable(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public boolean isRevocable()
+    {
+        Revocable revocable = getRevocable();
+        return revocable == null || revocable.isRevocable();
+    }
+
+    public RevocationKey[] getRevocationKeys()
+    {
+        SignatureSubpacket[] subpackets = getSubpackets(SignatureSubpacketTags.REVOCATION_KEY);
+        RevocationKey[] revocationKeys = new RevocationKey[subpackets.length];
+        for (int i = 0; i < revocationKeys.length; i++)
+        {
+            revocationKeys[i] = new RevocationKey(subpackets[i].isCritical(), subpackets[i].isLongLength(), subpackets[i].getData());
+        }
+        return revocationKeys;
+    }
+
+    public RevocationReason getRevocationReason()
+    {
+        SignatureSubpacket p = getSubpacket(SignatureSubpacketTags.REVOCATION_REASON);
+        if (p == null)
+        {
+            return null;
+        }
+        return new RevocationReason(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public TrustSignature getTrust()
+    {
+        SignatureSubpacket p = getSubpacket(SignatureSubpacketTags.TRUST_SIG);
+        if (p == null)
+        {
+            return null;
+        }
+        return new TrustSignature(p.isCritical(), p.isLongLength(), p.getData());
     }
 
     /**
