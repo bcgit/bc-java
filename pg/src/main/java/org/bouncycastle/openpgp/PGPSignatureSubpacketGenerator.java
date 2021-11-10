@@ -181,6 +181,18 @@ public class PGPSignatureSubpacketGenerator
     }
 
     /**
+     * Specify the preferred AEAD algorithms of this key.
+     *
+     * @param isCritical true if should be treated as critical, false otherwise.
+     * @param algorithms array of algorithms in descending preference
+     */
+    public void setPreferredAEADAlgorithms(boolean isCritical, int[] algorithms)
+    {
+        packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS, isCritical,
+                algorithms));
+    }
+
+    /**
      * Set this keys key flags.
      * See {@link PGPKeyFlags}.
      *
