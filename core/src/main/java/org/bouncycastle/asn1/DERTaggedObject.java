@@ -62,7 +62,7 @@ public class DERTaggedObject
         return length;
     }
 
-    void encode(ASN1OutputStream out, boolean withTag, int tagClass, int tagNo) throws IOException
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
 //      assert out.getClass().isAssignableFrom(DEROutputStream.class);
 
