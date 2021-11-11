@@ -458,13 +458,6 @@ public abstract class ASN1TaggedObject
         return this;
     }
 
-    final void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        encode(out, withTag, getTagClass(), getTagNo());
-    }
-
-    abstract void encode(ASN1OutputStream out, boolean withTag, int tagClass, int tagNo) throws IOException;
-
     abstract String getASN1Encoding();
 
     abstract ASN1Sequence rebuildConstructed(ASN1Primitive primitive);
