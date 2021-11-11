@@ -156,7 +156,7 @@ public class ASN1StreamParser
             {
                 if (BERTags.APPLICATION == tagClass)
                 {
-                    return new BERApplicationSpecificParser(tagNo, true, sp);
+                    return new BERApplicationSpecificParser(tagNo, sp);
                 }
 
                 return new BERTaggedObjectParser(tagClass, tagNo, true, sp);
