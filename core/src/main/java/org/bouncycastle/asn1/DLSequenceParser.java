@@ -38,7 +38,7 @@ public class DLSequenceParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-         return new DLSequence(_parser.readVector());
+         return DLFactory.createSequence(_parser.readVector());
     }
 
     /**
