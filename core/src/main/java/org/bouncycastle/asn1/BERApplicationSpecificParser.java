@@ -13,9 +13,9 @@ public class BERApplicationSpecificParser
     extends BERTaggedObjectParser
     implements ASN1ApplicationSpecificParser
 {
-    BERApplicationSpecificParser(int tagNo, boolean constructed, ASN1StreamParser parser)
+    BERApplicationSpecificParser(int tagNo, ASN1StreamParser parser)
     {
-        super(BERTags.APPLICATION, tagNo, constructed, parser);
+        super(BERTags.APPLICATION, tagNo, true, parser);
     }
 
     /**
