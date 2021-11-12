@@ -280,7 +280,11 @@ public class ArmoredInputStream
             
             if (crLf)
             {
-                in.read(); // skip last \n
+                int nl = in.read(); // skip last \n
+                if (nl != '\n')
+                {
+                    throw new IOException("inconsistent line endings in headers");
+                }
             }
         }
         
