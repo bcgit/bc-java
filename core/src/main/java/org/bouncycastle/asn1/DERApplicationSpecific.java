@@ -27,11 +27,11 @@ public class DERApplicationSpecific
      * Create an application specific object with a tagging of explicit/constructed.
      *
      * @param tag the tag number for this object.
-     * @param object the object to be contained.
+     * @param baseEncodable the object to be contained.
      */
-    public DERApplicationSpecific(int tag, ASN1Encodable object) throws IOException
+    public DERApplicationSpecific(int tag, ASN1Encodable baseEncodable) throws IOException
     {
-        this(true, tag, object);
+        this(true, tag, baseEncodable);
     }
 
     /**
