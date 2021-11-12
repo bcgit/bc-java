@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -51,7 +52,7 @@ public class LEAEngine
     /**
      * BlockSize.
      */
-    private static final int BLOCKSIZE = NUMWORDS * Integer.BYTES;
+    private static final int BLOCKSIZE = NUMWORDS * Integers.BYTES;
 
     /**
      * keyIndex0.
@@ -380,7 +381,7 @@ public class LEAEngine
         /* Determine the rounds and allocate round keys */
         theRounds = (pKey.length >> 1) + BASEROUNDS;
         theRoundKeys = new int[theRounds][NUMWORDS192];
-        final int numWords = pKey.length / Integer.BYTES;
+        final int numWords = pKey.length / Integers.BYTES;
 
         /* Create and initialise working array */
         final int[] myT = new int[numWords];
@@ -490,7 +491,7 @@ public class LEAEngine
     private static int rol32(final int pValue,
                              final int pBits)
     {
-        return (pValue << pBits) | (pValue >>> (Integer.SIZE - pBits));
+        return (pValue << pBits) | (pValue >>> (Integers.SIZE - pBits));
     }
 
     /**
@@ -503,6 +504,6 @@ public class LEAEngine
     private static int ror32(final int pValue,
                              final int pBits)
     {
-        return (pValue >>> pBits) | (pValue << (Integer.SIZE - pBits));
+        return (pValue >>> pBits) | (pValue << (Integers.SIZE - pBits));
     }
 }
