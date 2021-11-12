@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
@@ -30,6 +31,7 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -38,7 +40,6 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCRLStore;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509CRLHolder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAbsentContent;
 import org.bouncycastle.cms.CMSAlgorithm;
@@ -54,6 +55,8 @@ import org.bouncycastle.cms.SignerId;
 import org.bouncycastle.cms.SignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.bc.BcECSignerInfoVerifierBuilder;
+import org.bouncycastle.cms.bc.BcEdDSASignerInfoVerifierBuilder;
 import org.bouncycastle.cms.bc.BcRSASignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
@@ -110,6 +113,9 @@ public class BcSignedDataTest
 
     private static X509CRL _signCrl;
 
+    private static KeyPair         _signEd448KP;
+    private static X509Certificate _signEd448Cert;
+    
     private static boolean _initialised = false;
 
     private byte[] disorderedMessage = Base64.decode(
@@ -469,6 +475,10 @@ public class BcSignedDataTest
             _reciCert = CMSTestUtil.makeCertificate(_reciKP, _reciDN, _signKP, _signDN);
 
             _signCrl  = CMSTestUtil.makeCrl(_signKP);
+
+            _signEd448KP   = CMSTestUtil.makeEd448KeyPair();
+            _signEd448Cert = CMSTestUtil.makeCertificate(_signEd448KP, _signDN, _origKP, _origDN);
+
         }
     }
 
@@ -988,6 +998,12 @@ public class BcSignedDataTest
         encapsulatedTest(_signKP, _signCert, "SHA1withRSA");
     }
 
+    public void testEd448()
+        throws Exception
+    {
+        encapsulatedTest(_signEd448KP, _signEd448Cert, "ED448", new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512)));
+    }
+
     public void testSHA1WithRSAEncapsulatedSubjectKeyID()
         throws Exception
     {
@@ -1297,6 +1313,16 @@ public class BcSignedDataTest
         String signatureAlgorithm)
         throws Exception
     {
+        encapsulatedTest(signaturePair, signatureCert, signatureAlgorithm, null);
+    }
+
+    private void encapsulatedTest(
+        KeyPair signaturePair,
+        X509Certificate signatureCert,
+        String signatureAlgorithm,
+        AlgorithmIdentifier digestAlgorithm)
+        throws Exception
+    {
         ConfigurableProvider provider = (ConfigurableProvider)Security.getProvider(BC);
 
         if (!provider.hasAlgorithm("Signature", signatureAlgorithm))
@@ -1344,8 +1370,31 @@ public class BcSignedDataTest
     
             Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
-    
-            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+
+            if (digestAlgorithm != null)
+            {
+                assertTrue(signer.getDigestAlgorithmID().equals(digestAlgorithm));
+            }
+
+            if (signatureAlgorithm.indexOf("RSA") > 0)
+            {
+                assertEquals(true, signer.verify(
+                    new BcRSASignerInfoVerifierBuilder(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), new DefaultDigestAlgorithmIdentifierFinder(), new BcDigestCalculatorProvider()).build(cert)));
+            }
+            else if (signatureAlgorithm.indexOf("ECDSA") > 0)
+            {
+                assertEquals(true, signer.verify(
+                    new BcECSignerInfoVerifierBuilder(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), new DefaultDigestAlgorithmIdentifierFinder(), new BcDigestCalculatorProvider()).build(cert)));
+            }
+            else if (signatureAlgorithm.equals("ED448"))
+            {
+                assertEquals(true, signer.verify(
+                    new BcEdDSASignerInfoVerifierBuilder(new DefaultCMSSignatureAlgorithmNameGenerator(), new DefaultSignatureAlgorithmIdentifierFinder(), new DefaultDigestAlgorithmIdentifierFinder(), new BcDigestCalculatorProvider()).build(cert)));
+            }
+            else
+            {
+                assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+            }
         }
 
         //
