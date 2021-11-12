@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -12,7 +13,23 @@ import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.ExtendedDigest;
-import org.bouncycastle.crypto.digests.*;
+import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.digests.GOST3411Digest;
+import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest;
+import org.bouncycastle.crypto.digests.GOST3411_2012_512Digest;
+import org.bouncycastle.crypto.digests.MD2Digest;
+import org.bouncycastle.crypto.digests.MD4Digest;
+import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.crypto.digests.RIPEMD128Digest;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.digests.RIPEMD256Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.operator.OperatorCreationException;
 
 public class BcDefaultDigestProvider
@@ -85,6 +102,34 @@ public class BcDefaultDigestProvider
             public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
             {
                 return new SHA3Digest(512);
+            }
+        });
+        table.put(NISTObjectIdentifiers.id_shake128, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHAKEDigest(128);
+            }
+        });
+        table.put(NISTObjectIdentifiers.id_shake256, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHAKEDigest(256);
+            }
+        });
+        table.put(NISTObjectIdentifiers.id_shake128_len, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new AdjustedXof(new SHAKEDigest(128), ASN1Integer.getInstance(digestAlgorithmIdentifier.getParameters()).intValueExact());
+            }
+        });
+        table.put(NISTObjectIdentifiers.id_shake256_len, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new AdjustedXof(new SHAKEDigest(256), ASN1Integer.getInstance(digestAlgorithmIdentifier.getParameters()).intValueExact());
             }
         });
         table.put(PKCSObjectIdentifiers.md5, new BcDigestProvider()
@@ -172,5 +217,66 @@ public class BcDefaultDigestProvider
         }
 
         return extProv.get(digestAlgorithmIdentifier);
+    }
+
+    /**
+     * -len OIDs for SHAKE include an integer representing the bitlength in of the output.
+     */
+    private static class AdjustedXof
+        implements Xof
+    {
+        private final Xof xof;
+        private final int length;
+
+        AdjustedXof(Xof xof, int length)
+        {
+            this.xof = xof;
+            this.length = length;
+        }
+
+        public String getAlgorithmName()
+        {
+            return xof.getAlgorithmName() + "-" + length;
+        }
+
+        public int getDigestSize()
+        {
+            return (length + 7) / 8;
+        }
+
+        public void update(byte in)
+        {
+            xof.update(in);
+        }
+
+        public void update(byte[] in, int inOff, int len)
+        {
+            xof.update(in, inOff, len);
+        }
+
+        public int doFinal(byte[] out, int outOff)
+        {
+            return doFinal(out, outOff, getDigestSize());
+        }
+
+        public void reset()
+        {
+            xof.reset();
+        }
+
+        public int getByteLength()
+        {
+            return xof.getByteLength();
+        }
+
+        public int doFinal(byte[] out, int outOff, int outLen)
+        {
+            return xof.doFinal(out, outOff, outLen);
+        }
+
+        public int doOutput(byte[] out, int outOff, int outLen)
+        {
+            return xof.doOutput(out, outOff, outLen);
+        }
     }
 }
