@@ -15,12 +15,16 @@ public abstract class ASN1Primitive
 
     public void encodeTo(OutputStream output) throws IOException
     {
-        ASN1OutputStream.create(output).writeObject(this);
+        ASN1OutputStream asn1Out = ASN1OutputStream.create(output); 
+        asn1Out.writePrimitive(this, true);
+        asn1Out.flushInternal();
     }
 
     public void encodeTo(OutputStream output, String encoding) throws IOException
     {
-        ASN1OutputStream.create(output, encoding).writeObject(this);
+        ASN1OutputStream asn1Out = ASN1OutputStream.create(output, encoding); 
+        asn1Out.writePrimitive(this, true);
+        asn1Out.flushInternal();
     }
 
     /**
