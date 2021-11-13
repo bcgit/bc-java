@@ -15,9 +15,9 @@ public class DERTaggedObject
         super(true, tagNo, encodable);
     }
 
-    public DERTaggedObject(int tagClass, int tagNo, ASN1Encodable encodable)
+    public DERTaggedObject(int tagClass, int tagNo, ASN1Encodable obj)
     {
-        super(true, tagClass, tagNo, encodable);
+        super(true, tagClass, tagNo, obj);
     }
 
     /**
