@@ -20,16 +20,6 @@ public abstract class ASN1ApplicationSpecific
     extends ASN1Primitive
     implements ASN1ApplicationSpecificParser
 {
-    final ASN1TaggedObject taggedObject;
-
-    ASN1ApplicationSpecific(ASN1TaggedObject taggedObject)
-    {
-//        super(taggedObject.explicit, checkTagClass(taggedObject.tagClass), taggedObject.tagNo, taggedObject.obj);
-        checkTagClass(taggedObject.getTagClass());
-
-        this.taggedObject = taggedObject;
-    }
-
     /**
      * Return an ASN1ApplicationSpecific from the passed in object, which may be a byte array, or null.
      *
@@ -57,30 +47,14 @@ public abstract class ASN1ApplicationSpecific
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
     }
 
-//    /** @deprecated Class will be removed */
-    protected static int getLengthOfHeader(byte[] data)
+    final ASN1TaggedObject taggedObject;
+
+    ASN1ApplicationSpecific(ASN1TaggedObject taggedObject)
     {
-        int length = data[1] & 0xff; // TODO: assumes 1 byte tag
+//        super(taggedObject.explicitness, checkTagClass(taggedObject.tagClass), taggedObject.tagNo, taggedObject.obj);
+        checkTagClass(taggedObject.getTagClass());
 
-        if (length == 0x80)
-        {
-            return 2;      // indefinite-length encoding
-        }
-
-        if (length > 127)
-        {
-            int size = length & 0x7f;
-
-            // Note: The invalid long form "0xff" (see X.690 8.1.3.5c) will be caught here
-            if (size > 4)
-            {
-                throw new IllegalStateException("DER length more than 4 bytes: " + size);
-            }
-
-            return size + 2;
-        }
-
-        return 2;
+        this.taggedObject = taggedObject;
     }
 
     /**
@@ -130,8 +104,7 @@ public abstract class ASN1ApplicationSpecific
      */
     public ASN1Primitive getEnclosedObject() throws IOException
     {
-        // Bypass getObject() to avoid any tag class restriction
-        return taggedObject.obj.toASN1Primitive();
+        return taggedObject.getBaseObject().toASN1Primitive();
     }
 
     /**
@@ -173,7 +146,7 @@ public abstract class ASN1ApplicationSpecific
 
     public boolean hasContextTag(int tagNo)
     {
-        return taggedObject.hasContextTag(tagNo);
+        return false;
     }
 
     public boolean hasTag(int tagClass, int tagNo)
@@ -231,7 +204,7 @@ public abstract class ASN1ApplicationSpecific
     {
         // NOTE: No way to say you're looking for an implicitly-tagged object via ASN1ApplicationSpecificParser
         // Bypass getObject() to avoid any tag class restriction
-        return taggedObject.obj.toASN1Primitive();
+        return taggedObject.obj;
     }
 
     boolean encodeConstructed()
@@ -248,11 +221,6 @@ public abstract class ASN1ApplicationSpecific
     {
         taggedObject.encode(out, withTag);
     }
-
-//    String getASN1Encoding()
-//    {
-//        return taggedObject.getASN1Encoding();
-//    }
 
     ASN1Primitive toDERObject()
     {
