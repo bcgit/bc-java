@@ -10,11 +10,11 @@ import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
@@ -180,7 +180,7 @@ public class BCECGOST3410PublicKey
 
     private void populateFromPubKeyInfo(SubjectPublicKeyInfo info)
     {
-        DERBitString bits = info.getPublicKeyData();
+        ASN1BitString bits = info.getPublicKeyData();
         ASN1OctetString key;
         this.algorithm = "ECGOST3410";
 

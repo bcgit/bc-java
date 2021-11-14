@@ -77,7 +77,6 @@ public class BcITSContentVerifierProvider
         return issuer != null;
     }
 
-    @Override
     public ContentVerifier get(final int verifierAlgorithmIdentifier)
         throws OperatorCreationException
     {
@@ -105,21 +104,18 @@ public class BcITSContentVerifierProvider
 
         final OutputStream os = new OutputStream()
         {
-            @Override
             public void write(int b)
                 throws IOException
             {
                 digest.update((byte)b);
             }
 
-            @Override
             public void write(byte[] b)
                 throws IOException
             {
                 digest.update(b, 0, b.length);
             }
 
-            @Override
             public void write(byte[] b, int off, int len)
                 throws IOException
             {

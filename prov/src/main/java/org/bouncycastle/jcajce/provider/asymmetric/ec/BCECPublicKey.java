@@ -9,9 +9,9 @@ import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -193,7 +193,7 @@ public class BCECPublicKey
         ECCurve curve = EC5Util.getCurve(configuration, params);
         ecSpec = EC5Util.convertToSpec(params, curve);
 
-        DERBitString    bits = info.getPublicKeyData();
+        ASN1BitString   bits = info.getPublicKeyData();
         byte[]          data = bits.getBytes();
         ASN1OctetString key = new DEROctetString(data);
 

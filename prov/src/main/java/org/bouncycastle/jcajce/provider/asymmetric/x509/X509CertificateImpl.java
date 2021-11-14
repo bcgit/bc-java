@@ -31,6 +31,7 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1IA5String;
@@ -229,7 +230,7 @@ abstract class X509CertificateImpl
 
     public boolean[] getIssuerUniqueID()
     {
-        DERBitString    id = c.getTBSCertificate().getIssuerUniqueId();
+        ASN1BitString    id = c.getTBSCertificate().getIssuerUniqueId();
 
         if (id != null)
         {
@@ -249,7 +250,7 @@ abstract class X509CertificateImpl
 
     public boolean[] getSubjectUniqueID()
     {
-        DERBitString    id = c.getTBSCertificate().getSubjectUniqueId();
+        ASN1BitString id = c.getTBSCertificate().getSubjectUniqueId();
 
         if (id != null)
         {
