@@ -532,7 +532,6 @@ public class ArmoredInputStream
      *
      * @throws IOException if an exception happens AT ANY POINT
      */
-    @Override
     public int read(byte[] b, int off, int len) throws IOException
     {
         checkIndexSize(b.length, off, len);

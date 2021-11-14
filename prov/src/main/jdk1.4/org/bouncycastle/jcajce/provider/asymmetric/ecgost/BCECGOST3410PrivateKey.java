@@ -15,7 +15,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
@@ -52,7 +52,7 @@ public class BCECGOST3410PrivateKey
 
     private transient BigInteger      d;
     private transient ECParameterSpec ecSpec;
-    private transient DERBitString publicKey;
+    private transient ASN1BitString publicKey;
     private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
     protected BCECGOST3410PrivateKey()
@@ -332,7 +332,7 @@ public class BCECGOST3410PrivateKey
         return getD().hashCode() ^ engineGetSpec().hashCode();
     }
 
-    private DERBitString getPublicKeyDetails(BCECGOST3410PublicKey   pub)
+    private ASN1BitString getPublicKeyDetails(BCECGOST3410PublicKey   pub)
     {
         try
         {

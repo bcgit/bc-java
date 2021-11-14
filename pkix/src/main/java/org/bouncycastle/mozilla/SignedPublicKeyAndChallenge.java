@@ -11,6 +11,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.X509EncodedKeySpec;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
@@ -148,7 +149,7 @@ public class SignedPublicKeyAndChallenge
         SubjectPublicKeyInfo subjectPKInfo = spkacSeq.getPublicKeyAndChallenge().getSubjectPublicKeyInfo();
         try
         {
-            DERBitString bStr = new DERBitString(subjectPKInfo);
+            ASN1BitString bStr = new DERBitString(subjectPKInfo);
             X509EncodedKeySpec xspec = new X509EncodedKeySpec(bStr.getOctets());
             
 

@@ -10,6 +10,7 @@ import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.EllipticCurve;
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -17,7 +18,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
@@ -57,7 +57,7 @@ public class BCECGOST3410_2012PrivateKey
     private transient GOST3410PublicKeyAlgParameters gostParams;
     private transient BigInteger d;
     private transient ECParameterSpec ecSpec;
-    private transient DERBitString publicKey;
+    private transient ASN1BitString publicKey;
     private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
     protected BCECGOST3410_2012PrivateKey()
@@ -506,7 +506,7 @@ public class BCECGOST3410_2012PrivateKey
         return ECUtil.privateKeyToString(algorithm, d, engineGetSpec());
     }
 
-    private DERBitString getPublicKeyDetails(BCECGOST3410_2012PublicKey pub)
+    private ASN1BitString getPublicKeyDetails(BCECGOST3410_2012PublicKey pub)
     {
         SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(pub.getEncoded());
 
