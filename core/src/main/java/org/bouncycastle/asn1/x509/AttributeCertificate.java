@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -12,7 +13,7 @@ public class AttributeCertificate
 {
     AttributeCertificateInfo    acinfo;
     AlgorithmIdentifier         signatureAlgorithm;
-    DERBitString                signatureValue;
+    ASN1BitString               signatureValue;
 
     /**
      * @param obj
@@ -66,7 +67,7 @@ public class AttributeCertificate
         return signatureAlgorithm;
     }
 
-    public DERBitString getSignatureValue()
+    public ASN1BitString getSignatureValue()
     {
         return signatureValue;
     }

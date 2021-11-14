@@ -55,20 +55,17 @@ final class OTSHashAddress
             return this;
         }
 
-        @Override
         protected XMSSAddress build()
         {
             return new OTSHashAddress(this);
         }
 
-        @Override
         protected Builder getThis()
         {
             return this;
         }
     }
 
-    @Override
     protected byte[] toByteArray()
     {
         byte[] byteRepresentation = super.toByteArray();

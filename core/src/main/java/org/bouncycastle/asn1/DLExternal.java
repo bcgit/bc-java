@@ -71,7 +71,7 @@ public class DLExternal
         super(directReference, indirectReference, dataValueDescriptor, encoding, externalData);
     }
 
-    DLSequence buildSequence()
+    ASN1Sequence buildSequence()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(4);
         if (directReference != null)

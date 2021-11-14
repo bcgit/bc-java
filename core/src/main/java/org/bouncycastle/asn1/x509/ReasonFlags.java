@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.DERBitString;
 
 /**
@@ -78,7 +79,7 @@ public class ReasonFlags
     }
 
     public ReasonFlags(
-        DERBitString reasons)
+        ASN1BitString reasons)
     {
         super(reasons.getBytes(), reasons.getPadBits());
     }

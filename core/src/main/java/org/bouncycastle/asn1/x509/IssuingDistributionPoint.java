@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -162,7 +163,7 @@ public class IssuingDistributionPoint
                 onlyContainsCACerts = ASN1Boolean.getInstance(o, false).isTrue();
                 break;
             case 3:
-                onlySomeReasons = new ReasonFlags(ReasonFlags.getInstance(o, false));
+                onlySomeReasons = new ReasonFlags(ASN1BitString.getInstance(o, false));
                 break;
             case 4:
                 indirectCRL = ASN1Boolean.getInstance(o, false).isTrue();

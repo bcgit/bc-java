@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.x509;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -15,9 +16,9 @@ import org.bouncycastle.asn1.x500.X500Name;
 public class IssuerSerial
     extends ASN1Object
 {
-    GeneralNames            issuer;
-    ASN1Integer              serial;
-    DERBitString            issuerUID;
+    GeneralNames  issuer;
+    ASN1Integer   serial;
+    ASN1BitString issuerUID;
 
     public static IssuerSerial getInstance(
             Object  obj)
@@ -91,7 +92,7 @@ public class IssuerSerial
         return serial;
     }
 
-    public DERBitString getIssuerUID()
+    public ASN1BitString getIssuerUID()
     {
         return issuerUID;
     }

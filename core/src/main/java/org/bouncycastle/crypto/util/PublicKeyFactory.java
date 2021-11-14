@@ -6,13 +6,13 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
@@ -292,7 +292,7 @@ public class PublicKeyFactory
                 dParams = new ECDomainParameters(x9);
             }
 
-            DERBitString bits = keyInfo.getPublicKeyData();
+            ASN1BitString bits = keyInfo.getPublicKeyData();
             byte[] data = bits.getBytes();
             ASN1OctetString key = new DEROctetString(data);
 

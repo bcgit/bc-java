@@ -71,7 +71,7 @@ public class DERExternal
         super(directReference, indirectReference, dataValueDescriptor, encoding, externalData);
     }
 
-    DERSequence buildSequence()
+    ASN1Sequence buildSequence()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(4);
         if (directReference != null)
