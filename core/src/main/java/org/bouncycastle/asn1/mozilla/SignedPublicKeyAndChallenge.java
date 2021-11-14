@@ -1,9 +1,9 @@
 package org.bouncycastle.asn1.mozilla;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -57,8 +57,8 @@ public class SignedPublicKeyAndChallenge
         return AlgorithmIdentifier.getInstance(pkacSeq.getObjectAt(1));
     }
 
-    public DERBitString getSignature()
+    public ASN1BitString getSignature()
     {
-        return DERBitString.getInstance(pkacSeq.getObjectAt(2));
+        return ASN1BitString.getInstance(pkacSeq.getObjectAt(2));
     }
 }

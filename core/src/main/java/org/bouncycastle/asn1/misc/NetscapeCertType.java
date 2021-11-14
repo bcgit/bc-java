@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.misc;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.DERBitString;
 
 /**
@@ -42,7 +43,7 @@ public class NetscapeCertType
     }
 
     public NetscapeCertType(
-        DERBitString usage)
+        ASN1BitString usage)
     {
         super(usage.getBytes(), usage.getPadBits());
     }

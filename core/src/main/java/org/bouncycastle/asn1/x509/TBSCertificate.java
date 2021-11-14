@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -44,8 +45,8 @@ public class TBSCertificate
     Time                    startDate, endDate;
     X500Name                subject;
     SubjectPublicKeyInfo    subjectPublicKeyInfo;
-    DERBitString            issuerUniqueId;
-    DERBitString            subjectUniqueId;
+    ASN1BitString           issuerUniqueId;
+    ASN1BitString           subjectUniqueId;
     Extensions              extensions;
 
     public static TBSCertificate getInstance(
@@ -203,12 +204,12 @@ public class TBSCertificate
         return subjectPublicKeyInfo;
     }
 
-    public DERBitString getIssuerUniqueId()
+    public ASN1BitString getIssuerUniqueId()
     {
         return issuerUniqueId;
     }
 
-    public DERBitString getSubjectUniqueId()
+    public ASN1BitString getSubjectUniqueId()
     {
         return subjectUniqueId;
     }

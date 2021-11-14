@@ -255,7 +255,7 @@ public abstract class ASN1TaggedObject
             int contentsLength = length < 0 ? remaining - 2 : remaining;
             if (contentsLength < 0)
             {
-                throw new IllegalStateException("failed to get contents");
+                throw new ASN1ParsingException("failed to get contents");
             }
 
             byte[] contents = new byte[contentsLength];
@@ -264,7 +264,7 @@ public abstract class ASN1TaggedObject
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("failed to get contents", e);
+            throw new ASN1ParsingException("failed to get contents", e);
         }
     }
 
