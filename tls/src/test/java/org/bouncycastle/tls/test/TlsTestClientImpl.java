@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERBitString;
@@ -350,7 +351,7 @@ class TlsTestClientImpl
         return getCrypto().createCertificate(cert.getEncoded(ASN1Encoding.DER));
     }
 
-    protected DERBitString corruptSignature(DERBitString bs)
+    protected DERBitString corruptSignature(ASN1BitString bs)
     {
         return new DERBitString(corruptBit(bs.getOctets()));
     }
