@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -27,7 +28,7 @@ public class X509CertificateStructure
     ASN1Sequence  seq;
     TBSCertificateStructure tbsCert;
     AlgorithmIdentifier     sigAlgId;
-    DERBitString            sig;
+    ASN1BitString sig;
 
     public static X509CertificateStructure getInstance(
         ASN1TaggedObject obj,
@@ -117,7 +118,7 @@ public class X509CertificateStructure
         return sigAlgId;
     }
 
-    public DERBitString getSignature()
+    public ASN1BitString getSignature()
     {
         return sig;
     }

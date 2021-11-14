@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -17,10 +18,10 @@ public class AttributeCertificateInfo
     private Holder                  holder;
     private AttCertIssuer           issuer;
     private AlgorithmIdentifier     signature;
-    private ASN1Integer              serialNumber;
+    private ASN1Integer             serialNumber;
     private AttCertValidityPeriod   attrCertValidityPeriod;
     private ASN1Sequence            attributes;
-    private DERBitString            issuerUniqueID;
+    private ASN1BitString           issuerUniqueID;
     private Extensions              extensions;
 
     public static AttributeCertificateInfo getInstance(
@@ -122,7 +123,7 @@ public class AttributeCertificateInfo
         return attributes;
     }
 
-    public DERBitString getIssuerUniqueID()
+    public ASN1BitString getIssuerUniqueID()
     {
         return issuerUniqueID;
     }

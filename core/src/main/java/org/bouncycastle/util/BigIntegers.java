@@ -162,6 +162,28 @@ public final class BigIntegers
         return new BigInteger(1, mag);
     }
 
+    public static byte byteValueExact(BigInteger x)
+    {
+        // Since Java 1.8 could use BigInteger.byteValueExact instead
+        if (x.bitLength() > 7)
+        {
+            throw new ArithmeticException("BigInteger out of int range");
+        }
+
+        return x.byteValue();
+    }
+
+    public static short shortValueExact(BigInteger x)
+    {
+        // Since Java 1.8 could use BigInteger.shortValueExact instead
+        if (x.bitLength() > 15)
+        {
+            throw new ArithmeticException("BigInteger out of int range");
+        }
+
+        return x.shortValue();
+    }
+
     public static int intValueExact(BigInteger x)
     {
         // Since Java 1.8 could use BigInteger.intValueExact instead

@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.sec;
 import java.math.BigInteger;
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -12,7 +13,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -92,7 +92,7 @@ public class ECPrivateKey
      */
     public ECPrivateKey(
         BigInteger key,
-        DERBitString publicKey,
+        ASN1BitString publicKey,
         ASN1Encodable parameters)
     {
         this(key.bitLength(), key, publicKey, parameters);
@@ -109,7 +109,7 @@ public class ECPrivateKey
     public ECPrivateKey(
         int orderBitLength,
         BigInteger key,
-        DERBitString publicKey,
+        ASN1BitString publicKey,
         ASN1Encodable parameters)
     {
         byte[] bytes = BigIntegers.asUnsignedByteArray((orderBitLength + 7) / 8, key);
@@ -138,11 +138,10 @@ public class ECPrivateKey
 
         return new BigInteger(1, octs.getOctets());
     }
-
-    // TODO Make this ASN1BitString
-    public DERBitString getPublicKey()
+    
+    public ASN1BitString getPublicKey()
     {
-        return (DERBitString)getObjectInTag(1, BERTags.BIT_STRING);
+        return (ASN1BitString)getObjectInTag(1, BERTags.BIT_STRING);
     }
 
     /**

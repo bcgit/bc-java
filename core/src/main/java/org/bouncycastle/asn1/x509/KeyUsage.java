@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
@@ -34,7 +35,7 @@ public class KeyUsage
     public static final int        encipherOnly     = (1 << 0);
     public static final int        decipherOnly     = (1 << 15);
 
-    private DERBitString bitString;
+    private ASN1BitString bitString;
 
     public static KeyUsage getInstance(Object obj)   // needs to be DERBitString for other VMs
     {
@@ -44,7 +45,7 @@ public class KeyUsage
         }
         else if (obj != null)
         {
-            return new KeyUsage(DERBitString.getInstance(obj));
+            return new KeyUsage(ASN1BitString.getInstance(obj));
         }
 
         return null;
@@ -69,7 +70,7 @@ public class KeyUsage
     }
 
     private KeyUsage(
-        DERBitString bitString)
+        ASN1BitString bitString)
     {
         this.bitString = bitString;
     }

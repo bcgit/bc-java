@@ -248,10 +248,12 @@ public class ExtensionsGenerator
 
     public void addExtension(Extensions extensions)
     {
-        for (ASN1ObjectIdentifier _ident : extensions.getExtensionOIDs())
+        ASN1ObjectIdentifier[] oids = extensions.getExtensionOIDs();
+        for (int i = 0; i != oids.length; i++)
         {
-            Extension ext = extensions.getExtension(_ident);
-            addExtension(ASN1ObjectIdentifier.getInstance(_ident), ext.isCritical(), ext.getExtnValue().getOctets());
+            ASN1ObjectIdentifier ident = oids[i];
+            Extension ext = extensions.getExtension(ident);
+            addExtension(ASN1ObjectIdentifier.getInstance(ident), ext.isCritical(), ext.getExtnValue().getOctets());
         }
     }
 }
