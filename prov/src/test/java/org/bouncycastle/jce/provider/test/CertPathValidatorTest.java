@@ -917,7 +917,7 @@ public class CertPathValidatorTest
 
         public boolean[] getIssuerUniqueID()
         {
-            DERBitString id = c.getTBSCertificate().getIssuerUniqueId();
+            ASN1BitString id = c.getTBSCertificate().getIssuerUniqueId();
 
             if (id != null)
             {
@@ -937,7 +937,7 @@ public class CertPathValidatorTest
 
         public boolean[] getSubjectUniqueID()
         {
-            DERBitString id = c.getTBSCertificate().getSubjectUniqueId();
+            ASN1BitString id = c.getTBSCertificate().getSubjectUniqueId();
 
             if (id != null)
             {

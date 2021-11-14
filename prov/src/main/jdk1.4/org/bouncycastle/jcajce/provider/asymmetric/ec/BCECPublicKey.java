@@ -7,7 +7,7 @@ import java.io.ObjectOutputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
@@ -196,7 +196,7 @@ public class BCECPublicKey
             curve = ((ECParameterSpec)ecSpec).getCurve();
         }
 
-        DERBitString    bits = info.getPublicKeyData();
+        ASN1BitString   bits = info.getPublicKeyData();
         byte[]          data = bits.getBytes();
         ASN1OctetString key = new DEROctetString(data);
 

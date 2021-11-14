@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -50,7 +50,7 @@ public class BCECPrivateKey
     private transient BigInteger              d;
     private transient ECParameterSpec         ecSpec;
     private transient ProviderConfiguration   configuration;
-    private transient DERBitString            publicKey;
+    private transient ASN1BitString           publicKey;
 
     private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
@@ -330,7 +330,7 @@ public class BCECPrivateKey
         return getD().hashCode() ^ engineGetSpec().hashCode();
     }
 
-    private DERBitString getPublicKeyDetails(BCECPublicKey   pub)
+    private ASN1BitString getPublicKeyDetails(BCECPublicKey   pub)
     {
         try
         {
