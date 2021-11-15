@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.util.Iterator;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -64,8 +65,10 @@ public class OERInputStream
     private int countOptionalChildTypes(OERDefinition.Element element)
     {
         int optionalElements = 0;
-        for (OERDefinition.Element e : element.children)
+        for (Iterator it = element.children.iterator(); it.hasNext();)
         {
+            OERDefinition.Element e = (OERDefinition.Element)it.next();
+
             optionalElements += e.explicit ? 0 : 1;
         }
         return optionalElements;
@@ -341,8 +344,9 @@ public class OERInputStream
             {
                 StringBuffer sb = new StringBuffer();
                 sb.append("BIT STRING(" + (data.length * 8) + ") = ");
-                for (byte b : data)
+                for (int i = 0; i != data.length; i++)
                 {
+                    byte b = data[i];
                     for (int t = 0; t < 8; t++)
                     {
                         sb.append((b & 0x80) > 0 ? "1" : "0");
@@ -577,11 +581,11 @@ public class OERInputStream
 
         if (debugOutput != null)
         {
-
             StackTraceElement[] callStack = Thread.currentThread().getStackTrace();
             int level = -1;
-            for (StackTraceElement ste : callStack)
+            for (int i = 0; i != callStack.length; i++)
             {
+                StackTraceElement ste = callStack[i];
                 if (ste.getMethodName().equals("debugPrint"))
                 {
                     level = 0;

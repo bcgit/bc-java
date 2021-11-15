@@ -138,9 +138,7 @@ public class BitBuilder
             value = value.shiftLeft(7);
         }
     }
-
-
-    @Override
+    
     protected void finalize()
         throws Throwable
     {
