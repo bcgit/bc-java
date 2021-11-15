@@ -123,7 +123,6 @@ public class OEROptional
         }
     }
 
-    @Override
     public boolean equals(Object o)
     {
         if (this == o)
@@ -148,7 +147,6 @@ public class OEROptional
         return value != null ? value.equals(that.value) : that.value == null;
     }
 
-    @Override
     public int hashCode()
     {
         int result = super.hashCode();
