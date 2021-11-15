@@ -3,8 +3,10 @@ package org.bouncycastle.oer.its;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -53,9 +55,9 @@ public class SequenceOfPsidSsp
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector avec = new ASN1EncodableVector();
-        for (PsidSsp ssp : items)
+        for (Iterator it = items.iterator(); it.hasNext();)
         {
-            avec.add(ssp);
+            avec.add((ASN1Encodable)it.next());
         }
 
         return new DERSequence(avec);
@@ -74,8 +76,9 @@ public class SequenceOfPsidSsp
 
         public Builder setItem(PsidSsp... items)
         {
-            for (PsidSsp item : items)
+            for (int i = 0; i != items.length; i++)
             {
+                PsidSsp item = items[i];
                 this.items.add(item);
             }
             return this;

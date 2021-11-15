@@ -47,7 +47,6 @@ public class Uint16
         return value;
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         return new ASN1Integer(value);

@@ -50,7 +50,6 @@ public class ContributedExtensionBlock
 
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         return Utils.toSequence(contributorId, Utils.toSequence(extns));

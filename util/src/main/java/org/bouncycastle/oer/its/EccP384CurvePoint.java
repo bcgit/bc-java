@@ -96,7 +96,6 @@ public class EccP384CurvePoint
         return new DERTaggedObject(choice, value);
     }
 
-    @Override
     public byte[] getEncodedPoint()
     {
         byte[] key;

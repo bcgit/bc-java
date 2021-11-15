@@ -36,8 +36,6 @@ public class SequenceOfIdentifiedRegion
         return identifiedRegions;
     }
 
-
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         return new DERSequence(identifiedRegions.toArray(new ASN1Encodable[0]));
