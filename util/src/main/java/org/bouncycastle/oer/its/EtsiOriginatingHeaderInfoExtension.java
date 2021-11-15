@@ -48,7 +48,6 @@ public class EtsiOriginatingHeaderInfoExtension
         return new EtsiOriginatingHeaderInfoExtension(id, null);
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         return Utils.toSequence(etsiHeaderInfoContributorId, extension);

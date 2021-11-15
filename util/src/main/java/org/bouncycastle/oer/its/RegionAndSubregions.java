@@ -2,6 +2,7 @@ package org.bouncycastle.oer.its;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Object;
@@ -40,9 +41,9 @@ public class RegionAndSubregions
             Builder builder = new Builder();
             builder.setRegion(Region.getInstance(seq.getObjectAt(0)));
             ASN1Sequence subRegionsSeq = ASN1Sequence.getInstance(seq.getObjectAt(1));
-            for (Object subRegion : subRegionsSeq)
+            for (Iterator it = subRegionsSeq.iterator(); it.hasNext();)
             {
-                builder.setSubRegion(Uint16.getInstance(subRegion));
+                builder.setSubRegion(Uint16.getInstance(it.next()));
             }
             return builder.createRegionAndSubregions();
         }
