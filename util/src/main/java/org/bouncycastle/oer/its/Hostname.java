@@ -37,7 +37,6 @@ public class Hostname
 
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         return new DERUTF8String(hostName);

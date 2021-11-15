@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -43,13 +45,12 @@ public class SequenceOfPsidSspRange
         return new Builder();
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector avec = new ASN1EncodableVector();
-        for (PsidSspRange ssp : items)
+        for (Iterator it = items.iterator(); it.hasNext(); )
         {
-            avec.add(ssp);
+            avec.add((ASN1Encodable)it.next());
         }
         return new DERSequence(avec);
     }

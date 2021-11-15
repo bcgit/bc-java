@@ -51,7 +51,6 @@ public class CounterSignature
         return new CounterSignature(Uint8.getInstance(items.next()), SignedData.getInstance(items.next()));
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         return Utils.toSequence(protocolVersion, signedData);
