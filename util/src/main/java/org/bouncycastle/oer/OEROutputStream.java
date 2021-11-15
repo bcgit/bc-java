@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1Boolean;
@@ -282,9 +283,9 @@ public class OEROutputStream
                 ordinal = ASN1Enumerated.getInstance(encodable).getValue();
             }
 
-            for (OERDefinition.Element child : oerElement.children)
+            for (Iterator it = oerElement.children.iterator(); it.hasNext();)
             {
-
+                OERDefinition.Element child = (OERDefinition.Element)it.next();
                 //
                 // This by default is canonical OER, see NOTE 1 and NOTE 2, 11.14
                 // Section 11.4 of T-REC-X.696-201508-I!!PDF-E.pdf
@@ -348,16 +349,16 @@ public class OEROutputStream
                 switch (intBytesForRange)
                 {
                 case -1:
-                    encoded = new byte[]{number.byteValueExact()};
+                    encoded = new byte[]{BigIntegers.byteValueExact(number)};
                     break;
                 case -2:
-                    encoded = Pack.shortToBigEndian(number.shortValueExact());
+                    encoded = Pack.shortToBigEndian(BigIntegers.shortValueExact(number));
                     break;
                 case -4:
-                    encoded = Pack.intToBigEndian(number.intValueExact());
+                    encoded = Pack.intToBigEndian(BigIntegers.intValueExact(number));
                     break;
                 case -8:
-                    encoded = Pack.longToBigEndian(number.longValueExact());
+                    encoded = Pack.longToBigEndian(BigIntegers.longValueExact(number));
                     break;
                 default:
                     throw new IllegalStateException("unknown twos compliment length");
@@ -488,8 +489,9 @@ public class OEROutputStream
 
             StackTraceElement[] callStack = Thread.currentThread().getStackTrace();
             int level = -1;
-            for (StackTraceElement ste : callStack)
+            for (int i = 0; i != callStack.length; i++)
             {
+                StackTraceElement ste = callStack[i];
                 if (ste.getMethodName().equals("debugPrint"))
                 {
                     level = 0;

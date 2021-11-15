@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -87,8 +88,9 @@ public class OERDefinition
                 if (optionalChildrenInOrder == null)
                 {
                     ArrayList<Element> optList = new ArrayList<Element>();
-                    for (Element e : children)
+                    for (Iterator it = children.iterator(); it.hasNext();)
                     {
+                        Element e = (Element)it.next();
                         if (!e.explicit || e.getDefaultValue() != null)
                         {
                             optList.add(e);
@@ -168,8 +170,9 @@ public class OERDefinition
 
         public boolean hasPopulatedExtension()
         {
-            for (Element child : children)
+            for (Iterator it = children.iterator(); it.hasNext();)
             {
+                Element child = (Element)it.next();
                 if (child.baseType == BaseType.EXTENSION)
                 {
                     return true;
@@ -180,8 +183,9 @@ public class OERDefinition
 
         public boolean hasDefaultChildren()
         {
-            for (Element child : children)
+            for (Iterator it = children.iterator(); it.hasNext();)
             {
+                Element child = (Element)it.next();
                 if (child.defaultValue != null)
                 {
                     return true;
@@ -348,8 +352,9 @@ public class OERDefinition
         public Builder copy()
         {
             Builder b = new Builder(baseType);
-            for (Builder child : children)
+            for (Iterator it = children.iterator(); it.hasNext();)
             {
+                Builder child = (Builder)it.next();
                 b.children.add(child.copy());
             }
             b.explicit = explicit;
@@ -416,13 +421,14 @@ public class OERDefinition
         {
             final Builder b = this.copy();
 
-            for (Object item : items)
+            for (int i = 0; i != items.length; i++)
             {
+                Object item = items[i];
                 if (item instanceof OptionalList)
                 {
-                    for (Object subItem : (List)item)
+                    for (Iterator it = ((List)item).iterator(); it.hasNext();)
                     {
-                        b.children.add(wrap(false, subItem));
+                        b.children.add(wrap(false, it.next()));
                     }
                 }
                 else
@@ -486,10 +492,9 @@ public class OERDefinition
                 }
             }
 
-
-            for (Builder b : this.children)
+            for (Iterator it = this.children.iterator(); it.hasNext();)
             {
-
+                Builder b = (Builder)it.next();
 
                 if (!hasExtensions && b.baseType == BaseType.EXTENSION)
                 {
@@ -595,8 +600,9 @@ public class OERDefinition
                 throw new IllegalStateException("build cannot be modified and must be copied only");
             }
 
-            for (Builder b : items)
+            for (int i = 0; i != items.length; i++)
             {
+                Builder b = items[i];
                 super.children.add(b);
             }
 
