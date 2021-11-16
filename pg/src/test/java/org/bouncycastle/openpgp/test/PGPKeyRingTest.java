@@ -4,8 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.util.Date;
 import java.util.Iterator;
@@ -23,6 +26,7 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
@@ -48,6 +52,9 @@ import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
@@ -3463,6 +3470,45 @@ public class PGPKeyRingTest
         isTrue(PGPUtil.isKeyRing(data));
     }
 
+    private void testKeyRingGeneratorDirectKeySignedPrimaryKey()
+            throws PGPException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        PGPDigestCalculator digestCalculator = new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1);
+        KeyPairGenerator generator;
+        KeyPair pair;
+
+        // Generate master key
+
+        generator = KeyPairGenerator.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
+        generator.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+
+        pair = generator.generateKeyPair();
+        PGPKeyPair pgpMasterKey = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDSA, pair, new Date());
+
+        PGPSignatureSubpacketGenerator hashed = new PGPSignatureSubpacketGenerator();
+        hashed.addNotationData(false, true, "test@bouncycastle.org", "hashedNotation");
+        PGPSignatureSubpacketGenerator unhashed = new PGPSignatureSubpacketGenerator();
+
+        PGPContentSignerBuilder signerBuilder = new BcPGPContentSignerBuilder(PublicKeyAlgorithmTags.ECDSA, HashAlgorithmTags.SHA512);
+        PGPKeyRingGenerator keyRingGenerator = new PGPKeyRingGenerator(
+                pgpMasterKey, digestCalculator, hashed.generate(), unhashed.generate(), signerBuilder, null);
+
+        PGPSecretKeyRing secretKeys = keyRingGenerator.generateSecretKeyRing();
+
+        Iterator<PGPSignature> signatures = secretKeys.getPublicKey().getSignaturesOfType(PGPSignature.DIRECT_KEY);
+        isTrue(signatures.hasNext());
+
+        PGPSignature signature = signatures.next();
+        isTrue(!signatures.hasNext());
+
+        NotationData[] hashedNotations = signature.getHashedSubPackets().getNotationDataOccurrences();
+        isEquals(1, hashedNotations.length);
+        isEquals("test@bouncycastle.org", hashedNotations[0].getNotationName());
+        isEquals("hashedNotation", hashedNotations[0].getNotationValue());
+
+        signature.init(new BcPGPContentVerifierBuilderProvider(), secretKeys.getPublicKey());
+        isTrue(signature.verifyCertification(secretKeys.getPublicKey()));
+    }
+
     public void performTest()
         throws Exception
     {
@@ -3499,6 +3545,7 @@ public class PGPKeyRingTest
             testShouldProduceSubkeys();
             testApacheRings();
             testKeyRingWithMarker();
+            testKeyRingGeneratorDirectKeySignedPrimaryKey();
         }
         catch (PGPException e)
         {
