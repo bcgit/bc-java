@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -30,6 +31,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.operator.OperatorCreationException;
 
 public class BcDefaultDigestProvider
@@ -193,6 +195,13 @@ public class BcDefaultDigestProvider
             public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
             {
                 return new RIPEMD256Digest();
+            }
+        });
+        table.put(GMObjectIdentifiers.sm3, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SM3Digest();
             }
         });
 
