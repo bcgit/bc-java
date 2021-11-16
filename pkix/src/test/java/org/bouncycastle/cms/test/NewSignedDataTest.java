@@ -1790,6 +1790,54 @@ public class NewSignedDataTest
         encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA3-512withECDSA");
     }
 
+    public void testPLAIN_ECDSASHA224Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA224withPLAIN-ECDSA");
+    }
+
+    public void testPLAIN_ECDSASHA256Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA256withPLAIN-ECDSA");
+    }
+
+    public void testPLAIN_ECDSASHA384Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA384withPLAIN-ECDSA");
+    }
+
+    public void testPLAIN_ECDSASHA512Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA512withPLAIN-ECDSA");
+    }
+
+    public void testPLAIN_ECDSASHA3_224Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA3-224withPLAIN-ECDSA");
+    }
+
+    public void testPLAIN_ECDSASHA3_256Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA3-256withPLAIN-ECDSA");
+    }
+
+    public void testPLAIN_ECDSASHA3_384Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA3-384withPLAIN-ECDSA");
+    }
+
+    public void testPLAIN_ECDSASHA3_512Encapsulated()
+        throws Exception
+    {
+        encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA3-512withPLAIN-ECDSA");
+    }
+
     public void testECDSASHA512EncapsulatedWithKeyFactoryAsEC()
         throws Exception
     {
