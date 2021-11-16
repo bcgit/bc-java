@@ -453,6 +453,16 @@ public abstract class ASN1TaggedObject
         return primitive;
     }
 
+    public ASN1TaggedObjectParser parseExplicitBaseTagged() throws IOException
+    {
+        return getExplicitBaseTagged();
+    }
+
+    public ASN1TaggedObjectParser parseImplicitBaseTagged(int baseTagClass, int baseTagNo) throws IOException
+    {
+        return getImplicitBaseTagged(baseTagClass, baseTagNo);
+    }
+
     public final ASN1Primitive getLoadedObject()
     {
         return this;
