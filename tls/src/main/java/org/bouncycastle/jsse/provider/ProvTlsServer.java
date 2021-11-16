@@ -799,7 +799,7 @@ class ProvTlsServer
             Collection<BCSNIMatcher> sniMatchers = sslParameters.getSNIMatchers();
             if (null == sniMatchers || sniMatchers.isEmpty())
             {
-                LOG.fine("Server ignored SNI (no matchers specified)");
+                LOG.finer("Server ignored SNI (no matchers specified)");
             }
             else
             {
@@ -809,7 +809,7 @@ class ProvTlsServer
                     throw new TlsFatalAlert(AlertDescription.unrecognized_name);
                 }
 
-                LOG.fine("Server accepted SNI: " + matchedSNIServerName);
+                LOG.finer("Server accepted SNI: " + matchedSNIServerName);
             }
         }
 

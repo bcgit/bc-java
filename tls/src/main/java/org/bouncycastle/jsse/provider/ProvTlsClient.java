@@ -544,7 +544,7 @@ class ProvTlsClient
 
         if (isResumed)
         {
-            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+            LOG.finer("Server resumed session: " + Hex.toHexString(sessionID));
         }
         else
         {
@@ -552,11 +552,11 @@ class ProvTlsClient
 
             if (TlsUtils.isNullOrEmpty(sessionID))
             {
-                LOG.fine("Server did not specify a session ID");
+                LOG.finer("Server did not specify a session ID");
             }
             else
             {
-                LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+                LOG.finer("Server specified new session: " + Hex.toHexString(sessionID));
             }
 
             JsseUtils.checkSessionCreationEnabled(manager);
