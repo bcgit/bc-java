@@ -51,4 +51,8 @@ public interface ASN1TaggedObjectParser
 //        boolean baseDeclaredExplicit) throws IOException;
 
     ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException;
+
+    ASN1TaggedObjectParser parseExplicitBaseTagged() throws IOException;
+
+    ASN1TaggedObjectParser parseImplicitBaseTagged(int baseTagClass, int baseTagNo) throws IOException;
 }
