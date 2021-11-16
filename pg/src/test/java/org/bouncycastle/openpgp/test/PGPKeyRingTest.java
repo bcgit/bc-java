@@ -3471,7 +3471,8 @@ public class PGPKeyRingTest
     }
 
     private void testKeyRingGeneratorDirectKeySignedPrimaryKey()
-            throws PGPException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        throws PGPException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException
+    {
         PGPDigestCalculator digestCalculator = new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1);
         KeyPairGenerator generator;
         KeyPair pair;
@@ -3490,7 +3491,7 @@ public class PGPKeyRingTest
 
         PGPContentSignerBuilder signerBuilder = new BcPGPContentSignerBuilder(PublicKeyAlgorithmTags.ECDSA, HashAlgorithmTags.SHA512);
         PGPKeyRingGenerator keyRingGenerator = new PGPKeyRingGenerator(
-                pgpMasterKey, digestCalculator, hashed.generate(), unhashed.generate(), signerBuilder, null);
+            pgpMasterKey, digestCalculator, hashed.generate(), unhashed.generate(), signerBuilder, null);
 
         PGPSecretKeyRing secretKeys = keyRingGenerator.generateSecretKeyRing();
 
