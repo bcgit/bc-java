@@ -92,10 +92,28 @@ public class BERTaggedObjectParser
             {
                 throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
             }
+
+            // TODO[asn1] Alternate parser method specific to this case
             return _parser.readObject();
         }
 
         return _parser.readImplicit(_constructed, baseTagNo);
+    }
+
+    public ASN1TaggedObjectParser parseExplicitBaseTagged() throws IOException
+    {
+        if (!_constructed)
+        {
+            throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
+        }
+
+        // TODO[asn1] Alternate parser method specific to this case
+        return (ASN1TaggedObjectParser)_parser.readObject();
+    }
+
+    public ASN1TaggedObjectParser parseImplicitBaseTagged(int baseTagClass, int baseTagNo) throws IOException
+    {
+        return new BERTaggedObjectParser(baseTagClass, baseTagNo, _constructed, _parser);
     }
 
     /**
