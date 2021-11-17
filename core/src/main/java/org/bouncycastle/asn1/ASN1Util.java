@@ -4,6 +4,29 @@ import java.io.IOException;
 
 public abstract class ASN1Util
 {
+    static ASN1TaggedObject checkTag(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
+    {
+        if (!taggedObject.hasTag(tagClass, tagNo))
+        {
+            String expected = getTagText(tagClass, tagNo);
+            String found = getTagText(taggedObject);
+            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+        }
+        return taggedObject;
+    }
+
+    static ASN1TaggedObjectParser checkTag(ASN1TaggedObjectParser taggedObjectParser, int tagClass, int tagNo)
+    {
+        if (!taggedObjectParser.hasTag(tagClass, tagNo))
+        {
+            String expected = getTagText(tagClass, tagNo);
+            String found = getTagText(taggedObjectParser);
+            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+        }
+        return taggedObjectParser;
+    }
+
+
     /*
      * Tag text methods
      */
@@ -45,9 +68,7 @@ public abstract class ASN1Util
 
     public static ASN1Object getExplicitBaseObject(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
     {
-        checkTag(taggedObject, tagClass, tagNo);
-
-        return taggedObject.getExplicitBaseObject();
+        return checkTag(taggedObject, tagClass, tagNo).getExplicitBaseObject();
     }
 
     public static ASN1Object getExplicitContextBaseObject(ASN1TaggedObject taggedObject, int tagNo)
@@ -77,9 +98,7 @@ public abstract class ASN1Util
 
     public static ASN1TaggedObject getExplicitBaseTagged(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
     {
-        checkTag(taggedObject, tagClass, tagNo);
-
-        return taggedObject.getExplicitBaseTagged();
+        return checkTag(taggedObject, tagClass, tagNo).getExplicitBaseTagged();
     }
 
     public static ASN1TaggedObject getExplicitContextBaseTagged(ASN1TaggedObject taggedObject, int tagNo)
@@ -110,9 +129,7 @@ public abstract class ASN1Util
     public static ASN1TaggedObject getImplicitBaseTagged(ASN1TaggedObject taggedObject, int tagClass, int tagNo,
         int baseTagClass, int baseTagNo)
     {
-        checkTag(taggedObject, tagClass, tagNo);
-
-        return taggedObject.getImplicitBaseTagged(baseTagClass, baseTagNo);
+        return checkTag(taggedObject, tagClass, tagNo).getImplicitBaseTagged(baseTagClass, baseTagNo);
     }
 
     public static ASN1TaggedObject getImplicitContextBaseTagged(ASN1TaggedObject taggedObject, int tagNo,
@@ -146,9 +163,7 @@ public abstract class ASN1Util
     public static ASN1Primitive getBaseUniversal(ASN1TaggedObject taggedObject, int tagClass, int tagNo,
         boolean declaredExplicit, int baseTagNo)
     {
-        checkTag(taggedObject, tagClass, tagNo);
-
-        return taggedObject.getBaseUniversal(declaredExplicit, baseTagNo);  
+        return checkTag(taggedObject, tagClass, tagNo).getBaseUniversal(declaredExplicit, baseTagNo);  
     }
 
     public static ASN1Primitive getContextBaseUniversal(ASN1TaggedObject taggedObject, int tagNo,
@@ -182,9 +197,7 @@ public abstract class ASN1Util
     public static ASN1TaggedObjectParser parseExplicitBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
         int tagClass, int tagNo) throws IOException
     {
-        checkTag(taggedObjectParser, tagClass, tagNo);
-
-        return taggedObjectParser.parseExplicitBaseTagged();
+        return checkTag(taggedObjectParser, tagClass, tagNo).parseExplicitBaseTagged();
     }
 
     public static ASN1TaggedObjectParser parseExplicitContextBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
@@ -218,9 +231,7 @@ public abstract class ASN1Util
     public static ASN1TaggedObjectParser parseImplicitBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
         int tagClass, int tagNo, int baseTagClass, int baseTagNo) throws IOException
     {
-        checkTag(taggedObjectParser, tagClass, tagNo);
-
-        return taggedObjectParser.parseImplicitBaseTagged(baseTagClass, baseTagNo);
+        return checkTag(taggedObjectParser, tagClass, tagNo).parseImplicitBaseTagged(baseTagClass, baseTagNo);
     }
 
     public static ASN1TaggedObjectParser parseImplicitContextBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
@@ -254,9 +265,7 @@ public abstract class ASN1Util
     public static ASN1Encodable parseBaseUniversal(ASN1TaggedObjectParser taggedObjectParser, int tagClass,
         int tagNo, boolean declaredExplicit, int baseTagNo) throws IOException
     {
-        checkTag(taggedObjectParser, tagClass, tagNo);
-
-        return taggedObjectParser.parseBaseUniversal(declaredExplicit, baseTagNo);
+        return checkTag(taggedObjectParser, tagClass, tagNo).parseBaseUniversal(declaredExplicit, baseTagNo);
     }
 
     public static ASN1Encodable parseContextBaseUniversal(ASN1TaggedObjectParser taggedObjectParser, int tagNo,
@@ -280,26 +289,5 @@ public abstract class ASN1Util
         boolean declaredExplicit, int baseTagNo) throws IOException
     {
         return tryParseBaseUniversal(taggedObjectParser, BERTags.CONTEXT_SPECIFIC, tagNo, declaredExplicit, baseTagNo);
-    }
-
-
-    private static void checkTag(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
-    {
-        if (!taggedObject.hasTag(tagClass, tagNo))
-        {
-            String expected = getTagText(tagClass, tagNo);
-            String found = getTagText(taggedObject);
-            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
-        }
-    }
-
-    private static void checkTag(ASN1TaggedObjectParser taggedObjectParser, int tagClass, int tagNo)
-    {
-        if (!taggedObjectParser.hasTag(tagClass, tagNo))
-        {
-            String expected = getTagText(tagClass, tagNo);
-            String found = getTagText(taggedObjectParser);
-            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
-        }
     }
 }

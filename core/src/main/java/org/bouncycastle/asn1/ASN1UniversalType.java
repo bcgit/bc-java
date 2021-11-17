@@ -14,7 +14,7 @@ abstract class ASN1UniversalType
         this.tag = ASN1Tag.create(BERTags.UNIVERSAL, tagNumber);
     }
 
-    ASN1Primitive checkedCast(ASN1Primitive primitive)
+    final ASN1Primitive checkedCast(ASN1Primitive primitive)
     {
         if (javaClass.isInstance(primitive))
         {
@@ -39,7 +39,6 @@ abstract class ASN1UniversalType
         return checkedCast(ASN1Primitive.fromByteArray(bytes));
     }
 
-    // TODO Use for existing getInstance(ASN1TaggedObject, boolean) methods
     final ASN1Primitive getContextInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
         if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
@@ -47,7 +46,7 @@ abstract class ASN1UniversalType
             throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
         }
 
-        return checkedCast(taggedObject.getBaseUniversal(declaredExplicit, getTag().getTagNumber()));
+        return checkedCast(taggedObject.getBaseUniversal(declaredExplicit, this));
     }
 
     final ASN1Tag getTag()
