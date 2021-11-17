@@ -354,13 +354,7 @@ public abstract class ASN1TaggedObject
         case DECLARED_IMPLICIT:
         {
             ASN1TaggedObject declared = checkedCast(obj.toASN1Primitive());
-            if (!declared.hasTag(baseTagClass, baseTagNo))
-            {
-                String expected = ASN1Util.getTagText(baseTagClass, baseTagNo);
-                String found = ASN1Util.getTagText(declared);
-                throw new IllegalStateException("Expected " + expected + " tag but found " + found);
-            }
-            return declared;
+            return ASN1Util.checkTag(declared, baseTagClass, baseTagNo);
         }
 
         // Parsed; return a virtual tag (i.e. that couldn't have been present in the encoding)
@@ -388,11 +382,16 @@ public abstract class ASN1TaggedObject
             throw new IllegalArgumentException("unsupported UNIVERSAL tag number: " + tagNo);
         }
 
+        return getBaseUniversal(declaredExplicit, universalType);
+    }
+
+    ASN1Primitive getBaseUniversal(boolean declaredExplicit, ASN1UniversalType universalType)
+    {
         if (declaredExplicit)
         {
             if (!isExplicit())
             {
-                throw new IllegalArgumentException("object implicit - explicit expected.");
+                throw new IllegalStateException("object explicit - implicit expected.");
             }
 
             return universalType.checkedCast(obj.toASN1Primitive());
@@ -400,7 +399,7 @@ public abstract class ASN1TaggedObject
 
         if (DECLARED_EXPLICIT == explicitness)
         {
-            throw new IllegalArgumentException("object explicit - implicit expected.");
+            throw new IllegalStateException("object explicit - implicit expected.");
         }
 
         ASN1Primitive primitive = obj.toASN1Primitive();
