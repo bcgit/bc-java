@@ -141,7 +141,7 @@ public abstract class ASN1ApplicationSpecific
 
     public int getTagClass()
     {
-        return taggedObject.getTagClass();
+        return BERTags.APPLICATION;
     }
 
     public int getTagNo()
@@ -213,8 +213,7 @@ public abstract class ASN1ApplicationSpecific
     public ASN1Encodable readObject() throws IOException
     {
         // NOTE: No way to say you're looking for an implicitly-tagged object via ASN1ApplicationSpecificParser
-        // Bypass getObject() to avoid any tag class restriction
-        return taggedObject.obj;
+        return taggedObject.getBaseObject();
     }
 
     boolean encodeConstructed()
