@@ -82,24 +82,16 @@ public abstract class ASN1UniversalString
 
     public final String getString()
     {
-        StringBuffer buf = new StringBuffer("#");
+        int dl = contents.length;
+        StringBuffer buf = new StringBuffer(3 + 2 * (ASN1OutputStream.getLengthOfDL(dl) + dl));
+        buf.append("#1C");
+        encodeHexDL(buf, dl);
 
-        byte[] string;
-        try
+        for (int i = 0; i < dl; ++i)
         {
-            string = getEncoded();
-        }
-        catch (IOException e)
-        {
-           throw new ASN1ParsingException("internal error encoding UniversalString");
+            encodeHexByte(buf, contents[i]);
         }
 
-        for (int i = 0; i != string.length; i++)
-        {
-            buf.append(table[(string[i] >>> 4) & 0xf]);
-            buf.append(table[string[i] & 0xf]);
-        }
-        
         return buf.toString();
     }
 
@@ -148,5 +140,39 @@ public abstract class ASN1UniversalString
     static ASN1UniversalString createPrimitive(byte[] contents)
     {
         return new DERUniversalString(contents, false);
+    }
+
+    private static void encodeHexByte(StringBuffer buf, int i)
+    {
+        buf.append(table[(i >>> 4) & 0xF]);
+        buf.append(table[i & 0xF]);
+    }
+
+    private static void encodeHexDL(StringBuffer buf, int dl)
+    {
+        if (dl < 128)
+        {
+            encodeHexByte(buf, dl);
+            return;
+        }
+
+        byte[] stack = new byte[5];
+        int pos = 5;
+
+        do
+        {
+            stack[--pos] = (byte)dl;
+            dl >>>= 8;
+        }
+        while (dl != 0);
+
+        int count = stack.length - pos;
+        stack[--pos] = (byte)(0x80 | count);
+
+        do
+        {
+            encodeHexByte(buf, stack[pos++]);
+        }
+        while (pos < stack.length);
     }
 }
