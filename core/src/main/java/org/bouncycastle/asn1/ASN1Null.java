@@ -48,10 +48,6 @@ public abstract class ASN1Null
             {
                 throw new IllegalArgumentException("failed to construct NULL from byte[]: " + e.getMessage());
             }
-            catch (ClassCastException e)
-            {
-                throw new IllegalArgumentException("unknown object in getInstance(): " + o.getClass().getName());
-            }
         }
 
         return null;
