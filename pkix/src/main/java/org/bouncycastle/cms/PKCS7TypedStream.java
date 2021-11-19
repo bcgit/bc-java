@@ -41,21 +41,27 @@ public class PKCS7TypedStream
     public void drain()
         throws IOException
     {
-        getContentStream(content); // this will parse in the data
+        content.toASN1Primitive(); // this will parse in the data
     }
 
     private InputStream getContentStream(ASN1Encodable encodable)
         throws IOException
     {
         byte[] encoded = encodable.toASN1Primitive().getEncoded(ASN1Encoding.DER);
-        int index = 1;
-
-        while ((encoded[index] & 0xff) > 127)
+        int index = 0;
+        // Skip tag
+        if ((encoded[index++] & 0x1F) == 0x1F)
         {
-            index++;
+            while ((encoded[index++] & 0x80) != 0)
+            {
+            }
         }
-
-        index++;
+        // Skip definite-length
+        int dl = encoded[index++];
+        if ((dl & 0x80) != 0)
+        {
+            index += (dl & 0x7F);
+        }
 
         return new ByteArrayInputStream(encoded, index, encoded.length - index);
     }
