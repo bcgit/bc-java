@@ -148,6 +148,19 @@ public class PGPPublicKey
         init(fingerPrintCalculator);
      }
 
+    /**
+     * Factory method to create a subkey from the given public key packet.
+     *
+     * @param publicKeyPacket public key packet
+     * @param fingerPrintCalculator fingerprint calculator
+     * @return subkey
+     * @throws PGPException
+     */
+     public static PGPPublicKey createSubkey(PublicKeyPacket publicKeyPacket, KeyFingerPrintCalculator fingerPrintCalculator)
+             throws PGPException {
+         return new PGPPublicKey(new PGPPublicKey(publicKeyPacket, fingerPrintCalculator), null, new ArrayList<>());
+     }
+
     PGPPublicKey(
         PGPPublicKey key,
         TrustPacket trust, 
