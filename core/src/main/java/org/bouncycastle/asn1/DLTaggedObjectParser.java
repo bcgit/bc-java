@@ -8,33 +8,13 @@ import java.io.IOException;
 class DLTaggedObjectParser
     extends BERTaggedObjectParser
 {
-    private boolean _constructed;
+    private final boolean _constructed;
 
     DLTaggedObjectParser(int tagClass, int tagNo, boolean constructed, ASN1StreamParser parser)
     {
         super(tagClass, tagNo, parser);
 
         _constructed = constructed;
-    }
-
-    public int getTagClass()
-    {
-        return _tagClass;
-    }
-
-    public int getTagNo()
-    {
-        return _tagNo;
-    }
-
-    public boolean hasContextTag(int tagNo)
-    {
-        return this._tagClass == BERTags.CONTEXT_SPECIFIC && this._tagNo == tagNo;
-    }
-
-    public boolean hasTag(int tagClass, int tagNo)
-    {
-        return this._tagClass == tagClass && this._tagNo == tagNo;
     }
 
     /**
@@ -45,27 +25,6 @@ class DLTaggedObjectParser
     public boolean isConstructed()
     {
         return _constructed;
-    }
-
-    /**
-     * Return an object parser for the contents of this tagged object.
-     *
-     * @param tag        the actual tag number of the object (needed if implicit).
-     * @param isExplicit true if the contained object was explicitly tagged, false
-     *                   if implicit.
-     * @return an ASN.1 encodable object parser.
-     * @throws IOException if there is an issue building the object parser from the
-     *                     stream.
-     * @deprecated See {@link ASN1TaggedObjectParser#getObjectParser(int, boolean)}.
-     */
-    public ASN1Encodable getObjectParser(int tag, boolean isExplicit) throws IOException
-    {
-        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
-        {
-            throw new ASN1Exception("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return parseBaseUniversal(isExplicit, tag);
     }
 
     /**
@@ -127,22 +86,5 @@ class DLTaggedObjectParser
         }
 
         return new DLTaggedObjectParser(baseTagClass, baseTagNo, _constructed, _parser);
-    }
-
-    /**
-     * Return an ASN1TaggedObject representing this parser and its contents.
-     *
-     * @return an ASN1TaggedObject
-     */
-    public ASN1Primitive toASN1Primitive()
-    {
-        try
-        {
-            return getLoadedObject();
-        }
-        catch (IOException e)
-        {
-            throw new ASN1ParsingException(e.getMessage());
-        }
     }
 }
