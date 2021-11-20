@@ -15,7 +15,7 @@ public class BERApplicationSpecificParser
 {
     BERApplicationSpecificParser(int tagNo, ASN1StreamParser parser)
     {
-        super(BERTags.APPLICATION, tagNo, true, parser);
+        super(BERTags.APPLICATION, tagNo, parser);
     }
 
     /**
@@ -27,6 +27,6 @@ public class BERApplicationSpecificParser
         throws IOException
     {
         // NOTE: No way to say you're looking for an implicitly-tagged object via ASN1ApplicationSpecificParser
-        return parseBaseUniversal(true, -1);
+        return parseExplicitBaseObject();
     }
 }
