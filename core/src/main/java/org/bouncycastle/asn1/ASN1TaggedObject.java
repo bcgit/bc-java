@@ -452,6 +452,11 @@ public abstract class ASN1TaggedObject
         return primitive;
     }
 
+    public ASN1Encodable parseExplicitBaseObject() throws IOException
+    {
+        return getExplicitBaseObject();
+    }
+
     public ASN1TaggedObjectParser parseExplicitBaseTagged() throws IOException
     {
         return getExplicitBaseTagged();
@@ -488,38 +493,37 @@ public abstract class ASN1TaggedObject
         return ASN1Util.getTagText(tagClass, tagNo) + obj;
     }
 
-    static ASN1Primitive createConstructed(int tagClass, int tagNo, boolean isIL,
-        ASN1EncodableVector contentsElements)
+    static ASN1Primitive createConstructedDL(int tagClass, int tagNo, ASN1EncodableVector contentsElements)
     {
         boolean maybeExplicit = (contentsElements.size() == 1);
 
-        if (isIL)
-        {
-            ASN1TaggedObject taggedObject = maybeExplicit
-                ?   new BERTaggedObject(PARSED_EXPLICIT, tagClass, tagNo, contentsElements.get(0))
-                :   new BERTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, BERFactory.createSequence(contentsElements));
+        ASN1TaggedObject taggedObject = maybeExplicit
+            ?   new DLTaggedObject(PARSED_EXPLICIT, tagClass, tagNo, contentsElements.get(0))
+            :   new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, DLFactory.createSequence(contentsElements));
 
-            switch (tagClass)
-            {
-            case BERTags.APPLICATION:
-                return new BERApplicationSpecific(taggedObject);
-            default:
-                return taggedObject;
-            }
+        switch (tagClass)
+        {
+        case BERTags.APPLICATION:
+            return new DLApplicationSpecific(taggedObject);
+        default:
+            return taggedObject;
         }
-        else
-        {
-            ASN1TaggedObject taggedObject = maybeExplicit
-                ?   new DLTaggedObject(PARSED_EXPLICIT, tagClass, tagNo, contentsElements.get(0))
-                :   new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, DLFactory.createSequence(contentsElements));
+    }
 
-            switch (tagClass)
-            {
-            case BERTags.APPLICATION:
-                return new DLApplicationSpecific(taggedObject);
-            default:
-                return taggedObject;
-            }
+    static ASN1Primitive createConstructedIL(int tagClass, int tagNo, ASN1EncodableVector contentsElements)
+    {
+        boolean maybeExplicit = (contentsElements.size() == 1);
+
+        ASN1TaggedObject taggedObject = maybeExplicit
+            ?   new BERTaggedObject(PARSED_EXPLICIT, tagClass, tagNo, contentsElements.get(0))
+            :   new BERTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, BERFactory.createSequence(contentsElements));
+
+        switch (tagClass)
+        {
+        case BERTags.APPLICATION:
+            return new BERApplicationSpecific(taggedObject);
+        default:
+            return taggedObject;
         }
     }
 
