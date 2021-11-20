@@ -41,7 +41,9 @@ public class ContentInfoParser
     {
         if (content != null)
         {
-            return ASN1Util.parseContextBaseUniversal(content, 0, true, tag);
+            // TODO[cms] Ideally we could enforce the claimed tag
+//            return ASN1Util.parseContextBaseUniversal(content, 0, true, tag);
+            return ASN1Util.parseExplicitContextBaseObject(content, 0);
         }
 
         return null;
