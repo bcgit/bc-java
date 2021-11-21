@@ -227,7 +227,7 @@ public class OEROutputStream
                     .writeBit(tagClass & BERTags.APPLICATION);
 
                 tag = taggedObject.getTagNo();
-                item = taggedObject.getObject();
+                item = taggedObject.getBaseObject().toASN1Primitive();
             }
             else
             {
