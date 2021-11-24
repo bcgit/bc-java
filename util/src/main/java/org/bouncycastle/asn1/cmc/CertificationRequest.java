@@ -48,7 +48,7 @@ public class CertificationRequest
         ASN1BitString           subjectPublicKey,
         ASN1Set                 attributes,
         AlgorithmIdentifier     signatureAlgorithm,
-        DERBitString            signature)
+        ASN1BitString           signature)
     {
         this.certificationRequestInfo = new CertificationRequestInfo(subject, subjectPublicAlgorithm, subjectPublicKey, attributes);
         this.signatureAlgorithm = signatureAlgorithm;
