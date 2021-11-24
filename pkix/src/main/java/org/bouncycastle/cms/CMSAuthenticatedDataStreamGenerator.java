@@ -292,7 +292,7 @@ public class CMSAuthenticatedDataStreamGenerator
             }
             else
             {
-                parameters = Collections.emptyMap();                
+                parameters = Collections.EMPTY_MAP;
             }
 
             envGen.addObject(new DEROctetString(macCalculator.getMac()));

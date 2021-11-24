@@ -1,11 +1,11 @@
 package org.bouncycastle.asn1.crmf;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -15,7 +15,7 @@ public class POPOSigningKey
 {
     private POPOSigningKeyInput poposkInput;
     private AlgorithmIdentifier algorithmIdentifier;
-    private DERBitString signature;
+    private ASN1BitString signature;
 
     private POPOSigningKey(ASN1Sequence seq)
     {
@@ -33,7 +33,7 @@ public class POPOSigningKey
             poposkInput = POPOSigningKeyInput.getInstance(tagObj.getObject());
         }
         algorithmIdentifier = AlgorithmIdentifier.getInstance(seq.getObjectAt(index++));
-        signature = DERBitString.getInstance(seq.getObjectAt(index));
+        signature = ASN1BitString.getInstance(seq.getObjectAt(index));
     }
 
     public static POPOSigningKey getInstance(Object o)
@@ -68,7 +68,7 @@ public class POPOSigningKey
     public POPOSigningKey(
         POPOSigningKeyInput poposkIn,
         AlgorithmIdentifier aid,
-        DERBitString signature)
+        ASN1BitString signature)
     {
         this.poposkInput = poposkIn;
         this.algorithmIdentifier = aid;
@@ -85,7 +85,7 @@ public class POPOSigningKey
         return algorithmIdentifier;
     }
 
-    public DERBitString getSignature()
+    public ASN1BitString getSignature()
     {
         return signature;
     }

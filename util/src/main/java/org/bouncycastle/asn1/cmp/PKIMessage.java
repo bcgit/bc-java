@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.cmp;
 
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -17,7 +18,7 @@ public class PKIMessage
 {
     private PKIHeader header;
     private PKIBody body;
-    private DERBitString protection;
+    private ASN1BitString protection;
     private ASN1Sequence extraCerts;
 
     private PKIMessage(ASN1Sequence seq)
@@ -67,7 +68,7 @@ public class PKIMessage
     public PKIMessage(
         PKIHeader header,
         PKIBody body,
-        DERBitString protection,
+        ASN1BitString protection,
         CMPCertificate[] extraCerts)
     {
         this.header = header;
@@ -82,7 +83,7 @@ public class PKIMessage
     public PKIMessage(
         PKIHeader header,
         PKIBody body,
-        DERBitString protection)
+        ASN1BitString protection)
     {
         this(header, body, protection, null);
     }
@@ -104,7 +105,7 @@ public class PKIMessage
         return body;
     }
 
-    public DERBitString getProtection()
+    public ASN1BitString getProtection()
     {
         return protection;
     }

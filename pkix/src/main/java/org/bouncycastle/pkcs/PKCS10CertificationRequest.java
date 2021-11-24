@@ -3,10 +3,10 @@ package org.bouncycastle.pkcs;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Boolean;
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -232,15 +232,17 @@ public class PKCS10CertificationRequest
 
     public Extensions getRequestedExtensions()
     {
-        for (Attribute encodable : getAttributes())
+        Attribute[] attributes = getAttributes();
+        for (int i = 0; i != attributes.length; i++)
         {
+            Attribute encodable = attributes[i];
             if (encodable.getAttrType() == PKCSObjectIdentifiers.pkcs_9_at_extensionRequest)
             {
                 ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
                 ASN1Sequence extensionSequence = ASN1Sequence.getInstance(encodable.getAttrValues().getObjectAt(0));
-                for (ASN1Encodable seqItem : extensionSequence)
+                for (Enumeration en = extensionSequence.getObjects(); en.hasMoreElements();)
                 {
-                    ASN1Sequence itemSeq = ASN1Sequence.getInstance(seqItem);
+                    ASN1Sequence itemSeq = ASN1Sequence.getInstance(en.nextElement());
 
                     boolean critical = itemSeq.size() == 3 && ASN1Boolean.getInstance(itemSeq.getObjectAt(1)).isTrue();
                     if (itemSeq.size() == 2)

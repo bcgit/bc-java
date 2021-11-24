@@ -7,7 +7,6 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.engines.LEAEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.modes.KCTRBlockCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -167,28 +166,27 @@ public class LEATest
             }
             else if (line.startsWith("Key:"))
             {
-                line = line.replace("0x", "").replace(", ", "").trim();
+                line = remove(remove(line, "0x"), ", ").trim();
                 key = Hex.decode(line.substring(line.indexOf(":") + 1).trim());
             }
             else if (line.startsWith("Plaintext:"))
             {
-                line = line.replace("0x", "").replace(", ", "").trim();
+                line = remove(remove(line, "0x"), ", ").trim();
                 plainText = Hex.decode(line.substring(line.indexOf(":") + 1).trim());
             }
             else if (line.startsWith("Ciphertext:"))
             {
-                line = line.replace("0x", "").replace(", ", "").trim();
+                line = remove(remove(line, "0x"), ", ").trim();
                 cipherText = Hex.decode(line.substring(line.indexOf(":") + 1).trim());
             }
             else if (line.startsWith("IV:"))
             {
-                line = line.replace("0x", "").replace(", ", "").trim();
+                line = remove(remove(line, "0x"), ", ").trim();
                 iv = Hex.decode(line.substring(line.indexOf(":") + 1).trim());
             }
             else if (line.startsWith("Test:"))
             {
-
-                if (comment.contains("ECB"))
+                if (comment.indexOf("ECB") >= 0)
                 {
                     LEAEngine engine = new LEAEngine();
                     if (line.endsWith("Encrypt"))
@@ -218,11 +216,11 @@ public class LEATest
                     }
 
                 }
-                else if (comment.contains("CTR") || comment.contains("CBC"))
+                else if (comment.indexOf("CTR") >= 0 || comment.indexOf("CBC") >= 0)
                 {
                     BlockCipher engine;
 
-                    if (comment.contains("CBC"))
+                    if (comment.indexOf("CBC") >= 0)
                     {
                         engine = new CBCBlockCipher(new LEAEngine());
                     }
@@ -271,6 +269,16 @@ public class LEATest
 
     }
 
+    private static String remove(String orig, String txt)
+    {
+        int idx = -1;
+        while ((idx = orig.indexOf(txt)) >= 0)
+        {
+            orig = orig.substring(0, idx) + orig.substring(idx + txt.length());
+        }
+
+        return orig;
+    }
 
     /**
      * Main entry point.

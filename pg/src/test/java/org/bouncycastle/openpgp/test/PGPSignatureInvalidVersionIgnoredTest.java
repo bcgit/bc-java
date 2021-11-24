@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.security.Security;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
@@ -12,6 +11,7 @@ import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class PGPSignatureInvalidVersionIgnoredTest
@@ -98,7 +98,7 @@ public class PGPSignatureInvalidVersionIgnoredTest
     private void assertInvalidSignatureVersionIsIgnored(String SIG)
             throws IOException
     {
-        ArmoredInputStream armorIn = new ArmoredInputStream(new ByteArrayInputStream(SIG.getBytes(Charset.defaultCharset())));
+        ArmoredInputStream armorIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(SIG)));
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
         PGPSignatureList signatures = (PGPSignatureList) objectFactory.nextObject();
         isEquals(1, signatures.size());
