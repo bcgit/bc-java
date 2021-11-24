@@ -33,8 +33,10 @@ public class SphincsPlusTest
             " sha256-256s-simple.rsp shake256-128s-simple.rsp shake256-192s-simple.rsp shake256-256s-simple.rsp";
 
 
-        for (String name : files.split(" "))
+        String[] fileList = files.split(" ");
+        for (int i = 0; i != fileList.length; i++)
         {
+            String name = fileList[i];
             InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -53,16 +55,16 @@ public class SphincsPlusTest
                 {
                     continue;
                 }
-                if (line.isEmpty())
+                if (line.length() == 0)
                 {
                     if (buf.size() > 0)
                     {
-                        String count = buf.get("count");
-                        byte[] sk = Hex.decode(buf.get("sk"));
-                        byte[] pk = Hex.decode(buf.get("pk"));
-                        byte[] msg = Hex.decode(buf.get("msg"));
-                        byte[] sigExpected = Hex.decode(buf.get("sm"));
-                        byte[] oprR = Hex.decode(buf.get("optr"));
+                        String count = (String)buf.get("count");
+                        byte[] sk = Hex.decode((String)buf.get("sk"));
+                        byte[] pk = Hex.decode((String)buf.get("pk"));
+                        byte[] msg = Hex.decode((String)buf.get("msg"));
+                        byte[] sigExpected = Hex.decode((String)buf.get("sm"));
+                        byte[] oprR = Hex.decode((String)buf.get("optr"));
 
                         SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
                         SecureRandom random = new FixedSecureRandom(sk);

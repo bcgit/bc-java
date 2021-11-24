@@ -553,7 +553,7 @@ public class PGPPublicKey
             if (id.equals(ids.get(i)))
             {
                 userIdFound = true;
-                signatures.addAll(idSigs.get(i));
+                signatures.addAll((List<PGPSignature>)idSigs.get(i));
             }
         }
 
@@ -577,7 +577,7 @@ public class PGPPublicKey
             if (userAttributes.equals(ids.get(i)))
             {
                 attributeFound = true;
-                signatures.addAll(idSigs.get(i));
+                signatures.addAll((List<PGPSignature>)idSigs.get(i));
             }
         }
 

@@ -3498,7 +3498,7 @@ public class PGPKeyRingTest
         Iterator<PGPSignature> signatures = secretKeys.getPublicKey().getSignaturesOfType(PGPSignature.DIRECT_KEY);
         isTrue(signatures.hasNext());
 
-        PGPSignature signature = signatures.next();
+        PGPSignature signature = (PGPSignature)signatures.next();
         isTrue(!signatures.hasNext());
 
         NotationData[] hashedNotations = signature.getHashedSubPackets().getNotationDataOccurrences();

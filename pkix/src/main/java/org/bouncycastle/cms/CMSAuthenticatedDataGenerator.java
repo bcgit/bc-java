@@ -156,7 +156,7 @@ public class CMSAuthenticatedDataGenerator
                 throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
 
-            ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(Collections.emptyMap()).toASN1EncodableVector()) : null;
+            ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(Collections.EMPTY_MAP).toASN1EncodableVector()) : null;
 
             ContentInfo  eci = new ContentInfo(
                             typedData.getContentType(),

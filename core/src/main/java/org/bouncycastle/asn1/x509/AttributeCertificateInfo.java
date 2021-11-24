@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 
 public class AttributeCertificateInfo
@@ -77,9 +76,9 @@ public class AttributeCertificateInfo
         {
             ASN1Encodable    obj = seq.getObjectAt(i);
 
-            if (obj instanceof DERBitString)
+            if (obj instanceof ASN1BitString)
             {
-                this.issuerUniqueID = DERBitString.getInstance(seq.getObjectAt(i));
+                this.issuerUniqueID = ASN1BitString.getInstance(seq.getObjectAt(i));
             }
             else if (obj instanceof ASN1Sequence || obj instanceof Extensions)
             {
