@@ -81,7 +81,7 @@ public class CMSEncryptedDataGenerator
         ASN1Set unprotectedAttrSet = null;
         if (unprotectedAttributeGenerator != null)
         {
-            AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(Collections.emptyMap());
+            AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(Collections.EMPTY_MAP);
 
             unprotectedAttrSet = new BERSet(attrTable.toASN1EncodableVector());
         }

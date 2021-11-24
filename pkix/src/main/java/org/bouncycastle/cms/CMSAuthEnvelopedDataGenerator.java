@@ -52,7 +52,7 @@ public class CMSAuthEnvelopedDataGenerator
             
             if (authAttrsGenerator != null)
             {
-                AttributeTable attrTable = authAttrsGenerator.getAttributes(Collections.emptyMap());
+                AttributeTable attrTable = authAttrsGenerator.getAttributes(Collections.EMPTY_MAP);
 
                 authenticatedAttrSet = new DERSet(attrTable.toASN1EncodableVector());
 
@@ -90,7 +90,7 @@ public class CMSAuthEnvelopedDataGenerator
         ASN1Set unprotectedAttrSet = null;
         if (unauthAttrsGenerator != null)
         {
-            AttributeTable attrTable = unauthAttrsGenerator.getAttributes(Collections.emptyMap());
+            AttributeTable attrTable = unauthAttrsGenerator.getAttributes(Collections.EMPTY_MAP);
 
             unprotectedAttrSet = new DLSet(attrTable.toASN1EncodableVector());
         }

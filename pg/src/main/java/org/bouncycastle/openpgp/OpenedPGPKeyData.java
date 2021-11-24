@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.crypto.spec.DHPublicKeySpec;
@@ -125,7 +126,7 @@ public class OpenedPGPKeyData
 
                     String protectionType = protectedKey.getString(1);
 
-                    if (protectionType.contains("aes"))
+                    if (protectionType.indexOf("aes") >= 0)
                     {
                         unwrapResult = unwrapECCSecretKey(protectionType, publicKey, maxDepth, keyExpression, protectedKey, keyProtectionRemoverFactory);
                     }
@@ -215,7 +216,7 @@ public class OpenedPGPKeyData
                     String protectionType = protectedKey.getString(1);
 
 
-                    if (protectionType.contains("aes"))
+                    if (protectionType.indexOf("aes") >= 0)
                     {
                         // TODO could not get client to generate protected elgamal keys
                         throw new IllegalStateException("no decryption support for protected elgamal keys");
@@ -296,7 +297,7 @@ public class OpenedPGPKeyData
                     String protectionType = protectedKey.getString(1);
 
 
-                    if (protectionType.contains("aes"))
+                    if (protectionType.indexOf("aes") >= 0)
                     {
                         unwrapResult = unwrapDSASecretKey(protectionType, publicKey, maxDepth, keyExpression, protectedKey, keyProtectionRemoverFactory);
                     }
@@ -359,7 +360,7 @@ public class OpenedPGPKeyData
                     String protectionType = protectedKey.getString(1);
 
 
-                    if (protectionType.contains("aes"))
+                    if (protectionType.indexOf("aes") >= 0)
                     {
                         unwrapResult = unwrapRSASecretKey(protectionType, publicKey, maxDepth, keyExpression, protectedKey, keyProtectionRemoverFactory);
                     }
@@ -374,8 +375,9 @@ public class OpenedPGPKeyData
                 }
 
 
-                for (Object o : keyExpression.filterOut("rsa", "e", "n", "d", "p", "q", "u", "protected").getValues())
+                for (Iterator it = keyExpression.filterOut(new String[] { "rsa", "e", "n", "d", "p", "q", "u", "protected" }).getValues().iterator(); it.hasNext();)
                 {
+                    Object o = it.next();
                     if (o instanceof SExpression)
                     {
                         attributeList.add(((SExpression)o).toAttribute());
@@ -460,7 +462,7 @@ public class OpenedPGPKeyData
 //
 //                    String protectionType = protectedKey.getString(1);
 //
-//                    if (protectionType.contains("aes"))
+//                    if (protectionType.indexOf("aes") >= 0)
 //                    {
 //                        unwrapResult = unwrapECCSecretKey(protectionType, publicKey, maxDepth, keyExpression, protectedKey,keyProtectionRemoverFactory);
 //                    }
@@ -550,7 +552,7 @@ public class OpenedPGPKeyData
 //                    String protectionType = protectedKey.getString(1);
 //
 //
-//                    if (protectionType.contains("aes"))
+//                    if (protectionType.indexOf("aes") >= 0)
 //                    {
 //                        // TODO could not get client to generate protected elgamal keys
 //                        throw new IllegalStateException("no decryption support for protected elgamal keys");
@@ -631,7 +633,7 @@ public class OpenedPGPKeyData
 //                    String protectionType = protectedKey.getString(1);
 //
 //
-//                    if (protectionType.contains("aes"))
+//                    if (protectionType.indexOf("aes") >= 0)
 //                    {
 //                        unwrapResult = unwrapDSASecretKey(protectionType, publicKey, maxDepth, keyExpression, protectedKey);
 //                    }
@@ -694,7 +696,7 @@ public class OpenedPGPKeyData
 //                    String protectionType = protectedKey.getString(1);
 //
 //
-//                    if (protectionType.contains("aes"))
+//                    if (protectionType.indexOf("aes") >= 0)
 //                    {
 //                        unwrapResult = unwrapRSASecretKey(protectionType, publicKey, maxDepth, keyExpression, protectedKey);
 //                    }
@@ -770,7 +772,7 @@ public class OpenedPGPKeyData
             //
             SExpression.Builder builder = SExpression.builder().addValue("dsa");
             addPublicKey(publicKey, builder);
-            builder.addContent(keyExpression.filterOut("dsa", "p", "q", "g", "y", "protected"));
+            builder.addContent(keyExpression.filterOut(new String[] { "dsa", "p", "q", "g", "y", "protected" }));
             byte[] aad = builder.build().toCanonicalForm();
 
 
@@ -818,9 +820,9 @@ public class OpenedPGPKeyData
         {
 
             SExpression.Builder builder = SExpression.builder().addValue("ecc");
-            builder.addContent(keyExpression.filterIn("curve", "flags"));
+            builder.addContent(keyExpression.filterIn(new String[] { "curve", "flags" }));
             addPublicKey(publicKey, builder);
-            builder.addContent(keyExpression.filterOut("ecc", "flags", "curve", "q", "protected"));
+            builder.addContent(keyExpression.filterOut(new String[] { "ecc", "flags", "curve", "q", "protected" }));
             byte[] aad = builder.build().toCanonicalForm();
 
             String curve;
@@ -865,8 +867,9 @@ public class OpenedPGPKeyData
         byte[] qoint = null;
         String curve = null;
 
-        for (Object item : expression.getValues())
+        for (Iterator it = expression.getValues().iterator(); it.hasNext();)
         {
+            Object item = it.next();
             if (item instanceof SExpression)
             {
                 SExpression exp = (SExpression)item;
@@ -892,9 +895,8 @@ public class OpenedPGPKeyData
         }
         else if (curve.startsWith("NIST"))
         {
-            curve = curve.replace("NIST", "").trim();
+            curve = curve.substring("NIST".length()).trim();
         }
-
 
         PublicKeyPacket publicKeyPacket;
         if (Strings.toLowerCase(curve).equals("ed25519"))
@@ -938,8 +940,9 @@ public class OpenedPGPKeyData
         BigInteger g = null;
         BigInteger y = null;
 
-        for (Object item : expression.getValues())
+        for (Iterator it = expression.getValues().iterator(); it.hasNext();)
         {
+            Object item = it.next();
             if (item instanceof SExpression)
             {
                 SExpression exp = (SExpression)item;
@@ -1002,7 +1005,7 @@ public class OpenedPGPKeyData
 
             SExpression.Builder builder = SExpression.builder().addValue("rsa");
             addPublicKey(publicKey, builder);
-            builder.addContent(keyExpression.filterOut("rsa", "e", "n", "protected"));
+            builder.addContent(keyExpression.filterOut(new String[] { "rsa", "e", "n", "protected" }));
             byte[] aad = builder.build().toCanonicalForm();
 
 
@@ -1039,8 +1042,9 @@ public class OpenedPGPKeyData
     {
         BigInteger n = null;
         BigInteger e = null;
-        for (Object item : expression.getValues())
+        for (Iterator it = expression.getValues().iterator(); it.hasNext();)
         {
+            Object item = it.next();
             if (item instanceof SExpression)
             {
                 SExpression exp = (SExpression)item;

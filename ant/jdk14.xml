@@ -28,6 +28,7 @@
                 <exclude name="**/lms/**/*.java"/>
             </fileset>
             <fileset dir="util/src/main/java">
+                <exclude name="**/oer/**/*.java"/>
             </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/**/*.java"/>
@@ -35,6 +36,7 @@
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/JceAADStream.java"/>
                 <exclude name="**/JceKeyTransAuthEnvelopedRecipient.java"/>
+		<exclude name="**/its/**/*.java"/>
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/jcajce/*.java"/>
             </fileset>
@@ -106,6 +108,7 @@
                 <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
                 <exclude name="**/bouncycastle/cms/test/AuthEnvelopedDataTest.java"/>
                 <exclude name="**/PKIXRevocationTest.java"/>
+		<exclude name="**/its/**/*.java"/>
             </fileset>
             <fileset dir="mail/src/test/java"/>
             <fileset dir="prov/src/test/java">
@@ -202,6 +205,12 @@
             </fileset>
         </replaceregexp>
         <replaceregexp match="\.\.\." replace="[]" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <exclude name="**/MultipartParserTest.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="Action >\(" replace="Action(" flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
                 <exclude name="**/MultipartParserTest.java"/>

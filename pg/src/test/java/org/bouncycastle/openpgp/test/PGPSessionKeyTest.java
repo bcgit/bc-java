@@ -91,14 +91,12 @@ public class PGPSessionKeyTest
         Security.addProvider(new BouncyCastleProvider());
         test.performTest();
     }
-
-    @Override
+    
     public String getName()
     {
-        return PGPSessionKeyTest.class.getSimpleName();
+        return "PGPSessionKeyTest";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {
@@ -122,7 +120,7 @@ public class PGPSessionKeyTest
         PGPSecretKeyRing secretKeys = new PGPSecretKeyRing(keyArmorIn, new BcKeyFingerprintCalculator());
         Iterator<PGPSecretKey> secretKeyIterator = secretKeys.iterator();
         secretKeyIterator.next();
-        PGPSecretKey key = secretKeyIterator.next();
+        PGPSecretKey key = (PGPSecretKey)secretKeyIterator.next();
 
         ByteArrayInputStream msgIn = new ByteArrayInputStream(Strings.toByteArray(PK_ENC_MESSAGE));
         ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);

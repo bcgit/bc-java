@@ -9,6 +9,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.IvParameterSpec;
 
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -73,7 +74,7 @@ public class JcePBEProtectionRemoverFactory
             calculatorProvider = calculatorProviderBuilder.build();
         }
 
-        if (protection.contains("ocb"))
+        if (protection.indexOf("ocb") >= 0)
         {
             return new PGPSecretKeyDecryptorWithAAD(passPhrase, calculatorProvider)
             {
@@ -84,8 +85,7 @@ public class JcePBEProtectionRemoverFactory
                     {
                         Cipher c;
                         c = helper.createCipher(PGPUtil.getSymmetricCipherName(encAlgorithm) + "/OCB/NoPadding");
-                        c.init(Cipher.DECRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, key), new IvParameterSpec(iv));
-                        c.updateAAD(aad);
+                        c.init(Cipher.DECRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, key), new AEADParameterSpec(iv, 128, aad));
                         return c.doFinal(keyData, keyOff, keyLen);
                     }
                     catch (IllegalBlockSizeException e)
