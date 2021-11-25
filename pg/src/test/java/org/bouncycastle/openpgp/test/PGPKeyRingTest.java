@@ -2818,7 +2818,7 @@ public class PGPKeyRingTest
                 // this should succeed
                 PGPPrivateKey privTmp = pgpKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass));
 
-                if (pgpKey.getKeyID() != oldKeyID || pgpKey.getS2KUsage() != SecretKeyPacket.USAGE_CHECKSUM)
+                if (pgpKey.getKeyID() != oldKeyID || pgpKey.getS2KUsage() != SecretKeyPacket.USAGE_SHA1)
                 {
                     fail("usage/key ID mismatch");
                 }
