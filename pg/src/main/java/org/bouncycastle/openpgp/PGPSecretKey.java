@@ -35,6 +35,8 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.util.Arrays;
 
 /**
  * general class to handle and construct  a PGP secret key object.
@@ -812,12 +814,12 @@ public class PGPSecretKey
         }
         else
         {
-            if (s2kUsage == SecretKeyPacket.USAGE_NONE)
-            {
-                s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
-            }
             if (key.secret.getPublicKeyPacket().getVersion() < 4)
             {
+                if (s2kUsage == SecretKeyPacket.USAGE_NONE)
+                {
+                    s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
+                }
                 // Version 2 or 3 - RSA Keys only
 
                 byte[] encKey = newKeyEncryptor.getKey();
@@ -874,7 +876,19 @@ public class PGPSecretKey
             }
             else
             {
-                keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+                if (s2kUsage == SecretKeyPacket.USAGE_NONE)
+                {
+                    s2kUsage = SecretKeyPacket.USAGE_SHA1;
+                    PGPDigestCalculator checkCalc = new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1); //oldKeyDecryptor.getChecksumCalculator(HashAlgorithmTags.SHA1);
+
+                    byte[] check = checksum(checkCalc, rawKeyData, rawKeyData.length);
+                    rawKeyData = Arrays.concatenate(rawKeyData, check);
+                    keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+                }
+                else
+                {
+                    keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+                }
 
                 iv = newKeyEncryptor.getCipherIV();
 
