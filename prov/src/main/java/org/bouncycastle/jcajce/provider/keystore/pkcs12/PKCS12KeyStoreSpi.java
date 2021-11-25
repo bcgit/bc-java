@@ -742,7 +742,7 @@ public class PKCS12KeyStoreSpi
             key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), validateIterationCount(func.getIterationCount()), keySizeProvider.getKeySize(encScheme), func.getPrf()));
         }
 
-        Cipher cipher = Cipher.getInstance(alg.getEncryptionScheme().getAlgorithm().getId());
+        Cipher cipher = helper.createCipher(alg.getEncryptionScheme().getAlgorithm().getId());
 
         ASN1Encodable encParams = alg.getEncryptionScheme().getParameters();
         if (encParams instanceof ASN1OctetString)
