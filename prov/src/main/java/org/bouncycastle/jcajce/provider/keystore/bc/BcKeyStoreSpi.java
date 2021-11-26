@@ -389,6 +389,11 @@ public class BcKeyStoreSpi
     {
         byte[]      enc = key.getEncoded();
 
+        if (enc == null)
+        {
+            throw new IOException("unable to store encoding of protected key");
+        }
+
         if (key instanceof PrivateKey)
         {
             dOut.write(KEY_PRIVATE);
@@ -675,7 +680,9 @@ public class BcKeyStoreSpi
             }
             if (key.getEncoded() == null)
             {
-                throw new KeyStoreException("cannot store protected private key");
+                // we ingore the password as the key is already protected.
+                table.put(alias, new StoreEntry(alias, new Date(), KEY, key, chain));
+                return;
             }
         }
 
