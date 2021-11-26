@@ -17,8 +17,8 @@ import org.bouncycastle.pqc.math.linearalgebra.GF2Vector;
  * This class implements the Pointcheval conversion of the McEliecePKCS.
  * Pointcheval presents a generic technique to make a CCA2-secure cryptosystem
  * from any partially trapdoor one-way function in the random oracle model. For
- * details, see D. Engelbert, R. Overbeck, A. Schmidt, "A summary of the
- * development of the McEliece Cryptosystem", technical report.
+ * details, see D. Engelbert, R. Overbeck, A. Schmidt, "A Summary of McEliece-Type Cryptosystems and their Security", technical report.
+ *  https://www.degruyter.com/document/doi/10.1515/JMC.2007.009/html
  */
 public class McEliecePointchevalCipher
     implements MessageEncryptor

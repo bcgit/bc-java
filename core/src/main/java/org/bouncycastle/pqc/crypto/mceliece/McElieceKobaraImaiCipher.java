@@ -17,8 +17,8 @@ import org.bouncycastle.pqc.math.linearalgebra.IntegerFunctions;
 /**
  * This class implements the Kobara/Imai conversion of the McEliecePKCS. This is
  * a conversion of the McEliecePKCS which is CCA2-secure. For details, see D.
- * Engelbert, R. Overbeck, A. Schmidt, "A summary of the development of the
- * McEliece Cryptosystem", technical report.
+ * Engelbert, R. Overbeck, A. Schmidt, "A Summary of McEliece-Type Cryptosystems and their Security", technical report.
+ * https://www.degruyter.com/document/doi/10.1515/JMC.2007.009/html
  */
 public class McElieceKobaraImaiCipher
     implements MessageEncryptor
