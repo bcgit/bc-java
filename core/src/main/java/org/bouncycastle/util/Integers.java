@@ -5,7 +5,7 @@ package org.bouncycastle.util;
  */
 public class Integers
 {
-    public static final int BYTES = Integer.BYTES;
+    public static final int BYTES = 4;
     public static final int SIZE = Integer.SIZE;
 
     public static int numberOfLeadingZeros(int i)
