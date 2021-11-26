@@ -86,6 +86,61 @@ public class IESTest
         doTest(g, c1, c2);
         
         doDefTest(g, c1, c2);
+
+        doOutputSizeTest();
+    }
+
+    private void doOutputSizeTest()
+        throws Exception
+    {
+        final byte[] data = "Block of data to be encrypted".getBytes();
+
+        /* Generate keys */
+
+        final KeyPairGenerator generator = KeyPairGenerator.getInstance("ECIES", BouncyCastleProvider.PROVIDER_NAME);
+        final KeyPair keyPair = generator.generateKeyPair();
+        final SecureRandom random = new SecureRandom();
+        final byte[] nonce = new byte[16];
+        random.nextBytes(nonce);
+
+        /* Encrypt */
+
+        final Cipher encryptCipher = Cipher.getInstance("ECIESWITHAES-CBC", BouncyCastleProvider.PROVIDER_NAME);
+        final IESParameterSpec spec = new IESParameterSpec(null, null, 128, 128, nonce);
+        encryptCipher.init(Cipher.ENCRYPT_MODE, new IEKeySpec(keyPair.getPrivate(), keyPair.getPublic()), spec);
+
+        /* Calculate the size if only doFinal was going to be called */
+
+        int onlyFinalExpectedSize = encryptCipher.getOutputSize(data.length);
+
+        /* Calculate the size with an update followed by an empty doFinal */
+
+        encryptCipher.update(data);
+        int updateAndFinalExpectedSize = encryptCipher.getOutputSize(0);
+
+        isTrue(updateAndFinalExpectedSize == onlyFinalExpectedSize);
+
+        final byte[] encrypted = new byte[updateAndFinalExpectedSize];
+        int actualEncryptedSize = encryptCipher.doFinal(encrypted, 0);
+
+        final Cipher decryptCipher = Cipher.getInstance("ECIESWITHAES-CBC", BouncyCastleProvider.PROVIDER_NAME);
+
+        decryptCipher.init(Cipher.DECRYPT_MODE, new IEKeySpec(keyPair.getPrivate(), keyPair.getPublic()), spec);
+
+        /* Calculate the size if only doFinal was going to be called */
+
+        onlyFinalExpectedSize = decryptCipher.getOutputSize(actualEncryptedSize);
+
+        /* Calculate the size with an update followed by an empty doFinal */
+
+        decryptCipher.update(encrypted, 0, actualEncryptedSize);
+        updateAndFinalExpectedSize = decryptCipher.getOutputSize(0);
+       
+        isTrue(updateAndFinalExpectedSize == onlyFinalExpectedSize);
+        final byte[] decrypted = new byte[updateAndFinalExpectedSize];
+        final int actualDecryptedSize = decryptCipher.doFinal(decrypted, 0);
+
+        isTrue(areEqual(data, 0, data.length, decrypted, 0, actualDecryptedSize));
     }
 
     public void doTest(
@@ -257,6 +312,7 @@ public class IESTest
 
     public static void main(
         String[]    args)
+        throws Exception
     {
         Security.addProvider(new BouncyCastleProvider());
 
