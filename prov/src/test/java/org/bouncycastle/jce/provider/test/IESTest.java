@@ -18,6 +18,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.IEKeySpec;
 import org.bouncycastle.jce.spec.IESParameterSpec;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -88,6 +89,7 @@ public class IESTest
         doDefTest(g, c1, c2);
 
         doOutputSizeTest();
+        doAlgorithmParameterTest();
     }
 
     private void doOutputSizeTest()
@@ -143,6 +145,35 @@ public class IESTest
         isTrue(areEqual(data, 0, data.length, decrypted, 0, actualDecryptedSize));
     }
 
+    private void doAlgorithmParameterTest()
+        throws Exception
+    {
+        trySpec(new IESParameterSpec(null, null, 128, 128, Hex.decode("deafbeef")));
+        trySpec(new IESParameterSpec(Hex.decode("ffff"), Hex.decode("aaaa"), 256, 128, Hex.decode("deafbeef")));
+        trySpec(new IESParameterSpec(Hex.decode("ffff"), Hex.decode("aaaa"), 256, 128, Hex.decode("deafbeef"), true));
+        trySpec(new IESParameterSpec(Hex.decode("ffffcc"), Hex.decode("aaaabb"), 256));
+    }
+
+    private void trySpec(IESParameterSpec spec)
+        throws Exception
+    {
+        AlgorithmParameters alg1 = AlgorithmParameters.getInstance("IES", "BC");
+        AlgorithmParameters alg2 = AlgorithmParameters.getInstance("IES", "BC");
+
+        alg1.init(spec);
+
+        alg2.init(alg1.getEncoded());
+
+        IESParameterSpec iesSpec = alg2.getParameterSpec(IESParameterSpec.class);
+
+        isTrue(iesSpec.getPointCompression() == spec.getPointCompression());
+        isTrue(Arrays.areEqual(iesSpec.getNonce(), spec.getNonce()));
+        isTrue(Arrays.areEqual(iesSpec.getDerivationV(), spec.getDerivationV()));
+        isTrue(Arrays.areEqual(iesSpec.getEncodingV(), spec.getEncodingV()));
+        isTrue(iesSpec.getMacKeySize() == spec.getMacKeySize());
+        isTrue(iesSpec.getCipherKeySize() == spec.getCipherKeySize());
+    }
+    
     public void doTest(
         KeyPairGenerator g,
         Cipher           c1,
