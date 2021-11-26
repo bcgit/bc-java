@@ -667,9 +667,16 @@ public class BcKeyStoreSpi
         Certificate[]   chain) 
         throws KeyStoreException
     {
-        if ((key instanceof PrivateKey) && (chain == null))
+        if ((key instanceof PrivateKey))
         {
-            throw new KeyStoreException("no certificate chain for private key");
+            if (chain == null)
+            {
+                throw new KeyStoreException("no certificate chain for private key");
+            }
+            if (key.getEncoded() == null)
+            {
+                throw new KeyStoreException("cannot store protected private key");
+            }
         }
 
         try
