@@ -391,6 +391,86 @@ public class KeyStoreTest
                 fail("negative salt length not detected");
             }
         }
+
+        X9ECParameters x9 = ECNamedCurveTable.getByName("prime239v1");
+        ECCurve curve = x9.getCurve();
+        ECParameterSpec ecSpec = new ECParameterSpec(curve, x9.getG(), x9.getN(), x9.getH());
+
+        KeyPairGenerator    g = KeyPairGenerator.getInstance("ECDSA", "BC");
+
+        g.initialize(ecSpec, new SecureRandom());
+
+        KeyPair     keyPair = g.generateKeyPair();
+
+        PublicKey   pubKey = keyPair.getPublic();
+        PrivateKey  privKey = keyPair.getPrivate();
+
+        //
+        // distinguished name table.
+        //
+        Hashtable                 attrs = new Hashtable();
+        Vector                    order = new Vector();
+
+        attrs.put(X509Principal.C, "AU");
+        attrs.put(X509Principal.O, "The Legion of the Bouncy Castle");
+        attrs.put(X509Principal.L, "Melbourne");
+        attrs.put(X509Principal.ST, "Victoria");
+        attrs.put(X509Principal.E, "feedback-crypto@bouncycastle.org");
+
+        order.addElement(X509Principal.C);
+        order.addElement(X509Principal.O);
+        order.addElement(X509Principal.L);
+        order.addElement(X509Principal.ST);
+        order.addElement(X509Principal.E);
+
+        //
+        // create the certificate - version 3
+        //
+        X509V3CertificateGenerator  certGen = new X509V3CertificateGenerator();
+
+        certGen.setSerialNumber(BigInteger.valueOf(1));
+        certGen.setIssuerDN(new X509Principal(order, attrs));
+        certGen.setNotBefore(new Date(System.currentTimeMillis() - 50000));
+        certGen.setNotAfter(new Date(System.currentTimeMillis() + 50000));
+        certGen.setSubjectDN(new X509Principal(order, attrs));
+        certGen.setPublicKey(pubKey);
+        certGen.setSignatureAlgorithm("ECDSAwithSHA1");
+
+        Certificate[]    dummyChain = new Certificate[1];
+
+        dummyChain[0] = certGen.generate(privKey);
+
+        ks = KeyStore.getInstance("BKS", "BC");
+
+        ks.load(null, null);
+
+        // add a "protected key" should work
+        ks.setKeyEntry("noenc", new PrivateKey()
+        {
+            public String getAlgorithm()
+            {
+                return null;
+            }
+
+            public String getFormat()
+            {
+                return null;
+            }
+
+            public byte[] getEncoded()
+            {
+                return null;
+            }
+        }, new char[0], dummyChain);
+
+        try
+        {
+            ks.store(new ByteArrayOutputStream(), "hello".toCharArray());
+        }
+        catch (IOException e)
+        {
+            isTrue("unable to store encoding of protected key".equals(e.getMessage()));
+        }
     }
 
     public String getName()
