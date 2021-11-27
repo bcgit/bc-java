@@ -37,7 +37,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
-import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -198,7 +198,7 @@ abstract class X509CertificateImpl
 
     public boolean[] getIssuerUniqueID()
     {
-        DERBitString    id = c.getTBSCertificate().getIssuerUniqueId();
+        ASN1BitString    id = c.getTBSCertificate().getIssuerUniqueId();
 
         if (id != null)
         {
@@ -218,7 +218,7 @@ abstract class X509CertificateImpl
 
     public boolean[] getSubjectUniqueID()
     {
-        DERBitString    id = c.getTBSCertificate().getSubjectUniqueId();
+        ASN1BitString    id = c.getTBSCertificate().getSubjectUniqueId();
 
         if (id != null)
         {
@@ -508,7 +508,7 @@ abstract class X509CertificateImpl
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeCertType))
                         {
-                            buf.append(new NetscapeCertType(DERBitString.getInstance(dIn.readObject()))).append(nl);
+                            buf.append(new NetscapeCertType(ASN1BitString.getInstance(dIn.readObject()))).append(nl);
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeRevocationURL))
                         {

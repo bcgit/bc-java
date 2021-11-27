@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import junit.framework.TestCase;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.engines.LEAEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -199,7 +198,7 @@ public class LEATest
                             l += engine.processBlock(plainText, l, result, l);
                         }
 
-                        TestCase.assertTrue(comment + " cipher text must match vector", Arrays.areEqual(result, cipherText));
+                        isTrue(comment + " cipher text must match vector", Arrays.areEqual(result, cipherText));
                     }
                     else if (line.endsWith("Decrypt"))
                     {
@@ -212,7 +211,7 @@ public class LEATest
                             l += engine.processBlock(cipherText, l, result, l);
                         }
 
-                        TestCase.assertTrue(comment + " plain text must match", Arrays.areEqual(result, plainText));
+                        isTrue(comment + " plain text must match", Arrays.areEqual(result, plainText));
                     }
 
                 }
@@ -239,7 +238,7 @@ public class LEATest
                             l += engine.processBlock(plainText, l, result, l);
                         }
 
-                        TestCase.assertTrue(comment + " cipher text must match vector", Arrays.areEqual(result, cipherText));
+                        isTrue(comment + " cipher text must match vector", Arrays.areEqual(result, cipherText));
                     }
                     else if (line.endsWith("Decrypt"))
                     {
@@ -252,10 +251,8 @@ public class LEATest
                             l += engine.processBlock(cipherText, l, result, l);
                         }
 
-                        TestCase.assertTrue(comment + " plain text must match", Arrays.areEqual(result, plainText));
+                        isTrue(comment + " plain text must match", Arrays.areEqual(result, plainText));
                     }
-
-
                 }
                 else
                 {

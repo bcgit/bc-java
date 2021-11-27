@@ -402,7 +402,7 @@ public class X509V2CRLGenerator
         v.add(sigAlgId);
         v.add(new DERBitString(signature));
 
-        return new X509CRLObject(new CertificateList(new DERSequence(v)));
+        return new X509CRLObject(CertificateList.getInstance(new DERSequence(v)));
     }
 
     /**
