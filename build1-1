@@ -77,11 +77,13 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/math/ntru
     rm -rf org/bouncycastle/pqc/crypto/ntru
     rm -rf org/bouncycastle/pqc/crypto/xmss
+    rm -rf org/bouncycastle/pqc/crypto/sphincsplus
     rm -rf org/bouncycastle/pqc/crypto/*/NTRU*
     rm -rf org/bouncycastle/pqc/crypto/*/XMSS*
     rm -rf org/bouncycastle/pqc/crypto/*/EncryptionKey*
     rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
     rm -rf org/bouncycastle/pqc/crypto/test/QT*
+    rm -rf org/bouncycastle/pqc/crypto/test/SphincsPlus*
     rm -rf org/bouncycastle/crypto/*/test
     rm -rf org/bouncycastle/crypto/test/NISTECCTest.java
     rm -rf org/bouncycastle/crypto/test/SP80038GTest.java
@@ -225,7 +227,9 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pkix/test/TestUtil*
     rm org/bouncycastle/cms/jcajce/JceKeyTransAuthEnvelopedRecipient.java
     rm -rf org/bouncycastle/mime/
+    rm -rf org/bouncycastle/its/
     rm -rf org/bouncycastle/tsp/test
+    rm -rf org/bouncycastle/its/test
     rm -rf org/bouncycastle/est/test
     rm -rf org/bouncycastle/dvcs/test
     rm -rf org/bouncycastle/openssl/test/WriterTest.java
@@ -611,6 +615,7 @@ then
     rm -rf src/org/bouncycastle/asn1/*/test
     rm -rf src/org/bouncycastle/gpg/keybox
     rm -rf src/org/bouncycastle/gpg/test
+    rm -f src/org/bouncycastle/openpgp/test/PGPCanonicalizedDataGeneratorTest.java
     rm -f src/org/bouncycastle/openpgp/test/DSA2Test.java
     rm -f src/org/bouncycastle/openpgp/test/PGPUnicodeTest.java
     rm -f src/org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java
@@ -634,6 +639,12 @@ then
     echo "compiling"
 
 
+    ed src/org/bouncycastle/gpg/SExpression.java <<%
+g/\.\.\. /s//[]/
+w
+q
+%
+
     ed src/org/bouncycastle/bcpg/SignatureSubpacketInputStream.java <<%
 g/private.*final.*;/s/final//
 w
@@ -646,8 +657,38 @@ w
 q
 %
 
+    ed src/org/bouncycastle/openpgp/PGPExtendedKeyAttribute.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+    ed src/org/bouncycastle/openpgp/OpenedPGPKeyData.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+    ed src/org/bouncycastle/openpgp/PGPCanonicalizedDataGenerator.java <<%
+g/FileNotFoundException/s//IOException/
+w
+q
+%
+
+    ed src/org/bouncycastle/openpgp/operator/jcajce/JcePublicKeyDataDecryptorFactoryBuilder.java <<%
+g/RSAKey/s//RSAPrivateKey/g
+w
+q
+%
+
     ed src/org/bouncycastle/openpgp/test/RegressionTest.java <<%
 g/new PGPKeyRingTest(),/d
+w
+q
+%
+
+    ed src/org/bouncycastle/apache/bzip2/CBZip2OutputStream.java <<%
+g/private.*final.*;/s/final//
 w
 q
 %
