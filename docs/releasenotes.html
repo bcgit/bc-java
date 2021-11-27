@@ -33,6 +33,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>CRC detection on PGP ArmoredInputStreams can now be enabled or disabled explicitly as required.</li>
+<li>PGPSecretKey.copyWithNewPassword() now has a variant which uses USAGE_SHA1 for key protection if a PGPDigestCalculator is passed in.</li> 
 <li>PGP ASCII armored data now skips "\t", "\v", and "\f".</li>
 <li>PKCS12 files with duplicate localKeyId attributes on certificates will now have the incorrect attributes filtered out, rather than the duplicate causing an exception.</li>
 <li>PGPObjectFactory will now ignore packets representing unrecognised signature versions in the input stream.</li>
@@ -42,6 +43,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Added LEA Engine.</li>
 <li>Access, recovery, and direct use for PGP session keys has been added to the OpenPGP API for processing encrypted data.</li>
 <li>A PGPCanonicalizedDataGenerator has been added which converts input into canonicalized literal data for text and UTF-8 mode.</li>
+<li>A getUserKeyingMaterial() method has been added to the KeyAgreeRecipientInformation class.</li>
 </ul>
 
 <a name="r1rv69"><h3>2.2.1 Version</h3></a>

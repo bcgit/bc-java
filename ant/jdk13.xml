@@ -56,7 +56,10 @@
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
             </fileset>
-            <fileset dir="util/src/main/java"/>
+            <fileset dir="util/src/main/java">
+                <exclude name="**/oer/**" />
+                <exclude name="**/its/**" />
+            </fileset>
             <fileset dir="prov/src/main/java">
                 <exclude name="**/BCFKSStoreParameter.java" />
                 <exclude name="**/ec/ECUtils.java" />
@@ -109,6 +112,7 @@
                 <exclude name="**/pkix/jcajce/RFC3280Cert*.java" />
                 <exclude name="**/mime/**/*.java" />
                 <exclude name="**/est/**/*.java" />
+                <exclude name="**/its/**" />
             </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/*.java" />
@@ -218,6 +222,7 @@
                 <exclude name="**/PKIXRevocationTest.java" />
                 <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
                 <exclude name="**/bouncycastle/cms/test/AuthEnvelopedDataTest.java"/>
+                <exclude name="**/its/**" />
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/SignedMailValidatorTest.java" />
@@ -303,7 +308,6 @@
                 <exclude name="**/MultipartParserTest.java"/>
             </fileset>
         </replaceregexp>
-        <replaceregexp match="\.\.\." replace="[]" flags="g" byline="true">
         <replaceregexp match="\.\.\." replace="[]" flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
