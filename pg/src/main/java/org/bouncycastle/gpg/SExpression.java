@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.openpgp.PGPExtendedKeyAttribute;
+import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.util.Characters;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -393,7 +394,7 @@ public class SExpression
         }
         catch (Exception ex)
         {
-            throw new RuntimeException(ex.getMessage(), ex);
+            throw new PGPRuntimeOperationException(ex.getMessage(), ex);
         }
         return bos.toByteArray();
     }

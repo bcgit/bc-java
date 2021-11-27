@@ -9,7 +9,12 @@ import org.bouncycastle.gpg.SExpression;
 
 public class PGPExtendedKeyAttribute
 {
-    public final List<Object> values;
+    private final List<Object> values;
+
+    public List<Object> getValues()
+    {
+        return values;
+    }
 
     private PGPExtendedKeyAttribute(List<Object> values)
     {

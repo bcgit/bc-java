@@ -38,7 +38,7 @@ import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
-import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -102,7 +102,7 @@ public class X509CertificateObject
             byte[] bytes = this.getExtensionBytes("2.5.29.15");
             if (bytes != null)
             {
-                DERBitString    bits = DERBitString.getInstance(ASN1Primitive.fromByteArray(bytes));
+                ASN1BitString    bits = ASN1BitString.getInstance(ASN1Primitive.fromByteArray(bytes));
 
                 bytes = bits.getBytes();
                 int length = (bytes.length * 8) - bits.getPadBits();
@@ -268,7 +268,7 @@ public class X509CertificateObject
 
     public boolean[] getIssuerUniqueID()
     {
-        DERBitString    id = c.getTBSCertificate().getIssuerUniqueId();
+        ASN1BitString    id = c.getTBSCertificate().getIssuerUniqueId();
 
         if (id != null)
         {
@@ -288,7 +288,7 @@ public class X509CertificateObject
 
     public boolean[] getSubjectUniqueID()
     {
-        DERBitString    id = c.getTBSCertificate().getSubjectUniqueId();
+        ASN1BitString    id = c.getTBSCertificate().getSubjectUniqueId();
 
         if (id != null)
         {
@@ -679,7 +679,7 @@ public class X509CertificateObject
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeCertType))
                         {
-                            buf.append(new NetscapeCertType((DERBitString)dIn.readObject())).append(nl);
+                            buf.append(new NetscapeCertType((ASN1BitString)dIn.readObject())).append(nl);
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeRevocationURL))
                         {

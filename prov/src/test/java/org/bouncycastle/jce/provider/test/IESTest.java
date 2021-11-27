@@ -164,7 +164,7 @@ public class IESTest
 
         alg2.init(alg1.getEncoded());
 
-        IESParameterSpec iesSpec = alg2.getParameterSpec(IESParameterSpec.class);
+        IESParameterSpec iesSpec = (IESParameterSpec)alg2.getParameterSpec(IESParameterSpec.class);
 
         isTrue(iesSpec.getPointCompression() == spec.getPointCompression());
         isTrue(Arrays.areEqual(iesSpec.getNonce(), spec.getNonce()));

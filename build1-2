@@ -92,7 +92,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/cms/jcajce/JceAADStream.java
     rm org/bouncycastle/jcajce/provider/keystore/util/ParameterUtil.java
     rm -rf org/bouncycastle/jce/provider/test/SimpleTestTest.java
-    rm -rf org/bouncycastle/sasn1/test
+    rm -rf org/bouncycastle/oer
     rm -rf org/bouncycastle/i18n/test
     rm -rf org/bouncycastle/i18n/filter/test
     rm -rf org/bouncycastle/math/ec/test
@@ -167,6 +167,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/util/EC5*.java
     rm org/bouncycastle/asn1/test/EnumeratedTest.java
     rm -rf org/bouncycastle/pqc/crypto/test/QT*.java
+    rm -rf org/bouncycastle/pqc/crypto/test/SphincsPlusTest.java
     rm -rf org/bouncycastle/pqc/crypto/qtesla/QT*Tests.java
     rm -rf org/bouncycastle/pqc/jcajce/provider/test
     rm -r org/bouncycastle/crypto/test/speedy

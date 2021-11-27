@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -31,9 +33,8 @@ public class SphincsPlusTest
             " shake256-192f-simple.rsp shake256-256f-simple.rsp sha256-128s-robust.rsp sha256-192s-robust.rsp sha256-256s-robust.rsp" +
             " shake256-128s-robust.rsp shake256-192s-robust.rsp shake256-256s-robust.rsp sha256-128s-simple.rsp sha256-192s-simple.rsp" +
             " sha256-256s-simple.rsp shake256-128s-simple.rsp shake256-192s-simple.rsp shake256-256s-simple.rsp";
-
-
-        String[] fileList = files.split(" ");
+        
+        String[] fileList = splitOn(files, ' ');
         for (int i = 0; i != fileList.length; i++)
         {
             String name = fileList[i];
@@ -71,7 +72,7 @@ public class SphincsPlusTest
 
                         SPHINCSPlusParameters parameters;
 
-                        String[] nameParts = name.split("-");
+                        String[] nameParts = splitOn(name, '-');
                         boolean sha256 = nameParts[0].equals("sha256");
                         boolean shake256 = nameParts[0].equals("shake256");
                         int size = Integer.parseInt(nameParts[1].substring(0, 3));
@@ -343,5 +344,26 @@ public class SphincsPlusTest
         signer.init(false, pubParams);
 
         assertTrue(signer.verifySignature(msg, sig));
+    }
+
+    private static String[] splitOn(String input, char c)
+    {
+        String s = input.trim();
+        List l = new ArrayList();
+
+        int idx = s.indexOf(c);
+        while (idx > 0)
+        {
+            l.add(s.substring(0, idx));
+            s = s.substring(idx + 1).trim();
+            idx = s.indexOf(c);
+        }
+
+        if (s.length() > 0)
+        {
+            l.add(s);
+        }
+          
+        return (String[])l.toArray(new String[0]);
     }
 }
