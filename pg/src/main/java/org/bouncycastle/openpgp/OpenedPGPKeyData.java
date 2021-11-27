@@ -8,8 +8,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.crypto.spec.DHPublicKeySpec;
-
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -1174,7 +1172,6 @@ public class OpenedPGPKeyData
             case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
             {
                 ElGamalPublicBCPGKey elK = (ElGamalPublicBCPGKey)publicPk.getKey();
-                DHPublicKeySpec elSpec = new DHPublicKeySpec(elK.getY(), elK.getP(), elK.getG());
                 throw new IllegalStateException("not implemented");
             }
 
