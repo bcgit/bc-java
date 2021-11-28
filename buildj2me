@@ -49,6 +49,7 @@ then
         rm src/org/bouncycastle/crypto/test/SHA3DigestTest.java
         rm src/org/bouncycastle/crypto/test/SHAKEDigestTest.java
 	rm src/org/bouncycastle/crypto/test/NISTECCTest.java
+	rm src/org/bouncycastle/crypto/test/LEATest.java
         rm src/org/bouncycastle/crypto/CryptoServicesPermission.java
         rm src/org/bouncycastle/util/StreamParser.java
         rm src/org/bouncycastle/util/StreamParsingException.java
@@ -88,6 +89,7 @@ then
         rm -rf src/org/bouncycastle/pqc/crypto/*/NTRU*
         rm -rf src/org/bouncycastle/pqc/crypto/*/BitStringTest*
         rm -rf src/org/bouncycastle/pqc/crypto/*/IndexGenerator*
+        rm -rf src/org/bouncycastle/pqc/crypto/sphincsplus
         rm -rf src/org/bouncycastle/pqc/crypto/xmss
         rm -rf src/org/bouncycastle/pqc/crypto/lms
         rm -rf src/org/bouncycastle/pqc/crypto/test/XMSS*
@@ -156,6 +158,7 @@ then
         rm -r src/org/bouncycastle/util/utiltest
         rm -r src/org/bouncycastle/openpgp/examples
         rm src/org/bouncycastle/openpgp/PGPCompressed*
+        rm src/org/bouncycastle/openpgp/PGPCanonicalizedDataGenerator*
         rm -r src/org/bouncycastle/util/encoders/test
         rm -r src/org/bouncycastle/util/io/test
         rm src/org/bouncycastle/cms/CMSProcessableFile.java
@@ -168,6 +171,7 @@ then
         rm -r src/org/bouncycastle/voms
         rm -r src/org/bouncycastle/math/ec/tools
         rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
+
         ed src/org/bouncycastle/cms/CMSSignedDataGenerator.java <<%
 g/LinkedHashSet/s//HashSet/g
 w
@@ -175,6 +179,53 @@ q
 %
         ed src/org/bouncycastle/openpgp/operator/bc/BcPGPDataEncryptorBuilder.java <<%
 g/public BcPGPDataEncryptorBuilder setWi/s//public PGPDataEncryptorBuilder setWi/g
+w
+q
+%
+        ed src/org/bouncycastle/gpg/SExpression.java <<%
+g/\.\.\. /s//[]/g
+w
+q
+%
+
+	ed src/org/bouncycastle/cms/CMSAuthEnvelopedDataGenerator.java <<%
+g/java.util.Collections/s//java.util.HashMap/
+g/Collections.EMPTY_MAP/s//new HashMap()/
+w
+q
+%
+
+	ed src/org/bouncycastle/cms/CMSAuthenticatedDataStreamGenerator.java <<%
+g/java.util.Collections/s/$/ import java.util.HashMap;/
+g/Collections.EMPTY_MAP/s//new HashMap()/
+w
+q
+%
+
+	ed src/org/bouncycastle/cms/CMSAuthenticatedDataGenerator.java <<%
+g/java.util.Collections/s/$/ import java.util.HashMap;/
+g/Collections.EMPTY_MAP/s//new HashMap()/
+w
+q
+%
+
+	ed src/org/bouncycastle/cms/CMSEnvelopedDataStreamGenerator.java <<%
+g/java.util.Collections/s//java.util.HashMap/
+g/Collections.EMPTY_MAP/s//new HashMap()/
+w
+q
+%
+
+	ed src/org/bouncycastle/cms/CMSEnvelopedDataGenerator.java <<%
+g/java.util.Collections/s//java.util.HashMap/
+g/Collections.EMPTY_MAP/s//new HashMap()/
+w
+q
+%
+
+	ed src/org/bouncycastle/cms/CMSEncryptedDataGenerator.java <<%
+g/java.util.Collections/s//java.util.HashMap/
+g/Collections.EMPTY_MAP/s//new HashMap()/
 w
 q
 %

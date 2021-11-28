@@ -98,6 +98,14 @@ public abstract class ASN1Set
     extends ASN1Primitive
     implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
+    static final ASN1UniversalType TYPE = new ASN1UniversalType(ASN1Set.class, BERTags.SET)
+    {
+        ASN1Primitive fromImplicitConstructed(ASN1Sequence sequence)
+        {
+            return sequence.toASN1Set();
+        }
+    };
+    
     protected final ASN1Encodable[] elements;
     protected final boolean isSorted;
 

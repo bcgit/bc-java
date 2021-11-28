@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.HashMap;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -10,6 +11,8 @@ import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.Integers;
 
 /**
  * Basic utility class
@@ -17,6 +20,29 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 public class PGPUtil
     implements HashAlgorithmTags
 {
+    private static HashMap nameToHashId = new HashMap()
+    {
+        {
+            put("sha1", Integers.valueOf(HashAlgorithmTags.SHA1));
+            put("sha224", Integers.valueOf(HashAlgorithmTags.SHA224));
+            put("sha256", Integers.valueOf(HashAlgorithmTags.SHA256));
+            put("sha384", Integers.valueOf(HashAlgorithmTags.SHA384));
+            put("sha512", Integers.valueOf(HashAlgorithmTags.SHA512));
+            put("sha3-224", Integers.valueOf(HashAlgorithmTags.SHA3_224));
+            put("sha3-256", Integers.valueOf(HashAlgorithmTags.SHA3_256));
+            put("sha3-384", Integers.valueOf(HashAlgorithmTags.SHA3_384));
+            put("sha3-512", Integers.valueOf(HashAlgorithmTags.SHA3_512));
+            put("ripemd160", Integers.valueOf(HashAlgorithmTags.RIPEMD160));
+            put("rmd160", Integers.valueOf(HashAlgorithmTags.RIPEMD160));
+            put("md2", Integers.valueOf(HashAlgorithmTags.MD2));
+            put("md4", Integers.valueOf(HashAlgorithmTags.MD4));
+            put("tiger", Integers.valueOf(HashAlgorithmTags.TIGER_192));
+            put("haval", Integers.valueOf(HashAlgorithmTags.HAVAL_5_160));
+            put("sm3", Integers.valueOf(HashAlgorithmTags.SM3));
+            put("md5", Integers.valueOf(HashAlgorithmTags.MD5));
+        }
+    };
+
     static MPInteger[] dsaSigToMpi(
         byte[] encoding) 
         throws PGPException
@@ -148,5 +174,15 @@ public class PGPUtil
         random.nextBytes(keyBytes);
         
         return keyBytes;
+    }
+
+    public static int getDigestIDForName(String name)
+    {
+        name = Strings.toLowerCase(name);
+        if (nameToHashId.containsKey(name))
+        {
+            return ((Integer)nameToHashId.get(name)).intValue();
+        }
+        throw new IllegalArgumentException("unable to map " + name + " to a hash id");
     }
 }
