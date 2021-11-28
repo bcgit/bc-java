@@ -29,6 +29,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <ul>
 <li>Blake 3 output limit is enforced.</li>
 <li>The PKCS12 KeyStore was relying on default precedence for its key Cipher implementation so was sometimes failing if used from the keytool. The KeyStore class now makes sure it uses the correct Cipher implementation.</li>
+<li>Fixed bzip2 compression for empty contents (GH #993).</li>
+<li>ASN.1: More robust handling of high tag numbers and definite-length forms.</li>
+<li>BCJSSE: Fix a concurrent modification issue in session contexts (GH#968).</li>
+<li>BCJSSE: Don't log sensitive system property values (GH#976).</li>
+<li>BCJSSE: Fixed a priority issue amongst imperfect-match credentials in KeyManager classes.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -44,6 +49,13 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Access, recovery, and direct use for PGP session keys has been added to the OpenPGP API for processing encrypted data.</li>
 <li>A PGPCanonicalizedDataGenerator has been added which converts input into canonicalized literal data for text and UTF-8 mode.</li>
 <li>A getUserKeyingMaterial() method has been added to the KeyAgreeRecipientInformation class.</li>
+<li>ASN.1: Tagged objects (and parsers) now support all tag classes. Special code for ApplicationSpecific has been deprecated and
+re-implemented in terms of TaggedObject.</li>
+<li>ASN.1: Improved support for nested tagging.</li>
+<li>ASN.1: Added support for GraphicString, ObjectDescriptor, RelativeOID.</li>
+<li>ASN.1: Added support for constructed BitString encodings, including efficient parsing for large values.</li>
+<li>TLS: Added support for external PSK handshakes.</li>
+<li>TLS: Check policy restrictions on key size when determining cipher suite support.</li>
 </ul>
 
 <a name="r1rv69"><h3>2.2.1 Version</h3></a>
