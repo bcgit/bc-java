@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -34,7 +35,7 @@ public class PGPUtil
 {
     private static String defProvider = "BC";
 
-    private static HashMap<String, Integer> nameToHashId = new HashMap<String, Integer>()
+    private static Map<String, Integer> nameToHashId = new HashMap<String, Integer>()
     {
         {
             put("sha1", Integers.valueOf(HashAlgorithmTags.SHA1));
