@@ -42,7 +42,6 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2021, November 29th.
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>Missing PGP CRC checksums can now be optionally ignored using setDetectMissingCRC() (default false) on ArmoredInputStream.</li>
-<li>CRC detection on PGP ArmoredInputStreams can now be enabled or disabled explicitly as required.</li>
 <li>PGPSecretKey.copyWithNewPassword() now has a variant which uses USAGE_SHA1 for key protection if a PGPDigestCalculator is passed in.</li> 
 <li>PGP ASCII armored data now skips "\t", "\v", and "\f".</li>
 <li>PKCS12 files with duplicate localKeyId attributes on certificates will now have the incorrect attributes filtered out, rather than the duplicate causing an exception.</li>
