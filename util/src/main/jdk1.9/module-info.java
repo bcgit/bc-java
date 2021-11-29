@@ -19,4 +19,7 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.isismtt.x509;
     exports org.bouncycastle.asn1.smime;
     exports org.bouncycastle.asn1.tsp;
+    exports org.bouncycastle.oer;
+    exports org.bouncycastle.oer.its;
+    exports org.bouncycastle.oer.its.template;
 }
