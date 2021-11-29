@@ -34,18 +34,23 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>BCJSSE: Fix a concurrent modification issue in session contexts (GH#968).</li>
 <li>BCJSSE: Don't log sensitive system property values (GH#976).</li>
 <li>BCJSSE: Fixed a priority issue amongst imperfect-match credentials in KeyManager classes.</li>
+<li>The IES AlgorithmParameters object has been re-written to properly support all the variations of IESParameterSpec.</li>
+<li>getOutputSize() for ECIES has been corrected to avoid occassional underestimates.</li>
+<li>The lack of close() in the ASN.1 Dump command line utility was triggering false positives in some code analysis tools. A close() call has been added.</li>
+<li>PGPPublicKey.getBitStrength() now properly recognises EdDSA keys.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
+<li>Missing PGP CRC checksums can now be optionally ignored using setDetectMissingCRC() (default false) on ArmoredInputStream.</li>
 <li>CRC detection on PGP ArmoredInputStreams can now be enabled or disabled explicitly as required.</li>
 <li>PGPSecretKey.copyWithNewPassword() now has a variant which uses USAGE_SHA1 for key protection if a PGPDigestCalculator is passed in.</li> 
 <li>PGP ASCII armored data now skips "\t", "\v", and "\f".</li>
 <li>PKCS12 files with duplicate localKeyId attributes on certificates will now have the incorrect attributes filtered out, rather than the duplicate causing an exception.</li>
 <li>PGPObjectFactory will now ignore packets representing unrecognised signature versions in the input stream.</li>
-<li>X509Extension will accumulate repeat extensions if the outer type of extension is a sequence.</li>
+<li>The X.509 extension generator will now accumulate some duplicate X.509 extensions into a single extension where it is possible to do so.</li>
 <li>Removed support for maxXofLen in Kangaroo digest.</li>
 <li>Ignore marker packets in PGP Public and Secret key ring collection.</li>
-<li>Added LEA Engine.</li>
+<li>An implementation of LEA has been added to the low-level API.</li>
 <li>Access, recovery, and direct use for PGP session keys has been added to the OpenPGP API for processing encrypted data.</li>
 <li>A PGPCanonicalizedDataGenerator has been added which converts input into canonicalized literal data for text and UTF-8 mode.</li>
 <li>A getUserKeyingMaterial() method has been added to the KeyAgreeRecipientInformation class.</li>
@@ -56,6 +61,24 @@ re-implemented in terms of TaggedObject.</li>
 <li>ASN.1: Added support for constructed BitString encodings, including efficient parsing for large values.</li>
 <li>TLS: Added support for external PSK handshakes.</li>
 <li>TLS: Check policy restrictions on key size when determining cipher suite support.</li>
+<li>A performance issue in KeccakDigest due to left over debug code has been identified and dealt with.</li>
+<li>BKS key stores can now be used for collecting protected keys (note: any attempt to store such a store will cause an exception).</li>
+<li>A method for recovering user keying material has been added to KeyAgreeRecipientInformation.</li>
+<li>Support has been added to the CMS API for SHA-3 based PLAIN-ECDSA.</li>
+<li>The low level BcDefaultDigestProvider now supports the SHAKE family of algorithms and the SM3 alogirthm.</li>
+<li>PGPKeyRingGenerator now supports creation of key-rings with direct-key identified keys.</li>
+<li>The PQC NIST candidate, signature algorithm SPHINCS+ has been added to the low-level API.</li>
+<li>ArmoredInputStream now explicitly checks for a '\n' if in crLF mode.</li>
+<li>Direct support for NotationDataOccurances, Exportable, Revocable, IntendedRecipientFingerPrints, and AEAD algorithm preferences has been added to PGPSignatureSubpacketVector.</li>
+<li>A specific generator class has been added for dealing with PGP canonicalized data.</li>
+<li>Further support has been added for keys described using S-Expressions in GPG 2.2.X.</li>
+<li>Support for OpenPGP Session Keys from the (draft) Stateless OpenPGP CLI has been added.</li>
+<li>Additional checks have been added for PGP marker packets in the parsing of PGP objects.</li>
+<li>A CMSSignedData.addDigestAlgorithm() has been added to allow for adding additional digest algorithm identifiers to CMS SignedData structures when required.</li>
+<li>Support has been added to CMS for the LMS/HSS signature algorithm.</li>
+<li>The system property "org.bouncycastle.jsse.client.assumeOriginalHostName" (default false) has been added for dealing with SNI problems related to the host name not being propagate by the JVM.</li>
+<li>The JcePKCSPBEOutputEncryptorBuilder now supports SCRYPT with ciphers that do not have algorithm parameters (e.g. AESKWP).</li>
+<li>Support is now added for certificates using ETSI TS 103 097, "Intelligent Transport Systems (ITS)" in the bcpkix package.</li>
 </ul>
 
 <a name="r1rv69"><h3>2.2.1 Version</h3></a>
