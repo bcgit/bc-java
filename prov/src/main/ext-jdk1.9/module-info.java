@@ -128,6 +128,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.sphincs;
     exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
+    exports org.bouncycastle.pqc.crypto.sphincsplus;
     exports org.bouncycastle.pqc.jcajce.interfaces;
     exports org.bouncycastle.pqc.jcajce.provider;
     exports org.bouncycastle.pqc.jcajce.provider.gmss;
