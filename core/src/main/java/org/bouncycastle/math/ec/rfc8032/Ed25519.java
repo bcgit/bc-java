@@ -710,13 +710,6 @@ public abstract class Ed25519
         return r;
     }
 
-    private static void pointCopy(PointAffine p, PointAccum r)
-    {
-        F.copy(p.x, 0, r.x, 0);
-        F.copy(p.y, 0, r.y, 0);
-        pointExtendXY(r);
-    }
-
     private static void pointCopy(PointExt p, PointExt r)
     {
         F.copy(p.x, 0, r.x, 0);
@@ -802,16 +795,6 @@ public abstract class Ed25519
 
         F.cnegate(sign, r.x);
         F.cnegate(sign, r.t);
-    }
-
-    private static void pointLookup(int[] table, int index, PointExt r)
-    {
-        int off = F.SIZE * 4 * index;
-
-        F.copy(table, off, r.x, 0);     off += F.SIZE;
-        F.copy(table, off, r.y, 0);     off += F.SIZE;
-        F.copy(table, off, r.z, 0);     off += F.SIZE;
-        F.copy(table, off, r.t, 0);
     }
 
     private static int[] pointPrecompute(PointAffine p, int count)
@@ -1159,50 +1142,45 @@ public abstract class Ed25519
         int[] n = new int[SCALAR_INTS];
         decodeScalar(k, 0, n);
 
-//        assert 0 == (n[0] & 7);
-//        assert 1 == n[SCALAR_INTS - 1] >>> 30;
-
-        Nat.shiftDownBits(SCALAR_INTS, n, 3, 1);
-
         // Recode the scalar into signed-digit form
         {
             //int c1 =
             Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);      //assert c1 == 0;
-            //int c2 =           
-            Nat.shiftDownBit(SCALAR_INTS, n, 0);            //assert c2 == (1 << 31);
+            //int c2 =
+            Nat.shiftDownBit(SCALAR_INTS, n, 1);            //assert c2 == (1 << 31);
         }
-
-//        assert 1 == n[SCALAR_INTS - 1] >>> 28;
 
         int[] table = pointPrecompute(p, 8);
         PointExt q = new PointExt();
 
-        // Replace first 4 doublings (2^4 * P) with 1 addition (P + 15 * P)
-        pointCopy(p, r);
-        pointLookup(table, 7, q);
-        pointAdd(q, r);
+        pointSetNeutral(r);
 
-        int w = 62;
+        int w = 63;
         for (;;)
         {
             pointLookup(n, w, table, q);
             pointAdd(q, r);
-
-            pointDouble(r);
-            pointDouble(r);
-            pointDouble(r);
 
             if (--w < 0)
             {
                 break;
             }
 
-            pointDouble(r);
+            for (int i = 0; i < 4; ++i)
+            {
+                pointDouble(r);
+            }
         }
     }
 
     private static void scalarMultBase(byte[] k, PointAccum r)
     {
+        // Equivalent (but much slower)
+//        PointAffine p = new PointAffine();
+//        F.copy(B_x, 0, p.x, 0);
+//        F.copy(B_y, 0, p.y, 0);
+//        scalarMult(k, p, r);
+
         precompute();
 
         int[] n = new int[SCALAR_INTS];
