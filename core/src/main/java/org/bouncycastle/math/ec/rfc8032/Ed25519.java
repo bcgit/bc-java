@@ -67,6 +67,7 @@ public abstract class Ed25519
 
     private static final int WNAF_WIDTH_BASE = 7;
 
+    // scalarMultBase is hard-coded for these values of blocks, teeth, spacing so they can't be freely changed
     private static final int PRECOMP_BLOCKS = 8;
     private static final int PRECOMP_TEETH = 4;
     private static final int PRECOMP_SPACING = 8;
