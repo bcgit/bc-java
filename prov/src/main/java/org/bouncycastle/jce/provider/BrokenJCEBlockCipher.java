@@ -321,7 +321,7 @@ public class BrokenJCEBlockCipher
             cipher.init(false, param);
             break;
         default:
-            System.out.println("eeek!");
+            throw new IllegalArgumentException("unknown opmode: " + opmode);
         }
     }
 
