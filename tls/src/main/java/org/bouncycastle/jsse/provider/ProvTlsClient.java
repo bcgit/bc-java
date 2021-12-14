@@ -544,6 +544,7 @@ class ProvTlsClient
 
         if (isResumed)
         {
+            // -DM Hex.toHexString
             LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
         }
         else
@@ -556,6 +557,7 @@ class ProvTlsClient
             }
             else
             {
+                // -DM Hex.toHexString
                 LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
             }
 

@@ -310,6 +310,7 @@ public class OEROutputStream
                 }
             }
 
+            // -DM Hex.toHexString
             throw new IllegalArgumentException("enum value " + ordinal + " " + Hex.toHexString(ordinal.toByteArray()) + " no in defined child list");
         }
         case INT:

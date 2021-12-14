@@ -41,6 +41,8 @@ public class FirstBlob
 
         if (!Arrays.areEqual(magic, magicBytes))
         {
+            // -DM Hex.toHexString
+            // -DM Hex.toHexString
             throw new IOException("Incorrect magic expecting " + Hex.toHexString(magicBytes) + " but got " + Hex.toHexString(magic));
         }
 

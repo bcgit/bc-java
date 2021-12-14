@@ -369,6 +369,7 @@ public class IETFUtils
             try
             {
                 vBuf.append('#');
+                // -DM Hex.toHexString
                 vBuf.append(Hex.toHexString(value.toASN1Primitive().getEncoded(ASN1Encoding.DER)));
             }
             catch (IOException e)
