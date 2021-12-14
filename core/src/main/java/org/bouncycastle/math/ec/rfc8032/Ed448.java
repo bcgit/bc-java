@@ -69,9 +69,11 @@ public abstract class Ed448
 
     private static final int WNAF_WIDTH_BASE = 7;
 
+    // scalarMultBase supports varying blocks, teeth, spacing so long as their product is in range [449, 479]
     private static final int PRECOMP_BLOCKS = 5;
     private static final int PRECOMP_TEETH = 5;
     private static final int PRECOMP_SPACING = 18;
+    private static final int PRECOMP_RANGE = PRECOMP_BLOCKS * PRECOMP_TEETH * PRECOMP_SPACING; // 448 < range < 480
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
@@ -721,6 +723,15 @@ public abstract class Ed448
         F.cnegate(sign, r.x);
     }
 
+    private static void pointLookup15(int[] table, PointExt r)
+    {
+        int off = F.SIZE * 3 * 7;
+
+        F.copy(table, off, r.x, 0);     off += F.SIZE;
+        F.copy(table, off, r.y, 0);     off += F.SIZE;
+        F.copy(table, off, r.z, 0);
+    }
+
     private static int[] pointPrecompute(PointExt p, int count)
     {
 //        assert count > 0;
@@ -782,6 +793,9 @@ public abstract class Ed448
             {
                 return;
             }
+
+//            assert PRECOMP_RANGE > 448;
+//            assert PRECOMP_RANGE < 480;
 
             PointExt p = new PointExt();
             F.copy(B_x, 0, p.x, 0);
@@ -1177,43 +1191,49 @@ public abstract class Ed448
         int[] n = new int[SCALAR_INTS];
         decodeScalar(k, 0, n);
 
-//        assert 0 == (n[0] & 3);
-//        assert 1 == n[SCALAR_INTS - 1] >>> 31;
-
-        Nat.shiftDownBits(SCALAR_INTS, n, 2, 0);
-
         // Recode the scalar into signed-digit form
         {
-            //int c1 =
-            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);      //assert c1 == 0;
+            int c1 = Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
             //int c2 =
-            Nat.shiftDownBit(SCALAR_INTS, n, 1);            //assert c2 == (1 << 31);
+            Nat.shiftDownBit(SCALAR_INTS, n, c1);           //assert c2 == (1 << 31);
+
+            // NOTE: Bit 448 is implicitly set after the signed-digit recoding
         }
 
         int[] table = pointPrecompute(p, 8);
         PointExt q = new PointExt();
 
-        pointLookup(n, 111, table, r);
+        // Replace first 4 doublings (2^4 * P) with 1 addition (P + 15 * P)
+        pointLookup15(table, r);
+        pointAdd(p, r);
 
-        for (int w = 110; w >= 0; --w)
+        int w = 111;
+        for (;;)
         {
+            pointLookup(n, w, table, q);
+            pointAdd(q, r);
+
+            if (--w < 0)
+            {
+                break;
+            }
+
             for (int i = 0; i < 4; ++i)
             {
                 pointDouble(r);
             }
-
-            pointLookup(n, w, table, q);
-            pointAdd(q, r);
-        }
-
-        for (int i = 0; i < 2; ++i)
-        {
-            pointDouble(r);
         }
     }
 
     private static void scalarMultBase(byte[] k, PointExt r)
     {
+        // Equivalent (but much slower)
+//        PointExt p = new PointExt();
+//        F.copy(B_x, 0, p.x, 0);
+//        F.copy(B_y, 0, p.y, 0);
+//        pointExtendXY(p);
+//        scalarMult(k, p, r);
+
         precompute();
 
         int[] n = new int[SCALAR_INTS + 1];
@@ -1221,7 +1241,8 @@ public abstract class Ed448
 
         // Recode the scalar into signed-digit form
         {
-            n[SCALAR_INTS] = 4 + Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
+            n[SCALAR_INTS] = (1 << (PRECOMP_RANGE - 448))
+                           + Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
             //int c =
             Nat.shiftDownBit(n.length, n, 0);
             //assert c == (1 << 31);
