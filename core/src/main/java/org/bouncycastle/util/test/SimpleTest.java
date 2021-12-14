@@ -206,7 +206,7 @@ public abstract class SimpleTest
         {
             result.getException().printStackTrace(out);
         }
-
+        // -DM out.println
         out.println(result);
     }
 
@@ -230,22 +230,26 @@ public abstract class SimpleTest
             {
                 result.getException().printStackTrace(out);
             }
-
+            // -DM out.println
             out.println(result);
         }
 
+        // -DM out.print
         out.println("-----");
         if (failures.isEmpty())
         {
+            // -DM out.print
             out.println("All tests successful.");
         }
         else
         {
+            // -DM out.print
             out.println("Completed with " + failures.size() + " FAILURES:");
 
             Enumeration e = failures.elements();
             while (e.hasMoreElements())
             {
+                // -DM System.out.print
                 System.out.println("=>  " + (TestResult)e.nextElement());
             }
         }

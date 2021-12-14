@@ -233,7 +233,7 @@ public class PKCS12KeyStoreSpi
     private static byte[] getDigest(SubjectPublicKeyInfo spki)
     {
         Digest digest = DigestFactory.createSHA1();
-        byte[]  resBuf = new byte[digest.getDigestSize()];
+        byte[] resBuf = new byte[digest.getDigestSize()];
 
         byte[] bytes = spki.getPublicKeyData().getBytes();
         digest.update(bytes, 0, bytes.length);
@@ -654,7 +654,7 @@ public class PKCS12KeyStoreSpi
 
         try
         {
-            SecretKeyFactory keyFact =  helper.createSecretKeyFactory(algorithm);
+            SecretKeyFactory keyFact = helper.createSecretKeyFactory(algorithm);
             PBEParameterSpec defParams = new PBEParameterSpec(
                 pbeParams.getIV(),
                 pbeParams.getIterations().intValue());
@@ -704,7 +704,7 @@ public class PKCS12KeyStoreSpi
                 throw new IOException("exception decrypting data - " + e.toString());
             }
         }
-        else  if (algorithm.equals(PKCSObjectIdentifiers.id_PBES2))
+        else if (algorithm.equals(PKCSObjectIdentifiers.id_PBES2))
         {
             try
             {
@@ -806,7 +806,7 @@ public class PKCS12KeyStoreSpi
         bufIn.reset();
 
         ASN1InputStream bIn = new ASN1InputStream(bufIn);
-        
+
         Pfx bag;
         try
         {
@@ -979,6 +979,7 @@ public class PKCS12KeyStoreSpi
                         }
                         else
                         {
+                            // -DM 2 System.out.println
                             System.out.println("extra in data " + b.getBagId());
                             System.out.println(ASN1Dump.dumpAsString(b));
                         }
@@ -1125,6 +1126,7 @@ public class PKCS12KeyStoreSpi
                         }
                         else
                         {
+                            // -DM 2 System.out.println
                             System.out.println("extra in encryptedData " + b.getBagId());
                             System.out.println(ASN1Dump.dumpAsString(b));
                         }
@@ -1132,6 +1134,7 @@ public class PKCS12KeyStoreSpi
                 }
                 else
                 {
+                    // -DM 2 System.out.println
                     System.out.println("extra " + c[i].getContentType().getId());
                     System.out.println("extra " + ASN1Dump.dumpAsString(c[i].getContent()));
                 }
@@ -1195,6 +1198,7 @@ public class PKCS12KeyStoreSpi
                                 // we've found more than one - one might be incorrect
                                 if (oid.equals(pkcs_9_at_localKeyId))
                                 {
+                                    // -DM Hex.toHexString
                                     String id = Hex.toHexString(((ASN1OctetString)attr).getOctets());
                                     if (!(keys.keys.containsKey(id) || localIds.keys.containsKey(id)))
                                     {
@@ -1763,19 +1767,19 @@ public class PKCS12KeyStoreSpi
     {
         Set usedSet = new HashSet();
 
-        for (Enumeration en = keys.keys(); en.hasMoreElements();)
+        for (Enumeration en = keys.keys(); en.hasMoreElements(); )
         {
             String alias = (String)en.nextElement();
 
-                Certificate[] certs = engineGetCertificateChain(alias);
+            Certificate[] certs = engineGetCertificateChain(alias);
 
-                for (int i = 0; i != certs.length; i++)
-                {
-                    usedSet.add(certs[i]);
-                }
+            for (int i = 0; i != certs.length; i++)
+            {
+                usedSet.add(certs[i]);
+            }
         }
 
-        for (Enumeration en = certs.keys(); en.hasMoreElements();)
+        for (Enumeration en = certs.keys(); en.hasMoreElements(); )
         {
             String alias = (String)en.nextElement();
 

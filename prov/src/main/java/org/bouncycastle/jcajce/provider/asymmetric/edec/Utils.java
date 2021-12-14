@@ -51,6 +51,8 @@ class Utils
             keyBytes = ((Ed25519PublicKeyParameters)pubKey).getEncoded();
         }
 
+
+        // -DM Hex.toHexString
         buf.append(algorithm)
             .append(" ")
             .append(label).append(" [")

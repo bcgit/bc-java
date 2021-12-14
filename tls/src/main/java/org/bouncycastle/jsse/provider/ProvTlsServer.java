@@ -615,6 +615,7 @@ class ProvTlsServer
         boolean isResumed = (null != sslSession && sslSession.getTlsSession() == session);
         if (isResumed)
         {
+            // -DM Hex.toHexString
             LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
         }
         else
@@ -627,6 +628,7 @@ class ProvTlsServer
             }
             else
             {
+                // -DM Hex.toHexString
                 LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
             }
 

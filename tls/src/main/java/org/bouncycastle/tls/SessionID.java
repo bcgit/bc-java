@@ -40,6 +40,7 @@ public final class SessionID
 
     public String toString()
     {
+        // -DM Hex.toHexString
         return Hex.toHexString(id);
     }
 }

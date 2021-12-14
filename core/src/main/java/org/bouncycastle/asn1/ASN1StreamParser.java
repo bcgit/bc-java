@@ -154,6 +154,7 @@ public class ASN1StreamParser
         case BERTags.SEQUENCE:
             return new DLSequenceParser(this);
         default:
+            // -DM toHexString
             throw new ASN1Exception("unknown DL object encountered: 0x" + Integer.toHexString(univTagNo));
         }
     }

@@ -169,6 +169,7 @@ public class HttpAuth
                         userPass[username.length()] = ':';
                         System.arraycopy(password, 0, userPass, username.length() + 1, password.length);
 
+                        // -DM Base64.toBase64String
                         answer.setHeader("Authorization", "Basic " + Base64.toBase64String(Strings.toByteArray(userPass)));
 
                         res = req.getClient().doRequest(answer.build());
@@ -316,7 +317,7 @@ public class HttpAuth
         {
             DigestCalculator sessCalc = getDigestCalculator(algorithm, digestAlg);
             OutputStream sessOut = sessCalc.getOutputStream();
-
+            // -DM Hex.toHexString
             String cs = Hex.toHexString(ha1);
 
             update(sessOut, cs);
@@ -330,6 +331,7 @@ public class HttpAuth
             ha1 = sessCalc.getDigest();
         }
 
+        // -DM Hex.toHexString
         String hashHa1 = Hex.toHexString(ha1);
 
         DigestCalculator authCalc = getDigestCalculator(algorithm, digestAlg);
@@ -346,6 +348,8 @@ public class HttpAuth
 
             byte[] b = reqCalc.getDigest();
 
+            // -DM Hex.toHexString
+
             update(authOut, method);
             update(authOut, ":");
             update(authOut, uri);
@@ -360,7 +364,7 @@ public class HttpAuth
         }
 
         authOut.close();
-
+        // -DM Hex.toHexString
         String hashHa2 = Hex.toHexString(authCalc.getDigest());
 
         DigestCalculator responseCalc = getDigestCalculator(algorithm, digestAlg);
@@ -400,6 +404,7 @@ public class HttpAuth
 
         responseOut.close();
 
+        // -DM Hex.toHexString
         String digest = Hex.toHexString(responseCalc.getDigest());
 
         Map<String, String> hdr = new HashMap<String, String>();
@@ -480,6 +485,7 @@ public class HttpAuth
     {
         byte[] b = new byte[len];
         nonceGenerator.nextBytes(b);
+        // -DM Hex.toHexString
         return Hex.toHexString(b);
     }
 }

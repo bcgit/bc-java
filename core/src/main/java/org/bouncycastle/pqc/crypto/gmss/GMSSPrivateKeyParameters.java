@@ -518,6 +518,7 @@ public class GMSSPrivateKeyParameters
                     }
                     catch (Exception e)
                     {
+                        // -DM System.out.println
                         System.out.println(e);
                     }
                 }
@@ -657,6 +658,7 @@ public class GMSSPrivateKeyParameters
                     }
                     catch (Exception e)
                     {
+                        // -DM System.out.println
                         System.out.println(e);
                     }
                     // ------------------------------------------------
@@ -851,6 +853,7 @@ public class GMSSPrivateKeyParameters
                     }
                     else
                     {
+                        // -DM System.err.println
                         System.err
                             .println("Treehash ("
                                 + layer
@@ -932,6 +935,7 @@ public class GMSSPrivateKeyParameters
                     }
                     catch (Exception e)
                     {
+                        // -DM System.out.println
                         System.out.println(e);
                     }
                 }

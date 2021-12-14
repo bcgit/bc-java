@@ -1,32 +1,58 @@
 <?xml version="1.0"?>
 <!DOCTYPE module PUBLIC
-          "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
-          "https://checkstyle.org/dtds/configuration_1_3.dtd">
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <module name="Checker">
-  <!--
-      If you set the basedir property below, then all reported file
-      names will be relative to the specified directory. See
-      https://checkstyle.org/config.html#Checker
-      <property name="basedir" value="${basedir}"/>
-  -->
+    <!--
+        If you set the basedir property below, then all reported file
+        names will be relative to the specified directory. See
+        https://checkstyle.org/config.html#Checker
+        <property name="basedir" value="${basedir}"/>
+    -->
 
-  <property name="severity" value="error"/>
+    <property name="severity" value="error"/>
 
-  <property name="fileExtensions" value="java, properties, xml, vm, g, g4, dtd"/>
+    <property name="fileExtensions" value="java, properties, xml, vm, g, g4, dtd"/>
 
-  <!-- Whitespace -->
-  <module name="FileTabCharacter">
-    <property name="eachLine" value="false"/>
-  </module>
-
-  <module name="TreeWalker">
-    <property name="tabWidth" value="4"/>
-
-    <module name="LeftCurly">
-      <property name="option" value="nl"/>
+    <!-- Whitespace -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="false"/>
     </module>
 
-  </module>
+    <module name="TreeWalker">
+        <property name="tabWidth" value="4"/>
+
+        <module name="LeftCurly">
+            <property name="option" value="nl"/>
+        </module>
+
+        <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
+            <property name="contains" value="(org\.bouncycastle\.util\.encoders\.)*Hex\.toHexString$"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*|(org\.bouncycastle\.util\.encoders\.Hex)"/>
+        </module>
+
+        <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
+            <property name="contains" value="(org\.bouncycastle\.util\.encoders\.)*Base64\.toBase64String"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*| (org\.bouncycastle\.util\.encoders\.Base64)"/>
+        </module>
+
+        <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
+            <property name="contains" value="(.*(out\.print$))|(.*(out\.print)(ln$|f$)+)"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*"/>
+        </module>
+
+        <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
+            <property name="contains" value="(.*(err\.print$))|(.*(err\.print)(ln$|f$)+)"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*"/>
+        </module>
+
+        <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
+            <property name="contains" value="(.*(System\.exit))"/>
+            <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*"/>
+        </module>
+
+    </module>
 
 </module>
+
