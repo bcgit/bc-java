@@ -321,6 +321,8 @@ public class BrokenJCEBlockCipher
             cipher.init(false, param);
             break;
         default:
+            // TODO dgh to review
+            // -DM System.out.println
             System.out.println("eeek!");
         }
     }

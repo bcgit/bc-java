@@ -301,6 +301,7 @@ public class OERInputStream
 
             if (debugOutput != null)
             {
+                // -DM Hex.toHexString
                 debugPrint(element.appendLabel("OCTET STRING (" + data.length + ") = " + Hex.toHexString(data, 0, Math.min(data.length, 32))));
             }
 
@@ -372,6 +373,7 @@ public class OERInputStream
                 throw new IOException("could not read all of count of open value in choice (...) ");
             }
 
+            // -DM Hex.toHexString
             debugPrint("ext " + li.intLength() + " " + Hex.toHexString(value));
             return new DEROctetString(value);
         }
@@ -505,8 +507,6 @@ public class OERInputStream
             {
                 throw new EOFException("did not read all bytes of length definition");
             }
-
-            String k = Hex.toHexString(lengthInt);
 
             return new LengthInfo(BigIntegers.fromUnsignedByteArray(lengthInt), false);
         }

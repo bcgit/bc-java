@@ -60,6 +60,7 @@ public abstract class BCSNIServerName
     @Override
     public String toString()
     {
+        //-DM Hex.toHexString
         return "{type=" + NameType.getText((short)nameType) + ", value=" + Hex.toHexString(encoded) + "}";
     }
 }

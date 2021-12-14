@@ -60,6 +60,7 @@ public class NaccacheSternKeyPairGenerator
 
         if (debug)
         {
+            // -DM System.out.println
             System.out.println("Fetching first " + param.getCntSmallPrimes() + " primes.");
         }
 
@@ -97,6 +98,7 @@ public class NaccacheSternKeyPairGenerator
         long tries = 0;
         if (debug)
         {
+            // -DM System.out.println
             System.out.println("generating p and q");
         }
 
@@ -144,6 +146,7 @@ public class NaccacheSternKeyPairGenerator
             {
                 if (debug)
                 {
+                    // -DM System.out.println
                     System.out.println("key size too small. Should be " + strength + " but is actually "
                                     + p.multiply(q).bitLength());
                 }
@@ -154,6 +157,7 @@ public class NaccacheSternKeyPairGenerator
 
         if (debug)
         {
+            // -DM System.out.println
             System.out.println("needed " + tries + " tries to generate p and q.");
         }
 
@@ -163,6 +167,7 @@ public class NaccacheSternKeyPairGenerator
         tries = 0;
         if (debug)
         {
+            // -DM System.out.println
             System.out.println("generating g");
         }
         for (;;)
@@ -200,6 +205,7 @@ public class NaccacheSternKeyPairGenerator
                 {
                     if (debug)
                     {
+                        // -DM System.out.println
                         System.out.println("g has order phi(n)/" + smallPrimes.elementAt(i) + "\n g: " + g);
                     }
                     divisible = true;
@@ -218,6 +224,7 @@ public class NaccacheSternKeyPairGenerator
             {
                 if (debug)
                 {
+                    // -DM System.out.println
                     System.out.println("g has order phi(n)/4\n g:" + g);
                 }
                 continue;
@@ -227,6 +234,7 @@ public class NaccacheSternKeyPairGenerator
             {
                 if (debug)
                 {
+                    // -DM System.out.print
                     System.out.println("g has order phi(n)/p'\n g: " + g);
                 }
                 continue;
@@ -235,6 +243,7 @@ public class NaccacheSternKeyPairGenerator
             {
                 if (debug)
                 {
+                    // -DM System.out.print
                     System.out.println("g has order phi(n)/q'\n g: " + g);
                 }
                 continue;
@@ -243,6 +252,7 @@ public class NaccacheSternKeyPairGenerator
             {
                 if (debug)
                 {
+                    // -DM System.out.print
                     System.out.println("g has order phi(n)/a\n g: " + g);
                 }
                 continue;
@@ -251,12 +261,15 @@ public class NaccacheSternKeyPairGenerator
             {
                 if (debug)
                 {
+                    // -DM System.out.print
                     System.out.println("g has order phi(n)/b\n g: " + g);
                 }
                 continue;
             }
             break;
         }
+
+        // -DM 15 System.out.print
         if (debug)
         {
             System.out.println("needed " + tries + " tries to generate g");

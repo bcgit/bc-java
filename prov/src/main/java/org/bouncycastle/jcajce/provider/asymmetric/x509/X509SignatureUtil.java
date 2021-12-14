@@ -180,6 +180,11 @@ class X509SignatureUtil
 
     static void prettyPrintSignature(byte[] sig, StringBuffer buf, String nl)
     {
+        // -DM Hex.toHexString
+        // -DM Hex.toHexString
+        // -DM Hex.toHexString
+        // -DM Hex.toHexString
+
         if (sig.length > 20)
         {
             buf.append("            Signature: ").append(Hex.toHexString(sig, 0, 20)).append(nl);

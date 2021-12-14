@@ -78,12 +78,14 @@ public class GMSSUtil
      */
     public void printArray(String text, byte[][] array)
     {
+        // -DM System.out.println
         System.out.println(text);
         int counter = 0;
         for (int i = 0; i < array.length; i++)
         {
             for (int j = 0; j < array[0].length; j++)
             {
+                // -DM System.out.println
                 System.out.println(counter + "; " + array[i][j]);
                 counter++;
             }
@@ -98,10 +100,12 @@ public class GMSSUtil
      */
     public void printArray(String text, byte[] array)
     {
+        // -DM System.out.println
         System.out.println(text);
         int counter = 0;
         for (int i = 0; i < array.length; i++)
         {
+            // -DM System.out.println
             System.out.println(counter + "; " + array[i]);
             counter++;
         }

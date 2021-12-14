@@ -218,6 +218,7 @@ public class AuthorityKeyIdentifier
 
     public String toString()
     {
+        // -DM Hex.toHexString
         String keyID = (keyidentifier != null) ? Hex.toHexString(keyidentifier.getOctets()) : "null";
 
         return "AuthorityKeyIdentifier: KeyID(" + keyID + ")";
