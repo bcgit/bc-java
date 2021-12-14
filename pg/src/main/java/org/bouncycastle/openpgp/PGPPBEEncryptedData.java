@@ -27,7 +27,7 @@ public class PGPPBEEncryptedData
     SymmetricKeyEncSessionPacket    keyData;
 
     /**
-     * Construct a PBE encryped data object.
+     * Construct a PBE encrypted data object.
      *
      * @param keyData the PBE key data packet associated with the encrypted data in the PGP object
      *            stream.
@@ -198,5 +198,15 @@ public class PGPPBEEncryptedData
         {
             throw new PGPException("Exception creating cipher", e);
         }
+    }
+
+    @Override
+    public int getVersion() {
+        return keyData.getVersion();
+    }
+
+    @Override
+    public int getAlgorithm() {
+        return keyData.getEncAlgorithm();
     }
 }
