@@ -9,6 +9,7 @@ buildscript {
 plugins {
   id "io.spring.nohttp" version "0.0.8"
   id "checkstyle"
+  id "jacoco"
 }
 
 if (JavaVersion.current().isJava8Compatible())
@@ -27,6 +28,7 @@ allprojects {
   apply plugin: 'java'
   apply plugin: 'idea'
   apply plugin: 'checkstyle'
+  apply plugin: 'jacoco'
 
   repositories {
     mavenCentral()
@@ -72,6 +74,8 @@ subprojects {
     systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
 
+    finalizedBy jacocoTestReport
+
     filter {
       includeTestsMatching "AllTest*"
     }
@@ -87,6 +91,15 @@ subprojects {
     configFile file("$rootDir/config/checkstyle/checkstyle.xml");
     toolVersion '9.0'; // your choice here
     sourceSets = [project.sourceSets.main]
+  }
+
+
+  jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+  }
+
+  jacoco {
+    reportsDirectory =  layout.buildDirectory.dir("jacoco")
   }
 
 }
