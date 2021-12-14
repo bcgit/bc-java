@@ -25,6 +25,7 @@ public class Dump
 
             while ((obj = bIn.readObject()) != null)
             {
+                // -DM System.out.println
                 System.out.println(ASN1Dump.dumpAsString(obj));
             }
         }

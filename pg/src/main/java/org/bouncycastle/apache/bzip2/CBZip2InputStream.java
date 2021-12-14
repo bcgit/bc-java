@@ -41,11 +41,7 @@ public class CBZip2InputStream
 {
     private static void cadvise()
     {
-        // TODO confirm with pkd
-
-        // -DM System.out.println
-        System.out.println("CRC Error");
-        //throw new CCoruptionError();
+        throw new IllegalStateException();
     }
 
 //    private static void badBGLengths() {
