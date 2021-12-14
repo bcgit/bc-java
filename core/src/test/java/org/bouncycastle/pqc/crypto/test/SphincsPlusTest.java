@@ -38,18 +38,14 @@ public class SphincsPlusTest
         for (int i = 0; i != fileList.length; i++)
         {
             String name = fileList[i];
-            InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/" + name);
+            InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/subset_" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
-            boolean skip = false;
             while ((line = bin.readLine()) != null)
             {
-                if (skip)
-                {
-                    continue;
-                }
+
                 line = line.trim();
 
                 if (line.startsWith("#"))
@@ -154,7 +150,6 @@ public class SphincsPlusTest
 
                         assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, sigGenerated));
                         assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, attachedSig));
-                        skip = count.equals("2");
 
                     }
                     buf.clear();
