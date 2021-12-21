@@ -1,9 +1,10 @@
 package org.bouncycastle.pqc.crypto.cmce;
-
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageEncryptor;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.Arrays;
 
 import java.security.SecureRandom;
 
@@ -26,6 +27,24 @@ public class CMCECipher
     {
         return sessionKey;
     }
+
+    public void test()
+        throws Exception
+    {
+        byte[] sk = ((CMCEPrivateKeyParameters)key).getPrivateKey();
+        byte[] sk_s = ByteUtils.subArray(sk, 0, 40);
+        byte[] sk_a = ByteUtils.subArray(sk, 0, 40 + engine.getIrrBytes());
+        byte[] sk_g = ByteUtils.subArray(sk, 0, 40 + engine.getIrrBytes() + engine.getCondBytes());
+
+        System.out.println(sk.length + "\nsk: " + ByteUtils.toHexString(sk));
+        if(!Arrays.areEqual(sk, engine.decompress_private_key(sk_s))) {throw new Exception("sk 40 = g, a, s FAILED");}
+        System.out.println("sk: " + ByteUtils.toHexString(sk));
+        if(!Arrays.areEqual(sk, engine.decompress_private_key(sk_a))) {throw new Exception("sk 40+irr = a, s FAILED");}
+        System.out.println("sk: " + ByteUtils.toHexString(sk));
+        if(!Arrays.areEqual(sk, engine.decompress_private_key(sk_g))) {throw new Exception("sk 40+irr+cond = s FAILED");}
+
+    }
+
 
     @Override
     public void init(boolean forEncrypting,
