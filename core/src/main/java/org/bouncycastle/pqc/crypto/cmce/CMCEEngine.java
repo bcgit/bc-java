@@ -23,6 +23,16 @@ public class CMCEEngine
 
     private static int SYND_BYTES;// = (PK_NROWS + 7)/8;
 
+    public int getIrrBytes()
+    {
+        return IRR_BYTES;
+    }
+
+    public int getCondBytes()
+    {
+        return COND_BYTES;
+    }
+
     private static int GFMASK;    // = (1 << GFBITS) - 1;
 
     private static int[] poly; // only needed for key pair gen
@@ -51,7 +61,7 @@ public class CMCEEngine
         SYS_T = t;
         GFBITS = m;
 
-        IRR_BYTES = SYS_T * 2;
+        IRR_BYTES = SYS_T * 2; // t * ceil(m/8)
         COND_BYTES = (1 << (GFBITS-4))*(2* GFBITS - 1);
 
         PK_NROWS = SYS_T* GFBITS;
@@ -77,7 +87,98 @@ public class CMCEEngine
         countErrorIndices = (1<< GFBITS) > SYS_N;
     }
 
+    // generates the rest of the private key given the first 40 bytes
+    public byte[] decompress_private_key(byte[] sk)
+    {
+        byte[] reg_sk = new byte[getPrivateKeySize()];
+        System.arraycopy(sk, 0,reg_sk,0,sk.length);
 
+        // s: n/8 (random string)
+        // a: COND_BYTES (field ordering) ((2m-1) * 2^(m-4))
+        // g: IRR_BYTES (polynomial) (t * 2)
+
+        //TODO according to how much truncation is applied generate hash accordingly
+
+        // generate hash using the seed given in the sk (64 || first 32 bytes)
+        byte[] seed_a = {64}, seed_b = ByteUtils.subArray(sk, 0, 32);
+        byte[] seed = ByteUtils.concatenate(seed_a, seed_b);
+        byte[] hash = new byte[(SYS_N / 8) + ((1<<GFBITS) * 4) + IRR_BYTES + 32];;
+        int hash_idx = 0;
+        Xof digest;
+        digest = new SHAKEDigest(256);
+        digest.update(seed, 0, seed.length); // input
+        digest.doFinal(hash, 0, hash.length);
+
+
+        // generate g
+        if (sk.length <= 40)
+        {
+            short[] field = new short[SYS_T];
+
+            byte[] reg_g = new byte[IRR_BYTES];
+            hash_idx = hash.length - 32 - IRR_BYTES;
+            for (int i = 0; i < SYS_T; i++)
+            {
+                field[i] = Utils.load_gf(hash, hash_idx + i * 2, GFMASK);
+            }
+            generate_irr_poly(field);
+
+            for (int i = 0; i < SYS_T; i++)
+            {
+                Utils.store_gf(reg_g, i * 2, field[i]);
+            }
+            System.arraycopy(reg_g, 0, reg_sk, 40, IRR_BYTES);
+        }
+
+        // generate a
+        if (sk.length <= 40 + IRR_BYTES)
+        {
+            int[] perm = new int[1 << GFBITS];
+            short[] pi = new short[1 << GFBITS];
+
+            hash_idx = hash.length - 32 - IRR_BYTES - ((1 << GFBITS) * 4);
+            for (int i = 0; i < (1 << GFBITS); i++)//DONE use Utils load4
+            {
+                perm[i] = Utils.load4(hash, hash_idx + i * 4);
+            }
+
+            if(usePivots)
+            {
+                long[] pivots = {0};
+                pk_gen(null, reg_sk, perm, pi, pivots);
+            }
+            else
+            {
+                long[] buf = new long[1 << GFBITS];
+                for (int i = 0; i < (1 << GFBITS); i++)
+                {
+                    buf[i] = perm[i];
+                    buf[i] <<= 31;
+                    buf[i] |= i;
+                    buf[i] &= 0x7fffffffffffffffL; // getting rid of signed longs
+                }
+                Arrays.sort(buf);
+                for (int i = 0; i < (1 << GFBITS); i++)
+                {
+                    pi[i] = (short) (buf[i] & GFMASK);
+                }
+            }
+
+
+
+            byte[] out = new byte[COND_BYTES];
+            controlbitsfrompermutation(out, pi, GFBITS, 1 << GFBITS);
+            //copy the controlbits from the permutation to the private key
+            System.arraycopy(out, 0, reg_sk, IRR_BYTES + 40, out.length);
+        }
+
+
+        // reg s
+        System.arraycopy(hash,0, reg_sk, getPrivateKeySize() - SYS_N/8, SYS_N/8);
+        System.out.println(reg_sk.length + "reg_sk: " + ByteUtils.toHexString(reg_sk));
+        return reg_sk;
+
+    }
     public void kem_keypair(byte[] pk, byte[] sk, SecureRandom random)
     {
 
@@ -167,7 +268,7 @@ public class CMCEEngine
 
 
             //8. Write Γ′ as (g,α′1,α′2,...,α′n)
-            if (pk_gen(pk, field, perm, pi, pivots) == -1)
+            if (pk_gen(pk, sk, perm, pi, pivots) == -1)
             {
 //                System.out.println("FAILED GENERATING PUBLIC KEY");
                 continue;
@@ -176,7 +277,7 @@ public class CMCEEngine
             // computing c using Nassimi-Sahni algorithm which is a
             // parallel algorithms to set up the Benes permutation network
 
-            byte[] out = new byte[(COND_BYTES+IRR_BYTES +SYS_N/8 + 40)-(IRR_BYTES+40)];
+            byte[] out = new byte[COND_BYTES];
             controlbitsfrompermutation(out, pi, GFBITS, 1<<GFBITS);
 
             //copy the controlbits from the permutation to the private key
@@ -1141,7 +1242,7 @@ public class CMCEEngine
         cbrecursion(out,pos+step,step*2,null, (int) ((n+n/4)*2+n/2),w-1,n/2,temp);
     }
 
-    private static int pk_gen(byte[] pk, short[] field, int[] perm, short[] pi, long[] pivots)
+    private static int pk_gen(byte[] pk, byte[] sk, int[] perm, short[] pi, long[] pivots)
     {
         short[] g = new short[SYS_T+1]; // Goppa polynomial
         int i, j, k;
@@ -1149,7 +1250,8 @@ public class CMCEEngine
 
         for(i = 0; i < SYS_T; i++)//TODO change to Utils load_gf (get sk instead of field)
         {
-            g[i] = field[i];
+            g[i] = Utils.load_gf(sk,  40 + i*2,GFMASK);
+//            g[i] = field[i];
         }
 //        System.out.print("g: ");
 //        for(i=0;i<SYS_T+1;i++)
@@ -1197,7 +1299,9 @@ public class CMCEEngine
         for (i = 0; i < (1 << GFBITS); i++)
         {
             pi[i] = (short) (buf[i] & GFMASK);
+            System.out.printf("%02x ", pi[i]);
         }
+        System.out.println();
         for (i = 0; i < SYS_N; i++)//DONE change to Utils bitrev
         {
             L[i] = Utils.bitrev(pi[i], GFBITS);
@@ -1339,29 +1443,32 @@ public class CMCEEngine
         }
 
         // FieldOrdering 2.4.2 - 5. Output (α1,α2,...,αq)
-        if (usePadding)
+        if(pk != null)
         {
-            ///TODO usepadding: make sure this works
-            int tail, pk_index = 0;
-            tail = PK_NROWS % 8;
-            for (i = 0; i < PK_NROWS; i++)
+            if (usePadding)
             {
-                for (j = (PK_NROWS - 1) / 8; j < SYS_N / 8 - 1; j++)
+                ///TODO usepadding: make sure this works
+                int tail, pk_index = 0;
+                tail = PK_NROWS % 8;
+                for (i = 0; i < PK_NROWS; i++)
                 {
-                    pk[pk_index++] = (byte) (((mat[i][j]&0xff) >>> tail) | (mat[i][j+1] << (8-tail)));
+                    for (j = (PK_NROWS - 1) / 8; j < SYS_N / 8 - 1; j++)
+                    {
+                        pk[pk_index++] = (byte) (((mat[i][j] & 0xff) >>> tail) | (mat[i][j + 1] << (8 - tail)));
+                    }
+                    pk[pk_index++] = (byte) ((mat[i][j] & 0xff) >>> tail);
                 }
-                pk[pk_index++] = (byte) ((mat[i][j]&0xff) >>> tail);
             }
-        }
-        else
-        {
-            for (i = 0; i < PK_NROWS; i++)
+            else
             {
-                k = 0;
-                for (j = 0; j <  (((SYS_N - PK_NROWS ) + 7)/8); j++)
+                for (i = 0; i < PK_NROWS; i++)
                 {
-                    pk[i * (((SYS_N - PK_NROWS ) + 7)/8) + k] = mat[i][j + PK_NROWS/8];
-                    k++;
+                    k = 0;
+                    for (j = 0; j < (((SYS_N - PK_NROWS) + 7) / 8); j++)
+                    {
+                        pk[i * (((SYS_N - PK_NROWS) + 7) / 8) + k] = mat[i][j + PK_NROWS / 8];
+                        k++;
+                    }
                 }
             }
         }
