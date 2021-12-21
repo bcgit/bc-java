@@ -175,7 +175,6 @@ public class CMCEEngine
 
         // reg s
         System.arraycopy(hash,0, reg_sk, getPrivateKeySize() - SYS_N/8, SYS_N/8);
-        System.out.println(reg_sk.length + "reg_sk: " + ByteUtils.toHexString(reg_sk));
         return reg_sk;
 
     }
@@ -1299,9 +1298,7 @@ public class CMCEEngine
         for (i = 0; i < (1 << GFBITS); i++)
         {
             pi[i] = (short) (buf[i] & GFMASK);
-            System.out.printf("%02x ", pi[i]);
         }
-        System.out.println();
         for (i = 0; i < SYS_N; i++)//DONE change to Utils bitrev
         {
             L[i] = Utils.bitrev(pi[i], GFBITS);
@@ -1398,7 +1395,7 @@ public class CMCEEngine
                     {
                         if (mov_columns(mat, pi, pivots) != 0)
                         {
-                            System.out.println("failed mov column!");
+//                            System.out.println("failed mov column!");
                             return -1;
                         }
                     }

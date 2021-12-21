@@ -11,6 +11,11 @@ public class CMCEPrivateKeyParameters
 
     private byte[] privateKey;
 
+    public void setPrivateKey(byte[] privateKey)
+    {
+        this.privateKey = privateKey;
+    }
+
     public byte[] getPrivateKey()
     {
         return privateKey;
