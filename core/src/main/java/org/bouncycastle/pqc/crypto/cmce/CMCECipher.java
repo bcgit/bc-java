@@ -28,24 +28,6 @@ public class CMCECipher
         return sessionKey;
     }
 
-    public void test()
-        throws Exception
-    {
-        byte[] sk = ((CMCEPrivateKeyParameters)key).getPrivateKey();
-        byte[] sk_s = ByteUtils.subArray(sk, 0, 40);
-        byte[] sk_a = ByteUtils.subArray(sk, 0, 40 + engine.getIrrBytes());
-        byte[] sk_g = ByteUtils.subArray(sk, 0, 40 + engine.getIrrBytes() + engine.getCondBytes());
-
-        System.out.println(sk.length + "\nsk: " + ByteUtils.toHexString(sk));
-        if(!Arrays.areEqual(sk, engine.decompress_private_key(sk_s))) {throw new Exception("sk 40 = g, a, s FAILED");}
-        System.out.println("sk: " + ByteUtils.toHexString(sk));
-        if(!Arrays.areEqual(sk, engine.decompress_private_key(sk_a))) {throw new Exception("sk 40+irr = a, s FAILED");}
-        System.out.println("sk: " + ByteUtils.toHexString(sk));
-        if(!Arrays.areEqual(sk, engine.decompress_private_key(sk_g))) {throw new Exception("sk 40+irr+cond = s FAILED");}
-
-    }
-
-
     @Override
     public void init(boolean forEncrypting,
                      CipherParameters param)
@@ -93,6 +75,15 @@ public class CMCECipher
     private void initCipher(CMCEParameters param)
     {
         engine = param.getEngine();
+        if (!forEncryption)
+        {
+            CMCEPrivateKeyParameters privateParams = (CMCEPrivateKeyParameters) key;
+            if(privateParams.getPrivateKey().length < engine.getPrivateKeySize())
+            {
+                privateParams.setPrivateKey(engine.decompress_private_key(privateParams.getPrivateKey()));
+                key = privateParams;
+            }
+        }
     }
 
     /**

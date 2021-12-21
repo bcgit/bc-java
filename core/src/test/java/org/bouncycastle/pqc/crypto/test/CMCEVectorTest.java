@@ -24,7 +24,7 @@ public class CMCEVectorTest
     throws Exception
     {
         String files = "3488-64-cmce.rsp 4608-96-cmce.rsp 6688-128-cmce.rsp 6960-119-cmce.rsp 8192-128-cmce.rsp";
-//        files = "3488-64-f-cmce.rsp 4608-96-f-cmce.rsp 6688-128-f-cmce.rsp 6960-119-f-cmce.rsp 8192-128-f-cmce.rsp";
+        files = "3488-64-f-cmce.rsp 4608-96-f-cmce.rsp 6688-128-f-cmce.rsp 6960-119-f-cmce.rsp 8192-128-f-cmce.rsp";
         int[][] polys = {
                 {3, 1, 0},
                 {10, 9, 6, 0},
@@ -105,7 +105,6 @@ public class CMCEVectorTest
                         // KEM Dec
                         CMCECipher cmceDecCipher = new CMCECipher();
                         cmceDecCipher.init(false, privParams);
-                        cmceDecCipher.test();
                         byte[] dec_key = cmceDecCipher.messageDecrypt(generated_cipher_text);
 
                         assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(dec_key, ss));
