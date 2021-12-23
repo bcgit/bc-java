@@ -58,7 +58,7 @@ import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.70";
+    private static String info = "BouncyCastle Security Provider v1.71b";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -105,7 +105,7 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] ASYMMETRIC_CIPHERS =
     {
-        "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC"
+        "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC", "LMS"
     };
 
     /*
@@ -144,7 +144,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.70, info);
+        super(PROVIDER_NAME, 1.7099, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
