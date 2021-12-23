@@ -49,8 +49,6 @@ public class PQCTSPTest
     public void testLMS()
         throws Exception
     {
-        BouncyCastlePQCProvider pqcProvider = new BouncyCastlePQCProvider();
-
         //
         // set up the keys
         //
@@ -59,7 +57,7 @@ public class PQCTSPTest
 
         try
         {
-            KeyPairGenerator g = KeyPairGenerator.getInstance("LMS", pqcProvider);
+            KeyPairGenerator g = KeyPairGenerator.getInstance("LMS", BC);
 
             KeyPair p = g.generateKeyPair();
 
@@ -81,7 +79,7 @@ public class PQCTSPTest
         //
 
         ContentSigner sigGen = new JcaContentSignerBuilder("LMS")
-            .setProvider(pqcProvider).build(privKey);
+            .setProvider(BC).build(privKey);
         JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             new X500Name("CN=Test"),
             BigInteger.valueOf(1),
@@ -95,7 +93,7 @@ public class PQCTSPTest
         X509Certificate cert = new JcaX509CertificateConverter()
             .setProvider("BC").getCertificate(certGen.build(sigGen));
 
-        ContentSigner signer = new JcaContentSignerBuilder("LMS").setProvider(pqcProvider).build(privKey);
+        ContentSigner signer = new JcaContentSignerBuilder("LMS").setProvider(BC).build(privKey);
 
         TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
             new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
@@ -116,7 +114,7 @@ public class PQCTSPTest
         TimeStampToken tsToken = tsResp.getTimeStampToken();
 
         tsToken.validate(new JcaSignerInfoVerifierBuilder(new JcaDigestCalculatorProviderBuilder().build())
-            .setProvider(pqcProvider).build(cert));
+            .setProvider(BC).build(cert));
 
         AttributeTable table = tsToken.getSignedAttributes();
 
