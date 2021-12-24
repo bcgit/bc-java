@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-public class GF12
+class GF12
     extends GF
 {
 

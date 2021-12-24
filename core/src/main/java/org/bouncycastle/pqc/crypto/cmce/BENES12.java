@@ -1,8 +1,6 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-import org.bouncycastle.util.Pack;
-
-public class BENES12
+class BENES12
     extends BENES
 {
     public BENES12(int n, int t, int m)
