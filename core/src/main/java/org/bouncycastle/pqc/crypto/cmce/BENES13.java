@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-public class BENES13
+class BENES13
     extends BENES
 {
 

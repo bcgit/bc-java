@@ -1,16 +1,16 @@
-package org.bouncycastle.pqc.crypto.cmce;
+package org.bouncycastle.pqc.crypto.test;
+
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.util.test.FixedSecureRandom;
 
-import java.security.SecureRandom;
-
 /**
  *  for producing FixedSecureRandom objects for use with testing
  */
-public class CMCESecureRandom
+public class NISTSecureRandom
     extends SecureRandom
 {
     private byte[] seed;
@@ -35,7 +35,7 @@ public class CMCESecureRandom
 
     public static FixedSecureRandom getFixed(byte[] seed, byte[] personalization, int strength, int discard, int size)
     {
-        CMCESecureRandom cmceRNG = new CMCESecureRandom(seed, personalization);
+        NISTSecureRandom cmceRNG = new NISTSecureRandom(seed, personalization);
         cmceRNG.init(strength);
         byte[] burn = new byte[discard];
         cmceRNG.nextBytes(burn);
@@ -50,14 +50,14 @@ public class CMCESecureRandom
 
     public static FixedSecureRandom getFixedNoDiscard(byte[] seed, int strength)
     {
-        CMCESecureRandom cmceRNG = new CMCESecureRandom(seed, null);
+        NISTSecureRandom cmceRNG = new NISTSecureRandom(seed, null);
         cmceRNG.init(strength);
         byte[] burn = new byte[strength / 8];
         cmceRNG.nextBytes(burn);
         return new FixedSecureRandom(burn);
     }
 
-    public CMCESecureRandom(byte[] seed, byte[] personalization)
+    public NISTSecureRandom(byte[] seed, byte[] personalization)
     {
         this.seed = seed;
         this.personalization = personalization;
