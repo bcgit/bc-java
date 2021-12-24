@@ -1,13 +1,13 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.pqc.math.linearalgebra.*;
-
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-public class CMCEEngine
+import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+
+class CMCEEngine
 {
     private static int SYS_N;       // = 3488;
     private static int SYS_T;       // = 64;

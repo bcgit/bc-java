@@ -1,19 +1,22 @@
 package org.bouncycastle.pqc.crypto.test;
 
-import junit.framework.TestCase;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.cmce.*;
-import org.bouncycastle.pqc.crypto.sphincsplus.*;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.SecureRandom;
 import java.util.HashMap;
+
+import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.pqc.crypto.cmce.CMCEKEMExtractor;
+import org.bouncycastle.pqc.crypto.cmce.CMCEKEMGenerator;
+import org.bouncycastle.pqc.crypto.cmce.CMCEKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.cmce.CMCEKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
+import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class CMCEVectorTest
     extends TestCase
@@ -52,7 +55,7 @@ public class CMCEVectorTest
                 {
                     continue;
                 }
-                if (line.isEmpty())
+                if (line.length() == 0)
                 {
                     if (buf.size() > 0)
                     {
@@ -76,8 +79,8 @@ public class CMCEVectorTest
                             m = 13;
                         }
 
-                        CMCESecureRandom random = new CMCESecureRandom(seed, null);
-                        CMCEParameters parameters = new CMCEParameters(m, n, t, polys[fileIndex], usingPivots, random);
+                        NISTSecureRandom random = new NISTSecureRandom(seed, null);
+                        CMCEParameters parameters = new CMCEParameters(m, n, t, polys[fileIndex], usingPivots);
 
                         CMCEKeyPairGenerator kpGen = new CMCEKeyPairGenerator();
                         CMCEKeyGenerationParameters genParam = new CMCEKeyGenerationParameters(random, parameters);
@@ -92,23 +95,21 @@ public class CMCEVectorTest
 
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getPublicKey()));
                         assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
-
-                        ParametersWithRandom param = new ParametersWithRandom(pubParams, random);
+                        
                         // KEM Enc
-                        CMCECipher cmceEncCipher = new CMCECipher();
-                        cmceEncCipher.init(true, param);
-                        byte[] generated_cipher_text = cmceEncCipher.messageEncrypt(null);
-
+                        CMCEKEMGenerator cmceEncCipher = new CMCEKEMGenerator(random);
+                        SecretWithEncapsulation secWenc = cmceEncCipher.generateEncapsulated(pubParams);
+                        byte[] generated_cipher_text = secWenc.getEncapsulation();
                         assertTrue(name + " " + count + ": kem_enc cipher text", Arrays.areEqual(ct, generated_cipher_text));
-                        assertTrue(name + " " + count + ": kem_enc key", Arrays.areEqual(ss, cmceEncCipher.getSessionKey()));
+                        assertTrue(name + " " + count + ": kem_enc key", Arrays.areEqual(ss, secWenc.getSecret()));
 
                         // KEM Dec
-                        CMCECipher cmceDecCipher = new CMCECipher();
-                        cmceDecCipher.init(false, privParams);
-                        byte[] dec_key = cmceDecCipher.messageDecrypt(generated_cipher_text);
+                        CMCEKEMExtractor cmceDecCipher = new CMCEKEMExtractor(privParams);
+
+                        byte[] dec_key = cmceDecCipher.extractSecret(generated_cipher_text);
 
                         assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(dec_key, ss));
-                        assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, cmceEncCipher.getSessionKey()));
+                        assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secWenc.getSecret()));
 
                     }
                     buf.clear();
