@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
@@ -9,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusKeyGenerationParameters;
@@ -17,6 +20,10 @@ import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusSigner;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -170,6 +177,7 @@ public class SphincsPlusTest
     }
 
     public void testBasicKeyGeneration()
+        throws IOException
     {
         SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
         SecureRandom random = new FixedSecureRandom(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4792F267AAFA3F87CA60D01CB54F29202A3E784CCB7EBCDCFD45542B7F6AF778742E0F4479175084AA488B3B74340678AAD111491E7E52F6F1D726DAF2A4E75CAFB60D034B6E912B26BE68464B0095D60D"));
@@ -180,6 +188,15 @@ public class SphincsPlusTest
 
         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
+
+        assertTrue(Arrays.areEqual(Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), privParams.getEncoded()));
+
+        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams);
+        PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privParams);
+
+        pubParams = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(pubInfo.getEncoded());
+        privParams = (SPHINCSPlusPrivateKeyParameters)PrivateKeyFactory.createKey(privInfo.getEncoded());
 
         assertTrue(Arrays.areEqual(Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), pubParams.getEncoded()));
         assertTrue(Arrays.areEqual(Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), privParams.getEncoded()));
