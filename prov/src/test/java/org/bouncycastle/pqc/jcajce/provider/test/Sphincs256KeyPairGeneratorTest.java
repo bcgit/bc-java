@@ -24,7 +24,7 @@ public class Sphincs256KeyPairGeneratorTest
         throws Exception
     {
         kf = KeyFactory.getInstance("SPHINCS256", "BCPQC");
-        kf = KeyFactory.getInstance(PQCObjectIdentifiers.newHope.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(PQCObjectIdentifiers.sphincs256.getId(), "BCPQC");
     }
 
     public void testKeyPairEncoding()
