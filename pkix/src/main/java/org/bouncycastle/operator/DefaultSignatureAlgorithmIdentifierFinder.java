@@ -194,8 +194,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("XMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128);
         algorithms.put("XMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256);
 
-        algorithms.put("QTESLA-P-I", BCObjectIdentifiers.qTESLA_p_I);
-        algorithms.put("QTESLA-P-III", BCObjectIdentifiers.qTESLA_p_III);
+        algorithms.put("SPHINCS+", BCObjectIdentifiers.sphincsPlus);
+        algorithms.put("SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus);
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
@@ -243,6 +243,11 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         noParams.add(BCObjectIdentifiers.sphincs256_with_SHA512);
         noParams.add(BCObjectIdentifiers.sphincs256_with_SHA3_512);
+
+        //
+        // SPHINCS-PLUS
+        //
+        noParams.add(BCObjectIdentifiers.sphincsPlus);
 
         //
         // XMSS

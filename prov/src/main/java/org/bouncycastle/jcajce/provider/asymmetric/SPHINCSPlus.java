@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider;
+package org.bouncycastle.jcajce.provider.asymmetric;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
