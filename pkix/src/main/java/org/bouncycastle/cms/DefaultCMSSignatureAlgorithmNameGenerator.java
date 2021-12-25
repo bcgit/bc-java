@@ -231,6 +231,10 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         {
             return "LMS";
         }
+        if (BCObjectIdentifiers.sphincsPlus.equals(encryptionAlgOID))
+        {
+            return "SPHINCSPlus";
+        }
 
         String digestName = getDigestAlgName(encryptionAlgOID);
 
