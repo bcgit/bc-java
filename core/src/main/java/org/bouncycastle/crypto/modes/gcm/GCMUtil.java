@@ -340,6 +340,14 @@ public abstract class GCMUtil
         y[1] = (x1 >>> 8) | (x0 << 56);
     }
 
+    public static void multiplyP16(long[] x)
+    {
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 48;
+        x[0] = (x0 >>> 16) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        x[1] = (x1 >>> 16) | (x0 << 48);
+    }
+
     public static long[] pAsLongs()
     {
         long[] tmp = new long[SIZE_LONGS];
