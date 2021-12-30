@@ -1,10 +1,10 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-
-import java.security.SecureRandom;
 
 public class CMCEKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -43,7 +43,7 @@ public class CMCEKeyPairGenerator
         return new AsymmetricCipherKeyPair(pubKey, privKey);
 
     }
-    @Override
+
     public void init(KeyGenerationParameters param)
     {
         this.initialize(param);
