@@ -8,14 +8,9 @@ public class CMCEPrivateKeyParameters
 
     private byte[] privateKey;
 
-    public void setPrivateKey(byte[] privateKey)
-    {
-        this.privateKey = privateKey;
-    }
-
     public byte[] getPrivateKey()
     {
-        return privateKey;
+        return Arrays.clone(privateKey);
     }
 
     public CMCEPrivateKeyParameters(byte[] privateKey, CMCEParameters params)

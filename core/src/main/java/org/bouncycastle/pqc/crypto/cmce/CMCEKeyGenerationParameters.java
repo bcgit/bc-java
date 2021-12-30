@@ -1,8 +1,8 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-import org.bouncycastle.crypto.KeyGenerationParameters;
-
 import java.security.SecureRandom;
+
+import org.bouncycastle.crypto.KeyGenerationParameters;
 
 public class CMCEKeyGenerationParameters
     extends KeyGenerationParameters
@@ -10,12 +10,15 @@ public class CMCEKeyGenerationParameters
     private CMCEParameters params;
 
     public CMCEKeyGenerationParameters(
-            SecureRandom random,
-            CMCEParameters cmceParams)
+        SecureRandom random,
+        CMCEParameters cmceParams)
     {
         super(random, 256);
         this.params = cmceParams;
     }
 
-    public CMCEParameters getParameters() {return params;}
+    public CMCEParameters getParameters()
+    {
+        return params;
+    }
 }

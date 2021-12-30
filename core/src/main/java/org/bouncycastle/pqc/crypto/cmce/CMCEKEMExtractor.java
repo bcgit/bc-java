@@ -21,8 +21,7 @@ public class CMCEKEMExtractor
         CMCEPrivateKeyParameters privateParams = (CMCEPrivateKeyParameters) key;
         if(privateParams.getPrivateKey().length < engine.getPrivateKeySize())
         {
-            privateParams.setPrivateKey(engine.decompress_private_key(privateParams.getPrivateKey()));
-            key = privateParams;
+            key = new CMCEPrivateKeyParameters(engine.decompress_private_key(privateParams.getPrivateKey()), privateParams.getParameters());
         }
     }
     
