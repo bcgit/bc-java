@@ -21,28 +21,43 @@ import org.bouncycastle.util.encoders.Hex;
 public class CMCEVectorTest
     extends TestCase
 {
-//    public void testVectors()
-//        throws Exception
-    public static void main(String[] args)
-    throws Exception
+    public void testVectors()
+        throws Exception
     {
-        String files = "3488-64-cmce.rsp 4608-96-cmce.rsp 6688-128-cmce.rsp 6960-119-cmce.rsp 8192-128-cmce.rsp";
-        files = "3488-64-f-cmce.rsp 4608-96-f-cmce.rsp 6688-128-f-cmce.rsp 6960-119-f-cmce.rsp 8192-128-f-cmce.rsp";
-        int[][] polys = {
-                {3, 1, 0},
-                {10, 9, 6, 0},
-                {7, 2, 1, 0},
-                {8, 0},
-                {7, 2, 1, 0}
+        String[] files = new String[] {
+            "3488-64-cmce.rsp",
+            "3488-64-f-cmce.rsp",
+            "4608-96-cmce.rsp",
+            "4608-96-f-cmce.rsp",
+            "6688-128-cmce.rsp",
+            "6688-128-f-cmce.rsp",
+            "6960-119-cmce.rsp",
+            "6960-119-f-cmce.rsp",
+            "8192-128-cmce.rsp",
+            "8192-128-f-cmce.rsp"
         };
+
+        CMCEParameters[] params = new CMCEParameters[] {
+            CMCEParameters.mceliece348864,
+            CMCEParameters.mceliece348864f,
+            CMCEParameters.mceliece460896,
+            CMCEParameters.mceliece460896f,
+            CMCEParameters.mceliece6688128,
+            CMCEParameters.mceliece6688128f,
+            CMCEParameters.mceliece6960119,
+            CMCEParameters.mceliece6960119f,
+            CMCEParameters.mceliece8192128,
+            CMCEParameters.mceliece8192128f
+        };
+
 //        files = "6960-119-cmce.rsp";// 8192-128-cmce.rsp";
 //        files = "8192-128-cmce.rsp";
 //        String files = "4608-96-cmce.rsp";// 6688-128-cmce.rsp 6960-119-cmce.rsp 8192-128-cmce.rsp";
-        int fileIndex = 0;
-        for (String name : files.split(" "))
+        for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
+            String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/cmce/" + name);
+            InputStream src = CMCEVectorTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/cmce/" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
@@ -68,19 +83,8 @@ public class CMCEVectorTest
                         byte[] ct = Hex.decode(buf.get("ct"));     // ciphertext
                         byte[] ss = Hex.decode(buf.get("ss"));     // session key
 
-                        String[] nameParts = name.split("-");
-                        int m = 12;
-                        int n = Integer.parseInt(nameParts[0]);
-                        int t = Integer.parseInt(nameParts[1]);
-                        boolean usingPivots = nameParts[2].equals("f");
-
-                        if (n > 3488)
-                        {
-                            m = 13;
-                        }
-
                         NISTSecureRandom random = new NISTSecureRandom(seed, null);
-                        CMCEParameters parameters = new CMCEParameters(m, n, t, polys[fileIndex], usingPivots);
+                        CMCEParameters parameters = params[fileIndex];
 
                         CMCEKeyPairGenerator kpGen = new CMCEKeyPairGenerator();
                         CMCEKeyGenerationParameters genParam = new CMCEKeyGenerationParameters(random, parameters);
@@ -110,7 +114,6 @@ public class CMCEVectorTest
 
                         assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(dec_key, ss));
                         assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secWenc.getSecret()));
-
                     }
                     buf.clear();
 
@@ -126,8 +129,6 @@ public class CMCEVectorTest
 
             }
             System.out.println("testing successful!");
-
-            fileIndex++;
         }
 
     }

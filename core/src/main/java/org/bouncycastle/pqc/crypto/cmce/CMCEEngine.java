@@ -9,19 +9,30 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
 class CMCEEngine
 {
-    private static int SYS_N;       // = 3488;
-    private static int SYS_T;       // = 64;
-    private static int GFBITS;      // = 12;
+    private int SYS_N;       // = 3488;
+    private int SYS_T;       // = 64;
+    private int GFBITS;      // = 12;
 
-    private static int IRR_BYTES;   // = SYS_T * 2;
-    private static int COND_BYTES;  // = (1 << (GFBITS-4))*(2*GFBITS - 1);
+    private int IRR_BYTES;   // = SYS_T * 2;
+    private int COND_BYTES;  // = (1 << (GFBITS-4))*(2*GFBITS - 1);
 
 
-    private static int PK_NROWS;    // = SYS_T*GFBITS;
-    private static int PK_NCOLS;    // = SYS_N - PK_NROWS;
-    private static int PK_ROW_BYTES;// = (PK_NCOLS + 7)/8;
+    private int PK_NROWS;    // = SYS_T*GFBITS;
+    private int PK_NCOLS;    // = SYS_N - PK_NROWS;
+    private int PK_ROW_BYTES;// = (PK_NCOLS + 7)/8;
 
-    private static int SYND_BYTES;// = (PK_NROWS + 7)/8;
+    private int SYND_BYTES;// = (PK_NROWS + 7)/8;
+
+    private int GFMASK;    // = (1 << GFBITS) - 1;
+
+    private int[] poly; // only needed for key pair gen
+
+    private GF gf;
+    private BENES benes;
+
+    private boolean usePadding;
+    private boolean countErrorIndices;
+    private boolean usePivots; // used for compression
 
     public int getIrrBytes()
     {
@@ -32,17 +43,6 @@ class CMCEEngine
     {
         return COND_BYTES;
     }
-
-    private static int GFMASK;    // = (1 << GFBITS) - 1;
-
-    private static int[] poly; // only needed for key pair gen
-
-    private static GF gf;
-    private static BENES benes;
-
-    private static boolean usePadding;
-    private static boolean countErrorIndices;
-    private static boolean usePivots; // used for compression
 
     public int getPrivateKeySize()
     {
@@ -64,12 +64,13 @@ class CMCEEngine
         return SYND_BYTES + 32;
     }
 
-    public CMCEEngine(int m, int n, int t, int[] p, boolean isCompressed)
+    public CMCEEngine(int m, int n, int t, int[] p, boolean usePivots)
     {
-        usePivots = isCompressed;
-        SYS_N = n;
-        SYS_T = t;
-        GFBITS = m;
+        this.usePivots = usePivots;
+        this.SYS_N = n;
+        this.SYS_T = t;
+        this.GFBITS = m;
+        this.poly = p;
 
         IRR_BYTES = SYS_T * 2; // t * ceil(m/8)
         COND_BYTES = (1 << (GFBITS - 4)) * (2 * GFBITS - 1);
@@ -81,7 +82,7 @@ class CMCEEngine
         SYND_BYTES = (PK_NROWS + 7) / 8;
         GFMASK = (1 << GFBITS) - 1;
 
-        poly = p;
+
         if (GFBITS == 12)
         {
             gf = new GF12(GFBITS);
@@ -314,7 +315,7 @@ class CMCEEngine
     }
 
     // 2.2.3 Encoding subroutine
-    private static void syndrome(byte[] cipher_text, byte[] pk, byte[] error_vector)
+    private void syndrome(byte[] cipher_text, byte[] pk, byte[] error_vector)
     {
         /*
         2.2.3 Encoding subroutine
@@ -372,7 +373,7 @@ class CMCEEngine
     }
 
     // 2.4.4 Fixed-weight-vector generation
-    private static void generate_error_vector(byte[] error_vector, SecureRandom random)
+    private void generate_error_vector(byte[] error_vector, SecureRandom random)
     {
         byte[] buf_bytes;
         short[] buf_nums = new short[SYS_T * 2];
@@ -489,7 +490,7 @@ class CMCEEngine
         }
     }
 
-    private static void encrypt(byte[] cipher_text, byte[] pk, byte[] error_vector, SecureRandom random)
+    private void encrypt(byte[] cipher_text, byte[] pk, byte[] error_vector, SecureRandom random)
     {
         /*
         2.4.5 Encapsulation
@@ -674,7 +675,7 @@ class CMCEEngine
 
     // 2.2.4 Decoding subroutine
     // Niederreiter decryption with the Berlekamp decoder
-    private static int decrypt(byte[] error_vector, byte[] sk, byte[] cipher_text)
+    private int decrypt(byte[] error_vector, byte[] sk, byte[] cipher_text)
     {
 
         short[] g = new short[SYS_T + 1];
@@ -784,7 +785,7 @@ class CMCEEngine
     /* the Berlekamp-Massey algorithm */
     /* input: s, sequence of field elements */
     /* output: out, minimal polynomial of s */
-    private static void bm(short[] out, short[] s)
+    private void bm(short[] out, short[] s)
     {
         int i;
 
@@ -866,7 +867,7 @@ class CMCEEngine
 
     /* input: Goppa polynomial f, support L, received word r */
     /* output: out, the syndrome of length 2t */
-    private static void synd(short[] out, short[] f, short[] L, byte[] r)
+    private void synd(short[] out, short[] f, short[] L, byte[] r)
     {
         int i, j;
         short e, e_inv, c;
@@ -891,8 +892,7 @@ class CMCEEngine
         }
     }
 
-
-    private static int mov_columns(byte[][] mat, short[] pi, long[] pivots)
+    private int mov_columns(byte[][] mat, short[] pi, long[] pivots)
     {
         int i, j, k, s, block_idx, row, tail;
         long[] buf = new long[64],
@@ -1369,7 +1369,7 @@ class CMCEEngine
         cbrecursion(out, pos + step, step * 2, null, (int)((n + n / 4) * 2 + n / 2), w - 1, n / 2, temp);
     }
 
-    private static int pk_gen(byte[] pk, byte[] sk, int[] perm, short[] pi, long[] pivots)
+    private int pk_gen(byte[] pk, byte[] sk, int[] perm, short[] pi, long[] pivots)
     {
         short[] g = new short[SYS_T + 1]; // Goppa polynomial
         int i, j, k;
@@ -1603,7 +1603,7 @@ class CMCEEngine
     }
 
 
-    private static short eval(short[] f, short a)
+    private short eval(short[] f, short a)
     {
         short r;
 
@@ -1618,7 +1618,7 @@ class CMCEEngine
         return r;
     }
 
-    private static void root(short[] out, short[] f, short[] L)
+    private void root(short[] out, short[] f, short[] L)
     {
         for (int i = 0; i < SYS_N; i++)
         {
@@ -1626,7 +1626,7 @@ class CMCEEngine
         }
     }
 
-    private static int generate_irr_poly(short[] field)
+    private int generate_irr_poly(short[] field)
     {
 
         // Irreducible 2.4.1 - 2. Define β = β0 + β1y + ···+ βt−1yt−1 ∈Fq[y]/F(y).
@@ -1701,7 +1701,7 @@ class CMCEEngine
         return 0;
     }
 
-    private static void GF_mul(short[] out, short[] left, short[] right)
+    private void GF_mul(short[] out, short[] left, short[] right)
     {
 
         short[] prod = new short[SYS_T * 2 - 1];
@@ -1741,7 +1741,7 @@ class CMCEEngine
     }
 
     /* check if the padding bits of pk are all zero */
-    static int check_pk_padding(byte[] pk)// TODO make sure this works
+    int check_pk_padding(byte[] pk)// TODO make sure this works
     {
         byte b;
         int i, ret;
@@ -1761,7 +1761,7 @@ class CMCEEngine
     }
 
     /* check if the padding bits of c are all zero */
-    static int check_c_padding(byte[] c)// TODO make sure this works
+    int check_c_padding(byte[] c)// TODO make sure this works
     {
         byte b;
         int ret;
