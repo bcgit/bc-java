@@ -172,6 +172,11 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier newHope = bc_exch.branch("1");
 
     /**
+     * Classic McEliece
+     */
+    public static final ASN1ObjectIdentifier classicMcEliece = bc_exch.branch("2");
+
+    /**
      * X.509 extension(4) values
      * <p>
      * 1.3.6.1.4.1.22554.4

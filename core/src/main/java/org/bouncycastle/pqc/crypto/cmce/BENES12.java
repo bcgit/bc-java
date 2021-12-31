@@ -30,7 +30,7 @@ class BENES12
         }
     }
 
-    private static void apply_benes(byte[] r, byte[] bits, int rev)
+    private void apply_benes(byte[] r, byte[] bits, int rev)
     {
         int i;
 
