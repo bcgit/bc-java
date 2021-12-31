@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.cmce;
 class BENES13
     extends BENES
 {
-
     public BENES13(int n, int t, int m)
     {
         super(n, t, m);
