@@ -38,8 +38,8 @@ public class CMCEKeyPairGenerator
         byte[] pk = new byte[engine.getPublicKeySize()];
         engine.kem_keypair(pk, sk, random);
 
-        CMCEPublicKeyParameters pubKey = new CMCEPublicKeyParameters(pk, cmceParams.getParameters());
-        CMCEPrivateKeyParameters privKey = new CMCEPrivateKeyParameters(sk, cmceParams.getParameters());
+        CMCEPublicKeyParameters pubKey = new CMCEPublicKeyParameters(cmceParams.getParameters(), pk);
+        CMCEPrivateKeyParameters privKey = new CMCEPrivateKeyParameters(cmceParams.getParameters(), sk);
         return new AsymmetricCipherKeyPair(pubKey, privKey);
 
     }
