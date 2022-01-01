@@ -71,11 +71,11 @@ public class BCSPHINCSPlusPrivateKey
     }
 
     /**
-     * @return name of the algorithm - "SPHINCS-256"
+     * @return name of the algorithm - "SPHINCS+"
      */
     public final String getAlgorithm()
     {
-        return "SPHINCS-256";
+        return "SPHINCS+";
     }
 
     public byte[] getEncoded()
