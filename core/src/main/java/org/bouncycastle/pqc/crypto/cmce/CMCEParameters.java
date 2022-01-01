@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.util.Longs;
+import org.bouncycastle.util.Pack;
 
 public class CMCEParameters
     implements CipherParameters
@@ -70,6 +71,7 @@ public class CMCEParameters
     private final int n;
     private final int t;
     private final int[] poly;
+    private final boolean usePivots;
     private final CMCEEngine engine;
 
     private CMCEParameters(String name, int m, int n, int t, int[] p, boolean usePivots)
@@ -79,6 +81,7 @@ public class CMCEParameters
         this.n = n;
         this.t = t;
         this.poly = p;
+        this.usePivots = usePivots;
         this.engine = new CMCEEngine(m, n, t, p, usePivots);
     }
 
@@ -100,6 +103,16 @@ public class CMCEParameters
     public int getT()
     {
         return t;
+    }
+
+    public int getMu()
+    {
+        return (usePivots) ? 32 : 0;
+    }
+
+    public int getNu()
+    {
+        return (usePivots) ? 64 : 0;
     }
 
     public int[] getPoly()
@@ -132,5 +145,10 @@ public class CMCEParameters
     public static Long getID(CMCEParameters params)
     {
         return (Long)paramsToOid.get(params);
+    }
+
+    public byte[] getEncoded()
+    {
+        return Pack.longToBigEndian(getID(this));
     }
 }

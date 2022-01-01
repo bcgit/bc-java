@@ -138,8 +138,8 @@ public class SphincsPlusTest
                         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
                         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
-                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
+                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), pk), pubParams.getEncoded()));
+                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), sk), privParams.getEncoded()));
 
                         //
                         // Signature test
@@ -171,8 +171,6 @@ public class SphincsPlusTest
                 }
             }
             src.close();
-
-
         }
     }
 
@@ -189,8 +187,8 @@ public class SphincsPlusTest
         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-        assertTrue(Arrays.areEqual(Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec")), privParams.getEncoded()));
 
         SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams);
         PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privParams);
@@ -198,8 +196,8 @@ public class SphincsPlusTest
         pubParams = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(pubInfo.getEncoded());
         privParams = (SPHINCSPlusPrivateKeyParameters)PrivateKeyFactory.createKey(privInfo.getEncoded());
 
-        assertTrue(Arrays.areEqual(Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec")), privParams.getEncoded()));
     }
 
     public void testBasicKeyImportSimpleSign()
@@ -207,8 +205,8 @@ public class SphincsPlusTest
         SPHINCSPlusPublicKeyParameters pubParams = new SPHINCSPlusPublicKeyParameters(SPHINCSPlusParameters.sha256_128f, Hex.decode("b505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3"));
         SPHINCSPlusPrivateKeyParameters privParams = new SPHINCSPlusPrivateKeyParameters(SPHINCSPlusParameters.sha256_128f, Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3"));
 
-        assertTrue(Arrays.areEqual(Hex.decode("b505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("b505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3")), privParams.getEncoded()));
 
         byte[] msg = Hex.decode("D81C4D8D734FCBFBEADE3D3F8A039FAA2A2C9957E835AD55B22E75BF57BB556AC8");
 
@@ -273,8 +271,8 @@ public class SphincsPlusTest
         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-        assertTrue(Arrays.areEqual(Hex.decode("B505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("B505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84")), privParams.getEncoded()));
     }
 
     public void testBasicKeyGenerationShake256128fSimpleSign()
@@ -323,8 +321,8 @@ public class SphincsPlusTest
         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-        assertTrue(Arrays.areEqual(Hex.decode("B505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("B505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D")), privParams.getEncoded()));
     }
 
     public void testBasicKeyGenerationShake256128fRobustSign()

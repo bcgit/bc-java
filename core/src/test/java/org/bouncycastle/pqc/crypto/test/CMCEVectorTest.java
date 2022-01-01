@@ -15,12 +15,43 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class CMCEVectorTest
     extends TestCase
 {
+    public void testParameters()
+        throws Exception
+    {
+        CMCEParameters[] params = new CMCEParameters[] {
+            CMCEParameters.mceliece348864,
+            CMCEParameters.mceliece348864f,
+            CMCEParameters.mceliece460896,
+            CMCEParameters.mceliece460896f,
+            CMCEParameters.mceliece6688128,
+            CMCEParameters.mceliece6688128f,
+            CMCEParameters.mceliece6960119,
+            CMCEParameters.mceliece6960119f,
+            CMCEParameters.mceliece8192128,
+            CMCEParameters.mceliece8192128f
+        };
+
+        for (int i = 0; i != params.length; i++)
+        {
+            long l = CMCEParameters.getID(params[i]).longValue();
+            
+            assertEquals(params[i].getM(), (l >> 40) & 0xff);
+            assertEquals(params[i].getN(), (l >> 24) & 0xffff);
+            assertEquals(params[i].getT(), (l >> 16) & 0xff);
+            assertEquals(params[i].getMu(), (l >> 8) & 0xff);
+            assertEquals(params[i].getNu(), l & 0xff);
+        }
+    }
     public void testVectors()
         throws Exception
     {
@@ -94,8 +125,8 @@ public class CMCEVectorTest
                         kpGen.init(genParam);
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
-                        CMCEPublicKeyParameters pubParams = (CMCEPublicKeyParameters) kp.getPublic();
-                        CMCEPrivateKeyParameters privParams = (CMCEPrivateKeyParameters) kp.getPrivate();
+                        CMCEPublicKeyParameters pubParams = (CMCEPublicKeyParameters)PublicKeyFactory.createKey(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((CMCEPublicKeyParameters)kp.getPublic()));
+                        CMCEPrivateKeyParameters privParams = (CMCEPrivateKeyParameters)PrivateKeyFactory.createKey(PrivateKeyInfoFactory.createPrivateKeyInfo((CMCEPrivateKeyParameters)kp.getPrivate()));
 
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getPublicKey()));
                         assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
