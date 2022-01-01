@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Pack;
 
 public class SPHINCSPlusParameters
 {
@@ -174,5 +175,10 @@ public class SPHINCSPlusParameters
     public static Integer getID(SPHINCSPlusParameters params)
     {
           return (Integer)paramsToOid.get(params);
+    }
+
+    public byte[] getEncoded()
+    {
+        return Pack.intToBigEndian(getID(this));
     }
 }
