@@ -93,7 +93,7 @@ public class BCSPHINCSPlusPrivateKey
         }
     }
 
-    public SPHINCSPlusParameterSpec getParams()
+    public SPHINCSPlusParameterSpec getParameterSpec()
     {
         return SPHINCSPlusParameterSpec.fromName(params.getParameters().getName());
     }
