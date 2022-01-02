@@ -12,5 +12,5 @@ public interface SPHINCSPlusKey
      *
      * @return a SPHINCSPlusParameterSpec
      */
-    SPHINCSPlusParameterSpec getParams();
+    SPHINCSPlusParameterSpec getParameterSpec();
 }

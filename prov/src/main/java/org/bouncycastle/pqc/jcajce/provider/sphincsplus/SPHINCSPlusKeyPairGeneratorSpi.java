@@ -14,6 +14,7 @@ import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 
 public class SPHINCSPlusKeyPairGeneratorSpi
@@ -77,11 +78,10 @@ public class SPHINCSPlusKeyPairGeneratorSpi
     {
         if (!(params instanceof SPHINCSPlusParameterSpec))
         {
-            throw new InvalidAlgorithmParameterException("parameter object not a SPHINCS256KeyGenParameterSpec");
+            throw new InvalidAlgorithmParameterException("parameter object not a CMCEParameterSpec");
         }
-
-        SPHINCSPlusParameterSpec sphincsParams = (SPHINCSPlusParameterSpec)params;
-        param = new SPHINCSPlusKeyGenerationParameters(random, (SPHINCSPlusParameters)parameters.get(sphincsParams.getName()));
+        
+        param = new SPHINCSPlusKeyGenerationParameters(random, (SPHINCSPlusParameters)parameters.get(getNameFromParams(params)));
 
         engine.init(param);
         initialised = true;
@@ -102,5 +102,19 @@ public class SPHINCSPlusKeyPairGeneratorSpi
         SPHINCSPlusPrivateKeyParameters priv = (SPHINCSPlusPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCSPHINCSPlusPublicKey(pub), new BCSPHINCSPlusPrivateKey(priv));
+    }
+
+    private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
+        throws InvalidAlgorithmParameterException
+    {
+        if (paramSpec instanceof SPHINCSPlusParameterSpec)
+        {
+            SPHINCSPlusParameterSpec params = (SPHINCSPlusParameterSpec)paramSpec;
+            return params.getName();
+        }
+        else
+        {
+            return SpecUtil.getNameFrom(paramSpec);
+        }
     }
 }
