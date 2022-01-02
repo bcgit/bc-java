@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.sphincsplus;
+package org.bouncycastle.pqc.jcajce.provider.cmce;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -7,27 +7,27 @@ import java.security.PublicKey;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusKey;
-import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
+import org.bouncycastle.pqc.jcajce.interfaces.CMCEKey;
+import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
 import org.bouncycastle.util.Arrays;
 
-public class BCSPHINCSPlusPublicKey
-    implements PublicKey, SPHINCSPlusKey
+public class BCCMCEPublicKey
+    implements PublicKey, CMCEKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient SPHINCSPlusPublicKeyParameters params;
+    private transient CMCEPublicKeyParameters params;
 
-    public BCSPHINCSPlusPublicKey(
-        SPHINCSPlusPublicKeyParameters params)
+    public BCCMCEPublicKey(
+        CMCEPublicKeyParameters params)
     {
         this.params = params;
     }
 
-    public BCSPHINCSPlusPublicKey(SubjectPublicKeyInfo keyInfo)
+    public BCCMCEPublicKey(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
         init(keyInfo);
@@ -36,7 +36,7 @@ public class BCSPHINCSPlusPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.params = (CMCEPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
     }
     
     /**
@@ -52,9 +52,9 @@ public class BCSPHINCSPlusPublicKey
             return true;
         }
 
-        if (o instanceof BCSPHINCSPlusPublicKey)
+        if (o instanceof BCCMCEPublicKey)
         {
-            BCSPHINCSPlusPublicKey otherKey = (BCSPHINCSPlusPublicKey)o;
+            BCCMCEPublicKey otherKey = (BCCMCEPublicKey)o;
 
             return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
@@ -68,11 +68,11 @@ public class BCSPHINCSPlusPublicKey
     }
 
     /**
-     * @return name of the algorithm - "SPHINCS+"
+     * @return name of the algorithm - "CMCE"
      */
     public final String getAlgorithm()
     {
-        return "SPHINCS+";
+        return "CMCE";
     }
 
     public byte[] getEncoded()
@@ -94,9 +94,9 @@ public class BCSPHINCSPlusPublicKey
         return "X.509";
     }
 
-    public SPHINCSPlusParameterSpec getParameterSpec()
+    public CMCEParameterSpec getParameterSpec()
     {
-        return SPHINCSPlusParameterSpec.fromName(params.getParameters().getName());
+        return CMCEParameterSpec.fromName(params.getParameters().getName());
     }
 
     CipherParameters getKeyParams()

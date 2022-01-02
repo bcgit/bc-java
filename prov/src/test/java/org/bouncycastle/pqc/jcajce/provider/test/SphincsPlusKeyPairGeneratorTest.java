@@ -6,7 +6,6 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
-//import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusKeyGenParameterSpec;
 
 
 /**
