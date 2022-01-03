@@ -4,13 +4,14 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
  * Camellia - based on RFC 3713.
  */
 public class CamelliaEngine
-    implements BlockCipher
+    implements BlockCipher, StatelessProcessing
 {
     private boolean initialised = false;
     private boolean _keyIs128;
