@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -32,7 +33,7 @@ import org.bouncycastle.util.Pack;
  *
  */
 public class AESEngine
-    implements BlockCipher
+    implements BlockCipher, StatelessProcessing
 {
     // The S box
     private static final byte[] S = {
