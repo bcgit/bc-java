@@ -17,26 +17,50 @@ public class GCMCache
         CoreIndex idx = new CoreIndex(cipher, keyParam);
         CoreEngine coreEngine = null;
 
-        WeakReference<CoreEngine> markerRef = cache.get(idx);
-        if (markerRef != null)
+        if (cipher instanceof StatelessProcessing)
         {
-            coreEngine = markerRef.get();
-        }
-
-        if (coreEngine != null)
-        {
-            if (cipher instanceof StatelessProcessing)
+            synchronized (cache)
             {
+                WeakReference<CoreEngine> markerRef = cache.get(idx);
+                if (markerRef != null)
+                {
+                    coreEngine = markerRef.get();
+                }
+
+                if (coreEngine != null)
+                {
+                    return coreEngine;
+                }
+
+                coreEngine = new GCMCache.CoreEngine(((StatelessProcessing)cipher).newInstance(), multiplier, keyParam);
+
+                cache.put(idx, new WeakReference<GCMCache.CoreEngine>(coreEngine));
+
                 return coreEngine;
             }
-            return new CoreEngine(cipher, keyParam, coreEngine);
         }
+        else
+        {
+            synchronized (cache)
+             {
+                 WeakReference<CoreEngine> markerRef = cache.get(idx);
+                 if (markerRef != null)
+                 {
+                     coreEngine = markerRef.get();
+                 }
 
-        coreEngine = new CoreEngine(cipher, multiplier, keyParam);
+                 if (coreEngine != null)
+                 {
+                     return new GCMCache.CoreEngine(cipher, keyParam, coreEngine);
+                 }
 
-        cache.put(idx, new WeakReference<CoreEngine>(coreEngine));
+                 coreEngine = new GCMCache.CoreEngine(cipher, multiplier, keyParam);
 
-        return coreEngine;
+                 cache.put(idx, new WeakReference<GCMCache.CoreEngine>(coreEngine));
+
+                 return coreEngine;
+             }
+        }
     }
 
     static class CoreIndex
