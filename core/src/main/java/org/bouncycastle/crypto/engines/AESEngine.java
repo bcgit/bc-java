@@ -582,4 +582,9 @@ private static final int[] Tinv0 =
         Pack.intToLittleEndian(C2, out, outOff +  8);
         Pack.intToLittleEndian(C3, out, outOff + 12);
     }
+
+    public BlockCipher newInstance()
+    {
+        return new AESEngine();
+    }
 }

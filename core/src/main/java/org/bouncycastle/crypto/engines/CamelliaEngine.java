@@ -684,4 +684,9 @@ public class CamelliaEngine
         // nothing
 
     }
+
+    public BlockCipher newInstance()
+    {
+        return new CamelliaEngine();
+    }
 }
