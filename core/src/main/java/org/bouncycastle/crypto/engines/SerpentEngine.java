@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -298,5 +299,10 @@ public final class SerpentEngine
         Pack.intToLittleEndian(X[1] ^ wKey[1], output, outOff + 4);
         Pack.intToLittleEndian(X[2] ^ wKey[2], output, outOff + 8);
         Pack.intToLittleEndian(X[3] ^ wKey[3], output, outOff + 12);
+    }
+
+    public BlockCipher newInstance()
+    {
+        return new SerpentEngine();
     }
 }
