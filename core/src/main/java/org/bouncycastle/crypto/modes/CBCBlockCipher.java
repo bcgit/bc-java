@@ -16,8 +16,10 @@ public class CBCBlockCipher
     private byte[]          cbcV;
     private byte[]          cbcNextV;
 
-    private int             blockSize;
-    private BlockCipher     cipher = null;
+    private final int             blockSize;
+    private final BlockCipher     baseCipher;
+    private ECBCache.CoreEngine   cbcCore;
+
     private boolean         encrypting;
 
     /**
@@ -28,7 +30,7 @@ public class CBCBlockCipher
     public CBCBlockCipher(
         BlockCipher cipher)
     {
-        this.cipher = cipher;
+        this.baseCipher = cipher;
         this.blockSize = cipher.getBlockSize();
 
         this.IV = new byte[blockSize];
@@ -43,7 +45,7 @@ public class CBCBlockCipher
      */
     public BlockCipher getUnderlyingCipher()
     {
-        return cipher;
+        return (cbcCore != null) ? cbcCore.cipher : baseCipher;
     }
 
     /**
@@ -82,7 +84,7 @@ public class CBCBlockCipher
             // if null it's an IV changed only.
             if (ivParam.getParameters() != null)
             {
-                cipher.init(encrypting, ivParam.getParameters());
+                cbcCore = ECBCache.getCore(baseCipher, encrypting, ivParam.getParameters());
             }
             else if (oldEncrypting != encrypting)
             {
@@ -96,7 +98,7 @@ public class CBCBlockCipher
             // if it's null, key is to be reused.
             if (params != null)
             {
-                cipher.init(encrypting, params);
+                cbcCore = ECBCache.getCore(baseCipher, encrypting, params);
             }
             else if (oldEncrypting != encrypting)
             {
@@ -112,7 +114,7 @@ public class CBCBlockCipher
      */
     public String getAlgorithmName()
     {
-        return cipher.getAlgorithmName() + "/CBC";
+        return (cbcCore != null ? cbcCore.cipher.getAlgorithmName() : baseCipher.getAlgorithmName()) + "/CBC";
     }
 
     /**
@@ -122,7 +124,7 @@ public class CBCBlockCipher
      */
     public int getBlockSize()
     {
-        return cipher.getBlockSize();
+        return (cbcCore != null ? cbcCore.cipher.getBlockSize() : baseCipher.getBlockSize());
     }
 
     /**
@@ -157,7 +159,10 @@ public class CBCBlockCipher
         System.arraycopy(IV, 0, cbcV, 0, IV.length);
         Arrays.fill(cbcNextV, (byte)0);
 
-        cipher.reset();
+        if (cbcCore != null)
+        {
+            cbcCore.cipher.reset();
+        }
     }
 
     /**
@@ -193,7 +198,7 @@ public class CBCBlockCipher
             cbcV[i] ^= in[inOff + i];
         }
 
-        int length = cipher.processBlock(cbcV, 0, out, outOff);
+        int length = cbcCore.cipher.processBlock(cbcV, 0, out, outOff);
 
         /*
          * copy ciphertext to cbcV
@@ -229,7 +234,7 @@ public class CBCBlockCipher
 
         System.arraycopy(in, inOff, cbcNextV, 0, blockSize);
 
-        int length = cipher.processBlock(in, inOff, out, outOff);
+        int length = cbcCore.cipher.processBlock(in, inOff, out, outOff);
 
         /*
          * XOR the cbcV and the output
