@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -305,5 +306,10 @@ public final class TnepresEngine
         Pack.intToBigEndian(X[2] ^ wKey[2], output, outOff + 4);
         Pack.intToBigEndian(X[1] ^ wKey[1], output, outOff + 8);
         Pack.intToBigEndian(X[0] ^ wKey[0], output, outOff + 12);
+    }
+
+    public BlockCipher newInstance()
+    {
+        return new TnepresEngine();
     }
 }
