@@ -22,7 +22,7 @@ public class FrodoKEMGenerator
         FrodoPublicKeyParameters key = (FrodoPublicKeyParameters)recipientKey;
         FrodoEngine engine = key.getParameters().getEngine();
         byte[] cipher_text = new byte[engine.getCipherTextSize()];
-        byte[] sessionKey = new byte[32];
+        byte[] sessionKey = new byte[engine.getSessionKeySize()];
         engine.kem_enc(cipher_text, sessionKey, key.getPublicKey(), sr);
         return new FrodoKEMGenerator.SecretWithEncapsulationImpl(sessionKey, cipher_text);
     }
