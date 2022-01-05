@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.security.PublicKey;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
@@ -99,7 +98,7 @@ public class BCCMCEPublicKey
         return CMCEParameterSpec.fromName(params.getParameters().getName());
     }
 
-    CipherParameters getKeyParams()
+    CMCEPublicKeyParameters getKeyParams()
     {
         return params;
     }
