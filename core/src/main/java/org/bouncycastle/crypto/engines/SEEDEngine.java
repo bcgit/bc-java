@@ -244,6 +244,11 @@ public class SEEDEngine
 
     private int[] createWorkingKey(byte[] inKey)
     {
+        if (inKey.length != 16)
+        {
+            throw new IllegalArgumentException("key size must be 128 bits");
+        }
+        
         int[] key = new int[32];
         long lower = bytesToLong(inKey, 0);
         long upper = bytesToLong(inKey, 8);
