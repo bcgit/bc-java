@@ -6,6 +6,7 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.Pack;
 
 import javax.crypto.*;
+import java.io.IOException;
 import java.security.*;
 
 class FrodoEngine
@@ -166,9 +167,13 @@ class FrodoEngine
         len_pk_bytes = 21520;
         len_ct_bytes = 21632;
 
-        short[] error_distribution = {11278, 10277, 7774, 4882, 2545, 1101, 396, 118, 29, 6, 1};
+        short[] error_distribution = {18286, 14320, 6876, 2023, 364, 40, 2};
         // setting T_chi
         cdf_zero_centred_symmetric(error_distribution);
+        System.out.print("T_chi: ");
+        for (int i = 0; i < T_chi.length; i++)
+            System.out.print(  T_chi[i] + " ");
+        System.out.println();
 
         // all same size
         len_mu = 256;
@@ -185,39 +190,6 @@ class FrodoEngine
         len_pkh_bytes = len_pkh / 8;
         len_ss_bytes = len_ss / 8;
     }
-
-
-
-//    public static void main(String[] args)
-//    {
-//        // init
-//
-//        // keygen
-//
-//        SecureRandom random = new FixedSecureRandom(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E47"));
-//        byte[] pk = new byte[len_pk_bytes];
-//        byte[] sk = new byte[len_sk_bytes];
-//        kem_keypair(pk, sk, random);
-//        System.out.println(ByteUtils.toHexString(sk).toUpperCase());
-//
-//        // kem_enc
-//
-//        random = new FixedSecureRandom(Hex.decode("33B3C07507E4201748494D832B6EE2A6"));
-//        byte[] ct = new byte[len_ct_bytes];
-//        byte[] ss = new byte[len_ss_bytes];
-//        kem_enc(ct, ss, pk, random);
-//        System.out.println("ct: " + ByteUtils.toHexString(ct).toUpperCase());
-//
-//        // kem_dec
-//
-//        byte[] dec_ss = new byte[len_ss_bytes];
-//        kem_dec(dec_ss, ct, sk);
-//        System.out.println("dss: " + ByteUtils.toHexString(dec_ss));
-//
-//
-//    }
-
-
 
     private static void cdf_zero_centred_symmetric(short[] chi)
     {
@@ -285,8 +257,8 @@ class FrodoEngine
             for (int j = 0; j < Ycol; j++)
             {
                 for (int k = 0; k < Xcol; k++)
-                    res[i][j] = (short) ((res[i][j] & 0xffff) + (X[i][k] & 0xffff) * (Y[k][j] & 0xffff));
-                res[i][j] = (short) ((res[i][j] & 0xffff) % q);
+                    res[i][j] = (short) ((res[i][j] & 0xffff) + ((X[i][k] & 0xffff) * (Y[k][j] & 0xffff))&0xffff);
+                res[i][j] = (short) (((res[i][j] & 0xffff) % q)&0xffff);
             }
         return res;
     }
@@ -298,7 +270,7 @@ class FrodoEngine
         short[][] res = new short[row][col];
         for (int i = 0; i < row; i++)
             for (int j = 0; j < col; j++)
-                res[i][j] = (short) ((X[i][j] + Y[i][j]) % q);
+                res[i][j] = (short) (((X[i][j]&0xffff) + (Y[i][j]&0xffff)) % q);
 
         return res;
     }
@@ -362,8 +334,6 @@ class FrodoEngine
 
         // 2. Generate pseudorandom seed seedA = SHAKE(z, len_seedA) (length in bits)
         byte[] seedA = new byte[len_seedA_bytes];
-        // TODO make this a parameter (between shake and aes and different bit sizes)
-        Xof digest = new SHAKEDigest(128);
         digest.update(z, 0, z.length);
         digest.doFinal(seedA, 0, seedA.length);
 
@@ -376,7 +346,6 @@ class FrodoEngine
         byte[] temp = ByteUtils.concatenate(new byte[]{0x5f}, seedSE);
         byte[] rbytes = new byte[2 * n * nbar * len_chi_bytes];
 
-        digest = new SHAKEDigest(128);
         digest.update(temp, 0, temp.length);
         digest.doFinal(rbytes, 0, rbytes.length);
 
@@ -439,7 +408,6 @@ class FrodoEngine
         System.arraycopy(ByteUtils.concatenate(seedA, b), 0, pk, 0, len_pk_bytes);
 
         byte[] pkh = new byte[len_pkh_bytes];
-        digest = new SHAKEDigest(128);
         digest.update(pk, 0, pk.length);
         digest.doFinal(pkh, 0, pkh.length);
         System.out.println("pkh: " + ByteUtils.toHexString(pkh));
@@ -557,14 +525,12 @@ class FrodoEngine
 
         // 2. pkh = SHAKE(pk, len_pkh)
         byte[] pkh = new byte[len_pkh_bytes];
-        Xof digest = new SHAKEDigest(128);
         digest.update(pk, 0, len_pk_bytes);
         digest.doFinal(pkh, 0, len_pkh_bytes);
         System.out.println("pkh: " + ByteUtils.toHexString(pkh));
 
         // 3. seedSE || k = SHAKE(pkh || mu, len_seedSE + len_k) (length in bits)
         byte[] seedSE_k = new byte[len_seedSE + len_k];
-        digest = new SHAKEDigest(128);
         digest.update(ByteUtils.concatenate(pkh, mu), 0, len_pkh_bytes + len_mu_bytes);
         digest.doFinal(seedSE_k, 0, len_seedSE_bytes + len_k_bytes);
 
@@ -576,7 +542,6 @@ class FrodoEngine
 
         // 4. r = SHAKE(0x96 || seedSE, 2*mbar*n + mbar*nbar*len_chi) (length in bits)
         byte[] rbytes = new byte[(2 * mbar * n + mbar * nbar) * len_chi_bytes];
-        digest = new SHAKEDigest(128);
         digest.update(ByteUtils.concatenate(new byte[]{(byte) 0x96}, seedSE), 0, seedSE.length + 1);
         digest.doFinal(rbytes, 0, rbytes.length);
 
@@ -696,7 +661,6 @@ class FrodoEngine
         // ct = c1 + c2
         System.arraycopy(ByteUtils.concatenate(c1, c2), 0, ct, 0, len_ct_bytes);
 
-        digest = new SHAKEDigest(128);
         digest.update(ByteUtils.concatenate(ct, k), 0, c1.length + c2.length + len_k_bytes);
         digest.doFinal(ss, 0, len_s_bytes);
 
@@ -761,8 +725,8 @@ class FrodoEngine
 
 //        r = (short) ((-(short)(r >> 1) | -(short)(r & 1)) >> (8*2-1));
         if (r == 0)
-            return 1;
-        return 0;
+            return 0;
+        return -1;
     }
 
     private static byte[] ctselect(byte[] a, byte[] b, short selector)
@@ -770,9 +734,9 @@ class FrodoEngine
         // Select one of the two input arrays to be moved to r
         // If (selector == 0) then load r with a, else if (selector == -1) load r with b
         byte[] r = new byte[a.length];
-
         for (int i = 0; i < a.length; i++)
         {
+//            r[i] = (byte) ((a[i]&0xff & (~mask&0xff))&0xff | (b[i]&0xff & ((mask)&0xff))&0xff);
             r[i] = (byte) (((~selector & a[i]) & 0xff) | ((selector & b[i]) & 0xff));
         }
         return r;
@@ -854,6 +818,11 @@ class FrodoEngine
                 Bprime[i][j] = bprime[i * n + j];
             }
         }
+        System.out.print("B': ");
+        for (int i = 0; i < Bprime.length; i++)
+            for (int j = 0; j < Bprime[0].length; j++)
+                System.out.printf("%04x, ", (Bprime[i][j]));
+        System.out.println();
 
         // 2. C = Frodo.Unpack(c2, mbar, nbar)
         //TODO
@@ -910,7 +879,6 @@ class FrodoEngine
 
         // 6. seedSE' || k' = SHAKE(pkh || mu', len_seedSE + len_k) (length in bits)
         byte[] seedSEprime_kprime = new byte[len_seedSE_bytes + len_k_bytes];
-        Xof digest = new SHAKEDigest(128);
         digest.update(ByteUtils.concatenate(pkh, muprime), 0, len_pkh_bytes + len_mu_bytes);
         digest.doFinal(seedSEprime_kprime, 0, len_seedSE_bytes + len_k_bytes);
 
@@ -922,7 +890,6 @@ class FrodoEngine
 
         // 7. r = SHAKE(0x96 || seedSE', 2*mbar*n + mbar*nbar*len_chi) (length in bits)
         byte[] rbytes = new byte[(2 * mbar * n + mbar * mbar) * len_chi_bytes];
-        digest = new SHAKEDigest(128);
         digest.update(ByteUtils.concatenate(new byte[]{(byte) 0x96}, seedSEprime), 0, len_seedSE_bytes + 1);
         digest.doFinal(rbytes, 0, rbytes.length);
         System.out.println("rbyte: " + ByteUtils.toHexString(rbytes));
@@ -959,6 +926,7 @@ class FrodoEngine
         // 10. A = Frodo.Gen(seedA)
         short[][] A = gen.genMatrix(seedA);
 
+        System.out.println();
         // 11. B'' = S' A + E'
         short[][] Bprimeprime = matrix_add(matrix_mul(Sprime, A), Eprime);
         System.out.print("B'': ");
@@ -1017,11 +985,11 @@ class FrodoEngine
         // primitives using the Fujisaki-Okamoto transformation and its application on FrodoKEM. In CRYPTO 2020.
         //TODO change it so Bprime and C are in the same array same with B'' and C'
         short use_kprime = ctverify(Bprime, C, Bprimeprime, Cprime);
+        System.out.println("use_kprime: " + use_kprime);
         byte[] kbar = ctselect(kprime, s, use_kprime);
         System.out.println("kbar: " + ByteUtils.toHexString(kbar));
 
         // 17. ss = SHAKE(c1 || c2 || kbar, len_ss) (length in bits)
-        digest = new SHAKEDigest(128);
         digest.update(ByteUtils.concatenate(ByteUtils.concatenate(c1, c2), kbar), 0, c1.length + c2.length + kbar.length);
         digest.doFinal(ss, 0, len_ss_bytes);
         System.out.println("ss: " + ByteUtils.toHexString(ss));
