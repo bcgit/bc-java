@@ -157,6 +157,11 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier qTESLA_p_III = qTESLA.branch("12");
 
     /**
+     * SPHINCS+
+     */
+    public static final ASN1ObjectIdentifier sphincsPlus = bc_sig.branch("5");
+
+    /**
      * key_exchange(3) algorithms
      */
     public static final ASN1ObjectIdentifier bc_exch = bc.branch("3");
@@ -165,6 +170,11 @@ public interface BCObjectIdentifiers
      * NewHope
      */
     public static final ASN1ObjectIdentifier newHope = bc_exch.branch("1");
+
+    /**
+     * Classic McEliece
+     */
+    public static final ASN1ObjectIdentifier classicMcEliece = bc_exch.branch("2");
 
     /**
      * X.509 extension(4) values
