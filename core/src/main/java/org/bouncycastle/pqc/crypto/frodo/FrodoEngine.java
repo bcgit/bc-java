@@ -69,7 +69,7 @@ class FrodoEngine
         return len_pk_bytes;
     }
 
-    public FrodoEngine(int n, boolean isAES128) throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException
+    public FrodoEngine(int n, boolean isAES128)
     {
         switch (n)
         {
@@ -225,52 +225,44 @@ class FrodoEngine
         return e;
     }
 
-    private static short[][] sample_matrix(short[] r, int offset, int n1, int n2)
+    private static short[] sample_matrix(short[] r, int offset, int n1, int n2)
     {
-        short[][] E = new short[n1][n2];
+        short[] E = new short[n1 * n2];
         for (int i = 0; i < n1; i++)
             for (int j = 0; j < n2; j++)
-                E[i][j] = (short) (sample(r[i * n2 + j + offset]));
+                E[i*n2+j] = (short) (sample(r[i * n2 + j + offset]));
         return E;
     }
 
-    private static short[][] matrix_transpose(short[][] X)
+    private static short[] matrix_transpose(short[] X, int n1, int n2)
     {
-        int row = X.length,
-                col = X[0].length;
-        short[][] res = new short[col][row];
+        short[] res = new short[n1 * n2];
 
-        for (int i = 0; i < col; i++)
-            for (int j = 0; j < row; j++)
-                res[i][j] = X[j][i];
+        for (int i = 0; i < n2; i++)
+            for (int j = 0; j < n1; j++)
+                res[i*n1 +j] = X[j*n2+ i];
         return res;
     }
 
-    private static short[][] matrix_mul(short[][] X, short[][] Y)
+    private static short[] matrix_mul(short[] X, int Xrow, int Xcol, short[] Y, int Yrow, int Ycol)
     {
-        int Xrow = X.length,
-                Xcol = X[0].length,
-                Yrow = Y.length,
-                Ycol = Y[0].length;
-        short[][] res = new short[Xrow][Ycol];
+        short[] res = new short[Xrow * Ycol];
         for (int i = 0; i < Xrow; i++)
             for (int j = 0; j < Ycol; j++)
             {
                 for (int k = 0; k < Xcol; k++)
-                    res[i][j] = (short) ((res[i][j] & 0xffff) + ((X[i][k] & 0xffff) * (Y[k][j] & 0xffff))&0xffff);
-                res[i][j] = (short) (((res[i][j] & 0xffff) % q)&0xffff);
+                    res[i*Ycol+j] = (short) ((res[i*Ycol+j] & 0xffff) + ((X[i*Xcol+k] & 0xffff) * (Y[k*Ycol+j] & 0xffff))&0xffff);
+                res[i*Ycol+j] = (short) (((res[i*Ycol+j] & 0xffff) % q)&0xffff);
             }
         return res;
     }
 
-    private static short[][] matrix_add(short[][] X, short[][] Y)
+    private static short[] matrix_add(short[] X, short[] Y, int n1, int m1)
     {
-        int row = X.length,
-                col = X[0].length;
-        short[][] res = new short[row][col];
-        for (int i = 0; i < row; i++)
-            for (int j = 0; j < col; j++)
-                res[i][j] = (short) (((X[i][j]&0xffff) + (Y[i][j]&0xffff)) % q);
+        short[] res = new short[n1*m1];
+        for (int i = 0; i < n1; i++)
+            for (int j = 0; j < m1; j++)
+                res[i*m1+j] = (short) (((X[i*m1+j]&0xffff) + (Y[i*m1+j]&0xffff)) % q);
 
         return res;
     }
@@ -340,7 +332,7 @@ class FrodoEngine
         System.out.println("seedA: " + ByteUtils.toHexString(seedA));
 
         // 3. A = Frodo.Gen(seedA)
-        short[][] A = gen.genMatrix(seedA);
+        short[] A = gen.genMatrix(seedA);
 
         // 4. r = SHAKE(0x5F || seedSE, 2*n*nbar*len_chi) (length in bits), parsed as 2*n*nbar len_chi-bit integers in little-endian byte order
         byte[] temp = ByteUtils.concatenate(new byte[]{0x5f}, seedSE);
@@ -363,44 +355,35 @@ class FrodoEngine
         System.out.println();
 
         // 5. S^T = Frodo.SampleMatrix(r[0 .. n*nbar-1], nbar, n)
-        short[][] S_T = sample_matrix(r, 0, nbar, n);
+        short[] S_T = sample_matrix(r, 0, nbar, n);
 
         System.out.print("S^T: ");
         for (int i = 0; i < S_T.length; i++)
-            for (int j = 0; j < S_T[0].length; j++)
-                System.out.printf("%04x, ", (S_T[i][j]));
+            System.out.printf("%04x, ", (S_T[i]));
         //System.out.print(S_T[i][j] + " ");
         System.out.println();
 
-        short[][] S = matrix_transpose(S_T);
+        short[] S = matrix_transpose(S_T, nbar, n);
         // 6. E = Frodo.SampleMatrix(r[n*nbar .. 2*n*nbar-1], n, nbar)
-        short[][] E = sample_matrix(r, n * nbar, n, nbar);
+        short[] E = sample_matrix(r, n * nbar, n, nbar);
 
         System.out.print("E: ");
         for (int i = 0; i < E.length; i++)
-            for (int j = 0; j < E[0].length; j++)
-                System.out.printf("%04x, ", (E[i][j]));
+            System.out.printf("%04x, ", (E[i]));
         //System.out.print(E[i][j] + " ");
         System.out.println();
         // 7. B = A * S + E
-        short[][] B = matrix_add(matrix_mul(A, S), E);
+        short[] B = matrix_add(matrix_mul(A, n, n, S, n, nbar), E, n, nbar);
 
         System.out.print("B: ");
         for (int i = 0; i < B.length; i++)
-            for (int j = 0; j < B[0].length; j++)
-                System.out.printf("%04x, ", (B[i][j]));
+            System.out.printf("%04x, ", (B[i]));
 //        System.out.print(B[i][j] + ",");
 //                System.out.printf("%02x ",Pack.bigEndianToShort(Pack.shortToBigEndian(B[i][j]),0));
         System.out.println();
 
         // 8. b = Pack(B)
-        //TODO make it so we dont deal with matrices
-        short[] BB = new short[B.length * B[0].length]; //matrix into a vector
-        for (int i = 0; i < B.length; i++)
-        {
-            System.arraycopy(B[i], 0, BB, B[i].length * i, B[i].length);
-        }
-        byte[] b = pack(BB);
+        byte[] b = pack(B);
         System.out.println("b: " + ByteUtils.toHexString(b));
 
         // 9. pkh = SHAKE(seedA || b, len_pkh) (length in bits)
@@ -417,11 +400,11 @@ class FrodoEngine
                 sk, 0, len_s_bytes + len_pk_bytes);
         System.out.println("sk: " + ByteUtils.toHexString(sk).toUpperCase());
 
-        for (int i = 0; i < S_T.length; i++)
+        for (int i = 0; i < nbar; i++)
         {
-            for (int j = 0; j < S_T[0].length; j++)
+            for (int j = 0; j < n; j++)
             {
-                System.arraycopy(Pack.shortToLittleEndian(S_T[i][j]), 0,
+                System.arraycopy(Pack.shortToLittleEndian(S_T[i*n+j]), 0,
                         sk, len_s_bytes + len_pk_bytes + i * n * 2 + j * 2, 2);
             }
         }
@@ -477,11 +460,11 @@ class FrodoEngine
         return out;
     }
 
-    private static short[][] encode(byte[] k)
+    private static short[] encode(byte[] k)
     {
         int l, byte_index = 0;
         byte mask = 1;
-        short[][] K = new short[mbar][nbar];
+        short[] K = new short[mbar*nbar];
         int temp;
         // 1. for i = 0; i < mbar; i += 1
         for (int i = 0; i < mbar; i++)
@@ -506,7 +489,7 @@ class FrodoEngine
                     }
                 }
                 // 4. K[i][j] = ec(tmp) = tmp * q/2^B
-                K[i][j] = (short) (temp * (q / (1 << B)));
+                K[i*nbar+j] = (short) (temp * (q / (1 << B)));
             }
         }
         return K;
@@ -557,51 +540,41 @@ class FrodoEngine
         System.out.println();
 
         // 5. S' = Frodo.SampleMatrix(r[0 .. mbar*n-1], mbar, n)
-        short[][] Sprime = sample_matrix(r, 0, mbar, n);
+        short[] Sprime = sample_matrix(r, 0, mbar, n);
         System.out.print("S': ");
         for (int i = 0; i < Sprime.length; i++)
-            for (int j = 0; j < Sprime[0].length; j++)
-                System.out.printf("%04x, ", (Sprime[i][j]));
+            System.out.printf("%04x, ", (Sprime[i]));
         //System.out.print(Sprime[i][j] + ",");
         System.out.println();
 
         // 6. E' = Frodo.SampleMatrix(r[mbar*n .. 2*mbar*n-1], mbar, n)
-        short[][] Eprime = sample_matrix(r, mbar * n, mbar, n);
+        short[] Eprime = sample_matrix(r, mbar * n, mbar, n);
         System.out.print("E': ");
         for (int i = 0; i < Eprime.length; i++)
-            for (int j = 0; j < Eprime[0].length; j++)
-                System.out.printf("%04x, ", (Eprime[i][j]));
+            System.out.printf("%04x, ", (Eprime[i]));
         //System.out.print(Eprime[i][j] + ",");
         System.out.println();
 
         // 7. A = Frodo.Gen(seedA)
-        short[][] A = gen.genMatrix(seedA);
+        short[] A = gen.genMatrix(seedA);
 
         // 8. B' = S' A + E'
-        short[][] Bprime = matrix_add(matrix_mul(Sprime, A), Eprime);
+        short[] Bprime = matrix_add(matrix_mul(Sprime, mbar, n, A, n, n), Eprime, mbar, n);
         System.out.print("B': ");
         for (int i = 0; i < Bprime.length; i++)
-            for (int j = 0; j < Bprime[0].length; j++)
-                System.out.printf("%04x, ", (Bprime[i][j]));
+            System.out.printf("%04x, ", (Bprime[i]));
         //System.out.print(Bprime[i][j] + ",");
         System.out.println();
 
         // 9. c1 = Frodo.Pack(B')
-        //TODO make it so we dont deal with matrices
-        short[] BBPrime = new short[Bprime.length * Bprime[0].length]; //matrix into a vector
-        for (int i = 0; i < Bprime.length; i++)
-        {
-            System.arraycopy(Bprime[i], 0, BBPrime, Bprime[i].length * i, Bprime[i].length);
-        }
-        byte[] c1 = pack(BBPrime);
+        byte[] c1 = pack(Bprime);
         System.out.println("c1: " + ByteUtils.toHexString(c1).toUpperCase());
 
         // 10. E'' = Frodo.SampleMatrix(r[2*mbar*n .. 2*mbar*n + mbar*nbar-1], mbar, n)
-        short[][] Eprimeprime = sample_matrix(r, 2 * mbar * n, mbar, nbar);
+        short[] Eprimeprime = sample_matrix(r, 2 * mbar * n, mbar, nbar);
         System.out.print("E'': ");
         for (int i = 0; i < Eprimeprime.length; i++)
-            for (int j = 0; j < Eprimeprime[0].length; j++)
-                System.out.printf("%04x, ", (Eprimeprime[i][j]));
+                System.out.printf("%04x, ", (Eprimeprime[i]));
         //System.out.print((Eprimeprime[i][j]) + ",");
         System.out.println();
 
@@ -613,44 +586,26 @@ class FrodoEngine
 //        System.out.print(B[i] + ",");
         System.out.println();
 
-        //TODO make everything either a matrix or a vector
-        short[][] BB = new short[n][nbar]; //vector into a matrix
-        for (int i = 0; i < n; i++)
-        {
-            System.arraycopy(B, i * nbar, BB[i], 0, nbar);
-        }
 
         // 12. V = S' B + E''
-        short[][] V = matrix_add(matrix_mul(Sprime, BB), Eprimeprime);
+        short[] V = matrix_add(matrix_mul(Sprime, mbar, n, B, n, nbar), Eprimeprime, mbar, nbar);
 
         System.out.print("V: ");
         for (int i = 0; i < V.length; i++)
-            for (int j = 0; j < V[0].length; j++)
-                System.out.printf("%04x, ", (V[i][j]));
+            System.out.printf("%04x, ", (V[i]));
         System.out.println();
         // 13. C = V + Frodo.Encode(mu)
-        short[][] EncodedMU = encode(mu);
+        short[] EncodedMU = encode(mu);
         System.out.print("encMU: ");
         for (int i = 0; i < EncodedMU.length; i++)
-            for (int j = 0; j < EncodedMU.length; j++)
-                System.out.printf("%04x, ", (EncodedMU[i][j]));
+            System.out.printf("%04x, ", (EncodedMU[i]));
         System.out.println();
 
-        short[][] CC = matrix_add(V, EncodedMU);
+        short[] C = matrix_add(V, EncodedMU, nbar, mbar);
         System.out.print("C: ");
-        for (int i = 0; i < CC.length; i++)
-            for (int j = 0; j < CC.length; j++)
-                System.out.printf("%04x, ", (CC[i][j]));
+        for (int i = 0; i < C.length; i++)
+            System.out.printf("%04x, ", (C[i]));
         System.out.println();
-        //TODO
-        short[] C = new short[nbar * mbar];
-        for (int i = 0; i < nbar; i++)
-        {
-            for (int j = 0; j < mbar; j++)
-            {
-                C[i * mbar + j] = CC[i][j];
-            }
-        }
 
         // 14. c2 = Frodo.Pack(C)
         byte[] c2 = pack(C);
@@ -668,16 +623,14 @@ class FrodoEngine
         System.out.println("ct: " + ByteUtils.toHexString(ct));
     }
 
-    private static short[][] matrix_sub(short[][] X, short[][] Y)
+    private static short[] matrix_sub(short[] X, short[] Y, int n1, int n2)
     {
-        int Xrow = X.length,
-                Xcol = X[0].length;
-        short[][] res = new short[Xrow][Xcol];
-        for (int i = 0; i < Xrow; i++)
+        short[] res = new short[n1*n2];
+        for (int i = 0; i < n1; i++)
         {
-            for (int j = 0; j < Xcol; j++)
+            for (int j = 0; j < n2; j++)
             {
-                res[i][j] = (short) ((((X[i][j]) - (Y[i][j])) & 0xffff) % q);
+                res[i*n2+j] = (short) ((((X[i*n2+j]) - (Y[i*n2+j])) & 0xffff) % q);
             }
         }
         return res;
@@ -709,19 +662,17 @@ class FrodoEngine
     }
 
 
-    private static short ctverify(short[][] a1, short[][] a2, short[][] b1, short[][] b2)
+    private static short ctverify(short[] a1, short[] a2, short[] b1, short[] b2)
     {
         // Compare two arrays in constant time.
         // Returns 0 if the byte arrays are equal, -1 otherwise.
         short r = 0;
 
         for (short i = 0; i < a1.length; i++)
-            for (short j = 0; j < a1[0].length; j++)
-                r |= a1[i][j] ^ b1[i][j];
+            r |= a1[i] ^ b1[i];
 
         for (short i = 0; i < a2.length; i++)
-            for (short j = 0; j < a2[0].length; j++)
-                r |= a2[i][j] ^ b2[i][j];
+            r |= a2[i] ^ b2[i];
 
 //        r = (short) ((-(short)(r >> 1) | -(short)(r & 1)) >> (8*2-1));
         if (r == 0)
@@ -775,26 +726,24 @@ class FrodoEngine
         byte[] Sbytes = ByteUtils.subArray(sk, offset, offset + length);
         System.out.println("Sbytes: " + ByteUtils.toHexString(Sbytes));
 
-        short[][] Stransposed = new short[nbar][n];
+        short[] Stransposed = new short[nbar * n];
 
         for (int i = 0; i < nbar; i++)
         {
             for (int j = 0; j < n; j++)
             {
-                Stransposed[i][j] = Pack.littleEndianToShort(Sbytes, i * n * 2 + j * 2);
+                Stransposed[i*n+j] = Pack.littleEndianToShort(Sbytes, i * n * 2 + j * 2);
             }
         }
         System.out.print("S^T: ");
         for (int i = 0; i < Stransposed.length; i++)
-            for (int j = 0; j < Stransposed[0].length; j++)
-                System.out.printf("%04x, ", (Stransposed[i][j]));
+            System.out.printf("%04x, ", (Stransposed[i]));
         System.out.println();
 
-        short[][] S = matrix_transpose(Stransposed);
+        short[] S = matrix_transpose(Stransposed, nbar, n);
         System.out.print("S: ");
         for (int i = 0; i < S.length; i++)
-            for (int j = 0; j < S[0].length; j++)
-                System.out.printf("%04x, ", (S[i][j]));
+            System.out.printf("%04x, ", (S[i]));
         System.out.println();
 
 
@@ -804,75 +753,35 @@ class FrodoEngine
         System.out.println("pkh: " + ByteUtils.toHexString(pkh));
 
         // 1. B' = Frodo.Unpack(c1, mbar, n)
-        short[] bprime = unpack(c1, mbar, n);
-        System.out.print("B': ");
-        for (int i = 0; i < bprime.length; i++)
-            System.out.printf("%04x, ", (bprime[i]));
-        System.out.println();
-
-        short[][] Bprime = new short[mbar][n];
-        for (int i = 0; i < mbar; i++)
-        {
-            for (int j = 0; j < n; j++)
-            {
-                Bprime[i][j] = bprime[i * n + j];
-            }
-        }
+        short[] Bprime = unpack(c1, mbar, n);
         System.out.print("B': ");
         for (int i = 0; i < Bprime.length; i++)
-            for (int j = 0; j < Bprime[0].length; j++)
-                System.out.printf("%04x, ", (Bprime[i][j]));
+            System.out.printf("%04x, ", (Bprime[i]));
         System.out.println();
 
         // 2. C = Frodo.Unpack(c2, mbar, nbar)
-        //TODO
-        short[] c = unpack(c2, mbar, nbar);
-        System.out.print("c: ");
-        for (int i = 0; i < c.length; i++)
-            System.out.printf("%04x, ", (c[i]));
-        System.out.println();
-
-        short[][] C = new short[mbar][nbar];
-        for (int i = 0; i < mbar; i++)
-            for (int j = 0; j < nbar; j++)
-                C[i][j] = c[i * nbar + j];
-
+        short[] C = unpack(c2, mbar, nbar);
         System.out.print("C: ");
         for (int i = 0; i < C.length; i++)
-            for (int j = 0; j < C[0].length; j++)
-                System.out.printf("%04x, ", (C[i][j]));
+            System.out.printf("%04x, ", (C[i]));
         System.out.println();
 
         // 3. M = C - B' S
-        short[][] BprimeS = matrix_mul(Bprime, S);
+        short[] BprimeS = matrix_mul(Bprime, mbar, n, S, n, nbar);
         System.out.print("B'S: ");
         for (int i = 0; i < BprimeS.length; i++)
-            for (int j = 0; j < BprimeS[0].length; j++)
-                System.out.printf("%04x, ", (BprimeS[i][j]));
+            System.out.printf("%04x, ", (BprimeS[i]));
         System.out.println();
 
-        short[][] M = matrix_sub(C, BprimeS);
+        short[] M = matrix_sub(C, BprimeS, mbar, nbar);
         System.out.print("M: ");
         for (int i = 0; i < M.length; i++)
-            for (int j = 0; j < M[0].length; j++)
-                System.out.printf("%04x, ", (M[i][j]));
+            System.out.printf("%04x, ", (M[i]));
         System.out.println();
 
-        short[] m = new short[M.length * M[0].length];
-        for (int i = 0; i < M.length; i++)
-        {
-            for (int j = 0; j < M[0].length; j++)
-            {
-                m[i * M[0].length + j] = M[i][j];
-            }
-        }
-        System.out.print("m: ");
-        for (int i = 0; i < m.length; i++)
-            System.out.printf("%04x, ", (m[i]));
-        System.out.println();
 
         // 4. mu' = Frodo.Decode(M)
-        byte[] muprime = decode(m);
+        byte[] muprime = decode(M);
         System.out.println("mu': " + ByteUtils.toHexString(muprime));
 
         /// 5. Parse pk = seedA || b  (done above)
@@ -908,39 +817,35 @@ class FrodoEngine
         System.out.println();
 
         // 8. S' = Frodo.SampleMatrix(r[0 .. mbar*n-1], mbar, n)
-        short[][] Sprime = sample_matrix(r, 0, mbar, n);
+        short[] Sprime = sample_matrix(r, 0, mbar, n);
         System.out.print("S': ");
         for (int i = 0; i < Sprime.length; i++)
-            for (int j = 0; j < Sprime[0].length; j++)
-                System.out.printf("%04x, ", (Sprime[i][j]));
+            System.out.printf("%04x, ", (Sprime[i]));
         System.out.println();
 
         // 9. E' = Frodo.SampleMatrix(r[mbar*n .. 2*mbar*n-1], mbar, n)
-        short[][] Eprime = sample_matrix(r, mbar * n, mbar, n);
+        short[] Eprime = sample_matrix(r, mbar * n, mbar, n);
         System.out.print("E': ");
         for (int i = 0; i < Eprime.length; i++)
-            for (int j = 0; j < Eprime[0].length; j++)
-                System.out.printf("%04x, ", (Eprime[i][j]));
+            System.out.printf("%04x, ", (Eprime[i]));
         System.out.println();
 
         // 10. A = Frodo.Gen(seedA)
-        short[][] A = gen.genMatrix(seedA);
+        short[] A = gen.genMatrix(seedA);
 
         System.out.println();
         // 11. B'' = S' A + E'
-        short[][] Bprimeprime = matrix_add(matrix_mul(Sprime, A), Eprime);
+        short[] Bprimeprime = matrix_add(matrix_mul(Sprime, mbar, n, A, n, n), Eprime, mbar, n);
         System.out.print("B'': ");
         for (int i = 0; i < Bprimeprime.length; i++)
-            for (int j = 0; j < Bprimeprime[0].length; j++)
-                System.out.printf("%04x, ", (Bprimeprime[i][j]));
+            System.out.printf("%04x, ", (Bprimeprime[i]));
         System.out.println();
 
         // 12. E'' = Frodo.SampleMatrix(r[2*mbar*n .. 2*mbar*n + mbar*nbar-1], mbar, n)
-        short[][] Eprimeprime = sample_matrix(r, 2 * mbar * n, mbar, nbar);
+        short[] Eprimeprime = sample_matrix(r, 2 * mbar * n, mbar, nbar);
         System.out.print("E'': ");
         for (int i = 0; i < Eprimeprime.length; i++)
-            for (int j = 0; j < Eprimeprime[0].length; j++)
-                System.out.printf("%04x, ", (Eprimeprime[i][j]));
+            System.out.printf("%04x, ", (Eprimeprime[i]));
         System.out.println();
 
         // 13. B = Frodo.Unpack(b, n, nbar)
@@ -950,33 +855,19 @@ class FrodoEngine
             System.out.printf("%04x, ", (B[i]));
         System.out.println();
 
-        //TODO
-        short[][] BB = new short[n][nbar]; //vector into a matrix
-        for (int i = 0; i < n; i++)
-        {
-            System.arraycopy(B, i * nbar, BB[i], 0, nbar);
-        }
-
-        System.out.print("BB: ");
-        for (int i = 0; i < BB.length; i++)
-            for (int j = 0; j < BB[0].length; j++)
-                System.out.printf("%04x, ", (BB[i][j]));
-        System.out.println();
 
         // 14. V = S' B + E''
-        short[][] V = matrix_add(matrix_mul(Sprime, BB), Eprimeprime);
+        short[] V = matrix_add(matrix_mul(Sprime, mbar, n, B, n, nbar), Eprimeprime, mbar, nbar);
         System.out.print("V: ");
         for (int i = 0; i < V.length; i++)
-            for (int j = 0; j < V[0].length; j++)
-                System.out.printf("%04x, ", (V[i][j]));
+            System.out.printf("%04x, ", (V[i]));
         System.out.println();
 
         // 15. C' = V + Frodo.Encode(muprime)
-        short[][] Cprime = matrix_add(V, encode(muprime));
+        short[] Cprime = matrix_add(V, encode(muprime), mbar, nbar);
         System.out.print("C': ");
         for (int i = 0; i < Cprime.length; i++)
-            for (int j = 0; j < Cprime[0].length; j++)
-                System.out.printf("%04x, ", (Cprime[i][j]));
+            System.out.printf("%04x, ", (Cprime[i]));
         System.out.println();
 
         // 16. (in constant time) kbar = kprime if (B' || C == B'' || C') else kbar = s
