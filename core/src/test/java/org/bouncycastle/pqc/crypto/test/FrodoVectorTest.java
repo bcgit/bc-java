@@ -25,7 +25,7 @@ import java.util.HashMap;
 public class FrodoVectorTest
     extends TestCase
 {
-    public static void main(String[] args) throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, IllegalBlockSizeException, BadPaddingException, IOException, InvalidKeyException
+    public static void main(String[] args) throws IOException
     {
         String files = "PQCkemKAT_19888.rsp PQCkemKAT_31296.rsp PQCkemKAT_43088.rsp PQCkemKAT_19888_shake.rsp PQCkemKAT_31296_shake.rsp PQCkemKAT_43088_shake.rsp";
         for (String name : files.split(" "))

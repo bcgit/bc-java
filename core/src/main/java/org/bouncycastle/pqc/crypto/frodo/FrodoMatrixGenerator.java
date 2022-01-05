@@ -27,7 +27,7 @@ abstract class FrodoMatrixGenerator
         this.q = q;
     }
 
-    abstract short[][] genMatrix(byte[] seedA);
+    abstract short[] genMatrix(byte[] seedA);
 
     static class Shake128MatrixGenerator
             extends FrodoMatrixGenerator
@@ -37,9 +37,9 @@ abstract class FrodoMatrixGenerator
             super(n, q);
         }
 
-        short[][] genMatrix(byte[] seedA)
+        short[] genMatrix(byte[] seedA)
         {
-            short[][] A = new short[n][n];
+            short[] A = new short[n*n];
             short i, j;
             byte[] b, tmp = new byte[(16 * n) / 8];
             for (i = 0; i < n; i++)
@@ -53,7 +53,7 @@ abstract class FrodoMatrixGenerator
                 digest.doFinal(tmp, 0, tmp.length);
                 for (j = 0; j < n; j++)
                 {
-                    A[i][j] = (short) (Pack.littleEndianToShort(tmp, 2 * j) % q);
+                    A[i*n+j] = (short) (Pack.littleEndianToShort(tmp, 2 * j) % q);
                 }
             }
             return A;
@@ -71,11 +71,11 @@ abstract class FrodoMatrixGenerator
 
         }
 
-        short[][] genMatrix(byte[] seedA)
+        short[] genMatrix(byte[] seedA)
         {
             //        """Generate matrix A using AES-128 (FrodoKEM specification, Algorithm 7)"""
             //        A = [[None for j in range(self.n)] for i in range(self.n)]
-            short[][] A = new short[n][n];
+            short[] A = new short[n*n];
             byte[] b = new byte[16];
             byte[] c = new byte[16];
 
@@ -98,7 +98,7 @@ abstract class FrodoMatrixGenerator
                     for (int k = 0; k < 8; k++)
                     {
                         // 6. A[i][j+k] = c[k] where c is treated as a sequence of 8 16-bit integers each in little-endian byte order
-                        A[i][j + k] = (short) (Pack.littleEndianToShort(c, 2 * k) % q);
+                        A[i*n+ j + k] = (short) (Pack.littleEndianToShort(c, 2 * k) % q);
                     }
                 }
             }
