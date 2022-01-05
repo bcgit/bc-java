@@ -24,6 +24,9 @@ public class CMCE
 
             AsymmetricKeyInfoConverter keyFact = new CMCEKeyFactorySpi();
 
+            provider.addAlgorithm("Cipher.CMCE", PREFIX + "CMCECipherSpi$Base");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.classicMcEliece, "CMCE");
+
             registerOid(provider, BCObjectIdentifiers.classicMcEliece, "CMCE", keyFact);
             registerOidAlgorithmParameters(provider, BCObjectIdentifiers.classicMcEliece, "CMCE");
         }
