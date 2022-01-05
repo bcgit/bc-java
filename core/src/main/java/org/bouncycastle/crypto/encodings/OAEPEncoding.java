@@ -263,10 +263,7 @@ public class OAEPEncoding
 
         for (int i = 0; i != defHash.length; i++)
         {
-            if (defHash[i] != block[defHash.length + i])
-            {
-                defHashWrong = true;
-            }
+            defHashWrong |= defHash[i] != block[defHash.length + i];
         }
 
         //
