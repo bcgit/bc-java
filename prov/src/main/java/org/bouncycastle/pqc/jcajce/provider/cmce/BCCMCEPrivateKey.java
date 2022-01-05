@@ -7,7 +7,6 @@ import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
@@ -103,7 +102,7 @@ public class BCCMCEPrivateKey
         return "PKCS#8";
     }
 
-    CipherParameters getKeyParams()
+    CMCEPrivateKeyParameters getKeyParams()
     {
         return params;
     }
