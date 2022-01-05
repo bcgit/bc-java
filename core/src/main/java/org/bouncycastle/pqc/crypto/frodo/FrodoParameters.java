@@ -13,7 +13,7 @@ public class FrodoParameters
 
     private FrodoEngine engine;
 
-    private FrodoParameters(int n, boolean isAES128) throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException
+    public FrodoParameters(int n, boolean isAES128) throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException
     {
         this.n = n;
         this.isAES128 = isAES128;

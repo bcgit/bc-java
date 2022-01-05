@@ -1,7 +1,12 @@
 package org.bouncycastle.pqc.crypto.frodo;
 
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CFBBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.Pack;
 
@@ -9,10 +14,7 @@ import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.security.*;
 
 abstract class FrodoMatrixGenerator
 {
@@ -25,12 +27,11 @@ abstract class FrodoMatrixGenerator
         this.q = q;
     }
 
-    abstract short[][] genMatrix(byte[] seedA) throws IllegalBlockSizeException, BadPaddingException, IOException, InvalidKeyException;
+    abstract short[][] genMatrix(byte[] seedA);
 
     static class Shake128MatrixGenerator
             extends FrodoMatrixGenerator
     {
-        Xof digest = new SHAKEDigest(128);
         public Shake128MatrixGenerator(int n, int q)
         {
             super(n, q);
@@ -47,6 +48,7 @@ abstract class FrodoMatrixGenerator
                 b = ByteUtils.concatenate(Pack.shortToLittleEndian(i), seedA);
 
                 // 2. c_{i,0} || c_{i,1} || ... || c_{i,n-1} = SHAKE128(b, 16n) (length in bits) where each c_{i,j} is parsed as a 16-bit integer in little-endian byte order format
+                Xof digest = new SHAKEDigest(128);
                 digest.update(b, 0, b.length);
                 digest.doFinal(tmp, 0, tmp.length);
                 for (j = 0; j < n; j++)
@@ -56,19 +58,20 @@ abstract class FrodoMatrixGenerator
             }
             return A;
         }
-    }
 
+    }
     static class Aes128MatrixGenerator
             extends FrodoMatrixGenerator
     {
-        Cipher cipher;
-        public Aes128MatrixGenerator(int n, int q) throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException
+        BufferedBlockCipher cipher;
+        public Aes128MatrixGenerator(int n, int q)
         {
             super(n, q);
-            cipher = Cipher.getInstance("AES/ECB/NoPadding", "BC");
+            cipher = new BufferedBlockCipher(new AESEngine());
+
         }
 
-        short[][] genMatrix(byte[] seedA) throws IllegalBlockSizeException, BadPaddingException, IOException, InvalidKeyException
+        short[][] genMatrix(byte[] seedA)
         {
             //        """Generate matrix A using AES-128 (FrodoKEM specification, Algorithm 7)"""
             //        A = [[None for j in range(self.n)] for i in range(self.n)]
@@ -103,23 +106,19 @@ abstract class FrodoMatrixGenerator
         }
 
         void aes128(byte[] out, byte[] keyBytes, byte[] msg)
-                throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, IOException
         {
-            Key key = new SecretKeySpec(keyBytes, "AES");
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-
-            //
-            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-            CipherOutputStream cOut = new CipherOutputStream(bOut, cipher);
-
-            for (int i = 0; i != msg.length / 2; i++)
+            try
             {
-                cOut.write(msg[i]);
+                KeyParameter kp = new KeyParameter(keyBytes);
+                cipher.init(true, kp);
+                int len = cipher.processBytes(msg, 0, msg.length, out, 0);
+                cipher.doFinal(out, len);
             }
-            cOut.write(msg, msg.length / 2, msg.length - msg.length/2);
-            cOut.close();
-            System.arraycopy(bOut.toByteArray(), 0, out, 0, out.length);
-            //
+            catch (InvalidCipherTextException e)
+            {
+                throw new IllegalStateException(e.toString(), e);
+            }
+
         }
     }
 }
