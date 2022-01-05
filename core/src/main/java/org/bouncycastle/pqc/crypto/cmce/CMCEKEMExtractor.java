@@ -31,4 +31,9 @@ public class CMCEKEMExtractor
         engine.kem_dec(session_key, encapsulation, ((CMCEPrivateKeyParameters)key).getPrivateKey());
         return session_key;
     }
+
+    public int getInputSize()
+    {
+        return engine.getCipherTextSize();
+    }
 }

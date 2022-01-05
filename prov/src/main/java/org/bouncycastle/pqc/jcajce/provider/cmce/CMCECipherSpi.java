@@ -40,7 +40,6 @@ import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.cmce.CMCEKEMExtractor;
 import org.bouncycastle.pqc.crypto.cmce.CMCEKEMGenerator;
 import org.bouncycastle.util.Arrays;
@@ -199,7 +198,7 @@ class CMCECipherSpi
         {
             try
             {
-                paramSpec = algorithmParameters.getParameterSpec(KTSParameterSpec.class);
+                paramSpec = algorithmParameters.getParameterSpec(KEMParameterSpec.class);
             }
             catch (Exception e)
             {
