@@ -81,10 +81,6 @@ public class FrodoVectorTest
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getPublicKey()));
                         assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
 
-                        // assert pub and priv keys
-                        System.out.println("pk: " + ByteUtils.toHexString(pubParams.getPublicKey()));
-                        System.out.println("sk: " + ByteUtils.toHexString(privParams.getPrivateKey()));
-
                         // kem_enc
 
                         FrodoKEMGenerator frodoEncCipher = new FrodoKEMGenerator(random);

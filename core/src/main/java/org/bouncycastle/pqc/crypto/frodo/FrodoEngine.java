@@ -170,10 +170,6 @@ class FrodoEngine
         short[] error_distribution = {18286, 14320, 6876, 2023, 364, 40, 2};
         // setting T_chi
         cdf_zero_centred_symmetric(error_distribution);
-        System.out.print("T_chi: ");
-        for (int i = 0; i < T_chi.length; i++)
-            System.out.print(  T_chi[i] + " ");
-        System.out.println();
 
         // all same size
         len_mu = 256;
@@ -318,8 +314,6 @@ class FrodoEngine
         byte[] s_seedSE_z = new byte[len_s_bytes + len_seedSE_bytes + len_z_bytes];
         random.nextBytes(s_seedSE_z);
 
-        System.out.println("randomness: " + ByteUtils.toHexString(s_seedSE_z));
-
         byte[] s = ByteUtils.subArray(s_seedSE_z, 0, len_s_bytes);
         byte[] seedSE = ByteUtils.subArray(s_seedSE_z, len_s_bytes, len_s_bytes + len_seedSE_bytes);
         byte[] z = ByteUtils.subArray(s_seedSE_z, len_s_bytes + len_seedSE_bytes, len_s_bytes + len_seedSE_bytes + len_z_bytes);
@@ -328,8 +322,6 @@ class FrodoEngine
         byte[] seedA = new byte[len_seedA_bytes];
         digest.update(z, 0, z.length);
         digest.doFinal(seedA, 0, seedA.length);
-
-        System.out.println("seedA: " + ByteUtils.toHexString(seedA));
 
         // 3. A = Frodo.Gen(seedA)
         short[] A = gen.genMatrix(seedA);
@@ -343,48 +335,20 @@ class FrodoEngine
 
         short[] r = new short[2 * n * nbar];
         for (int i = 0; i < r.length; i++)
-        {
             r[i] = Pack.littleEndianToShort(rbytes, i * 2);
-        }
-//        r = [struct.unpack_from('<H', rbytes, 2*i)[0] for i in range(2 * self.n * self.nbar)]
-//        self.__print_intermediate_value("r", r)
-        System.out.print("r: ");
-        for (int i = 0; i < r.length; i++)
-            System.out.printf("%04x, ", (r[i]));
-//        System.out.print(r[i] + " ");
-        System.out.println();
 
         // 5. S^T = Frodo.SampleMatrix(r[0 .. n*nbar-1], nbar, n)
         short[] S_T = sample_matrix(r, 0, nbar, n);
-
-        System.out.print("S^T: ");
-        for (int i = 0; i < S_T.length; i++)
-            System.out.printf("%04x, ", (S_T[i]));
-        //System.out.print(S_T[i][j] + " ");
-        System.out.println();
-
         short[] S = matrix_transpose(S_T, nbar, n);
+
         // 6. E = Frodo.SampleMatrix(r[n*nbar .. 2*n*nbar-1], n, nbar)
         short[] E = sample_matrix(r, n * nbar, n, nbar);
 
-        System.out.print("E: ");
-        for (int i = 0; i < E.length; i++)
-            System.out.printf("%04x, ", (E[i]));
-        //System.out.print(E[i][j] + " ");
-        System.out.println();
         // 7. B = A * S + E
         short[] B = matrix_add(matrix_mul(A, n, n, S, n, nbar), E, n, nbar);
 
-        System.out.print("B: ");
-        for (int i = 0; i < B.length; i++)
-            System.out.printf("%04x, ", (B[i]));
-//        System.out.print(B[i][j] + ",");
-//                System.out.printf("%02x ",Pack.bigEndianToShort(Pack.shortToBigEndian(B[i][j]),0));
-        System.out.println();
-
         // 8. b = Pack(B)
         byte[] b = pack(B);
-        System.out.println("b: " + ByteUtils.toHexString(b));
 
         // 9. pkh = SHAKE(seedA || b, len_pkh) (length in bits)
         // 10. pk = seedA || b
@@ -393,31 +357,21 @@ class FrodoEngine
         byte[] pkh = new byte[len_pkh_bytes];
         digest.update(pk, 0, pk.length);
         digest.doFinal(pkh, 0, pkh.length);
-        System.out.println("pkh: " + ByteUtils.toHexString(pkh));
 
         //10. sk = (s || seedA || b, S^T, pkh)
         System.arraycopy(ByteUtils.concatenate(s, pk), 0,
                 sk, 0, len_s_bytes + len_pk_bytes);
-        System.out.println("sk: " + ByteUtils.toHexString(sk).toUpperCase());
 
         for (int i = 0; i < nbar; i++)
-        {
             for (int j = 0; j < n; j++)
-            {
                 System.arraycopy(Pack.shortToLittleEndian(S_T[i*n+j]), 0,
                         sk, len_s_bytes + len_pk_bytes + i * n * 2 + j * 2, 2);
-            }
-        }
 
         System.arraycopy(pkh, 0, sk, len_sk_bytes - len_pkh_bytes, len_pkh_bytes);
-
-        System.out.println("pk: " + ByteUtils.toHexString(pk).toUpperCase());
-        System.out.println("sk: " + ByteUtils.toHexString(sk).toUpperCase());
     }
 
     private static short[] unpack(byte[] in, int n1, int n2)
     {
-//    frodo_unpack(B, PARAMS_N*PARAMS_NBAR, pk_b, CRYPTO_PUBLICKEYBYTES - BYTES_SEED_A, PARAMS_LOGQ);
         short[] out = new short[n1 * n2];
 
         short i = 0;    // whole uint16_t already filled in
@@ -504,13 +458,11 @@ class FrodoEngine
         // 1. Choose a uniformly random key mu in {0,1}^len_mu (length in bits)
         byte[] mu = new byte[len_mu_bytes];
         random.nextBytes(mu);
-        System.out.println("mu: " + ByteUtils.toHexString(mu));
 
         // 2. pkh = SHAKE(pk, len_pkh)
         byte[] pkh = new byte[len_pkh_bytes];
         digest.update(pk, 0, len_pk_bytes);
         digest.doFinal(pkh, 0, len_pkh_bytes);
-        System.out.println("pkh: " + ByteUtils.toHexString(pkh));
 
         // 3. seedSE || k = SHAKE(pkh || mu, len_seedSE + len_k) (length in bits)
         byte[] seedSE_k = new byte[len_seedSE + len_k];
@@ -518,10 +470,7 @@ class FrodoEngine
         digest.doFinal(seedSE_k, 0, len_seedSE_bytes + len_k_bytes);
 
         byte[] seedSE = ByteUtils.subArray(seedSE_k, 0, len_seedSE_bytes);
-        System.out.println("seedSE: " + ByteUtils.toHexString(seedSE));
-
         byte[] k = ByteUtils.subArray(seedSE_k, len_seedSE_bytes, len_seedSE_bytes + len_k_bytes);
-        System.out.println("k: " + ByteUtils.toHexString(k));
 
         // 4. r = SHAKE(0x96 || seedSE, 2*mbar*n + mbar*nbar*len_chi) (length in bits)
         byte[] rbytes = new byte[(2 * mbar * n + mbar * nbar) * len_chi_bytes];
@@ -530,109 +479,55 @@ class FrodoEngine
 
         short[] r = new short[rbytes.length / 2];
         for (int i = 0; i < r.length; i++)
-        {
             r[i] = Pack.littleEndianToShort(rbytes, i * 2);
-        }
-        System.out.print("r: ");
-        for (int i = 0; i < r.length; i++)
-            System.out.printf("%04x, ", (r[i]));
-        //System.out.print(r[i] + ",");
-        System.out.println();
 
         // 5. S' = Frodo.SampleMatrix(r[0 .. mbar*n-1], mbar, n)
         short[] Sprime = sample_matrix(r, 0, mbar, n);
-        System.out.print("S': ");
-        for (int i = 0; i < Sprime.length; i++)
-            System.out.printf("%04x, ", (Sprime[i]));
-        //System.out.print(Sprime[i][j] + ",");
-        System.out.println();
 
         // 6. E' = Frodo.SampleMatrix(r[mbar*n .. 2*mbar*n-1], mbar, n)
         short[] Eprime = sample_matrix(r, mbar * n, mbar, n);
-        System.out.print("E': ");
-        for (int i = 0; i < Eprime.length; i++)
-            System.out.printf("%04x, ", (Eprime[i]));
-        //System.out.print(Eprime[i][j] + ",");
-        System.out.println();
 
         // 7. A = Frodo.Gen(seedA)
         short[] A = gen.genMatrix(seedA);
 
         // 8. B' = S' A + E'
         short[] Bprime = matrix_add(matrix_mul(Sprime, mbar, n, A, n, n), Eprime, mbar, n);
-        System.out.print("B': ");
-        for (int i = 0; i < Bprime.length; i++)
-            System.out.printf("%04x, ", (Bprime[i]));
-        //System.out.print(Bprime[i][j] + ",");
-        System.out.println();
 
         // 9. c1 = Frodo.Pack(B')
         byte[] c1 = pack(Bprime);
-        System.out.println("c1: " + ByteUtils.toHexString(c1).toUpperCase());
 
         // 10. E'' = Frodo.SampleMatrix(r[2*mbar*n .. 2*mbar*n + mbar*nbar-1], mbar, n)
         short[] Eprimeprime = sample_matrix(r, 2 * mbar * n, mbar, nbar);
-        System.out.print("E'': ");
-        for (int i = 0; i < Eprimeprime.length; i++)
-                System.out.printf("%04x, ", (Eprimeprime[i]));
-        //System.out.print((Eprimeprime[i][j]) + ",");
-        System.out.println();
 
         // 11. B = Frodo.Unpack(b, n, nbar)
         short[] B = unpack(b, n, nbar);
-        System.out.print("B: ");
-        for (int i = 0; i < B.length; i++)
-            System.out.printf("%04x, ", B[i]);
-//        System.out.print(B[i] + ",");
-        System.out.println();
 
 
         // 12. V = S' B + E''
         short[] V = matrix_add(matrix_mul(Sprime, mbar, n, B, n, nbar), Eprimeprime, mbar, nbar);
 
-        System.out.print("V: ");
-        for (int i = 0; i < V.length; i++)
-            System.out.printf("%04x, ", (V[i]));
-        System.out.println();
         // 13. C = V + Frodo.Encode(mu)
         short[] EncodedMU = encode(mu);
-        System.out.print("encMU: ");
-        for (int i = 0; i < EncodedMU.length; i++)
-            System.out.printf("%04x, ", (EncodedMU[i]));
-        System.out.println();
-
         short[] C = matrix_add(V, EncodedMU, nbar, mbar);
-        System.out.print("C: ");
-        for (int i = 0; i < C.length; i++)
-            System.out.printf("%04x, ", (C[i]));
-        System.out.println();
 
         // 14. c2 = Frodo.Pack(C)
         byte[] c2 = pack(C);
-        System.out.println("c2: " + ByteUtils.toHexString(c2));
 
         // 15. ss = SHAKE(c1 || c2 || k, len_ss)
-
         // ct = c1 + c2
         System.arraycopy(ByteUtils.concatenate(c1, c2), 0, ct, 0, len_ct_bytes);
 
         digest.update(ByteUtils.concatenate(ct, k), 0, c1.length + c2.length + len_k_bytes);
         digest.doFinal(ss, 0, len_s_bytes);
-
-        System.out.println("ss: " + ByteUtils.toHexString(ss));
-        System.out.println("ct: " + ByteUtils.toHexString(ct));
     }
 
     private static short[] matrix_sub(short[] X, short[] Y, int n1, int n2)
     {
         short[] res = new short[n1*n2];
         for (int i = 0; i < n1; i++)
-        {
             for (int j = 0; j < n2; j++)
-            {
                 res[i*n2+j] = (short) ((((X[i*n2+j]) - (Y[i*n2+j])) & 0xffff) % q);
-            }
-        }
+
         return res;
     }
 
@@ -686,10 +581,8 @@ class FrodoEngine
         // If (selector == 0) then load r with a, else if (selector == -1) load r with b
         byte[] r = new byte[a.length];
         for (int i = 0; i < a.length; i++)
-        {
-//            r[i] = (byte) ((a[i]&0xff & (~mask&0xff))&0xff | (b[i]&0xff & ((mask)&0xff))&0xff);
             r[i] = (byte) (((~selector & a[i]) & 0xff) | ((selector & b[i]) & 0xff));
-        }
+
         return r;
     }
 
@@ -699,90 +592,52 @@ class FrodoEngine
         int offset = 0;
         int length = mbar * n * D / 8;
         byte[] c1 = ByteUtils.subArray(ct, offset, offset + length);
-        System.out.println("c1: " + ByteUtils.toHexString(c1));
 
         offset += length;
         length = mbar * nbar * D / 8;
         byte[] c2 = ByteUtils.subArray(ct, offset, offset + length);
-        System.out.println("c2: " + ByteUtils.toHexString(c2));
 
         // Parse sk = (s || seedA || b, S^T, pkh)
         offset = 0;
         length = len_s_bytes;
         byte[] s = ByteUtils.subArray(sk, offset, offset + length);
-        System.out.println("s: " + ByteUtils.toHexString(s));
 
         offset += length;
         length = len_seedA_bytes;
         byte[] seedA = ByteUtils.subArray(sk, offset, offset + length);
-        System.out.println("seedA: " + ByteUtils.toHexString(seedA));
+
         offset += length;
         length = (D * n * nbar) / 8;
         byte[] b = ByteUtils.subArray(sk, offset, offset + length);
-        System.out.println("b: " + ByteUtils.toHexString(b));
 
         offset += length;
         length = n * nbar * 16 / 8;
         byte[] Sbytes = ByteUtils.subArray(sk, offset, offset + length);
-        System.out.println("Sbytes: " + ByteUtils.toHexString(Sbytes));
 
         short[] Stransposed = new short[nbar * n];
 
         for (int i = 0; i < nbar; i++)
-        {
             for (int j = 0; j < n; j++)
-            {
                 Stransposed[i*n+j] = Pack.littleEndianToShort(Sbytes, i * n * 2 + j * 2);
-            }
-        }
-        System.out.print("S^T: ");
-        for (int i = 0; i < Stransposed.length; i++)
-            System.out.printf("%04x, ", (Stransposed[i]));
-        System.out.println();
 
         short[] S = matrix_transpose(Stransposed, nbar, n);
-        System.out.print("S: ");
-        for (int i = 0; i < S.length; i++)
-            System.out.printf("%04x, ", (S[i]));
-        System.out.println();
-
 
         offset += length;
         length = len_pkh_bytes;
         byte[] pkh = ByteUtils.subArray(sk, offset, offset + length);
-        System.out.println("pkh: " + ByteUtils.toHexString(pkh));
 
         // 1. B' = Frodo.Unpack(c1, mbar, n)
         short[] Bprime = unpack(c1, mbar, n);
-        System.out.print("B': ");
-        for (int i = 0; i < Bprime.length; i++)
-            System.out.printf("%04x, ", (Bprime[i]));
-        System.out.println();
 
         // 2. C = Frodo.Unpack(c2, mbar, nbar)
         short[] C = unpack(c2, mbar, nbar);
-        System.out.print("C: ");
-        for (int i = 0; i < C.length; i++)
-            System.out.printf("%04x, ", (C[i]));
-        System.out.println();
 
         // 3. M = C - B' S
         short[] BprimeS = matrix_mul(Bprime, mbar, n, S, n, nbar);
-        System.out.print("B'S: ");
-        for (int i = 0; i < BprimeS.length; i++)
-            System.out.printf("%04x, ", (BprimeS[i]));
-        System.out.println();
-
         short[] M = matrix_sub(C, BprimeS, mbar, nbar);
-        System.out.print("M: ");
-        for (int i = 0; i < M.length; i++)
-            System.out.printf("%04x, ", (M[i]));
-        System.out.println();
-
 
         // 4. mu' = Frodo.Decode(M)
         byte[] muprime = decode(M);
-        System.out.println("mu': " + ByteUtils.toHexString(muprime));
 
         /// 5. Parse pk = seedA || b  (done above)
 
@@ -792,83 +647,40 @@ class FrodoEngine
         digest.doFinal(seedSEprime_kprime, 0, len_seedSE_bytes + len_k_bytes);
 
         byte[] seedSEprime = ByteUtils.subArray(seedSEprime_kprime, 0, len_seedSE_bytes);
-        System.out.println("seedSE': " + ByteUtils.toHexString(seedSEprime));
-
         byte[] kprime = ByteUtils.subArray(seedSEprime_kprime, len_seedSE_bytes, len_seedSE_bytes + len_k_bytes);
-        System.out.println("k': " + ByteUtils.toHexString(kprime));
 
         // 7. r = SHAKE(0x96 || seedSE', 2*mbar*n + mbar*nbar*len_chi) (length in bits)
         byte[] rbytes = new byte[(2 * mbar * n + mbar * mbar) * len_chi_bytes];
         digest.update(ByteUtils.concatenate(new byte[]{(byte) 0x96}, seedSEprime), 0, len_seedSE_bytes + 1);
         digest.doFinal(rbytes, 0, rbytes.length);
-        System.out.println("rbyte: " + ByteUtils.toHexString(rbytes));
-        //        r = [struct.unpack_from('<H', rbytes, 2*i)[0] for i in range(2 * self.mbar * self.n + self.mbar * self.nbar)]
-        //        self.__print_intermediate_value("r", r)
+
         short[] r = new short[2 * mbar * n + mbar * nbar];
         for (int i = 0; i < r.length; i++)
-        {
             r[i] = Pack.littleEndianToShort(rbytes, i * 2);
-        }
-//        r = [struct.unpack_from('<H', rbytes, 2*i)[0] for i in range(2 * self.n * self.nbar)]
-//        self.__print_intermediate_value("r", r)
-        System.out.print("r: ");
-        for (int i = 0; i < r.length; i++)
-            System.out.printf("%04x, ", (r[i]));
-        System.out.println();
 
         // 8. S' = Frodo.SampleMatrix(r[0 .. mbar*n-1], mbar, n)
         short[] Sprime = sample_matrix(r, 0, mbar, n);
-        System.out.print("S': ");
-        for (int i = 0; i < Sprime.length; i++)
-            System.out.printf("%04x, ", (Sprime[i]));
-        System.out.println();
 
         // 9. E' = Frodo.SampleMatrix(r[mbar*n .. 2*mbar*n-1], mbar, n)
         short[] Eprime = sample_matrix(r, mbar * n, mbar, n);
-        System.out.print("E': ");
-        for (int i = 0; i < Eprime.length; i++)
-            System.out.printf("%04x, ", (Eprime[i]));
-        System.out.println();
 
         // 10. A = Frodo.Gen(seedA)
         short[] A = gen.genMatrix(seedA);
 
-        System.out.println();
         // 11. B'' = S' A + E'
         short[] Bprimeprime = matrix_add(matrix_mul(Sprime, mbar, n, A, n, n), Eprime, mbar, n);
-        System.out.print("B'': ");
-        for (int i = 0; i < Bprimeprime.length; i++)
-            System.out.printf("%04x, ", (Bprimeprime[i]));
-        System.out.println();
 
         // 12. E'' = Frodo.SampleMatrix(r[2*mbar*n .. 2*mbar*n + mbar*nbar-1], mbar, n)
         short[] Eprimeprime = sample_matrix(r, 2 * mbar * n, mbar, nbar);
-        System.out.print("E'': ");
-        for (int i = 0; i < Eprimeprime.length; i++)
-            System.out.printf("%04x, ", (Eprimeprime[i]));
-        System.out.println();
 
         // 13. B = Frodo.Unpack(b, n, nbar)
         short[] B = unpack(b, n, nbar);
-        System.out.print("B: ");
-        for (int i = 0; i < B.length; i++)
-            System.out.printf("%04x, ", (B[i]));
-        System.out.println();
-
 
         // 14. V = S' B + E''
         short[] V = matrix_add(matrix_mul(Sprime, mbar, n, B, n, nbar), Eprimeprime, mbar, nbar);
-        System.out.print("V: ");
-        for (int i = 0; i < V.length; i++)
-            System.out.printf("%04x, ", (V[i]));
-        System.out.println();
 
         // 15. C' = V + Frodo.Encode(muprime)
         short[] Cprime = matrix_add(V, encode(muprime), mbar, nbar);
-        System.out.print("C': ");
-        for (int i = 0; i < Cprime.length; i++)
-            System.out.printf("%04x, ", (Cprime[i]));
-        System.out.println();
 
         // 16. (in constant time) kbar = kprime if (B' || C == B'' || C') else kbar = s
         // Needs to avoid branching on secret data as per:
@@ -876,14 +688,11 @@ class FrodoEngine
         // primitives using the Fujisaki-Okamoto transformation and its application on FrodoKEM. In CRYPTO 2020.
         //TODO change it so Bprime and C are in the same array same with B'' and C'
         short use_kprime = ctverify(Bprime, C, Bprimeprime, Cprime);
-        System.out.println("use_kprime: " + use_kprime);
         byte[] kbar = ctselect(kprime, s, use_kprime);
-        System.out.println("kbar: " + ByteUtils.toHexString(kbar));
 
         // 17. ss = SHAKE(c1 || c2 || kbar, len_ss) (length in bits)
         digest.update(ByteUtils.concatenate(ByteUtils.concatenate(c1, c2), kbar), 0, c1.length + c2.length + kbar.length);
         digest.doFinal(ss, 0, len_ss_bytes);
-        System.out.println("ss: " + ByteUtils.toHexString(ss));
     }
 
 }
